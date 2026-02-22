@@ -79,6 +79,10 @@ export interface BusinessSettings {
     timezone: string;
     workDays: number[];
     workHours: { start: string; end: string };
+    cargoConfig?: {
+        defaultFee: number;
+        isIncludedByDefault: boolean;
+    };
 }
 
 export interface BusinessStats {
@@ -278,6 +282,10 @@ export interface Product {
         quantity: number;
         lowStockThreshold: number;
         trackInventory: boolean;
+    };
+    cargoFee?: {
+        amount: number;
+        isIncluded: boolean;
     };
     unitType: string;
     isActive: boolean;

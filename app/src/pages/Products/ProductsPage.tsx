@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Header } from '../../components/layout/Header';
-import { Search, Plus, AlertTriangle, Grid3X3, List, Loader2, MoreVertical, ChevronDown } from 'lucide-react';
+import { Search, Plus, AlertTriangle, Grid3X3, List, Loader2, MoreVertical, ChevronDown, Globe } from 'lucide-react';
 import { useBusinessStore, useAuthStore } from '../../store';
 import { productService, categoryService } from '../../services/db';
 import type { Product, Category } from '../../types';
@@ -149,6 +149,10 @@ function CreateProductModal({ onClose }: { onClose: () => void }) {
     const [salePrice, setSalePrice] = useState<string>('');
     const [margin, setMargin] = useState<string>(localStorage.getItem('liscord_last_margin') || '20');
 
+    // Cargo Features
+    const [cargoFee, setCargoFee] = useState<string>(business?.settings?.cargoConfig?.defaultFee?.toString() || '');
+    const [isCargoIncluded, setIsCargoIncluded] = useState(business?.settings?.cargoConfig?.isIncludedByDefault || false);
+
     useEffect(() => {
         if (!business?.id) return;
         const unsubscribe = categoryService.subscribeCategories(business.id, setCategories);
@@ -252,6 +256,10 @@ function CreateProductModal({ onClose }: { onClose: () => void }) {
                     lowStockThreshold: 3,
                     trackInventory: productType === 'ready'
                 },
+                cargoFee: productType === 'preorder' ? {
+                    amount: Number(cargoFee) || 0,
+                    isIncluded: isCargoIncluded
+                } : undefined,
                 unitType: 'ш',
                 isActive: true,
                 stats: {
@@ -389,6 +397,65 @@ function CreateProductModal({ onClose }: { onClose: () => void }) {
                                 />
                             </div>
                         </div>
+
+                        {productType === 'preorder' && (
+                            <div className="cargo-fee-section animate-slide-up" style={{
+                                background: 'var(--bg-soft)',
+                                padding: '16px',
+                                borderRadius: '12px',
+                                border: '1px solid var(--border-color)',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                gap: '12px'
+                            }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--primary)', fontWeight: 600, fontSize: '0.9rem' }}>
+                                    <Globe size={16} /> Олон улсын каргоны тохиргоо
+                                </div>
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                                    <div className="input-group">
+                                        <label className="input-label">Каргоны төлбөр /нэгж/</label>
+                                        <div className="input-with-icon">
+                                            <input
+                                                className="input"
+                                                type="number"
+                                                value={cargoFee}
+                                                onChange={e => setCargoFee(e.target.value)}
+                                                placeholder="25,000"
+                                            />
+                                            <span className="input-icon-right" style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>₮</span>
+                                        </div>
+                                    </div>
+                                    <div className="input-group">
+                                        <label className="input-label">Тооцоолох арга</label>
+                                        <div
+                                            className={`input select-custom ${isCargoIncluded ? 'active' : ''}`}
+                                            onClick={() => setIsCargoIncluded(!isCargoIncluded)}
+                                            style={{
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                cursor: 'pointer',
+                                                transition: 'all 0.2s ease',
+                                                fontSize: '0.9rem',
+                                                background: isCargoIncluded ? 'rgba(var(--primary-rgb), 0.1)' : 'var(--bg-input)',
+                                                borderColor: isCargoIncluded ? 'var(--primary)' : 'var(--border-color)',
+                                                color: isCargoIncluded ? 'var(--primary)' : 'var(--text-main)',
+                                                height: '42px',
+                                                borderRadius: '8px',
+                                                border: '1px solid'
+                                            }}
+                                        >
+                                            {isCargoIncluded ? '✅ Үнэд багтсан' : '📦 Тусдаа бодогдоно'}
+                                        </div>
+                                    </div>
+                                </div>
+                                <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', margin: 0 }}>
+                                    {isCargoIncluded
+                                        ? '* Каргоны төлбөр барааны үндсэн үнэд багтсан тул хэрэглэгчээс нэмэлт төлбөр авахгүй.'
+                                        : '* Захиалга бүрт энэхүү каргоны төлбөр автоматаар нэмэгдэж тооцогдоно.'}
+                                </p>
+                            </div>
+                        )}
                     </div>
                     <div className="modal-footer">
                         <button type="button" className="btn btn-secondary" onClick={onClose} disabled={loading}>Болих</button>
