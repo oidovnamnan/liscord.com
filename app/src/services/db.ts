@@ -25,6 +25,9 @@ import type { Business, User, Employee, Order, Customer, Product, Position, Cate
  */
 export function convertTimestamps(data: any): any {
     if (!data) return data;
+    if (Array.isArray(data)) {
+        return data.map(item => convertTimestamps(item));
+    }
     const result = { ...data };
     for (const key in result) {
         if (result[key] instanceof Timestamp) {
