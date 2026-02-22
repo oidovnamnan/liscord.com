@@ -290,6 +290,17 @@ export interface Product {
     isDeleted: boolean;
 }
 
+// ============ CATEGORY ============
+export interface Category {
+    id: string;
+    name: string;
+    description: string;
+    color?: string;
+    productCount: number;
+    isDeleted: boolean;
+    createdAt: Date;
+}
+
 // ============ NAVIGATION ============
 export interface NavItem {
     id: string;

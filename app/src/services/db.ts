@@ -16,7 +16,7 @@ import {
 } from 'firebase/firestore';
 import { db } from './firebase';
 import { auditService } from './audit';
-import type { Business, User, Employee, Order, Customer, Product, Position } from '../types';
+import type { Business, User, Employee, Order, Customer, Product, Position, Category } from '../types';
 
 // ============ GENERIC HELPERS ============
 
@@ -270,6 +270,34 @@ export const productService = {
             ...updates,
             updatedAt: serverTimestamp()
         });
+    }
+};
+
+// ============ CATEGORY SERVICES ============
+
+export const categoryService = {
+    getCategoriesRef(bizId: string) {
+        return collection(db, 'businesses', bizId, 'categories');
+    },
+
+    subscribeCategories(bizId: string, callback: (categories: Category[]) => void) {
+        const q = query(this.getCategoriesRef(bizId), where('isDeleted', '==', false));
+        return onSnapshot(q, (snapshot) => {
+            const categories = snapshot.docs.map(d => ({ id: d.id, ...convertTimestamps(d.data()) } as Category));
+            // Sort by name
+            categories.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+            callback(categories);
+        });
+    },
+
+    async createCategory(bizId: string, category: Partial<Category>): Promise<string> {
+        const docRef = await addDoc(this.getCategoriesRef(bizId), {
+            ...category,
+            productCount: 0,
+            isDeleted: false,
+            createdAt: serverTimestamp()
+        });
+        return docRef.id;
     }
 };
 

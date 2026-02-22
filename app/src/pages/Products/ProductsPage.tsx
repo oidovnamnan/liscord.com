@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 import { Header } from '../../components/layout/Header';
-import { Search, Plus, AlertTriangle, Grid3X3, List, Loader2, MoreVertical } from 'lucide-react';
+import { Search, Plus, AlertTriangle, Grid3X3, List, Loader2, MoreVertical, ChevronDown } from 'lucide-react';
 import { useBusinessStore, useAuthStore } from '../../store';
-import { productService } from '../../services/db';
-import type { Product } from '../../types';
+import { productService, categoryService } from '../../services/db';
+import type { Product, Category } from '../../types';
 import { toast } from 'react-hot-toast';
 import './ProductsPage.css';
 
@@ -137,11 +137,23 @@ function CreateProductModal({ onClose }: { onClose: () => void }) {
     const [loading, setLoading] = useState(false);
     const [productType, setProductType] = useState<'ready' | 'preorder'>('ready');
 
+    // Categories
+    const [categories, setCategories] = useState<Category[]>([]);
+    const [categoryInput, setCategoryInput] = useState('');
+    const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
+    const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
+
     // Smart Features States
     const [sku, setSku] = useState('');
     const [costPrice, setCostPrice] = useState<string>('');
     const [salePrice, setSalePrice] = useState<string>('');
     const [margin, setMargin] = useState<string>(localStorage.getItem('liscord_last_margin') || '20');
+
+    useEffect(() => {
+        if (!business?.id) return;
+        const unsubscribe = categoryService.subscribeCategories(business.id, setCategories);
+        return () => unsubscribe();
+    }, [business?.id]);
 
     useEffect(() => {
         // Auto-generate SKU: LSC-XXXX-XXXX
@@ -193,7 +205,6 @@ function CreateProductModal({ onClose }: { onClose: () => void }) {
 
         const fd = new FormData(e.currentTarget);
         const name = fd.get('name') as string;
-        const category = fd.get('category') as string;
         const finalSalePrice = Number(salePrice);
         const finalCostPrice = Number(costPrice);
         const stockQty = productType === 'preorder' ? 999999 : Number(fd.get('stock'));
@@ -205,10 +216,27 @@ function CreateProductModal({ onClose }: { onClose: () => void }) {
 
         setLoading(true);
         try {
+            let categoryId = selectedCategory?.id || 'general';
+            let categoryName = selectedCategory?.name || categoryInput || 'Бусад';
+
+            // Create new category if needed
+            if (!selectedCategory && categoryInput) {
+                const existing = categories.find(c => c.name.toLowerCase() === categoryInput.toLowerCase());
+                if (existing) {
+                    categoryId = existing.id;
+                    categoryName = existing.name;
+                } else {
+                    categoryId = await categoryService.createCategory(business.id, {
+                        name: categoryInput,
+                        description: ''
+                    });
+                }
+            }
+
             await productService.createProduct(business.id, {
                 name,
-                categoryId: 'general',
-                categoryName: category || 'Бусад',
+                categoryId,
+                categoryName,
                 sku: sku || '',
                 barcode: '',
                 description: '',
@@ -242,6 +270,8 @@ function CreateProductModal({ onClose }: { onClose: () => void }) {
         }
     };
 
+    const filteredCats = categories.filter(c => c.name.toLowerCase().includes(categoryInput.toLowerCase()));
+
     return (
         <div className="modal-backdrop" onClick={onClose}>
             <div className="modal" onClick={e => e.stopPropagation()}>
@@ -256,9 +286,51 @@ function CreateProductModal({ onClose }: { onClose: () => void }) {
                             <input className="input" name="name" placeholder="iPhone 15 Pro" autoFocus required />
                         </div>
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                            <div className="input-group">
+                            <div className="input-group" style={{ position: 'relative' }}>
                                 <label className="input-label">Ангилал</label>
-                                <input className="input" name="category" placeholder="Гар утас" />
+                                <div className="input-with-icon" onClick={() => setShowCategoryDropdown(true)}>
+                                    <input
+                                        className="input"
+                                        placeholder="Гар утас"
+                                        value={categoryInput}
+                                        onChange={e => {
+                                            setCategoryInput(e.target.value);
+                                            setSelectedCategory(null);
+                                            setShowCategoryDropdown(true);
+                                        }}
+                                        onFocus={() => setShowCategoryDropdown(true)}
+                                    />
+                                    <ChevronDown size={16} className="input-icon-right" style={{ pointerEvents: 'none' }} />
+                                </div>
+                                {showCategoryDropdown && (categoryInput || categories.length > 0) && (
+                                    <>
+                                        <div className="dropdown-backdrop" onClick={() => setShowCategoryDropdown(false)} />
+                                        <div className="dropdown-menu show" style={{ width: '100%', top: '100%', left: 0, marginTop: 4, maxHeight: 200, overflowY: 'auto' }}>
+                                            {filteredCats.map(c => (
+                                                <div
+                                                    key={c.id}
+                                                    className="dropdown-item"
+                                                    onClick={() => {
+                                                        setSelectedCategory(c);
+                                                        setCategoryInput(c.name);
+                                                        setShowCategoryDropdown(false);
+                                                    }}
+                                                >
+                                                    {c.name}
+                                                </div>
+                                            ))}
+                                            {categoryInput && !categories.some(c => c.name.toLowerCase() === categoryInput.toLowerCase()) && (
+                                                <div
+                                                    className="dropdown-item"
+                                                    style={{ color: 'var(--primary)', fontWeight: 600 }}
+                                                    onClick={() => setShowCategoryDropdown(false)}
+                                                >
+                                                    <Plus size={14} style={{ marginRight: 4 }} /> "{categoryInput}" нэмэх
+                                                </div>
+                                            )}
+                                        </div>
+                                    </>
+                                )}
                             </div>
                             <div className="input-group">
                                 <label className="input-label">SKU</label>
