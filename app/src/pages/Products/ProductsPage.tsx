@@ -231,6 +231,7 @@ function CreateProductModal({ onClose }: { onClose: () => void }) {
 
         const fd = new FormData(e.currentTarget);
         const name = fd.get('name') as string;
+        const description = fd.get('description') as string;
         const finalSalePrice = Number(salePrice);
         const finalCostPrice = Number(costPrice);
         const stockQty = productType === 'preorder' ? 999999 : Number(fd.get('stock'));
@@ -265,7 +266,7 @@ function CreateProductModal({ onClose }: { onClose: () => void }) {
                 categoryName,
                 sku: sku || '',
                 barcode: '',
-                description: '',
+                description: description || '',
                 images: [],
                 pricing: {
                     salePrice: finalSalePrice,
@@ -316,6 +317,15 @@ function CreateProductModal({ onClose }: { onClose: () => void }) {
                         <div className="input-group">
                             <label className="input-label">Барааны нэр <span className="required">*</span></label>
                             <input className="input" name="name" placeholder="iPhone 15 Pro" autoFocus required />
+                        </div>
+                        <div className="input-group">
+                            <label className="input-label">Барааны тайлбар /Танилцуулга/</label>
+                            <textarea
+                                className="input"
+                                name="description"
+                                placeholder="Барааны дэлгэрэнгүй мэдээлэл, хэмжээ, материал г.м"
+                                style={{ minHeight: 80, padding: '10px 12px', resize: 'vertical' }}
+                            />
                         </div>
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                             <div className="input-group" style={{ position: 'relative' }}>
