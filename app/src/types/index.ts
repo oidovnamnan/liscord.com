@@ -287,6 +287,7 @@ export interface Product {
         amount: number;
         isIncluded: boolean;
         cargoTypeId?: string;
+        cargoValue?: number;
     };
     unitType: string;
     isActive: boolean;

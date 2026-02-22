@@ -152,6 +152,7 @@ function CreateProductModal({ onClose }: { onClose: () => void }) {
     // Cargo Features
     const [cargoTypes, setCargoTypes] = useState<CargoType[]>([]);
     const [selectedCargoTypeId, setSelectedCargoTypeId] = useState<string>('');
+    const [cargoValue, setCargoValue] = useState<string>('1');
     const [cargoFee, setCargoFee] = useState<string>(business?.settings?.cargoConfig?.defaultFee?.toString() || '');
     const [isCargoIncluded, setIsCargoIncluded] = useState(business?.settings?.cargoConfig?.isIncludedByDefault || false);
 
@@ -166,7 +167,17 @@ function CreateProductModal({ onClose }: { onClose: () => void }) {
         setSelectedCargoTypeId(id);
         const selected = cargoTypes.find(t => t.id === id);
         if (selected) {
-            setCargoFee(selected.fee.toString());
+            const val = Number(cargoValue) || 1;
+            setCargoFee(Math.round(selected.fee * val).toString());
+        }
+    };
+
+    const handleCargoValueChange = (val: string) => {
+        setCargoValue(val);
+        const selected = cargoTypes.find(t => t.id === selectedCargoTypeId);
+        if (selected) {
+            const numVal = Number(val) || 0;
+            setCargoFee(Math.round(selected.fee * numVal).toString());
         }
     };
 
@@ -270,7 +281,8 @@ function CreateProductModal({ onClose }: { onClose: () => void }) {
                 cargoFee: productType === 'preorder' ? {
                     amount: Number(cargoFee) || 0,
                     isIncluded: isCargoIncluded,
-                    cargoTypeId: selectedCargoTypeId || undefined
+                    cargoTypeId: selectedCargoTypeId || undefined,
+                    cargoValue: Number(cargoValue) || 1
                 } : undefined,
                 unitType: 'ш',
                 isActive: true,
@@ -423,7 +435,7 @@ function CreateProductModal({ onClose }: { onClose: () => void }) {
                                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--primary)', fontWeight: 600, fontSize: '0.9rem' }}>
                                     <Globe size={16} /> Олон улсын каргоны тохиргоо
                                 </div>
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1.2fr', gap: 12 }}>
                                     <div className="input-group">
                                         <label className="input-label">Каргоны төрөл</label>
                                         <select
@@ -436,6 +448,19 @@ function CreateProductModal({ onClose }: { onClose: () => void }) {
                                                 <option key={t.id} value={t.id}>{t.name} (₮{t.fee.toLocaleString()} / {t.unit})</option>
                                             ))}
                                         </select>
+                                    </div>
+                                    <div className="input-group">
+                                        <label className="input-label">
+                                            {selectedCargoTypeId ? `Хэмжээ (${cargoTypes.find(t => t.id === selectedCargoTypeId)?.unit})` : 'Хэмжээ / Жин'}
+                                        </label>
+                                        <input
+                                            className="input"
+                                            type="number"
+                                            step="any"
+                                            value={cargoValue}
+                                            onChange={e => handleCargoValueChange(e.target.value)}
+                                            placeholder="1"
+                                        />
                                     </div>
                                     <div className="input-group">
                                         <label className="input-label">Каргоны төлбөр /нэгж/</label>
