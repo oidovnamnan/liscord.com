@@ -106,7 +106,9 @@ export default function App() {
               profile.isSuperAdmin = true;
             }
 
-            setUser(profile);
+            // Fix: Ensure UID is present in the profile object for usePermissions hook
+            setUser({ ...profile, uid: firebaseUser.uid });
+
             if (profile.activeBusiness) {
               const [biz, emp] = await Promise.all([
                 businessService.getBusiness(profile.activeBusiness),
