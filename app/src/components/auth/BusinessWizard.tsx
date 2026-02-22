@@ -5,7 +5,7 @@ import type { BusinessCategory } from '../../types';
 import { businessService } from '../../services/db';
 import { useAuthStore } from '../../store';
 import { toast } from 'react-hot-toast';
-import { arrayUnion, doc, updateDoc } from 'firebase/firestore';
+import { arrayUnion, doc, setDoc } from 'firebase/firestore';
 import { db } from '../../services/firebase';
 import './BusinessWizard.css';
 
