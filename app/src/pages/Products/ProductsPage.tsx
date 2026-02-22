@@ -20,6 +20,7 @@ export function ProductsPage() {
     const [loading, setLoading] = useState(true);
 
     const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+    const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
 
     useEffect(() => {
         if (!business?.id) return;
@@ -51,6 +52,12 @@ export function ProductsPage() {
             toast.error('Алдаа гарлаа');
         }
     };
+
+    useEffect(() => {
+        const handleClickOutside = () => setOpenDropdownId(null);
+        window.addEventListener('click', handleClickOutside);
+        return () => window.removeEventListener('click', handleClickOutside);
+    }, []);
 
     return (
         <>
@@ -110,7 +117,7 @@ export function ProductsPage() {
                             <div className={viewMode === 'grid' ? 'products-grid' : 'products-list'}>
                                 {filtered.map(p => (
                                     <div key={p.id} className={`product-card card-clickable ${(p.stock?.quantity || 0) === 0 ? 'product-out' : ''}`}>
-                                        <div className="product-card-image-wrapper">
+                                        <div className="product-card-image-wrapper" onClick={() => setEditingProduct(p)}>
                                             {p.images?.[0] ? (
                                                 <img src={p.images[0]} alt={p.name} className="product-card-image" />
                                             ) : (
@@ -131,18 +138,32 @@ export function ProductsPage() {
                                         </div>
 
                                         <div className="product-card-actions">
-                                            <button className="product-action-btn" onClick={(e) => { e.stopPropagation(); setEditingProduct(p); }}>
+                                            <button
+                                                className={`product-action-btn ${openDropdownId === p.id ? 'active' : ''}`}
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setOpenDropdownId(openDropdownId === p.id ? null : p.id);
+                                                }}
+                                            >
                                                 <MoreVertical size={16} />
                                             </button>
-                                            <button className="product-action-btn" style={{ color: '#ef4444' }} onClick={(e) => { e.stopPropagation(); handleDelete(p.id); }}>
-                                                <AlertTriangle size={16} />
-                                            </button>
+
+                                            {openDropdownId === p.id && (
+                                                <div className="product-card-dropdown" onClick={e => e.stopPropagation()}>
+                                                    <div className="dropdown-action-item" onClick={() => { setEditingProduct(p); setOpenDropdownId(null); }}>
+                                                        <Plus size={14} style={{ transform: 'rotate(45deg)' }} /> Засах
+                                                    </div>
+                                                    <div className="dropdown-action-item danger" onClick={() => { handleDelete(p.id); setOpenDropdownId(null); }}>
+                                                        <AlertTriangle size={14} /> Устгах
+                                                    </div>
+                                                </div>
+                                            )}
                                         </div>
 
                                         <div className="product-card-content" onClick={() => setEditingProduct(p)}>
                                             <div className="product-card-name">{p.name}</div>
                                             <div className="product-card-meta">
-                                                <span className="badge badge-soft" style={{ fontSize: '0.7rem' }}>{p.categoryName || 'АНГИЛАЛГҮЙ'}</span>
+                                                <span className="badge badge-soft" style={{ fontSize: '0.65rem' }}>{p.categoryName || 'АНГИЛАЛГҮЙ'}</span>
                                                 <span>•</span>
                                                 <span className="sku-text">{p.sku || '-'}</span>
                                             </div>
