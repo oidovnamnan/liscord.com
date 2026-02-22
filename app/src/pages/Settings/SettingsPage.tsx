@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Header } from '../../components/layout/Header';
-import { Building2, Palette, Bell, Shield, Users, CreditCard, Globe, Moon, Sun, Monitor, Loader2, Plus, MoreVertical, Trash2 } from 'lucide-react';
+import { Building2, Palette, Bell, Shield, Users, Globe, Moon, Sun, Monitor, Loader2, Plus, MoreVertical, Trash2 } from 'lucide-react';
 import { useBusinessStore, useUIStore } from '../../store';
 import { businessService, teamService, cargoService } from '../../services/db';
 import { toast } from 'react-hot-toast';
