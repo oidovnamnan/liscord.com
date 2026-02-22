@@ -67,10 +67,8 @@ export const businessService = {
     },
 
     async createBusiness(business: Partial<Business>, ownerUid: string): Promise<string> {
-        console.log('[db.ts] Starting createBusiness for user:', ownerUid);
         const bizRef = doc(collection(db, 'businesses'));
         const bizId = bizRef.id;
-        console.log('[db.ts] Generated bizId:', bizId);
 
         const fullBusiness = {
             ...business,
@@ -80,15 +78,8 @@ export const businessService = {
             updatedAt: serverTimestamp(),
         };
 
-        try {
-            console.log('[db.ts] Calling setDoc for business...');
-            await setDoc(bizRef, fullBusiness);
-            console.log('[db.ts] setDoc successful');
-            return bizId;
-        } catch (err: any) {
-            console.error('[db.ts] setDoc failed:', err);
-            throw err;
-        }
+        await setDoc(bizRef, fullBusiness);
+        return bizId;
     },
 
     async getEmployeeProfile(bizId: string, uid: string): Promise<Employee | null> {
