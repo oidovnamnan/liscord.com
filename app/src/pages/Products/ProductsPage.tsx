@@ -330,11 +330,10 @@ function CreateProductModal({ onClose }: { onClose: () => void }) {
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                             <div className="input-group" style={{ position: 'relative' }}>
                                 <label className="input-label">Ангилал</label>
-                                <div className="input-with-icon" onClick={() => setShowCategoryDropdown(true)} style={{ cursor: 'pointer' }}>
+                                <div className="input-with" onClick={() => setShowCategoryDropdown(true)}>
                                     <input
                                         className="input"
-                                        placeholder="Гар утас"
-                                        style={{ cursor: 'pointer' }}
+                                        placeholder="Ангилал сонгох эсвэл шинээр бичих..."
                                         value={categoryInput}
                                         onChange={e => {
                                             setCategoryInput(e.target.value);
@@ -343,7 +342,6 @@ function CreateProductModal({ onClose }: { onClose: () => void }) {
                                         }}
                                         onFocus={() => setShowCategoryDropdown(true)}
                                     />
-                                    <ChevronDown size={18} className="input-icon-right" style={{ pointerEvents: 'none', right: 12 }} />
                                 </div>
                                 {showCategoryDropdown && (categoryInput || categories.length > 0) && (
                                     <>
@@ -352,66 +350,49 @@ function CreateProductModal({ onClose }: { onClose: () => void }) {
                                             width: '100%',
                                             top: '100%',
                                             left: 0,
-                                            marginTop: 6,
+                                            marginTop: 4,
                                             maxHeight: 240,
                                             overflowY: 'auto',
-                                            borderRadius: 12,
+                                            borderRadius: 10,
                                             border: '1px solid var(--border-color)',
                                             padding: '4px',
-                                            zIndex: 100
+                                            zIndex: 100,
+                                            background: 'var(--bg-main)'
                                         }}>
-                                            {filteredCats.length > 0 ? (
-                                                filteredCats.map(c => (
-                                                    <div
-                                                        key={c.id}
-                                                        className="dropdown-item"
-                                                        style={{ borderRadius: 8, padding: '10px 12px' }}
-                                                        onClick={() => {
-                                                            setSelectedCategory(c);
-                                                            setCategoryInput(c.name);
-                                                            setShowCategoryDropdown(false);
-                                                        }}
-                                                    >
-                                                        {c.name}
-                                                    </div>
-                                                ))
-                                            ) : categoryInput && (
-                                                <div style={{ padding: '8px 12px', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
-                                                    Ангилал олдсонгүй
-                                                </div>
-                                            )}
-
-                                            {categoryInput && !categories.some(c => c.name.toLowerCase() === categoryInput.toLowerCase()) && (
+                                            {filteredCats.map(c => (
                                                 <div
-                                                    className="dropdown-item add-new-item"
-                                                    style={{
-                                                        color: 'var(--primary)',
-                                                        fontWeight: 600,
-                                                        borderTop: '1px solid var(--border-color)',
-                                                        marginTop: 4,
-                                                        padding: '12px',
-                                                        display: 'flex',
-                                                        alignItems: 'center',
-                                                        gap: 8,
-                                                        borderRadius: 8
-                                                    }}
+                                                    key={c.id}
+                                                    className="dropdown-item"
+                                                    style={{ borderRadius: 6, padding: '8px 12px' }}
                                                     onClick={() => {
-                                                        setSelectedCategory(null); // Will be created on submit
+                                                        setSelectedCategory(c);
+                                                        setCategoryInput(c.name);
                                                         setShowCategoryDropdown(false);
                                                     }}
                                                 >
-                                                    <div style={{
-                                                        width: 24,
-                                                        height: 24,
-                                                        borderRadius: '50%',
-                                                        background: 'rgba(var(--primary-rgb), 0.1)',
+                                                    {c.name}
+                                                </div>
+                                            ))}
+
+                                            {categoryInput && !categories.some(c => c.name.toLowerCase() === categoryInput.toLowerCase()) && (
+                                                <div
+                                                    className="dropdown-item"
+                                                    style={{
+                                                        color: 'var(--primary)',
+                                                        fontWeight: 600,
+                                                        background: 'rgba(var(--primary-rgb), 0.05)',
+                                                        marginTop: filteredCats.length > 0 ? 4 : 0,
+                                                        padding: '10px 12px',
                                                         display: 'flex',
                                                         alignItems: 'center',
-                                                        justifyContent: 'center'
-                                                    }}>
-                                                        <Plus size={16} />
-                                                    </div>
-                                                    <span>"{categoryInput}" нэмэх</span>
+                                                        gap: 6,
+                                                        borderRadius: 6
+                                                    }}
+                                                    onClick={() => {
+                                                        setShowCategoryDropdown(false);
+                                                    }}
+                                                >
+                                                    <Plus size={16} /> Шинээр нэмэх: "{categoryInput}"
                                                 </div>
                                             )}
                                         </div>
