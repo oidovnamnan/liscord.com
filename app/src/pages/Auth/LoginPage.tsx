@@ -45,11 +45,14 @@ export function LoginPage() {
             toast.success('Баталгаажуулах код илгээлээ');
         } catch (error: any) {
             console.error(error);
-            toast.error('Алдал гарлаа. Дугаараа шалгана уу.');
-            if (window.recaptchaVerifier) {
-                window.recaptchaVerifier.render().then((widgetId: any) => {
+            toast.error('Алдаа гарлаа. Дугаараа шалгана уу.');
+            if (window.recaptchaVerifier && typeof window.recaptchaVerifier.reset === 'function') {
+                try {
+                    const widgetId = await window.recaptchaVerifier.render();
                     window.recaptchaVerifier.reset(widgetId);
-                });
+                } catch (e) {
+                    console.warn('Could not reset reCAPTCHA:', e);
+                }
             }
         } finally {
             setLoading(false);

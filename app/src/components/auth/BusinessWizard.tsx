@@ -22,7 +22,9 @@ export function BusinessWizard() {
         if (!name || !category || !user) return;
 
         setLoading(true);
+        console.log('Starting business creation...', { name, category, userId: user.uid });
         try {
+            console.log('Calling businessService.createBusiness...');
             const bizId = await businessService.createBusiness({
                 name,
                 category,
@@ -49,15 +51,20 @@ export function BusinessWizard() {
                 subscription: { plan: 'free', expiresAt: null },
             }, user.uid);
 
+            console.log('Business created, ID:', bizId);
+            console.log('Updating user record in Firestore...');
+
             // Update user in Firestore
             await updateDoc(doc(db, 'users', user.uid), {
                 activeBusiness: bizId,
                 businessIds: arrayUnion(bizId)
             });
 
+            console.log('User record updated successfully');
             toast.success('Бизнес амжилттай үүслээ!');
             window.location.reload();
         } catch (error: any) {
+            console.error('Error in handleCreateBusiness:', error);
             toast.error('Алдаа гарлаа: ' + error.message);
         } finally {
             setLoading(false);
