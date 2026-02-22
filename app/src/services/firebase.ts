@@ -5,12 +5,12 @@ import { getStorage } from 'firebase/storage';
 import { getMessaging } from 'firebase/messaging';
 
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "demo-key",
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "liscord-dev.firebaseapp.com",
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "liscord-dev",
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "liscord-dev.appspot.com",
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "000000000000",
-  appId: import.meta.env.VITE_FIREBASE_APP_ID || "1:000:web:000",
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyCuaNXsfhQt_dtNgoBs_Uz6IXN8qzZkONs",
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "liscord-2b529.firebaseapp.com",
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "liscord-2b529",
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "liscord-2b529.firebasestorage.app",
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "190310416937",
+  appId: import.meta.env.VITE_FIREBASE_APP_ID || "1:190310416937:web:824037b0a18abcdaabd238",
 };
 
 export const app = initializeApp(firebaseConfig);

@@ -3,7 +3,6 @@ import {
     Search,
     Filter,
     MoreVertical,
-    ShieldCheck,
     Clock,
     Lock,
     ExternalLink

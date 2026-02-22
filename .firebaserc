@@ -1,6 +1,5 @@
 {
   "projects": {
-    "default": "liscord-dev",
-    "production": "liscord-prod"
+    "default": "liscord-2b529"
   }
 }
