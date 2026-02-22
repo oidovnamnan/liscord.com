@@ -19,6 +19,8 @@ export function ProductsPage() {
     const [products, setProducts] = useState<Product[]>([]);
     const [loading, setLoading] = useState(true);
 
+    const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+
     useEffect(() => {
         if (!business?.id) return;
 
@@ -40,6 +42,16 @@ export function ProductsPage() {
     const lowStock = products.filter(p => (p.stock?.quantity || 0) <= (p.stock?.lowStockThreshold || 0) && (p.stock?.quantity || 0) > 0).length;
     const outOfStock = products.filter(p => (p.stock?.quantity || 0) === 0).length;
 
+    const handleDelete = async (id: string) => {
+        if (!business || !confirm('Энэ барааг устгахдаа итгэлтэй байна уу?')) return;
+        try {
+            await productService.updateProduct(business.id, id, { isDeleted: true });
+            toast.success('Бараа устгагдлаа');
+        } catch (e) {
+            toast.error('Алдаа гарлаа');
+        }
+    };
+
     return (
         <>
             <Header
@@ -54,8 +66,8 @@ export function ProductsPage() {
                         <input className="input orders-search-input" placeholder="Бараа, SKU хайх..." value={search} onChange={e => setSearch(e.target.value)} />
                     </div>
                     <div className="products-view-toggle">
-                        <button className={`btn btn-ghost btn-icon ${viewMode === 'grid' ? 'active' : ''}`} onClick={() => setViewMode('grid')}><Grid3X3 size={18} /></button>
-                        <button className={`btn btn-ghost btn-icon ${viewMode === 'list' ? 'active' : ''}`} onClick={() => setViewMode('list')}><List size={18} /></button>
+                        <button className={`btn btn-ghost ${viewMode === 'grid' ? 'active' : ''}`} onClick={() => setViewMode('grid')}><Grid3X3 size={18} /></button>
+                        <button className={`btn btn-ghost ${viewMode === 'list' ? 'active' : ''}`} onClick={() => setViewMode('list')}><List size={18} /></button>
                     </div>
                 </div>
 
@@ -97,29 +109,56 @@ export function ProductsPage() {
                         ) : (
                             <div className={viewMode === 'grid' ? 'products-grid' : 'products-list'}>
                                 {filtered.map(p => (
-                                    <div key={p.id} className={`product-card card card-clickable ${(p.stock?.quantity || 0) === 0 ? 'product-out' : (p.stock?.quantity || 0) <= (p.stock?.lowStockThreshold || 0) ? 'product-low' : ''}`}>
-                                        <div className="product-image">{p.images?.[0] || '📦'}</div>
-                                        <div className="product-info">
-                                            <div className="product-name">{p.name}</div>
-                                            <div className="product-category">{p.categoryName || 'АНГИЛАЛГҮЙ'} • {p.sku || '-'}</div>
-                                            <div className="product-prices">
-                                                <span className="product-sale-price">{fmt(p.pricing?.salePrice || 0)}</span>
-                                                <span className="product-cost-price">{fmt(p.pricing?.costPrice || 0)}</span>
-                                                <span className="product-profit">+{p.pricing?.costPrice ? Math.round((p.pricing.salePrice - p.pricing.costPrice) / p.pricing.costPrice * 100) : 0}%</span>
+                                    <div key={p.id} className={`product-card card-clickable ${(p.stock?.quantity || 0) === 0 ? 'product-out' : ''}`}>
+                                        <div className="product-card-image-wrapper">
+                                            {p.images?.[0] ? (
+                                                <img src={p.images[0]} alt={p.name} className="product-card-image" />
+                                            ) : (
+                                                <div className="product-card-placeholder">📦</div>
+                                            )}
+                                        </div>
+
+                                        <div className="product-card-badges">
+                                            {p.productType === 'preorder' ? (
+                                                <span className="badge badge-info">♾️ Захиалга</span>
+                                            ) : (p.stock?.quantity || 0) === 0 ? (
+                                                <span className="badge badge-cancelled">Дууссан</span>
+                                            ) : (p.stock?.quantity || 0) <= (p.stock?.lowStockThreshold || 0) ? (
+                                                <span className="badge badge-preparing">⚠️ {p.stock.quantity} ш</span>
+                                            ) : (
+                                                <span className="badge badge-delivered">{p.stock.quantity} ш</span>
+                                            )}
+                                        </div>
+
+                                        <div className="product-card-actions">
+                                            <button className="product-action-btn" onClick={(e) => { e.stopPropagation(); setEditingProduct(p); }}>
+                                                <MoreVertical size={16} />
+                                            </button>
+                                            <button className="product-action-btn" style={{ color: '#ef4444' }} onClick={(e) => { e.stopPropagation(); handleDelete(p.id); }}>
+                                                <AlertTriangle size={16} />
+                                            </button>
+                                        </div>
+
+                                        <div className="product-card-content" onClick={() => setEditingProduct(p)}>
+                                            <div className="product-card-name">{p.name}</div>
+                                            <div className="product-card-meta">
+                                                <span className="badge badge-soft" style={{ fontSize: '0.7rem' }}>{p.categoryName || 'АНГИЛАЛГҮЙ'}</span>
+                                                <span>•</span>
+                                                <span className="sku-text">{p.sku || '-'}</span>
                                             </div>
-                                            <div className="product-stock">
-                                                {p.productType === 'preorder' ? (
-                                                    <span className="badge badge-info">♾️ Захиалга</span>
-                                                ) : (p.stock?.quantity || 0) === 0 ? (
-                                                    <span className="badge badge-cancelled">Дууссан</span>
-                                                ) : (p.stock?.quantity || 0) <= (p.stock?.lowStockThreshold || 0) ? (
-                                                    <span className="badge badge-preparing">⚠️ {p.stock.quantity} ш үлдсэн</span>
-                                                ) : (
-                                                    <span className="badge badge-delivered">{p.stock.quantity} ш бэлэн</span>
-                                                )}
+
+                                            <div className="product-card-price-section">
+                                                <div className="product-card-prices">
+                                                    <div className="product-card-sale-price">{fmt(p.pricing?.salePrice || 0)}</div>
+                                                    {p.pricing?.costPrice && (
+                                                        <div className="product-card-cost-row">
+                                                            <span className="product-card-cost-price">{fmt(p.pricing.costPrice)}</span>
+                                                            <span className="product-card-profit">+{Math.round((p.pricing.salePrice - p.pricing.costPrice) / p.pricing.costPrice * 100)}%</span>
+                                                        </div>
+                                                    )}
+                                                </div>
                                             </div>
                                         </div>
-                                        <button className="btn btn-ghost btn-sm btn-icon product-more"><MoreVertical size={16} /></button>
                                     </div>
                                 ))}
                             </div>
@@ -129,6 +168,12 @@ export function ProductsPage() {
             </div>
 
             {showCreate && <CreateProductModal onClose={() => setShowCreate(false)} />}
+            {editingProduct && (
+                <EditProductModal
+                    product={editingProduct}
+                    onClose={() => setEditingProduct(null)}
+                />
+            )}
         </>
     );
 }
@@ -186,7 +231,6 @@ function CreateProductModal({ onClose }: { onClose: () => void }) {
     };
 
     useEffect(() => {
-        // Auto-generate SKU: LSC-XXXX-XXXX
         const rand = () => Math.random().toString(36).substring(2, 6).toUpperCase();
         setSku(`LSC-${rand()}-${rand()}`);
     }, []);
@@ -247,7 +291,6 @@ function CreateProductModal({ onClose }: { onClose: () => void }) {
 
         setLoading(true);
         try {
-            // 1. Upload images if any
             let imageUrls = [...existingImages];
             if (imageFiles.length > 0) {
                 const uploadedUrls = await storage.uploadProductImages(business.id, imageFiles);
@@ -257,7 +300,6 @@ function CreateProductModal({ onClose }: { onClose: () => void }) {
             let categoryId = selectedCategory?.id || 'general';
             let categoryName = selectedCategory?.name || categoryInput || 'Бусад';
 
-            // Create new category if needed
             if (!selectedCategory && categoryInput) {
                 const existing = categories.find(c => c.name.toLowerCase() === categoryInput.toLowerCase());
                 if (existing) {
@@ -298,10 +340,7 @@ function CreateProductModal({ onClose }: { onClose: () => void }) {
                 } : undefined,
                 unitType: 'ш',
                 isActive: true,
-                stats: {
-                    totalSold: 0,
-                    totalRevenue: 0
-                },
+                stats: { totalSold: 0, totalRevenue: 0 },
                 isDeleted: false
             });
             onClose();
@@ -352,7 +391,7 @@ function CreateProductModal({ onClose }: { onClose: () => void }) {
                                 <div className="input-with" onClick={() => setShowCategoryDropdown(true)}>
                                     <input
                                         className="input"
-                                        placeholder="Ангилал сонгох эсвэл шинээр бичих..."
+                                        placeholder="Ангилал сонгох..."
                                         value={categoryInput}
                                         onChange={e => {
                                             setCategoryInput(e.target.value);
@@ -366,51 +405,23 @@ function CreateProductModal({ onClose }: { onClose: () => void }) {
                                     <>
                                         <div className="dropdown-backdrop" onClick={() => setShowCategoryDropdown(false)} />
                                         <div className="dropdown-menu show shadow-lg" style={{
-                                            width: '100%',
-                                            top: '100%',
-                                            left: 0,
-                                            marginTop: 4,
-                                            maxHeight: 240,
-                                            overflowY: 'auto',
-                                            borderRadius: 10,
-                                            border: '1px solid var(--border-color)',
-                                            padding: '4px',
-                                            zIndex: 100,
-                                            background: 'var(--bg-main)'
+                                            width: '100%', top: '100%', left: 0, marginTop: 4,
+                                            maxHeight: 240, overflowY: 'auto', borderRadius: 10,
+                                            border: '1px solid var(--border-color)', padding: '4px',
+                                            zIndex: 100, background: 'var(--bg-main)'
                                         }}>
                                             {filteredCats.map(c => (
-                                                <div
-                                                    key={c.id}
-                                                    className="dropdown-item"
-                                                    style={{ borderRadius: 6, padding: '8px 12px' }}
-                                                    onClick={() => {
-                                                        setSelectedCategory(c);
-                                                        setCategoryInput(c.name);
-                                                        setShowCategoryDropdown(false);
-                                                    }}
-                                                >
+                                                <div key={c.id} className="dropdown-item" onClick={() => {
+                                                    setSelectedCategory(c);
+                                                    setCategoryInput(c.name);
+                                                    setShowCategoryDropdown(false);
+                                                }}>
                                                     {c.name}
                                                 </div>
                                             ))}
                                             {categoryInput && !categories.some(c => c.name.toLowerCase() === categoryInput.toLowerCase()) && (
-                                                <div
-                                                    className="dropdown-item"
-                                                    style={{
-                                                        color: 'var(--primary)',
-                                                        fontWeight: 600,
-                                                        background: 'rgba(var(--primary-rgb), 0.05)',
-                                                        marginTop: filteredCats.length > 0 ? 4 : 0,
-                                                        padding: '10px 12px',
-                                                        display: 'flex',
-                                                        alignItems: 'center',
-                                                        gap: 6,
-                                                        borderRadius: 6
-                                                    }}
-                                                    onClick={() => {
-                                                        setShowCategoryDropdown(false);
-                                                    }}
-                                                >
-                                                    <Plus size={16} /> Шинээр нэмэх: "{categoryInput}"
+                                                <div className="dropdown-item" style={{ color: 'var(--primary)', fontWeight: 600 }} onClick={() => setShowCategoryDropdown(false)}>
+                                                    <Plus size={16} /> Шинээр: "{categoryInput}"
                                                 </div>
                                             )}
                                         </div>
@@ -419,157 +430,77 @@ function CreateProductModal({ onClose }: { onClose: () => void }) {
                             </div>
                             <div className="input-group">
                                 <label className="input-label">SKU</label>
-                                <input className="input" value={sku} onChange={e => setSku(e.target.value)} placeholder="LSC-XXXX-XXXX" />
+                                <input className="input" value={sku} onChange={e => setSku(e.target.value)} />
                             </div>
                         </div>
 
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
                             <div className="input-group">
                                 <label className="input-label">Өртөг</label>
-                                <input
-                                    className="input"
-                                    type="number"
-                                    value={costPrice}
-                                    onChange={e => handleCostChange(e.target.value)}
-                                    placeholder="3800000"
-                                />
+                                <input className="input" type="number" value={costPrice} onChange={e => handleCostChange(e.target.value)} />
                             </div>
                             <div className="input-group">
                                 <label className="input-label">Ашиг (%)</label>
-                                <input
-                                    className="input"
-                                    type="number"
-                                    value={margin}
-                                    onChange={e => handleMarginChange(e.target.value)}
-                                    placeholder="20"
-                                />
+                                <input className="input" type="number" value={margin} onChange={e => handleMarginChange(e.target.value)} />
                             </div>
                             <div className="input-group">
                                 <label className="input-label">Зарах үнэ <span className="required">*</span></label>
-                                <input
-                                    className="input"
-                                    type="number"
-                                    value={salePrice}
-                                    onChange={e => handleSaleChange(e.target.value)}
-                                    placeholder="4500000"
-                                    required
-                                />
+                                <input className="input" type="number" value={salePrice} onChange={e => handleSaleChange(e.target.value)} required />
                             </div>
                         </div>
 
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                             <div className="input-group">
-                                <label className="input-label">Төрөл <span className="required">*</span></label>
+                                <label className="input-label">Төрөл</label>
                                 <select className="input select" value={productType} onChange={e => setProductType(e.target.value as any)}>
                                     <option value="ready">Бэлэн байгаа</option>
-                                    <option value="preorder">Захиалгаар ирэх</option>
+                                    <option value="preorder">Захиалгаар</option>
                                 </select>
                             </div>
                             <div className="input-group">
-                                <label className="input-label">Нөөцийн тоо /Үлдэгдэл/</label>
-                                <input
-                                    className="input"
-                                    name="stock"
-                                    type="number"
-                                    placeholder={productType === 'preorder' ? 'Хязгааргүй' : '10'}
-                                    disabled={productType === 'preorder'}
-                                />
+                                <label className="input-label">{productType === 'ready' ? 'Үлдэгдэл' : 'Захиалга'}</label>
+                                <input className="input" name="stock" type="number" disabled={productType === 'preorder'} placeholder={productType === 'preorder' ? '∞' : '0'} />
                             </div>
                         </div>
 
                         {productType === 'preorder' && (
                             <div className="cargo-fee-section animate-slide-up" style={{
-                                background: 'var(--bg-soft)',
-                                padding: '16px',
-                                borderRadius: '12px',
-                                border: '1px solid var(--border-color)',
-                                display: 'flex',
-                                flexDirection: 'column',
-                                gap: '12px'
+                                background: 'var(--bg-soft)', padding: '16px', borderRadius: '12px', border: '1px solid var(--border-color)',
+                                display: 'flex', flexDirection: 'column', gap: '12px'
                             }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--primary)', fontWeight: 600, fontSize: '0.9rem' }}>
-                                    <Globe size={16} /> Олон улсын каргоны тохиргоо
+                                    <Globe size={16} /> Каргоны тохиргоо
                                 </div>
-                                <div style={{ display: 'grid', gridTemplateColumns: 'minmax(140px, 1.2fr) 0.8fr 1fr', gap: 12 }}>
+                                <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.8fr 1fr', gap: 12 }}>
                                     <div className="input-group">
-                                        <label className="input-label">Карго төрөл</label>
-                                        <select
-                                            className="input select"
-                                            value={selectedCargoTypeId}
-                                            onChange={e => handleCargoTypeChange(e.target.value)}
-                                            style={{ fontSize: '0.85rem' }}
-                                        >
-                                            <option value="">-- Сонгох --</option>
-                                            {cargoTypes.map(t => (
-                                                <option key={t.id} value={t.id}>{t.name}</option>
-                                            ))}
+                                        <select className="input select" value={selectedCargoTypeId} onChange={e => handleCargoTypeChange(e.target.value)}>
+                                            <option value="">-- Төрөл --</option>
+                                            {cargoTypes.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
                                         </select>
                                     </div>
                                     <div className="input-group">
-                                        <label className="input-label" style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                            {selectedCargoTypeId ? `Хэмжээ (${cargoTypes.find(t => t.id === selectedCargoTypeId)?.unit})` : 'Хэмжээ'}
-                                        </label>
-                                        <input
-                                            className="input"
-                                            type="number"
-                                            step="any"
-                                            value={cargoValue}
-                                            onChange={e => handleCargoValueChange(e.target.value)}
-                                            placeholder="1"
-                                        />
+                                        <input className="input" type="number" value={cargoValue} onChange={e => handleCargoValueChange(e.target.value)} placeholder="1" />
                                     </div>
                                     <div className="input-group">
-                                        <label className="input-label">Төлбөр (₮)</label>
-                                        <div className="input-with-icon">
-                                            <input
-                                                className="input"
-                                                type="number"
-                                                value={cargoFee}
-                                                onChange={e => {
-                                                    setCargoFee(e.target.value);
-                                                    setSelectedCargoTypeId('');
-                                                }}
-                                                placeholder="0"
-                                            />
-                                        </div>
+                                        <input className="input" type="number" value={cargoFee} onChange={e => setCargoFee(e.target.value)} />
                                     </div>
                                 </div>
                                 <div className="input-group">
-                                    <label className="input-label">Тооцоолох арга</label>
                                     <div
                                         className={`input select-custom ${isCargoIncluded ? 'active' : ''}`}
                                         onClick={() => setIsCargoIncluded(!isCargoIncluded)}
-                                        style={{
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'center',
-                                            cursor: 'pointer',
-                                            transition: 'all 0.2s ease',
-                                            fontSize: '0.9rem',
-                                            padding: '0 12px',
-                                            background: isCargoIncluded ? 'rgba(var(--primary-rgb), 0.1)' : 'var(--bg-input)',
-                                            borderColor: isCargoIncluded ? 'var(--primary)' : 'var(--border-color)',
-                                            color: isCargoIncluded ? 'var(--primary)' : 'var(--text-main)',
-                                            height: '42px',
-                                            borderRadius: '8px',
-                                            border: '1px solid'
-                                        }}
+                                        style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', height: 42, background: isCargoIncluded ? 'rgba(var(--primary-rgb), 0.1)' : 'var(--bg-input)', borderColor: isCargoIncluded ? 'var(--primary)' : 'var(--border-color)', borderRadius: 8, border: '1px solid' }}
                                     >
                                         {isCargoIncluded ? '✅ Үнэд багтсан' : '📦 Тусдаа бодогдоно'}
                                     </div>
                                 </div>
-                                <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', margin: 0 }}>
-                                    {isCargoIncluded
-                                        ? '* Каргоны төлбөр барааны үндсэн үнэд багтсан тул хэрэглэгчээс нэмэлт төлбөр авахгүй.'
-                                        : '* Захиалга бүрт энэхүү каргоны төлбөр автоматаар нэмэгдэж тооцогдоно.'}
-                                </p>
                             </div>
                         )}
                     </div>
                     <div className="modal-footer">
                         <button type="button" className="btn btn-secondary" onClick={onClose} disabled={loading}>Болих</button>
                         <button type="submit" className="btn btn-primary" disabled={loading}>
-                            {loading ? <Loader2 size={16} className="animate-spin" /> : <><Plus size={16} /> Нэмэх</>}
+                            {loading ? <Loader2 size={16} className="animate-spin" /> : <><Plus size={16} /> Үүсгэх</>}
                         </button>
                     </div>
                 </form>
@@ -577,3 +508,299 @@ function CreateProductModal({ onClose }: { onClose: () => void }) {
         </div>
     );
 }
+
+function EditProductModal({ product, onClose }: { product: Product; onClose: () => void }) {
+    const { business } = useBusinessStore();
+    const [loading, setLoading] = useState(false);
+    const [productType, setProductType] = useState(product.productType);
+
+    // Categories
+    const [categories, setCategories] = useState<Category[]>([]);
+    const [categoryInput, setCategoryInput] = useState(product.categoryName || '');
+    const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
+    const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
+
+    // Prices
+    const [sku, setSku] = useState(product.sku || '');
+    const [costPrice, setCostPrice] = useState<string>(product.pricing.costPrice?.toString() || '');
+    const [salePrice, setSalePrice] = useState<string>(product.pricing.salePrice.toString());
+    const [margin, setMargin] = useState<string>('20'); // Should calc from current
+
+    // Images
+    const [imageFiles, setImageFiles] = useState<File[]>([]);
+    const [existingImages, setExistingImages] = useState<string[]>(product.images || []);
+
+    // Cargo
+    const [cargoTypes, setCargoTypes] = useState<CargoType[]>([]);
+    const [selectedCargoTypeId, setSelectedCargoTypeId] = useState<string>(product.cargoFee?.cargoTypeId || '');
+    const [cargoValue, setCargoValue] = useState<string>(product.cargoFee?.cargoValue?.toString() || '1');
+    const [cargoFee, setCargoFee] = useState<string>(product.cargoFee?.amount?.toString() || '');
+    const [isCargoIncluded, setIsCargoIncluded] = useState(product.cargoFee?.isIncluded || false);
+
+    useEffect(() => {
+        if (!business?.id) return;
+        const u1 = categoryService.subscribeCategories(business.id, setCategories);
+        const u2 = cargoService.subscribeCargoTypes(business.id, setCargoTypes);
+
+        // Find current category
+        if (product.categoryId) {
+            categoryService.subscribeCategories(business.id, (cats) => {
+                const found = cats.find(c => c.id === product.categoryId);
+                if (found) setSelectedCategory(found);
+            });
+        }
+
+        // Set margin
+        if (product.pricing.costPrice && product.pricing.salePrice) {
+            const m = Math.round((product.pricing.salePrice - product.pricing.costPrice) / product.pricing.costPrice * 100);
+            setMargin(m.toString());
+        }
+
+        return () => { u1(); u2(); };
+    }, [business?.id, product]);
+
+    const handleCargoTypeChange = (id: string) => {
+        setSelectedCargoTypeId(id);
+        const selected = cargoTypes.find(t => t.id === id);
+        if (selected) {
+            const val = Number(cargoValue) || 1;
+            setCargoFee(Math.round(selected.fee * val).toString());
+        }
+    };
+
+    const handleCargoValueChange = (val: string) => {
+        setCargoValue(val);
+        const selected = cargoTypes.find(t => t.id === selectedCargoTypeId);
+        if (selected) {
+            const numVal = Number(val) || 0;
+            setCargoFee(Math.round(selected.fee * numVal).toString());
+        }
+    };
+
+    const handleCostChange = (val: string) => {
+        setCostPrice(val);
+        const costNum = Number(val);
+        const marginNum = Number(margin);
+        if (!isNaN(costNum) && !isNaN(marginNum)) {
+            setSalePrice(Math.round(costNum * (1 + marginNum / 100)).toString());
+        }
+    };
+
+    const handleSaleChange = (val: string) => {
+        setSalePrice(val);
+        const saleNum = Number(val);
+        const marginNum = Number(margin);
+        if (!isNaN(saleNum) && !isNaN(marginNum)) {
+            setCostPrice(Math.round(saleNum / (1 + marginNum / 100)).toString());
+        }
+    };
+
+    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+        if (!business) return;
+
+        const fd = new FormData(e.currentTarget);
+        const name = fd.get('name') as string;
+        const description = fd.get('description') as string;
+        const stockQty = productType === 'preorder' ? 999999 : Number(fd.get('stock'));
+
+        setLoading(true);
+        try {
+            let imageUrls = [...existingImages];
+            if (imageFiles.length > 0) {
+                const uploadedUrls = await storage.uploadProductImages(business.id, imageFiles);
+                imageUrls = [...imageUrls, ...uploadedUrls];
+            }
+
+            let categoryId = selectedCategory?.id || product.categoryId || 'general';
+            let categoryName = selectedCategory?.name || categoryInput || 'Бусад';
+
+            await productService.updateProduct(business.id, product.id, {
+                name,
+                categoryId,
+                categoryName,
+                sku: sku || '',
+                description: description || '',
+                images: imageUrls,
+                pricing: {
+                    salePrice: Number(salePrice),
+                    costPrice: Number(costPrice),
+                    wholesalePrice: Number(salePrice)
+                },
+                productType,
+                stock: {
+                    quantity: stockQty,
+                    lowStockThreshold: 3,
+                    trackInventory: productType === 'ready'
+                },
+                cargoFee: productType === 'preorder' ? {
+                    amount: Number(cargoFee) || 0,
+                    isIncluded: isCargoIncluded,
+                    cargoTypeId: selectedCargoTypeId || undefined,
+                    cargoValue: Number(cargoValue) || 1
+                } : undefined,
+                updatedAt: new Date()
+            });
+
+            toast.success('Амжилттай шинэчлэгдлээ');
+            onClose();
+        } catch (error) {
+            console.error(error);
+            toast.error('Шинэчлэхэд алдаа гарлаа');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const filteredCats = categories.filter(c => c.name.toLowerCase().includes(categoryInput.toLowerCase()));
+
+    return (
+        <div className="modal-backdrop" onClick={onClose}>
+            <div className="modal" onClick={e => e.stopPropagation()}>
+                <div className="modal-header">
+                    <h2>Бараа засах</h2>
+                    <button className="btn btn-ghost btn-icon" onClick={onClose}>✕</button>
+                </div>
+                <form onSubmit={handleSubmit}>
+                    <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                        <div className="input-group">
+                            <label className="input-label">Барааны нэр <span className="required">*</span></label>
+                            <input className="input" name="name" defaultValue={product.name} required />
+                        </div>
+
+                        <ImageUpload
+                            images={existingImages}
+                            onImagesChange={setExistingImages}
+                            onFilesChange={setImageFiles}
+                        />
+
+                        <div className="input-group">
+                            <label className="input-label">Барааны тайлбар /Танилцуулга/</label>
+                            <textarea
+                                className="input"
+                                name="description"
+                                defaultValue={product.description}
+                                placeholder="Барааны дэлгэрэнгүй мэдээлэл..."
+                                style={{ minHeight: 80, padding: '10px 12px', resize: 'vertical' }}
+                            />
+                        </div>
+
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                            <div className="input-group" style={{ position: 'relative' }}>
+                                <label className="input-label">Ангилал</label>
+                                <div className="input-with" onClick={() => setShowCategoryDropdown(true)}>
+                                    <input
+                                        className="input"
+                                        placeholder="Ангилал сонгох..."
+                                        value={categoryInput}
+                                        onChange={e => {
+                                            setCategoryInput(e.target.value);
+                                            setSelectedCategory(null);
+                                            setShowCategoryDropdown(true);
+                                        }}
+                                        onFocus={() => setShowCategoryDropdown(true)}
+                                    />
+                                </div>
+                                {showCategoryDropdown && (categoryInput || categories.length > 0) && (
+                                    <>
+                                        <div className="dropdown-backdrop" onClick={() => setShowCategoryDropdown(false)} />
+                                        <div className="dropdown-menu show shadow-lg" style={{
+                                            width: '100%', top: '100%', left: 0, marginTop: 4,
+                                            maxHeight: 240, overflowY: 'auto', borderRadius: 10,
+                                            border: '1px solid var(--border-color)', padding: '4px',
+                                            zIndex: 100, background: 'var(--bg-main)'
+                                        }}>
+                                            {filteredCats.map(c => (
+                                                <div key={c.id} className="dropdown-item" onClick={() => {
+                                                    setSelectedCategory(c);
+                                                    setCategoryInput(c.name);
+                                                    setShowCategoryDropdown(false);
+                                                }}>
+                                                    {c.name}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </>
+                                )}
+                            </div>
+                            <div className="input-group">
+                                <label className="input-label">SKU</label>
+                                <input className="input" value={sku} onChange={e => setSku(e.target.value)} />
+                            </div>
+                        </div>
+
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
+                            <div className="input-group">
+                                <label className="input-label">Өртөг</label>
+                                <input className="input" type="number" value={costPrice} onChange={e => handleCostChange(e.target.value)} />
+                            </div>
+                            <div className="input-group">
+                                <label className="input-label">Ашиг (%)</label>
+                                <input className="input" type="number" value={margin} onChange={e => setMargin(e.target.value)} />
+                            </div>
+                            <div className="input-group">
+                                <label className="input-label">Зарах үнэ <span className="required">*</span></label>
+                                <input className="input" type="number" value={salePrice} onChange={e => handleSaleChange(e.target.value)} required />
+                            </div>
+                        </div>
+
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                            <div className="input-group">
+                                <label className="input-label">Төрөл</label>
+                                <select className="input select" value={productType} onChange={e => setProductType(e.target.value as any)}>
+                                    <option value="ready">Бэлэн байгаа</option>
+                                    <option value="preorder">Захиалгаар</option>
+                                </select>
+                            </div>
+                            <div className="input-group">
+                                <label className="input-label">{productType === 'ready' ? 'Үлдэгдэл' : 'Захиалга'}</label>
+                                <input className="input" name="stock" type="number" defaultValue={product.stock?.quantity} disabled={productType === 'preorder'} placeholder={productType === 'preorder' ? '∞' : '0'} />
+                            </div>
+                        </div>
+
+                        {productType === 'preorder' && (
+                            <div className="cargo-fee-section animate-slide-up" style={{
+                                background: 'var(--bg-soft)', padding: '16px', borderRadius: '12px', border: '1px solid var(--border-color)',
+                                display: 'flex', flexDirection: 'column', gap: '12px'
+                            }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--primary)', fontWeight: 600, fontSize: '0.9rem' }}>
+                                    <Globe size={16} /> Каргоны тохиргоо
+                                </div>
+                                <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.8fr 1fr', gap: 12 }}>
+                                    <div className="input-group">
+                                        <select className="input select" value={selectedCargoTypeId} onChange={e => handleCargoTypeChange(e.target.value)}>
+                                            <option value="">-- Төрөл --</option>
+                                            {cargoTypes.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+                                        </select>
+                                    </div>
+                                    <div className="input-group">
+                                        <input className="input" type="number" step="any" value={cargoValue} onChange={e => handleCargoValueChange(e.target.value)} placeholder="1" />
+                                    </div>
+                                    <div className="input-group">
+                                        <input className="input" type="number" value={cargoFee} onChange={e => setCargoFee(e.target.value)} />
+                                    </div>
+                                </div>
+                                <div className="input-group">
+                                    <div
+                                        className={`input select-custom ${isCargoIncluded ? 'active' : ''}`}
+                                        onClick={() => setIsCargoIncluded(!isCargoIncluded)}
+                                        style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', height: 42, background: isCargoIncluded ? 'rgba(var(--primary-rgb), 0.1)' : 'var(--bg-input)', borderColor: isCargoIncluded ? 'var(--primary)' : 'var(--border-color)', borderRadius: 8, border: '1px solid' }}
+                                    >
+                                        {isCargoIncluded ? '✅ Үнэд багтсан' : '📦 Тусдаа бодогдоно'}
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                    <div className="modal-footer">
+                        <button type="button" className="btn btn-secondary" onClick={onClose} disabled={loading}>Болих</button>
+                        <button type="submit" className="btn btn-primary" disabled={loading}>
+                            {loading ? <Loader2 size={16} className="animate-spin" /> : 'Хадгалах'}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    );
+}
+
