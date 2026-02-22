@@ -113,11 +113,12 @@ export const orderService = {
         const q = query(
             this.getOrdersRef(bizId),
             where('isDeleted', '==', false),
-            orderBy('createdAt', 'desc'),
             limit(50)
         );
         return onSnapshot(q, (snapshot) => {
-            const orders = snapshot.docs.map(d => convertTimestamps(d.data()) as Order);
+            const orders = snapshot.docs.map(d => ({ id: d.id, ...convertTimestamps(d.data()) } as Order));
+            // Sort by createdAt desc in-memory
+            orders.sort((a: any, b: any) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
             callback(orders);
         });
     },
@@ -178,11 +179,12 @@ export const customerService = {
     subscribeCustomers(bizId: string, callback: (customers: Customer[]) => void) {
         const q = query(
             this.getCustomersRef(bizId),
-            where('isDeleted', '==', false),
-            orderBy('name')
+            where('isDeleted', '==', false)
         );
         return onSnapshot(q, (snapshot) => {
-            const customers = snapshot.docs.map(d => convertTimestamps(d.data()) as Customer);
+            const customers = snapshot.docs.map(d => ({ id: d.id, ...convertTimestamps(d.data()) } as Customer));
+            // Sort by name in-memory
+            customers.sort((a: any, b: any) => (a.name || '').localeCompare(b.name || ''));
             callback(customers);
         });
     },
@@ -232,11 +234,12 @@ export const productService = {
     subscribeProducts(bizId: string, callback: (products: Product[]) => void) {
         const q = query(
             this.getProductsRef(bizId),
-            where('isDeleted', '==', false),
-            orderBy('name')
+            where('isDeleted', '==', false)
         );
         return onSnapshot(q, (snapshot) => {
-            const products = snapshot.docs.map(d => convertTimestamps(d.data()) as Product);
+            const products = snapshot.docs.map(d => ({ id: d.id, ...convertTimestamps(d.data()) } as Product));
+            // Sort by name in-memory
+            products.sort((a: any, b: any) => (a.name || '').localeCompare(b.name || ''));
             callback(products);
         });
     },
@@ -277,12 +280,13 @@ export const dashboardService = {
         const q = query(
             collection(db, 'businesses', bizId, 'orders'),
             where('isDeleted', '==', false),
-            orderBy('createdAt', 'desc'),
-            limit(5)
+            limit(10) // Get a bit more for safe in-memory sorting
         );
         return onSnapshot(q, (snapshot) => {
-            const orders = snapshot.docs.map(d => convertTimestamps(d.data()) as Order);
-            callback(orders);
+            const orders = snapshot.docs.map(d => ({ id: d.id, ...convertTimestamps(d.data()) } as Order));
+            // Sort desc
+            orders.sort((a: any, b: any) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
+            callback(orders.slice(0, 5));
         });
     },
 

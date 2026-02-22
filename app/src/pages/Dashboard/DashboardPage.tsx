@@ -35,8 +35,9 @@ export function DashboardPage() {
         setLoading(true);
 
         async function loadDashboard() {
+            if (!business?.id) return;
             try {
-                const statsData = await dashboardService.getDashboardStats(business!.id);
+                const statsData = await dashboardService.getDashboardStats(business.id);
                 setStats(statsData || {
                     totalOrders: 0,
                     totalRevenue: 0,
