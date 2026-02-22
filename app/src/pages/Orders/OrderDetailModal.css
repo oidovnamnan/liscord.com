@@ -1,0 +1,232 @@
+.order-detail-modal {
+    max-width: 900px !important;
+    width: 95% !important;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.order-detail-modal .modal-body {
+    padding: 24px;
+    overflow-y: auto;
+}
+
+.order-grid {
+    display: grid;
+    grid-template-columns: 1.5fr 1fr;
+    gap: 24px;
+}
+
+.info-section {
+    margin-bottom: 24px;
+}
+
+.section-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin-bottom: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.info-card,
+.financial-card {
+    background: var(--bg-secondary);
+    border-radius: 12px;
+    padding: 16px;
+    border: 1px solid var(--border-color);
+}
+
+.info-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.info-row:last-child {
+    border-bottom: none;
+}
+
+.info-row .label {
+    color: var(--text-secondary);
+}
+
+.info-row .value {
+    font-weight: 500;
+}
+
+.items-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.items-table th {
+    text-align: left;
+    padding: 12px 8px;
+    color: var(--text-secondary);
+    font-weight: 500;
+    border-bottom: 1px solid var(--border-color);
+    font-size: 0.85rem;
+}
+
+.items-table td {
+    padding: 12px 8px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.item-name-cell {
+    display: flex;
+    flex-direction: column;
+}
+
+.item-variant {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+}
+
+.fin-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 6px 0;
+}
+
+.fin-row.total {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-top: 8px;
+}
+
+.fin-row.paid {
+    color: var(--text-secondary);
+}
+
+.fin-row.due {
+    font-weight: 600;
+}
+
+/* Timeline */
+.timeline {
+    position: relative;
+    padding-left: 20px;
+}
+
+.timeline::before {
+    content: '';
+    position: absolute;
+    left: 4px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: var(--border-color);
+}
+
+.timeline-item {
+    position: relative;
+    padding-bottom: 20px;
+}
+
+.timeline-marker {
+    position: absolute;
+    left: -20px;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--border-color);
+    border: 2px solid var(--bg-primary);
+    z-index: 1;
+}
+
+.timeline-item.active .timeline-marker {
+    background: var(--accent-primary);
+    box-shadow: 0 0 0 4px rgba(108, 92, 231, 0.2);
+}
+
+.timeline-status {
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.timeline-date {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+}
+
+.print-only {
+    display: none;
+}
+
+/* PRINT STYLES */
+@media print {
+    body * {
+        visibility: hidden;
+    }
+
+    .print-container,
+    .print-container * {
+        visibility: visible;
+    }
+
+    .print-container {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        padding: 40px !important;
+        background: white !important;
+        color: black !important;
+    }
+
+    .hide-print {
+        display: none !important;
+    }
+
+    .print-only {
+        display: block;
+    }
+
+    .invoice-header {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 40px;
+        border-bottom: 2px solid #eee;
+        padding-bottom: 20px;
+    }
+
+    .invoice-brand h1 {
+        margin: 0;
+        color: #6c5ce7;
+    }
+
+    .invoice-meta {
+        text-align: right;
+    }
+
+    .info-card,
+    .financial-card {
+        background: none !important;
+        border: 1px solid #eee !important;
+    }
+
+    .items-table th {
+        background: #f9f9f9 !important;
+        -webkit-print-color-adjust: exact;
+    }
+
+    .badge {
+        border: 1px solid #ccc !important;
+        background: none !important;
+        color: black !important;
+    }
+}
+
+@media (max-width: 768px) {
+    .order-grid {
+        grid-template-columns: 1fr;
+    }
+}

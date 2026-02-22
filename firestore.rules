@@ -1,0 +1,96 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // === HELPER FUNCTIONS ===
+    function isAuth() {
+      return request.auth != null;
+    }
+    
+    function getEmployee(bizId) {
+      return get(/databases/$(database)/documents/businesses/$(bizId)/employees/$(request.auth.uid)).data;
+    }
+    
+    function getPosition(bizId, posId) {
+      return get(/databases/$(database)/documents/businesses/$(bizId)/positions/$(posId)).data;
+    }
+    
+    function hasPerm(bizId, perm) {
+      let emp = getEmployee(bizId);
+      return emp.status == 'active' && (
+        emp.role == 'owner' || 
+        perm in getPosition(bizId, emp.positionId).permissions
+      );
+    }
+    
+    function isOwner(bizId) {
+      let emp = getEmployee(bizId);
+      return emp.role == 'owner';
+    }
+
+    // === USERS ===
+    match /users/{userId} {
+      allow read, write: if isAuth() && request.auth.uid == userId;
+    }
+    
+    // === BUSINESSES ===
+    match /businesses/{bizId} {
+      allow read: if isAuth() && (exists(/databases/$(database)/documents/businesses/$(bizId)/employees/$(request.auth.uid)) || isOwner(bizId));
+      allow update: if isAuth() && hasPerm(bizId, 'settings.edit_business');
+      allow delete: if isAuth() && isOwner(bizId);
+      
+      // Orders
+      match /orders/{orderId} {
+        allow read: if isAuth() && (
+          hasPerm(bizId, 'orders.view_all') || 
+          (hasPerm(bizId, 'orders.view_own') && resource.data.createdBy == request.auth.uid)
+        );
+        allow create: if isAuth() && hasPerm(bizId, 'orders.create');
+        allow update: if isAuth() && (
+          hasPerm(bizId, 'orders.edit_all') ||
+          (hasPerm(bizId, 'orders.edit_own') && resource.data.createdBy == request.auth.uid)
+        );
+        allow delete: if false; // Soft delete only via update
+      }
+
+      // Customers
+      match /customers/{custId} {
+        allow read: if isAuth() && hasPerm(bizId, 'customers.view');
+        allow create: if isAuth() && hasPerm(bizId, 'customers.create');
+        allow update: if isAuth() && hasPerm(bizId, 'customers.edit');
+        allow delete: if false;
+      }
+
+      // Products
+      match /products/{prodId} {
+        allow read: if isAuth() && hasPerm(bizId, 'products.view');
+        allow create: if isAuth() && hasPerm(bizId, 'products.create');
+        allow update: if isAuth() && hasPerm(bizId, 'products.edit');
+        allow delete: if false;
+      }
+
+      // Audit Logs
+      match /auditLog/{logId} {
+        allow read: if isAuth() && hasPerm(bizId, 'audit.view_all');
+        allow create: if isAuth(); // Any employee can write logs
+        allow update, delete: if false; // Untamperable
+      }
+
+      // Positions & Employees
+      match /positions/{posId} {
+        allow read: if isAuth() && (exists(/databases/$(database)/documents/businesses/$(bizId)/employees/$(request.auth.uid)) || isOwner(bizId));
+        allow write: if isAuth() && hasPerm(bizId, 'team.manage_positions');
+      }
+      
+      match /employees/{empId} {
+        allow read: if isAuth() && (exists(/databases/$(database)/documents/businesses/$(bizId)/employees/$(request.auth.uid)) || isOwner(bizId));
+        allow write: if isAuth() && hasPerm(bizId, 'team.edit');
+      }
+
+      // Sub-collections catch-all
+      match /{allSubcollections=**} {
+        allow read: if isAuth() && (exists(/databases/$(database)/documents/businesses/$(bizId)/employees/$(request.auth.uid)) || isOwner(bizId));
+      }
+    }
+  }
+}

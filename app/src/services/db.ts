@@ -1,0 +1,382 @@
+import {
+    collection,
+    doc,
+    getDoc,
+    getDocs,
+    setDoc,
+    updateDoc,
+    query,
+    where,
+    orderBy,
+    limit,
+    Timestamp,
+    onSnapshot,
+    addDoc,
+    serverTimestamp,
+} from 'firebase/firestore';
+import { db } from './firebase';
+import { auditService } from './audit';
+import type { Business, User, Employee, Order, Customer, Product, Position } from '../types';
+
+// ============ GENERIC HELPERS ============
+
+/**
+ * Converts Firestore timestamps in an object to Dates
+ */
+export function convertTimestamps(data: any): any {
+    if (!data) return data;
+    const result = { ...data };
+    for (const key in result) {
+        if (result[key] instanceof Timestamp) {
+            result[key] = result[key].toDate();
+        } else if (typeof result[key] === 'object' && result[key] !== null) {
+            result[key] = convertTimestamps(result[key]);
+        }
+    }
+    return result;
+}
+
+// ============ USER SERVICES ============
+
+export const userService = {
+    async getUser(uid: string): Promise<User | null> {
+        const docRef = doc(db, 'users', uid);
+        const docSnap = await getDoc(docRef);
+        return docSnap.exists() ? convertTimestamps(docSnap.data()) as User : null;
+    },
+
+    async createUser(user: User): Promise<void> {
+        await setDoc(doc(db, 'users', user.uid), {
+            ...user,
+            createdAt: serverTimestamp(),
+        });
+    },
+
+    async updateActiveBusiness(uid: string, businessId: string): Promise<void> {
+        await updateDoc(doc(db, 'users', uid), { activeBusiness: businessId });
+    }
+};
+
+// ============ BUSINESS SERVICES ============
+
+export const businessService = {
+    async getBusiness(bizId: string): Promise<Business | null> {
+        const docRef = doc(db, 'businesses', bizId);
+        const docSnap = await getDoc(docRef);
+        return docSnap.exists() ? convertTimestamps(docSnap.data()) as Business : null;
+    },
+
+    async createBusiness(business: Partial<Business>, ownerUid: string): Promise<string> {
+        const bizRef = doc(collection(db, 'businesses'));
+        const bizId = bizRef.id;
+
+        const fullBusiness = {
+            ...business,
+            id: bizId,
+            ownerId: ownerUid,
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp(),
+        };
+
+        await setDoc(bizRef, fullBusiness);
+        return bizId;
+    },
+
+    async getEmployeeProfile(bizId: string, uid: string): Promise<Employee | null> {
+        const q = query(
+            collection(db, 'businesses', bizId, 'employees'),
+            where('userId', '==', uid),
+            where('status', '==', 'active'),
+            limit(1)
+        );
+        const querySnapshot = await getDocs(q);
+        if (querySnapshot.empty) return null;
+        return convertTimestamps(querySnapshot.docs[0].data()) as Employee;
+    },
+
+    async updateBusiness(bizId: string, data: Partial<Business>) {
+        await updateDoc(doc(db, 'businesses', bizId), {
+            ...data,
+            updatedAt: serverTimestamp()
+        });
+    }
+};
+
+// ============ ORDER SERVICES ============
+
+export const orderService = {
+    getOrdersRef(bizId: string) {
+        return collection(db, 'businesses', bizId, 'orders');
+    },
+
+    subscribeOrders(bizId: string, callback: (orders: Order[]) => void) {
+        const q = query(
+            this.getOrdersRef(bizId),
+            where('isDeleted', '==', false),
+            orderBy('createdAt', 'desc'),
+            limit(50)
+        );
+        return onSnapshot(q, (snapshot) => {
+            const orders = snapshot.docs.map(d => convertTimestamps(d.data()) as Order);
+            callback(orders);
+        });
+    },
+
+    async createOrder(bizId: string, order: Partial<Order>, employeeProfile?: any): Promise<string> {
+        const docRef = await addDoc(this.getOrdersRef(bizId), {
+            ...order,
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp(),
+            isDeleted: false
+        });
+
+        await auditService.writeLog(bizId, {
+            action: 'order.create',
+            module: 'orders',
+            targetType: 'order',
+            targetId: docRef.id,
+            targetLabel: `#${order.orderNumber || 'Шинэ'}`,
+            severity: 'normal'
+        }, employeeProfile);
+
+        return docRef.id;
+    },
+
+    async updateOrderStatus(bizId: string, orderId: string, status: string, historyItem: any, employeeProfile?: any): Promise<void> {
+        const docRef = doc(db, 'businesses', bizId, 'orders', orderId);
+        await updateDoc(docRef, {
+            status,
+            updatedAt: serverTimestamp(),
+            statusHistory: historyItem
+        });
+
+        await auditService.writeLog(bizId, {
+            action: 'order.status_change',
+            module: 'orders',
+            targetType: 'order',
+            targetId: orderId,
+            targetLabel: `#${orderId}`,
+            severity: 'normal',
+            changes: [{ field: 'status', oldValue: '?', newValue: status }]
+        }, employeeProfile);
+    }
+};
+
+// ============ CUSTOMER SERVICES ============
+
+export const customerService = {
+    getCustomersRef(bizId: string) {
+        return collection(db, 'businesses', bizId, 'customers');
+    },
+
+    async getCustomers(bizId: string): Promise<Customer[]> {
+        const q = query(this.getCustomersRef(bizId), where('isDeleted', '==', false), orderBy('name'));
+        const snap = await getDocs(q);
+        return snap.docs.map(d => convertTimestamps(d.data()) as Customer);
+    },
+
+    subscribeCustomers(bizId: string, callback: (customers: Customer[]) => void) {
+        const q = query(
+            this.getCustomersRef(bizId),
+            where('isDeleted', '==', false),
+            orderBy('name')
+        );
+        return onSnapshot(q, (snapshot) => {
+            const customers = snapshot.docs.map(d => convertTimestamps(d.data()) as Customer);
+            callback(customers);
+        });
+    },
+
+    async createCustomer(bizId: string, customer: Partial<Customer>, employeeProfile?: any): Promise<string> {
+        const docRef = await addDoc(this.getCustomersRef(bizId), {
+            ...customer,
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp(),
+            isDeleted: false
+        });
+
+        await auditService.writeLog(bizId, {
+            action: 'customer.create',
+            module: 'customers',
+            targetType: 'customer',
+            targetId: docRef.id,
+            targetLabel: customer.name || 'Шинэ харилцагч',
+            severity: 'normal'
+        }, employeeProfile);
+
+        return docRef.id;
+    },
+
+    async updateCustomer(bizId: string, customerId: string, updates: Partial<Customer>): Promise<void> {
+        const docRef = doc(db, 'businesses', bizId, 'customers', customerId);
+        await updateDoc(docRef, {
+            ...updates,
+            updatedAt: serverTimestamp()
+        });
+    }
+};
+
+// ============ PRODUCT SERVICES ============
+
+export const productService = {
+    getProductsRef(bizId: string) {
+        return collection(db, 'businesses', bizId, 'products');
+    },
+
+    async getProducts(bizId: string): Promise<Product[]> {
+        const q = query(this.getProductsRef(bizId), where('isDeleted', '==', false));
+        const snap = await getDocs(q);
+        return snap.docs.map(d => convertTimestamps(d.data()) as Product);
+    },
+
+    subscribeProducts(bizId: string, callback: (products: Product[]) => void) {
+        const q = query(
+            this.getProductsRef(bizId),
+            where('isDeleted', '==', false),
+            orderBy('name')
+        );
+        return onSnapshot(q, (snapshot) => {
+            const products = snapshot.docs.map(d => convertTimestamps(d.data()) as Product);
+            callback(products);
+        });
+    },
+
+    async createProduct(bizId: string, product: Partial<Product>, employeeProfile?: any): Promise<string> {
+        const docRef = await addDoc(this.getProductsRef(bizId), {
+            ...product,
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp(),
+            isDeleted: false
+        });
+
+        await auditService.writeLog(bizId, {
+            action: 'product.create',
+            module: 'products',
+            targetType: 'product',
+            targetId: docRef.id,
+            targetLabel: product.name || 'Шинэ бараа',
+            severity: 'normal'
+        }, employeeProfile);
+
+        return docRef.id;
+    },
+
+    async updateProduct(bizId: string, productId: string, updates: Partial<Product>): Promise<void> {
+        const docRef = doc(db, 'businesses', bizId, 'products', productId);
+        await updateDoc(docRef, {
+            ...updates,
+            updatedAt: serverTimestamp()
+        });
+    }
+};
+
+// ============ DASHBOARD SERVICES ============
+
+export const dashboardService = {
+    subscribeRecentOrders(bizId: string, callback: (orders: Order[]) => void) {
+        const q = query(
+            collection(db, 'businesses', bizId, 'orders'),
+            where('isDeleted', '==', false),
+            orderBy('createdAt', 'desc'),
+            limit(5)
+        );
+        return onSnapshot(q, (snapshot) => {
+            const orders = snapshot.docs.map(d => convertTimestamps(d.data()) as Order);
+            callback(orders);
+        });
+    },
+
+    async getDashboardStats(bizId: string) {
+        const bizDoc = await getDoc(doc(db, 'businesses', bizId));
+        if (!bizDoc.exists()) return null;
+
+        const data = bizDoc.data() as Business;
+        return {
+            totalOrders: data.stats.totalOrders,
+            totalRevenue: data.stats.totalRevenue,
+            totalCustomers: data.stats.totalCustomers,
+            totalProducts: data.stats.totalProducts,
+        };
+    }
+};
+
+// ============ CHAT SERVICES ============
+
+export const chatService = {
+    getChannelsRef(bizId: string) {
+        return collection(db, 'businesses', bizId, 'channels');
+    },
+
+    subscribeChannels(bizId: string, callback: (channels: any[]) => void) {
+        const q = query(this.getChannelsRef(bizId), orderBy('name'));
+        return onSnapshot(q, (snapshot) => {
+            callback(snapshot.docs.map(d => ({ id: d.id, ...d.data() })));
+        });
+    },
+
+    subscribeMessages(bizId: string, channelId: string, callback: (messages: any[]) => void) {
+        const q = query(
+            collection(db, 'businesses', bizId, 'channels', channelId, 'messages'),
+            orderBy('createdAt', 'asc'),
+            limit(100)
+        );
+        return onSnapshot(q, (snapshot) => {
+            callback(snapshot.docs.map(d => ({ id: d.id, ...convertTimestamps(d.data()) })));
+        });
+    },
+
+    async sendMessage(bizId: string, channelId: string, message: { text: string; senderId: string; senderName: string; avatar: string }) {
+        await addDoc(collection(db, 'businesses', bizId, 'channels', channelId, 'messages'), {
+            ...message,
+            createdAt: serverTimestamp()
+        });
+
+        // Update last message in channel
+        await updateDoc(doc(db, 'businesses', bizId, 'channels', channelId), {
+            lastMessage: `${message.senderName}: ${message.text}`,
+            lastMessageAt: serverTimestamp()
+        });
+    }
+};
+
+// ============ TEAM SERVICES ============
+
+export const teamService = {
+    // POSITIONS
+    subscribePositions(bizId: string, callback: (positions: Position[]) => void) {
+        const q = query(collection(db, 'businesses', bizId, 'positions'), orderBy('order'));
+        return onSnapshot(q, (snapshot) => {
+            callback(snapshot.docs.map(d => ({ id: d.id, ...d.data() } as Position)));
+        });
+    },
+
+    async createPosition(bizId: string, data: Partial<Position>) {
+        await addDoc(collection(db, 'businesses', bizId, 'positions'), {
+            ...data,
+            createdAt: serverTimestamp()
+        });
+    },
+
+    async updatePosition(bizId: string, posId: string, data: Partial<Position>) {
+        await updateDoc(doc(db, 'businesses', bizId, 'positions', posId), data);
+    },
+
+    // EMPLOYEES
+    subscribeEmployees(bizId: string, callback: (employees: Employee[]) => void) {
+        const q = query(collection(db, 'businesses', bizId, 'employees'), orderBy('joinedAt', 'desc'));
+        return onSnapshot(q, (snapshot) => {
+            callback(snapshot.docs.map(d => convertTimestamps({ id: d.id, ...d.data() }) as Employee));
+        });
+    },
+
+    async inviteEmployee(bizId: string, employeeData: Partial<Employee>) {
+        await addDoc(collection(db, 'businesses', bizId, 'employees'), {
+            ...employeeData,
+            status: 'pending_invite',
+            joinedAt: serverTimestamp(),
+            stats: { totalOrdersCreated: 0, totalOrdersHandled: 0 }
+        });
+    }
+};
+
+

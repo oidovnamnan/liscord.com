@@ -1,0 +1,105 @@
+.wizard-page {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-md);
+    background: var(--bg-primary);
+}
+
+.wizard-card {
+    width: 100%;
+    max-width: 600px;
+    background: var(--surface-1);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-xl);
+    padding: var(--space-xxl);
+    box-shadow: var(--shadow-xl);
+}
+
+.wizard-header {
+    text-align: center;
+    margin-bottom: var(--space-xxl);
+}
+
+.wizard-title {
+    font-size: 1.8rem;
+    font-weight: 800;
+    margin-bottom: var(--space-xs);
+}
+
+.wizard-subtitle {
+    color: var(--text-secondary);
+}
+
+.wizard-input {
+    font-size: 1.4rem;
+    padding: var(--space-lg);
+    text-align: center;
+    margin-bottom: var(--space-xl);
+}
+
+.wizard-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    gap: var(--space-md);
+    margin-bottom: var(--space-xxl);
+    max-height: 400px;
+    overflow-y: auto;
+    padding: var(--space-xs);
+}
+
+.wizard-category-card {
+    background: var(--surface-2);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-lg);
+    padding: var(--space-lg) var(--space-md);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-sm);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+    color: var(--text-primary);
+}
+
+.wizard-category-card:hover {
+    border-color: var(--primary);
+    transform: translateY(-2px);
+}
+
+.wizard-category-card.active {
+    background: var(--primary-light);
+    border-color: var(--primary);
+}
+
+.wizard-category-icon {
+    font-size: 2rem;
+}
+
+.wizard-category-name {
+    font-size: var(--font-size-sm);
+    font-weight: 500;
+    text-align: center;
+}
+
+.checked-badge {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    width: 18px;
+    height: 18px;
+    background: var(--primary);
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.wizard-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}

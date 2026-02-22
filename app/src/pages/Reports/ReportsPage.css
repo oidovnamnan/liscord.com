@@ -1,0 +1,107 @@
+.report-period-bar {
+    display: flex;
+    gap: var(--space-xs);
+    margin-bottom: var(--space-lg);
+}
+
+.report-chart {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-around;
+    gap: var(--space-md);
+    height: 220px;
+    padding: var(--space-md) 0;
+}
+
+.report-chart-bar-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-xs);
+    flex: 1;
+}
+
+.report-chart-bar {
+    width: 100%;
+    max-width: 60px;
+    background: var(--gradient-primary);
+    border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+    transition: height 0.5s ease;
+    min-height: 4px;
+}
+
+.report-chart-bar-wrap:hover .report-chart-bar {
+    box-shadow: var(--primary-glow);
+}
+
+.report-chart-value {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    white-space: nowrap;
+}
+
+.report-chart-label {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+.report-ranking {
+    display: flex;
+    flex-direction: column;
+}
+
+.report-rank-item {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    padding: var(--space-sm) 0;
+    border-bottom: 1px solid var(--border-primary);
+}
+
+.report-rank-item:last-child {
+    border-bottom: none;
+}
+
+.report-rank-num {
+    font-weight: 700;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    width: 28px;
+}
+
+.report-rank-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.report-rank-name {
+    font-size: 0.9rem;
+    font-weight: 500;
+    display: block;
+}
+
+.report-rank-detail {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+
+.report-rank-value {
+    font-weight: 600;
+    font-size: 0.85rem;
+    white-space: nowrap;
+}
+
+@media (max-width: 640px) {
+    .report-chart {
+        gap: var(--space-xs);
+    }
+
+    .report-chart-bar {
+        max-width: 36px;
+    }
+
+    .report-chart-value {
+        font-size: 0.6rem;
+    }
+}

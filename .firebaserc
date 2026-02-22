@@ -1,0 +1,6 @@
+{
+  "projects": {
+    "default": "liscord-dev",
+    "production": "liscord-prod"
+  }
+}

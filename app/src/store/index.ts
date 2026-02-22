@@ -1,0 +1,68 @@
+import { create } from 'zustand';
+import type { User, Business, Employee } from '../types';
+
+// ============ AUTH STORE ============
+interface AuthState {
+    user: User | null;
+    impersonatedBusinessId: string | null;
+    loading: boolean;
+    setUser: (user: User | null) => void;
+    setImpersonatedBusinessId: (id: string | null) => void;
+    setLoading: (loading: boolean) => void;
+}
+
+export const useAuthStore = create<AuthState>((set) => ({
+    user: null,
+    impersonatedBusinessId: null,
+    loading: true,
+    setUser: (user) => set({ user, loading: false }),
+    setImpersonatedBusinessId: (id) => set({ impersonatedBusinessId: id }),
+    setLoading: (loading) => set({ loading }),
+}));
+
+// ============ BUSINESS STORE ============
+interface BusinessState {
+    business: Business | null;
+    employee: Employee | null;
+    loading: boolean;
+    setBusiness: (business: Business | null) => void;
+    setEmployee: (employee: Employee | null) => void;
+    setLoading: (loading: boolean) => void;
+    clear: () => void;
+}
+
+export const useBusinessStore = create<BusinessState>((set) => ({
+    business: null,
+    employee: null,
+    loading: false,
+    setBusiness: (business) => set({ business }),
+    setEmployee: (employee) => set({ employee }),
+    setLoading: (loading) => set({ loading }),
+    clear: () => set({ business: null, employee: null, loading: false }),
+}));
+
+// ============ UI STORE ============
+interface UIState {
+    sidebarOpen: boolean;
+    sidebarCollapsed: boolean;
+    theme: 'dark' | 'light' | 'system';
+    toggleSidebar: () => void;
+    toggleSidebarCollapsed: () => void;
+    setTheme: (theme: 'dark' | 'light' | 'system') => void;
+}
+
+export const useUIStore = create<UIState>((set) => ({
+    sidebarOpen: false,
+    sidebarCollapsed: false,
+    theme: (localStorage.getItem('theme') as 'dark' | 'light' | 'system') || 'dark',
+    toggleSidebar: () => set((s) => ({ sidebarOpen: !s.sidebarOpen })),
+    toggleSidebarCollapsed: () => set((s) => ({ sidebarCollapsed: !s.sidebarCollapsed })),
+    setTheme: (theme) => {
+        localStorage.setItem('theme', theme);
+        const resolved = theme === 'system'
+            ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+            : theme;
+        document.documentElement.setAttribute('data-theme', resolved);
+        set({ theme });
+    },
+}));
