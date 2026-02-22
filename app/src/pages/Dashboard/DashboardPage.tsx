@@ -33,13 +33,25 @@ export function DashboardPage() {
         if (!business?.id) return;
 
         setLoading(true);
-        // Stats
-        dashboardService.getDashboardStats(business.id).then(data => {
-            setStats(data);
-        });
+
+        async function loadDashboard() {
+            try {
+                const statsData = await dashboardService.getDashboardStats(business.id!);
+                setStats(statsData || {
+                    totalOrders: 0,
+                    totalRevenue: 0,
+                    totalCustomers: 0,
+                    totalProducts: 0
+                });
+            } catch (error) {
+                console.error('Stats load error:', error);
+            }
+        }
+
+        loadDashboard();
 
         // Recent orders subscription
-        const unsubscribe = dashboardService.subscribeRecentOrders(business.id, (orders) => {
+        const unsubscribe = dashboardService.subscribeRecentOrders(business.id!, (orders) => {
             setRecentOrders(orders);
             setLoading(false);
         });
@@ -47,7 +59,7 @@ export function DashboardPage() {
         return () => unsubscribe();
     }, [business?.id]);
 
-    if (loading) {
+    if (loading || !stats) {
         return (
             <div className="loading-screen">
                 <Loader2 className="animate-spin" size={32} />
