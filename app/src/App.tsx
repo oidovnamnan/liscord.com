@@ -94,46 +94,56 @@ export default function App() {
     });
 
     const unsubscribeAuth = onAuthStateChanged(auth, async (firebaseUser) => {
-      if (firebaseUser) {
-        setLoading(true);
-        const profile = await userService.getUser(firebaseUser.uid);
-        if (profile) {
-          // Temporary: Grant Super Admin to the user
-          if (profile.email === 'oidovnamnan7@gmail.com' && !profile.isSuperAdmin) {
-            console.log('Granting Super Admin...');
-            await updateDoc(doc(db, 'users', firebaseUser.uid), { isSuperAdmin: true });
-            profile.isSuperAdmin = true;
-          }
+      try {
+        if (firebaseUser) {
+          setLoading(true);
+          const profile = await userService.getUser(firebaseUser.uid);
+          if (profile) {
+            // Temporary: Grant Super Admin to the user
+            if (profile.email === 'oidovnamnan7@gmail.com' && !profile.isSuperAdmin) {
+              console.log('Granting Super Admin...');
+              await updateDoc(doc(db, 'users', firebaseUser.uid), { isSuperAdmin: true });
+              profile.isSuperAdmin = true;
+            }
 
-          setUser(profile);
-          if (profile.activeBusiness) {
-            const [biz, emp] = await Promise.all([
-              businessService.getBusiness(profile.activeBusiness),
-              businessService.getEmployeeProfile(profile.activeBusiness, firebaseUser.uid)
-            ]);
-            setBusiness(biz);
-            setEmployee(emp);
+            setUser(profile);
+            if (profile.activeBusiness) {
+              const [biz, emp] = await Promise.all([
+                businessService.getBusiness(profile.activeBusiness),
+                businessService.getEmployeeProfile(profile.activeBusiness, firebaseUser.uid)
+              ]);
+              setBusiness(biz);
+              setEmployee(emp);
+            }
+          } else {
+            // Half-reg state
+            const newUser: User = {
+              uid: firebaseUser.uid,
+              phone: firebaseUser.phoneNumber,
+              email: firebaseUser.email,
+              displayName: firebaseUser.displayName || '',
+              photoURL: firebaseUser.photoURL,
+              businessIds: [],
+              activeBusiness: null,
+              language: 'mn',
+              createdAt: new Date(),
+            };
+            setUser(newUser);
           }
         } else {
-          // Half-reg state
-          const newUser: User = {
-            uid: firebaseUser.uid,
-            phone: firebaseUser.phoneNumber,
-            email: firebaseUser.email,
-            displayName: firebaseUser.displayName || '',
-            photoURL: firebaseUser.photoURL,
-            businessIds: [],
-            activeBusiness: null,
-            language: 'mn',
-            createdAt: new Date(),
-          };
-          setUser(newUser);
+          setUser(null);
+          clear();
         }
-      } else {
-        setUser(null);
-        clear();
+      } catch (error: any) {
+        console.error('Auth state change error:', error);
+        if (error.code === 'failed-precondition') {
+          toast.error('Firestore индекс үүсгэх шаардлагатай. Консол дээрх холбоос дээр дарна уу.');
+        } else {
+          toast.error('Нэвтрэхэд алдаа гарлаа');
+        }
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     });
 
     return () => {
