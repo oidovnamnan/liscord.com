@@ -24,7 +24,6 @@ export function BusinessWizard() {
         setLoading(true);
         try {
             const bizId = await businessService.createBusiness({
-                // ... (existing fields)
                 name,
                 category,
                 country: 'MN',
