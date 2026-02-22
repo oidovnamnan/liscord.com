@@ -13,15 +13,6 @@ const firebaseConfig = {
   appId: import.meta.env.VITE_FIREBASE_APP_ID || "1:190310416937:web:824037b0a18abcdaabd238",
 };
 
-if (import.meta.env.PROD) {
-  console.log('Firebase Init Debug:', {
-    keyPrefix: firebaseConfig.apiKey?.substring(0, 10),
-    keySuffix: firebaseConfig.apiKey?.substring(firebaseConfig.apiKey.length - 5),
-    keyLength: firebaseConfig.apiKey?.length,
-    projectId: firebaseConfig.projectId
-  });
-}
-
 export const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const db = getFirestore(app);
