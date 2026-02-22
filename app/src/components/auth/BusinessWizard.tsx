@@ -54,11 +54,11 @@ export function BusinessWizard() {
             console.log('Business created, ID:', bizId);
             console.log('Updating user record in Firestore...');
 
-            // Update user in Firestore
-            await updateDoc(doc(db, 'users', user.uid), {
+            // Update user in Firestore - Using setDoc with merge for robustness
+            await setDoc(doc(db, 'users', user.uid), {
                 activeBusiness: bizId,
                 businessIds: arrayUnion(bizId)
-            });
+            }, { merge: true });
 
             console.log('User record updated successfully');
             toast.success('Бизнес амжилттай үүслээ!');
