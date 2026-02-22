@@ -338,27 +338,70 @@ function CreateProductModal({ onClose }: { onClose: () => void }) {
                                 {showCategoryDropdown && (categoryInput || categories.length > 0) && (
                                     <>
                                         <div className="dropdown-backdrop" onClick={() => setShowCategoryDropdown(false)} />
-                                        <div className="dropdown-menu show" style={{ width: '100%', top: '100%', left: 0, marginTop: 4, maxHeight: 200, overflowY: 'auto' }}>
-                                            {filteredCats.map(c => (
+                                        <div className="dropdown-menu show shadow-lg" style={{
+                                            width: '100%',
+                                            top: '100%',
+                                            left: 0,
+                                            marginTop: 6,
+                                            maxHeight: 240,
+                                            overflowY: 'auto',
+                                            borderRadius: 12,
+                                            border: '1px solid var(--border-color)',
+                                            padding: '4px',
+                                            zIndex: 100
+                                        }}>
+                                            {filteredCats.length > 0 ? (
+                                                filteredCats.map(c => (
+                                                    <div
+                                                        key={c.id}
+                                                        className="dropdown-item"
+                                                        style={{ borderRadius: 8, padding: '10px 12px' }}
+                                                        onClick={() => {
+                                                            setSelectedCategory(c);
+                                                            setCategoryInput(c.name);
+                                                            setShowCategoryDropdown(false);
+                                                        }}
+                                                    >
+                                                        {c.name}
+                                                    </div>
+                                                ))
+                                            ) : categoryInput && (
+                                                <div style={{ padding: '8px 12px', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+                                                    Ангилал олдсонгүй
+                                                </div>
+                                            )}
+
+                                            {categoryInput && !categories.some(c => c.name.toLowerCase() === categoryInput.toLowerCase()) && (
                                                 <div
-                                                    key={c.id}
-                                                    className="dropdown-item"
+                                                    className="dropdown-item add-new-item"
+                                                    style={{
+                                                        color: 'var(--primary)',
+                                                        fontWeight: 600,
+                                                        borderTop: '1px solid var(--border-color)',
+                                                        marginTop: 4,
+                                                        padding: '12px',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        gap: 8,
+                                                        borderRadius: 8
+                                                    }}
                                                     onClick={() => {
-                                                        setSelectedCategory(c);
-                                                        setCategoryInput(c.name);
+                                                        setSelectedCategory(null); // Will be created on submit
                                                         setShowCategoryDropdown(false);
                                                     }}
                                                 >
-                                                    {c.name}
-                                                </div>
-                                            ))}
-                                            {categoryInput && !categories.some(c => c.name.toLowerCase() === categoryInput.toLowerCase()) && (
-                                                <div
-                                                    className="dropdown-item"
-                                                    style={{ color: 'var(--primary)', fontWeight: 600 }}
-                                                    onClick={() => setShowCategoryDropdown(false)}
-                                                >
-                                                    <Plus size={14} style={{ marginRight: 4 }} /> "{categoryInput}" нэмэх
+                                                    <div style={{
+                                                        width: 24,
+                                                        height: 24,
+                                                        borderRadius: '50%',
+                                                        background: 'rgba(var(--primary-rgb), 0.1)',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'center'
+                                                    }}>
+                                                        <Plus size={16} />
+                                                    </div>
+                                                    <span>"{categoryInput}" нэмэх</span>
                                                 </div>
                                             )}
                                         </div>
