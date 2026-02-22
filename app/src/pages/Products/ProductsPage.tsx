@@ -81,15 +81,20 @@ export function ProductsPage() {
                         )}
 
                         {/* Grid / List */}
-                        <div className={viewMode === 'grid' ? 'products-grid' : 'products-list'}>
-                            {filtered.length === 0 ? (
-                                <div className="empty-state">
-                                    <div className="empty-state-icon">📦</div>
-                                    <h3>Бараа олдсонгүй</h3>
-                                    <p>Хайлтын нөхцөлөө өөрчилнө үү</p>
-                                </div>
-                            ) : (
-                                filtered.map(p => (
+                        {filtered.length === 0 ? (
+                            <div className="empty-state animate-fade-in">
+                                <div className="empty-state-icon">📦</div>
+                                <h3>{products.length === 0 ? 'Одоогоор бараа үүсгээгүй байна' : 'Бараа олдсонгүй'}</h3>
+                                <p>{products.length === 0 ? 'Та "Шинэ бараа" товч дээр дарж анхны бараагаа нэмнэ үү.' : 'Хайлтын нөхцөлөө өөрчилнө үү'}</p>
+                                {products.length === 0 && (
+                                    <button className="btn btn-primary" style={{ marginTop: 20 }} onClick={() => setShowCreate(true)}>
+                                        <Plus size={18} /> Шинэ бараа нэмэх
+                                    </button>
+                                )}
+                            </div>
+                        ) : (
+                            <div className={viewMode === 'grid' ? 'products-grid' : 'products-list'}>
+                                {filtered.map(p => (
                                     <div key={p.id} className={`product-card card card-clickable ${(p.stock?.quantity || 0) === 0 ? 'product-out' : (p.stock?.quantity || 0) <= (p.stock?.lowStockThreshold || 0) ? 'product-low' : ''}`}>
                                         <div className="product-image">{p.images?.[0] || '📦'}</div>
                                         <div className="product-info">
@@ -114,9 +119,9 @@ export function ProductsPage() {
                                         </div>
                                         <button className="btn btn-ghost btn-sm btn-icon product-more"><MoreVertical size={16} /></button>
                                     </div>
-                                ))
-                            )}
-                        </div>
+                                ))}
+                            </div>
+                        )}
                     </>
                 )}
             </div>
