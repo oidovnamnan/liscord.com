@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Header } from '../../components/layout/Header';
-import { Plus, Search, MoreVertical, Loader2, X, User, Package, CreditCard, Check } from 'lucide-react';
+import { Plus, Search, MoreVertical, Loader2, X, User, Package, CreditCard } from 'lucide-react';
 import { useBusinessStore, useAuthStore } from '../../store';
 import { orderService, productService, cargoService } from '../../services/db';
 import { OrderDetailModal } from './OrderDetailModal';
@@ -235,6 +235,7 @@ function CreateOrderModal({ onClose, nextNumber }: {
     const [deliveryFee, setDeliveryFee] = useState('0');
     const [cargoFee, setCargoFee] = useState('0');
     const [cargoIncluded, setCargoIncluded] = useState(false);
+    const [payCargoNow, setPayCargoNow] = useState(true);
 
     // Payment
     const [paymentMethod, setPaymentMethod] = useState<any>('bank');
@@ -280,9 +281,13 @@ function CreateOrderModal({ onClose, nextNumber }: {
         }
     };
 
+    const calculateItemTotal = () => Number(unitPrice) * quantity;
+    const calculateCargoTotal = () => (cargoIncluded ? 0 : Number(cargoFee) * quantity);
+
     const calculateTotal = () => {
-        const itemTotal = Number(unitPrice) * quantity;
-        const total = itemTotal + Number(deliveryFee) + (cargoIncluded ? 0 : Number(cargoFee));
+        const itemTotal = calculateItemTotal();
+        const totalCargo = calculateCargoTotal();
+        const total = itemTotal + Number(deliveryFee) + (payCargoNow ? totalCargo : 0);
         return total;
     };
 
@@ -295,6 +300,7 @@ function CreateOrderModal({ onClose, nextNumber }: {
         try {
             const finalTotal = calculateTotal();
             const paid = Number(paidAmount);
+            const cargoTotal = calculateCargoTotal();
 
             const variantParts = [color, size].filter(Boolean).join(' / ');
             const finalItemName = selectedProduct ? selectedProduct.name : manualItemName;
@@ -318,15 +324,15 @@ function CreateOrderModal({ onClose, nextNumber }: {
                     quantity: quantity,
                     unitPrice: Number(unitPrice),
                     costPrice: selectedProduct?.pricing?.costPrice || 0,
-                    totalPrice: Number(unitPrice) * quantity,
+                    totalPrice: calculateItemTotal(),
                 }],
                 financials: {
-                    subtotal: Number(unitPrice) * quantity,
+                    subtotal: calculateItemTotal(),
                     discountType: 'fixed',
                     discountValue: 0,
                     discountAmount: 0,
                     deliveryFee: Number(deliveryFee),
-                    cargoFee: Number(cargoFee),
+                    cargoFee: cargoTotal,
                     cargoIncluded: cargoIncluded,
                     totalAmount: finalTotal,
                     payments: paid > 0 ? [{
@@ -343,7 +349,7 @@ function CreateOrderModal({ onClose, nextNumber }: {
                 createdBy: user.uid,
                 createdByName: user.displayName,
                 isDeleted: false,
-                notes: '',
+                notes: payCargoNow ? '' : 'Карго ирэхээр төлнө',
                 internalNotes: '',
                 statusHistory: [],
                 tags: []
@@ -486,7 +492,7 @@ function CreateOrderModal({ onClose, nextNumber }: {
                                 <div className="input-group">
                                     <label className="input-label">Нийт бараа</label>
                                     <div className="input" style={{ background: 'var(--bg-tertiary)', fontWeight: 600, display: 'flex', alignItems: 'center' }}>
-                                        {fmt(Number(unitPrice) * quantity)}
+                                        {fmt(calculateItemTotal())}
                                     </div>
                                 </div>
                             </div>
@@ -501,25 +507,36 @@ function CreateOrderModal({ onClose, nextNumber }: {
                                 </div>
                                 <div className="input-group">
                                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
-                                        <label className="input-label" style={{ margin: 0 }}>Каргоны дүн</label>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                            <label className="input-label" style={{ margin: 0 }}>Каргоны дүн</label>
+                                            <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>({fmt(Number(cargoFee))} x {quantity})</span>
+                                        </div>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                                             <input type="checkbox" id="cargoInc" checked={cargoIncluded} onChange={e => setCargoIncluded(e.target.checked)} />
                                             <label htmlFor="cargoInc" style={{ fontSize: '0.7rem', cursor: 'pointer' }}>Орсон</label>
                                         </div>
                                     </div>
-                                    <input className="input" type="number" disabled={cargoIncluded} value={cargoFee} onChange={e => setCargoFee(e.target.value)} />
+                                    <input className="input" type="number" disabled={cargoIncluded} value={calculateCargoTotal()} readOnly style={{ background: cargoIncluded ? 'var(--bg-soft)' : 'white' }} />
                                 </div>
                             </div>
-                            <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 12, marginTop: 4 }}>
-                                <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Нийт төлөх дүн:</span>
-                                <span style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--primary)' }}>
+
+                            {!cargoIncluded && (
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: -8, marginBottom: 4 }}>
+                                    <input type="checkbox" id="payCargoNow" checked={payCargoNow} onChange={e => setPayCargoNow(e.target.checked)} />
+                                    <label htmlFor="payCargoNow" style={{ fontSize: '0.75rem', cursor: 'pointer', color: 'var(--text-secondary)' }}>Каргоныг одоо төлөх (Бусад тохиолдолд ирэхээр нь төлнө)</label>
+                                </div>
+                            )}
+
+                            <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 12, marginTop: 4, paddingTop: 8, borderTop: '1px solid var(--primary-light)' }}>
+                                <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Нийт захиалгын дүн:</span>
+                                <span style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--primary)' }}>
                                     {fmt(calculateTotal())}
                                 </span>
                             </div>
                         </div>
 
                         {/* SECTION 4: PAYMENT */}
-                        <div className="modal-section" style={{ borderColor: 'var(--primary)' }}>
+                        <div className="modal-section" style={{ borderColor: 'var(--primary)', borderStyle: 'dashed' }}>
                             <div className="modal-section-title"><CreditCard size={14} /> Төлбөр бүртгэх</div>
                             <div className="input-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                                 <div className="input-group">
@@ -532,17 +549,33 @@ function CreateOrderModal({ onClose, nextNumber }: {
                                     </select>
                                 </div>
                                 <div className="input-group">
-                                    <label className="input-label">Төлсөн дүн</label>
-                                    <div style={{ display: 'flex', gap: 8 }}>
+                                    <label className="input-label">Төлсөн дүн (Урьдчилгаа)</label>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                                         <input className="input" type="number" value={paidAmount} onChange={e => setPaidAmount(e.target.value)} />
-                                        <button
-                                            type="button"
-                                            className="btn btn-ghost btn-sm"
-                                            onClick={() => setPaidAmount(calculateTotal().toString())}
-                                            style={{ fontSize: '0.7rem', whiteSpace: 'nowrap' }}
-                                        >
-                                            <Check size={14} /> Бүрэн
-                                        </button>
+                                        <div style={{ display: 'flex', gap: 4 }}>
+                                            <button
+                                                type="button"
+                                                className="btn btn-ghost btn-sm"
+                                                onClick={() => setPaidAmount((calculateTotal() * 0.5).toString())}
+                                                style={{ fontSize: '0.65rem', padding: '2px 8px', height: 24 }}
+                                            >
+                                                50%
+                                            </button>
+                                            <button
+                                                type="button"
+                                                className="btn btn-ghost btn-sm"
+                                                onClick={() => setPaidAmount(calculateTotal().toString())}
+                                                style={{ fontSize: '0.65rem', padding: '2px 8px', height: 24 }}
+                                            >
+                                                100%
+                                            </button>
+                                            <div style={{ flex: 1 }}></div>
+                                            {Number(paidAmount) < calculateTotal() && Number(paidAmount) > 0 && (
+                                                <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center' }}>
+                                                    Үлдэгдэл: {fmt(calculateTotal() - Number(paidAmount))}
+                                                </span>
+                                            )}
+                                        </div>
                                     </div>
                                 </div>
                             </div>
