@@ -320,10 +320,11 @@ function CreateProductModal({ onClose }: { onClose: () => void }) {
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                             <div className="input-group" style={{ position: 'relative' }}>
                                 <label className="input-label">Ангилал</label>
-                                <div className="input-with-icon" onClick={() => setShowCategoryDropdown(true)}>
+                                <div className="input-with-icon" onClick={() => setShowCategoryDropdown(true)} style={{ cursor: 'pointer' }}>
                                     <input
                                         className="input"
                                         placeholder="Гар утас"
+                                        style={{ cursor: 'pointer' }}
                                         value={categoryInput}
                                         onChange={e => {
                                             setCategoryInput(e.target.value);
@@ -332,7 +333,7 @@ function CreateProductModal({ onClose }: { onClose: () => void }) {
                                         }}
                                         onFocus={() => setShowCategoryDropdown(true)}
                                     />
-                                    <ChevronDown size={16} className="input-icon-right" style={{ pointerEvents: 'none' }} />
+                                    <ChevronDown size={18} className="input-icon-right" style={{ pointerEvents: 'none', right: 12 }} />
                                 </div>
                                 {showCategoryDropdown && (categoryInput || categories.length > 0) && (
                                     <>
@@ -435,23 +436,24 @@ function CreateProductModal({ onClose }: { onClose: () => void }) {
                                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--primary)', fontWeight: 600, fontSize: '0.9rem' }}>
                                     <Globe size={16} /> Олон улсын каргоны тохиргоо
                                 </div>
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1.2fr', gap: 12 }}>
+                                <div style={{ display: 'grid', gridTemplateColumns: 'minmax(140px, 1.2fr) 0.8fr 1fr', gap: 12 }}>
                                     <div className="input-group">
-                                        <label className="input-label">Каргоны төрөл</label>
+                                        <label className="input-label">Карго төрөл</label>
                                         <select
                                             className="input select"
                                             value={selectedCargoTypeId}
                                             onChange={e => handleCargoTypeChange(e.target.value)}
+                                            style={{ fontSize: '0.85rem' }}
                                         >
-                                            <option value="">-- Төрөл сонгох --</option>
+                                            <option value="">-- Сонгох --</option>
                                             {cargoTypes.map(t => (
-                                                <option key={t.id} value={t.id}>{t.name} (₮{t.fee.toLocaleString()} / {t.unit})</option>
+                                                <option key={t.id} value={t.id}>{t.name}</option>
                                             ))}
                                         </select>
                                     </div>
                                     <div className="input-group">
-                                        <label className="input-label">
-                                            {selectedCargoTypeId ? `Хэмжээ (${cargoTypes.find(t => t.id === selectedCargoTypeId)?.unit})` : 'Хэмжээ / Жин'}
+                                        <label className="input-label" style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                            {selectedCargoTypeId ? `Хэмжээ (${cargoTypes.find(t => t.id === selectedCargoTypeId)?.unit})` : 'Хэмжээ'}
                                         </label>
                                         <input
                                             className="input"
@@ -463,7 +465,7 @@ function CreateProductModal({ onClose }: { onClose: () => void }) {
                                         />
                                     </div>
                                     <div className="input-group">
-                                        <label className="input-label">Каргоны төлбөр /нэгж/</label>
+                                        <label className="input-label">Төлбөр (₮)</label>
                                         <div className="input-with-icon">
                                             <input
                                                 className="input"
@@ -471,11 +473,10 @@ function CreateProductModal({ onClose }: { onClose: () => void }) {
                                                 value={cargoFee}
                                                 onChange={e => {
                                                     setCargoFee(e.target.value);
-                                                    setSelectedCargoTypeId(''); // Reset selection if manual edit
+                                                    setSelectedCargoTypeId('');
                                                 }}
-                                                placeholder="25,000"
+                                                placeholder="0"
                                             />
-                                            <span className="input-icon-right" style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>₮</span>
                                         </div>
                                     </div>
                                 </div>
