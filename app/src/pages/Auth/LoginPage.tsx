@@ -80,7 +80,15 @@ export function LoginPage() {
             await signInWithEmailAndPassword(auth, email, password);
             navigate('/app');
         } catch (error: any) {
-            toast.error('И-мэйл эсвэл нууц үг буруу байна');
+            let message = 'И-мэйл эсвэл нууц үг буруу байна';
+            if (error.code === 'auth/user-not-found') {
+                message = 'Ийм бүртгэлтэй хэрэглэгч олдсонгүй';
+            } else if (error.code === 'auth/wrong-password') {
+                message = 'Нууц үг буруу байна';
+            } else if (error.code === 'auth/too-many-requests') {
+                message = 'Олон удаа буруу оролдлого хийсэн тул түр хаагдлаа. Дараа дахин оролдоно уу.';
+            }
+            toast.error(message);
         } finally {
             setLoading(false);
         }

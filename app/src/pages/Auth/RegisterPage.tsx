@@ -52,7 +52,19 @@ export function RegisterPage() {
             navigate('/app');
         } catch (error: any) {
             console.error(error);
-            toast.error('Бүртгэлд алдаа гарлаа: ' + error.message);
+            let message = 'Бүртгэлд алдаа гарлаа';
+
+            if (error.code === 'auth/email-already-in-use') {
+                message = 'Энэ и-мэйл хаяг аль хэдийн бүртгэлтэй байна';
+            } else if (error.code === 'auth/invalid-email') {
+                message = 'И-мэйл хаяг буруу байна';
+            } else if (error.code === 'auth/weak-password') {
+                message = 'Нууц үг хэтэрхий сул байна';
+            } else if (error.code === 'auth/phone-number-already-exists') {
+                message = 'Энэ утасны дугаар аль хэдийн бүртгэлтэй байна';
+            }
+
+            toast.error(message);
         } finally {
             setLoading(false);
         }
