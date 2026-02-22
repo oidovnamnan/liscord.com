@@ -286,6 +286,7 @@ export interface Product {
     cargoFee?: {
         amount: number;
         isIncluded: boolean;
+        cargoTypeId?: string;
     };
     unitType: string;
     isActive: boolean;
@@ -305,6 +306,15 @@ export interface Category {
     description: string;
     color?: string;
     productCount: number;
+    isDeleted: boolean;
+    createdAt: Date;
+}
+
+export interface CargoType {
+    id: string;
+    name: string;
+    fee: number;
+    unit: string; // ш, кг, л, м3
     isDeleted: boolean;
     createdAt: Date;
 }

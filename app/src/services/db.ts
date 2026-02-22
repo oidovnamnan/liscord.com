@@ -16,7 +16,7 @@ import {
 } from 'firebase/firestore';
 import { db } from './firebase';
 import { auditService } from './audit';
-import type { Business, User, Employee, Order, Customer, Product, Position, Category } from '../types';
+import type { Business, User, Employee, Order, Customer, Product, Position, Category, CargoType } from '../types';
 
 // ============ GENERIC HELPERS ============
 
@@ -298,6 +298,38 @@ export const categoryService = {
             createdAt: serverTimestamp()
         });
         return docRef.id;
+    }
+};
+
+export const cargoService = {
+    getCargoTypesRef(bizId: string) {
+        return collection(db, 'businesses', bizId, 'cargo_types');
+    },
+
+    subscribeCargoTypes(bizId: string, callback: (types: CargoType[]) => void) {
+        const q = query(this.getCargoTypesRef(bizId), where('isDeleted', '==', false));
+        return onSnapshot(q, (snapshot) => {
+            const types = snapshot.docs.map(d => ({ id: d.id, ...convertTimestamps(d.data()) } as CargoType));
+            types.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+            callback(types);
+        });
+    },
+
+    async createCargoType(bizId: string, data: Partial<CargoType>): Promise<string> {
+        const docRef = await addDoc(this.getCargoTypesRef(bizId), {
+            ...data,
+            isDeleted: false,
+            createdAt: serverTimestamp()
+        });
+        return docRef.id;
+    },
+
+    async updateCargoType(bizId: string, id: string, data: Partial<CargoType>) {
+        const docRef = doc(this.getCargoTypesRef(bizId), id);
+        await updateDoc(docRef, {
+            ...data,
+            updatedAt: serverTimestamp()
+        });
     }
 };
 

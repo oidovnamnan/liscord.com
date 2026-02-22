@@ -2,8 +2,8 @@ import { useState, useEffect } from 'react';
 import { Header } from '../../components/layout/Header';
 import { Search, Plus, AlertTriangle, Grid3X3, List, Loader2, MoreVertical, ChevronDown, Globe } from 'lucide-react';
 import { useBusinessStore, useAuthStore } from '../../store';
-import { productService, categoryService } from '../../services/db';
-import type { Product, Category } from '../../types';
+import { productService, categoryService, cargoService } from '../../services/db';
+import type { Product, Category, CargoType } from '../../types';
 import { toast } from 'react-hot-toast';
 import './ProductsPage.css';
 
@@ -150,14 +150,25 @@ function CreateProductModal({ onClose }: { onClose: () => void }) {
     const [margin, setMargin] = useState<string>(localStorage.getItem('liscord_last_margin') || '20');
 
     // Cargo Features
+    const [cargoTypes, setCargoTypes] = useState<CargoType[]>([]);
+    const [selectedCargoTypeId, setSelectedCargoTypeId] = useState<string>('');
     const [cargoFee, setCargoFee] = useState<string>(business?.settings?.cargoConfig?.defaultFee?.toString() || '');
     const [isCargoIncluded, setIsCargoIncluded] = useState(business?.settings?.cargoConfig?.isIncludedByDefault || false);
 
     useEffect(() => {
         if (!business?.id) return;
-        const unsubscribe = categoryService.subscribeCategories(business.id, setCategories);
-        return () => unsubscribe();
+        const u1 = categoryService.subscribeCategories(business.id, setCategories);
+        const u2 = cargoService.subscribeCargoTypes(business.id, setCargoTypes);
+        return () => { u1(); u2(); };
     }, [business?.id]);
+
+    const handleCargoTypeChange = (id: string) => {
+        setSelectedCargoTypeId(id);
+        const selected = cargoTypes.find(t => t.id === id);
+        if (selected) {
+            setCargoFee(selected.fee.toString());
+        }
+    };
 
     useEffect(() => {
         // Auto-generate SKU: LSC-XXXX-XXXX
@@ -258,7 +269,8 @@ function CreateProductModal({ onClose }: { onClose: () => void }) {
                 },
                 cargoFee: productType === 'preorder' ? {
                     amount: Number(cargoFee) || 0,
-                    isIncluded: isCargoIncluded
+                    isIncluded: isCargoIncluded,
+                    cargoTypeId: selectedCargoTypeId || undefined
                 } : undefined,
                 unitType: 'ш',
                 isActive: true,
@@ -413,40 +425,57 @@ function CreateProductModal({ onClose }: { onClose: () => void }) {
                                 </div>
                                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                                     <div className="input-group">
+                                        <label className="input-label">Каргоны төрөл</label>
+                                        <select
+                                            className="input select"
+                                            value={selectedCargoTypeId}
+                                            onChange={e => handleCargoTypeChange(e.target.value)}
+                                        >
+                                            <option value="">-- Төрөл сонгох --</option>
+                                            {cargoTypes.map(t => (
+                                                <option key={t.id} value={t.id}>{t.name} (₮{t.fee.toLocaleString()} / {t.unit})</option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                    <div className="input-group">
                                         <label className="input-label">Каргоны төлбөр /нэгж/</label>
                                         <div className="input-with-icon">
                                             <input
                                                 className="input"
                                                 type="number"
                                                 value={cargoFee}
-                                                onChange={e => setCargoFee(e.target.value)}
+                                                onChange={e => {
+                                                    setCargoFee(e.target.value);
+                                                    setSelectedCargoTypeId(''); // Reset selection if manual edit
+                                                }}
                                                 placeholder="25,000"
                                             />
                                             <span className="input-icon-right" style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>₮</span>
                                         </div>
                                     </div>
-                                    <div className="input-group">
-                                        <label className="input-label">Тооцоолох арга</label>
-                                        <div
-                                            className={`input select-custom ${isCargoIncluded ? 'active' : ''}`}
-                                            onClick={() => setIsCargoIncluded(!isCargoIncluded)}
-                                            style={{
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                justifyContent: 'center',
-                                                cursor: 'pointer',
-                                                transition: 'all 0.2s ease',
-                                                fontSize: '0.9rem',
-                                                background: isCargoIncluded ? 'rgba(var(--primary-rgb), 0.1)' : 'var(--bg-input)',
-                                                borderColor: isCargoIncluded ? 'var(--primary)' : 'var(--border-color)',
-                                                color: isCargoIncluded ? 'var(--primary)' : 'var(--text-main)',
-                                                height: '42px',
-                                                borderRadius: '8px',
-                                                border: '1px solid'
-                                            }}
-                                        >
-                                            {isCargoIncluded ? '✅ Үнэд багтсан' : '📦 Тусдаа бодогдоно'}
-                                        </div>
+                                </div>
+                                <div className="input-group">
+                                    <label className="input-label">Тооцоолох арга</label>
+                                    <div
+                                        className={`input select-custom ${isCargoIncluded ? 'active' : ''}`}
+                                        onClick={() => setIsCargoIncluded(!isCargoIncluded)}
+                                        style={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            cursor: 'pointer',
+                                            transition: 'all 0.2s ease',
+                                            fontSize: '0.9rem',
+                                            padding: '0 12px',
+                                            background: isCargoIncluded ? 'rgba(var(--primary-rgb), 0.1)' : 'var(--bg-input)',
+                                            borderColor: isCargoIncluded ? 'var(--primary)' : 'var(--border-color)',
+                                            color: isCargoIncluded ? 'var(--primary)' : 'var(--text-main)',
+                                            height: '42px',
+                                            borderRadius: '8px',
+                                            border: '1px solid'
+                                        }}
+                                    >
+                                        {isCargoIncluded ? '✅ Үнэд багтсан' : '📦 Тусдаа бодогдоно'}
                                     </div>
                                 </div>
                                 <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', margin: 0 }}>
