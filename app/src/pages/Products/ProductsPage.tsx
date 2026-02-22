@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
 import { Header } from '../../components/layout/Header';
+import { ImageUpload } from '../../components/common/ImageUpload';
 import { Search, Plus, AlertTriangle, Grid3X3, List, Loader2, MoreVertical, Globe } from 'lucide-react';
 import { useBusinessStore, useAuthStore } from '../../store';
 import { productService, categoryService, cargoService } from '../../services/db';
+import { storageService as storage } from '../../services/storage';
 import type { Product, Category, CargoType } from '../../types';
 import { toast } from 'react-hot-toast';
 import './ProductsPage.css';
@@ -152,6 +154,8 @@ function CreateProductModal({ onClose }: { onClose: () => void }) {
     // Cargo Features
     const [cargoTypes, setCargoTypes] = useState<CargoType[]>([]);
     const [selectedCargoTypeId, setSelectedCargoTypeId] = useState<string>('');
+    const [imageFiles, setImageFiles] = useState<File[]>([]);
+    const [existingImages, setExistingImages] = useState<string[]>([]);
     const [cargoValue, setCargoValue] = useState<string>('1');
     const [cargoFee, setCargoFee] = useState<string>(business?.settings?.cargoConfig?.defaultFee?.toString() || '');
     const [isCargoIncluded, setIsCargoIncluded] = useState(business?.settings?.cargoConfig?.isIncludedByDefault || false);
@@ -243,6 +247,13 @@ function CreateProductModal({ onClose }: { onClose: () => void }) {
 
         setLoading(true);
         try {
+            // 1. Upload images if any
+            let imageUrls = [...existingImages];
+            if (imageFiles.length > 0) {
+                const uploadedUrls = await storage.uploadProductImages(business.id, imageFiles);
+                imageUrls = [...imageUrls, ...uploadedUrls];
+            }
+
             let categoryId = selectedCategory?.id || 'general';
             let categoryName = selectedCategory?.name || categoryInput || 'Бусад';
 
@@ -267,7 +278,7 @@ function CreateProductModal({ onClose }: { onClose: () => void }) {
                 sku: sku || '',
                 barcode: '',
                 description: description || '',
-                images: [],
+                images: imageUrls,
                 pricing: {
                     salePrice: finalSalePrice,
                     costPrice: finalCostPrice,
@@ -318,6 +329,13 @@ function CreateProductModal({ onClose }: { onClose: () => void }) {
                             <label className="input-label">Барааны нэр <span className="required">*</span></label>
                             <input className="input" name="name" placeholder="iPhone 15 Pro" autoFocus required />
                         </div>
+
+                        <ImageUpload
+                            images={existingImages}
+                            onImagesChange={setExistingImages}
+                            onFilesChange={setImageFiles}
+                        />
+
                         <div className="input-group">
                             <label className="input-label">Барааны тайлбар /Танилцуулга/</label>
                             <textarea
@@ -327,6 +345,7 @@ function CreateProductModal({ onClose }: { onClose: () => void }) {
                                 style={{ minHeight: 80, padding: '10px 12px', resize: 'vertical' }}
                             />
                         </div>
+
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                             <div className="input-group" style={{ position: 'relative' }}>
                                 <label className="input-label">Ангилал</label>
@@ -373,7 +392,6 @@ function CreateProductModal({ onClose }: { onClose: () => void }) {
                                                     {c.name}
                                                 </div>
                                             ))}
-
                                             {categoryInput && !categories.some(c => c.name.toLowerCase() === categoryInput.toLowerCase()) && (
                                                 <div
                                                     className="dropdown-item"
@@ -404,6 +422,7 @@ function CreateProductModal({ onClose }: { onClose: () => void }) {
                                 <input className="input" value={sku} onChange={e => setSku(e.target.value)} placeholder="LSC-XXXX-XXXX" />
                             </div>
                         </div>
+
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
                             <div className="input-group">
                                 <label className="input-label">Өртөг</label>
@@ -437,6 +456,7 @@ function CreateProductModal({ onClose }: { onClose: () => void }) {
                                 />
                             </div>
                         </div>
+
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                             <div className="input-group">
                                 <label className="input-label">Төрөл <span className="required">*</span></label>
