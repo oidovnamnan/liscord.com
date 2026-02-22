@@ -132,6 +132,56 @@ function CreateProductModal({ onClose }: { onClose: () => void }) {
     const [loading, setLoading] = useState(false);
     const [productType, setProductType] = useState<'ready' | 'preorder'>('ready');
 
+    // Smart Features States
+    const [sku, setSku] = useState('');
+    const [costPrice, setCostPrice] = useState<string>('');
+    const [salePrice, setSalePrice] = useState<string>('');
+    const [margin, setMargin] = useState<string>(localStorage.getItem('liscord_last_margin') || '20');
+
+    useEffect(() => {
+        // Auto-generate SKU: LSC-XXXX-XXXX
+        const rand = () => Math.random().toString(36).substring(2, 6).toUpperCase();
+        setSku(`LSC-${rand()}-${rand()}`);
+    }, []);
+
+    const calculateSaleFromCost = (cost: number, m: number) => {
+        if (!cost) return '';
+        return Math.round(cost * (1 + m / 100)).toString();
+    };
+
+    const calculateCostFromSale = (sale: number, m: number) => {
+        if (!sale) return '';
+        return Math.round(sale / (1 + m / 100)).toString();
+    };
+
+    const handleCostChange = (val: string) => {
+        setCostPrice(val);
+        const costNum = Number(val);
+        const marginNum = Number(margin);
+        if (!isNaN(costNum) && !isNaN(marginNum)) {
+            setSalePrice(calculateSaleFromCost(costNum, marginNum));
+        }
+    };
+
+    const handleSaleChange = (val: string) => {
+        setSalePrice(val);
+        const saleNum = Number(val);
+        const marginNum = Number(margin);
+        if (!isNaN(saleNum) && !isNaN(marginNum)) {
+            setCostPrice(calculateCostFromSale(saleNum, marginNum));
+        }
+    };
+
+    const handleMarginChange = (val: string) => {
+        setMargin(val);
+        localStorage.setItem('liscord_last_margin', val);
+        const costNum = Number(costPrice);
+        const marginNum = Number(val);
+        if (!isNaN(costNum) && !isNaN(marginNum)) {
+            setSalePrice(calculateSaleFromCost(costNum, marginNum));
+        }
+    };
+
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         if (!business || !user) return;
@@ -139,12 +189,11 @@ function CreateProductModal({ onClose }: { onClose: () => void }) {
         const fd = new FormData(e.currentTarget);
         const name = fd.get('name') as string;
         const category = fd.get('category') as string;
-        const sku = fd.get('sku') as string;
-        const salePrice = Number(fd.get('salePrice'));
-        const costPrice = Number(fd.get('costPrice'));
+        const finalSalePrice = Number(salePrice);
+        const finalCostPrice = Number(costPrice);
         const stockQty = productType === 'preorder' ? 999999 : Number(fd.get('stock'));
 
-        if (!name || isNaN(salePrice)) {
+        if (!name || isNaN(finalSalePrice)) {
             toast.error('Мэдээллээ бүрэн оруулна уу');
             return;
         }
@@ -160,9 +209,9 @@ function CreateProductModal({ onClose }: { onClose: () => void }) {
                 description: '',
                 images: [],
                 pricing: {
-                    salePrice,
-                    costPrice,
-                    wholesalePrice: salePrice
+                    salePrice: finalSalePrice,
+                    costPrice: finalCostPrice,
+                    wholesalePrice: finalSalePrice
                 },
                 productType,
                 stock: {
@@ -208,17 +257,40 @@ function CreateProductModal({ onClose }: { onClose: () => void }) {
                             </div>
                             <div className="input-group">
                                 <label className="input-label">SKU</label>
-                                <input className="input" name="sku" placeholder="IP15P-256" />
+                                <input className="input" value={sku} onChange={e => setSku(e.target.value)} placeholder="LSC-XXXX-XXXX" />
                             </div>
                         </div>
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                            <div className="input-group">
-                                <label className="input-label">Зарах үнэ <span className="required">*</span></label>
-                                <input className="input" name="salePrice" type="number" placeholder="4500000" required />
-                            </div>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
                             <div className="input-group">
                                 <label className="input-label">Өртөг</label>
-                                <input className="input" name="costPrice" type="number" placeholder="3800000" />
+                                <input
+                                    className="input"
+                                    type="number"
+                                    value={costPrice}
+                                    onChange={e => handleCostChange(e.target.value)}
+                                    placeholder="3800000"
+                                />
+                            </div>
+                            <div className="input-group">
+                                <label className="input-label">Ашиг (%)</label>
+                                <input
+                                    className="input"
+                                    type="number"
+                                    value={margin}
+                                    onChange={e => handleMarginChange(e.target.value)}
+                                    placeholder="20"
+                                />
+                            </div>
+                            <div className="input-group">
+                                <label className="input-label">Зарах үнэ <span className="required">*</span></label>
+                                <input
+                                    className="input"
+                                    type="number"
+                                    value={salePrice}
+                                    onChange={e => handleSaleChange(e.target.value)}
+                                    placeholder="4500000"
+                                    required
+                                />
                             </div>
                         </div>
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
