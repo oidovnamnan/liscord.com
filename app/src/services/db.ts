@@ -24,17 +24,13 @@ import type { Business, User, Employee, Order, Customer, Product, Position, Cate
  * Converts Firestore timestamps in an object to Dates
  */
 export function convertTimestamps(data: any): any {
-    if (!data) return data;
-    if (Array.isArray(data)) {
-        return data.map(item => convertTimestamps(item));
-    }
+    if (!data || typeof data !== 'object') return data;
+    if (data instanceof Timestamp) return data.toDate();
+    if (Array.isArray(data)) return data.map(item => convertTimestamps(item));
+
     const result = { ...data };
     for (const key in result) {
-        if (result[key] instanceof Timestamp) {
-            result[key] = result[key].toDate();
-        } else if (typeof result[key] === 'object' && result[key] !== null) {
-            result[key] = convertTimestamps(result[key]);
-        }
+        result[key] = convertTimestamps(result[key]);
     }
     return result;
 }
