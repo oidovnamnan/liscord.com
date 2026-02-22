@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Header } from '../../components/layout/Header';
-import { Search, Plus, AlertTriangle, Grid3X3, List, Loader2, MoreVertical, ChevronDown, Globe } from 'lucide-react';
+import { Search, Plus, AlertTriangle, Grid3X3, List, Loader2, MoreVertical, Globe } from 'lucide-react';
 import { useBusinessStore, useAuthStore } from '../../store';
 import { productService, categoryService, cargoService } from '../../services/db';
 import type { Product, Category, CargoType } from '../../types';
