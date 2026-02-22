@@ -15,7 +15,7 @@ export const useAuthStore = create<AuthState>((set) => ({
     user: null,
     impersonatedBusinessId: null,
     loading: true,
-    setUser: (user) => set({ user, loading: false }),
+    setUser: (user) => set({ user }),
     setImpersonatedBusinessId: (id) => set({ impersonatedBusinessId: id }),
     setLoading: (loading) => set({ loading }),
 }));

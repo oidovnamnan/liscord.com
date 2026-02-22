@@ -42,8 +42,13 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   if (loading) return <div className="loading-screen">Уншиж байна...</div>;
   if (!user) return <Navigate to="/login" replace />;
 
+  // Wait for business data if user has an active business
+  if (user.activeBusiness && !business) {
+    return <div className="loading-screen">Бизнесийн мэдээлэл ачаалж байна...</div>;
+  }
+
   // If user is logged in but has no business setup, show Wizard
-  if (!user.activeBusiness || !business) {
+  if (!user.activeBusiness) {
     return <BusinessWizard />;
   }
 
