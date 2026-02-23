@@ -287,18 +287,45 @@ function CreateOrderModal({ onClose, nextNumber }: {
         const name = selectedProduct ? selectedProduct.name : manualItemName;
         if (!name) return;
 
-        const newItem = {
-            productId: selectedProduct?.id || null,
-            name: name,
-            variant: [color, size].filter(Boolean).join(' / '),
-            quantity: quantity,
-            unitPrice: Number(unitPrice),
-            costPrice: selectedProduct?.pricing?.costPrice || 0,
-            totalPrice: Number(unitPrice) * quantity,
-            unitCargoFee: !itemCargoIncluded && selectedProduct?.cargoFee ? selectedProduct.cargoFee.amount : 0
-        };
+        const variant = [color, size].filter(Boolean).join(' / ');
+        const unitPriceNum = Number(unitPrice);
+        const unitCargoFee = !itemCargoIncluded && selectedProduct?.cargoFee ? selectedProduct.cargoFee.amount : 0;
 
-        setItems([...items, newItem]);
+        // Check if item with same identity already exists in the list
+        const existingItemIndex = items.findIndex(item =>
+            item.productId === (selectedProduct?.id || null) &&
+            item.name === name &&
+            item.variant === variant &&
+            item.unitPrice === unitPriceNum &&
+            item.unitCargoFee === unitCargoFee
+        );
+
+        if (existingItemIndex > -1) {
+            // MERGE: Update quantity of existing item
+            const updatedItems = [...items];
+            const existingItem = updatedItems[existingItemIndex];
+            const newQuantity = existingItem.quantity + quantity;
+
+            updatedItems[existingItemIndex] = {
+                ...existingItem,
+                quantity: newQuantity,
+                totalPrice: newQuantity * unitPriceNum
+            };
+            setItems(updatedItems);
+        } else {
+            // ADD NEW: Standard addition
+            const newItem = {
+                productId: selectedProduct?.id || null,
+                name: name,
+                variant: variant,
+                quantity: quantity,
+                unitPrice: unitPriceNum,
+                costPrice: selectedProduct?.pricing?.costPrice || 0,
+                totalPrice: unitPriceNum * quantity,
+                unitCargoFee: unitCargoFee
+            };
+            setItems([...items, newItem]);
+        }
 
         // Reset item inputs
         setSelectedProduct(null);
