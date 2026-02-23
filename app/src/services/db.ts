@@ -161,12 +161,24 @@ export const orderService = {
         }, employeeProfile);
     },
 
-    async deleteOrder(bizId: string, orderId: string): Promise<void> {
+    async deleteOrder(bizId: string, orderId: string, reason: string, employeeProfile?: any): Promise<void> {
         const docRef = doc(db, 'businesses', bizId, 'orders', orderId);
         await updateDoc(docRef, {
             isDeleted: true,
+            cancelReason: reason,
             updatedAt: serverTimestamp()
         });
+
+        await auditService.writeLog(bizId, {
+            action: 'order.delete',
+            module: 'orders',
+            targetType: 'order',
+            targetId: orderId,
+            targetLabel: `#${orderId}`,
+            severity: 'warning',
+            changes: [{ field: 'isDeleted', oldValue: false, newValue: true }],
+            metadata: { reason }
+        }, employeeProfile);
     }
 };
 

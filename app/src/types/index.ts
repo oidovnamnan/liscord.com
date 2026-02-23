@@ -260,6 +260,7 @@ export interface Order {
     createdAt: Date;
     updatedAt: Date;
     isDeleted: boolean;
+    cancelReason?: string;
 }
 
 // ============ CUSTOMER ============

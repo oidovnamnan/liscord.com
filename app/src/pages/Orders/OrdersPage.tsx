@@ -52,6 +52,10 @@ export function OrdersPage() {
     const [orders, setOrders] = useState<Order[]>([]);
     const [loading, setLoading] = useState(true);
     const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+    const [deleteOrderId, setDeleteOrderId] = useState<string | null>(null);
+    const [deleteReason, setDeleteReason] = useState('');
+    const [showDeleteModal, setShowDeleteModal] = useState(false);
+    const { user } = useAuthStore();
     const menuRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
@@ -190,7 +194,15 @@ export function OrdersPage() {
                                                                 <CheckSquare size={14} /> Статус солих
                                                             </button>
                                                             <hr />
-                                                            <button className="pro-dropdown-item text-danger" onClick={() => { if (confirm('Баталгаалаа юу?')) orderService.deleteOrder(business?.id!, order.id); setOpenMenuId(null); }}>
+                                                            <button
+                                                                className="pro-dropdown-item text-danger"
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    setDeleteOrderId(order.id);
+                                                                    setShowDeleteModal(true);
+                                                                    setOpenMenuId(null);
+                                                                }}
+                                                            >
                                                                 <Trash2 size={14} /> Устгах
                                                             </button>
                                                         </div>
@@ -260,6 +272,11 @@ export function OrdersPage() {
                                             </div>
                                         </div>
                                     </div>
+                                    {order.isDeleted && order.cancelReason && (
+                                        <div className="order-cancel-badge" title={order.cancelReason}>
+                                            <X size={10} /> Цуцлагдсан
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         ))
@@ -272,6 +289,55 @@ export function OrdersPage() {
                     order={selectedOrder}
                     onClose={() => setSelectedOrder(null)}
                 />
+            )}
+
+            {showDeleteModal && (
+                <div className="modal-overlay" style={{ zIndex: 3000 }}>
+                    <div className="modal-content" style={{ maxWidth: 400 }}>
+                        <div className="modal-header">
+                            <h2 style={{ color: '#e11d48', display: 'flex', alignItems: 'center', gap: 10 }}>
+                                <Trash2 size={24} /> Устгах баталгаажуулалт
+                            </h2>
+                            <button className="btn-icon" onClick={() => { setShowDeleteModal(false); setDeleteReason(''); }}><X size={20} /></button>
+                        </div>
+                        <div className="modal-body">
+                            <p style={{ fontSize: '0.9rem', color: '#64748b', marginBottom: 16 }}>
+                                Энэ захиалгыг устгах (идэвхгүй болгох) шалтгаанаа бичнэ үү. Тайлбаргүйгээр устгах боломжгүй.
+                            </p>
+                            <div className="input-group">
+                                <label className="input-label">Цуцлах шалтгаан *</label>
+                                <textarea
+                                    className="input"
+                                    rows={3}
+                                    placeholder="Жишээ: Харилцагч утсаа авахгүй байна, Буруу бараа..."
+                                    value={deleteReason}
+                                    onChange={e => setDeleteReason(e.target.value)}
+                                    autoFocus
+                                />
+                            </div>
+                        </div>
+                        <div className="modal-footer">
+                            <button className="btn btn-secondary" onClick={() => { setShowDeleteModal(false); setDeleteReason(''); }}>Болих</button>
+                            <button
+                                className="btn btn-danger"
+                                disabled={!deleteReason.trim()}
+                                onClick={async () => {
+                                    if (!deleteOrderId || !business?.id) return;
+                                    try {
+                                        await orderService.deleteOrder(business.id, deleteOrderId, deleteReason, user);
+                                        setShowDeleteModal(false);
+                                        setDeleteOrderId(null);
+                                        setDeleteReason('');
+                                    } catch (err) {
+                                        alert('Устгахад алдаа гарлаа');
+                                    }
+                                }}
+                            >
+                                <Trash2 size={16} /> Тийм, устгах
+                            </button>
+                        </div>
+                    </div>
+                </div>
             )}
 
             {showCreate && (
