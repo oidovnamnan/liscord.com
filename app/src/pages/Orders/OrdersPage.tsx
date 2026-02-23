@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Header } from '../../components/layout/Header';
-import { Plus, Search, MoreVertical, Loader2, X, User, Package, CreditCard, Phone, MapPin, Trash2, CheckSquare } from 'lucide-react';
+import { Plus, Search, MoreVertical, Loader2, X, User, Package, CreditCard, Trash2, CheckSquare } from 'lucide-react';
 import { useBusinessStore, useAuthStore } from '../../store';
 import {
     productService,
@@ -152,106 +152,110 @@ export function OrdersPage() {
                                 className={`order-card status-${order.status} stagger-item`}
                                 onClick={() => setSelectedOrder(order)}
                             >
-                                <div className="order-card-inner">
-                                    <div className="order-card-top">
-                                        <div className="order-card-left">
-                                            <div className="order-number-badge">
+                                <div className={`order-card status-${order.status}`} onClick={() => setSelectedOrder(order)}>
+                                    <div className="order-card-inner">
+                                        {/* Row 1: Header */}
+                                        <div className="order-card-header">
+                                            <div className="order-header-left">
                                                 <span className="order-number">#{order.orderNumber}</span>
+                                                <span className={`badge ${statusConfig[order.status]?.cls}`}>
+                                                    {statusConfig[order.status]?.label}
+                                                </span>
                                             </div>
-                                            <span className={`badge ${statusConfig[order.status]?.cls}`}>
-                                                {statusConfig[order.status]?.label}
-                                            </span>
-                                            {order.source && (
-                                                <div className="order-source-badge" title={order.source}>
-                                                    {sourceIcons[order.source] || '📦'}
+                                            <div className="order-header-right">
+                                                <span className="order-date">
+                                                    {order.createdAt instanceof Date
+                                                        ? order.createdAt.toLocaleDateString('mn-MN')
+                                                        : 'Саяхан'}
+                                                </span>
+                                                <div className="order-actions-dropdown" ref={openMenuId === order.id ? menuRef : null}>
+                                                    <button
+                                                        className={`btn btn-ghost btn-sm btn-icon ${openMenuId === order.id ? 'active' : ''}`}
+                                                        onClick={e => {
+                                                            e.stopPropagation();
+                                                            setOpenMenuId(openMenuId === order.id ? null : order.id);
+                                                        }}
+                                                    >
+                                                        <MoreVertical size={16} />
+                                                    </button>
+                                                    {openMenuId === order.id && (
+                                                        <div className="dropdown-menu order-dropdown-menu" onClick={e => e.stopPropagation()}>
+                                                            <button className="dropdown-item" onClick={() => { setSelectedOrder(order); setOpenMenuId(null); }}>
+                                                                <Package size={14} /> Дэлгэрэнгүй
+                                                            </button>
+                                                            <button className="dropdown-item" onClick={() => { /* Status change logic */ setOpenMenuId(null); }}>
+                                                                <CheckSquare size={14} /> Статус солих
+                                                            </button>
+                                                            <hr />
+                                                            <button className="dropdown-item text-danger" onClick={() => { if (confirm('Баталгаалаа юу?')) orderService.deleteOrder(business?.id!, order.id); setOpenMenuId(null); }}>
+                                                                <Trash2 size={14} /> Устгах
+                                                            </button>
+                                                        </div>
+                                                    )}
                                                 </div>
-                                            )}
-                                        </div>
-                                        <div className="order-card-right">
-                                            <span className="order-date">
-                                                {order.createdAt instanceof Date
-                                                    ? order.createdAt.toLocaleDateString('mn-MN')
-                                                    : 'Саяхан'}
-                                            </span>
-                                            <div className="order-actions-dropdown" ref={openMenuId === order.id ? menuRef : null}>
-                                                <button
-                                                    className={`btn btn-ghost btn-sm btn-icon ${openMenuId === order.id ? 'active' : ''}`}
-                                                    onClick={e => {
-                                                        e.stopPropagation();
-                                                        setOpenMenuId(openMenuId === order.id ? null : order.id);
-                                                    }}
-                                                >
-                                                    <MoreVertical size={16} />
-                                                </button>
-                                                {openMenuId === order.id && (
-                                                    <div className="dropdown-menu order-dropdown-menu" onClick={e => e.stopPropagation()}>
-                                                        <button className="dropdown-item" onClick={() => { setSelectedOrder(order); setOpenMenuId(null); }}>
-                                                            <Package size={14} /> Дэлгэрэнгүй
-                                                        </button>
-                                                        <button className="dropdown-item" onClick={() => { /* Status change logic */ setOpenMenuId(null); }}>
-                                                            <CheckSquare size={14} /> Статус солих
-                                                        </button>
-                                                        <hr />
-                                                        <button className="dropdown-item text-danger" onClick={() => { if (confirm('Баталгаалаа юу?')) orderService.deleteOrder(business?.id!, order.id); setOpenMenuId(null); }}>
-                                                            <Trash2 size={14} /> Устгах
-                                                        </button>
-                                                    </div>
-                                                )}
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div className="order-card-body">
-                                        <div className="order-customer">
-                                            <div className="customer-main">
-                                                <div className="icon-badge-sm"><User size={14} /></div>
-                                                <span className="customer-name">{order.customer.name}</span>
-                                                {order.customer.socialHandle && (
-                                                    <span className="order-social-handle">@{order.customer.socialHandle}</span>
-                                                )}
-                                            </div>
-                                            <div className="customer-meta">
-                                                <div className="meta-item">
-                                                    <Phone size={12} />
-                                                    <span>{order.customer.phone}</span>
-                                                </div>
-                                                {order.deliveryAddress && (
-                                                    <div className="meta-item">
-                                                        <MapPin size={12} />
-                                                        <span className="truncate" style={{ maxWidth: 200 }}>{order.deliveryAddress}</span>
-                                                    </div>
-                                                )}
                                             </div>
                                         </div>
 
-                                        <div className="order-items-scroll hide-scrollbar">
-                                            {order.items.map((i, idx) => (
-                                                <div key={idx} className="order-item-tag-premium">
-                                                    <div className="item-img-mini">
-                                                        {i.image ? <img src={i.image} alt="" /> : <Package size={12} />}
+                                        {/* Row 2: Product Focus (Hero Section) */}
+                                        <div className="order-product-section">
+                                            <div className="product-visual-group">
+                                                {order.items[0]?.image ? (
+                                                    <img src={order.items[0].image} className="main-product-img" alt="" />
+                                                ) : (
+                                                    <div className="main-product-placeholder">
+                                                        <Package size={24} />
                                                     </div>
-                                                    <span className="item-name-mini">{i.name}</span>
-                                                    <span className="item-qty-badge">x{i.quantity}</span>
+                                                )}
+                                                {order.items.length > 1 && (
+                                                    <div className="product-count-plus">+{order.items.length - 1}</div>
+                                                )}
+                                            </div>
+                                            <div className="product-info-group">
+                                                <div className="product-main-names">
+                                                    {order.items.map(i => i.name).join(', ')}
                                                 </div>
-                                            ))}
+                                                <div className="product-sub-info">
+                                                    <span className="qty-total-badge">
+                                                        {order.items.reduce((sum, i) => sum + i.quantity, 0)} ш
+                                                    </span>
+                                                    {order.items[0]?.variant && (
+                                                        <span className="variant-label"> • {order.items[0].variant}</span>
+                                                    )}
+                                                </div>
+                                            </div>
                                         </div>
-                                    </div>
 
-                                    <div className="order-card-bottom">
-                                        <div className="order-financials">
-                                            <div className="order-total-group">
-                                                <span className="order-total-label">Нийт дүн</span>
-                                                <span className="order-total-value">{fmt(order.financials.totalAmount)}</span>
+                                        {/* Row 3: Customer & Assignee (Secondary) */}
+                                        <div className="order-meta-info">
+                                            <div className="customer-info-compact">
+                                                <User size={12} />
+                                                <span className="name">{order.customer.name}</span>
+                                                {order.customer.phone && <span className="phone">({order.customer.phone})</span>}
                                             </div>
-                                            <span className={`badge ${paymentConfig[order.paymentStatus]?.cls}`}>
-                                                {paymentConfig[order.paymentStatus]?.label}
-                                            </span>
+                                            <div className="assignee-info-compact">
+                                                <div className="mini-avatar">
+                                                    {order.assignedToName?.charAt(0) || <User size={10} />}
+                                                </div>
+                                                <span>{order.assignedToName || 'Хувиарлаагүй'}</span>
+                                            </div>
                                         </div>
-                                        <div className="order-assignee">
-                                            <div className="order-assignee-avatar">
-                                                {order.assignedToName?.charAt(0) || <User size={12} />}
+
+                                        {/* Row 4: Financials */}
+                                        <div className="order-card-footer">
+                                            <div className="footer-total">
+                                                <span className="label">Нийт дүн</span>
+                                                <span className="value">{fmt(order.financials.totalAmount)}</span>
                                             </div>
-                                            <span>{order.assignedToName || 'Хувиарлаагүй'}</span>
+                                            <div className="footer-status-badges">
+                                                <span className={`badge ${paymentConfig[order.paymentStatus]?.cls}`}>
+                                                    {paymentConfig[order.paymentStatus]?.label}
+                                                </span>
+                                                {order.source && (
+                                                    <span className="source-mini-badge" title={order.source}>
+                                                        {sourceIcons[order.source] || '📦'}
+                                                    </span>
+                                                )}
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
