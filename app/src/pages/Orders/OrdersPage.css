@@ -178,7 +178,19 @@
     background: #10b981;
 }
 
-.order-card.pro-layout.status-processing .pro-status-border {
+.order-card.pro-layout.status-new .pro-status-border {
+    background: #3b82f6;
+}
+
+.order-card.pro-layout.status-confirmed .pro-status-border {
+    background: #10b981;
+}
+
+.order-card.pro-layout.status-preparing .pro-status-border {
+    background: #f59e0b;
+}
+
+.order-card.pro-layout.status-ready .pro-status-border {
     background: #f59e0b;
 }
 
@@ -188,6 +200,31 @@
 
 .order-card.pro-layout.status-delivered .pro-status-border {
     background: #334155;
+}
+
+.order-card.pro-layout.status-completed .pro-status-border {
+    background: #334155;
+}
+
+.order-card.pro-layout.status-cancelled .pro-status-border {
+    background: #ef4444;
+}
+
+/* Cancelled/Deleted State Specifics */
+.order-card.is-deleted {
+    opacity: 0.95;
+    background: #fffafa;
+    /* Very subtle reddish tint */
+}
+
+.order-card.is-deleted .pro-status-border {
+    background: #ef4444 !important;
+}
+
+.pro-badge.status-cancelled {
+    color: #ef4444;
+    background: #fef2f2;
+    border: 1px solid #fecaca;
 }
 
 .order-card-inner {
@@ -827,28 +864,16 @@
     }
 }
 
-.order-cancel-badge {
-    position: absolute;
-    top: 10px;
-    right: 130px;
-    background: #fef2f2;
-    color: #ef4444;
-    border: 1px solid #fee2e2;
-    padding: 2px 8px;
-    border-radius: 6px;
-    font-size: 0.7rem;
-    font-weight: 700;
+.order-cancel-reason-hint {
+    background: #fff1f2;
+    border-top: 1px dashed #fecaca;
+    padding: 8px 16px;
+    font-size: 0.75rem;
+    color: #e11d48;
+    font-style: italic;
     display: flex;
     align-items: center;
-    gap: 4px;
-    z-index: 20;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    box-shadow: 0 2px 4px rgba(239, 68, 68, 0.1);
-}
-
-.order-cancel-badge svg {
-    color: #ef4444;
+    gap: 6px;
 }
 
 .pro-assignee-mark.creator {

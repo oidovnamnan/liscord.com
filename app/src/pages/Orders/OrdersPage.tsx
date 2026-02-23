@@ -169,206 +169,215 @@ export function OrdersPage() {
                         filtered.map(order => (
                             <div
                                 key={order.id}
-                                className={`order-card status-${order.status} stagger-item`}
+                                className={`order-card pro-layout status-${order.status} ${order.isDeleted ? 'is-deleted' : ''} stagger-item`}
                                 onClick={() => setSelectedOrder(order)}
                             >
-                                <div className={`order-card pro-layout status-${order.status}`} onClick={() => setSelectedOrder(order)}>
-                                    {/* Status Indicator (Slim) */}
-                                    <div className="pro-status-border"></div>
+                                {/* Status Indicator (Slim) */}
+                                <div className="pro-status-border"></div>
 
-                                    <div className="order-card-inner">
-                                        {/* Header Row: ID, Date, Actions */}
-                                        <div className="pro-card-header">
-                                            <div className="header-id-group">
-                                                <span className="order-id">#{order.orderNumber}</span>
+                                <div className="order-card-inner">
+                                    {/* Header Row: ID, Date, Actions */}
+                                    <div className="pro-card-header">
+                                        <div className="header-id-group">
+                                            <span className="order-id">#{order.orderNumber}</span>
+                                            {order.isDeleted ? (
+                                                <span className="pro-badge status-cancelled">
+                                                    Цуцлагдсан
+                                                </span>
+                                            ) : (
                                                 <span className={`pro-badge status-${order.status}`}>
                                                     {statusConfig[order.status]?.label}
                                                 </span>
-                                            </div>
-                                            <div className="header-actions-group">
-                                                <span className="pro-date">
-                                                    {order.createdAt instanceof Date
-                                                        ? order.createdAt.toLocaleDateString('mn-MN')
-                                                        : 'Саяхан'}
-                                                </span>
-                                                <div className="order-actions-dropdown" ref={openMenuId === order.id ? menuRef : null}>
-                                                    <button
-                                                        className={`pro-btn-ghost btn-icon ${openMenuId === order.id ? 'active' : ''}`}
-                                                        onClick={e => {
-                                                            e.stopPropagation();
-                                                            setOpenMenuId(openMenuId === order.id ? null : order.id);
-                                                        }}
-                                                    >
-                                                        <MoreVertical size={14} />
-                                                    </button>
-                                                    {openMenuId === order.id && (
-                                                        <div className="pro-dropdown-menu" onClick={e => e.stopPropagation()}>
-                                                            <button className="pro-dropdown-item" onClick={() => { setSelectedOrder(order); setOpenMenuId(null); }}>
-                                                                <Package size={14} /> Дэлгэрэнгүй
-                                                            </button>
-                                                            <button className="pro-dropdown-item" onClick={() => { /* Status change logic */ setOpenMenuId(null); }}>
-                                                                <CheckSquare size={14} /> Статус солих
-                                                            </button>
-                                                            <hr />
-                                                            <button
-                                                                className="pro-dropdown-item text-danger"
-                                                                onClick={(e) => {
-                                                                    e.stopPropagation();
-                                                                    setDeleteOrderId(order.id);
-                                                                    setShowDeleteModal(true);
-                                                                    setOpenMenuId(null);
-                                                                }}
-                                                            >
-                                                                <Trash2 size={14} /> Устгах
-                                                            </button>
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        {/* Main Content: Product(s) Focus */}
-                                        <div className="pro-card-main">
-                                            <div className="pro-product-listing">
-                                                {order.items.map((item, idx) => (
-                                                    <div key={idx} className="pro-item-row">
-                                                        <div className="pro-item-thumb">
-                                                            {item.image ? (
-                                                                <img src={item.image} alt="" />
-                                                            ) : (
-                                                                <Package size={16} />
-                                                            )}
-                                                        </div>
-                                                        <div className="pro-item-info">
-                                                            <span className="pro-item-name">{item.name}</span>
-                                                            <div className="pro-item-meta">
-                                                                {item.variant && <span className="pro-variant">{item.variant}</span>}
-                                                                <span className="pro-qty">x{item.quantity}</span>
-                                                            </div>
-                                                        </div>
-                                                        <div className="pro-item-price">
-                                                            {fmt(item.totalPrice)}
-                                                        </div>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        </div>
-
-                                        {/* Interaction Bar: Customer & Assignee */}
-                                        <div className="pro-card-meta-bar">
-                                            <div className="pro-meta-item">
-                                                <User size={12} className="meta-icon" />
-                                                <span className="pro-customer-name">{order.customer.name}</span>
-                                                {order.customer.phone && <span className="pro-customer-phone">{order.customer.phone}</span>}
-                                            </div>
-                                            <div className="pro-meta-divider"></div>
-                                            <div className="pro-meta-item">
-                                                <div className="pro-assignee-mark">
-                                                    {order.assignedToName?.charAt(0) || <User size={10} />}
-                                                </div>
-                                                <span className="pro-assignee-name">{order.assignedToName || 'Хувиарлаагүй'}</span>
-                                            </div>
-                                            {order.source && (
-                                                <div className="pro-source-tag">
-                                                    {sourceIcons[order.source] || '📦'} {order.source}
-                                                </div>
                                             )}
-                                            <div className="pro-meta-divider"></div>
-                                            <div className="pro-meta-item" title={`Үүсгэсэн: ${order.createdByName || 'Систем'}`}>
-                                                <div className="pro-assignee-mark creator">
-                                                    {order.createdByName?.charAt(0) || '?'}
-                                                </div>
-                                                <span className="pro-assignee-name">{order.createdByName?.split(' ')[0] || 'Систем'}</span>
-                                            </div>
                                         </div>
-
-                                        {/* Footer: Financials Summary */}
-                                        <div className="pro-card-footer">
-                                            <div className="pro-financial-summary">
-                                                <div className="pro-total-label">НИЙТ ДҮН</div>
-                                                <div className="pro-total-value">{fmt(order.financials.totalAmount)}</div>
-                                            </div>
-                                            <div className="pro-payment-indicator">
-                                                <span className={`pro-payment-badge ${order.paymentStatus}`}>
-                                                    <CreditCard size={12} /> {paymentConfig[order.paymentStatus]?.label}
-                                                </span>
+                                        <div className="header-actions-group">
+                                            <span className="pro-date">
+                                                {order.createdAt instanceof Date
+                                                    ? order.createdAt.toLocaleDateString('mn-MN')
+                                                    : 'Саяхан'}
+                                            </span>
+                                            <div className="order-actions-dropdown" ref={openMenuId === order.id ? menuRef : null}>
+                                                <button
+                                                    className={`pro-btn-ghost btn-icon ${openMenuId === order.id ? 'active' : ''}`}
+                                                    onClick={e => {
+                                                        e.stopPropagation();
+                                                        setOpenMenuId(openMenuId === order.id ? null : order.id);
+                                                    }}
+                                                >
+                                                    <MoreVertical size={14} />
+                                                </button>
+                                                {openMenuId === order.id && (
+                                                    <div className="pro-dropdown-menu" onClick={e => e.stopPropagation()}>
+                                                        <button className="pro-dropdown-item" onClick={() => { setSelectedOrder(order); setOpenMenuId(null); }}>
+                                                            <Package size={14} /> Дэлгэрэнгүй
+                                                        </button>
+                                                        <button className="pro-dropdown-item" onClick={() => { /* Status change logic */ setOpenMenuId(null); }}>
+                                                            <CheckSquare size={14} /> Статус солих
+                                                        </button>
+                                                        <hr />
+                                                        <button
+                                                            className="pro-dropdown-item text-danger"
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                setDeleteOrderId(order.id);
+                                                                setShowDeleteModal(true);
+                                                                setOpenMenuId(null);
+                                                            }}
+                                                        >
+                                                            <Trash2 size={14} /> Устгах
+                                                        </button>
+                                                    </div>
+                                                )}
                                             </div>
                                         </div>
                                     </div>
-                                    {order.isDeleted && order.cancelReason && (
-                                        <div className="order-cancel-badge" title={order.cancelReason}>
-                                            <X size={10} /> Цуцлагдсан
+
+                                    {/* Main Content: Product(s) Focus */}
+                                    <div className="pro-card-main">
+                                        <div className="pro-product-listing">
+                                            {order.items.map((item, idx) => (
+                                                <div key={idx} className="pro-item-row">
+                                                    <div className="pro-item-thumb">
+                                                        {item.image ? (
+                                                            <img src={item.image} alt="" />
+                                                        ) : (
+                                                            <Package size={16} />
+                                                        )}
+                                                    </div>
+                                                    <div className="pro-item-info">
+                                                        <span className="pro-item-name">{item.name}</span>
+                                                        <div className="pro-item-meta">
+                                                            {item.variant && <span className="pro-variant">{item.variant}</span>}
+                                                            <span className="pro-qty">x{item.quantity}</span>
+                                                        </div>
+                                                    </div>
+                                                    <div className="pro-item-price">
+                                                        {fmt(item.totalPrice)}
+                                                    </div>
+                                                </div>
+                                            ))}
                                         </div>
-                                    )}
+                                    </div>
+
+                                    {/* Interaction Bar: Customer & Assignee */}
+                                    <div className="pro-card-meta-bar">
+                                        <div className="pro-meta-item">
+                                            <User size={12} className="meta-icon" />
+                                            <span className="pro-customer-name">{order.customer.name}</span>
+                                            {order.customer.phone && <span className="pro-customer-phone">{order.customer.phone}</span>}
+                                        </div>
+                                        <div className="pro-meta-divider"></div>
+                                        <div className="pro-meta-item">
+                                            <div className="pro-assignee-mark">
+                                                {order.assignedToName?.charAt(0) || <User size={10} />}
+                                            </div>
+                                            <span className="pro-assignee-name">{order.assignedToName || 'Хувиарлаагүй'}</span>
+                                        </div>
+                                        {order.source && (
+                                            <div className="pro-source-tag">
+                                                {sourceIcons[order.source] || '📦'} {order.source}
+                                            </div>
+                                        )}
+                                        <div className="pro-meta-divider"></div>
+                                        <div className="pro-meta-item" title={`Үүсгэсэн: ${order.createdByName || 'Систем'}`}>
+                                            <div className="pro-assignee-mark creator">
+                                                {order.createdByName?.charAt(0) || '?'}
+                                            </div>
+                                            <span className="pro-assignee-name">{order.createdByName?.split(' ')[0] || 'Систем'}</span>
+                                        </div>
+                                    </div>
+
+                                    {/* Footer: Financials Summary */}
+                                    <div className="pro-card-footer">
+                                        <div className="pro-financial-summary">
+                                            <div className="pro-total-label">НИЙТ ДҮН</div>
+                                            <div className="pro-total-value">{fmt(order.financials.totalAmount)}</div>
+                                        </div>
+                                        <div className="pro-payment-indicator">
+                                            <span className={`pro-payment-badge ${order.paymentStatus}`}>
+                                                <CreditCard size={12} /> {paymentConfig[order.paymentStatus]?.label}
+                                            </span>
+                                        </div>
+                                    </div>
                                 </div>
+                                {order.isDeleted && order.cancelReason && (
+                                    <div className="order-cancel-reason-hint" title={order.cancelReason}>
+                                        🔒 {order.cancelReason}
+                                    </div>
+                                )}
                             </div>
                         ))
                     )}
                 </div>
-            </div>
+            </div >
 
             {selectedOrder && (
                 <OrderDetailModal
                     order={selectedOrder}
                     onClose={() => setSelectedOrder(null)}
                 />
-            )}
+            )
+            }
 
-            {showDeleteModal && (
-                <div className="modal-overlay" style={{ zIndex: 3000 }}>
-                    <div className="modal-content" style={{ maxWidth: 400 }}>
-                        <div className="modal-header">
-                            <h2 style={{ color: '#e11d48', display: 'flex', alignItems: 'center', gap: 10 }}>
-                                <Trash2 size={24} /> Устгах баталгаажуулалт
-                            </h2>
-                            <button className="btn-icon" onClick={() => { setShowDeleteModal(false); setDeleteReason(''); }}><X size={20} /></button>
-                        </div>
-                        <div className="modal-body">
-                            <p style={{ fontSize: '0.9rem', color: '#64748b', marginBottom: 16 }}>
-                                Энэ захиалгыг устгах (идэвхгүй болгох) шалтгаанаа бичнэ үү. Тайлбаргүйгээр устгах боломжгүй.
-                            </p>
-                            <div className="input-group">
-                                <label className="input-label">Цуцлах шалтгаан *</label>
-                                <textarea
-                                    className="input"
-                                    rows={3}
-                                    placeholder="Жишээ: Харилцагч утсаа авахгүй байна, Буруу бараа..."
-                                    value={deleteReason}
-                                    onChange={e => setDeleteReason(e.target.value)}
-                                    autoFocus
-                                />
+            {
+                showDeleteModal && (
+                    <div className="modal-overlay" style={{ zIndex: 3000 }}>
+                        <div className="modal-content" style={{ maxWidth: 400 }}>
+                            <div className="modal-header">
+                                <h2 style={{ color: '#e11d48', display: 'flex', alignItems: 'center', gap: 10 }}>
+                                    <Trash2 size={24} /> Устгах баталгаажуулалт
+                                </h2>
+                                <button className="btn-icon" onClick={() => { setShowDeleteModal(false); setDeleteReason(''); }}><X size={20} /></button>
+                            </div>
+                            <div className="modal-body">
+                                <p style={{ fontSize: '0.9rem', color: '#64748b', marginBottom: 16 }}>
+                                    Энэ захиалгыг устгах (идэвхгүй болгох) шалтгаанаа бичнэ үү. Тайлбаргүйгээр устгах боломжгүй.
+                                </p>
+                                <div className="input-group">
+                                    <label className="input-label">Цуцлах шалтгаан *</label>
+                                    <textarea
+                                        className="input"
+                                        rows={3}
+                                        placeholder="Жишээ: Харилцагч утсаа авахгүй байна, Буруу бараа..."
+                                        value={deleteReason}
+                                        onChange={e => setDeleteReason(e.target.value)}
+                                        autoFocus
+                                    />
+                                </div>
+                            </div>
+                            <div className="modal-footer">
+                                <button className="btn btn-secondary" onClick={() => { setShowDeleteModal(false); setDeleteReason(''); }}>Болих</button>
+                                <button
+                                    className="btn btn-danger"
+                                    disabled={!deleteReason.trim()}
+                                    onClick={async () => {
+                                        if (!deleteOrderId || !business?.id) return;
+                                        try {
+                                            await orderService.deleteOrder(business.id, deleteOrderId, deleteReason, user);
+                                            setShowDeleteModal(false);
+                                            setDeleteOrderId(null);
+                                            setDeleteReason('');
+                                        } catch (err) {
+                                            alert('Устгахад алдаа гарлаа');
+                                        }
+                                    }}
+                                >
+                                    <Trash2 size={16} /> Тийм, устгах
+                                </button>
                             </div>
                         </div>
-                        <div className="modal-footer">
-                            <button className="btn btn-secondary" onClick={() => { setShowDeleteModal(false); setDeleteReason(''); }}>Болих</button>
-                            <button
-                                className="btn btn-danger"
-                                disabled={!deleteReason.trim()}
-                                onClick={async () => {
-                                    if (!deleteOrderId || !business?.id) return;
-                                    try {
-                                        await orderService.deleteOrder(business.id, deleteOrderId, deleteReason, user);
-                                        setShowDeleteModal(false);
-                                        setDeleteOrderId(null);
-                                        setDeleteReason('');
-                                    } catch (err) {
-                                        alert('Устгахад алдаа гарлаа');
-                                    }
-                                }}
-                            >
-                                <Trash2 size={16} /> Тийм, устгах
-                            </button>
-                        </div>
                     </div>
-                </div>
-            )}
+                )
+            }
 
-            {showCreate && (
-                <CreateOrderModal
-                    onClose={() => setShowCreate(false)}
-                    nextNumber={`${business?.settings.orderPrefix || 'ORD'}-${String((business?.settings.orderCounter || 0) + 1).padStart(4, '0')}`}
-                />
-            )}
+            {
+                showCreate && (
+                    <CreateOrderModal
+                        onClose={() => setShowCreate(false)}
+                        nextNumber={`${business?.settings.orderPrefix || 'ORD'}-${String((business?.settings.orderCounter || 0) + 1).padStart(4, '0')}`}
+                    />
+                )
+            }
         </>
     );
 }
