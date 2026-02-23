@@ -87,14 +87,14 @@ export function OrdersPage() {
 
         // 'cancelled' tab shows both explicitly deleted orders and those with 'cancelled' status
         if (statusFilter === 'cancelled') {
-            return matchSearch && (o.isDeleted || o.status === 'cancelled');
+            return matchSearch && (o.isDeleted || o.status?.toLowerCase() === 'cancelled');
         }
 
         // 'all' shows absolutely everything
         if (statusFilter === 'all') return matchSearch;
 
         // Other statuses only show non-deleted matching orders
-        return matchSearch && !o.isDeleted && o.status === statusFilter;
+        return matchSearch && !o.isDeleted && o.status?.toLowerCase() === statusFilter.toLowerCase();
     });
 
     return (
@@ -138,8 +138,8 @@ export function OrdersPage() {
                     </button>
                     {statuses.filter(s => s.isActive || s.id === 'cancelled').map(s => {
                         const count = s.id === 'cancelled'
-                            ? orders.filter(o => o.isDeleted || o.status === 'cancelled').length
-                            : orders.filter(o => o.status === s.id && !o.isDeleted).length;
+                            ? orders.filter(o => o.isDeleted || o.status?.toLowerCase() === 'cancelled').length
+                            : orders.filter(o => o.status?.toLowerCase() === s.id.toLowerCase() && !o.isDeleted).length;
 
                         return (
                             <button
@@ -171,7 +171,7 @@ export function OrdersPage() {
                                 key={order.id}
                                 className={`order-card pro-layout ${order.isDeleted ? 'is-deleted' : ''} stagger-item`}
                                 style={{
-                                    '--status-color': order.isDeleted ? '#ef4444' : (statuses.find(s => s.id === order.status)?.color || '#3b82f6')
+                                    '--status-color': order.isDeleted ? '#ef4444' : (statuses.find(s => s.id.toLowerCase() === order.status?.toLowerCase())?.color || '#3b82f6')
                                 } as React.CSSProperties}
                                 onClick={() => setSelectedOrder(order)}
                             >
@@ -191,12 +191,12 @@ export function OrdersPage() {
                                                 <span
                                                     className="pro-badge"
                                                     style={{
-                                                        background: statuses.find(s => s.id === order.status)?.color + '20',
-                                                        color: statuses.find(s => s.id === order.status)?.color,
-                                                        border: `1px solid ${statuses.find(s => s.id === order.status)?.color}40`
+                                                        background: (statuses.find(s => s.id.toLowerCase() === order.status?.toLowerCase())?.color || '#3b82f6') + '20',
+                                                        color: statuses.find(s => s.id.toLowerCase() === order.status?.toLowerCase())?.color || '#3b82f6',
+                                                        border: `1px solid ${statuses.find(s => s.id.toLowerCase() === order.status?.toLowerCase())?.color || '#3b82f6'}40`
                                                     }}
                                                 >
-                                                    {statuses.find(s => s.id === order.status)?.label || order.status}
+                                                    {statuses.find(s => s.id.toLowerCase() === order.status?.toLowerCase())?.label || order.status}
                                                 </span>
                                             )}
                                         </div>

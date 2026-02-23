@@ -108,7 +108,7 @@ export const DEFAULT_STATUSES: Partial<OrderStatusConfig>[] = [
     { id: 'new', label: 'Шинэ', color: '#3b82f6', order: 1, isSystem: true, isActive: true },
     { id: 'completed', label: 'Биелсэн', color: '#10b981', order: 2, isSystem: true, isActive: true },
     { id: 'returned', label: 'Буцаасан', color: '#f59e0b', order: 3, isSystem: true, isActive: true },
-    { id: 'cancelled', label: 'Цуцалсан', color: '#ef4444', order: 4, isSystem: true, isActive: true },
+    { id: 'cancelled', label: 'Цуцлагдсан', color: '#ef4444', order: 4, isSystem: true, isActive: true },
 ];
 
 export const orderStatusService = {
@@ -119,13 +119,21 @@ export const orderStatusService = {
     subscribeStatuses(bizId: string, callback: (statuses: OrderStatusConfig[]) => void) {
         const q = query(this.getStatusesRef(bizId), orderBy('order', 'asc'));
         return onSnapshot(q, (snapshot) => {
-            if (snapshot.empty) {
-                // If empty, return defaults (but don't necessarily write them to DB yet to avoid auto-seeding without user intent)
-                callback(DEFAULT_STATUSES as OrderStatusConfig[]);
-                return;
-            }
-            const statuses = snapshot.docs.map(d => ({ ...d.data(), id: d.id } as OrderStatusConfig));
-            callback(statuses);
+            const dbStatuses = snapshot.docs.map(d => ({ ...d.data(), id: d.id } as OrderStatusConfig));
+
+            // Merge with defaults: system defaults always exist, but DB overrides them (if they have same ID)
+            const combined = [...DEFAULT_STATUSES] as OrderStatusConfig[];
+
+            dbStatuses.forEach(dbS => {
+                const idx = combined.findIndex(s => s.id === dbS.id);
+                if (idx > -1) {
+                    combined[idx] = { ...combined[idx], ...dbS };
+                } else {
+                    combined.push(dbS);
+                }
+            });
+
+            callback(combined.sort((a, b) => a.order - b.order));
         });
     },
 

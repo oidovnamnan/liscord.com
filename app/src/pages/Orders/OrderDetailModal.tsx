@@ -21,10 +21,10 @@ export function OrderDetailModal({ bizId, order, onClose, statuses }: OrderDetai
     const fmt = (n: number) => '₮' + n.toLocaleString('mn-MN');
 
     const handleStatusChange = async (newStatusId: string) => {
-        if (newStatusId === order.status) return;
+        if (newStatusId.toLowerCase() === order.status?.toLowerCase()) return;
         setUpdating(true);
         try {
-            const statusLabel = statuses.find(s => s.id === newStatusId)?.label || newStatusId;
+            const statusLabel = statuses.find(s => s.id.toLowerCase() === newStatusId.toLowerCase())?.label || newStatusId;
             const historyItem = {
                 status: newStatusId,
                 label: statusLabel,
@@ -50,7 +50,8 @@ export function OrderDetailModal({ bizId, order, onClose, statuses }: OrderDetai
         window.print();
     };
 
-    const activeStatus = statuses.find(s => s.id === currentStatusId) || statuses.find(s => s.id === order.status);
+    const activeStatus = statuses.find(s => s.id.toLowerCase() === currentStatusId?.toLowerCase()) ||
+        statuses.find(s => s.id.toLowerCase() === order.status?.toLowerCase());
 
     return (
         <div className="modal-backdrop" onClick={onClose}>
@@ -73,7 +74,7 @@ export function OrderDetailModal({ bizId, order, onClose, statuses }: OrderDetai
                                         border: `1px solid ${(activeStatus?.color || '#3b82f6')}40`,
                                     }}
                                 >
-                                    {statuses.filter(s => s.isActive || s.id === order.status).map(s => (
+                                    {statuses.filter(s => s.isActive || s.id.toLowerCase() === order.status?.toLowerCase()).map(s => (
                                         <option key={s.id} value={s.id}>{s.label}</option>
                                     ))}
                                 </select>
@@ -211,7 +212,7 @@ export function OrderDetailModal({ bizId, order, onClose, statuses }: OrderDetai
                                         {/* Status items */}
                                         {statuses.map((s, idx) => {
                                             // Logic to check if this status is "completed" in terms of timeline
-                                            const currentStatusIndex = statuses.findIndex(st => st.id === currentStatusId);
+                                            const currentStatusIndex = statuses.findIndex(st => st.id.toLowerCase() === currentStatusId?.toLowerCase());
                                             const isCompleted = !order.isDeleted && (currentStatusIndex >= idx);
 
                                             return (
