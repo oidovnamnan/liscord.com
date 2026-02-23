@@ -424,19 +424,24 @@ function CreateOrderModal({ onClose, nextNumber, statuses }: {
     const [color, setColor] = useState('');
     const [size, setSize] = useState('');
     const [unitPrice, setUnitPrice] = useState('0');
-    const [itemCargoIncluded, setItemCargoIncluded] = useState(false);
 
     // List of added items
     const [items, setItems] = useState<any[]>([]);
 
     // Fees & Totals
     const [deliveryFee, setDeliveryFee] = useState('0');
-    const [payCargoNow, setPayCargoNow] = useState(true);
+    const [payCargoNow, setPayCargoNow] = useState(() => {
+        const saved = localStorage.getItem('liscord_payCargoNow');
+        return saved !== null ? saved === 'true' : true;
+    });
 
     // Payment
     const [paymentMethod, setPaymentMethod] = useState<any>('bank');
     const [paidAmount, setPaidAmount] = useState('0');
     const [loading, setLoading] = useState(false);
+    useEffect(() => {
+        localStorage.setItem('liscord_payCargoNow', payCargoNow.toString());
+    }, [payCargoNow]);
 
     useEffect(() => {
         if (!business?.id) return;
@@ -485,13 +490,6 @@ function CreateOrderModal({ onClose, nextNumber, statuses }: {
         setUnitPrice(p.pricing.salePrice.toString());
         setSearchQuery('');
         setShowResults(false);
-
-        // Auto-fill cargo fee if available
-        if (p.cargoFee) {
-            setItemCargoIncluded(p.cargoFee.isIncluded);
-        } else {
-            setItemCargoIncluded(false);
-        }
     };
 
     // Dynamic Preview calculation
@@ -501,7 +499,7 @@ function CreateOrderModal({ onClose, nextNumber, statuses }: {
 
         const variant = [color, size].filter(Boolean).join(' / ');
         const unitPriceNum = Number(unitPrice);
-        const unitCargoFee = !itemCargoIncluded && selectedProduct?.cargoFee ? selectedProduct.cargoFee.amount : 0;
+        const unitCargoFee = selectedProduct?.cargoFee && !selectedProduct.cargoFee.isIncluded ? selectedProduct.cargoFee.amount : 0;
 
         // Check if item with same identity already exists
         const existingItemIndex = items.findIndex(item =>
@@ -853,10 +851,6 @@ function CreateOrderModal({ onClose, nextNumber, statuses }: {
                                         <div className="input-group">
                                             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
                                                 <label className="input-label" style={{ margin: 0 }}>Нэгж үнэ</label>
-                                                <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                                                    <input type="checkbox" id="itemCargoInc" checked={itemCargoIncluded} onChange={e => setItemCargoIncluded(e.target.checked)} />
-                                                    <label htmlFor="itemCargoInc" style={{ fontSize: '0.7rem', cursor: 'pointer', color: 'var(--text-secondary)' }}>Карго орсон</label>
-                                                </div>
                                             </div>
                                             <input className="input" type="number" value={unitPrice} onChange={e => setUnitPrice(e.target.value)} />
                                         </div>
