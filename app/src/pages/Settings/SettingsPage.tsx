@@ -755,21 +755,26 @@ function OrderStatusSettings({ bizId }: { bizId: string }) {
         } catch (e) { toast.error('Алдаа гарлаа'); }
     };
 
+    const [moving, setMoving] = useState(false);
+
     const handleMove = async (index: number, direction: 'up' | 'down') => {
+        if (moving) return;
         const newIndex = direction === 'up' ? index - 1 : index + 1;
         if (newIndex < 0 || newIndex >= statuses.length) return;
 
-        const s1 = statuses[index];
-        const s2 = statuses[newIndex];
+        setMoving(true);
+        const newStatuses = [...statuses];
+        [newStatuses[index], newStatuses[newIndex]] = [newStatuses[newIndex], newStatuses[index]];
 
         try {
-            // Swap orders
-            await Promise.all([
-                orderStatusService.updateStatus(bizId, s1.id, { order: s2.order }),
-                orderStatusService.updateStatus(bizId, s2.id, { order: s1.order })
-            ]);
+            // Update all to ensure sequential unique orders to avoid unstable sorting in DB
+            await Promise.all(newStatuses.map((s, idx) =>
+                orderStatusService.updateStatus(bizId, s.id, { order: idx })
+            ));
         } catch (e) {
             toast.error('Дараалал солиход алдаа гарлаа');
+        } finally {
+            setMoving(false);
         }
     };
 
@@ -808,7 +813,7 @@ function OrderStatusSettings({ bizId }: { bizId: string }) {
                                     className="btn btn-ghost btn-xs btn-icon"
                                     style={{ padding: 2, height: 20, width: 20 }}
                                     onClick={() => handleMove(idx, 'up')}
-                                    disabled={idx === 0}
+                                    disabled={idx === 0 || moving}
                                 >
                                     <ChevronUp size={12} />
                                 </button>
@@ -816,7 +821,7 @@ function OrderStatusSettings({ bizId }: { bizId: string }) {
                                     className="btn btn-ghost btn-xs btn-icon"
                                     style={{ padding: 2, height: 20, width: 20 }}
                                     onClick={() => handleMove(idx, 'down')}
-                                    disabled={idx === statuses.length - 1}
+                                    disabled={idx === statuses.length - 1 || moving}
                                 >
                                     <ChevronDown size={12} />
                                 </button>
@@ -828,16 +833,16 @@ function OrderStatusSettings({ bizId }: { bizId: string }) {
                             </div>
                         </div>
                         <div style={{ display: 'flex', gap: 4 }}>
-                            <button className="btn btn-ghost btn-xs btn-icon" onClick={(e) => { e.stopPropagation(); setEditingStatus(s); setShowModal(true); }}><MoreVertical size={14} /></button>
+                            <button className="btn btn-ghost btn-xs btn-icon" onClick={(e) => { e.stopPropagation(); setEditingStatus(s); setShowModal(true); }} disabled={moving}><MoreVertical size={14} /></button>
                             {!s.isSystem && (
-                                <button className="btn btn-ghost btn-xs btn-icon text-danger" onClick={(e) => { e.stopPropagation(); handleDelete(s.id, s.isSystem); }}><Trash2 size={14} /></button>
+                                <button className="btn btn-ghost btn-xs btn-icon text-danger" onClick={(e) => { e.stopPropagation(); handleDelete(s.id, s.isSystem); }} disabled={moving}><Trash2 size={14} /></button>
                             )}
                         </div>
                     </div>
                 ))}
             </div>
 
-            {showModal && <OrderStatusModal bizId={bizId} onClose={() => setShowModal(false)} editingStatus={editingStatus} nextOrder={statuses.length + 1} />}
+            {showModal && <OrderStatusModal bizId={bizId} onClose={() => setShowModal(false)} editingStatus={editingStatus} nextOrder={statuses.length} />}
         </div>
     );
 }

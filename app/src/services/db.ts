@@ -134,7 +134,10 @@ export const orderStatusService = {
                 }
             });
 
-            callback(combined.sort((a, b) => a.order - b.order));
+            callback(combined.sort((a, b) => {
+                if (a.order !== b.order) return a.order - b.order;
+                return a.id.localeCompare(b.id);
+            }));
         });
     },
 
