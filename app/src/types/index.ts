@@ -201,6 +201,7 @@ export interface OrderItem {
     unitPrice: number;
     costPrice: number;
     totalPrice: number;
+    image?: string | null;
 }
 
 export interface OrderPayment {

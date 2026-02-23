@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Header } from '../../components/layout/Header';
-import { Plus, Search, MoreVertical, Loader2, X, User, Package, CreditCard, Phone, MapPin } from 'lucide-react';
+import { Plus, Search, MoreVertical, Loader2, X, User, Package, CreditCard, Phone, MapPin, Trash2, CheckSquare } from 'lucide-react';
 import { useBusinessStore, useAuthStore } from '../../store';
 import {
     productService,
@@ -51,6 +51,8 @@ export function OrdersPage() {
     const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
     const [orders, setOrders] = useState<Order[]>([]);
     const [loading, setLoading] = useState(true);
+    const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+    const menuRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         if (!business?.id) return;
@@ -61,7 +63,17 @@ export function OrdersPage() {
             setLoading(false);
         });
 
-        return () => unsubscribe();
+        const handleClickOutside = (event: MouseEvent) => {
+            if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+                setOpenMenuId(null);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+
+        return () => {
+            unsubscribe();
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
     }, [business?.id]);
 
     const filtered = orders.filter(o => {
@@ -161,9 +173,31 @@ export function OrdersPage() {
                                                     ? order.createdAt.toLocaleDateString('mn-MN')
                                                     : 'Саяхан'}
                                             </span>
-                                            <button className="btn btn-ghost btn-sm btn-icon" onClick={e => { e.stopPropagation(); }}>
-                                                <MoreVertical size={16} />
-                                            </button>
+                                            <div className="order-actions-dropdown" ref={openMenuId === order.id ? menuRef : null}>
+                                                <button
+                                                    className={`btn btn-ghost btn-sm btn-icon ${openMenuId === order.id ? 'active' : ''}`}
+                                                    onClick={e => {
+                                                        e.stopPropagation();
+                                                        setOpenMenuId(openMenuId === order.id ? null : order.id);
+                                                    }}
+                                                >
+                                                    <MoreVertical size={16} />
+                                                </button>
+                                                {openMenuId === order.id && (
+                                                    <div className="dropdown-menu order-dropdown-menu" onClick={e => e.stopPropagation()}>
+                                                        <button className="dropdown-item" onClick={() => { setSelectedOrder(order); setOpenMenuId(null); }}>
+                                                            <Package size={14} /> Дэлгэрэнгүй
+                                                        </button>
+                                                        <button className="dropdown-item" onClick={() => { /* Status change logic */ setOpenMenuId(null); }}>
+                                                            <CheckSquare size={14} /> Статус солих
+                                                        </button>
+                                                        <hr />
+                                                        <button className="dropdown-item text-danger" onClick={() => { if (confirm('Баталгаалаа юу?')) orderService.deleteOrder(business?.id!, order.id); setOpenMenuId(null); }}>
+                                                            <Trash2 size={14} /> Устгах
+                                                        </button>
+                                                    </div>
+                                                )}
+                                            </div>
                                         </div>
                                     </div>
 
@@ -192,9 +226,13 @@ export function OrdersPage() {
 
                                         <div className="order-items-scroll hide-scrollbar">
                                             {order.items.map((i, idx) => (
-                                                <span key={idx} className="order-item-tag">
-                                                    {i.name} <span style={{ opacity: 0.6 }}>x{i.quantity}</span>
-                                                </span>
+                                                <div key={idx} className="order-item-tag-premium">
+                                                    <div className="item-img-mini">
+                                                        {i.image ? <img src={i.image} alt="" /> : <Package size={12} />}
+                                                    </div>
+                                                    <span className="item-name-mini">{i.name}</span>
+                                                    <span className="item-qty-badge">x{i.quantity}</span>
+                                                </div>
                                             ))}
                                         </div>
                                     </div>
@@ -374,7 +412,8 @@ function CreateOrderModal({ onClose, nextNumber }: {
                 unitPrice: unitPriceNum,
                 costPrice: selectedProduct?.pricing?.costPrice || 0,
                 totalPrice: unitPriceNum * quantity,
-                unitCargoFee: unitCargoFee
+                unitCargoFee: unitCargoFee,
+                image: selectedProduct?.images?.[0] || null
             };
             setItems([...items, newItem]);
         }

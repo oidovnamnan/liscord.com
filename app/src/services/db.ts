@@ -159,6 +159,14 @@ export const orderService = {
             severity: 'normal',
             changes: [{ field: 'status', oldValue: '?', newValue: status }]
         }, employeeProfile);
+    },
+
+    async deleteOrder(bizId: string, orderId: string): Promise<void> {
+        const docRef = doc(db, 'businesses', bizId, 'orders', orderId);
+        await updateDoc(docRef, {
+            isDeleted: true,
+            updatedAt: serverTimestamp()
+        });
     }
 };
 
