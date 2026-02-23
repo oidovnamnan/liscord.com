@@ -674,15 +674,15 @@ function OrderSourceModal({ bizId, onClose, editingSource }: { bizId: string; on
                     <button onClick={onClose} className="btn btn-ghost btn-icon"><X size={20} /></button>
                 </div>
                 <form onSubmit={handleSubmit}>
-                    <div className="modal-body" style={{ padding: '12px 24px 24px' }}>
+                    <div className="modal-body" style={{ padding: '0 28px 28px' }}>
                         <div className="input-group">
                             <label className="input-label">Эх сурвалжийн нэр</label>
                             <input className="input" name="name" defaultValue={editingSource?.name} placeholder="Жишээ: Facebook, Instagram, TikTok..." required autoFocus style={{ height: 48, borderRadius: 12 }} />
                         </div>
                     </div>
-                    <div className="modal-footer" style={{ padding: '12px 24px 24px', border: 'none', gap: 12 }}>
-                        <button type="button" className="btn btn-secondary" onClick={onClose} style={{ flex: 1, height: 44, borderRadius: 12 }}>Болих</button>
-                        <button type="submit" className="btn btn-primary gradient-btn" disabled={loading} style={{ flex: 1, height: 44, borderRadius: 12 }}>
+                    <div className="modal-footer" style={{ padding: '0 28px 28px', border: 'none', gap: 12 }}>
+                        <button type="button" className="btn btn-secondary" onClick={onClose} style={{ flex: 1, height: 50, borderRadius: 16 }}>Болих</button>
+                        <button type="submit" className="btn btn-primary gradient-btn" disabled={loading} style={{ flex: 1, height: 50, borderRadius: 16 }}>
                             {loading ? <Loader2 size={18} className="animate-spin" /> : 'Хадгалах'}
                         </button>
                     </div>
@@ -715,15 +715,15 @@ function SocialAccountModal({ bizId, sourceId, sourceName, onClose }: { bizId: s
                     <button onClick={onClose} className="btn btn-ghost btn-icon"><X size={20} /></button>
                 </div>
                 <form onSubmit={handleSubmit}>
-                    <div className="modal-body" style={{ padding: '12px 24px 24px' }}>
+                    <div className="modal-body" style={{ padding: '0 28px 28px' }}>
                         <div className="input-group">
                             <label className="input-label">Пэйж буюу хаягийн нэр</label>
                             <input className="input" name="name" placeholder="Жишээ: Liscord Shop, Facebook Page A..." required autoFocus style={{ height: 48, borderRadius: 12 }} />
                         </div>
                     </div>
-                    <div className="modal-footer" style={{ padding: '12px 24px 24px', border: 'none', gap: 12 }}>
-                        <button type="button" className="btn btn-secondary" onClick={onClose} style={{ flex: 1, height: 44, borderRadius: 12 }}>Болих</button>
-                        <button type="submit" className="btn btn-primary gradient-btn" disabled={loading} style={{ flex: 1, height: 44, borderRadius: 12 }}>
+                    <div className="modal-footer" style={{ padding: '0 28px 28px', border: 'none', gap: 12 }}>
+                        <button type="button" className="btn btn-secondary" onClick={onClose} style={{ flex: 1, height: 50, borderRadius: 16 }}>Болих</button>
+                        <button type="submit" className="btn btn-primary gradient-btn" disabled={loading} style={{ flex: 1, height: 50, borderRadius: 16 }}>
                             {loading ? <Loader2 size={18} className="animate-spin" /> : 'Нэмэх'}
                         </button>
                     </div>
@@ -843,47 +843,64 @@ function OrderStatusModal({ bizId, onClose, editingStatus, nextOrder }: { bizId:
     };
 
     return (
-        <div className="modal-backdrop" onClick={onClose}>
-            <div className="modal animate-slide-up" onClick={e => e.stopPropagation()} style={{ maxWidth: 400, borderRadius: 24 }}>
-                <div className="modal-header" style={{ padding: '24px 24px 12px' }}>
-                    <h2 style={{ fontSize: '1.4rem' }}>{editingStatus ? 'Төлөв засах' : 'Шинэ төлөв'}</h2>
-                    <button onClick={onClose} className="btn btn-ghost btn-icon"><X size={20} /></button>
+        <div className="modal-backdrop premium-backdrop" onClick={onClose}>
+            <div className="modal premium-modal animate-slide-up" onClick={e => e.stopPropagation()} style={{ maxWidth: 420, borderRadius: 28 }}>
+                <div className="modal-header" style={{ padding: '24px 28px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                        <h2 style={{ fontSize: '1.25rem', fontWeight: 700, margin: 0, letterSpacing: '-0.02em' }}>
+                            {editingStatus ? 'Төлөв засах' : 'Шинэ төлөв'}
+                        </h2>
+                        <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                            {editingStatus ? 'Төлөвийн мэдээллийг шинэчлэх' : 'Захиалгын шинэ дамжлага нэмэх'}
+                        </p>
+                    </div>
+                    <button onClick={onClose} className="btn btn-ghost btn-icon" style={{ borderRadius: 12 }}><X size={20} /></button>
                 </div>
                 <form onSubmit={handleSubmit}>
-                    <div className="modal-body" style={{ padding: '12px 24px 24px' }}>
+                    <div className="modal-body" style={{ padding: '28px' }}>
                         <div className="input-group">
-                            <label className="input-label">Төлөвийн нэр</label>
-                            <input className="input" name="label" defaultValue={editingStatus?.label} placeholder="Жишээ: Хүлээн авсан, Нийлүүлэгч рүү явуулсан..." required autoFocus style={{ height: 48, borderRadius: 12 }} />
+                            <label className="input-label" style={{ fontWeight: 600, fontSize: '0.9rem', marginBottom: 10 }}>Төлөвийн нэр</label>
+                            <input
+                                className="input"
+                                name="label"
+                                defaultValue={editingStatus?.label}
+                                placeholder="Жишээ: Хүлээн авсан..."
+                                required
+                                autoFocus
+                                style={{ height: 52, borderRadius: 14, fontSize: '1rem', padding: '0 18px' }}
+                            />
                         </div>
 
-                        <div className="input-group" style={{ marginTop: 16 }}>
-                            <label className="input-label">Өнгө сонгох</label>
-                            <div className="color-swatch-grid">
+                        <div className="input-group" style={{ marginTop: 24 }}>
+                            <label className="input-label" style={{ fontWeight: 600, fontSize: '0.9rem', marginBottom: 12 }}>Өнгө сонгох</label>
+                            <div className="color-swatch-grid" style={{ gap: 12 }}>
                                 {colors.map(c => (
                                     <div
                                         key={c}
                                         onClick={() => setColor(c)}
                                         className={`color-swatch ${color === c ? 'active' : ''}`}
-                                        style={{ background: c }}
+                                        style={{ background: c, height: 38, borderRadius: 12 }}
                                     />
                                 ))}
                             </div>
                         </div>
 
-                        <div style={{ marginTop: 24, padding: '16px', background: 'var(--bg-soft)', borderRadius: 16, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                            <div>
-                                <div style={{ fontWeight: 600, fontSize: '0.95rem' }}>Төлөв идэвхтэй</div>
-                                <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Төлөвийг идэвхгүй болгосноор шинээр үүсгэхэд харагдахгүй</div>
+                        <div className="premium-toggle-card" style={{ marginTop: 28, padding: '18px', borderRadius: 20, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                            <div style={{ flex: 1 }}>
+                                <div style={{ fontWeight: 600, fontSize: '0.95rem', color: 'var(--text-main)' }}>Төлөв идэвхтэй</div>
+                                <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', lineHeight: 1.4, marginTop: 2 }}>
+                                    Идэвхгүй болгосноор шинээр захиалга үүсгэхэд харагдахгүй
+                                </div>
                             </div>
-                            <label className="toggle">
+                            <label className="toggle" style={{ marginLeft: 16 }}>
                                 <input type="checkbox" checked={isActive} onChange={e => setIsActive(e.target.checked)} />
                                 <span className="toggle-slider"></span>
                             </label>
                         </div>
                     </div>
-                    <div className="modal-footer" style={{ padding: '12px 24px 24px', border: 'none', gap: 12 }}>
-                        <button type="button" className="btn btn-secondary" onClick={onClose} style={{ flex: 1, height: 44, borderRadius: 12 }}>Болих</button>
-                        <button type="submit" className="btn btn-primary gradient-btn" disabled={loading} style={{ flex: 1, height: 44, borderRadius: 12 }}>
+                    <div className="modal-footer" style={{ padding: '0 28px 28px', border: 'none', gap: 12 }}>
+                        <button type="button" className="btn btn-secondary" onClick={onClose} style={{ flex: 1, height: 50, borderRadius: 16 }}>Болих</button>
+                        <button type="submit" className="btn btn-primary gradient-btn" disabled={loading} style={{ flex: 1, height: 50, borderRadius: 16 }}>
                             {loading ? <Loader2 size={18} className="animate-spin" /> : 'Хадгалах'}
                         </button>
                     </div>
