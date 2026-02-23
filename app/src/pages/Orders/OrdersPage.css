@@ -37,42 +37,43 @@
 /* Status bar */
 .orders-status-bar {
     display: flex;
-    gap: var(--space-xs);
+    gap: 12px;
     margin-bottom: var(--space-lg);
     overflow-x: auto;
-    padding-bottom: 4px;
+    padding: 8px;
+    background: #f1f5f9;
+    border-radius: 16px;
+    border: 1px solid #e2e8f0;
 }
 
 .orders-status-chip {
     display: flex;
     align-items: center;
     gap: 8px;
-    padding: 10px 20px;
-    background: var(--bg-card);
-    border: 1px solid var(--border-color);
-    border-radius: 14px;
+    padding: 8px 20px;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
     font-size: 0.85rem;
-    font-weight: 500;
-    color: var(--text-muted);
+    font-weight: 600;
+    color: #475569;
     cursor: pointer;
-    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     white-space: nowrap;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
 .orders-status-chip:hover {
-    transform: translateY(-2px);
-    background: var(--bg-soft);
-    border-color: var(--primary-light);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    border-color: #cbd5e1;
+    color: #1e293b;
+    background: #f8fafc;
 }
 
 .orders-status-chip.active {
-    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
-    border-color: transparent;
-    color: white;
-    font-weight: 600;
-    box-shadow: 0 8px 16px var(--primary-light);
+    background: #1e293b;
+    border-color: #1e293b;
+    color: #ffffff;
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.15);
 }
 
 .badge-paid {
@@ -88,16 +89,16 @@
 
 .orders-status-count {
     font-size: 0.75rem;
-    background: var(--bg-soft);
-    padding: 2px 8px;
-    border-radius: 8px;
-    color: var(--text-muted);
-    transition: all 0.2s ease;
+    background: #f1f5f9;
+    padding: 1px 7px;
+    border-radius: 6px;
+    color: #64748b;
+    font-weight: 700;
 }
 
 .orders-status-chip.active .orders-status-count {
     background: rgba(255, 255, 255, 0.2);
-    color: white;
+    color: #ffffff;
 }
 
 /* Orders list */
@@ -229,18 +230,21 @@
 }
 
 .pro-badge.status-new {
-    color: #2563eb;
-    background: #eff6ff;
+    color: #1d4ed8;
+    background: #dbeafe;
+    border: 1px solid #bfdbfe;
 }
 
 .pro-badge.status-confirmed {
-    color: #059669;
-    background: #ecfdf5;
+    color: #047857;
+    background: #d1fae5;
+    border: 1px solid #a7f3d0;
 }
 
 .pro-badge.status-processing {
-    color: #d97706;
-    background: #fffbeb;
+    color: #b45309;
+    background: #fef3c7;
+    border: 1px solid #fde68a;
 }
 
 .header-actions-group {
@@ -427,7 +431,7 @@
 }
 
 .pro-total-value {
-    font-size: 1.25rem;
+    font-size: 1.35rem;
     font-weight: 800;
     color: #0f172a;
 }
