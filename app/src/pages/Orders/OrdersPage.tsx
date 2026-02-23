@@ -83,18 +83,18 @@ export function OrdersPage() {
             o.customer.name.toLowerCase().includes(search.toLowerCase()) ||
             o.customer.phone.includes(search);
 
-        // If searching, show everything matching the search
         if (search) return matchSearch;
 
-        // Otherwise, filter by status and deletion state
+        // 'cancelled' tab shows both explicitly deleted orders and those with 'cancelled' status
         if (statusFilter === 'cancelled') {
-            return matchSearch && o.isDeleted;
+            return matchSearch && (o.isDeleted || o.status === 'cancelled');
         }
 
-        const isDeletedMatch = statusFilter === 'all' || !o.isDeleted;
-        const matchStatus = statusFilter === 'all' || o.status === statusFilter;
+        // 'all' shows absolutely everything
+        if (statusFilter === 'all') return matchSearch;
 
-        return matchSearch && matchStatus && isDeletedMatch;
+        // Other statuses only show non-deleted matching orders
+        return matchSearch && !o.isDeleted && o.status === statusFilter;
     });
 
     return (
@@ -138,7 +138,7 @@ export function OrdersPage() {
                     </button>
                     {statuses.filter(s => s.isActive || s.id === 'cancelled').map(s => {
                         const count = s.id === 'cancelled'
-                            ? orders.filter(o => o.isDeleted).length
+                            ? orders.filter(o => o.isDeleted || o.status === 'cancelled').length
                             : orders.filter(o => o.status === s.id && !o.isDeleted).length;
 
                         return (

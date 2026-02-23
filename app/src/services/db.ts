@@ -106,13 +106,9 @@ export const businessService = {
 
 export const DEFAULT_STATUSES: Partial<OrderStatusConfig>[] = [
     { id: 'new', label: 'Шинэ', color: '#3b82f6', order: 1, isSystem: true, isActive: true },
-    { id: 'confirmed', label: 'Баталсан', color: '#10b981', order: 2, isSystem: true, isActive: true },
-    { id: 'preparing', label: 'Бэлтгэж буй', color: '#f59e0b', order: 3, isSystem: true, isActive: true },
-    { id: 'ready', label: 'Бэлэн', color: '#f59e0b', order: 4, isSystem: true, isActive: true },
-    { id: 'shipping', label: 'Хүргэлтэнд', color: '#8b5cf6', order: 5, isSystem: true, isActive: true },
-    { id: 'delivered', label: 'Хүргэгдсэн', color: '#334155', order: 6, isSystem: true, isActive: true },
-    { id: 'completed', label: 'Дууссан', color: '#334155', order: 7, isSystem: true, isActive: true },
-    { id: 'cancelled', label: 'Цуцалсан', color: '#ef4444', order: 8, isSystem: true, isActive: true },
+    { id: 'completed', label: 'Биелсэн', color: '#10b981', order: 2, isSystem: true, isActive: true },
+    { id: 'returned', label: 'Буцаасан', color: '#f59e0b', order: 3, isSystem: true, isActive: true },
+    { id: 'cancelled', label: 'Цуцалсан', color: '#ef4444', order: 4, isSystem: true, isActive: true },
 ];
 
 export const orderStatusService = {

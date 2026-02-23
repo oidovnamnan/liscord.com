@@ -209,10 +209,7 @@ export function OrderDetailModal({ bizId, order, onClose, statuses }: OrderDetai
                                 <div className="timeline-card">
                                     <div className="timeline">
                                         {/* Status items */}
-                                        {statuses.slice(0, 6).map((s, idx) => {
-                                            const isSystem = ['new', 'confirmed', 'preparing', 'shipping', 'delivered', 'completed'].includes(s.id);
-                                            if (!isSystem && idx > 5) return null; // Simplified timeline
-
+                                        {statuses.map((s, idx) => {
                                             // Logic to check if this status is "completed" in terms of timeline
                                             const currentStatusIndex = statuses.findIndex(st => st.id === currentStatusId);
                                             const isCompleted = !order.isDeleted && (currentStatusIndex >= idx);
