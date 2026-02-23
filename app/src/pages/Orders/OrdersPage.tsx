@@ -121,8 +121,7 @@ export function OrdersPage() {
                             value={statusFilter}
                             onChange={(e) => setStatusFilter(e.target.value)}
                         >
-                            <option value="all">Бүх статус</option>
-                            {statuses.filter(s => s.isActive || s.id === 'cancelled').map(s => (
+                            {statuses.filter(s => s.isActive || s.id === 'cancelled' || s.id === 'all').map(s => (
                                 <option key={s.id} value={s.id}>{s.label}</option>
                             ))}
                         </select>
@@ -130,16 +129,12 @@ export function OrdersPage() {
                 </div>
 
                 <div className="orders-status-bar">
-                    <button
-                        className={`orders-status-chip ${statusFilter === 'all' ? 'active' : ''}`}
-                        onClick={() => setStatusFilter('all')}
-                    >
-                        Бүгд <span className="orders-status-count">{orders.length}</span>
-                    </button>
-                    {statuses.filter(s => s.isActive || s.id === 'cancelled').map(s => {
-                        const count = s.id === 'cancelled'
-                            ? orders.filter(o => o.isDeleted || o.status?.toLowerCase() === 'cancelled').length
-                            : orders.filter(o => o.status?.toLowerCase() === s.id.toLowerCase() && !o.isDeleted).length;
+                    {statuses.filter(s => s.isActive || s.id === 'cancelled' || s.id === 'all').map(s => {
+                        const count = s.id === 'all'
+                            ? orders.length
+                            : s.id === 'cancelled'
+                                ? orders.filter(o => o.isDeleted || o.status?.toLowerCase() === 'cancelled').length
+                                : orders.filter(o => o.status?.toLowerCase() === s.id.toLowerCase() && !o.isDeleted).length;
 
                         return (
                             <button
@@ -581,7 +576,7 @@ function CreateOrderModal({ onClose, nextNumber, statuses }: {
 
             await orderService.createOrder(business.id, {
                 orderNumber: nextNumber,
-                status: statuses.find(s => s.isActive)?.id || 'new',
+                status: statuses.find(s => s.isActive && s.id !== 'all')?.id || 'new',
                 paymentStatus: paid >= finalTotal ? 'paid' : paid > 0 ? 'partial' : 'unpaid',
                 customer: {
                     id: null,

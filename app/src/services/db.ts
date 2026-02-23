@@ -105,6 +105,7 @@ export const businessService = {
 // ============ ORDER STATUS SERVICES ============
 
 export const DEFAULT_STATUSES: Partial<OrderStatusConfig>[] = [
+    { id: 'all', label: 'Бүгд', color: '#64748b', order: 0, isSystem: true, isActive: true },
     { id: 'new', label: 'Шинэ', color: '#3b82f6', order: 1, isSystem: true, isActive: true },
     { id: 'completed', label: 'Биелсэн', color: '#10b981', order: 2, isSystem: true, isActive: true },
     { id: 'returned', label: 'Буцаасан', color: '#f59e0b', order: 3, isSystem: true, isActive: true },

@@ -74,7 +74,7 @@ export function OrderDetailModal({ bizId, order, onClose, statuses }: OrderDetai
                                         border: `1px solid ${(activeStatus?.color || '#3b82f6')}40`,
                                     }}
                                 >
-                                    {statuses.filter(s => s.isActive || s.id.toLowerCase() === order.status?.toLowerCase()).map(s => (
+                                    {statuses.filter(s => (s.isActive || s.id.toLowerCase() === order.status?.toLowerCase()) && s.id !== 'all').map(s => (
                                         <option key={s.id} value={s.id}>{s.label}</option>
                                     ))}
                                 </select>
