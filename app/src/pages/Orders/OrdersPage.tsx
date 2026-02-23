@@ -95,7 +95,7 @@ export function OrdersPage() {
             return matchSearch && o.isDeleted;
         }
 
-        const isDeletedMatch = !o.isDeleted;
+        const isDeletedMatch = statusFilter === 'all' || !o.isDeleted;
         const matchStatus = statusFilter === 'all' || o.status === statusFilter;
 
         return matchSearch && matchStatus && isDeletedMatch;
@@ -136,7 +136,7 @@ export function OrdersPage() {
                 <div className="orders-status-bar">
                     {['all', 'new', 'confirmed', 'preparing', 'shipping', 'delivered', 'cancelled'].map(s => {
                         let count = 0;
-                        if (s === 'all') count = orders.filter(o => !o.isDeleted).length;
+                        if (s === 'all') count = orders.length;
                         else if (s === 'cancelled') count = orders.filter(o => o.isDeleted).length;
                         else count = orders.filter(o => o.status === s && !o.isDeleted).length;
 
