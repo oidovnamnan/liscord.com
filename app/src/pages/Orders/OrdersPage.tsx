@@ -225,16 +225,17 @@ function CreateOrderModal({ onClose, nextNumber }: {
     const [showResults, setShowResults] = useState(false);
     const [selectedProduct, setSelectedProduct] = useState<any | null>(null);
     const [manualItemName, setManualItemName] = useState('');
-
     const [quantity, setQuantity] = useState(1);
     const [color, setColor] = useState('');
     const [size, setSize] = useState('');
     const [unitPrice, setUnitPrice] = useState('0');
+    const [itemCargoIncluded, setItemCargoIncluded] = useState(false);
+
+    // List of added items
+    const [items, setItems] = useState<any[]>([]);
 
     // Fees & Totals
     const [deliveryFee, setDeliveryFee] = useState('0');
-    const [cargoFee, setCargoFee] = useState('0');
-    const [cargoIncluded, setCargoIncluded] = useState(false);
     const [payCargoNow, setPayCargoNow] = useState(true);
 
     // Payment
@@ -276,13 +277,45 @@ function CreateOrderModal({ onClose, nextNumber }: {
 
         // Auto-fill cargo fee if available
         if (p.cargoFee) {
-            setCargoFee(p.cargoFee.amount.toString());
-            setCargoIncluded(p.cargoFee.isIncluded);
+            setItemCargoIncluded(p.cargoFee.isIncluded);
+        } else {
+            setItemCargoIncluded(false);
         }
     };
 
-    const calculateItemTotal = () => Number(unitPrice) * quantity;
-    const calculateCargoTotal = () => (cargoIncluded ? 0 : Number(cargoFee) * quantity);
+    const handleAddItem = () => {
+        const name = selectedProduct ? selectedProduct.name : manualItemName;
+        if (!name) return;
+
+        const newItem = {
+            productId: selectedProduct?.id || null,
+            name: name,
+            variant: [color, size].filter(Boolean).join(' / '),
+            quantity: quantity,
+            unitPrice: Number(unitPrice),
+            costPrice: selectedProduct?.pricing?.costPrice || 0,
+            totalPrice: Number(unitPrice) * quantity,
+            unitCargoFee: !itemCargoIncluded && selectedProduct?.cargoFee ? selectedProduct.cargoFee.amount : 0
+        };
+
+        setItems([...items, newItem]);
+
+        // Reset item inputs
+        setSelectedProduct(null);
+        setManualItemName('');
+        setQuantity(1);
+        setColor('');
+        setSize('');
+        setUnitPrice('0');
+        setSearchQuery('');
+    };
+
+    const removeItem = (index: number) => {
+        setItems(items.filter((_, i) => i !== index));
+    };
+
+    const calculateItemTotal = () => items.reduce((sum, item) => sum + item.totalPrice, 0);
+    const calculateCargoTotal = () => items.reduce((sum, item) => sum + (item.unitCargoFee * item.quantity), 0);
 
     const calculateTotal = () => {
         const itemTotal = calculateItemTotal();
@@ -294,16 +327,13 @@ function CreateOrderModal({ onClose, nextNumber }: {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!customer || !business || !user) return;
-        if (!selectedProduct && !manualItemName) return;
+        if (items.length === 0) return;
 
         setLoading(true);
         try {
             const finalTotal = calculateTotal();
             const paid = Number(paidAmount);
             const cargoTotal = calculateCargoTotal();
-
-            const variantParts = [color, size].filter(Boolean).join(' / ');
-            const finalItemName = selectedProduct ? selectedProduct.name : manualItemName;
 
             await orderService.createOrder(business.id, {
                 orderNumber: nextNumber,
@@ -317,15 +347,7 @@ function CreateOrderModal({ onClose, nextNumber }: {
                 },
                 source: source as any,
                 deliveryAddress: address,
-                items: [{
-                    productId: selectedProduct?.id || null,
-                    name: finalItemName,
-                    variant: variantParts,
-                    quantity: quantity,
-                    unitPrice: Number(unitPrice),
-                    costPrice: selectedProduct?.pricing?.costPrice || 0,
-                    totalPrice: calculateItemTotal(),
-                }],
+                items: items,
                 financials: {
                     subtotal: calculateItemTotal(),
                     discountType: 'fixed',
@@ -333,7 +355,7 @@ function CreateOrderModal({ onClose, nextNumber }: {
                     discountAmount: 0,
                     deliveryFee: Number(deliveryFee),
                     cargoFee: cargoTotal,
-                    cargoIncluded: cargoIncluded,
+                    cargoIncluded: items.every(i => i.unitCargoFee === 0),
                     totalAmount: finalTotal,
                     payments: paid > 0 ? [{
                         id: crypto.randomUUID(),
@@ -407,20 +429,58 @@ function CreateOrderModal({ onClose, nextNumber }: {
                             </div>
                         </div>
 
-                        {/* SECTION 2: ITEMS */}
+                        {/* SECTION 2: ITEMS LIST */}
                         <div className="modal-section">
-                            <div className="modal-section-title"><Package size={14} /> Бараа / Үйлчилгээ</div>
+                            <div className="modal-section-title"><Package size={14} /> Сонгосон бараанууд ({items.length})</div>
+
+                            {items.length > 0 ? (
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                                    {items.map((item, idx) => (
+                                        <div key={idx} style={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: 12,
+                                            padding: 10,
+                                            background: 'var(--bg-soft)',
+                                            borderRadius: 8,
+                                            border: '1px solid var(--border-primary)'
+                                        }}>
+                                            <div style={{ flex: 1 }}>
+                                                <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>{item.name}</div>
+                                                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                                                    {item.variant} • {fmt(item.unitPrice)} x {item.quantity}
+                                                </div>
+                                            </div>
+                                            <div style={{ fontWeight: 700, fontSize: '0.9rem' }}>{fmt(item.totalPrice)}</div>
+                                            <button type="button" className="btn btn-ghost btn-icon btn-sm" onClick={() => removeItem(idx)}>
+                                                <X size={16} />
+                                            </button>
+                                        </div>
+                                    ))}
+                                    <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '0 10px', fontWeight: 700, fontSize: '0.9rem', color: 'var(--primary)' }}>
+                                        Нийт бараа: {fmt(calculateItemTotal())}
+                                    </div>
+                                </div>
+                            ) : (
+                                <div style={{ textAlign: 'center', padding: '20px 0', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+                                    Захиалгад бараа нэмээгүй байна.
+                                </div>
+                            )}
+                        </div>
+
+                        {/* SECTION 3: ADD NEW ITEM */}
+                        <div className="modal-section" style={{ border: '1px dashed var(--primary)', background: 'var(--primary-light)' }}>
+                            <div className="modal-section-title" style={{ color: 'var(--primary)' }}><Plus size={14} /> Бараа нэмэх</div>
 
                             {!selectedProduct ? (
                                 <div className="product-search-container">
                                     <div className="input-group">
-                                        <label className="input-label">Бараа хайх (Нэр эсвэл SKU)</label>
                                         <div style={{ position: 'relative' }}>
                                             <Search size={16} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
                                             <input
                                                 className="input"
                                                 style={{ paddingLeft: 36 }}
-                                                placeholder="Барааны нэр бичнэ үү..."
+                                                placeholder="Барааны нэр эсвэл SKU бичнэ үү..."
                                                 value={searchQuery}
                                                 onChange={e => {
                                                     setSearchQuery(e.target.value);
@@ -438,7 +498,7 @@ function CreateOrderModal({ onClose, nextNumber }: {
                                                     <img src={p.images?.[0] || 'https://via.placeholder.com/40'} className="product-search-img" alt="" />
                                                     <div className="product-search-info">
                                                         <span className="product-search-name">{p.name}</span>
-                                                        <span className="product-search-sku">{p.sku} • {p.categoryName}</span>
+                                                        <span className="product-search-sku">{p.sku}</span>
                                                     </div>
                                                     <div className="product-search-price">{fmt(p.pricing.salePrice)}</div>
                                                 </div>
@@ -449,14 +509,13 @@ function CreateOrderModal({ onClose, nextNumber }: {
                                     {searchQuery && filteredProducts.length === 0 && (
                                         <div style={{ marginTop: 8 }}>
                                             <div className="input-group">
-                                                <label className="input-label" style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Олдсонгүй, гараар оруулах:</label>
                                                 <input className="input" placeholder="Барааны нэр" value={manualItemName} onChange={e => setManualItemName(e.target.value)} />
                                             </div>
                                         </div>
                                     )}
                                 </div>
                             ) : (
-                                <div className="selected-product-preview">
+                                <div className="selected-product-preview" style={{ background: 'white' }}>
                                     <img src={selectedProduct.images?.[0] || 'https://via.placeholder.com/40'} className="product-search-img" alt="" />
                                     <div className="product-search-info">
                                         <span className="product-search-name">{selectedProduct.name}</span>
@@ -469,65 +528,71 @@ function CreateOrderModal({ onClose, nextNumber }: {
                                 </div>
                             )}
 
-                            <div className="input-row" style={{ display: 'grid', gridTemplateColumns: '2fr 1.5fr 1.5fr', gap: 12 }}>
-                                <div className="input-group">
-                                    <label className="input-label">Тоо ширхэг</label>
-                                    <input className="input" type="number" min="1" value={quantity} onChange={e => setQuantity(Number(e.target.value))} />
-                                </div>
-                                <div className="input-group">
-                                    <label className="input-label">Өнгө</label>
-                                    <input className="input" placeholder="Хар" value={color} onChange={e => setColor(e.target.value)} />
-                                </div>
-                                <div className="input-group">
-                                    <label className="input-label">Хэмжээ</label>
-                                    <input className="input" placeholder="XL" value={size} onChange={e => setSize(e.target.value)} />
-                                </div>
-                            </div>
-
-                            <div className="input-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                                <div className="input-group">
-                                    <label className="input-label">Нэгж үнэ</label>
-                                    <input className="input" type="number" value={unitPrice} onChange={e => setUnitPrice(e.target.value)} />
-                                </div>
-                                <div className="input-group">
-                                    <label className="input-label">Нийт бараа</label>
-                                    <div className="input" style={{ background: 'var(--bg-tertiary)', fontWeight: 600, display: 'flex', alignItems: 'center' }}>
-                                        {fmt(calculateItemTotal())}
+                            {(selectedProduct || manualItemName) && (
+                                <>
+                                    <div className="input-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
+                                        <div className="input-group">
+                                            <label className="input-label">Тоо ширхэг</label>
+                                            <input className="input" type="number" min="1" value={quantity} onChange={e => setQuantity(Number(e.target.value))} />
+                                        </div>
+                                        <div className="input-group">
+                                            <label className="input-label">Өнгө</label>
+                                            <input className="input" placeholder="Хар" value={color} onChange={e => setColor(e.target.value)} />
+                                        </div>
+                                        <div className="input-group">
+                                            <label className="input-label">Хэмжээ</label>
+                                            <input className="input" placeholder="XL" value={size} onChange={e => setSize(e.target.value)} />
+                                        </div>
                                     </div>
-                                </div>
-                            </div>
+                                    <div className="input-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                                        <div className="input-group">
+                                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+                                                <label className="input-label" style={{ margin: 0 }}>Нэгж үнэ</label>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                                                    <input type="checkbox" id="itemCargoInc" checked={itemCargoIncluded} onChange={e => setItemCargoIncluded(e.target.checked)} />
+                                                    <label htmlFor="itemCargoInc" style={{ fontSize: '0.7rem', cursor: 'pointer', color: 'var(--text-secondary)' }}>Карго орсон</label>
+                                                </div>
+                                            </div>
+                                            <input className="input" type="number" value={unitPrice} onChange={e => setUnitPrice(e.target.value)} />
+                                        </div>
+                                        <div style={{ display: 'flex', alignItems: 'flex-end' }}>
+                                            <button
+                                                type="button"
+                                                className="btn btn-primary"
+                                                style={{ width: '100%' }}
+                                                onClick={handleAddItem}
+                                            >
+                                                Жагсаалтанд нэмэх
+                                            </button>
+                                        </div>
+                                    </div>
+                                </>
+                            )}
                         </div>
 
-                        {/* SECTION 3: DELIVERY & CARGO */}
-                        <div className="modal-section" style={{ background: 'var(--primary-light)' }}>
+                        {/* SECTION 4: DELIVERY & CARGO */}
+                        <div className="modal-section" style={{ background: 'rgba(var(--primary-rgb), 0.05)' }}>
                             <div className="input-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                                 <div className="input-group">
                                     <label className="input-label">Хүргэлтийн төлбөр</label>
                                     <input className="input" type="number" value={deliveryFee} onChange={e => setDeliveryFee(e.target.value)} />
                                 </div>
                                 <div className="input-group">
-                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                                            <label className="input-label" style={{ margin: 0 }}>Каргоны дүн</label>
-                                            <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>({fmt(Number(cargoFee))} x {quantity})</span>
-                                        </div>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                                            <input type="checkbox" id="cargoInc" checked={cargoIncluded} onChange={e => setCargoIncluded(e.target.checked)} />
-                                            <label htmlFor="cargoInc" style={{ fontSize: '0.7rem', cursor: 'pointer' }}>Орсон</label>
-                                        </div>
+                                    <label className="input-label">Нийт карго ({calculateCargoTotal() > 0 ? "Ирж яваа" : "Үнэдээ орсон"})</label>
+                                    <div className="input" style={{ background: 'var(--bg-soft)', fontWeight: 600, display: 'flex', alignItems: 'center' }}>
+                                        {fmt(calculateCargoTotal())}
                                     </div>
-                                    <input className="input" type="number" disabled={cargoIncluded} value={calculateCargoTotal()} readOnly style={{ background: cargoIncluded ? 'var(--bg-soft)' : 'white' }} />
                                 </div>
                             </div>
 
-                            {!cargoIncluded && (
-                                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: -8, marginBottom: 4 }}>
+                            {calculateCargoTotal() > 0 && (
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 4 }}>
                                     <input type="checkbox" id="payCargoNow" checked={payCargoNow} onChange={e => setPayCargoNow(e.target.checked)} />
                                     <label htmlFor="payCargoNow" style={{ fontSize: '0.75rem', cursor: 'pointer', color: 'var(--text-secondary)' }}>Каргоныг одоо төлөх (Бусад тохиолдолд ирэхээр нь төлнө)</label>
                                 </div>
                             )}
 
-                            <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 12, marginTop: 4, paddingTop: 8, borderTop: '1px solid var(--primary-light)' }}>
+                            <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 12, marginTop: 4, paddingTop: 8, borderTop: '1px solid var(--border-primary)' }}>
                                 <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Нийт захиалгын дүн:</span>
                                 <span style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--primary)' }}>
                                     {fmt(calculateTotal())}
@@ -535,7 +600,7 @@ function CreateOrderModal({ onClose, nextNumber }: {
                             </div>
                         </div>
 
-                        {/* SECTION 4: PAYMENT */}
+                        {/* SECTION 5: PAYMENT */}
                         <div className="modal-section" style={{ borderColor: 'var(--primary)', borderStyle: 'dashed' }}>
                             <div className="modal-section-title"><CreditCard size={14} /> Төлбөр бүртгэх</div>
                             <div className="input-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
@@ -583,7 +648,7 @@ function CreateOrderModal({ onClose, nextNumber }: {
                     </div>
                     <div className="modal-footer">
                         <button type="button" className="btn btn-secondary" onClick={onClose} disabled={loading}>Болих</button>
-                        <button type="submit" className="btn btn-primary btn-lg" disabled={loading || !customer || (!selectedProduct && !manualItemName)}>
+                        <button type="submit" className="btn btn-primary btn-lg" disabled={loading || !customer || items.length === 0}>
                             {loading ? <Loader2 size={18} className="animate-spin" /> : <><Plus size={18} /> Захиалга үүсгэх</>}
                         </button>
                     </div>
