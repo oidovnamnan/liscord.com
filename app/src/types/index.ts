@@ -190,6 +190,7 @@ export interface OrderStatusConfig {
     color: string;
     order: number;
     isSystem: boolean;
+    isActive: boolean;
 }
 
 export type OrderStatus =

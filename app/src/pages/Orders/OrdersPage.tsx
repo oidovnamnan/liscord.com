@@ -122,7 +122,7 @@ export function OrdersPage() {
                             onChange={(e) => setStatusFilter(e.target.value)}
                         >
                             <option value="all">Бүх статус</option>
-                            {statuses.map(s => (
+                            {statuses.filter(s => s.isActive || s.id === 'cancelled').map(s => (
                                 <option key={s.id} value={s.id}>{s.label}</option>
                             ))}
                         </select>
@@ -136,7 +136,7 @@ export function OrdersPage() {
                     >
                         Бүгд <span className="orders-status-count">{orders.length}</span>
                     </button>
-                    {statuses.map(s => {
+                    {statuses.filter(s => s.isActive || s.id === 'cancelled').map(s => {
                         const count = s.id === 'cancelled'
                             ? orders.filter(o => o.isDeleted).length
                             : orders.filter(o => o.status === s.id && !o.isDeleted).length;
@@ -581,7 +581,7 @@ function CreateOrderModal({ onClose, nextNumber, statuses }: {
 
             await orderService.createOrder(business.id, {
                 orderNumber: nextNumber,
-                status: statuses[0]?.id || 'new',
+                status: statuses.find(s => s.isActive)?.id || 'new',
                 paymentStatus: paid >= finalTotal ? 'paid' : paid > 0 ? 'partial' : 'unpaid',
                 customer: {
                     id: null,

@@ -739,7 +739,10 @@ function OrderStatusSettings({ bizId }: { bizId: string }) {
 
     useEffect(() => {
         if (!bizId) return;
-        return orderStatusService.subscribeStatuses(bizId, setStatuses);
+        return orderStatusService.subscribeStatuses(bizId, (data) => {
+            // Sort by order
+            setStatuses(data.sort((a, b) => a.order - b.order));
+        });
     }, [bizId]);
 
     const handleDelete = async (id: string, isSystem: boolean) => {
@@ -768,10 +771,24 @@ function OrderStatusSettings({ bizId }: { bizId: string }) {
 
             <div className="status-settings-grid">
                 {statuses.map(s => (
-                    <div key={s.id} className="card status-config-card" style={{ padding: '16px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderLeft: `4px solid ${s.color}` }}>
+                    <div
+                        key={s.id}
+                        className={`card status-config-card ${!s.isActive ? 'is-inactive' : ''}`}
+                        style={{
+                            padding: '16px 20px',
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            borderLeft: `4px solid ${s.color}`,
+                            opacity: s.isActive ? 1 : 0.6
+                        }}
+                    >
                         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                             <div style={{ fontWeight: 600, fontSize: '1rem' }}>{s.label}</div>
-                            {s.isSystem && <span style={{ fontSize: '0.65rem', background: 'var(--bg-soft)', padding: '2px 6px', borderRadius: 4, opacity: 0.7 }}>СИСТЕМ</span>}
+                            <div style={{ display: 'flex', gap: 4 }}>
+                                {s.isSystem && <span style={{ fontSize: '0.65rem', background: 'var(--bg-soft)', padding: '2px 6px', borderRadius: 4, opacity: 0.7 }}>СИСТЕМ</span>}
+                                {!s.isActive && <span style={{ fontSize: '0.65rem', background: '#ef444420', color: '#ef4444', padding: '2px 6px', borderRadius: 4 }}>ИДЭВХГҮЙ</span>}
+                            </div>
                         </div>
                         <div style={{ display: 'flex', gap: 4 }}>
                             <button className="btn btn-ghost btn-xs btn-icon" onClick={(e) => { e.stopPropagation(); setEditingStatus(s); setShowModal(true); }}><MoreVertical size={14} /></button>
@@ -791,6 +808,7 @@ function OrderStatusSettings({ bizId }: { bizId: string }) {
 function OrderStatusModal({ bizId, onClose, editingStatus, nextOrder }: { bizId: string; onClose: () => void; editingStatus: OrderStatusConfig | null; nextOrder: number }) {
     const [loading, setLoading] = useState(false);
     const [color, setColor] = useState(editingStatus?.color || '#3b82f6');
+    const [isActive, setIsActive] = useState(editingStatus ? editingStatus.isActive : true);
 
     const colors = [
         '#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#64748b', '#334155', '#0f172a',
@@ -807,6 +825,7 @@ function OrderStatusModal({ bizId, onClose, editingStatus, nextOrder }: { bizId:
                 label,
                 color,
                 order: editingStatus?.order || nextOrder,
+                isActive
             };
 
             if (editingStatus) {
@@ -848,6 +867,17 @@ function OrderStatusModal({ bizId, onClose, editingStatus, nextOrder }: { bizId:
                                     />
                                 ))}
                             </div>
+                        </div>
+
+                        <div style={{ marginTop: 24, padding: '16px', background: 'var(--bg-soft)', borderRadius: 16, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                            <div>
+                                <div style={{ fontWeight: 600, fontSize: '0.95rem' }}>Төлөв идэвхтэй</div>
+                                <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Төлөвийг идэвхгүй болгосноор шинээр үүсгэхэд харагдахгүй</div>
+                            </div>
+                            <label className="toggle">
+                                <input type="checkbox" checked={isActive} onChange={e => setIsActive(e.target.checked)} />
+                                <span className="toggle-slider"></span>
+                            </label>
                         </div>
                     </div>
                     <div className="modal-footer" style={{ padding: '12px 24px 24px', border: 'none', gap: 12 }}>
