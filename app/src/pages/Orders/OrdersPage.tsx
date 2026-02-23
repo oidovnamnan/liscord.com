@@ -152,42 +152,45 @@ export function OrdersPage() {
                                 className={`order-card status-${order.status} stagger-item`}
                                 onClick={() => setSelectedOrder(order)}
                             >
-                                <div className={`order-card status-${order.status}`} onClick={() => setSelectedOrder(order)}>
+                                <div className={`order-card pro-layout status-${order.status}`} onClick={() => setSelectedOrder(order)}>
+                                    {/* Status Indicator (Slim) */}
+                                    <div className="pro-status-border"></div>
+
                                     <div className="order-card-inner">
-                                        {/* Row 1: Header */}
-                                        <div className="order-card-header">
-                                            <div className="order-header-left">
-                                                <span className="order-number">#{order.orderNumber}</span>
-                                                <span className={`badge ${statusConfig[order.status]?.cls}`}>
+                                        {/* Header Row: ID, Date, Actions */}
+                                        <div className="pro-card-header">
+                                            <div className="header-id-group">
+                                                <span className="order-id">#{order.orderNumber}</span>
+                                                <span className={`pro-badge status-${order.status}`}>
                                                     {statusConfig[order.status]?.label}
                                                 </span>
                                             </div>
-                                            <div className="order-header-right">
-                                                <span className="order-date">
+                                            <div className="header-actions-group">
+                                                <span className="pro-date">
                                                     {order.createdAt instanceof Date
                                                         ? order.createdAt.toLocaleDateString('mn-MN')
                                                         : 'Саяхан'}
                                                 </span>
                                                 <div className="order-actions-dropdown" ref={openMenuId === order.id ? menuRef : null}>
                                                     <button
-                                                        className={`btn btn-ghost btn-sm btn-icon ${openMenuId === order.id ? 'active' : ''}`}
+                                                        className={`pro-btn-ghost btn-icon ${openMenuId === order.id ? 'active' : ''}`}
                                                         onClick={e => {
                                                             e.stopPropagation();
                                                             setOpenMenuId(openMenuId === order.id ? null : order.id);
                                                         }}
                                                     >
-                                                        <MoreVertical size={16} />
+                                                        <MoreVertical size={14} />
                                                     </button>
                                                     {openMenuId === order.id && (
-                                                        <div className="dropdown-menu order-dropdown-menu" onClick={e => e.stopPropagation()}>
-                                                            <button className="dropdown-item" onClick={() => { setSelectedOrder(order); setOpenMenuId(null); }}>
+                                                        <div className="pro-dropdown-menu" onClick={e => e.stopPropagation()}>
+                                                            <button className="pro-dropdown-item" onClick={() => { setSelectedOrder(order); setOpenMenuId(null); }}>
                                                                 <Package size={14} /> Дэлгэрэнгүй
                                                             </button>
-                                                            <button className="dropdown-item" onClick={() => { /* Status change logic */ setOpenMenuId(null); }}>
+                                                            <button className="pro-dropdown-item" onClick={() => { /* Status change logic */ setOpenMenuId(null); }}>
                                                                 <CheckSquare size={14} /> Статус солих
                                                             </button>
                                                             <hr />
-                                                            <button className="dropdown-item text-danger" onClick={() => { if (confirm('Баталгаалаа юу?')) orderService.deleteOrder(business?.id!, order.id); setOpenMenuId(null); }}>
+                                                            <button className="pro-dropdown-item text-danger" onClick={() => { if (confirm('Баталгаалаа юу?')) orderService.deleteOrder(business?.id!, order.id); setOpenMenuId(null); }}>
                                                                 <Trash2 size={14} /> Устгах
                                                             </button>
                                                         </div>
@@ -196,65 +199,64 @@ export function OrdersPage() {
                                             </div>
                                         </div>
 
-                                        {/* Row 2: Product Focus (Hero Section) */}
-                                        <div className="order-product-section">
-                                            <div className="product-visual-group">
-                                                {order.items[0]?.image ? (
-                                                    <img src={order.items[0].image} className="main-product-img" alt="" />
-                                                ) : (
-                                                    <div className="main-product-placeholder">
-                                                        <Package size={24} />
+                                        {/* Main Content: Product(s) Focus */}
+                                        <div className="pro-card-main">
+                                            <div className="pro-product-listing">
+                                                {order.items.map((item, idx) => (
+                                                    <div key={idx} className="pro-item-row">
+                                                        <div className="pro-item-thumb">
+                                                            {item.image ? (
+                                                                <img src={item.image} alt="" />
+                                                            ) : (
+                                                                <Package size={16} />
+                                                            )}
+                                                        </div>
+                                                        <div className="pro-item-info">
+                                                            <span className="pro-item-name">{item.name}</span>
+                                                            <div className="pro-item-meta">
+                                                                {item.variant && <span className="pro-variant">{item.variant}</span>}
+                                                                <span className="pro-qty">x{item.quantity}</span>
+                                                            </div>
+                                                        </div>
+                                                        <div className="pro-item-price">
+                                                            {fmt(item.totalPrice)}
+                                                        </div>
                                                     </div>
-                                                )}
-                                                {order.items.length > 1 && (
-                                                    <div className="product-count-plus">+{order.items.length - 1}</div>
-                                                )}
-                                            </div>
-                                            <div className="product-info-group">
-                                                <div className="product-main-names">
-                                                    {order.items.map(i => i.name).join(', ')}
-                                                </div>
-                                                <div className="product-sub-info">
-                                                    <span className="qty-total-badge">
-                                                        {order.items.reduce((sum, i) => sum + i.quantity, 0)} ш
-                                                    </span>
-                                                    {order.items[0]?.variant && (
-                                                        <span className="variant-label"> • {order.items[0].variant}</span>
-                                                    )}
-                                                </div>
+                                                ))}
                                             </div>
                                         </div>
 
-                                        {/* Row 3: Customer & Assignee (Secondary) */}
-                                        <div className="order-meta-info">
-                                            <div className="customer-info-compact">
-                                                <User size={12} />
-                                                <span className="name">{order.customer.name}</span>
-                                                {order.customer.phone && <span className="phone">({order.customer.phone})</span>}
+                                        {/* Interaction Bar: Customer & Assignee */}
+                                        <div className="pro-card-meta-bar">
+                                            <div className="pro-meta-item">
+                                                <User size={12} className="meta-icon" />
+                                                <span className="pro-customer-name">{order.customer.name}</span>
+                                                {order.customer.phone && <span className="pro-customer-phone">{order.customer.phone}</span>}
                                             </div>
-                                            <div className="assignee-info-compact">
-                                                <div className="mini-avatar">
+                                            <div className="pro-meta-divider"></div>
+                                            <div className="pro-meta-item">
+                                                <div className="pro-assignee-mark">
                                                     {order.assignedToName?.charAt(0) || <User size={10} />}
                                                 </div>
-                                                <span>{order.assignedToName || 'Хувиарлаагүй'}</span>
+                                                <span className="pro-assignee-name">{order.assignedToName || 'Хувиарлаагүй'}</span>
                                             </div>
+                                            {order.source && (
+                                                <div className="pro-source-tag">
+                                                    {sourceIcons[order.source] || '📦'} {order.source}
+                                                </div>
+                                            )}
                                         </div>
 
-                                        {/* Row 4: Financials */}
-                                        <div className="order-card-footer">
-                                            <div className="footer-total">
-                                                <span className="label">Нийт дүн</span>
-                                                <span className="value">{fmt(order.financials.totalAmount)}</span>
+                                        {/* Footer: Financials Summary */}
+                                        <div className="pro-card-footer">
+                                            <div className="pro-financial-summary">
+                                                <div className="pro-total-label">НИЙТ ДҮН</div>
+                                                <div className="pro-total-value">{fmt(order.financials.totalAmount)}</div>
                                             </div>
-                                            <div className="footer-status-badges">
-                                                <span className={`badge ${paymentConfig[order.paymentStatus]?.cls}`}>
-                                                    {paymentConfig[order.paymentStatus]?.label}
+                                            <div className="pro-payment-indicator">
+                                                <span className={`pro-payment-badge ${order.paymentStatus}`}>
+                                                    <CreditCard size={12} /> {paymentConfig[order.paymentStatus]?.label}
                                                 </span>
-                                                {order.source && (
-                                                    <span className="source-mini-badge" title={order.source}>
-                                                        {sourceIcons[order.source] || '📦'}
-                                                    </span>
-                                                )}
                                             </div>
                                         </div>
                                     </div>
