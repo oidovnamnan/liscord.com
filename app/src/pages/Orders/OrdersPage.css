@@ -46,28 +46,33 @@
 .orders-status-chip {
     display: flex;
     align-items: center;
-    gap: 6px;
-    padding: 8px 16px;
-    background: var(--surface-1);
-    border: 1px solid var(--border-primary);
-    border-radius: var(--radius-full);
-    font-size: 0.8rem;
+    gap: 8px;
+    padding: 10px 20px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 14px;
+    font-size: 0.85rem;
     font-weight: 500;
-    color: var(--text-secondary);
+    color: var(--text-muted);
     cursor: pointer;
-    transition: all var(--transition-fast);
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
     white-space: nowrap;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
 }
 
 .orders-status-chip:hover {
-    background: var(--bg-hover);
+    transform: translateY(-2px);
+    background: var(--bg-soft);
+    border-color: var(--primary-light);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
 }
 
 .orders-status-chip.active {
-    background: var(--primary-light);
-    border-color: var(--primary);
-    color: var(--primary);
+    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+    border-color: transparent;
+    color: white;
     font-weight: 600;
+    box-shadow: 0 8px 16px var(--primary-light);
 }
 
 .badge-paid {
@@ -82,14 +87,17 @@
 }
 
 .orders-status-count {
-    font-size: 0.7rem;
-    background: var(--surface-3);
-    padding: 1px 6px;
-    border-radius: var(--radius-full);
+    font-size: 0.75rem;
+    background: var(--bg-soft);
+    padding: 2px 8px;
+    border-radius: 8px;
+    color: var(--text-muted);
+    transition: all 0.2s ease;
 }
 
 .orders-status-chip.active .orders-status-count {
-    background: rgba(108, 92, 231, 0.3);
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
 }
 
 /* Orders list */
@@ -100,7 +108,34 @@
 }
 
 .order-card {
-    padding: var(--space-md) var(--space-lg);
+    padding: 0;
+    overflow: hidden;
+    position: relative;
+    border-radius: 18px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    border: 1px solid var(--border-color);
+    background: var(--bg-card);
+}
+
+.order-card::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 6px;
+    background: var(--status-color, var(--primary));
+    opacity: 0.8;
+}
+
+.order-card:hover {
+    transform: translateX(6px);
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.06);
+    border-color: var(--primary-light);
+}
+
+.order-card-inner {
+    padding: 20px 24px;
 }
 
 .order-card-top {
@@ -159,8 +194,34 @@
 
 .order-customer {
     display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.customer-main {
+    display: flex;
     align-items: center;
-    gap: var(--space-sm);
+    gap: 12px;
+}
+
+.customer-name {
+    font-weight: 700;
+    font-size: 1.05rem;
+    color: var(--text-main);
+}
+
+.customer-meta {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+}
+
+.meta-item {
+    display: flex;
+    align-items: center;
+    gap: 4px;
 }
 
 .order-customer strong {
@@ -347,6 +408,68 @@
 
 .remove-selected-btn:hover {
     color: #ef4444;
+}
+
+/* Status-based colors for left border */
+.order-card.status-new {
+    --status-color: #6c5ce7;
+}
+
+.order-card.status-confirmed {
+    --status-color: #00b894;
+}
+
+.order-card.status-preparing {
+    --status-color: #fdcb6e;
+}
+
+.order-card.status-shipping {
+    --status-color: #0984e3;
+}
+
+.order-card.status-delivered {
+    --status-color: #00b894;
+}
+
+.order-card.status-cancelled {
+    --status-color: #ff7675;
+}
+
+.order-items-scroll {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    padding-bottom: 4px;
+    margin-top: 8px;
+}
+
+.order-item-tag {
+    background: var(--bg-soft);
+    padding: 4px 10px;
+    border-radius: 8px;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    border: 1px solid var(--border-color);
+    white-space: nowrap;
+}
+
+.order-total-group {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.order-total-label {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.order-total-value {
+    font-weight: 800;
+    font-size: 1.15rem;
+    color: var(--text-main);
 }
 
 @media (max-width: 640px) {

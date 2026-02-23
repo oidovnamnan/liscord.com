@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Header } from '../../components/layout/Header';
-import { Plus, Search, MoreVertical, Loader2, X, User, Package, CreditCard } from 'lucide-react';
+import { Plus, Search, MoreVertical, Loader2, X, User, Package, CreditCard, Phone, MapPin } from 'lucide-react';
 import { useBusinessStore, useAuthStore } from '../../store';
 import {
     productService,
@@ -135,54 +135,86 @@ export function OrdersPage() {
                         </div>
                     ) : (
                         filtered.map(order => (
-                            <div key={order.id} className="order-card card card-clickable" onClick={() => setSelectedOrder(order)}>
-                                <div className="order-card-top">
-                                    <div className="order-card-left">
-                                        <span className="order-number">#{order.orderNumber}</span>
-                                        <span className={`badge ${statusConfig[order.status]?.cls}`}>
-                                            {statusConfig[order.status]?.label}
-                                        </span>
-                                        {order.source && (
-                                            <span className="order-source-icon" title={order.source}>
-                                                {sourceIcons[order.source] || '📦'}
+                            <div
+                                key={order.id}
+                                className={`order-card status-${order.status} stagger-item`}
+                                onClick={() => setSelectedOrder(order)}
+                            >
+                                <div className="order-card-inner">
+                                    <div className="order-card-top">
+                                        <div className="order-card-left">
+                                            <div className="order-number-badge">
+                                                <span className="order-number">#{order.orderNumber}</span>
+                                            </div>
+                                            <span className={`badge ${statusConfig[order.status]?.cls}`}>
+                                                {statusConfig[order.status]?.label}
                                             </span>
-                                        )}
-                                    </div>
-                                    <div className="order-card-right">
-                                        <span className="order-date">
-                                            {order.createdAt instanceof Date
-                                                ? order.createdAt.toLocaleDateString('mn-MN')
-                                                : 'Саяхан'}
-                                        </span>
-                                        <button className="btn btn-ghost btn-sm btn-icon" onClick={e => { e.stopPropagation(); /* context menu later */ }}>
-                                            <MoreVertical size={16} />
-                                        </button>
-                                    </div>
-                                </div>
-                                <div className="order-card-body">
-                                    <div className="order-customer">
-                                        <strong>{order.customer.name}</strong>
-                                        <span className="order-phone">{order.customer.phone}</span>
-                                        {order.customer.socialHandle && (
-                                            <span className="order-social-handle">@{order.customer.socialHandle}</span>
-                                        )}
-                                    </div>
-                                    <div className="order-items">
-                                        {order.items.map(i => `${i.name} x${i.quantity}`).join(', ')}
-                                    </div>
-                                </div>
-                                <div className="order-card-bottom">
-                                    <div className="order-financials">
-                                        <div className="order-total">{fmt(order.financials.totalAmount)}</div>
-                                        <span className={`badge ${paymentConfig[order.paymentStatus]?.cls}`}>
-                                            {paymentConfig[order.paymentStatus]?.label}
-                                        </span>
-                                    </div>
-                                    <div className="order-assignee">
-                                        <div className="order-assignee-avatar">
-                                            {order.assignedToName?.charAt(0) || '?'}
+                                            {order.source && (
+                                                <div className="order-source-badge" title={order.source}>
+                                                    {sourceIcons[order.source] || '📦'}
+                                                </div>
+                                            )}
                                         </div>
-                                        <span>{order.assignedToName || 'Хувиарлаагүй'}</span>
+                                        <div className="order-card-right">
+                                            <span className="order-date">
+                                                {order.createdAt instanceof Date
+                                                    ? order.createdAt.toLocaleDateString('mn-MN')
+                                                    : 'Саяхан'}
+                                            </span>
+                                            <button className="btn btn-ghost btn-sm btn-icon" onClick={e => { e.stopPropagation(); }}>
+                                                <MoreVertical size={16} />
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <div className="order-card-body">
+                                        <div className="order-customer">
+                                            <div className="customer-main">
+                                                <div className="icon-badge-sm"><User size={14} /></div>
+                                                <span className="customer-name">{order.customer.name}</span>
+                                                {order.customer.socialHandle && (
+                                                    <span className="order-social-handle">@{order.customer.socialHandle}</span>
+                                                )}
+                                            </div>
+                                            <div className="customer-meta">
+                                                <div className="meta-item">
+                                                    <Phone size={12} />
+                                                    <span>{order.customer.phone}</span>
+                                                </div>
+                                                {order.deliveryAddress && (
+                                                    <div className="meta-item">
+                                                        <MapPin size={12} />
+                                                        <span className="truncate" style={{ maxWidth: 200 }}>{order.deliveryAddress}</span>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        <div className="order-items-scroll hide-scrollbar">
+                                            {order.items.map((i, idx) => (
+                                                <span key={idx} className="order-item-tag">
+                                                    {i.name} <span style={{ opacity: 0.6 }}>x{i.quantity}</span>
+                                                </span>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    <div className="order-card-bottom">
+                                        <div className="order-financials">
+                                            <div className="order-total-group">
+                                                <span className="order-total-label">Нийт дүн</span>
+                                                <span className="order-total-value">{fmt(order.financials.totalAmount)}</span>
+                                            </div>
+                                            <span className={`badge ${paymentConfig[order.paymentStatus]?.cls}`}>
+                                                {paymentConfig[order.paymentStatus]?.label}
+                                            </span>
+                                        </div>
+                                        <div className="order-assignee">
+                                            <div className="order-assignee-avatar">
+                                                {order.assignedToName?.charAt(0) || <User size={12} />}
+                                            </div>
+                                            <span>{order.assignedToName || 'Хувиарлаагүй'}</span>
+                                        </div>
                                     </div>
                                 </div>
                             </div>

@@ -1,4 +1,4 @@
-import { X, Printer, Clock, User, Package, CreditCard } from 'lucide-react';
+import { X, Printer, Clock, User, Package, CreditCard, CheckCircle2 } from 'lucide-react';
 import type { Order, OrderStatus } from '../../types';
 import './OrderDetailModal.css';
 
@@ -159,8 +159,31 @@ export function OrderDetailModal({ order, onClose }: OrderDetailModalProps) {
 
                             <section className="info-section hide-print">
                                 <h3 className="section-title"><Clock size={16} /> Статус түүх</h3>
-                                <div className="timeline">
-                                    {/* ... existing timeline code ... */}
+                                <div className="timeline-card">
+                                    <div className="timeline">
+                                        {/* Status items */}
+                                        {[
+                                            { status: 'new', label: 'Захиалга үүсэх', completed: true },
+                                            { status: 'confirmed', label: 'Баталгаажсан', completed: order.status !== 'new' && order.status !== 'cancelled' },
+                                            { status: 'preparing', label: 'Бэлтгэж байна', completed: ['preparing', 'ready', 'shipping', 'delivered', 'completed'].includes(order.status) },
+                                            { status: 'shipping', label: 'Хүргэлтэнд гарсан', completed: ['shipping', 'delivered', 'completed'].includes(order.status) },
+                                            { status: 'delivered', label: 'Хүргэгдсэн', completed: ['delivered', 'completed'].includes(order.status) }
+                                        ].map((item, idx) => (
+                                            <div key={idx} className={`timeline - item ${item.completed ? 'active' : ''} `}>
+                                                <div className="timeline-marker">
+                                                    {item.completed ? <CheckCircle2 size={12} /> : idx + 1}
+                                                </div>
+                                                <div className="timeline-content">
+                                                    <div className="timeline-status-label">{item.label}</div>
+                                                    {item.completed && (
+                                                        <div className="timeline-meta">
+                                                            <span className="timeline-time">2026.02.23 09:16</span>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
                                 </div>
                             </section>
 
@@ -168,9 +191,9 @@ export function OrderDetailModal({ order, onClose }: OrderDetailModalProps) {
                                 <h3 className="section-title">Төлбөрийн баримт</h3>
                                 <div className="payment-screenshot-box">
                                     {order.paymentScreenshot ? (
-                                        <img src={order.paymentScreenshot} alt="Баримт" style={{ maxWidth: '100%', borderRadius: 8 }} />
+                                        <img src={order.paymentScreenshot} alt="Баримт" style={{ maxWidth: '100%', borderRadius: 16 }} />
                                     ) : (
-                                        <div className="empty-photo-placeholder">
+                                        <div className="empty-photo-placeholder" style={{ borderRadius: 16 }}>
                                             📷 Баримтын зураг байхгүй
                                         </div>
                                     )}
