@@ -848,3 +848,13 @@
 .order-cancel-badge svg {
     color: #ef4444;
 }
+
+.pro-assignee-mark.creator {
+    background: #f1f5f9;
+    color: #475569;
+    border: 1px dashed #cbd5e1;
+}
+
+.pro-meta-item[title] {
+    cursor: help;
+}

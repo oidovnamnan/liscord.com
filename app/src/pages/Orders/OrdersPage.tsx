@@ -5,7 +5,8 @@ import { useBusinessStore, useAuthStore } from '../../store';
 import {
     productService,
     orderService,
-    sourceService
+    sourceService,
+    customerService
 } from '../../services/db';
 import type { OrderSource, SocialAccount } from '../../types';
 import { OrderDetailModal } from './OrderDetailModal';
@@ -262,6 +263,13 @@ export function OrdersPage() {
                                                     {sourceIcons[order.source] || '📦'} {order.source}
                                                 </div>
                                             )}
+                                            <div className="pro-meta-divider"></div>
+                                            <div className="pro-meta-item" title={`Үүсгэсэн: ${order.createdByName || 'Систем'}`}>
+                                                <div className="pro-assignee-mark creator">
+                                                    {order.createdByName?.charAt(0) || '?'}
+                                                </div>
+                                                <span className="pro-assignee-name">{order.createdByName?.split(' ')[0] || 'Систем'}</span>
+                                            </div>
                                         </div>
 
                                         {/* Footer: Financials Summary */}
@@ -364,6 +372,9 @@ function CreateOrderModal({ onClose, nextNumber }: {
 
     // Data lists
     const [allProducts, setAllProducts] = useState<any[]>([]);
+    const [allCustomers, setAllCustomers] = useState<any[]>([]);
+    const [filteredCustomers, setFilteredCustomers] = useState<any[]>([]);
+    const [showCustomerResults, setShowCustomerResults] = useState(false);
 
     // Customer Info
     const [customer, setCustomer] = useState('');
@@ -422,10 +433,16 @@ function CreateOrderModal({ onClose, nextNumber }: {
             setAllAccounts(data);
         });
 
+        // Fetch customers for autocomplete
+        const unsubCustomers = customerService.subscribeCustomers(business.id, (data) => {
+            setAllCustomers(data);
+        });
+
         return () => {
             unsubProducts();
             unsubSources();
             unsubAccounts();
+            unsubCustomers();
         };
     }, [business?.id, sourceId]); // Added sourceId to dependencies to re-evaluate auto-selection if sourceId changes
 
@@ -594,13 +611,57 @@ function CreateOrderModal({ onClose, nextNumber }: {
                         <div className="modal-section">
                             <div className="modal-section-title"><User size={14} /> Харилцагчийн мэдээлэл</div>
                             <div className="input-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                                <div className="input-group" style={{ position: 'relative' }}>
+                                    <label className="input-label">Утасны дугаар <span className="required">*</span></label>
+                                    <input
+                                        className="input"
+                                        placeholder="8811-XXXX"
+                                        value={phone}
+                                        onChange={e => {
+                                            const val = e.target.value;
+                                            setPhone(val);
+                                            if (val.length >= 4) {
+                                                const matches = allCustomers.filter(c =>
+                                                    c.phone?.includes(val) ||
+                                                    c.name?.toLowerCase().includes(val.toLowerCase())
+                                                ).slice(0, 5);
+                                                setFilteredCustomers(matches);
+                                                setShowCustomerResults(matches.length > 0);
+                                            } else {
+                                                setShowCustomerResults(false);
+                                            }
+                                        }}
+                                        required
+                                        onBlur={() => setTimeout(() => setShowCustomerResults(false), 200)}
+                                    />
+                                    {showCustomerResults && (
+                                        <div className="product-results" style={{ top: '100%', left: 0, right: 0, zIndex: 100, marginBottom: 0 }}>
+                                            {filteredCustomers.map(c => (
+                                                <div
+                                                    key={c.id}
+                                                    className="product-result-item"
+                                                    onClick={() => {
+                                                        setCustomer(c.name || '');
+                                                        setPhone(c.phone || '');
+                                                        setSocialHandle(c.socialHandle || '');
+                                                        if (c.sourceId) setSourceId(c.sourceId);
+                                                        if (c.accountId) setAccountId(c.accountId);
+                                                        if (c.address) setAddress(c.address);
+                                                        setShowCustomerResults(false);
+                                                    }}
+                                                >
+                                                    <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                                        <span style={{ fontWeight: 600, fontSize: '0.85rem' }}>{c.name}</span>
+                                                        <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{c.phone} {c.socialHandle && `• ${c.socialHandle}`}</span>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
                                 <div className="input-group">
                                     <label className="input-label">Сошиал хаяг (IG/FB) <span className="required">*</span></label>
                                     <input className="input" placeholder="@username" value={socialHandle} onChange={e => setSocialHandle(e.target.value)} required />
-                                </div>
-                                <div className="input-group">
-                                    <label className="input-label">Утасны дугаар <span className="required">*</span></label>
-                                    <input className="input" placeholder="8811-XXXX" value={phone} onChange={e => setPhone(e.target.value)} required />
                                 </div>
                             </div>
                             <div className="input-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
