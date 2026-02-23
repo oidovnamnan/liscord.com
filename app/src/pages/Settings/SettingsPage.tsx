@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Header } from '../../components/layout/Header';
-import { Building2, Palette, Bell, Shield, Users, Globe, Moon, Sun, Monitor, Loader2, Plus, MoreVertical, Trash2, Share2 } from 'lucide-react';
+import { Building2, Palette, Bell, Shield, Users, Globe, Moon, Sun, Monitor, Loader2, Plus, MoreVertical, Trash2, Share2, X } from 'lucide-react';
 import { useBusinessStore, useUIStore } from '../../store';
 import { businessService, teamService, cargoService, sourceService } from '../../services/db';
 import { toast } from 'react-hot-toast';
@@ -372,55 +372,101 @@ function SourceSettings({ bizId }: { bizId: string }) {
         } catch (e) { toast.error('Алдаа гарлаа'); }
     };
 
+    const currentSource = sources.find(s => s.id === selectedSourceId);
+    const filteredAccounts = accounts.filter(a => !selectedSourceId || a.sourceId === selectedSourceId);
+
     return (
-        <div className="settings-section animate-fade-in">
-            <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: 32 }}>
+        <div className="settings-section animate-fade-in" style={{ padding: '0 var(--space-xs)' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '320px 1fr', gap: 32 }}>
                 <div className="sources-list">
-                    <div className="section-header-compact">
-                        <h3>Эх сурвалжууд</h3>
-                        <button className="btn btn-primary btn-sm" onClick={() => { setEditingSource(null); setShowSourceModal(true); }}>
+                    <div className="section-header-compact" style={{ marginBottom: 16 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <div className="icon-badge"><Share2 size={16} /></div>
+                            <h3 style={{ margin: 0 }}>Эх сурвалжууд</h3>
+                        </div>
+                        <button className="btn btn-primary btn-sm gradient-btn" onClick={() => { setEditingSource(null); setShowSourceModal(true); }}>
                             <Plus size={14} /> Нэмэх
                         </button>
                     </div>
-                    <div className="source-cards-grid" style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 16 }}>
+                    <div className="source-cards-grid" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                         {sources.map(s => (
-                            <div key={s.id} className={`card ${selectedSourceId === s.id ? 'active' : ''}`} style={{ padding: 16, cursor: 'pointer', border: selectedSourceId === s.id ? '2px solid var(--primary)' : '' }} onClick={() => setSelectedSourceId(s.id)}>
+                            <div
+                                key={s.id}
+                                className={`card source-card ${selectedSourceId === s.id ? 'active' : ''}`}
+                                style={{ padding: '16px 20px', cursor: 'pointer' }}
+                                onClick={() => setSelectedSourceId(s.id)}
+                            >
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                    <div style={{ fontWeight: 600 }}>{s.name}</div>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                                        <div style={{ color: selectedSourceId === s.id ? 'var(--primary)' : 'var(--text-muted)' }}>
+                                            <Globe size={18} />
+                                        </div>
+                                        <div style={{ fontWeight: selectedSourceId === s.id ? 700 : 500, fontSize: '1rem' }}>{s.name}</div>
+                                    </div>
                                     <div style={{ display: 'flex', gap: 4 }}>
-                                        <button className="btn btn-ghost btn-sm btn-icon" onClick={(e) => { e.stopPropagation(); setEditingSource(s); setShowSourceModal(true); }}><MoreVertical size={14} /></button>
-                                        <button className="btn btn-ghost btn-sm btn-icon text-danger" onClick={(e) => { e.stopPropagation(); handleDeleteSource(s.id); }}><Trash2 size={14} /></button>
+                                        <button className="btn btn-ghost btn-xs btn-icon" onClick={(e) => { e.stopPropagation(); setEditingSource(s); setShowSourceModal(true); }}><MoreVertical size={14} /></button>
+                                        <button className="btn btn-ghost btn-xs btn-icon text-danger" onClick={(e) => { e.stopPropagation(); handleDeleteSource(s.id); }}><Trash2 size={14} /></button>
                                     </div>
                                 </div>
                             </div>
                         ))}
+                        {sources.length === 0 && (
+                            <div className="empty-state-illustrative">
+                                <Share2 size={32} style={{ opacity: 0.3, marginBottom: 12 }} />
+                                <p style={{ fontSize: '0.9rem', marginBottom: 0 }}>Эх сурвалж бүртгэгдээгүй байна</p>
+                            </div>
+                        )}
                     </div>
                 </div>
 
                 <div className="accounts-list">
-                    <div className="section-header-compact">
-                        <h3>{selectedSourceId ? sources.find(s => s.id === selectedSourceId)?.name : 'Бүх'} хаягууд</h3>
+                    <div className="section-header-compact" style={{ marginBottom: 16 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                            <div className="icon-badge" style={{ background: 'var(--bg-soft)' }}><Users size={16} /></div>
+                            <h3 style={{ margin: 0 }}>{currentSource ? `${currentSource.name} хаягууд` : 'Бүх хаягууд'}</h3>
+                        </div>
                         <button className="btn btn-primary btn-sm" disabled={!selectedSourceId} onClick={() => setShowAccountModal(true)}>
                             <Plus size={14} /> Хаяг нэмэх
                         </button>
                     </div>
-                    <div className="account-cards-grid" style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 16 }}>
-                        {accounts.filter(a => !selectedSourceId || a.sourceId === selectedSourceId).map(a => (
-                            <div key={a.id} className="card" style={{ padding: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                <div>{a.name}</div>
-                                <button className="btn btn-ghost btn-sm btn-icon text-danger" onClick={() => handleDeleteAccount(a.id)}><Trash2 size={14} /></button>
+
+                    <div className="account-cards-grid" style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                        {filteredAccounts.map(a => (
+                            <div key={a.id} className="card account-card" style={{ padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                                    <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'var(--bg-soft)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.9rem', fontWeight: 600, color: 'var(--primary)' }}>
+                                        {a.name.charAt(0)}
+                                    </div>
+                                    <div style={{ fontWeight: 500 }}>{a.name}</div>
+                                </div>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                                    {!selectedSourceId && <span className="account-badge">{sources.find(s => s.id === a.sourceId)?.name}</span>}
+                                    <button className="btn btn-ghost btn-sm btn-icon text-danger" onClick={() => handleDeleteAccount(a.id)}><Trash2 size={14} /></button>
+                                </div>
                             </div>
                         ))}
-                        {selectedSourceId && accounts.filter(a => a.sourceId === selectedSourceId).length === 0 && (
-                            <div style={{ textAlign: 'center', padding: 24, fontSize: '0.9rem', color: 'var(--text-muted)', background: 'var(--bg-soft)', borderRadius: 8 }}>Хаяг бүртгэгдээгүй байна</div>
+
+                        {selectedSourceId && filteredAccounts.length === 0 && (
+                            <div className="empty-state-illustrative" style={{ padding: '40px 20px' }}>
+                                <div style={{ width: 48, height: 48, borderRadius: '50%', background: 'var(--bg-soft)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}>
+                                    <Plus size={20} style={{ opacity: 0.4 }} />
+                                </div>
+                                <p style={{ fontWeight: 500, marginBottom: 4 }}>Хаяг бүртгэгдээгүй байна</p>
+                                <p style={{ fontSize: '0.85rem', opacity: 0.7 }}>"{currentSource?.name}" эх сурвалжид хамаарах хаяг/пэйж нэмнэ үү</p>
+                            </div>
                         )}
-                        {!selectedSourceId && <div style={{ textAlign: 'center', padding: 24, fontSize: '0.9rem', color: 'var(--text-muted)' }}>Эх сурвалж сонгож хаяг нэмнэ үү</div>}
+
+                        {!selectedSourceId && sources.length > 0 && (
+                            <div className="empty-state-illustrative" style={{ padding: '40px 20px' }}>
+                                <p style={{ fontSize: '0.9rem', opacity: 0.7 }}>Зүүн талын жагсаалтаас эх сурвалж сонгож хаяг удирдана уу</p>
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>
 
             {showSourceModal && <OrderSourceModal bizId={bizId} onClose={() => setShowSourceModal(false)} editingSource={editingSource} />}
-            {showAccountModal && <SocialAccountModal bizId={bizId} sourceId={selectedSourceId!} onClose={() => setShowAccountModal(false)} />}
+            {showAccountModal && <SocialAccountModal bizId={bizId} sourceId={selectedSourceId!} sourceName={currentSource?.name || ''} onClose={() => setShowAccountModal(false)} />}
         </div>
     );
 }
@@ -440,16 +486,32 @@ function OrderSourceModal({ bizId, onClose, editingSource }: { bizId: string; on
         } catch (e) { toast.error('Алдаа гарлаа'); } finally { setLoading(false); }
     };
     return (
-        <div className="modal-backdrop" onClick={onClose}><div className="modal" onClick={e => e.stopPropagation()} style={{ maxWidth: 400 }}>
-            <div className="modal-header"><h2>{editingSource ? 'Эх сурвалж засах' : 'Шинэ эх сурвалж'}</h2><button onClick={onClose} className="btn btn-ghost btn-icon">✕</button></div>
-            <form onSubmit={handleSubmit}><div className="modal-body">
-                <div className="input-group"><label className="input-label">Нэр</label><input className="input" name="name" defaultValue={editingSource?.name} placeholder="Жишээ: Facebook" required autoFocus /></div>
-            </div><div className="modal-footer"><button type="submit" className="btn btn-primary" disabled={loading}>Хадгалах</button></div></form>
-        </div></div>
+        <div className="modal-backdrop" onClick={onClose}>
+            <div className="modal animate-slide-up" onClick={e => e.stopPropagation()} style={{ maxWidth: 400, borderRadius: 24 }}>
+                <div className="modal-header" style={{ padding: '24px 24px 12px' }}>
+                    <h2 style={{ fontSize: '1.4rem' }}>{editingSource ? 'Эх сурвалж засах' : 'Шинэ эх сурвалж'}</h2>
+                    <button onClick={onClose} className="btn btn-ghost btn-icon"><X size={20} /></button>
+                </div>
+                <form onSubmit={handleSubmit}>
+                    <div className="modal-body" style={{ padding: '12px 24px 24px' }}>
+                        <div className="input-group">
+                            <label className="input-label">Эх сурвалжийн нэр</label>
+                            <input className="input" name="name" defaultValue={editingSource?.name} placeholder="Жишээ: Facebook, Instagram, TikTok..." required autoFocus style={{ height: 48, borderRadius: 12 }} />
+                        </div>
+                    </div>
+                    <div className="modal-footer" style={{ padding: '12px 24px 24px', border: 'none', gap: 12 }}>
+                        <button type="button" className="btn btn-secondary" onClick={onClose} style={{ flex: 1, height: 44, borderRadius: 12 }}>Болих</button>
+                        <button type="submit" className="btn btn-primary gradient-btn" disabled={loading} style={{ flex: 1, height: 44, borderRadius: 12 }}>
+                            {loading ? <Loader2 size={18} className="animate-spin" /> : 'Хадгалах'}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
     );
 }
 
-function SocialAccountModal({ bizId, sourceId, onClose }: { bizId: string; sourceId: string; onClose: () => void }) {
+function SocialAccountModal({ bizId, sourceId, sourceName, onClose }: { bizId: string; sourceId: string; sourceName: string; onClose: () => void }) {
     const [loading, setLoading] = useState(false);
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
@@ -462,11 +524,30 @@ function SocialAccountModal({ bizId, sourceId, onClose }: { bizId: string; sourc
         } catch (e) { toast.error('Алдаа гарлаа'); } finally { setLoading(false); }
     };
     return (
-        <div className="modal-backdrop" onClick={onClose}><div className="modal" onClick={e => e.stopPropagation()} style={{ maxWidth: 400 }}>
-            <div className="modal-header"><h2>Шинэ хаяг / Пэйж</h2><button onClick={onClose} className="btn btn-ghost btn-icon">✕</button></div>
-            <form onSubmit={handleSubmit}><div className="modal-body">
-                <div className="input-group"><label className="input-label">Нэр</label><input className="input" name="name" placeholder="Жишээ: Liscord Shop" required autoFocus /></div>
-            </div><div className="modal-footer"><button type="submit" className="btn btn-primary" disabled={loading}>Хадгалах</button></div></form>
-        </div></div>
+        <div className="modal-backdrop" onClick={onClose}>
+            <div className="modal animate-slide-up" onClick={e => e.stopPropagation()} style={{ maxWidth: 400, borderRadius: 24 }}>
+                <div className="modal-header" style={{ padding: '24px 24px 12px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column' }}>
+                        <h2 style={{ fontSize: '1.4rem', marginBottom: 4 }}>Шинэ хаяг / Пэйж</h2>
+                        <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Эх сурвалж: <strong>{sourceName}</strong></span>
+                    </div>
+                    <button onClick={onClose} className="btn btn-ghost btn-icon"><X size={20} /></button>
+                </div>
+                <form onSubmit={handleSubmit}>
+                    <div className="modal-body" style={{ padding: '12px 24px 24px' }}>
+                        <div className="input-group">
+                            <label className="input-label">Пэйж буюу хаягийн нэр</label>
+                            <input className="input" name="name" placeholder="Жишээ: Liscord Shop, Facebook Page A..." required autoFocus style={{ height: 48, borderRadius: 12 }} />
+                        </div>
+                    </div>
+                    <div className="modal-footer" style={{ padding: '12px 24px 24px', border: 'none', gap: 12 }}>
+                        <button type="button" className="btn btn-secondary" onClick={onClose} style={{ flex: 1, height: 44, borderRadius: 12 }}>Болих</button>
+                        <button type="submit" className="btn btn-primary gradient-btn" disabled={loading} style={{ flex: 1, height: 44, borderRadius: 12 }}>
+                            {loading ? <Loader2 size={18} className="animate-spin" /> : 'Нэмэх'}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
     );
 }

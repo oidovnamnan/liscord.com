@@ -45,7 +45,6 @@
     min-width: 0;
 }
 
-.settings-section {}
 
 .settings-section h2 {
     font-size: 1.3rem;
@@ -173,4 +172,87 @@
     .theme-options {
         flex-direction: column;
     }
+}
+
+/* Order Sources Premium Styles */
+.source-card {
+    transition: all var(--transition-normal);
+    border: 1px solid var(--border-primary);
+    background: var(--surface-1);
+    position: relative;
+    overflow: hidden;
+}
+
+.source-card::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+    background: var(--primary);
+    transform: scaleY(0);
+    transition: transform var(--transition-fast);
+}
+
+.source-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+    border-color: var(--primary-light);
+}
+
+.source-card.active {
+    border-color: var(--primary);
+    background: var(--primary-light-alpha, rgba(108, 92, 231, 0.05));
+    box-shadow: 0 4px 12px rgba(108, 92, 231, 0.1);
+}
+
+.source-card.active::after {
+    transform: scaleY(1);
+}
+
+.account-card {
+    transition: all var(--transition-normal);
+    border: 1px solid var(--border-primary);
+    background: var(--surface-2);
+}
+
+.account-card:hover {
+    background: var(--surface-1);
+    border-color: var(--border-secondary);
+    transform: translateX(4px);
+}
+
+.account-badge {
+    padding: 2px 8px;
+    border-radius: var(--radius-full);
+    font-size: 0.75rem;
+    font-weight: 600;
+    background: var(--bg-soft);
+    color: var(--text-muted);
+}
+
+.empty-state-illustrative {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-2xl) var(--space-xl);
+    background: var(--bg-soft);
+    border-radius: var(--radius-lg);
+    border: 1px dashed var(--border-primary);
+    color: var(--text-muted);
+    text-align: center;
+}
+
+.gradient-btn {
+    background: linear-gradient(135deg, var(--primary) 0%, #8e44ad 100%);
+    color: white;
+    border: none;
+    box-shadow: 0 4px 15px rgba(108, 92, 231, 0.3);
+}
+
+.gradient-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(108, 92, 231, 0.4);
 }
