@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { Header } from '../../components/layout/Header';
 import { Building2, Palette, Bell, Shield, Users, Globe, Moon, Sun, Monitor, Loader2, Plus, MoreVertical, Trash2, Share2, X, CheckSquare, ListOrdered } from 'lucide-react';
 import { useBusinessStore, useUIStore } from '../../store';
@@ -842,7 +843,7 @@ function OrderStatusModal({ bizId, onClose, editingStatus, nextOrder }: { bizId:
         } catch (e) { toast.error('Алдаа гарлаа'); } finally { setLoading(false); }
     };
 
-    return (
+    return createPortal(
         <div className="modal-backdrop premium-backdrop" onClick={onClose}>
             <div className="modal premium-modal animate-slide-up" onClick={e => e.stopPropagation()}>
                 <div className="modal-header">
@@ -906,6 +907,7 @@ function OrderStatusModal({ bizId, onClose, editingStatus, nextOrder }: { bizId:
                     </div>
                 </form>
             </div>
-        </div>
+        </div>,
+        document.body
     );
 }
