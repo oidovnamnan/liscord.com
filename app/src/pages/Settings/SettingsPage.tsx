@@ -12,6 +12,13 @@ export function SettingsPage() {
     const { business } = useBusinessStore();
     const { theme, setTheme } = useUIStore();
     const [activeTab, setActiveTab] = useState('general');
+    const [language, setLanguage] = useState('mn');
+    const [notifications, setNotifications] = useState({
+        newOrders: true,
+        lowStock: true,
+        cargoUpdates: true,
+        teamActivity: false
+    });
     const [loading, setLoading] = useState(false);
 
     const tabs = [
@@ -71,37 +78,190 @@ export function SettingsPage() {
                     <div className="settings-content">
                         {activeTab === 'general' && (
                             <div className="settings-section animate-fade-in">
-                                <h2>Бизнесийн мэдээлэл</h2>
-                                <form className="settings-form" onSubmit={handleUpdateBusiness}>
-                                    <div className="input-group"><label className="input-label">Бизнесийн нэр</label><input className="input" name="name" defaultValue={business?.name} required /></div>
-                                    <div className="grid-2-gap"><div className="input-group"><label className="input-label">Утас</label><input className="input" name="phone" defaultValue={business?.phone} /></div><div className="input-group"><label className="input-label">И-мэйл</label><input className="input" name="email" defaultValue={business?.email} /></div></div>
-                                    <div className="input-group"><label className="input-label">Хаяг</label><input className="input" name="address" defaultValue={business?.address} /></div>
-                                    <button className="btn btn-primary" type="submit" disabled={loading}>{loading ? <Loader2 size={16} className="animate-spin" /> : 'Хадгалах'}</button>
-                                </form>
+                                <h2>Бизнесийн тохиргоо</h2>
+
+                                <div className="settings-card">
+                                    <div className="settings-card-header">
+                                        <div className="settings-card-icon"><Building2 size={20} /></div>
+                                        <h3>Үндсэн мэдээлэл</h3>
+                                    </div>
+                                    <form className="settings-form" onSubmit={handleUpdateBusiness}>
+                                        <div className="input-group">
+                                            <label className="input-label">Бизнесийн нэр</label>
+                                            <input className="input" name="name" defaultValue={business?.name} required placeholder="Танай бизнесийн нэр" />
+                                        </div>
+                                        <div className="grid-2-gap">
+                                            <div className="input-group">
+                                                <label className="input-label">Утас</label>
+                                                <input className="input" name="phone" defaultValue={business?.phone} placeholder="Холбоо барих утас" />
+                                            </div>
+                                            <div className="input-group">
+                                                <label className="input-label">И-мэйл</label>
+                                                <input className="input" name="email" defaultValue={business?.email} placeholder="Бизнес и-мэйл" />
+                                            </div>
+                                        </div>
+                                        <div className="input-group">
+                                            <label className="input-label">Хаяг</label>
+                                            <input className="input" name="address" defaultValue={business?.address} placeholder="Бизнесийн байршил" />
+                                        </div>
+                                        <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 12 }}>
+                                            <button className="btn btn-primary gradient-btn" type="submit" disabled={loading} style={{ minWidth: 120 }}>
+                                                {loading ? <Loader2 size={16} className="animate-spin" /> : 'Хадгалах'}
+                                            </button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        )}
+                        {activeTab === 'appearance' && (
+                            <div className="settings-section animate-fade-in">
+                                <h2>Харагдац</h2>
+                                <div className="settings-card">
+                                    <div className="settings-card-header">
+                                        <div className="settings-card-icon"><Palette size={20} /></div>
+                                        <h3>Аппын өнгө төрх</h3>
+                                    </div>
+                                    <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginBottom: 24 }}>
+                                        Системийн харагдах байдлыг өөрийн хүссэнээр өөрчлөх боломжтой.
+                                    </p>
+
+                                    <div className="theme-previews">
+                                        {[
+                                            { id: 'light', label: 'Цайвар', icon: Sun, class: 'preview-light' },
+                                            { id: 'dark', label: 'Бараан', icon: Moon, class: 'preview-dark' },
+                                            { id: 'system', label: 'Системийн', icon: Monitor, class: 'preview-system' }
+                                        ].map(t => (
+                                            <div
+                                                key={t.id}
+                                                className={`theme-preview-card ${t.class} ${theme === t.id ? 'active' : ''}`}
+                                                onClick={() => setTheme(t.id as any)}
+                                            >
+                                                <div className="theme-mockup">
+                                                    <div className="mockup-header" />
+                                                    <div className="mockup-content">
+                                                        <div className="mockup-sidebar" />
+                                                        <div className="mockup-body" />
+                                                    </div>
+                                                </div>
+                                                <div className="theme-preview-label">
+                                                    <t.icon size={16} />
+                                                    {t.label}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
                             </div>
                         )}
                         {activeTab === 'security' && (
                             <div className="settings-section animate-fade-in">
                                 <h2>Аюулгүй байдал</h2>
-                                <form className="settings-form" onSubmit={handleUpdatePIN}>
-                                    <div className="input-group"><label className="input-label">PIN код (Чухал үйлдлийн баталгаажуулалт)</label><input className="input" name="pin" type="password" defaultValue={business?.settings?.pin} style={{ maxWidth: 200 }} required /></div>
-                                    <button className="btn btn-primary" type="submit" disabled={loading}>{loading ? <Loader2 size={16} className="animate-spin" /> : 'PIN шинэчлэх'}</button>
-                                </form>
-                            </div>
-                        )}
-                        {activeTab === 'team' && <TeamSettings bizId={business?.id || ''} />}
-                        {activeTab === 'appearance' && (
-                            <div className="settings-section animate-fade-in">
-                                <h2>Харагдац</h2>
-                                <div className="theme-options">
-                                    <button className={`theme-option ${theme === 'dark' ? 'active' : ''}`} onClick={() => setTheme('dark')}><Moon size={24} /><span>Бараан</span></button>
-                                    <button className={`theme-option ${theme === 'light' ? 'active' : ''}`} onClick={() => setTheme('light')}><Sun size={24} /><span>Цайвар</span></button>
-                                    <button className={`theme-option ${theme === 'system' ? 'active' : ''}`} onClick={() => setTheme('system')}><Monitor size={24} /><span>Системийн</span></button>
+                                <div className="settings-card" style={{ maxWidth: 500 }}>
+                                    <div className="settings-card-header">
+                                        <div className="settings-card-icon" style={{ color: 'var(--danger)' }}><Shield size={20} /></div>
+                                        <h3>PIN код тохируулах</h3>
+                                    </div>
+                                    <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginBottom: 20 }}>
+                                        Захиалга устгах, бүртгэл өөрчлөх зэрэг чухал үйлдлүүдэд ашиглагдана.
+                                    </p>
+                                    <form className="settings-form" onSubmit={handleUpdatePIN}>
+                                        <div className="input-group">
+                                            <label className="input-label">Шинэ PIN код</label>
+                                            <input
+                                                className="input"
+                                                name="pin"
+                                                type="password"
+                                                maxLength={4}
+                                                pattern="[0-9]*"
+                                                inputMode="numeric"
+                                                defaultValue={business?.settings?.pin}
+                                                style={{ maxWidth: 160, fontSize: '1.2rem', letterSpacing: '0.4em' }}
+                                                required
+                                            />
+                                        </div>
+                                        <div style={{ display: 'flex', marginTop: 8 }}>
+                                            <button className="btn btn-primary" type="submit" disabled={loading}>
+                                                {loading ? <Loader2 size={16} className="animate-spin" /> : 'PIN шинэчлэх'}
+                                            </button>
+                                        </div>
+                                    </form>
                                 </div>
                             </div>
                         )}
+                        {activeTab === 'team' && <TeamSettings bizId={business?.id || ''} />}
                         {activeTab === 'cargo' && <CargoSettings bizId={business?.id || ''} />}
                         {activeTab === 'sources' && <SourceSettings bizId={business?.id || ''} />}
+
+                        {activeTab === 'notifications' && (
+                            <div className="settings-section animate-fade-in">
+                                <h2>Мэдэгдэл</h2>
+                                <div className="settings-card">
+                                    <div className="settings-card-header">
+                                        <div className="settings-card-icon"><Bell size={20} /></div>
+                                        <h3>Мэдэгдлийн тохиргоо</h3>
+                                    </div>
+                                    <div className="notification-toggles" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                                        {[
+                                            { id: 'newOrders', label: 'Шинэ захиалга', desc: 'Шинэ захиалга бүртгэгдэх үед мэдэгдэх' },
+                                            { id: 'lowStock', label: 'Нөөц багассан', desc: 'Барааны үлдэгдэл доод хэмжээнд хүрэхэд мэдэгдэх' },
+                                            { id: 'cargoUpdates', label: 'Карго шинэчлэл', desc: 'Каргоны төлөв өөрчлөгдөх үед мэдэгдэх' },
+                                            { id: 'teamActivity', label: 'Багийн ажиллагаа', desc: 'Багийн гишүүд өөрчлөлт хийхэд мэдэгдэх' }
+                                        ].map(item => (
+                                            <div key={item.id} className="notification-item" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 0', borderBottom: '1px solid var(--border-color)' }}>
+                                                <div>
+                                                    <div style={{ fontWeight: 600, fontSize: '1rem' }}>{item.label}</div>
+                                                    <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>{item.desc}</div>
+                                                </div>
+                                                <label className="toggle-switch">
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={(notifications as any)[item.id]}
+                                                        onChange={() => setNotifications(prev => ({ ...prev, [item.id]: !(prev as any)[item.id] }))}
+                                                    />
+                                                    <span className="toggle-slider" />
+                                                </label>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {activeTab === 'language' && (
+                            <div className="settings-section animate-fade-in">
+                                <h2>Хэлний тохиргоо</h2>
+                                <div className="settings-card">
+                                    <div className="settings-card-header">
+                                        <div className="settings-card-icon"><Globe size={20} /></div>
+                                        <h3>Системийн хэл сонгох</h3>
+                                    </div>
+                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginTop: 12 }}>
+                                        {[
+                                            { id: 'mn', label: 'Mongolian', desc: 'Монгол хэл', flag: '🇲🇳' },
+                                            { id: 'en', label: 'English', desc: 'Англи хэл (Coming Soon)', flag: '🇺🇸', disabled: true }
+                                        ].map(lang => (
+                                            <div
+                                                key={lang.id}
+                                                className={`card ${language === lang.id ? 'active' : ''}`}
+                                                style={{
+                                                    padding: 24,
+                                                    cursor: lang.disabled ? 'not-allowed' : 'pointer',
+                                                    opacity: lang.disabled ? 0.6 : 1,
+                                                    border: language === lang.id ? '2px solid var(--primary)' : '1px solid var(--border-color)',
+                                                    background: language === lang.id ? 'var(--primary-light)' : 'var(--bg-card)',
+                                                    borderRadius: 20
+                                                }}
+                                                onClick={() => !lang.disabled && setLanguage(lang.id)}
+                                            >
+                                                <div style={{ fontSize: '2rem', marginBottom: 12 }}>{lang.flag}</div>
+                                                <div style={{ fontWeight: 700, fontSize: '1.1rem', marginBottom: 4 }}>{lang.label}</div>
+                                                <div style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>{lang.desc}</div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>
@@ -149,23 +309,40 @@ function TeamSettings({ bizId }: { bizId: string }) {
                     <div className="section-header-compact"><h3>Ажилчид ({employees.length})</h3><button className="btn btn-primary btn-sm"><Plus size={14} /> Урих</button></div>
                     <div className="employee-grid">
                         {employees.map(emp => (
-                            <div key={emp.id} className="employee-card card">
+                            <div key={emp.id} className="settings-card employee-card">
                                 <div className="employee-avatar">{emp.avatar || emp.name.charAt(0)}</div>
-                                <div className="employee-info"><div className="employee-name">{emp.name}</div><div className="employee-role">{emp.positionName}</div></div>
+                                <div className="employee-info">
+                                    <div className="employee-name">{emp.name}</div>
+                                    <div className="employee-role">{emp.positionName || 'Ажилтан'}</div>
+                                </div>
+                                <button className="btn btn-ghost btn-sm btn-icon"><MoreVertical size={16} /></button>
                             </div>
                         ))}
                     </div>
                 </div>
             ) : (
                 <div className="positions-list">
-                    <div className="section-header-compact"><h3>Албан тушаалууд</h3><button className="btn btn-primary btn-sm" onClick={() => setShowPosModal(true)}><Plus size={14} /> Нэмэх</button></div>
-                    <div className="positions-grid">
+                    <div className="section-header-compact" style={{ marginBottom: 16 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                            <div className="icon-badge"><Shield size={16} /></div>
+                            <h3 style={{ margin: 0 }}>Албан тушаалууд</h3>
+                        </div>
+                        <button className="btn btn-primary btn-sm gradient-btn" onClick={() => setShowPosModal(true)}>
+                            <Plus size={14} /> Нэмэх
+                        </button>
+                    </div>
+                    <div className="positions-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 16 }}>
                         {positions.filter(p => !(p as any).isDeleted).map(pos => (
-                            <div key={pos.id} className="position-card card">
-                                <div className="position-info"><div className="position-name">{pos.name}</div><div className="position-desc">{pos.description}</div></div>
-                                <div style={{ display: 'flex', gap: 4 }}>
-                                    <button className="btn btn-ghost btn-sm btn-icon"><MoreVertical size={14} /></button>
-                                    <button className="btn btn-ghost btn-sm btn-icon text-danger" onClick={() => handleDeletePos(pos.id)}><Trash2 size={14} /></button>
+                            <div key={pos.id} className="settings-card position-card">
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
+                                    <div className="position-info">
+                                        <div className="position-name" style={{ fontWeight: 600, fontSize: '1rem', marginBottom: 4 }}>{pos.name}</div>
+                                        <div className="position-desc" style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>{pos.description || 'Тайлбар байхгүй'}</div>
+                                    </div>
+                                    <div style={{ display: 'flex', gap: 4 }}>
+                                        <button className="btn btn-ghost btn-sm btn-icon"><MoreVertical size={14} /></button>
+                                        <button className="btn btn-ghost btn-sm btn-icon text-danger" onClick={() => handleDeletePos(pos.id)}><Trash2 size={14} /></button>
+                                    </div>
                                 </div>
                             </div>
                         ))}
@@ -240,10 +417,10 @@ function CargoSettings({ bizId }: { bizId: string }) {
 
             <div className="cargo-types-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 16, marginTop: 16 }}>
                 {cargoTypes.map(type => (
-                    <div key={type.id} className="card cargo-type-card" style={{ padding: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
+                    <div key={type.id} className="settings-card cargo-type-card" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
                         <div>
                             <div style={{ fontWeight: 600, fontSize: '1rem', marginBottom: 4 }}>{type.name}</div>
-                            <div style={{ color: 'var(--primary)', fontWeight: 700, fontSize: '1.2rem' }}>
+                            <div style={{ color: 'var(--primary)', fontWeight: 700, fontSize: '1.25rem' }}>
                                 ₮{type.fee.toLocaleString()} <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 400 }}>/ {type.unit}</span>
                             </div>
                         </div>
