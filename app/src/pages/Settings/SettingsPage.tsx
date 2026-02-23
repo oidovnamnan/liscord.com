@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { Header } from '../../components/layout/Header';
-import { Building2, Palette, Bell, Shield, Users, Globe, Moon, Sun, Monitor, Loader2, Plus, MoreVertical, Trash2, Share2, X, CheckSquare, ListOrdered } from 'lucide-react';
+import { Building2, Palette, Bell, Shield, Users, Globe, Moon, Sun, Monitor, Loader2, Plus, MoreVertical, Trash2, Share2, X, CheckSquare, ListOrdered, ChevronUp, ChevronDown } from 'lucide-react';
 import { useBusinessStore, useUIStore } from '../../store';
 import { businessService, teamService, cargoService, sourceService, orderStatusService } from '../../services/db';
 import { toast } from 'react-hot-toast';
@@ -755,6 +755,24 @@ function OrderStatusSettings({ bizId }: { bizId: string }) {
         } catch (e) { toast.error('Алдаа гарлаа'); }
     };
 
+    const handleMove = async (index: number, direction: 'up' | 'down') => {
+        const newIndex = direction === 'up' ? index - 1 : index + 1;
+        if (newIndex < 0 || newIndex >= statuses.length) return;
+
+        const s1 = statuses[index];
+        const s2 = statuses[newIndex];
+
+        try {
+            // Swap orders
+            await Promise.all([
+                orderStatusService.updateStatus(bizId, s1.id, { order: s2.order }),
+                orderStatusService.updateStatus(bizId, s2.id, { order: s1.order })
+            ]);
+        } catch (e) {
+            toast.error('Дараалал солиход алдаа гарлаа');
+        }
+    };
+
     return (
         <div className="settings-section animate-fade-in" style={{ padding: '0 var(--space-xs)' }}>
             <div className="section-header-compact" style={{ marginBottom: 20 }}>
@@ -771,7 +789,7 @@ function OrderStatusSettings({ bizId }: { bizId: string }) {
             </div>
 
             <div className="status-settings-grid">
-                {statuses.map(s => (
+                {statuses.map((s, idx) => (
                     <div
                         key={s.id}
                         className={`card status-config-card ${!s.isActive ? 'is-inactive' : ''}`}
@@ -785,6 +803,24 @@ function OrderStatusSettings({ bizId }: { bizId: string }) {
                         }}
                     >
                         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                            <div className="reorder-actions" style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                                <button
+                                    className="btn btn-ghost btn-xs btn-icon"
+                                    style={{ padding: 2, height: 20, width: 20 }}
+                                    onClick={() => handleMove(idx, 'up')}
+                                    disabled={idx === 0}
+                                >
+                                    <ChevronUp size={12} />
+                                </button>
+                                <button
+                                    className="btn btn-ghost btn-xs btn-icon"
+                                    style={{ padding: 2, height: 20, width: 20 }}
+                                    onClick={() => handleMove(idx, 'down')}
+                                    disabled={idx === statuses.length - 1}
+                                >
+                                    <ChevronDown size={12} />
+                                </button>
+                            </div>
                             <div style={{ fontWeight: 600, fontSize: '1rem' }}>{s.label}</div>
                             <div style={{ display: 'flex', gap: 4 }}>
                                 {s.isSystem && <span style={{ fontSize: '0.65rem', background: 'var(--bg-soft)', padding: '2px 6px', borderRadius: 4, opacity: 0.7 }}>СИСТЕМ</span>}
