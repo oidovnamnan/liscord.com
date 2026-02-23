@@ -424,21 +424,21 @@ function CreateOrderModal({ onClose, nextNumber }: {
                         {/* SECTION 1: CUSTOMER */}
                         <div className="modal-section">
                             <div className="modal-section-title"><User size={14} /> Харилцагчийн мэдээлэл</div>
-                            <div className="input-group">
-                                <label className="input-label">Нэр <span className="required">*</span></label>
-                                <input className="input" placeholder="Болд" value={customer} onChange={e => setCustomer(e.target.value)} autoFocus required />
-                            </div>
                             <div className="input-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                                 <div className="input-group">
-                                    <label className="input-label">Утасны дугаар</label>
-                                    <input className="input" placeholder="8811-XXXX" value={phone} onChange={e => setPhone(e.target.value)} />
+                                    <label className="input-label">Сошиал хаяг (IG/FB) <span className="required">*</span></label>
+                                    <input className="input" placeholder="@username" value={socialHandle} onChange={e => setSocialHandle(e.target.value)} required />
                                 </div>
                                 <div className="input-group">
-                                    <label className="input-label">Сошиал хаяг (IG/FB)</label>
-                                    <input className="input" placeholder="@username" value={socialHandle} onChange={e => setSocialHandle(e.target.value)} />
+                                    <label className="input-label">Утасны дугаар <span className="required">*</span></label>
+                                    <input className="input" placeholder="8811-XXXX" value={phone} onChange={e => setPhone(e.target.value)} required />
                                 </div>
                             </div>
                             <div className="input-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                                <div className="input-group">
+                                    <label className="input-label">Харилцагчийн нэр</label>
+                                    <input className="input" placeholder="Жишээ: Болд" value={customer} onChange={e => setCustomer(e.target.value)} />
+                                </div>
                                 <div className="input-group">
                                     <label className="input-label">Эх сурвалж</label>
                                     <select className="input select" value={source} onChange={e => setSource(e.target.value)}>
@@ -449,10 +449,10 @@ function CreateOrderModal({ onClose, nextNumber }: {
                                         <option value="other">Бусад</option>
                                     </select>
                                 </div>
-                                <div className="input-group">
-                                    <label className="input-label">Хүргэлтийн хаяг</label>
-                                    <input className="input" placeholder="БЗД, 26-р хороо..." value={address} onChange={e => setAddress(e.target.value)} />
-                                </div>
+                            </div>
+                            <div className="input-group">
+                                <label className="input-label">Хүргэлтийн хаяг</label>
+                                <input className="input" placeholder="Жишээ: БЗД, 26-р хороо, Хүннү 2222, 101-102 тоот" value={address} onChange={e => setAddress(e.target.value)} />
                             </div>
                         </div>
 
