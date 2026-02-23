@@ -184,9 +184,18 @@ export const ALL_PERMISSIONS: Record<string, { label: string; group: string }> =
 };
 
 // ============ ORDER ============
+export interface OrderStatusConfig {
+    id: string;
+    label: string;
+    color: string;
+    order: number;
+    isSystem: boolean;
+}
+
 export type OrderStatus =
     | 'new' | 'confirmed' | 'preparing' | 'ready'
-    | 'shipping' | 'delivered' | 'completed' | 'cancelled';
+    | 'shipping' | 'delivered' | 'completed' | 'cancelled'
+    | string;
 
 export type LegacyOrderSource = 'facebook' | 'instagram' | 'tiktok' | 'website' | 'phone' | 'pos' | 'other';
 
@@ -216,7 +225,7 @@ export interface OrderPayment {
 export interface Order {
     id: string;
     orderNumber: string;
-    status: OrderStatus;
+    status: string; // Dynamic status ID
     paymentStatus: PaymentStatus;
 
     customer: {

@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
 import { Header } from '../../components/layout/Header';
-import { Building2, Palette, Bell, Shield, Users, Globe, Moon, Sun, Monitor, Loader2, Plus, MoreVertical, Trash2, Share2, X } from 'lucide-react';
+import { Building2, Palette, Bell, Shield, Users, Globe, Moon, Sun, Monitor, Loader2, Plus, MoreVertical, Trash2, Share2, X, CheckSquare, ListOrdered } from 'lucide-react';
 import { useBusinessStore, useUIStore } from '../../store';
-import { businessService, teamService, cargoService, sourceService } from '../../services/db';
+import { businessService, teamService, cargoService, sourceService, orderStatusService } from '../../services/db';
 import { toast } from 'react-hot-toast';
 import { PINModal } from '../../components/common/PINModal';
-import type { Position, Employee, CargoType, OrderSource, SocialAccount } from '../../types';
+import type { Position, Employee, CargoType, OrderSource, SocialAccount, OrderStatusConfig } from '../../types';
 import './SettingsPage.css';
 
 export function SettingsPage() {
@@ -29,6 +29,7 @@ export function SettingsPage() {
         { id: 'team', label: 'Баг', icon: Users },
         { id: 'cargo', label: 'Карго', icon: Globe },
         { id: 'sources', label: 'Эх сурвалж', icon: Share2 },
+        { id: 'statuses', label: 'Захиалгын төлөв', icon: CheckSquare },
         { id: 'language', label: 'Хэл', icon: Globe },
     ];
 
@@ -112,6 +113,9 @@ export function SettingsPage() {
                                     </form>
                                 </div>
                             </div>
+                        )}
+                        {activeTab === 'statuses' && business && (
+                            <OrderStatusSettings bizId={business.id} />
                         )}
                         {activeTab === 'appearance' && (
                             <div className="settings-section animate-fade-in">
@@ -721,6 +725,140 @@ function SocialAccountModal({ bizId, sourceId, sourceName, onClose }: { bizId: s
                         <button type="button" className="btn btn-secondary" onClick={onClose} style={{ flex: 1, height: 44, borderRadius: 12 }}>Болих</button>
                         <button type="submit" className="btn btn-primary gradient-btn" disabled={loading} style={{ flex: 1, height: 44, borderRadius: 12 }}>
                             {loading ? <Loader2 size={18} className="animate-spin" /> : 'Нэмэх'}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    );
+}
+function OrderStatusSettings({ bizId }: { bizId: string }) {
+    const [statuses, setStatuses] = useState<OrderStatusConfig[]>([]);
+    const [showModal, setShowModal] = useState(false);
+    const [editingStatus, setEditingStatus] = useState<OrderStatusConfig | null>(null);
+
+    useEffect(() => {
+        if (!bizId) return;
+        return orderStatusService.subscribeStatuses(bizId, setStatuses);
+    }, [bizId]);
+
+    const handleDelete = async (id: string, isSystem: boolean) => {
+        if (isSystem) return toast.error('Системийн төлөвийг устгах боломжгүй');
+        if (!confirm('Энэ төлөвийг устгах уу?')) return;
+        try {
+            await orderStatusService.deleteStatus(bizId, id);
+            toast.success('Устгагдлаа');
+        } catch (e) { toast.error('Алдаа гарлаа'); }
+    };
+
+    return (
+        <div className="settings-section animate-fade-in" style={{ padding: '0 var(--space-xs)' }}>
+            <div className="section-header-compact" style={{ marginBottom: 20 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <div className="icon-badge"><ListOrdered size={18} /></div>
+                    <div>
+                        <h3 style={{ margin: 0 }}>Захиалгын төлөвүүд</h3>
+                        <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-muted)' }}>Захиалгын явцыг хянах төлөвүүдийг тохируулна уу</p>
+                    </div>
+                </div>
+                <button className="btn btn-primary btn-sm gradient-btn" onClick={() => { setEditingStatus(null); setShowModal(true); }}>
+                    <Plus size={14} /> Төлөв нэмэх
+                </button>
+            </div>
+
+            <div className="status-settings-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 16 }}>
+                {statuses.map(s => (
+                    <div key={s.id} className="card status-config-card" style={{ padding: '16px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderLeft: `4px solid ${s.color}` }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                            <div style={{ fontWeight: 600, fontSize: '1rem' }}>{s.label}</div>
+                            {s.isSystem && <span style={{ fontSize: '0.65rem', background: 'var(--bg-soft)', padding: '2px 6px', borderRadius: 4, opacity: 0.7 }}>СИСТЕМ</span>}
+                        </div>
+                        <div style={{ display: 'flex', gap: 4 }}>
+                            <button className="btn btn-ghost btn-xs btn-icon" onClick={() => { setEditingStatus(s); setShowModal(true); }}><MoreVertical size={14} /></button>
+                            {!s.isSystem && (
+                                <button className="btn btn-ghost btn-xs btn-icon text-danger" onClick={() => handleDelete(s.id, s.isSystem)}><Trash2 size={14} /></button>
+                            )}
+                        </div>
+                    </div>
+                ))}
+            </div>
+
+            {showModal && <OrderStatusModal bizId={bizId} onClose={() => setShowModal(false)} editingStatus={editingStatus} nextOrder={statuses.length + 1} />}
+        </div>
+    );
+}
+
+function OrderStatusModal({ bizId, onClose, editingStatus, nextOrder }: { bizId: string; onClose: () => void; editingStatus: OrderStatusConfig | null; nextOrder: number }) {
+    const [loading, setLoading] = useState(false);
+    const [color, setColor] = useState(editingStatus?.color || '#3b82f6');
+
+    const colors = [
+        '#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#64748b', '#334155', '#0f172a',
+        '#06b6d4', '#84cc16', '#a855f7', '#f97316', '#14b8a6', '#475569'
+    ];
+
+    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+        const fd = new FormData(e.currentTarget);
+        setLoading(true);
+        try {
+            const label = fd.get('label') as string;
+            const data: Partial<OrderStatusConfig> = {
+                label,
+                color,
+                order: editingStatus?.order || nextOrder,
+            };
+
+            if (editingStatus) {
+                await orderStatusService.updateStatus(bizId, editingStatus.id, data);
+            } else {
+                // Generate a simple ID from label
+                const id = label.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '');
+                await orderStatusService.addStatus(bizId, { ...data, id });
+            }
+            toast.success('Амжилттай хадгалагдлаа');
+            onClose();
+        } catch (e) { toast.error('Алдаа гарлаа'); } finally { setLoading(false); }
+    };
+
+    return (
+        <div className="modal-backdrop" onClick={onClose}>
+            <div className="modal animate-slide-up" onClick={e => e.stopPropagation()} style={{ maxWidth: 400, borderRadius: 24 }}>
+                <div className="modal-header" style={{ padding: '24px 24px 12px' }}>
+                    <h2 style={{ fontSize: '1.4rem' }}>{editingStatus ? 'Төлөв засах' : 'Шинэ төлөв'}</h2>
+                    <button onClick={onClose} className="btn btn-ghost btn-icon"><X size={20} /></button>
+                </div>
+                <form onSubmit={handleSubmit}>
+                    <div className="modal-body" style={{ padding: '12px 24px 24px' }}>
+                        <div className="input-group">
+                            <label className="input-label">Төлөвийн нэр</label>
+                            <input className="input" name="label" defaultValue={editingStatus?.label} placeholder="Жишээ: Хүлээн авсан, Нийлүүлэгч рүү явуулсан..." required autoFocus style={{ height: 48, borderRadius: 12 }} />
+                        </div>
+
+                        <div className="input-group" style={{ marginTop: 16 }}>
+                            <label className="input-label">Өнгө сонгох</label>
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 8, marginTop: 8 }}>
+                                {colors.map(c => (
+                                    <div
+                                        key={c}
+                                        onClick={() => setColor(c)}
+                                        style={{
+                                            height: 32,
+                                            background: c,
+                                            borderRadius: 8,
+                                            cursor: 'pointer',
+                                            border: color === c ? '3px solid var(--text-main)' : '1px solid rgba(0,0,0,0.1)',
+                                            boxShadow: color === c ? '0 0 0 2px var(--bg-main)' : 'none'
+                                        }}
+                                    />
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                    <div className="modal-footer" style={{ padding: '12px 24px 24px', border: 'none', gap: 12 }}>
+                        <button type="button" className="btn btn-secondary" onClick={onClose} style={{ flex: 1, height: 44, borderRadius: 12 }}>Болих</button>
+                        <button type="submit" className="btn btn-primary gradient-btn" disabled={loading} style={{ flex: 1, height: 44, borderRadius: 12 }}>
+                            {loading ? <Loader2 size={18} className="animate-spin" /> : 'Хадгалах'}
                         </button>
                     </div>
                 </form>

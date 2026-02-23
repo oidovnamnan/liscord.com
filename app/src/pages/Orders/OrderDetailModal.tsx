@@ -1,24 +1,14 @@
 import { X, Printer, Clock, User, Package, CreditCard, CheckCircle2 } from 'lucide-react';
-import type { Order, OrderStatus } from '../../types';
+import type { Order, OrderStatusConfig } from '../../types';
 import './OrderDetailModal.css';
 
 interface OrderDetailModalProps {
     order: Order;
     onClose: () => void;
+    statuses: OrderStatusConfig[];
 }
 
-const statusConfig: Record<OrderStatus, { label: string; cls: string }> = {
-    new: { label: 'Шинэ', cls: 'badge-new' },
-    confirmed: { label: 'Баталсан', cls: 'badge-confirmed' },
-    preparing: { label: 'Бэлтгэж буй', cls: 'badge-preparing' },
-    ready: { label: 'Бэлэн', cls: 'badge-preparing' },
-    shipping: { label: 'Хүргэлтэнд', cls: 'badge-shipping' },
-    delivered: { label: 'Хүргэгдсэн', cls: 'badge-delivered' },
-    completed: { label: 'Дууссан', cls: 'badge-delivered' },
-    cancelled: { label: 'Цуцалсан', cls: 'badge-cancelled' },
-};
-
-export function OrderDetailModal({ order, onClose }: OrderDetailModalProps) {
+export function OrderDetailModal({ order, onClose, statuses }: OrderDetailModalProps) {
     const fmt = (n: number) => '₮' + n.toLocaleString('mn-MN');
 
     const handlePrint = () => {
@@ -31,9 +21,24 @@ export function OrderDetailModal({ order, onClose }: OrderDetailModalProps) {
                 <div className="modal-header hide-print">
                     <div className="header-title-group">
                         <h2>Захиалга #{order.orderNumber}</h2>
-                        <span className={`badge ${statusConfig[order.status]?.cls}`}>
-                            {statusConfig[order.status]?.label}
-                        </span>
+                        {order.isDeleted ? (
+                            <span className="badge badge-cancelled">Цуцалсан</span>
+                        ) : (
+                            <span
+                                className="badge"
+                                style={{
+                                    background: statuses.find(s => s.id === order.status)?.color + '20',
+                                    color: statuses.find(s => s.id === order.status)?.color,
+                                    border: `1px solid ${statuses.find(s => s.id === order.status)?.color}40`,
+                                    padding: '4px 10px',
+                                    borderRadius: '6px',
+                                    fontSize: '0.8rem',
+                                    fontWeight: 700
+                                }}
+                            >
+                                {statuses.find(s => s.id === order.status)?.label || order.status}
+                            </span>
+                        )}
                     </div>
                     <div className="header-actions">
                         <button className="btn btn-secondary btn-sm" onClick={handlePrint}>
@@ -162,27 +167,30 @@ export function OrderDetailModal({ order, onClose }: OrderDetailModalProps) {
                                 <div className="timeline-card">
                                     <div className="timeline">
                                         {/* Status items */}
-                                        {[
-                                            { status: 'new', label: 'Захиалга үүсэх', completed: true },
-                                            { status: 'confirmed', label: 'Баталгаажсан', completed: order.status !== 'new' && order.status !== 'cancelled' },
-                                            { status: 'preparing', label: 'Бэлтгэж байна', completed: ['preparing', 'ready', 'shipping', 'delivered', 'completed'].includes(order.status) },
-                                            { status: 'shipping', label: 'Хүргэлтэнд гарсан', completed: ['shipping', 'delivered', 'completed'].includes(order.status) },
-                                            { status: 'delivered', label: 'Хүргэгдсэн', completed: ['delivered', 'completed'].includes(order.status) }
-                                        ].map((item, idx) => (
-                                            <div key={idx} className={`timeline - item ${item.completed ? 'active' : ''} `}>
-                                                <div className="timeline-marker">
-                                                    {item.completed ? <CheckCircle2 size={12} /> : idx + 1}
+                                        {statuses.slice(0, 6).map((s, idx) => {
+                                            const isSystem = ['new', 'confirmed', 'preparing', 'shipping', 'delivered', 'completed'].includes(s.id);
+                                            if (!isSystem && idx > 5) return null; // Simplified timeline
+
+                                            // Logic to check if this status is "completed" in terms of timeline
+                                            const currentStatusIndex = statuses.findIndex(st => st.id === order.status);
+                                            const isCompleted = !order.isDeleted && (currentStatusIndex >= idx);
+
+                                            return (
+                                                <div key={s.id} className={`timeline-item ${isCompleted ? 'active' : ''}`}>
+                                                    <div className="timeline-marker">
+                                                        {isCompleted ? <CheckCircle2 size={12} /> : idx + 1}
+                                                    </div>
+                                                    <div className="timeline-content">
+                                                        <div className="timeline-status-label">{s.label}</div>
+                                                        {isCompleted && (
+                                                            <div className="timeline-meta">
+                                                                <span className="timeline-time">Саяхан</span>
+                                                            </div>
+                                                        )}
+                                                    </div>
                                                 </div>
-                                                <div className="timeline-content">
-                                                    <div className="timeline-status-label">{item.label}</div>
-                                                    {item.completed && (
-                                                        <div className="timeline-meta">
-                                                            <span className="timeline-time">2026.02.23 09:16</span>
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        ))}
+                                            );
+                                        })}
                                     </div>
                                 </div>
                             </section>

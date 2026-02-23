@@ -12,11 +12,12 @@ import {
     Timestamp,
     onSnapshot,
     addDoc,
+    deleteDoc,
     serverTimestamp,
 } from 'firebase/firestore';
 import { db } from './firebase';
 import { auditService } from './audit';
-import type { Business, User, Employee, Order, Customer, Product, Position, Category, CargoType, OrderSource, SocialAccount } from '../types';
+import type { Business, User, Employee, Order, Customer, Product, Position, Category, CargoType, OrderSource, SocialAccount, OrderStatusConfig } from '../types';
 
 // ============ GENERIC HELPERS ============
 
@@ -98,6 +99,59 @@ export const businessService = {
             ...data,
             updatedAt: serverTimestamp()
         });
+    }
+};
+
+// ============ ORDER STATUS SERVICES ============
+
+export const DEFAULT_STATUSES: Partial<OrderStatusConfig>[] = [
+    { id: 'new', label: 'Шинэ', color: '#3b82f6', order: 1, isSystem: true },
+    { id: 'confirmed', label: 'Баталсан', color: '#10b981', order: 2, isSystem: true },
+    { id: 'preparing', label: 'Бэлтгэж буй', color: '#f59e0b', order: 3, isSystem: true },
+    { id: 'ready', label: 'Бэлэн', color: '#f59e0b', order: 4, isSystem: true },
+    { id: 'shipping', label: 'Хүргэлтэнд', color: '#8b5cf6', order: 5, isSystem: true },
+    { id: 'delivered', label: 'Хүргэгдсэн', color: '#334155', order: 6, isSystem: true },
+    { id: 'completed', label: 'Дууссан', color: '#334155', order: 7, isSystem: true },
+    { id: 'cancelled', label: 'Цуцалсан', color: '#ef4444', order: 8, isSystem: true },
+];
+
+export const orderStatusService = {
+    getStatusesRef(bizId: string) {
+        return collection(db, 'businesses', bizId, 'orderStatuses');
+    },
+
+    subscribeStatuses(bizId: string, callback: (statuses: OrderStatusConfig[]) => void) {
+        const q = query(this.getStatusesRef(bizId), orderBy('order', 'asc'));
+        return onSnapshot(q, (snapshot) => {
+            if (snapshot.empty) {
+                // If empty, return defaults (but don't necessarily write them to DB yet to avoid auto-seeding without user intent)
+                callback(DEFAULT_STATUSES as OrderStatusConfig[]);
+                return;
+            }
+            const statuses = snapshot.docs.map(d => ({ ...d.data(), id: d.id } as OrderStatusConfig));
+            callback(statuses);
+        });
+    },
+
+    async addStatus(bizId: string, status: Partial<OrderStatusConfig>): Promise<void> {
+        const docRef = doc(this.getStatusesRef(bizId), status.id || undefined);
+        await setDoc(docRef, {
+            ...status,
+            id: docRef.id,
+            isSystem: false,
+            createdAt: serverTimestamp()
+        }, { merge: true });
+    },
+
+    async updateStatus(bizId: string, statusId: string, status: Partial<OrderStatusConfig>): Promise<void> {
+        await updateDoc(doc(this.getStatusesRef(bizId), statusId), {
+            ...status,
+            updatedAt: serverTimestamp()
+        });
+    },
+
+    async deleteStatus(bizId: string, statusId: string): Promise<void> {
+        await deleteDoc(doc(this.getStatusesRef(bizId), statusId));
     }
 };
 

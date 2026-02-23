@@ -6,23 +6,14 @@ import {
     productService,
     orderService,
     sourceService,
-    customerService
+    customerService,
+    orderStatusService
 } from '../../services/db';
-import type { OrderSource, SocialAccount } from '../../types';
+import type { OrderSource, SocialAccount, OrderStatusConfig } from '../../types';
 import { OrderDetailModal } from './OrderDetailModal';
-import type { Order, OrderStatus } from '../../types';
+import type { Order } from '../../types';
 import './OrdersPage.css';
 
-const statusConfig: Record<OrderStatus, { label: string; cls: string }> = {
-    new: { label: 'Шинэ', cls: 'badge-new' },
-    confirmed: { label: 'Баталсан', cls: 'badge-confirmed' },
-    preparing: { label: 'Бэлтгэж буй', cls: 'badge-preparing' },
-    ready: { label: 'Бэлэн', cls: 'badge-preparing' },
-    shipping: { label: 'Хүргэлтэнд', cls: 'badge-shipping' },
-    delivered: { label: 'Хүргэгдсэн', cls: 'badge-delivered' },
-    completed: { label: 'Дууссан', cls: 'badge-delivered' },
-    cancelled: { label: 'Цуцалсан', cls: 'badge-cancelled' },
-};
 
 const paymentConfig: Record<string, { label: string; cls: string }> = {
     unpaid: { label: 'Төлөгдөөгүй', cls: 'badge-unpaid' },
@@ -51,6 +42,7 @@ export function OrdersPage() {
     const [showCreate, setShowCreate] = useState(false);
     const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
     const [orders, setOrders] = useState<Order[]>([]);
+    const [statuses, setStatuses] = useState<OrderStatusConfig[]>([]);
     const [loading, setLoading] = useState(true);
     const [openMenuId, setOpenMenuId] = useState<string | null>(null);
     const [deleteOrderId, setDeleteOrderId] = useState<string | null>(null);
@@ -62,10 +54,13 @@ export function OrdersPage() {
     useEffect(() => {
         if (!business?.id) return;
 
-        setLoading(true);
-        const unsubscribe = orderService.subscribeOrders(business.id, (data) => {
+        const unOrder = orderService.subscribeOrders(business.id, (data) => {
             setOrders(data);
             setLoading(false);
+        });
+
+        const unStatus = orderStatusService.subscribeStatuses(business.id, (data) => {
+            setStatuses(data);
         });
 
         const handleClickOutside = (event: MouseEvent) => {
@@ -76,7 +71,8 @@ export function OrdersPage() {
         document.addEventListener('mousedown', handleClickOutside);
 
         return () => {
-            unsubscribe();
+            unOrder();
+            unStatus();
             document.removeEventListener('mousedown', handleClickOutside);
         };
     }, [business?.id]);
@@ -126,28 +122,32 @@ export function OrdersPage() {
                             onChange={(e) => setStatusFilter(e.target.value)}
                         >
                             <option value="all">Бүх статус</option>
-                            {Object.entries(statusConfig).map(([k, v]) => (
-                                <option key={k} value={k}>{v.label}</option>
+                            {statuses.map(s => (
+                                <option key={s.id} value={s.id}>{s.label}</option>
                             ))}
                         </select>
                     </div>
                 </div>
 
                 <div className="orders-status-bar">
-                    {['all', 'new', 'confirmed', 'preparing', 'shipping', 'delivered', 'cancelled'].map(s => {
-                        let count = 0;
-                        if (s === 'all') count = orders.length;
-                        else if (s === 'cancelled') count = orders.filter(o => o.isDeleted).length;
-                        else count = orders.filter(o => o.status === s && !o.isDeleted).length;
+                    <button
+                        className={`orders-status-chip ${statusFilter === 'all' ? 'active' : ''}`}
+                        onClick={() => setStatusFilter('all')}
+                    >
+                        Бүгд <span className="orders-status-count">{orders.length}</span>
+                    </button>
+                    {statuses.map(s => {
+                        const count = s.id === 'cancelled'
+                            ? orders.filter(o => o.isDeleted).length
+                            : orders.filter(o => o.status === s.id && !o.isDeleted).length;
 
-                        const label = s === 'all' ? 'Бүгд' : (s === 'cancelled' ? 'Цуцалсан' : statusConfig[s as OrderStatus]?.label);
                         return (
                             <button
-                                key={s}
-                                className={`orders-status-chip ${statusFilter === s ? 'active' : ''}`}
-                                onClick={() => setStatusFilter(s)}
+                                key={s.id}
+                                className={`orders-status-chip ${statusFilter === s.id ? 'active' : ''}`}
+                                onClick={() => setStatusFilter(s.id)}
                             >
-                                {label} <span className="orders-status-count">{count}</span>
+                                {s.label} <span className="orders-status-count">{count}</span>
                             </button>
                         );
                     })}
@@ -169,7 +169,10 @@ export function OrdersPage() {
                         filtered.map(order => (
                             <div
                                 key={order.id}
-                                className={`order-card pro-layout status-${order.status} ${order.isDeleted ? 'is-deleted' : ''} stagger-item`}
+                                className={`order-card pro-layout ${order.isDeleted ? 'is-deleted' : ''} stagger-item`}
+                                style={{
+                                    '--status-color': order.isDeleted ? '#ef4444' : (statuses.find(s => s.id === order.status)?.color || '#3b82f6')
+                                } as React.CSSProperties}
                                 onClick={() => setSelectedOrder(order)}
                             >
                                 {/* Status Indicator (Slim) */}
@@ -185,8 +188,15 @@ export function OrdersPage() {
                                                     Цуцлагдсан
                                                 </span>
                                             ) : (
-                                                <span className={`pro-badge status-${order.status}`}>
-                                                    {statusConfig[order.status]?.label}
+                                                <span
+                                                    className="pro-badge"
+                                                    style={{
+                                                        background: statuses.find(s => s.id === order.status)?.color + '20',
+                                                        color: statuses.find(s => s.id === order.status)?.color,
+                                                        border: `1px solid ${statuses.find(s => s.id === order.status)?.color}40`
+                                                    }}
+                                                >
+                                                    {statuses.find(s => s.id === order.status)?.label || order.status}
                                                 </span>
                                             )}
                                         </div>
@@ -315,6 +325,7 @@ export function OrdersPage() {
                 <OrderDetailModal
                     order={selectedOrder}
                     onClose={() => setSelectedOrder(null)}
+                    statuses={statuses}
                 />
             )
             }
@@ -375,6 +386,7 @@ export function OrdersPage() {
                     <CreateOrderModal
                         onClose={() => setShowCreate(false)}
                         nextNumber={`${business?.settings.orderPrefix || 'ORD'}-${String((business?.settings.orderCounter || 0) + 1).padStart(4, '0')}`}
+                        statuses={statuses}
                     />
                 )
             }
@@ -382,9 +394,10 @@ export function OrdersPage() {
     );
 }
 
-function CreateOrderModal({ onClose, nextNumber }: {
+function CreateOrderModal({ onClose, nextNumber, statuses }: {
     onClose: () => void;
     nextNumber: string;
+    statuses: OrderStatusConfig[];
 }) {
     const { business } = useBusinessStore();
     const { user } = useAuthStore();
@@ -568,7 +581,7 @@ function CreateOrderModal({ onClose, nextNumber }: {
 
             await orderService.createOrder(business.id, {
                 orderNumber: nextNumber,
-                status: 'new',
+                status: statuses[0]?.id || 'new',
                 paymentStatus: paid >= finalTotal ? 'paid' : paid > 0 ? 'partial' : 'unpaid',
                 customer: {
                     id: null,

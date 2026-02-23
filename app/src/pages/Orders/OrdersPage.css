@@ -170,44 +170,8 @@
     z-index: 10;
 }
 
-.order-card.pro-layout.status-new .pro-status-border {
-    background: #3b82f6;
-}
-
-.order-card.pro-layout.status-confirmed .pro-status-border {
-    background: #10b981;
-}
-
-.order-card.pro-layout.status-new .pro-status-border {
-    background: #3b82f6;
-}
-
-.order-card.pro-layout.status-confirmed .pro-status-border {
-    background: #10b981;
-}
-
-.order-card.pro-layout.status-preparing .pro-status-border {
-    background: #f59e0b;
-}
-
-.order-card.pro-layout.status-ready .pro-status-border {
-    background: #f59e0b;
-}
-
-.order-card.pro-layout.status-shipping .pro-status-border {
-    background: #8b5cf6;
-}
-
-.order-card.pro-layout.status-delivered .pro-status-border {
-    background: #334155;
-}
-
-.order-card.pro-layout.status-completed .pro-status-border {
-    background: #334155;
-}
-
-.order-card.pro-layout.status-cancelled .pro-status-border {
-    background: #ef4444;
+.pro-status-border {
+    background: var(--status-color, #3b82f6);
 }
 
 /* Cancelled/Deleted State Specifics */
