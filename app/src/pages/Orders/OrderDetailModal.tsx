@@ -184,7 +184,12 @@ export function OrderDetailModal({ bizId, order, onClose, statuses }: OrderDetai
                                         <span>{fmt(order.financials.deliveryFee)}</span>
                                     </div>
                                     <div className="fin-row">
-                                        <span>Карго ({order.financials.cargoIncluded ? 'Үнэд орсон' : 'Тусдаа'}):</span>
+                                        <span>
+                                            Карго (
+                                            {order.financials.cargoIncluded ? 'Үнэдээ орсон' :
+                                                (order.financials.totalAmount >= order.financials.subtotal + order.financials.deliveryFee + order.financials.cargoFee) ? 'Одоо төлнө' : 'Ирэхээр төлнө'}
+                                            ):
+                                        </span>
                                         <span>{fmt(order.financials.cargoFee)}</span>
                                     </div>
                                     <hr />
@@ -210,9 +215,10 @@ export function OrderDetailModal({ bizId, order, onClose, statuses }: OrderDetai
                                 <div className="timeline-card">
                                     <div className="timeline">
                                         {/* Status items */}
-                                        {statuses.map((s, idx) => {
+                                        {statuses.filter(st => st.id !== 'all').map((s, idx) => {
+                                            const activeStatuses = statuses.filter(st => st.id !== 'all');
                                             // Logic to check if this status is "completed" in terms of timeline
-                                            const currentStatusIndex = statuses.findIndex(st => st.id.toLowerCase() === currentStatusId?.toLowerCase());
+                                            const currentStatusIndex = activeStatuses.findIndex(st => st.id.toLowerCase() === currentStatusId?.toLowerCase());
                                             const isCompleted = !order.isDeleted && (currentStatusIndex >= idx);
 
                                             return (
