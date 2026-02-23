@@ -1,19 +1,56 @@
-import { X, Printer, Clock, User, Package, CreditCard, CheckCircle2 } from 'lucide-react';
+import { X, Printer, Clock, User, Package, CreditCard, CheckCircle2, ChevronDown, Loader2 } from 'lucide-react';
+import { useState } from 'react';
 import type { Order, OrderStatusConfig } from '../../types';
+import { orderService } from '../../services/db';
+import { toast } from 'react-hot-toast';
+import { useAuthStore } from '../../store';
 import './OrderDetailModal.css';
 
 interface OrderDetailModalProps {
+    bizId: string;
     order: Order;
     onClose: () => void;
     statuses: OrderStatusConfig[];
 }
 
-export function OrderDetailModal({ order, onClose, statuses }: OrderDetailModalProps) {
+export function OrderDetailModal({ bizId, order, onClose, statuses }: OrderDetailModalProps) {
+    const { user } = useAuthStore();
+    const [updating, setUpdating] = useState(false);
+    const [currentStatusId, setCurrentStatusId] = useState(order.status);
+
     const fmt = (n: number) => '₮' + n.toLocaleString('mn-MN');
 
+    const handleStatusChange = async (newStatusId: string) => {
+        if (newStatusId === order.status) return;
+        setUpdating(true);
+        try {
+            const statusLabel = statuses.find(s => s.id === newStatusId)?.label || newStatusId;
+            const historyItem = {
+                status: newStatusId,
+                label: statusLabel,
+                timestamp: new Date(),
+                note: `Төлөвийг [${statusLabel}] болгож өөрчлөв`,
+                updatedBy: user?.displayName || 'Систем'
+            };
+
+            await orderService.updateOrderStatus(bizId, order.id, newStatusId, historyItem, {
+                displayName: user?.displayName,
+                email: user?.email,
+                photoURL: user?.photoURL
+            });
+            setCurrentStatusId(newStatusId);
+            toast.success('Төлөв шинэчлэгдлээ');
+        } catch (error) {
+            toast.error('Алдаа гарлаа');
+        } finally {
+            setUpdating(false);
+        }
+    };
     const handlePrint = () => {
         window.print();
     };
+
+    const activeStatus = statuses.find(s => s.id === currentStatusId) || statuses.find(s => s.id === order.status);
 
     return (
         <div className="modal-backdrop" onClick={onClose}>
@@ -24,20 +61,25 @@ export function OrderDetailModal({ order, onClose, statuses }: OrderDetailModalP
                         {order.isDeleted ? (
                             <span className="badge badge-cancelled">Цуцалсан</span>
                         ) : (
-                            <span
-                                className="badge"
-                                style={{
-                                    background: statuses.find(s => s.id === order.status)?.color + '20',
-                                    color: statuses.find(s => s.id === order.status)?.color,
-                                    border: `1px solid ${statuses.find(s => s.id === order.status)?.color}40`,
-                                    padding: '4px 10px',
-                                    borderRadius: '6px',
-                                    fontSize: '0.8rem',
-                                    fontWeight: 700
-                                }}
-                            >
-                                {statuses.find(s => s.id === order.status)?.label || order.status}
-                            </span>
+                            <div className="status-selector-wrapper">
+                                <select
+                                    className="status-badge-select"
+                                    value={currentStatusId}
+                                    onChange={(e) => handleStatusChange(e.target.value)}
+                                    disabled={updating}
+                                    style={{
+                                        background: (activeStatus?.color || '#3b82f6') + '20',
+                                        color: activeStatus?.color || '#3b82f6',
+                                        border: `1px solid ${(activeStatus?.color || '#3b82f6')}40`,
+                                    }}
+                                >
+                                    {statuses.filter(s => s.isActive || s.id === order.status).map(s => (
+                                        <option key={s.id} value={s.id}>{s.label}</option>
+                                    ))}
+                                </select>
+                                {updating && <Loader2 size={12} className="animate-spin status-loader" />}
+                                <ChevronDown size={12} className="status-chevron" style={{ color: activeStatus?.color }} />
+                            </div>
                         )}
                     </div>
                     <div className="header-actions">
@@ -172,7 +214,7 @@ export function OrderDetailModal({ order, onClose, statuses }: OrderDetailModalP
                                             if (!isSystem && idx > 5) return null; // Simplified timeline
 
                                             // Logic to check if this status is "completed" in terms of timeline
-                                            const currentStatusIndex = statuses.findIndex(st => st.id === order.status);
+                                            const currentStatusIndex = statuses.findIndex(st => st.id === currentStatusId);
                                             const isCompleted = !order.isDeleted && (currentStatusIndex >= idx);
 
                                             return (

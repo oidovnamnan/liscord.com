@@ -321,14 +321,14 @@ export function OrdersPage() {
                 </div>
             </div >
 
-            {selectedOrder && (
+            {selectedOrder && business && (
                 <OrderDetailModal
+                    bizId={business.id}
                     order={selectedOrder}
                     onClose={() => setSelectedOrder(null)}
                     statuses={statuses}
                 />
-            )
-            }
+            )}
 
             {
                 showDeleteModal && (

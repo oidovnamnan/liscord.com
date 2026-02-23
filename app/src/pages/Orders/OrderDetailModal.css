@@ -217,7 +217,7 @@
         left: 0;
         top: 0;
         width: 100%;
-        padding: 40px !important;
+        padding: 0 !important;
         background: white !important;
         color: black !important;
     }
@@ -270,4 +270,57 @@
     .order-grid {
         grid-template-columns: 1fr;
     }
+}
+
+/* Status Selector Styles */
+.status-selector-wrapper {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+}
+
+.status-badge-select {
+    appearance: none;
+    -webkit-appearance: none;
+    padding: 6px 32px 6px 14px;
+    border-radius: 10px;
+    font-size: 0.82rem;
+    font-weight: 800;
+    cursor: pointer;
+    outline: none;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    min-width: 150px;
+    border: 1px solid transparent;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+}
+
+.status-badge-select:hover {
+    filter: brightness(0.96);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.status-badge-select:active {
+    transform: translateY(0);
+}
+
+.status-chevron {
+    position: absolute;
+    right: 12px;
+    pointer-events: none;
+}
+
+.status-loader {
+    position: absolute;
+    right: -28px;
+    color: var(--primary-main);
+}
+
+[data-theme="dark"] .status-badge-select {
+    filter: brightness(1.15);
+}
+
+[data-theme="dark"] .status-badge-select:hover {
+    filter: brightness(1.25);
 }
