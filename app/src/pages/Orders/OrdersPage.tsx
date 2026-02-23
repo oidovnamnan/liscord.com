@@ -494,15 +494,16 @@ function CreateOrderModal({ onClose, nextNumber, statuses }: {
         }
     };
 
-    const handleAddItem = () => {
+    // Dynamic Preview calculation
+    const getPreviewItems = () => {
         const name = selectedProduct ? selectedProduct.name : manualItemName;
-        if (!name) return;
+        if (!name) return items;
 
         const variant = [color, size].filter(Boolean).join(' / ');
         const unitPriceNum = Number(unitPrice);
         const unitCargoFee = !itemCargoIncluded && selectedProduct?.cargoFee ? selectedProduct.cargoFee.amount : 0;
 
-        // Check if item with same identity already exists in the list
+        // Check if item with same identity already exists
         const existingItemIndex = items.findIndex(item =>
             item.productId === (selectedProduct?.id || null) &&
             item.name === name &&
@@ -512,7 +513,7 @@ function CreateOrderModal({ onClose, nextNumber, statuses }: {
         );
 
         if (existingItemIndex > -1) {
-            // MERGE: Update quantity of existing item
+            // MERGE: preview quantity increase
             const updatedItems = [...items];
             const existingItem = updatedItems[existingItemIndex];
             const newQuantity = existingItem.quantity + quantity;
@@ -522,10 +523,10 @@ function CreateOrderModal({ onClose, nextNumber, statuses }: {
                 quantity: newQuantity,
                 totalPrice: newQuantity * unitPriceNum
             };
-            setItems(updatedItems);
+            return updatedItems;
         } else {
-            // ADD NEW: Standard addition
-            const newItem = {
+            // ADD NEW: preview addition
+            const pendingItem = {
                 productId: selectedProduct?.id || null,
                 name: name,
                 variant: variant,
@@ -536,8 +537,16 @@ function CreateOrderModal({ onClose, nextNumber, statuses }: {
                 unitCargoFee: unitCargoFee,
                 image: selectedProduct?.images?.[0] || null
             };
-            setItems([...items, newItem]);
+            return [...items, pendingItem];
         }
+    };
+
+    const handleAddItem = () => {
+        const name = selectedProduct ? selectedProduct.name : manualItemName;
+        if (!name) return;
+
+        // Finalize the preview into real items
+        setItems(getPreviewItems());
 
         // Reset item inputs
         setSelectedProduct(null);
@@ -553,8 +562,8 @@ function CreateOrderModal({ onClose, nextNumber, statuses }: {
         setItems(items.filter((_, i) => i !== index));
     };
 
-    const calculateItemTotal = () => items.reduce((sum, item) => sum + item.totalPrice, 0);
-    const calculateCargoTotal = () => items.reduce((sum, item) => sum + (item.unitCargoFee * item.quantity), 0);
+    const calculateItemTotal = () => getPreviewItems().reduce((sum, item) => sum + item.totalPrice, 0);
+    const calculateCargoTotal = () => getPreviewItems().reduce((sum, item) => sum + (item.unitCargoFee * item.quantity), 0);
 
     const calculateTotal = () => {
         const itemTotal = calculateItemTotal();
@@ -566,7 +575,9 @@ function CreateOrderModal({ onClose, nextNumber, statuses }: {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!customer || !business || !user) return;
-        if (items.length === 0) return;
+
+        const finalItems = getPreviewItems();
+        if (finalItems.length === 0) return;
 
         setLoading(true);
         try {
@@ -587,7 +598,7 @@ function CreateOrderModal({ onClose, nextNumber, statuses }: {
                 sourceId: sourceId || undefined,
                 accountId: accountId || undefined,
                 deliveryAddress: address,
-                items: items,
+                items: finalItems,
                 financials: {
                     subtotal: calculateItemTotal(),
                     discountType: 'fixed',
@@ -595,7 +606,7 @@ function CreateOrderModal({ onClose, nextNumber, statuses }: {
                     discountAmount: 0,
                     deliveryFee: Number(deliveryFee),
                     cargoFee: cargoTotal,
-                    cargoIncluded: items.every(i => i.unitCargoFee === 0),
+                    cargoIncluded: finalItems.every(i => i.unitCargoFee === 0),
                     totalAmount: finalTotal,
                     payments: paid > 0 ? [{
                         id: crypto.randomUUID(),
