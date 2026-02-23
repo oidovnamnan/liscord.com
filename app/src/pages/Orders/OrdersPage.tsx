@@ -47,7 +47,7 @@ function fmt(n: number) {
 export function OrdersPage() {
     const { business } = useBusinessStore();
     const [search, setSearch] = useState('');
-    const [statusFilter, setStatusFilter] = useState<string>('all');
+    const [statusFilter, setStatusFilter] = useState<string>('new');
     const [showCreate, setShowCreate] = useState(false);
     const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
     const [orders, setOrders] = useState<Order[]>([]);
@@ -87,11 +87,17 @@ export function OrdersPage() {
             o.customer.name.toLowerCase().includes(search.toLowerCase()) ||
             o.customer.phone.includes(search);
 
-        // If searching, show even deleted ones to find by number
-        // If not searching, hide deleted ones unless statusFilter is 'all' or 'cancelled'
-        const isDeletedMatch = !o.isDeleted || search || statusFilter === 'all' || statusFilter === 'cancelled';
+        // If searching, show everything matching the search
+        if (search) return matchSearch;
 
+        // Otherwise, filter by status and deletion state
+        if (statusFilter === 'cancelled') {
+            return matchSearch && o.isDeleted;
+        }
+
+        const isDeletedMatch = !o.isDeleted;
         const matchStatus = statusFilter === 'all' || o.status === statusFilter;
+
         return matchSearch && matchStatus && isDeletedMatch;
     });
 
@@ -128,9 +134,13 @@ export function OrdersPage() {
                 </div>
 
                 <div className="orders-status-bar">
-                    {['all', 'new', 'confirmed', 'preparing', 'shipping', 'delivered'].map(s => {
-                        const count = s === 'all' ? orders.length : orders.filter(o => o.status === s).length;
-                        const label = s === 'all' ? 'Бүгд' : statusConfig[s as OrderStatus]?.label;
+                    {['all', 'new', 'confirmed', 'preparing', 'shipping', 'delivered', 'cancelled'].map(s => {
+                        let count = 0;
+                        if (s === 'all') count = orders.filter(o => !o.isDeleted).length;
+                        else if (s === 'cancelled') count = orders.filter(o => o.isDeleted).length;
+                        else count = orders.filter(o => o.status === s && !o.isDeleted).length;
+
+                        const label = s === 'all' ? 'Бүгд' : (s === 'cancelled' ? 'Цуцалсан' : statusConfig[s as OrderStatus]?.label);
                         return (
                             <button
                                 key={s}
