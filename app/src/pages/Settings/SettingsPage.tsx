@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
 import { Header } from '../../components/layout/Header';
-import { Building2, Palette, Bell, Shield, Users, Globe, Moon, Sun, Monitor, Loader2, Plus, MoreVertical, Trash2 } from 'lucide-react';
+import { Building2, Palette, Bell, Shield, Users, Globe, Moon, Sun, Monitor, Loader2, Plus, MoreVertical, Trash2, Share2 } from 'lucide-react';
 import { useBusinessStore, useUIStore } from '../../store';
-import { businessService, teamService, cargoService } from '../../services/db';
+import { businessService, teamService, cargoService, sourceService } from '../../services/db';
 import { toast } from 'react-hot-toast';
 import { PINModal } from '../../components/common/PINModal';
-import type { Position, Employee, CargoType } from '../../types';
+import type { Position, Employee, CargoType, OrderSource, SocialAccount } from '../../types';
 import './SettingsPage.css';
 
 export function SettingsPage() {
@@ -21,6 +21,7 @@ export function SettingsPage() {
         { id: 'security', label: 'Аюулгүй байдал', icon: Shield },
         { id: 'team', label: 'Баг', icon: Users },
         { id: 'cargo', label: 'Карго', icon: Globe },
+        { id: 'sources', label: 'Эх сурвалж', icon: Share2 },
         { id: 'language', label: 'Хэл', icon: Globe },
     ];
 
@@ -100,6 +101,7 @@ export function SettingsPage() {
                             </div>
                         )}
                         {activeTab === 'cargo' && <CargoSettings bizId={business?.id || ''} />}
+                        {activeTab === 'sources' && <SourceSettings bizId={business?.id || ''} />}
                     </div>
                 </div>
             </div>
@@ -336,5 +338,135 @@ function CargoTypeModal({ bizId, onClose, editingType }: { bizId: string; onClos
                 </form>
             </div>
         </div>
+    );
+}
+
+function SourceSettings({ bizId }: { bizId: string }) {
+    const [sources, setSources] = useState<OrderSource[]>([]);
+    const [accounts, setAccounts] = useState<SocialAccount[]>([]);
+    const [showSourceModal, setShowSourceModal] = useState(false);
+    const [showAccountModal, setShowAccountModal] = useState(false);
+    const [editingSource, setEditingSource] = useState<OrderSource | null>(null);
+    const [selectedSourceId, setSelectedSourceId] = useState<string | null>(null);
+
+    useEffect(() => {
+        if (!bizId) return;
+        const u1 = sourceService.subscribeSources(bizId, setSources);
+        const u2 = sourceService.subscribeAccounts(bizId, null, setAccounts);
+        return () => { u1(); u2(); };
+    }, [bizId]);
+
+    const handleDeleteSource = async (id: string) => {
+        if (!confirm('Энэ эх сурвалжийг устгах уу?')) return;
+        try {
+            await sourceService.updateSource(bizId, id, { isDeleted: true });
+            toast.success('Устгагдлаа');
+        } catch (e) { toast.error('Алдаа гарлаа'); }
+    };
+
+    const handleDeleteAccount = async (id: string) => {
+        if (!confirm('Энэ хаягийг устгах уу?')) return;
+        try {
+            await sourceService.updateAccount(bizId, id, { isDeleted: true });
+            toast.success('Устгагдлаа');
+        } catch (e) { toast.error('Алдаа гарлаа'); }
+    };
+
+    return (
+        <div className="settings-section animate-fade-in">
+            <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: 32 }}>
+                <div className="sources-list">
+                    <div className="section-header-compact">
+                        <h3>Эх сурвалжууд</h3>
+                        <button className="btn btn-primary btn-sm" onClick={() => { setEditingSource(null); setShowSourceModal(true); }}>
+                            <Plus size={14} /> Нэмэх
+                        </button>
+                    </div>
+                    <div className="source-cards-grid" style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 16 }}>
+                        {sources.map(s => (
+                            <div key={s.id} className={`card ${selectedSourceId === s.id ? 'active' : ''}`} style={{ padding: 16, cursor: 'pointer', border: selectedSourceId === s.id ? '2px solid var(--primary)' : '' }} onClick={() => setSelectedSourceId(s.id)}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <div style={{ fontWeight: 600 }}>{s.name}</div>
+                                    <div style={{ display: 'flex', gap: 4 }}>
+                                        <button className="btn btn-ghost btn-sm btn-icon" onClick={(e) => { e.stopPropagation(); setEditingSource(s); setShowSourceModal(true); }}><MoreVertical size={14} /></button>
+                                        <button className="btn btn-ghost btn-sm btn-icon text-danger" onClick={(e) => { e.stopPropagation(); handleDeleteSource(s.id); }}><Trash2 size={14} /></button>
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+
+                <div className="accounts-list">
+                    <div className="section-header-compact">
+                        <h3>{selectedSourceId ? sources.find(s => s.id === selectedSourceId)?.name : 'Бүх'} хаягууд</h3>
+                        <button className="btn btn-primary btn-sm" disabled={!selectedSourceId} onClick={() => setShowAccountModal(true)}>
+                            <Plus size={14} /> Хаяг нэмэх
+                        </button>
+                    </div>
+                    <div className="account-cards-grid" style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 16 }}>
+                        {accounts.filter(a => !selectedSourceId || a.sourceId === selectedSourceId).map(a => (
+                            <div key={a.id} className="card" style={{ padding: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <div>{a.name}</div>
+                                <button className="btn btn-ghost btn-sm btn-icon text-danger" onClick={() => handleDeleteAccount(a.id)}><Trash2 size={14} /></button>
+                            </div>
+                        ))}
+                        {selectedSourceId && accounts.filter(a => a.sourceId === selectedSourceId).length === 0 && (
+                            <div style={{ textAlign: 'center', padding: 24, fontSize: '0.9rem', color: 'var(--text-muted)', background: 'var(--bg-soft)', borderRadius: 8 }}>Хаяг бүртгэгдээгүй байна</div>
+                        )}
+                        {!selectedSourceId && <div style={{ textAlign: 'center', padding: 24, fontSize: '0.9rem', color: 'var(--text-muted)' }}>Эх сурвалж сонгож хаяг нэмнэ үү</div>}
+                    </div>
+                </div>
+            </div>
+
+            {showSourceModal && <OrderSourceModal bizId={bizId} onClose={() => setShowSourceModal(false)} editingSource={editingSource} />}
+            {showAccountModal && <SocialAccountModal bizId={bizId} sourceId={selectedSourceId!} onClose={() => setShowAccountModal(false)} />}
+        </div>
+    );
+}
+
+function OrderSourceModal({ bizId, onClose, editingSource }: { bizId: string; onClose: () => void; editingSource: OrderSource | null }) {
+    const [loading, setLoading] = useState(false);
+    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+        const fd = new FormData(e.currentTarget);
+        setLoading(true);
+        try {
+            const data = { name: fd.get('name') as string };
+            if (editingSource) await sourceService.updateSource(bizId, editingSource.id, data);
+            else await sourceService.createSource(bizId, data);
+            toast.success('Амжилттай');
+            onClose();
+        } catch (e) { toast.error('Алдаа гарлаа'); } finally { setLoading(false); }
+    };
+    return (
+        <div className="modal-backdrop" onClick={onClose}><div className="modal" onClick={e => e.stopPropagation()} style={{ maxWidth: 400 }}>
+            <div className="modal-header"><h2>{editingSource ? 'Эх сурвалж засах' : 'Шинэ эх сурвалж'}</h2><button onClick={onClose} className="btn btn-ghost btn-icon">✕</button></div>
+            <form onSubmit={handleSubmit}><div className="modal-body">
+                <div className="input-group"><label className="input-label">Нэр</label><input className="input" name="name" defaultValue={editingSource?.name} placeholder="Жишээ: Facebook" required autoFocus /></div>
+            </div><div className="modal-footer"><button type="submit" className="btn btn-primary" disabled={loading}>Хадгалах</button></div></form>
+        </div></div>
+    );
+}
+
+function SocialAccountModal({ bizId, sourceId, onClose }: { bizId: string; sourceId: string; onClose: () => void }) {
+    const [loading, setLoading] = useState(false);
+    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+        const fd = new FormData(e.currentTarget);
+        setLoading(true);
+        try {
+            await sourceService.createAccount(bizId, { name: fd.get('name') as string, sourceId });
+            toast.success('Амжилттай');
+            onClose();
+        } catch (e) { toast.error('Алдаа гарлаа'); } finally { setLoading(false); }
+    };
+    return (
+        <div className="modal-backdrop" onClick={onClose}><div className="modal" onClick={e => e.stopPropagation()} style={{ maxWidth: 400 }}>
+            <div className="modal-header"><h2>Шинэ хаяг / Пэйж</h2><button onClick={onClose} className="btn btn-ghost btn-icon">✕</button></div>
+            <form onSubmit={handleSubmit}><div className="modal-body">
+                <div className="input-group"><label className="input-label">Нэр</label><input className="input" name="name" placeholder="Жишээ: Liscord Shop" required autoFocus /></div>
+            </div><div className="modal-footer"><button type="submit" className="btn btn-primary" disabled={loading}>Хадгалах</button></div></form>
+        </div></div>
     );
 }

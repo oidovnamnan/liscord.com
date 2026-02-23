@@ -16,7 +16,7 @@ import {
 } from 'firebase/firestore';
 import { db } from './firebase';
 import { auditService } from './audit';
-import type { Business, User, Employee, Order, Customer, Product, Position, Category, CargoType } from '../types';
+import type { Business, User, Employee, Order, Customer, Product, Position, Category, CargoType, OrderSource, SocialAccount } from '../types';
 
 // ============ GENERIC HELPERS ============
 
@@ -443,3 +443,69 @@ export const teamService = {
 };
 
 
+
+// ============ SOURCE & ACCOUNT SERVICES ============
+
+export const sourceService = {
+    async createSource(bizId: string, source: Partial<OrderSource>): Promise<string> {
+        const ref = doc(collection(db, 'businesses', bizId, 'orderSources'));
+        await setDoc(ref, {
+            ...source,
+            id: ref.id,
+            businessId: bizId,
+            isDeleted: false,
+            createdAt: serverTimestamp(),
+        });
+        return ref.id;
+    },
+
+    async updateSource(bizId: string, sourceId: string, data: Partial<OrderSource>) {
+        await updateDoc(doc(db, 'businesses', bizId, 'orderSources', sourceId), data);
+    },
+
+    subscribeSources(bizId: string, callback: (sources: OrderSource[]) => void) {
+        const q = query(
+            collection(db, 'businesses', bizId, 'orderSources'),
+            where('isDeleted', '==', false),
+            orderBy('createdAt', 'desc')
+        );
+        return onSnapshot(q, (snap) => {
+            callback(snap.docs.map(d => convertTimestamps(d.data()) as OrderSource));
+        });
+    },
+
+    async createAccount(bizId: string, account: Partial<SocialAccount>): Promise<string> {
+        const ref = doc(collection(db, 'businesses', bizId, 'socialAccounts'));
+        await setDoc(ref, {
+            ...account,
+            id: ref.id,
+            businessId: bizId,
+            isDeleted: false,
+            createdAt: serverTimestamp(),
+        });
+        return ref.id;
+    },
+
+    async updateAccount(bizId: string, accountId: string, data: Partial<SocialAccount>) {
+        await updateDoc(doc(db, 'businesses', bizId, 'socialAccounts', accountId), data);
+    },
+
+    subscribeAccounts(bizId: string, sourceId: string | null, callback: (accounts: SocialAccount[]) => void) {
+        let q = query(
+            collection(db, 'businesses', bizId, 'socialAccounts'),
+            where('isDeleted', '==', false)
+        );
+        if (sourceId) {
+            q = query(q, where('sourceId', '==', sourceId));
+        }
+        return onSnapshot(q, (snap) => {
+            callback(snap.docs.map(d => convertTimestamps(d.data()) as SocialAccount));
+        });
+    },
+
+    async getAllAccounts(bizId: string): Promise<SocialAccount[]> {
+        const q = query(collection(db, 'businesses', bizId, 'socialAccounts'), where('isDeleted', '==', false));
+        const snap = await getDocs(q);
+        return snap.docs.map(d => convertTimestamps(d.data()) as SocialAccount);
+    }
+};

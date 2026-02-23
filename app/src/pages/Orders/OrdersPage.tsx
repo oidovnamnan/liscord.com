@@ -2,7 +2,12 @@ import { useState, useEffect } from 'react';
 import { Header } from '../../components/layout/Header';
 import { Plus, Search, MoreVertical, Loader2, X, User, Package, CreditCard } from 'lucide-react';
 import { useBusinessStore, useAuthStore } from '../../store';
-import { orderService, productService, cargoService } from '../../services/db';
+import {
+    productService,
+    orderService,
+    sourceService
+} from '../../services/db';
+import type { OrderSource, SocialAccount } from '../../types';
 import { OrderDetailModal } from './OrderDetailModal';
 import type { Order, OrderStatus } from '../../types';
 import './OrdersPage.css';
@@ -217,8 +222,13 @@ function CreateOrderModal({ onClose, nextNumber }: {
     const [customer, setCustomer] = useState('');
     const [phone, setPhone] = useState('');
     const [socialHandle, setSocialHandle] = useState('');
-    const [source, setSource] = useState('instagram');
+    const [sourceId, setSourceId] = useState('');
+    const [accountId, setAccountId] = useState('');
     const [address, setAddress] = useState('');
+
+    // Dynamic Data
+    const [allSources, setAllSources] = useState<OrderSource[]>([]);
+    const [allAccounts, setAllAccounts] = useState<SocialAccount[]>([]);
 
     // Item Search & Details
     const [searchQuery, setSearchQuery] = useState('');
@@ -251,16 +261,26 @@ function CreateOrderModal({ onClose, nextNumber }: {
             setAllProducts(data);
         });
 
-        // Fetch cargo types
-        const unsubCargo = cargoService.subscribeCargoTypes(business.id, (_data) => {
-            // No longer storing cargo types list since we auto-fill from product
+        // Fetch sources
+        const unsubSources = sourceService.subscribeSources(business.id, (data) => {
+            setAllSources(data);
+            if (data.length > 0 && !sourceId) {
+                // Auto-select first source (or default if we had that in business settings)
+                setSourceId(data[0].id);
+            }
+        });
+
+        // Fetch all accounts for this business
+        const unsubAccounts = sourceService.subscribeAccounts(business.id, null, (data) => {
+            setAllAccounts(data);
         });
 
         return () => {
             unsubProducts();
-            unsubCargo();
+            unsubSources();
+            unsubAccounts();
         };
-    }, [business?.id]);
+    }, [business?.id, sourceId]); // Added sourceId to dependencies to re-evaluate auto-selection if sourceId changes
 
     const filteredProducts = searchQuery.length > 0
         ? allProducts.filter(p =>
@@ -372,7 +392,8 @@ function CreateOrderModal({ onClose, nextNumber }: {
                     phone: phone,
                     socialHandle: socialHandle || undefined
                 },
-                source: source as any,
+                sourceId: sourceId || undefined,
+                accountId: accountId || undefined,
                 deliveryAddress: address,
                 items: items,
                 financials: {
@@ -441,12 +462,22 @@ function CreateOrderModal({ onClose, nextNumber }: {
                                 </div>
                                 <div className="input-group">
                                     <label className="input-label">Эх сурвалж</label>
-                                    <select className="input select" value={source} onChange={e => setSource(e.target.value)}>
-                                        <option value="instagram">Instagram</option>
-                                        <option value="facebook">Facebook</option>
-                                        <option value="tiktok">TikTok</option>
-                                        <option value="phone">Утас</option>
-                                        <option value="other">Бусад</option>
+                                    <select className="input select" value={sourceId} onChange={e => { setSourceId(e.target.value); setAccountId(''); }}>
+                                        <option value="">Сонгох...</option>
+                                        {allSources.map(s => (
+                                            <option key={s.id} value={s.id}>{s.name}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                            </div>
+                            <div className="input-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                                <div className="input-group">
+                                    <label className="input-label">Пэйж / Хаяг</label>
+                                    <select className="input select" value={accountId} onChange={e => setAccountId(e.target.value)} disabled={!sourceId}>
+                                        <option value="">Сонгох...</option>
+                                        {allAccounts.filter(a => a.sourceId === sourceId).map(a => (
+                                            <option key={a.id} value={a.id}>{a.name}</option>
+                                        ))}
                                     </select>
                                 </div>
                             </div>

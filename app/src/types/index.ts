@@ -83,6 +83,26 @@ export interface BusinessSettings {
         defaultFee: number;
         isIncludedByDefault: boolean;
     };
+    defaultSourceId?: string;
+}
+
+export interface OrderSource {
+    id: string;
+    name: string;
+    icon?: string;
+    businessId: string;
+    defaultAccountId?: string;
+    isDeleted: boolean;
+    createdAt: Date;
+}
+
+export interface SocialAccount {
+    id: string;
+    name: string;
+    sourceId: string;
+    businessId: string;
+    isDeleted: boolean;
+    createdAt: Date;
 }
 
 export interface BusinessStats {
@@ -168,7 +188,7 @@ export type OrderStatus =
     | 'new' | 'confirmed' | 'preparing' | 'ready'
     | 'shipping' | 'delivered' | 'completed' | 'cancelled';
 
-export type OrderSource = 'facebook' | 'instagram' | 'tiktok' | 'website' | 'phone' | 'pos' | 'other';
+export type LegacyOrderSource = 'facebook' | 'instagram' | 'tiktok' | 'website' | 'phone' | 'pos' | 'other';
 
 export type PaymentStatus = 'unpaid' | 'partial' | 'paid';
 export type PaymentMethod = 'cash' | 'qpay' | 'bank' | 'card' | 'credit';
@@ -205,7 +225,9 @@ export interface Order {
         socialHandle?: string;
     };
 
-    source?: OrderSource;
+    source?: LegacyOrderSource;
+    sourceId?: string;
+    accountId?: string;
     paymentScreenshot?: string;
 
     items: OrderItem[];
