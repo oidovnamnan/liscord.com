@@ -85,8 +85,13 @@ export function OrdersPage() {
             o.orderNumber.toLowerCase().includes(search.toLowerCase()) ||
             o.customer.name.toLowerCase().includes(search.toLowerCase()) ||
             o.customer.phone.includes(search);
+
+        // If searching, show even deleted ones to find by number
+        // If not searching, hide deleted ones unless statusFilter is 'all' or 'cancelled'
+        const isDeletedMatch = !o.isDeleted || search || statusFilter === 'all' || statusFilter === 'cancelled';
+
         const matchStatus = statusFilter === 'all' || o.status === statusFilter;
-        return matchSearch && matchStatus;
+        return matchSearch && matchStatus && isDeletedMatch;
     });
 
     return (

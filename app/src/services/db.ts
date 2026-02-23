@@ -111,8 +111,7 @@ export const orderService = {
     subscribeOrders(bizId: string, callback: (orders: Order[]) => void) {
         const q = query(
             this.getOrdersRef(bizId),
-            where('isDeleted', '==', false),
-            limit(50)
+            limit(100)
         );
         return onSnapshot(q, (snapshot) => {
             const orders = snapshot.docs.map(d => ({ id: d.id, ...convertTimestamps(d.data()) } as Order));
