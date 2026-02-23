@@ -825,7 +825,8 @@ function OrderStatusModal({ bizId, onClose, editingStatus, nextOrder }: { bizId:
                 label,
                 color,
                 order: editingStatus?.order || nextOrder,
-                isActive
+                isActive,
+                isSystem: editingStatus?.isSystem ?? false
             };
 
             if (editingStatus) {

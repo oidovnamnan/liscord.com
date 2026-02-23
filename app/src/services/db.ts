@@ -145,10 +145,10 @@ export const orderStatusService = {
     },
 
     async updateStatus(bizId: string, statusId: string, status: Partial<OrderStatusConfig>): Promise<void> {
-        await updateDoc(doc(this.getStatusesRef(bizId), statusId), {
+        await setDoc(doc(this.getStatusesRef(bizId), statusId), {
             ...status,
             updatedAt: serverTimestamp()
-        });
+        }, { merge: true });
     },
 
     async deleteStatus(bizId: string, statusId: string): Promise<void> {
