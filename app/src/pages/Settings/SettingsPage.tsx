@@ -766,7 +766,7 @@ function OrderStatusSettings({ bizId }: { bizId: string }) {
                 </button>
             </div>
 
-            <div className="status-settings-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 16 }}>
+            <div className="status-settings-grid">
                 {statuses.map(s => (
                     <div key={s.id} className="card status-config-card" style={{ padding: '16px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderLeft: `4px solid ${s.color}` }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -774,9 +774,9 @@ function OrderStatusSettings({ bizId }: { bizId: string }) {
                             {s.isSystem && <span style={{ fontSize: '0.65rem', background: 'var(--bg-soft)', padding: '2px 6px', borderRadius: 4, opacity: 0.7 }}>СИСТЕМ</span>}
                         </div>
                         <div style={{ display: 'flex', gap: 4 }}>
-                            <button className="btn btn-ghost btn-xs btn-icon" onClick={() => { setEditingStatus(s); setShowModal(true); }}><MoreVertical size={14} /></button>
+                            <button className="btn btn-ghost btn-xs btn-icon" onClick={(e) => { e.stopPropagation(); setEditingStatus(s); setShowModal(true); }}><MoreVertical size={14} /></button>
                             {!s.isSystem && (
-                                <button className="btn btn-ghost btn-xs btn-icon text-danger" onClick={() => handleDelete(s.id, s.isSystem)}><Trash2 size={14} /></button>
+                                <button className="btn btn-ghost btn-xs btn-icon text-danger" onClick={(e) => { e.stopPropagation(); handleDelete(s.id, s.isSystem); }}><Trash2 size={14} /></button>
                             )}
                         </div>
                     </div>
@@ -812,8 +812,9 @@ function OrderStatusModal({ bizId, onClose, editingStatus, nextOrder }: { bizId:
             if (editingStatus) {
                 await orderStatusService.updateStatus(bizId, editingStatus.id, data);
             } else {
-                // Generate a simple ID from label
-                const id = label.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '');
+                // Generate a simple ID from label, fallback to random if empty (e.g. Mongolian)
+                const slug = label.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '');
+                const id = slug || `status_${Date.now()}`;
                 await orderStatusService.addStatus(bizId, { ...data, id });
             }
             toast.success('Амжилттай хадгалагдлаа');
@@ -837,19 +838,13 @@ function OrderStatusModal({ bizId, onClose, editingStatus, nextOrder }: { bizId:
 
                         <div className="input-group" style={{ marginTop: 16 }}>
                             <label className="input-label">Өнгө сонгох</label>
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 8, marginTop: 8 }}>
+                            <div className="color-swatch-grid">
                                 {colors.map(c => (
                                     <div
                                         key={c}
                                         onClick={() => setColor(c)}
-                                        style={{
-                                            height: 32,
-                                            background: c,
-                                            borderRadius: 8,
-                                            cursor: 'pointer',
-                                            border: color === c ? '3px solid var(--text-main)' : '1px solid rgba(0,0,0,0.1)',
-                                            boxShadow: color === c ? '0 0 0 2px var(--bg-main)' : 'none'
-                                        }}
+                                        className={`color-swatch ${color === c ? 'active' : ''}`}
+                                        style={{ background: c }}
                                     />
                                 ))}
                             </div>
