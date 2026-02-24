@@ -103,10 +103,9 @@ export function Sidebar() {
             )}
 
             <aside className={`sidebar ${sidebarOpen ? 'open' : ''} ${sidebarCollapsed ? 'collapsed' : ''}`}>
-                {/* Header / Mobile Close Button */}
-                <div className="sidebar-header" style={{ paddingBottom: 0 }}>
-                    <div style={{ flex: 1 }}></div>
-                    <button className="btn-icon sidebar-close hide-desktop" onClick={toggleSidebar}>
+                {/* Header / Mobile Close Button (Only on mobile) */}
+                <div className="hide-desktop" style={{ padding: 'var(--space-md)', display: 'flex', justifyContent: 'flex-end', borderBottom: '1px solid var(--border-primary)' }}>
+                    <button className="btn-icon sidebar-close" onClick={toggleSidebar}>
                         <X size={20} />
                     </button>
                 </div>
