@@ -17,8 +17,23 @@ export function OrderDetailModal({ bizId, order, onClose, statuses }: OrderDetai
     const { user } = useAuthStore();
     const [updating, setUpdating] = useState(false);
     const [currentStatusId, setCurrentStatusId] = useState(order.status);
-
     const fmt = (n: number) => '₮' + n.toLocaleString('mn-MN');
+
+    const formatTime = (date?: Date | any) => {
+        if (!date) return 'Саяхан';
+        try {
+            // Check if it's a Firestore Timestamp or normal Date
+            const d = date.toDate ? date.toDate() : new Date(date);
+            if (isNaN(d.getTime())) return 'Саяхан';
+            const mo = String(d.getMonth() + 1).padStart(2, '0');
+            const da = String(d.getDate()).padStart(2, '0');
+            const ho = String(d.getHours()).padStart(2, '0');
+            const mi = String(d.getMinutes()).padStart(2, '0');
+            return `${mo}/${da} ${ho}:${mi}`;
+        } catch {
+            return 'Саяхан';
+        }
+    };
 
     const handleStatusChange = async (newStatusId: string) => {
         if (newStatusId.toLowerCase() === order.status?.toLowerCase()) return;
@@ -215,11 +230,15 @@ export function OrderDetailModal({ bizId, order, onClose, statuses }: OrderDetai
                                 <div className="timeline-card">
                                     <div className="timeline">
                                         {/* Status items */}
-                                        {statuses.filter(st => st.id !== 'all').map((s, idx) => {
-                                            const activeStatuses = statuses.filter(st => st.id !== 'all');
+                                        {statuses.filter(st => st.id !== 'all' && st.isActive).map((s, idx) => {
+                                            const activeStatuses = statuses.filter(st => st.id !== 'all' && st.isActive);
                                             // Logic to check if this status is "completed" in terms of timeline
                                             const currentStatusIndex = activeStatuses.findIndex(st => st.id.toLowerCase() === currentStatusId?.toLowerCase());
                                             const isCompleted = !order.isDeleted && (currentStatusIndex >= idx);
+
+                                            // Find timestamp from history
+                                            const historyItem = order.statusHistory?.slice().reverse().find(h => h.status.toLowerCase() === s.id.toLowerCase());
+                                            const timeLabel = historyItem?.at ? formatTime(historyItem.at) : (s.id.toLowerCase() === 'new' ? formatTime(order.createdAt) : 'Саяхан');
 
                                             return (
                                                 <div key={s.id} className={`timeline-item ${isCompleted ? 'active' : ''}`}>
@@ -230,7 +249,7 @@ export function OrderDetailModal({ bizId, order, onClose, statuses }: OrderDetai
                                                         <div className="timeline-status-label">{s.label}</div>
                                                         {isCompleted && (
                                                             <div className="timeline-meta">
-                                                                <span className="timeline-time">Саяхан</span>
+                                                                <span className="timeline-time">{timeLabel}</span>
                                                             </div>
                                                         )}
                                                     </div>
