@@ -13,6 +13,12 @@
     border-radius: 0 0 16px 16px;
 }
 
+@media (max-width: 600px) {
+    .order-detail-modal .modal-body {
+        padding: 12px;
+    }
+}
+
 .order-grid {
     display: grid;
     grid-template-columns: 1.5fr 1fr;
@@ -73,9 +79,16 @@
     font-weight: 500;
 }
 
+.table-responsive-wrapper {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
 .items-table {
     width: 100%;
     border-collapse: collapse;
+    min-width: 400px;
 }
 
 .items-table th {
@@ -277,6 +290,13 @@
 @media (max-width: 768px) {
     .order-grid {
         grid-template-columns: 1fr;
+    }
+
+    .info-card,
+    .financial-card,
+    .timeline-card,
+    .notes-box {
+        padding: 12px;
     }
 }
 

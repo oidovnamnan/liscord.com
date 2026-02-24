@@ -158,31 +158,33 @@ export function OrderDetailModal({ bizId, order, onClose, statuses }: OrderDetai
 
                             <section className="info-section">
                                 <h3 className="section-title"><Package size={16} /> Бараанууд</h3>
-                                <table className="items-table">
-                                    <thead>
-                                        <tr>
-                                            <th>Нэр</th>
-                                            <th className="text-right">Тоо</th>
-                                            <th className="text-right">Нэгж үнэ</th>
-                                            <th className="text-right">Нийт</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {order.items.map((item, idx) => (
-                                            <tr key={idx}>
-                                                <td>
-                                                    <div className="item-name-cell">
-                                                        {item.name}
-                                                        {item.variant && <span className="item-variant">{item.variant}</span>}
-                                                    </div>
-                                                </td>
-                                                <td className="text-right">{item.quantity}</td>
-                                                <td className="text-right">{fmt(item.unitPrice)}</td>
-                                                <td className="text-right">{fmt(item.totalPrice)}</td>
+                                <div className="table-responsive-wrapper">
+                                    <table className="items-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Нэр</th>
+                                                <th className="text-right">Тоо</th>
+                                                <th className="text-right">Нэгж үнэ</th>
+                                                <th className="text-right">Нийт</th>
                                             </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
+                                        </thead>
+                                        <tbody>
+                                            {order.items.map((item, idx) => (
+                                                <tr key={idx}>
+                                                    <td>
+                                                        <div className="item-name-cell">
+                                                            {item.name}
+                                                            {item.variant && <span className="item-variant">{item.variant}</span>}
+                                                        </div>
+                                                    </td>
+                                                    <td className="text-right">{item.quantity}</td>
+                                                    <td className="text-right">{fmt(item.unitPrice)}</td>
+                                                    <td className="text-right">{fmt(item.totalPrice)}</td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
                             </section>
                         </div>
 
