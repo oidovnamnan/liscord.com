@@ -564,52 +564,65 @@ function CreatePositionModal({ bizId, editingPosition, onClose }: { bizId: strin
 
     return (
         <div className="modal-backdrop" onClick={onClose}>
-            <div className="modal" style={{ maxWidth: 800, width: '90%' }} onClick={e => e.stopPropagation()}>
-                <div className="modal-header">
-                    <h2>{editingPosition ? 'Албан тушаал засах' : 'Шинэ албан тушаал'}</h2>
-                    <button onClick={onClose}>✕</button>
+            <div className="modal" style={{ maxWidth: 800, width: '90%', maxHeight: '90vh', display: 'flex', flexDirection: 'column' }} onClick={e => e.stopPropagation()}>
+                <div className="modal-header" style={{ padding: '24px 32px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                        <div className="icon-badge" style={{ background: 'var(--primary)', color: 'white' }}><Shield size={20} /></div>
+                        <div>
+                            <h2 style={{ fontSize: '1.25rem', margin: 0 }}>{editingPosition ? 'Албан тушаал засах' : 'Шинэ албан тушаал'}</h2>
+                            <p style={{ margin: '4px 0 0 0', fontSize: '0.85rem', color: 'var(--text-muted)' }}>Системд хандах эрхийн тохиргоо</p>
+                        </div>
+                    </div>
+                    <button className="btn btn-ghost btn-icon" onClick={onClose}><X size={20} /></button>
                 </div>
-                <form onSubmit={handleSubmit}>
-                    <div className="modal-body">
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-                            <div className="input-group">
-                                <label className="input-label">Нэр</label>
-                                <input className="input" name="name" required defaultValue={editingPosition?.name} placeholder="Жнь: Менежер" />
-                            </div>
-                            <div className="input-group">
-                                <label className="input-label">Тайлбар</label>
-                                <input className="input" name="description" defaultValue={editingPosition?.description} placeholder="Тухайн албан тушаалын үүрэг" />
+
+                <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+                    <div className="modal-body" style={{ padding: 0, overflowY: 'auto' }}>
+
+                        {/* SECTION 1: BASIC INFO */}
+                        <div className="modal-section" style={{ padding: '24px 32px' }}>
+                            <div className="modal-section-title" style={{ fontSize: '0.85rem', fontWeight: 700, letterSpacing: '0.5px', color: 'var(--primary)', textTransform: 'uppercase', marginBottom: 16 }}>Үндсэн мэдээлэл</div>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
+                                <div className="input-group">
+                                    <label className="input-label" style={{ fontWeight: 600 }}>Албан тушаалын нэр *</label>
+                                    <input className="input" name="name" required defaultValue={editingPosition?.name} placeholder="Жнь: Менежер, Салбарын эрхлэгч..." style={{ height: 48 }} />
+                                </div>
+                                <div className="input-group">
+                                    <label className="input-label" style={{ fontWeight: 600 }}>Тайлбар</label>
+                                    <input className="input" name="description" defaultValue={editingPosition?.description} placeholder="Тухайн албан тушаалын үүрэг" style={{ height: 48 }} />
+                                </div>
                             </div>
                         </div>
 
-                        <div style={{ marginTop: 24 }}>
-                            <h3 style={{ fontSize: '1.1rem', marginBottom: 16, paddingBottom: 8, borderBottom: '1px solid var(--border-color)' }}>Эрхийн тохиргоо</h3>
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 24, maxHeight: '50vh', overflowY: 'auto', paddingRight: 8 }}>
+                        {/* SECTION 2: PERMISSIONS */}
+                        <div className="modal-section" style={{ padding: '24px 32px', background: 'var(--bg-soft)', borderTop: '1px solid var(--border-primary)' }}>
+                            <div className="modal-section-title" style={{ fontSize: '0.85rem', fontWeight: 700, letterSpacing: '0.5px', color: 'var(--primary)', textTransform: 'uppercase', marginBottom: 20 }}>Системийн эрхүүд</div>
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 24 }}>
                                 {Object.entries(groupedPermissions).map(([groupName, perms]) => {
                                     const allSelected = perms.every(p => selectedPerms.includes(p.id));
                                     const someSelected = perms.some(p => selectedPerms.includes(p.id));
 
                                     return (
-                                        <div key={groupName} className="settings-card" style={{ padding: 16 }}>
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12, borderBottom: '1px solid var(--border-color)', paddingBottom: 8 }}>
+                                        <div key={groupName} className="settings-card" style={{ padding: 20, background: '#fff', border: '1px solid var(--border-color)', borderRadius: 16, boxShadow: '0 2px 8px rgba(0,0,0,0.02)' }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16, paddingBottom: 12, borderBottom: '1px solid var(--border-soft)' }}>
                                                 <input
                                                     type="checkbox"
                                                     checked={allSelected}
                                                     ref={input => { if (input) input.indeterminate = !allSelected && someSelected; }}
                                                     onChange={() => toggleGroup(groupName, perms.map(p => p.id))}
                                                     id={`group-${groupName}`}
-                                                    style={{ cursor: 'pointer', accentColor: 'var(--primary)' }}
+                                                    style={{ cursor: 'pointer', accentColor: 'var(--primary)', width: 18, height: 18 }}
                                                 />
-                                                <label htmlFor={`group-${groupName}`} style={{ fontWeight: 600, cursor: 'pointer', flex: 1 }}>{groupName}</label>
+                                                <label htmlFor={`group-${groupName}`} style={{ fontWeight: 700, fontSize: '1rem', cursor: 'pointer', flex: 1, margin: 0 }}>{groupName}</label>
                                             </div>
-                                            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                                                 {perms.map(perm => (
-                                                    <label key={perm.id} style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
+                                                    <label key={perm.id} style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', fontSize: '0.95rem', color: 'var(--text-primary)' }}>
                                                         <input
                                                             type="checkbox"
                                                             checked={selectedPerms.includes(perm.id)}
                                                             onChange={() => togglePermission(perm.id)}
-                                                            style={{ cursor: 'pointer', accentColor: 'var(--primary)' }}
+                                                            style={{ cursor: 'pointer', accentColor: 'var(--primary)', width: 16, height: 16, marginTop: 2 }}
                                                         />
                                                         {perm.label}
                                                     </label>
@@ -621,9 +634,11 @@ function CreatePositionModal({ bizId, editingPosition, onClose }: { bizId: strin
                             </div>
                         </div>
                     </div>
-                    <div className="modal-footer">
-                        <button type="button" className="btn btn-ghost" onClick={onClose}>Болих</button>
-                        <button type="submit" className="btn btn-primary" disabled={loading}>Хадгалах</button>
+                    <div className="modal-footer" style={{ padding: '20px 32px', background: '#fff', borderTop: '1px solid var(--border-color)', display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
+                        <button type="button" className="btn btn-ghost" onClick={onClose} style={{ fontWeight: 600 }}>Болих</button>
+                        <button type="submit" className="btn btn-primary gradient-btn" disabled={loading} style={{ padding: '0 24px', fontWeight: 600 }}>
+                            {editingPosition ? 'Өөрчлөлтийг хадгалах' : 'Үүсгэх'}
+                        </button>
                     </div>
                 </form>
             </div>
