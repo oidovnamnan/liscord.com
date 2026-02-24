@@ -8,7 +8,7 @@ import { businessService, teamService, cargoService, sourceService, orderStatusS
 import { toast } from 'react-hot-toast';
 import { PINModal } from '../../components/common/PINModal';
 import { ActivityTab } from './components/ActivityTab';
-import type { Position, Employee, CargoType, OrderSource, SocialAccount, OrderStatusConfig } from '../../types';
+import { ALL_PERMISSIONS, type Position, type Employee, type CargoType, type OrderSource, type SocialAccount, type OrderStatusConfig } from '../../types';
 import './SettingsPage.css';
 
 export function SettingsPage() {
@@ -404,6 +404,7 @@ function TeamSettings({ bizId }: { bizId: string }) {
     const [employees, setEmployees] = useState<Employee[]>([]);
     const [positions, setPositions] = useState<Position[]>([]);
     const [showPosModal, setShowPosModal] = useState(false);
+    const [editingPosition, setEditingPosition] = useState<Position | null>(null);
     const [showPIN, setShowPIN] = useState(false);
     const [selectedPosId, setSelectedPosId] = useState<string | null>(null);
 
@@ -475,7 +476,7 @@ function TeamSettings({ bizId }: { bizId: string }) {
                                 <div className="icon-badge"><Shield size={16} /></div>
                                 <h3 style={{ margin: 0 }}>Албан тушаалууд</h3>
                             </div>
-                            <button className="btn btn-primary btn-sm gradient-btn" onClick={() => setShowPosModal(true)}>
+                            <button className="btn btn-primary btn-sm gradient-btn" onClick={() => { setEditingPosition(null); setShowPosModal(true); }}>
                                 <Plus size={14} /> Нэмэх
                             </button>
                         </div>
@@ -488,7 +489,9 @@ function TeamSettings({ bizId }: { bizId: string }) {
                                             <div className="position-desc" style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>{pos.description || 'Тайлбар байхгүй'}</div>
                                         </div>
                                         <div style={{ display: 'flex', gap: 4 }}>
-                                            <button className="btn btn-ghost btn-sm btn-icon"><MoreVertical size={14} /></button>
+                                            <button className="btn btn-ghost btn-sm btn-icon" onClick={() => { setEditingPosition(pos); setShowPosModal(true); }}>
+                                                <MoreVertical size={14} />
+                                            </button>
                                             <button className="btn btn-ghost btn-sm btn-icon text-danger" onClick={() => handleDeletePos(pos.id)}><Trash2 size={14} /></button>
                                         </div>
                                     </div>
@@ -499,40 +502,132 @@ function TeamSettings({ bizId }: { bizId: string }) {
                 )}
             </div>
 
-            {showPosModal && <CreatePositionModal bizId={bizId} onClose={() => setShowPosModal(false)} />}
+            {showPosModal && <CreatePositionModal bizId={bizId} editingPosition={editingPosition} onClose={() => setShowPosModal(false)} />}
             {showPIN && <PINModal title="Устгах баталгаажуулалт" description="Албан тушаалын эрхийг устгахын тулд PIN кодыг оруулна уу." onSuccess={confirmDelete} onClose={() => setShowPIN(false)} />}
         </div>
     );
 }
 
-function CreatePositionModal({ bizId, onClose }: { bizId: string; onClose: () => void }) {
+function CreatePositionModal({ bizId, editingPosition, onClose }: { bizId: string; editingPosition: Position | null; onClose: () => void }) {
     const [loading, setLoading] = useState(false);
+    const [selectedPerms, setSelectedPerms] = useState<string[]>(editingPosition?.permissions || []);
+
+    const togglePermission = (permId: string) => {
+        setSelectedPerms(prev =>
+            prev.includes(permId) ? prev.filter(p => p !== permId) : [...prev, permId]
+        );
+    };
+
+    const toggleGroup = (_groupName: string, permIds: string[]) => {
+        const allSelected = permIds.every(id => selectedPerms.includes(id));
+        if (allSelected) {
+            setSelectedPerms(prev => prev.filter(p => !permIds.includes(p)));
+        } else {
+            setSelectedPerms(prev => Array.from(new Set([...prev, ...permIds])));
+        }
+    };
+
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         const fd = new FormData(e.currentTarget);
         setLoading(true);
         try {
-            await teamService.createPosition(bizId, {
+            const data = {
                 name: fd.get('name') as string,
                 description: fd.get('description') as string,
                 color: '#6c5ce7',
-                permissions: [],
-                order: 1,
-                isSystem: false,
-                isDefault: false
-            });
-            toast.success('Амжилттай');
+                permissions: selectedPerms,
+            };
+
+            if (editingPosition) {
+                await teamService.updatePosition(bizId, editingPosition.id, data);
+                toast.success('Амжилттай засагдлаа');
+            } else {
+                await teamService.createPosition(bizId, {
+                    ...data,
+                    order: 1,
+                    isSystem: false,
+                    isDefault: false
+                });
+                toast.success('Амжилттай үүсгэлээ');
+            }
             onClose();
         } catch (e) { toast.error('Алдаа гарлаа'); } finally { setLoading(false); }
     };
+
+    // Group permissions by category
+    const groupedPermissions: Record<string, { id: string; label: string }[]> = {};
+    Object.entries(ALL_PERMISSIONS).forEach(([id, perm]) => {
+        if (!groupedPermissions[perm.group]) groupedPermissions[perm.group] = [];
+        groupedPermissions[perm.group].push({ id, label: perm.label });
+    });
+
     return (
-        <div className="modal-backdrop" onClick={onClose}><div className="modal" onClick={e => e.stopPropagation()}>
-            <div className="modal-header"><h2>Шинэ албан тушаал</h2><button onClick={onClose}>✕</button></div>
-            <form onSubmit={handleSubmit}><div className="modal-body">
-                <div className="input-group"><label className="input-label">Нэр</label><input className="input" name="name" required /></div>
-                <div className="input-group"><label className="input-label">Тайлбар</label><input className="input" name="description" /></div>
-            </div><div className="modal-footer"><button type="submit" className="btn btn-primary" disabled={loading}>Хадгалах</button></div></form>
-        </div></div>
+        <div className="modal-backdrop" onClick={onClose}>
+            <div className="modal" style={{ maxWidth: 800, width: '90%' }} onClick={e => e.stopPropagation()}>
+                <div className="modal-header">
+                    <h2>{editingPosition ? 'Албан тушаал засах' : 'Шинэ албан тушаал'}</h2>
+                    <button onClick={onClose}>✕</button>
+                </div>
+                <form onSubmit={handleSubmit}>
+                    <div className="modal-body">
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+                            <div className="input-group">
+                                <label className="input-label">Нэр</label>
+                                <input className="input" name="name" required defaultValue={editingPosition?.name} placeholder="Жнь: Менежер" />
+                            </div>
+                            <div className="input-group">
+                                <label className="input-label">Тайлбар</label>
+                                <input className="input" name="description" defaultValue={editingPosition?.description} placeholder="Тухайн албан тушаалын үүрэг" />
+                            </div>
+                        </div>
+
+                        <div style={{ marginTop: 24 }}>
+                            <h3 style={{ fontSize: '1.1rem', marginBottom: 16, paddingBottom: 8, borderBottom: '1px solid var(--border-color)' }}>Эрхийн тохиргоо</h3>
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 24, maxHeight: '50vh', overflowY: 'auto', paddingRight: 8 }}>
+                                {Object.entries(groupedPermissions).map(([groupName, perms]) => {
+                                    const allSelected = perms.every(p => selectedPerms.includes(p.id));
+                                    const someSelected = perms.some(p => selectedPerms.includes(p.id));
+
+                                    return (
+                                        <div key={groupName} className="settings-card" style={{ padding: 16 }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12, borderBottom: '1px solid var(--border-color)', paddingBottom: 8 }}>
+                                                <input
+                                                    type="checkbox"
+                                                    checked={allSelected}
+                                                    ref={input => { if (input) input.indeterminate = !allSelected && someSelected; }}
+                                                    onChange={() => toggleGroup(groupName, perms.map(p => p.id))}
+                                                    id={`group-${groupName}`}
+                                                    style={{ cursor: 'pointer', accentColor: 'var(--primary)' }}
+                                                />
+                                                <label htmlFor={`group-${groupName}`} style={{ fontWeight: 600, cursor: 'pointer', flex: 1 }}>{groupName}</label>
+                                            </div>
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                                                {perms.map(perm => (
+                                                    <label key={perm.id} style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={selectedPerms.includes(perm.id)}
+                                                            onChange={() => togglePermission(perm.id)}
+                                                            style={{ cursor: 'pointer', accentColor: 'var(--primary)' }}
+                                                        />
+                                                        {perm.label}
+                                                    </label>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    </div>
+                    <div className="modal-footer">
+                        <button type="button" className="btn btn-ghost" onClick={onClose}>Болих</button>
+                        <button type="submit" className="btn btn-primary" disabled={loading}>Хадгалах</button>
+                    </div>
+                </form>
+            </div>
+        </div>
     );
 }
 
