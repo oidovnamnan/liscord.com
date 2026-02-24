@@ -163,6 +163,8 @@ export const ALL_PERMISSIONS: Record<string, { label: string; group: string }> =
     'orders.edit_own': { label: 'Өөрийн захиалга засах', group: 'Захиалга' },
     'orders.delete': { label: 'Захиалга устгах', group: 'Захиалга' },
     'orders.change_status': { label: 'Статус өөрчлөх', group: 'Захиалга' },
+    'orders.purchase': { label: 'Эх сурвалжаас худалдан авах (Taobao, 1688)', group: 'Захиалга' },
+    'orders.manage_delivery': { label: 'Хүргэлт, ложистик удирдах', group: 'Захиалга' },
     'orders.view_financials': { label: 'Мөнгөн дүн харах', group: 'Захиалга' },
     'orders.manage_payments': { label: 'Төлбөр удирдах', group: 'Захиалга' },
     'orders.export': { label: 'Экспортлох', group: 'Захиалга' },
@@ -179,6 +181,7 @@ export const ALL_PERMISSIONS: Record<string, { label: string; group: string }> =
     'reports.view_dashboard': { label: 'Dashboard харах', group: 'Тайлан' },
     'reports.view_sales': { label: 'Борлуулалтын тайлан', group: 'Тайлан' },
     'reports.export': { label: 'Тайлан экспортлох', group: 'Тайлан' },
+    'finance.manage': { label: 'Санхүү, орлого зарлага удирдах', group: 'Санхүү' },
     'team.view': { label: 'Ажилтан харах', group: 'Баг' },
     'team.invite': { label: 'Ажилтан урих', group: 'Баг' },
     'team.edit': { label: 'Ажилтан засах', group: 'Баг' },
@@ -186,6 +189,7 @@ export const ALL_PERMISSIONS: Record<string, { label: string; group: string }> =
     'team.manage_positions': { label: 'Албан тушаал удирдах', group: 'Баг' },
     'settings.view': { label: 'Тохиргоо харах', group: 'Тохиргоо' },
     'settings.edit_business': { label: 'Бизнес мэдээлэл засах', group: 'Тохиргоо' },
+    'settings.manage_cargo_sources': { label: 'Карго, эх сурвалж удирдах', group: 'Тохиргоо' },
     'settings.manage_billing': { label: 'Төлбөр удирдах', group: 'Тохиргоо' },
 };
 
