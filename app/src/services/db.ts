@@ -206,10 +206,23 @@ export const orderService = {
 
     async updateOrderStatus(bizId: string, orderId: string, status: string, historyItem: any, employeeProfile?: any): Promise<void> {
         const docRef = doc(db, 'businesses', bizId, 'orders', orderId);
+
+        const orderSnap = await getDoc(docRef);
+        let updatedHistory = [historyItem];
+        if (orderSnap.exists()) {
+            const data = orderSnap.data();
+            if (Array.isArray(data.statusHistory)) {
+                updatedHistory = [...data.statusHistory, historyItem];
+            } else if (data.statusHistory) {
+                // Convert previous singular object to array format
+                updatedHistory = [data.statusHistory, historyItem];
+            }
+        }
+
         await updateDoc(docRef, {
             status,
             updatedAt: serverTimestamp(),
-            statusHistory: historyItem
+            statusHistory: updatedHistory
         });
 
         await auditService.writeLog(bizId, {

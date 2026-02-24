@@ -262,8 +262,14 @@ export interface Order {
     notes: string;
     internalNotes: string;
     deliveryAddress: string;
-    statusHistory: Array<{ status: OrderStatus; at: Date; by: string; byName: string }>;
-    tags: string[];
+    statusHistory: Array<{
+        status: OrderStatus;
+        at: Date;
+        by: string;
+        byName: string;
+        updatedBy?: string;
+        timestamp?: Date;
+    }>;
 
     createdBy: string;
     createdByName: string;

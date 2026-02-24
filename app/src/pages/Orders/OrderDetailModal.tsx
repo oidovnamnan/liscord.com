@@ -44,8 +44,11 @@ export function OrderDetailModal({ bizId, order, onClose, statuses }: OrderDetai
                 status: newStatusId,
                 label: statusLabel,
                 timestamp: new Date(),
+                at: new Date(),
                 note: `Төлөвийг [${statusLabel}] болгож өөрчлөв`,
-                updatedBy: user?.displayName || 'Систем'
+                updatedBy: user?.displayName || 'Систем',
+                by: user?.uid || 'system',
+                byName: user?.displayName || 'Систем'
             };
 
             await orderService.updateOrderStatus(bizId, order.id, newStatusId, historyItem, {
@@ -242,6 +245,7 @@ export function OrderDetailModal({ bizId, order, onClose, statuses }: OrderDetai
                                             const historyArray = Array.isArray(order.statusHistory) ? order.statusHistory : [];
                                             const historyItem = historyArray.slice().reverse().find(h => h.status.toLowerCase() === s.id.toLowerCase());
                                             const timeLabel = historyItem?.at ? formatTime(historyItem.at) : (s.id.toLowerCase() === 'new' ? formatTime(order.createdAt) : 'Саяхан');
+                                            const actorName = historyItem?.byName || historyItem?.updatedBy || (s.id.toLowerCase() === 'new' ? (order.createdByName || 'Систем') : '');
 
                                             return (
                                                 <div key={s.id} className={`timeline-item ${isCompleted ? 'active' : ''}`}>
@@ -251,8 +255,14 @@ export function OrderDetailModal({ bizId, order, onClose, statuses }: OrderDetai
                                                     <div className="timeline-content">
                                                         <div className="timeline-status-label">{s.label}</div>
                                                         {isCompleted && (
-                                                            <div className="timeline-meta">
+                                                            <div className="timeline-meta" style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
                                                                 <span className="timeline-time">{timeLabel}</span>
+                                                                {actorName && (
+                                                                    <>
+                                                                        <span style={{ color: 'var(--border-color)' }}>|</span>
+                                                                        <span className="timeline-actor">{actorName}</span>
+                                                                    </>
+                                                                )}
                                                             </div>
                                                         )}
                                                     </div>
