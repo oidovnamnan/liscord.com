@@ -423,56 +423,75 @@ function TeamSettings({ bizId }: { bizId: string }) {
 
     return (
         <div className="settings-section animate-fade-in">
-            <div className="settings-subtabs">
-                <button className={`settings-subtab ${subTab === 'employees' ? 'active' : ''}`} onClick={() => setSubTab('employees')}>Ажилчид</button>
-                <button className={`settings-subtab ${subTab === 'positions' ? 'active' : ''}`} onClick={() => setSubTab('positions')}>Эрхүүд / Албан тушаал</button>
-            </div>
+            <h2>Баг</h2>
+            <div className="settings-card">
+                <div className="settings-card-header" style={{ marginBottom: 0 }}>
+                    <div className="settings-card-icon"><Users size={20} /></div>
+                    <div style={{ flex: 1 }}>
+                        <h3 style={{ margin: 0 }}>Багийн гишүүд болон эрх</h3>
+                        <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', margin: '4px 0 0 0' }}>Багийн гишүүдийг урих, тэдний системд хандах эрхийг удирдах.</p>
+                    </div>
+                </div>
 
-            {subTab === 'employees' ? (
-                <div className="team-list">
-                    <div className="section-header-compact"><h3>Ажилчид ({employees.length})</h3><button className="btn btn-primary btn-sm"><Plus size={14} /> Урих</button></div>
-                    <div className="employee-grid">
-                        {employees.map(emp => (
-                            <div key={emp.id} className="settings-card employee-card">
-                                <div className="employee-avatar">{emp.avatar || emp.name.charAt(0)}</div>
-                                <div className="employee-info">
-                                    <div className="employee-name">{emp.name}</div>
-                                    <div className="employee-role">{emp.positionName || 'Ажилтан'}</div>
-                                </div>
-                                <button className="btn btn-ghost btn-sm btn-icon"><MoreVertical size={16} /></button>
-                            </div>
-                        ))}
-                    </div>
+                <div style={{ display: 'flex', gap: 4, margin: '24px 0', padding: 4, background: 'var(--bg-soft)', borderRadius: 12, width: 'fit-content' }}>
+                    <button
+                        className={`btn btn-sm ${subTab === 'employees' ? '' : 'btn-ghost'}`}
+                        onClick={() => setSubTab('employees')}
+                        style={{ borderRadius: 8, padding: '6px 16px', background: subTab === 'employees' ? '#fff' : 'transparent', color: subTab === 'employees' ? '#000' : 'inherit', boxShadow: subTab === 'employees' ? '0 2px 8px rgba(0,0,0,0.05)' : 'none' }}
+                    >Ажилчид</button>
+                    <button
+                        className={`btn btn-sm ${subTab === 'positions' ? '' : 'btn-ghost'}`}
+                        onClick={() => setSubTab('positions')}
+                        style={{ borderRadius: 8, padding: '6px 16px', background: subTab === 'positions' ? '#fff' : 'transparent', color: subTab === 'positions' ? '#000' : 'inherit', boxShadow: subTab === 'positions' ? '0 2px 8px rgba(0,0,0,0.05)' : 'none' }}
+                    >Эрхүүд / Албан тушаал</button>
                 </div>
-            ) : (
-                <div className="positions-list">
-                    <div className="section-header-compact" style={{ marginBottom: 16 }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                            <div className="icon-badge"><Shield size={16} /></div>
-                            <h3 style={{ margin: 0 }}>Албан тушаалууд</h3>
+
+                {subTab === 'employees' ? (
+                    <div className="team-list">
+                        <div className="section-header-compact"><h3>Ажилчид ({employees.length})</h3><button className="btn btn-primary btn-sm"><Plus size={14} /> Урих</button></div>
+                        <div className="employee-grid">
+                            {employees.map(emp => (
+                                <div key={emp.id} className="settings-card employee-card">
+                                    <div className="employee-avatar">{emp.avatar || emp.name.charAt(0)}</div>
+                                    <div className="employee-info">
+                                        <div className="employee-name">{emp.name}</div>
+                                        <div className="employee-role">{emp.positionName || 'Ажилтан'}</div>
+                                    </div>
+                                    <button className="btn btn-ghost btn-sm btn-icon"><MoreVertical size={16} /></button>
+                                </div>
+                            ))}
                         </div>
-                        <button className="btn btn-primary btn-sm gradient-btn" onClick={() => setShowPosModal(true)}>
-                            <Plus size={14} /> Нэмэх
-                        </button>
                     </div>
-                    <div className="positions-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 16 }}>
-                        {positions.filter(p => !(p as any).isDeleted).map(pos => (
-                            <div key={pos.id} className="settings-card position-card">
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
-                                    <div className="position-info">
-                                        <div className="position-name" style={{ fontWeight: 600, fontSize: '1rem', marginBottom: 4 }}>{pos.name}</div>
-                                        <div className="position-desc" style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>{pos.description || 'Тайлбар байхгүй'}</div>
-                                    </div>
-                                    <div style={{ display: 'flex', gap: 4 }}>
-                                        <button className="btn btn-ghost btn-sm btn-icon"><MoreVertical size={14} /></button>
-                                        <button className="btn btn-ghost btn-sm btn-icon text-danger" onClick={() => handleDeletePos(pos.id)}><Trash2 size={14} /></button>
+                ) : (
+                    <div className="positions-list">
+                        <div className="section-header-compact" style={{ marginBottom: 16 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                                <div className="icon-badge"><Shield size={16} /></div>
+                                <h3 style={{ margin: 0 }}>Албан тушаалууд</h3>
+                            </div>
+                            <button className="btn btn-primary btn-sm gradient-btn" onClick={() => setShowPosModal(true)}>
+                                <Plus size={14} /> Нэмэх
+                            </button>
+                        </div>
+                        <div className="positions-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 16 }}>
+                            {positions.filter(p => !(p as any).isDeleted).map(pos => (
+                                <div key={pos.id} className="settings-card position-card">
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
+                                        <div className="position-info">
+                                            <div className="position-name" style={{ fontWeight: 600, fontSize: '1rem', marginBottom: 4 }}>{pos.name}</div>
+                                            <div className="position-desc" style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>{pos.description || 'Тайлбар байхгүй'}</div>
+                                        </div>
+                                        <div style={{ display: 'flex', gap: 4 }}>
+                                            <button className="btn btn-ghost btn-sm btn-icon"><MoreVertical size={14} /></button>
+                                            <button className="btn btn-ghost btn-sm btn-icon text-danger" onClick={() => handleDeletePos(pos.id)}><Trash2 size={14} /></button>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                        ))}
+                            ))}
+                        </div>
                     </div>
-                </div>
-            )}
+                )}
+            </div>
 
             {showPosModal && <CreatePositionModal bizId={bizId} onClose={() => setShowPosModal(false)} />}
             {showPIN && <PINModal title="Устгах баталгаажуулалт" description="Албан тушаалын эрхийг устгахын тулд PIN кодыг оруулна уу." onSuccess={confirmDelete} onClose={() => setShowPIN(false)} />}
@@ -532,38 +551,45 @@ function CargoSettings({ bizId }: { bizId: string }) {
 
     return (
         <div className="settings-section animate-fade-in">
-            <div className="section-header-compact">
-                <h3>Каргоны төрлүүд</h3>
-                <button className="btn btn-primary btn-sm" onClick={() => { setEditingType(null); setShowModal(true); }}>
-                    <Plus size={14} /> Төрөл нэмэх
-                </button>
-            </div>
+            <h2>Карго холболт</h2>
+            <div className="settings-card">
+                <div className="settings-card-header">
+                    <div className="settings-card-icon"><Globe size={20} /></div>
+                    <div style={{ flex: 1 }}>
+                        <h3 style={{ margin: 0 }}>Каргоны төрлүүд</h3>
+                        <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', margin: '4px 0 0 0' }}>Захиалга үүсгэх үед ашиглагдах каргоны үнийн тохиргоо.</p>
+                    </div>
+                    <button className="btn btn-primary btn-sm gradient-btn" onClick={() => { setEditingType(null); setShowModal(true); }}>
+                        <Plus size={14} /> Төрөл нэмэх
+                    </button>
+                </div>
 
-            <div className="cargo-types-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 16, marginTop: 16 }}>
-                {cargoTypes.map(type => (
-                    <div key={type.id} className="settings-card cargo-type-card" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
-                        <div>
-                            <div style={{ fontWeight: 600, fontSize: '1rem', marginBottom: 4 }}>{type.name}</div>
-                            <div style={{ color: 'var(--primary)', fontWeight: 700, fontSize: '1.25rem' }}>
-                                ₮{type.fee.toLocaleString()} <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 400 }}>/ {type.unit}</span>
+                <div className="cargo-types-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 16, marginTop: 16 }}>
+                    {cargoTypes.map(type => (
+                        <div key={type.id} className="card cargo-type-card" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', padding: '16px 20px', border: '1px solid var(--border-color)', borderRadius: '16px' }}>
+                            <div>
+                                <div style={{ fontWeight: 600, fontSize: '1rem', marginBottom: 4 }}>{type.name}</div>
+                                <div style={{ color: 'var(--primary)', fontWeight: 700, fontSize: '1.25rem' }}>
+                                    ₮{type.fee.toLocaleString()} <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 400 }}>/ {type.unit}</span>
+                                </div>
+                            </div>
+                            <div style={{ display: 'flex', gap: 4 }}>
+                                <button className="btn btn-ghost btn-sm btn-icon" onClick={() => { setEditingType(type); setShowModal(true); }}>
+                                    <MoreVertical size={14} />
+                                </button>
+                                <button className="btn btn-ghost btn-sm btn-icon text-danger" onClick={() => handleDelete(type.id)}>
+                                    <Trash2 size={14} />
+                                </button>
                             </div>
                         </div>
-                        <div style={{ display: 'flex', gap: 4 }}>
-                            <button className="btn btn-ghost btn-sm btn-icon" onClick={() => { setEditingType(type); setShowModal(true); }}>
-                                <MoreVertical size={14} />
-                            </button>
-                            <button className="btn btn-ghost btn-sm btn-icon text-danger" onClick={() => handleDelete(type.id)}>
-                                <Trash2 size={14} />
-                            </button>
+                    ))}
+                    {cargoTypes.length === 0 && (
+                        <div className="empty-state-mini" style={{ gridColumn: '1/-1', textAlign: 'center', padding: '40px', background: 'var(--bg-soft)', borderRadius: 12, border: '1px dashed var(--border-color)' }}>
+                            <Globe size={32} style={{ color: 'var(--text-muted)', marginBottom: 12, opacity: 0.5 }} />
+                            <div style={{ color: 'var(--text-muted)' }}>Каргоны төрөл бүртгэгдээгүй байна</div>
                         </div>
-                    </div>
-                ))}
-                {cargoTypes.length === 0 && (
-                    <div className="empty-state-mini" style={{ gridColumn: '1/-1', textAlign: 'center', padding: '40px', background: 'var(--bg-soft)', borderRadius: 12, border: '1px dashed var(--border-color)' }}>
-                        <Globe size={32} style={{ color: 'var(--text-muted)', marginBottom: 12, opacity: 0.5 }} />
-                        <div style={{ color: 'var(--text-muted)' }}>Каргоны төрөл бүртгэгдээгүй байна</div>
-                    </div>
-                )}
+                    )}
+                </div>
             </div>
 
             {showModal && (
@@ -677,19 +703,22 @@ function SourceSettings({ bizId }: { bizId: string }) {
     const filteredAccounts = accounts.filter(a => !selectedSourceId || a.sourceId === selectedSourceId);
 
     return (
-        <div className="settings-section animate-fade-in" style={{ padding: '0 var(--space-xs)' }}>
-            <div style={{ display: 'grid', gridTemplateColumns: '320px 1fr', gap: 32 }}>
-                <div className="sources-list">
-                    <div className="section-header-compact" style={{ marginBottom: 16 }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                            <div className="icon-badge"><Share2 size={16} /></div>
+        <div className="settings-section animate-fade-in">
+            <h2>Эх сурвалж болон хаягууд</h2>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'minmax(300px, 360px) 1fr', gap: 24 }}>
+                <div className="settings-card" style={{ padding: 24, border: '1px solid var(--border-color)', borderRadius: 20 }}>
+                    <div className="settings-card-header">
+                        <div className="settings-card-icon"><Share2 size={20} /></div>
+                        <div style={{ flex: 1 }}>
                             <h3 style={{ margin: 0 }}>Эх сурвалжууд</h3>
+                            <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', margin: '4px 0 0 0' }}>Захиалга хаанаас ирж буйг бүртгэх</p>
                         </div>
                         <button className="btn btn-primary btn-sm gradient-btn" onClick={() => { setEditingSource(null); setShowSourceModal(true); }}>
                             <Plus size={14} /> Нэмэх
                         </button>
                     </div>
-                    <div className="source-cards-grid" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                    <div className="source-cards-grid" style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 24 }}>
                         {sources.map(s => (
                             <div
                                 key={s.id}
@@ -720,18 +749,19 @@ function SourceSettings({ bizId }: { bizId: string }) {
                     </div>
                 </div>
 
-                <div className="accounts-list">
-                    <div className="section-header-compact" style={{ marginBottom: 16 }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                            <div className="icon-badge" style={{ background: 'var(--bg-soft)' }}><Users size={16} /></div>
+                <div className="settings-card" style={{ padding: 24, border: '1px solid var(--border-color)', borderRadius: 20 }}>
+                    <div className="settings-card-header">
+                        <div className="settings-card-icon" style={{ background: 'var(--bg-soft)', color: 'var(--text-primary)' }}><Users size={20} /></div>
+                        <div style={{ flex: 1 }}>
                             <h3 style={{ margin: 0 }}>{currentSource ? `${currentSource.name} хаягууд` : 'Бүх хаягууд'}</h3>
+                            <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', margin: '4px 0 0 0' }}>Тухайн суваг дээрх албан ёсны пэйжүүд</p>
                         </div>
-                        <button className="btn btn-primary btn-sm" disabled={!selectedSourceId} onClick={() => setShowAccountModal(true)}>
+                        <button className="btn btn-primary btn-sm gradient-btn" disabled={!selectedSourceId} onClick={() => setShowAccountModal(true)}>
                             <Plus size={14} /> Хаяг нэмэх
                         </button>
                     </div>
 
-                    <div className="account-cards-grid" style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    <div className="account-cards-grid" style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 24 }}>
                         {filteredAccounts.map(a => (
                             <div key={a.id} className="card account-card" style={{ padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
