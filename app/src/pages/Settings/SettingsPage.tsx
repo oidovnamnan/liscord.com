@@ -182,7 +182,7 @@ export function SettingsPage() {
                                                 <div style={{ fontWeight: 600, fontSize: '1rem' }}>Дэлгүүрийг нээх (Онлайн худалдаа)</div>
                                                 <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Хэрэв унтраасан бол хэрэглэгчид танай дэлгүүр рүү орж захиалга өгөх боломжгүйгээр түр хаагдана.</div>
                                             </div>
-                                            <label className="toggle-switch">
+                                            <label className="toggle">
                                                 <input
                                                     type="checkbox"
                                                     name="storefrontEnabled"
@@ -316,7 +316,7 @@ export function SettingsPage() {
                                                     <div style={{ fontWeight: 600, fontSize: '1rem' }}>{item.label}</div>
                                                     <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>{item.desc}</div>
                                                 </div>
-                                                <label className="toggle-switch">
+                                                <label className="toggle">
                                                     <input
                                                         type="checkbox"
                                                         checked={(notifications as any)[item.id]}
