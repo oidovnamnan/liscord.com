@@ -1,10 +1,10 @@
 import { GoogleGenAI } from '@google/genai';
 
-// Initialize the Gemini client.
+// Initialize the Gemini client lazily.
 // In a real production app, this should be called from a secure backend or Firebase Function.
 // For this MVP, we will use it directly on the client side with a restricted API key if possible.
 const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY || '';
-const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
+let aiClient: GoogleGenAI | null = null;
 
 export interface ExtractedData {
     extractedText: string;
@@ -21,6 +21,10 @@ export interface ExtractedData {
 export async function scanPackageLabel(base64Image: string, mimeType: string, orderPrefix: string): Promise<ExtractedData> {
     if (!GEMINI_API_KEY) {
         throw new Error("Gemini API Key is missing. Please add VITE_GEMINI_API_KEY to your .env file.");
+    }
+
+    if (!aiClient) {
+        aiClient = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
     }
 
     const prompt = `
@@ -41,7 +45,7 @@ FORMAT YOUR RESPONSE EXACTLY LIKE THIS JSON:
 `;
 
     try {
-        const response = await ai.models.generateContent({
+        const response = await aiClient.models.generateContent({
             model: 'gemini-2.5-flash',
             contents: [
                 {
