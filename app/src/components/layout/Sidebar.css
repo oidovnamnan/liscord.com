@@ -49,35 +49,6 @@
     border-bottom: 1px solid var(--border-primary);
 }
 
-.sidebar-brand {
-    display: flex;
-    align-items: center;
-    gap: var(--space-sm);
-}
-
-.sidebar-logo {
-    width: 36px;
-    height: 36px;
-    background: var(--gradient-primary);
-    border-radius: var(--radius-md);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: 900;
-    font-size: 1.1rem;
-    color: #fff;
-    flex-shrink: 0;
-}
-
-.sidebar-title {
-    font-size: 1.2rem;
-    font-weight: 800;
-    background: var(--gradient-primary);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-}
-
 .sidebar-close {
     background: none;
     border: none;

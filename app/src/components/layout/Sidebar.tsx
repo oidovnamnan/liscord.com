@@ -103,17 +103,9 @@ export function Sidebar() {
             )}
 
             <aside className={`sidebar ${sidebarOpen ? 'open' : ''} ${sidebarCollapsed ? 'collapsed' : ''}`}>
-                {/* Header */}
-                <div className="sidebar-header">
-                    {!sidebarCollapsed && (
-                        <div className="sidebar-brand">
-                            <div className="sidebar-logo">L</div>
-                            <span className="sidebar-title">Liscord</span>
-                        </div>
-                    )}
-                    {sidebarCollapsed && (
-                        <div className="sidebar-logo">L</div>
-                    )}
+                {/* Header / Mobile Close Button */}
+                <div className="sidebar-header" style={{ paddingBottom: 0 }}>
+                    <div style={{ flex: 1 }}></div>
                     <button className="btn-icon sidebar-close hide-desktop" onClick={toggleSidebar}>
                         <X size={20} />
                     </button>
