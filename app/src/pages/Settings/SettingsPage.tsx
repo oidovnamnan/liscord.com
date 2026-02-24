@@ -440,7 +440,7 @@ function TeamSettings({ bizId }: { bizId: string }) {
                     </div>
                 </div>
 
-                <div style={{ display: 'flex', gap: 4, margin: '24px 0', padding: 4, background: 'var(--bg-soft)', borderRadius: 12, width: 'fit-content' }}>
+                <div style={{ display: 'flex', gap: 4, marginTop: 24, marginBottom: 32, padding: 4, background: 'var(--bg-soft)', borderRadius: 12, width: 'fit-content' }}>
                     <button
                         className={`btn btn-sm ${subTab === 'employees' ? '' : 'btn-ghost'}`}
                         onClick={() => setSubTab('employees')}
@@ -455,7 +455,10 @@ function TeamSettings({ bizId }: { bizId: string }) {
 
                 {subTab === 'employees' ? (
                     <div className="team-list">
-                        <div className="section-header-compact"><h3>Ажилчид ({employees.length})</h3><button className="btn btn-primary btn-sm"><Plus size={14} /> Урих</button></div>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
+                            <h3 style={{ margin: 0 }}>Ажилчид ({employees.length})</h3>
+                            <button className="btn btn-primary btn-sm gradient-btn"><Plus size={14} /> Урих</button>
+                        </div>
                         <div className="employee-grid">
                             {employees.map(emp => (
                                 <div key={emp.id} className="settings-card employee-card">
@@ -471,7 +474,7 @@ function TeamSettings({ bizId }: { bizId: string }) {
                     </div>
                 ) : (
                     <div className="positions-list">
-                        <div className="section-header-compact" style={{ marginBottom: 16 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                                 <div className="icon-badge"><Shield size={16} /></div>
                                 <h3 style={{ margin: 0 }}>Албан тушаалууд</h3>
