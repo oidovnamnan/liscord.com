@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Shield, Loader2 } from 'lucide-react';
 import { useBusinessStore } from '../../store';
 import { toast } from 'react-hot-toast';
@@ -59,7 +60,7 @@ export function PINModal({ onSuccess, onClose, title = 'Баталгаажуул
         setLoading(false);
     };
 
-    return (
+    return createPortal(
         <div className="modal-backdrop" onClick={onClose} style={{ zIndex: 2000 }}>
             <div className="modal" onClick={e => e.stopPropagation()} style={{ maxWidth: 360, textAlign: 'center' }}>
                 <div className="modal-header" style={{ justifyContent: 'center' }}>
@@ -96,6 +97,7 @@ export function PINModal({ onSuccess, onClose, title = 'Баталгаажуул
                     <button className="btn btn-ghost" onClick={onClose} disabled={loading} style={{ width: '100%' }}>БОЛИХ</button>
                 </div>
             </div>
-        </div>
+        </div>,
+        document.body
     );
 }

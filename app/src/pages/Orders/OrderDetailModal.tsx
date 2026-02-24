@@ -1,5 +1,6 @@
 import { X, Printer, Clock, User, Package, CreditCard, CheckCircle2, ChevronDown, Loader2 } from 'lucide-react';
 import { useState } from 'react';
+import { createPortal } from 'react-dom';
 import type { Order, OrderStatusConfig } from '../../types';
 import { orderService } from '../../services/db';
 import { toast } from 'react-hot-toast';
@@ -71,7 +72,7 @@ export function OrderDetailModal({ bizId, order, onClose, statuses }: OrderDetai
     const activeStatus = statuses.find(s => s.id.toLowerCase() === currentStatusId?.toLowerCase()) ||
         statuses.find(s => s.id.toLowerCase() === order.status?.toLowerCase());
 
-    return (
+    return createPortal(
         <div className="modal-backdrop" onClick={onClose}>
             <div className="modal order-detail-modal" onClick={e => e.stopPropagation()}>
                 <div className="modal-header hide-print">
@@ -309,6 +310,7 @@ export function OrderDetailModal({ bizId, order, onClose, statuses }: OrderDetai
                     )}
                 </div>
             </div>
-        </div>
+        </div>,
+        document.body
     );
 }

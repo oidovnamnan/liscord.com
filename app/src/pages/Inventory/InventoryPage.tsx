@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { Header } from '../../components/layout/Header';
 import { Search, Plus, Package, AlertTriangle, ArrowDownRight, ArrowUpRight, History, TrendingUp, TrendingDown, Loader2 } from 'lucide-react';
 import { useBusinessStore } from '../../store';
@@ -155,7 +156,7 @@ export function InventoryPage() {
                 </div>
             </div>
 
-            {showAdd && (
+            {showAdd && createPortal(
                 <div className="modal-backdrop" onClick={() => setShowAdd(false)}>
                     <div className="modal" onClick={e => e.stopPropagation()}>
                         <div className="modal-header">
@@ -194,7 +195,8 @@ export function InventoryPage() {
                             <button className="btn btn-primary" onClick={() => setShowAdd(false)} disabled={products.length === 0}><Plus size={16} /> Бүртгэх</button>
                         </div>
                     </div>
-                </div>
+                </div>,
+                document.body
             )}
         </>
     );

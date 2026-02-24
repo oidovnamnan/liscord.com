@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { Header } from '../../components/layout/Header';
 import { Search, Plus, Phone, Mail, MoreVertical, ShoppingCart, DollarSign, Loader2 } from 'lucide-react';
 import { useBusinessStore, useAuthStore } from '../../store';
@@ -180,7 +181,7 @@ function CreateCustomerModal({ onClose }: { onClose: () => void }) {
         }
     };
 
-    return (
+    return createPortal(
         <div className="modal-backdrop" onClick={onClose}>
             <div className="modal" onClick={e => e.stopPropagation()}>
                 <div className="modal-header">
@@ -214,6 +215,7 @@ function CreateCustomerModal({ onClose }: { onClose: () => void }) {
                     </div>
                 </form>
             </div>
-        </div>
+        </div>,
+        document.body
     );
 }

@@ -562,7 +562,7 @@ function CreatePositionModal({ bizId, editingPosition, onClose }: { bizId: strin
         groupedPermissions[perm.group].push({ id, label: perm.label });
     });
 
-    return (
+    return createPortal(
         <div className="modal-backdrop" onClick={onClose}>
             <div className="modal" style={{ maxWidth: 800, width: '90%', maxHeight: '90vh', display: 'flex', flexDirection: 'column' }} onClick={e => e.stopPropagation()}>
                 <div className="modal-header" style={{ padding: '24px 32px' }}>
@@ -642,7 +642,8 @@ function CreatePositionModal({ bizId, editingPosition, onClose }: { bizId: strin
                     </div>
                 </form>
             </div>
-        </div>
+        </div>,
+        document.body
     );
 }
 
@@ -743,7 +744,7 @@ function CargoTypeModal({ bizId, onClose, editingType }: { bizId: string; onClos
         } catch (e) { toast.error('Алдаа гарлаа'); } finally { setLoading(false); }
     };
 
-    return (
+    return createPortal(
         <div className="modal-backdrop" onClick={onClose}>
             <div className="modal" onClick={e => e.stopPropagation()} style={{ maxWidth: 400 }}>
                 <div className="modal-header">
@@ -780,7 +781,8 @@ function CargoTypeModal({ bizId, onClose, editingType }: { bizId: string; onClos
                     </div>
                 </form>
             </div>
-        </div>
+        </div>,
+        document.body
     );
 }
 
@@ -932,7 +934,7 @@ function OrderSourceModal({ bizId, onClose, editingSource }: { bizId: string; on
             onClose();
         } catch (e) { toast.error('Алдаа гарлаа'); } finally { setLoading(false); }
     };
-    return (
+    return createPortal(
         <div className="modal-backdrop" onClick={onClose}>
             <div className="modal animate-slide-up" onClick={e => e.stopPropagation()} style={{ maxWidth: 400, borderRadius: 24 }}>
                 <div className="modal-header" style={{ padding: '24px 24px 12px' }}>
@@ -954,7 +956,8 @@ function OrderSourceModal({ bizId, onClose, editingSource }: { bizId: string; on
                     </div>
                 </form>
             </div>
-        </div>
+        </div>,
+        document.body
     );
 }
 
@@ -970,7 +973,7 @@ function SocialAccountModal({ bizId, sourceId, sourceName, onClose }: { bizId: s
             onClose();
         } catch (e) { toast.error('Алдаа гарлаа'); } finally { setLoading(false); }
     };
-    return (
+    return createPortal(
         <div className="modal-backdrop" onClick={onClose}>
             <div className="modal animate-slide-up" onClick={e => e.stopPropagation()} style={{ maxWidth: 400, borderRadius: 24 }}>
                 <div className="modal-header" style={{ padding: '24px 24px 12px' }}>
@@ -995,7 +998,8 @@ function SocialAccountModal({ bizId, sourceId, sourceName, onClose }: { bizId: s
                     </div>
                 </form>
             </div>
-        </div>
+        </div>,
+        document.body
     );
 }
 function OrderStatusSettings({ bizId }: { bizId: string }) {

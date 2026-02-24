@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { Header } from '../../components/layout/Header';
 import { ImageUpload } from '../../components/common/ImageUpload';
 import { Search, Plus, AlertTriangle, Grid3X3, List, Loader2, MoreVertical, Globe } from 'lucide-react';
@@ -376,7 +377,7 @@ function CreateProductModal({ onClose }: { onClose: () => void }) {
 
     const filteredCats = categories.filter(c => c.name.toLowerCase().includes(categoryInput.toLowerCase()));
 
-    return (
+    return createPortal(
         <div className="modal-backdrop" onClick={onClose}>
             <div className="modal" onClick={e => e.stopPropagation()}>
                 <div className="modal-header">
@@ -526,7 +527,8 @@ function CreateProductModal({ onClose }: { onClose: () => void }) {
                     </div>
                 </form>
             </div>
-        </div>
+        </div>,
+        document.body
     );
 }
 
@@ -675,7 +677,7 @@ function EditProductModal({ product, onClose }: { product: Product; onClose: () 
 
     const filteredCats = categories.filter(c => c.name.toLowerCase().includes(categoryInput.toLowerCase()));
 
-    return (
+    return createPortal(
         <div className="modal-backdrop" onClick={onClose}>
             <div className="modal" onClick={e => e.stopPropagation()}>
                 <div className="modal-header">
@@ -821,7 +823,8 @@ function EditProductModal({ product, onClose }: { product: Product; onClose: () 
                     </div>
                 </form>
             </div>
-        </div>
+        </div>,
+        document.body
     );
 }
 
