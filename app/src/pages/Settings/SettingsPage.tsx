@@ -406,6 +406,7 @@ function TeamSettings({ bizId }: { bizId: string }) {
     const [showPosModal, setShowPosModal] = useState(false);
     const [editingPosition, setEditingPosition] = useState<Position | null>(null);
     const [showPIN, setShowPIN] = useState(false);
+    const [showInvite, setShowInvite] = useState(false);
     const [selectedPosId, setSelectedPosId] = useState<string | null>(null);
 
     useEffect(() => {
@@ -457,7 +458,7 @@ function TeamSettings({ bizId }: { bizId: string }) {
                     <div className="team-list">
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
                             <h3 style={{ margin: 0 }}>Ажилчид ({employees.length})</h3>
-                            <button className="btn btn-primary btn-sm gradient-btn"><Plus size={14} /> Урих</button>
+                            <button className="btn btn-primary btn-sm gradient-btn" onClick={() => setShowInvite(true)}><Plus size={14} /> Урих</button>
                         </div>
                         <div className="employee-grid">
                             {employees.map(emp => (
@@ -507,6 +508,7 @@ function TeamSettings({ bizId }: { bizId: string }) {
 
             {showPosModal && <CreatePositionModal bizId={bizId} editingPosition={editingPosition} onClose={() => setShowPosModal(false)} />}
             {showPIN && <PINModal title="Устгах баталгаажуулалт" description="Албан тушаалын эрхийг устгахын тулд PIN кодыг оруулна уу." onSuccess={confirmDelete} onClose={() => setShowPIN(false)} />}
+            {showInvite && <InviteEmployeeModal onClose={() => setShowInvite(false)} positions={positions} />}
         </div>
     );
 }
@@ -1219,6 +1221,41 @@ function OrderStatusModal({ bizId, onClose, editingStatus, nextOrder }: { bizId:
                         </button>
                     </div>
                 </form>
+            </div>
+        </div>,
+        document.body
+    );
+}
+
+function InviteEmployeeModal({ onClose, positions }: { onClose: () => void; positions: Position[] }) {
+    return createPortal(
+        <div className="modal-backdrop" onClick={onClose}>
+            <div className="modal" onClick={e => e.stopPropagation()}>
+                <div className="modal-header">
+                    <h2>Ажилтан урих</h2>
+                    <button className="btn btn-ghost btn-icon" onClick={onClose}>✕</button>
+                </div>
+                <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                    <div className="input-group">
+                        <label className="input-label">Утасны дугаар <span className="required">*</span></label>
+                        <input className="input" placeholder="+976 9900 1234" autoFocus />
+                    </div>
+                    <div className="input-group">
+                        <label className="input-label">Албан тушаал</label>
+                        <select className="input select">
+                            {positions.map(p => (
+                                <option key={p.id} value={p.id}>{p.name}</option>
+                            ))}
+                        </select>
+                    </div>
+                    <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                        Урилга линк тухайн дугаар руу SMS-ээр илгээгдэнэ.
+                    </p>
+                </div>
+                <div className="modal-footer">
+                    <button className="btn btn-secondary" onClick={onClose}>Болих</button>
+                    <button className="btn btn-primary" onClick={onClose}><Plus size={16} /> Урих</button>
+                </div>
             </div>
         </div>,
         document.body
