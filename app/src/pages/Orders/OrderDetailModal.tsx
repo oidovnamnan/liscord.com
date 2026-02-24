@@ -243,12 +243,18 @@ export function OrderDetailModal({ bizId, order, onClose, statuses }: OrderDetai
 
                                             // Find timestamp from history
                                             const historyArray = Array.isArray(order.statusHistory) ? order.statusHistory : [];
+                                            // The UI shows a predefined sequence (e.g. Шинэ -> Захиалагдсан -> Бараа ирсэн).
+                                            // However, statuses can go back and forth. For the UI timeline *step* 's.id',
+                                            // we want the *latest* history record where the status became 's.id'.
                                             const historyItem = historyArray.slice().reverse().find(h => h.status.toLowerCase() === s.id.toLowerCase());
-                                            const timeLabel = historyItem?.at ? formatTime(historyItem.at) : (
-                                                (s.id.toLowerCase() === 'new' || s.id.toLowerCase() === 'unpaid') ? formatTime(order.createdAt) : 'Саяхан'
-                                            );
 
-                                            // Extract actor name: try byName, updatedBy, then fallback for new orders
+                                            // Handle time
+                                            let timeLabel = 'Саяхан';
+                                            if (historyItem?.at) timeLabel = formatTime(historyItem.at);
+                                            else if (s.id.toLowerCase() === 'new' || s.id.toLowerCase() === 'unpaid') timeLabel = formatTime(order.createdAt);
+                                            else if (idx === 0) timeLabel = formatTime(order.createdAt); // Fallback for very first status
+
+                                            // Handle actor
                                             let actorName = historyItem?.byName || historyItem?.updatedBy || '';
                                             if (!actorName && (s.id.toLowerCase() === 'new' || s.id.toLowerCase() === 'unpaid' || idx === 0)) {
                                                 actorName = order.createdByName || '';
