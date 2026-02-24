@@ -22,6 +22,13 @@ export function SettingsPage() {
         teamActivity: false
     });
     const [loading, setLoading] = useState(false);
+    const [isDirty, setIsDirty] = useState(false);
+    const [storefrontSlug, setStorefrontSlug] = useState(business?.slug || '');
+
+    useEffect(() => {
+        setIsDirty(false);
+        setStorefrontSlug(business?.slug || '');
+    }, [activeTab, business?.slug]);
 
     const tabs = [
         { id: 'general', label: 'Ерөнхий', icon: Building2 },
@@ -53,6 +60,7 @@ export function SettingsPage() {
                     orderPrefix: (fd.get('orderPrefix') as string)?.trim() || '',
                 }
             });
+            setIsDirty(false);
             toast.success('Тохиргоо хадгалагдлаа');
         } catch (error) { toast.error('Алдаа гарлаа'); } finally { setLoading(false); }
     };
@@ -65,6 +73,7 @@ export function SettingsPage() {
         setLoading(true);
         try {
             await businessService.updateBusiness(business.id, { settings: { ...business.settings, pin } });
+            setIsDirty(false);
             toast.success('PIN код шинэчлэгдлээ');
         } catch (error) { toast.error('Алдаа гарлаа'); } finally { setLoading(false); }
     };
@@ -96,6 +105,7 @@ export function SettingsPage() {
                     }
                 }
             });
+            setIsDirty(false);
             toast.success('Дэлгүүрийн тохиргоо хадгалагдлаа');
         } catch (error) { toast.error('Алдаа гарлаа'); } finally { setLoading(false); }
     };
@@ -125,7 +135,7 @@ export function SettingsPage() {
                                         <div className="settings-card-icon"><Building2 size={20} /></div>
                                         <h3>Үндсэн мэдээлэл</h3>
                                     </div>
-                                    <form className="settings-form" onSubmit={handleUpdateBusiness}>
+                                    <form className="settings-form" onSubmit={handleUpdateBusiness} onChange={() => setIsDirty(true)}>
                                         <div className="input-group">
                                             <label className="input-label">Бизнесийн нэр</label>
                                             <input className="input" name="name" defaultValue={business?.name} required placeholder="Танай бизнесийн нэр" />
@@ -151,7 +161,7 @@ export function SettingsPage() {
                                             </div>
                                         </div>
                                         <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 12 }}>
-                                            <button className="btn btn-primary gradient-btn" type="submit" disabled={loading} style={{ minWidth: 120 }}>
+                                            <button className="btn btn-primary gradient-btn" type="submit" disabled={loading || !isDirty} style={{ minWidth: 120 }}>
                                                 {loading ? <Loader2 size={16} className="animate-spin" /> : 'Хадгалах'}
                                             </button>
                                         </div>
@@ -168,14 +178,14 @@ export function SettingsPage() {
                                         <div className="settings-card-icon"><ShoppingBag size={20} /></div>
                                         <h3>Онлайн дэлгүүрийн холбоос болон нээлттэй эсэх</h3>
                                     </div>
-                                    <form className="settings-form" onSubmit={handleUpdateStorefront}>
+                                    <form className="settings-form" onSubmit={handleUpdateStorefront} onChange={() => setIsDirty(true)}>
                                         <div className="input-group">
                                             <label className="input-label">Дэлгүүрийн холбоос (Slug)</label>
                                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                                 <span style={{ color: 'var(--text-muted)' }}>{window.location.origin}/s/</span>
-                                                <input className="input" name="slug" defaultValue={business?.slug} placeholder="zara-mongolia" required pattern="[a-z0-9-]+" title="Зөвхөн жижиг англи үсэг, тоо болон зураас ашиглана уу" style={{ flex: 1 }} />
+                                                <input className="input" name="slug" value={storefrontSlug} onChange={(e) => { setStorefrontSlug(e.target.value.toLowerCase()); setIsDirty(true); }} placeholder="zara-mongolia" required pattern="[a-z0-9-]+" title="Зөвхөн жижиг англи үсэг, тоо болон зураас ашиглана уу" style={{ flex: 1 }} />
                                             </div>
-                                            <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '4px' }}>Зөвхөн жижиг англи үсэг, тоо болон дундуур зураас орж болно.</p>
+                                            <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: '4px 0 0 0' }}>Зөвхөн жижиг англи үсэг, тоо болон дундуур зураас орж болно.</p>
                                         </div>
                                         <div className="notification-item" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 0', borderTop: '1px solid var(--border-color)', marginTop: '16px' }}>
                                             <div>
@@ -192,21 +202,21 @@ export function SettingsPage() {
                                             </label>
                                         </div>
                                         <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 16 }}>
-                                            <button className="btn btn-primary gradient-btn" type="submit" disabled={loading} style={{ minWidth: 120 }}>
+                                            <button className="btn btn-primary gradient-btn" type="submit" disabled={loading || !isDirty} style={{ minWidth: 120 }}>
                                                 {loading ? <Loader2 size={16} className="animate-spin" /> : 'Хадгалах'}
                                             </button>
                                         </div>
                                     </form>
 
-                                    {business?.slug && business?.settings?.storefront?.enabled && (
+                                    {storefrontSlug && (
                                         <div style={{ marginTop: '24px', padding: '16px', background: 'var(--primary-light)', borderRadius: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                             <div>
                                                 <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '4px' }}>Танай дэлгүүрийн шууд линк:</div>
-                                                <a href={`${window.location.origin}/s/${business.slug}`} target="_blank" rel="noopener noreferrer" style={{ fontWeight: 600, color: 'var(--primary)', textDecoration: 'none' }}>
-                                                    {window.location.origin}/s/{business.slug}
+                                                <a href={`${window.location.origin}/s/${storefrontSlug}`} target="_blank" rel="noopener noreferrer" style={{ fontWeight: 600, color: 'var(--primary)', textDecoration: 'none' }}>
+                                                    {window.location.origin}/s/{storefrontSlug}
                                                 </a>
                                             </div>
-                                            <a href={`${window.location.origin}/s/${business.slug}`} target="_blank" rel="noopener noreferrer" className="btn btn-outline btn-sm">
+                                            <a href={`${window.location.origin}/s/${storefrontSlug}`} target="_blank" rel="noopener noreferrer" className="btn btn-outline btn-sm" style={{ flexShrink: 0 }}>
                                                 Шалгах <Share2 size={14} style={{ marginLeft: 4 }} />
                                             </a>
                                         </div>
@@ -268,7 +278,7 @@ export function SettingsPage() {
                                     <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginBottom: 20 }}>
                                         Захиалга устгах, бүртгэл өөрчлөх зэрэг чухал үйлдлүүдэд ашиглагдана.
                                     </p>
-                                    <form className="settings-form" onSubmit={handleUpdatePIN}>
+                                    <form className="settings-form" onSubmit={handleUpdatePIN} onChange={() => setIsDirty(true)}>
                                         <div className="input-group">
                                             <label className="input-label">Шинэ PIN код</label>
                                             <input
@@ -284,7 +294,7 @@ export function SettingsPage() {
                                             />
                                         </div>
                                         <div style={{ display: 'flex', marginTop: 8 }}>
-                                            <button className="btn btn-primary" type="submit" disabled={loading}>
+                                            <button className="btn btn-primary" type="submit" disabled={loading || !isDirty}>
                                                 {loading ? <Loader2 size={16} className="animate-spin" /> : 'PIN шинэчлэх'}
                                             </button>
                                         </div>
