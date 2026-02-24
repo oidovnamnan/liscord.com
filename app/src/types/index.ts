@@ -52,6 +52,7 @@ export const BUSINESS_CATEGORIES: Record<BusinessCategory, { label: string; icon
 export interface Business {
     id: string;
     name: string;
+    slug?: string; // Add slug for storefront URL
     category: BusinessCategory;
     country: string;
     currency: string;
@@ -84,6 +85,10 @@ export interface BusinessSettings {
         isIncludedByDefault: boolean;
     };
     defaultSourceId?: string;
+    storefront?: {
+        enabled: boolean;
+        theme?: 'light' | 'dark';
+    };
 }
 
 export interface OrderSource {

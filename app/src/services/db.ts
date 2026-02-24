@@ -67,6 +67,13 @@ export const businessService = {
         return docSnap.exists() ? convertTimestamps(docSnap.data()) as Business : null;
     },
 
+    async getBusinessBySlug(slug: string): Promise<Business | null> {
+        const q = query(collection(db, 'businesses'), where('slug', '==', slug), limit(1));
+        const querySnapshot = await getDocs(q);
+        if (querySnapshot.empty) return null;
+        return convertTimestamps(querySnapshot.docs[0].data()) as Business;
+    },
+
     async createBusiness(business: Partial<Business>, ownerUid: string): Promise<string> {
         const bizRef = doc(collection(db, 'businesses'));
         const bizId = bizRef.id;

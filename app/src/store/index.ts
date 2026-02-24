@@ -20,6 +20,10 @@ export const useAuthStore = create<AuthState>((set) => ({
     setLoading: (loading) => set({ loading }),
 }));
 
+// ============ CART STORE ============
+export { useCartStore } from './cartStore';
+export type { CartItem } from './cartStore';
+
 // ============ BUSINESS STORE ============
 interface BusinessState {
     business: Business | null;

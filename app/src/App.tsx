@@ -32,6 +32,11 @@ import { SuperAdminDashboard } from './pages/SuperAdmin/SuperAdminDashboard';
 import { SuperAdminBusinesses } from './pages/SuperAdmin/SuperAdminBusinesses';
 import { SuperAdminUsers } from './pages/SuperAdmin/SuperAdminUsers';
 
+// Storefront Pages
+import { StorefrontWrapper } from './pages/Storefront/StorefrontWrapper';
+import { StoreCatalog } from './pages/Storefront/StoreCatalog';
+import { StoreCheckout } from './pages/Storefront/StoreCheckout';
+
 // Components
 import { BusinessWizard } from './components/auth/BusinessWizard';
 
@@ -179,6 +184,12 @@ export default function App() {
         <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
+
+        {/* Storefront Routes */}
+        <Route path="/s/:slug" element={<StorefrontWrapper />}>
+          <Route index element={<StoreCatalog />} />
+          <Route path="checkout" element={<StoreCheckout />} />
+        </Route>
 
 
         {/* Protected app routes */}

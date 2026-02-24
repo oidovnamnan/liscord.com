@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { Header } from '../../components/layout/Header';
-import { Building2, Palette, Bell, Shield, Users, Globe, Moon, Sun, Monitor, Loader2, Plus, MoreVertical, Trash2, Share2, X, CheckSquare, ListOrdered, ChevronUp, ChevronDown } from 'lucide-react';
+import { Building2, Palette, Bell, Shield, Users, Globe, Moon, Sun, Monitor, Loader2, Plus, MoreVertical, Trash2, Share2, X, CheckSquare, ListOrdered, ChevronUp, ChevronDown, ShoppingBag } from 'lucide-react';
 import { useBusinessStore, useUIStore } from '../../store';
 import { businessService, teamService, cargoService, sourceService, orderStatusService } from '../../services/db';
 import { toast } from 'react-hot-toast';
@@ -25,6 +25,7 @@ export function SettingsPage() {
 
     const tabs = [
         { id: 'general', label: 'Ерөнхий', icon: Building2 },
+        { id: 'storefront', label: 'Дэлгүүр', icon: ShoppingBag },
         { id: 'appearance', label: 'Харагдац', icon: Palette },
         { id: 'notifications', label: 'Мэдэгдэл', icon: Bell },
         { id: 'security', label: 'Аюулгүй байдал', icon: Shield },
@@ -65,6 +66,37 @@ export function SettingsPage() {
         try {
             await businessService.updateBusiness(business.id, { settings: { ...business.settings, pin } });
             toast.success('PIN код шинэчлэгдлээ');
+        } catch (error) { toast.error('Алдаа гарлаа'); } finally { setLoading(false); }
+    };
+
+    const handleUpdateStorefront = async (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+        if (!business) return;
+        const fd = new FormData(e.currentTarget);
+        const slug = (fd.get('slug') as string)?.trim().toLowerCase();
+        const enabled = fd.get('storefrontEnabled') === 'on';
+        setLoading(true);
+        try {
+            // Check if slug is unique (if it changed)
+            if (slug && slug !== business.slug) {
+                const existing = await businessService.getBusinessBySlug(slug);
+                if (existing) {
+                    toast.error('Энэ дэлгүүрийн холбоос давхардсан байна. Өөр үг сонгоно уу.');
+                    setLoading(false);
+                    return;
+                }
+            }
+            await businessService.updateBusiness(business.id, {
+                slug: slug || business.slug || '',
+                settings: {
+                    ...business.settings,
+                    storefront: {
+                        enabled,
+                        theme: business.settings.storefront?.theme || 'light'
+                    }
+                }
+            });
+            toast.success('Дэлгүүрийн тохиргоо хадгалагдлаа');
         } catch (error) { toast.error('Алдаа гарлаа'); } finally { setLoading(false); }
     };
 
@@ -124,6 +156,61 @@ export function SettingsPage() {
                                             </button>
                                         </div>
                                     </form>
+                                </div>
+                            </div>
+                        )}
+                        {activeTab === 'storefront' && (
+                            <div className="settings-section animate-fade-in">
+                                <h2>Дэлгүүрийн тохиргоо</h2>
+
+                                <div className="settings-card">
+                                    <div className="settings-card-header">
+                                        <div className="settings-card-icon"><ShoppingBag size={20} /></div>
+                                        <h3>Онлайн дэлгүүрийн холбоос болон нээлттэй эсэх</h3>
+                                    </div>
+                                    <form className="settings-form" onSubmit={handleUpdateStorefront}>
+                                        <div className="input-group">
+                                            <label className="input-label">Дэлгүүрийн холбоос (Slug)</label>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                <span style={{ color: 'var(--text-muted)' }}>{window.location.origin}/s/</span>
+                                                <input className="input" name="slug" defaultValue={business?.slug} placeholder="zara-mongolia" required pattern="[a-z0-9-]+" title="Зөвхөн жижиг англи үсэг, тоо болон зураас ашиглана уу" style={{ flex: 1 }} />
+                                            </div>
+                                            <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '4px' }}>Зөвхөн жижиг англи үсэг, тоо болон дундуур зураас орж болно.</p>
+                                        </div>
+                                        <div className="notification-item" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 0', borderTop: '1px solid var(--border-color)', marginTop: '16px' }}>
+                                            <div>
+                                                <div style={{ fontWeight: 600, fontSize: '1rem' }}>Дэлгүүрийг нээх (Онлайн худалдаа)</div>
+                                                <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Хэрэв унтраасан бол хэрэглэгчид танай дэлгүүр рүү орж захиалга өгөх боломжгүйгээр түр хаагдана.</div>
+                                            </div>
+                                            <label className="toggle-switch">
+                                                <input
+                                                    type="checkbox"
+                                                    name="storefrontEnabled"
+                                                    defaultChecked={business?.settings?.storefront?.enabled}
+                                                />
+                                                <span className="toggle-slider" />
+                                            </label>
+                                        </div>
+                                        <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 16 }}>
+                                            <button className="btn btn-primary gradient-btn" type="submit" disabled={loading} style={{ minWidth: 120 }}>
+                                                {loading ? <Loader2 size={16} className="animate-spin" /> : 'Хадгалах'}
+                                            </button>
+                                        </div>
+                                    </form>
+
+                                    {business?.slug && business?.settings?.storefront?.enabled && (
+                                        <div style={{ marginTop: '24px', padding: '16px', background: 'var(--primary-light)', borderRadius: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                            <div>
+                                                <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '4px' }}>Танай дэлгүүрийн шууд линк:</div>
+                                                <a href={`${window.location.origin}/s/${business.slug}`} target="_blank" rel="noopener noreferrer" style={{ fontWeight: 600, color: 'var(--primary)', textDecoration: 'none' }}>
+                                                    {window.location.origin}/s/{business.slug}
+                                                </a>
+                                            </div>
+                                            <a href={`${window.location.origin}/s/${business.slug}`} target="_blank" rel="noopener noreferrer" className="btn btn-outline btn-sm">
+                                                Шалгах <Share2 size={14} style={{ marginLeft: 4 }} />
+                                            </a>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         )}
