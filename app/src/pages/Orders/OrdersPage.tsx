@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { Header } from '../../components/layout/Header';
-import { Plus, Search, MoreVertical, Loader2, X, User, Package, CreditCard, Trash2, CheckSquare } from 'lucide-react';
+import { Plus, Search, MoreVertical, Loader2, X, User, Package, CreditCard, Trash2, CheckSquare, Settings } from 'lucide-react';
 import { useBusinessStore, useAuthStore } from '../../store';
+import { toast } from 'react-hot-toast';
 import {
     productService,
     orderService,
@@ -48,6 +49,8 @@ export function OrdersPage() {
     const [deleteOrderId, setDeleteOrderId] = useState<string | null>(null);
     const [deleteReason, setDeleteReason] = useState('');
     const [showDeleteModal, setShowDeleteModal] = useState(false);
+    const [selectedOrderIds, setSelectedOrderIds] = useState<Set<string>>(new Set());
+    const [showBulkStatusModal, setShowBulkStatusModal] = useState(false);
     const { user } = useAuthStore();
     const menuRef = useRef<HTMLDivElement>(null);
 
@@ -97,6 +100,54 @@ export function OrdersPage() {
         return matchSearch && !o.isDeleted && o.status?.toLowerCase() === statusFilter.toLowerCase();
     });
 
+    const toggleSelection = (e: React.MouseEvent, id: string) => {
+        e.stopPropagation();
+        const next = new Set(selectedOrderIds);
+        if (next.has(id)) next.delete(id);
+        else next.add(id);
+        setSelectedOrderIds(next);
+    };
+
+    const toggleAll = () => {
+        if (selectedOrderIds.size === filtered.length) {
+            setSelectedOrderIds(new Set());
+        } else {
+            setSelectedOrderIds(new Set(filtered.map(o => o.id)));
+        }
+    };
+
+    const handleBulkDelete = async () => {
+        if (!business || selectedOrderIds.size === 0) return;
+        const confirm = window.confirm(`Сонгосон ${selectedOrderIds.size} захиалгыг устгах уу?`);
+        if (!confirm) return;
+        setLoading(true);
+        try {
+            await orderService.batchDeleteOrders(business.id, Array.from(selectedOrderIds), 'Олноор устгав', user);
+            setSelectedOrderIds(new Set());
+            toast.success('Захиалгуудыг устгалаа');
+        } catch (e) {
+            toast.error('Алдаа: ' + (e as any).message);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleDelete = async (id: string) => {
+        if (!business) return;
+        setLoading(true);
+        try {
+            await orderService.deleteOrder(business.id, id, deleteReason, user);
+            setDeleteOrderId(null);
+            setDeleteReason('');
+            setShowDeleteModal(false);
+            toast.success('Захиалга устгагдлаа');
+        } catch (error) {
+            toast.error('Алдаа гарлаа');
+        } finally {
+            setLoading(false);
+        }
+    };
+
     return (
         <>
             <Header
@@ -115,7 +166,10 @@ export function OrdersPage() {
                             onChange={(e) => setSearch(e.target.value)}
                         />
                     </div>
-                    <div className="orders-filters">
+                    <div className="orders-filters" style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                        <button className="btn-secondary btn-sm" onClick={toggleAll}>
+                            {selectedOrderIds.size === filtered.length ? 'Сонголт арилгах' : 'Бүгдийг сонгох'}
+                        </button>
                         <select
                             className="input select orders-filter-select"
                             value={statusFilter}
@@ -177,6 +231,13 @@ export function OrdersPage() {
                                     {/* Header Row: ID, Date, Actions */}
                                     <div className="pro-card-header">
                                         <div className="header-id-group">
+                                            <input
+                                                type="checkbox"
+                                                className="order-checkbox"
+                                                checked={selectedOrderIds.has(order.id)}
+                                                onChange={() => { }}
+                                                onClick={(e) => toggleSelection(e, order.id)}
+                                            />
                                             <span className="order-id">#{order.orderNumber}</span>
                                             {order.isDeleted ? (
                                                 <span className="pro-badge status-cancelled">
@@ -314,7 +375,25 @@ export function OrdersPage() {
                         ))
                     )}
                 </div>
-            </div >
+
+                {selectedOrderIds.size > 0 && (
+                    <div className="orders-bulk-action-bar animate-fade-in">
+                        <div className="bulk-selection-info">
+                            <span className="bulk-count">{selectedOrderIds.size}</span>
+                            <span>сонгосон байна</span>
+                            <button className="btn-text btn-sm" onClick={() => setSelectedOrderIds(new Set())}>Цуцлах</button>
+                        </div>
+                        <div className="bulk-actions">
+                            <button className="btn btn-secondary btn-sm" onClick={() => setShowBulkStatusModal(true)}>
+                                <Settings size={14} /> Төлөв өөрчлөх
+                            </button>
+                            <button className="btn btn-danger btn-sm" onClick={handleBulkDelete}>
+                                <Trash2 size={14} /> Устгах
+                            </button>
+                        </div>
+                    </div>
+                )}
+            </div>
 
             {selectedOrder && business && (
                 <OrderDetailModal
@@ -325,66 +404,104 @@ export function OrdersPage() {
                 />
             )}
 
-            {
-                showDeleteModal && (
-                    <div className="modal-overlay" style={{ zIndex: 3000 }}>
-                        <div className="modal-content" style={{ maxWidth: 400 }}>
-                            <div className="modal-header">
-                                <h2 style={{ color: '#e11d48', display: 'flex', alignItems: 'center', gap: 10 }}>
-                                    <Trash2 size={24} /> Устгах баталгаажуулалт
-                                </h2>
-                                <button className="btn-icon" onClick={() => { setShowDeleteModal(false); setDeleteReason(''); }}><X size={20} /></button>
-                            </div>
-                            <div className="modal-body">
-                                <p style={{ fontSize: '0.9rem', color: '#64748b', marginBottom: 16 }}>
-                                    Энэ захиалгыг устгах (идэвхгүй болгох) шалтгаанаа бичнэ үү. Тайлбаргүйгээр устгах боломжгүй.
-                                </p>
-                                <div className="input-group">
-                                    <label className="input-label">Цуцлах шалтгаан *</label>
-                                    <textarea
-                                        className="input"
-                                        rows={3}
-                                        placeholder="Жишээ: Харилцагч утсаа авахгүй байна, Буруу бараа..."
-                                        value={deleteReason}
-                                        onChange={e => setDeleteReason(e.target.value)}
-                                        autoFocus
-                                    />
-                                </div>
-                            </div>
-                            <div className="modal-footer">
-                                <button className="btn btn-secondary" onClick={() => { setShowDeleteModal(false); setDeleteReason(''); }}>Болих</button>
-                                <button
-                                    className="btn btn-danger"
-                                    disabled={!deleteReason.trim()}
-                                    onClick={async () => {
-                                        if (!deleteOrderId || !business?.id) return;
-                                        try {
-                                            await orderService.deleteOrder(business.id, deleteOrderId, deleteReason, user);
-                                            setShowDeleteModal(false);
-                                            setDeleteOrderId(null);
-                                            setDeleteReason('');
-                                        } catch (err) {
-                                            alert('Устгахад алдаа гарлаа');
-                                        }
-                                    }}
-                                >
-                                    <Trash2 size={16} /> Тийм, устгах
-                                </button>
+            {showDeleteModal && deleteOrderId && (
+                <div className="modal-overlay animate-fade-in" onClick={() => setShowDeleteModal(false)}>
+                    <div className="modal-content" onClick={e => e.stopPropagation()}>
+                        <div className="modal-header">
+                            <h2>Захиалга устгах</h2>
+                            <button className="btn-icon" onClick={() => setShowDeleteModal(false)}><X size={20} /></button>
+                        </div>
+                        <div className="modal-body p-6">
+                            <p className="mb-4 text-muted">Захиалгыг устгах шалтгаанаа бичнэ үү. Энэ нь аудитын түүхэнд үлдэнэ.</p>
+                            <div className="input-group">
+                                <label className="input-label">Шалтгаан <span className="text-danger">*</span></label>
+                                <textarea
+                                    className="input"
+                                    rows={3}
+                                    placeholder="Жишээ: Үйлчлүүлэгч цуцалсан, Давхардсан захиалга..."
+                                    value={deleteReason}
+                                    onChange={e => setDeleteReason(e.target.value)}
+                                    autoFocus
+                                />
                             </div>
                         </div>
+                        <div className="modal-footer">
+                            <button className="btn btn-secondary" onClick={() => setShowDeleteModal(false)}>Буцах</button>
+                            <button
+                                className="btn btn-danger"
+                                onClick={() => {
+                                    handleDelete(deleteOrderId);
+                                }}
+                                disabled={!deleteReason.trim()}
+                            >
+                                <Trash2 size={18} /> Устгах
+                            </button>
+                        </div>
                     </div>
-                )
-            }
+                </div>
+            )}
 
-            {
-                showCreate && (
-                    <CreateOrderModal
-                        onClose={() => setShowCreate(false)}
-                        nextNumber={`${business?.settings.orderPrefix || 'ORD'}-${String((business?.settings.orderCounter || 0) + 1).padStart(4, '0')}`}
-                        statuses={statuses}
-                    />
-                )
-            }
+            {showBulkStatusModal && (
+                <div className="modal-overlay animate-fade-in" onClick={() => setShowBulkStatusModal(false)}>
+                    <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '400px' }}>
+                        <div className="modal-header">
+                            <h2>Олноор төлөв өөрчлөх</h2>
+                            <button className="btn-icon" onClick={() => setShowBulkStatusModal(false)}><X size={20} /></button>
+                        </div>
+                        <div className="modal-body p-6">
+                            <p className="mb-4 text-muted">Сонгосон {selectedOrderIds.size} захиалгуудын төлөвийг өөрчлөхдөө доорхоос сонгоно уу.</p>
+                            <div className="input-group">
+                                <label className="input-label">Шинэ төлөв</label>
+                                <select className="input select" id="bulk-status-select">
+                                    {statuses.filter(s => s.isActive).map(s => (
+                                        <option key={s.id} value={s.id}>{s.label}</option>
+                                    ))}
+                                </select>
+                            </div>
+                        </div>
+                        <div className="modal-footer">
+                            <button className="btn btn-secondary" onClick={() => setShowBulkStatusModal(false)}>Буцах</button>
+                            <button className="btn btn-primary" onClick={async () => {
+                                const select = document.getElementById('bulk-status-select') as HTMLSelectElement;
+                                const newStatus = select.value;
+                                if (!business) return;
+
+                                const statusConfig = statuses.find(s => s.id === newStatus);
+                                const historyItem = {
+                                    statusId: newStatus,
+                                    statusLabel: statusConfig?.label || newStatus,
+                                    at: new Date(),
+                                    note: 'Олноор төлөв өөрчилсөн',
+                                    byName: user?.displayName || 'Ажилтан',
+                                    byUid: user?.uid
+                                };
+
+                                setLoading(true);
+                                try {
+                                    await orderService.batchUpdateOrdersStatus(business.id, Array.from(selectedOrderIds), newStatus, historyItem, user);
+                                    setSelectedOrderIds(new Set());
+                                    setShowBulkStatusModal(false);
+                                    toast.success(`${selectedOrderIds.size} захиалгын төлөв шинэчлэгдлээ`);
+                                } catch (e) {
+                                    toast.error('Алдаа гарлаа: ' + (e as any).message);
+                                } finally {
+                                    setLoading(false);
+                                }
+                            }}>
+                                <CheckSquare size={18} /> Хадгалах
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {showCreate && (
+                <CreateOrderModal
+                    onClose={() => setShowCreate(false)}
+                    nextNumber={`${business?.settings.orderPrefix || 'ORD'}-${String((business?.settings.orderCounter || 0) + 1).padStart(4, '0')}`}
+                    statuses={statuses}
+                />
+            )}
         </>
     );
 }

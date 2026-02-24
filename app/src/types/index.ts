@@ -262,6 +262,7 @@ export interface Order {
     notes: string;
     internalNotes: string;
     deliveryAddress: string;
+    locationCode?: string | null;
     statusHistory: Array<{
         status: OrderStatus;
         at: Date;
@@ -369,4 +370,34 @@ export interface NavItem {
     path: string;
     permission?: string;
     badge?: number;
+}
+
+// ============ CARGO PACKAGES & SHELVES ============
+export interface ScannedItem {
+    id: string;
+    imageUrl: string;
+    extractedText: string;
+    matchedOrderId: string | null;
+    matchedOrderNumber: string | null;
+    isConflicted: boolean;
+    locationCode?: string; // e.g. "A-1" (Shelf ID/Code)
+}
+
+export interface PackageBatch {
+    id: string;
+    batchName: string; // e.g., "Улаан-Үд ачаа #45"
+    status: 'processing' | 'completed';
+    scannedItems: ScannedItem[];
+    createdBy: string;
+    createdAt: Date;
+    updatedAt: Date;
+}
+
+export interface Shelf {
+    id: string;
+    locationCode: string; // e.g. B-04
+    level: 'top' | 'middle' | 'bottom';
+    isFull: boolean;
+    createdBy: string;
+    createdAt: Date;
 }

@@ -14,6 +14,7 @@ import {
     addDoc,
     deleteDoc,
     serverTimestamp,
+    writeBatch
 } from 'firebase/firestore';
 import { db } from './firebase';
 import { auditService } from './audit';
@@ -236,6 +237,35 @@ export const orderService = {
         }, employeeProfile);
     },
 
+    async updateOrderRaw(bizId: string, orderId: string, updates: Partial<Order>): Promise<void> {
+        const docRef = doc(db, 'businesses', bizId, 'orders', orderId);
+        await updateDoc(docRef, {
+            ...updates,
+            updatedAt: serverTimestamp()
+        });
+    },
+
+    async addTimelineEvent(bizId: string, orderId: string, event: { statusId: string, note: string, createdBy: string }): Promise<void> {
+        const docRef = doc(db, 'businesses', bizId, 'orders', orderId);
+        const orderSnap = await getDoc(docRef);
+
+        let updatedHistory = [{ ...event, at: new Date() }];
+
+        if (orderSnap.exists()) {
+            const data = orderSnap.data();
+            if (Array.isArray(data.statusHistory)) {
+                updatedHistory = [...data.statusHistory, ...updatedHistory];
+            } else if (data.statusHistory) {
+                updatedHistory = [data.statusHistory, ...updatedHistory];
+            }
+        }
+
+        await updateDoc(docRef, {
+            statusHistory: updatedHistory,
+            updatedAt: serverTimestamp()
+        });
+    },
+
     async deleteOrder(bizId: string, orderId: string, reason: string, employeeProfile?: any): Promise<void> {
         const docRef = doc(db, 'businesses', bizId, 'orders', orderId);
         await updateDoc(docRef, {
@@ -252,6 +282,69 @@ export const orderService = {
             targetLabel: `#${orderId}`,
             severity: 'warning',
             changes: [{ field: 'isDeleted', oldValue: false, newValue: true }],
+            metadata: { reason }
+        }, employeeProfile);
+    },
+
+    async batchUpdateOrdersStatus(bizId: string, orderIds: string[], status: string, historyItem: any, employeeProfile?: any): Promise<void> {
+        if (!orderIds.length) return;
+        const batch = writeBatch(db);
+
+        // We fetch current order docs to append timeline
+        // Note: Firestore batched reads (in this simple way) requires fetching them first
+        const promises = orderIds.map(id => getDoc(doc(db, 'businesses', bizId, 'orders', id)));
+        const snaps = await Promise.all(promises);
+
+        snaps.forEach(snap => {
+            if (snap.exists()) {
+                const data = snap.data();
+                let updatedHistory = [historyItem];
+                if (Array.isArray(data.statusHistory)) {
+                    updatedHistory = [...data.statusHistory, historyItem];
+                } else if (data.statusHistory) {
+                    updatedHistory = [data.statusHistory, historyItem];
+                }
+
+                batch.update(snap.ref, {
+                    status,
+                    updatedAt: serverTimestamp(),
+                    statusHistory: updatedHistory
+                });
+            }
+        });
+
+        await batch.commit();
+
+        await auditService.writeLog(bizId, {
+            action: 'orders.batch_status_change',
+            module: 'orders',
+            targetType: 'orders',
+            targetId: orderIds.join(','),
+            targetLabel: `${orderIds.length} захиалгуудын төлөв: ${status}`,
+            severity: 'normal'
+        }, employeeProfile);
+    },
+
+    async batchDeleteOrders(bizId: string, orderIds: string[], reason: string, employeeProfile?: any): Promise<void> {
+        if (!orderIds.length) return;
+        const batch = writeBatch(db);
+
+        orderIds.forEach(id => {
+            batch.update(doc(db, 'businesses', bizId, 'orders', id), {
+                isDeleted: true,
+                updatedAt: serverTimestamp()
+            });
+        });
+
+        await batch.commit();
+
+        await auditService.writeLog(bizId, {
+            action: 'orders.batch_delete',
+            module: 'orders',
+            targetType: 'orders',
+            targetId: orderIds.join(','),
+            targetLabel: `${orderIds.length} захиалгуудыг устгасан`,
+            severity: 'warning',
             metadata: { reason }
         }, employeeProfile);
     }
@@ -602,5 +695,70 @@ export const sourceService = {
         const q = query(collection(db, 'businesses', bizId, 'socialAccounts'), where('isDeleted', '==', false));
         const snap = await getDocs(q);
         return snap.docs.map(d => convertTimestamps(d.data()) as SocialAccount);
+    }
+};
+
+// ============ SHELF & PACKAGE SERVICES ============
+
+export const shelfService = {
+    subscribeShelves(bizId: string, callback: (shelves: any[]) => void) {
+        const q = query(collection(db, 'businesses', bizId, 'shelves'), orderBy('locationCode'));
+        return onSnapshot(q, (snapshot) => {
+            callback(snapshot.docs.map(d => convertTimestamps({ id: d.id, ...d.data() })));
+        });
+    },
+
+    async createShelf(bizId: string, data: { locationCode: string; level: 'top' | 'middle' | 'bottom'; isFull: boolean; createdBy: string }) {
+        const newRef = doc(collection(db, 'businesses', bizId, 'shelves'));
+        await setDoc(newRef, {
+            ...data,
+            id: newRef.id,
+            createdAt: serverTimestamp()
+        });
+        return newRef.id;
+    },
+
+    async updateShelf(bizId: string, shelfId: string, data: any) {
+        await updateDoc(doc(db, 'businesses', bizId, 'shelves', shelfId), data);
+    },
+
+    async deleteShelf(bizId: string, shelfId: string) {
+        await deleteDoc(doc(db, 'businesses', bizId, 'shelves', shelfId));
+    },
+
+    // Quick lookup for inline creation
+    async getShelfByCode(bizId: string, code: string) {
+        const q = query(collection(db, 'businesses', bizId, 'shelves'), where('locationCode', '==', code.toUpperCase()));
+        const snap = await getDocs(q);
+        if (snap.empty) return null;
+        return convertTimestamps({ id: snap.docs[0].id, ...snap.docs[0].data() });
+    }
+};
+
+export const packageService = {
+    subscribeBatches(bizId: string, callback: (batches: any[]) => void) {
+        const q = query(collection(db, 'businesses', bizId, 'packages'), orderBy('createdAt', 'desc'));
+        return onSnapshot(q, (snapshot) => {
+            callback(snapshot.docs.map(d => convertTimestamps({ id: d.id, ...d.data() })));
+        });
+    },
+
+    async createBatch(bizId: string, data: any) {
+        const newRef = doc(collection(db, 'businesses', bizId, 'packages'));
+        await setDoc(newRef, {
+            ...data,
+            id: newRef.id,
+            status: 'processing',
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp()
+        });
+        return newRef.id;
+    },
+
+    async updateBatch(bizId: string, batchId: string, data: any) {
+        await updateDoc(doc(db, 'businesses', bizId, 'packages', batchId), {
+            ...data,
+            updatedAt: serverTimestamp()
+        });
     }
 };

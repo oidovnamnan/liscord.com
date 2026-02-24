@@ -1,4 +1,4 @@
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, query, orderBy, limit, onSnapshot } from 'firebase/firestore';
 import { db, auth } from './firebase';
 
 export type AuditSeverity = 'normal' | 'warning' | 'critical';
@@ -36,5 +36,25 @@ export const auditService = {
             // Don't throw error to prevent blocking the main action in production
             // but log it to console or crash reporting
         }
+    },
+
+    subscribeAuditLogs(bizId: string, limitCount: number, callback: (logs: any[]) => void) {
+        const q = query(
+            collection(db, 'businesses', bizId, 'auditLog'),
+            orderBy('createdAt', 'desc'),
+            limit(limitCount)
+        );
+        return onSnapshot(q, (snapshot) => {
+            const logs = snapshot.docs.map(d => {
+                const data = d.data();
+                return {
+                    id: d.id,
+                    ...data,
+                    // Basic date conversion without pulling in the full converter
+                    createdAt: data.createdAt?.toDate() || new Date()
+                };
+            });
+            callback(logs);
+        });
     }
 };

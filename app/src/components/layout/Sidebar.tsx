@@ -17,6 +17,7 @@ import {
     X,
     ChevronDown,
     Plus,
+    ScanLine,
 } from 'lucide-react';
 import { useUIStore, useBusinessStore, useAuthStore } from '../../store';
 import { usePermissions } from '../../hooks/usePermissions';
@@ -32,6 +33,7 @@ const navItems = [
     { id: 'customers', label: 'Харилцагч', icon: Users, path: '/app/customers', permission: 'customers.view' },
     { id: 'products', label: 'Бараа', icon: Package, path: '/app/products', permission: 'products.view' },
     { id: 'delivery', label: 'Хүргэлт', icon: Truck, path: '/app/delivery' },
+    { id: 'packages', label: 'Ачаа (AI)', icon: ScanLine, path: '/app/packages' },
     { id: 'inventory', label: 'Нөөц', icon: Warehouse, permission: 'products.manage_stock', path: '/app/inventory' },
     { id: 'payments', label: 'Төлбөр', icon: Receipt, path: '/app/payments', permission: 'orders.manage_payments' },
     { id: 'reports', label: 'Тайлан', icon: BarChart3, path: '/app/reports', permission: 'reports.view_sales' },

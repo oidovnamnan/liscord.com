@@ -6,6 +6,7 @@ import { useBusinessStore, useUIStore } from '../../store';
 import { businessService, teamService, cargoService, sourceService, orderStatusService } from '../../services/db';
 import { toast } from 'react-hot-toast';
 import { PINModal } from '../../components/common/PINModal';
+import { ActivityTab } from './components/ActivityTab';
 import type { Position, Employee, CargoType, OrderSource, SocialAccount, OrderStatusConfig } from '../../types';
 import './SettingsPage.css';
 
@@ -31,6 +32,7 @@ export function SettingsPage() {
         { id: 'cargo', label: 'Карго', icon: Globe },
         { id: 'sources', label: 'Эх сурвалж', icon: Share2 },
         { id: 'statuses', label: 'Захиалгын төлөв', icon: CheckSquare },
+        { id: 'activity', label: 'Ажиллагсдын үйлдэл', icon: ListOrdered },
         { id: 'language', label: 'Хэл', icon: Globe },
     ];
 
@@ -45,6 +47,10 @@ export function SettingsPage() {
                 phone: fd.get('phone') as string,
                 email: fd.get('email') as string,
                 address: fd.get('address') as string,
+                settings: {
+                    ...business.settings,
+                    orderPrefix: (fd.get('orderPrefix') as string)?.trim() || '',
+                }
             });
             toast.success('Тохиргоо хадгалагдлаа');
         } catch (error) { toast.error('Алдаа гарлаа'); } finally { setLoading(false); }
@@ -102,9 +108,15 @@ export function SettingsPage() {
                                                 <input className="input" name="email" defaultValue={business?.email} placeholder="Бизнес и-мэйл" />
                                             </div>
                                         </div>
-                                        <div className="input-group">
-                                            <label className="input-label">Хаяг</label>
-                                            <input className="input" name="address" defaultValue={business?.address} placeholder="Бизнесийн байршил" />
+                                        <div className="grid-2-gap">
+                                            <div className="input-group">
+                                                <label className="input-label">Хаяг</label>
+                                                <input className="input" name="address" defaultValue={business?.address} placeholder="Бизнесийн байршил" />
+                                            </div>
+                                            <div className="input-group">
+                                                <label className="input-label">Захиалгын кодын эхлэл (Угтвар)</label>
+                                                <input className="input" name="orderPrefix" defaultValue={business?.settings?.orderPrefix || 'ORD-'} placeholder="Жнь: ORD-" />
+                                            </div>
                                         </div>
                                         <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 12 }}>
                                             <button className="btn btn-primary gradient-btn" type="submit" disabled={loading} style={{ minWidth: 120 }}>
@@ -267,6 +279,9 @@ export function SettingsPage() {
                                 </div>
                             </div>
                         )}
+
+                        {activeTab === 'activity' && <ActivityTab />}
+
                     </div>
                 </div>
             </div>

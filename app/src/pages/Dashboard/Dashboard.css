@@ -272,3 +272,49 @@
         justify-content: space-between;
     }
 }
+
+/* Activity Stream */
+.activity-stream {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs);
+}
+
+.activity-item {
+    display: flex;
+    align-items: flex-start;
+    padding: var(--space-md) var(--space-lg);
+    gap: var(--space-md);
+    background: var(--surface-1);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-primary);
+    transition: all 0.2s ease;
+}
+
+.activity-item:hover {
+    border-color: var(--primary);
+    transform: translateX(4px);
+}
+
+.activity-icon {
+    font-size: 1.2rem;
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+
+.activity-content {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.activity-text {
+    font-size: 0.9rem;
+    color: var(--text-primary);
+    line-height: 1.4;
+}
+
+.activity-time {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}

@@ -25,6 +25,7 @@ import { EmployeesPage } from './pages/Employees/EmployeesPage';
 import { ReportsPage } from './pages/Reports/ReportsPage';
 import { PaymentsPage } from './pages/Payments/PaymentsPage';
 import { DeliveryPage } from './pages/Delivery/DeliveryPage';
+import { PackagesPage } from './pages/Cargo/Packages/PackagesPage';
 import { InventoryPage } from './pages/Inventory/InventoryPage';
 import { ChatPage } from './pages/Chat/ChatPage';
 import { SuperAdminDashboard } from './pages/SuperAdmin/SuperAdminDashboard';
@@ -194,6 +195,7 @@ export default function App() {
           <Route path="customers" element={<CustomersPage />} />
           <Route path="products" element={<ProductsPage />} />
           <Route path="delivery" element={<DeliveryPage />} />
+          <Route path="packages" element={<PackagesPage />} />
           <Route path="inventory" element={<InventoryPage />} />
           <Route path="payments" element={<PaymentsPage />} />
           <Route path="reports" element={<ReportsPage />} />

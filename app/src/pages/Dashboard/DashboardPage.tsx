@@ -3,6 +3,7 @@ import { Header } from '../../components/layout/Header';
 import { ShoppingCart, Package, Loader2, ArrowRight, CheckCircle2 } from 'lucide-react';
 import { useBusinessStore, useAuthStore } from '../../store';
 import { dashboardService } from '../../services/db';
+import { auditService } from '../../services/audit';
 import { KPICards } from './components/KPICards';
 import { OrderChart } from './components/OrderChart';
 import type { Order } from '../../types';
@@ -28,6 +29,7 @@ export function DashboardPage() {
     const [recentOrders, setRecentOrders] = useState<Order[]>([]);
     const [stats, setStats] = useState<any>(null);
     const [loading, setLoading] = useState(true);
+    const [recentLogs, setRecentLogs] = useState<any[]>([]);
 
     useEffect(() => {
         if (!business?.id) return;
@@ -52,12 +54,20 @@ export function DashboardPage() {
         loadDashboard();
 
         // Recent orders subscription
-        const unsubscribe = dashboardService.subscribeRecentOrders(business.id!, (orders) => {
+        const unsubscribeOrders = dashboardService.subscribeRecentOrders(business.id!, (orders) => {
             setRecentOrders(orders);
             setLoading(false);
         });
 
-        return () => unsubscribe();
+        // Recent activity logs subscription
+        const unsubscribeLogs = auditService.subscribeAuditLogs(business.id!, 10, (logs) => {
+            setRecentLogs(logs);
+        });
+
+        return () => {
+            unsubscribeOrders();
+            unsubscribeLogs();
+        };
     }, [business?.id]);
 
     if (loading || !stats) {
@@ -128,7 +138,7 @@ export function DashboardPage() {
                                 <h3>Сүүлийн захиалгууд</h3>
                                 <a href="/app/orders" className="text-primary text-sm">Бүгд →</a>
                             </div>
-                            <div className="dashboard-orders-list">
+                            <div className="dashboard-orders-list mb-6">
                                 {recentOrders.length === 0 ? (
                                     <div className="empty-state-compact">
                                         <p className="text-muted">Захиалга байхгүй</p>
@@ -152,6 +162,45 @@ export function DashboardPage() {
                                             </div>
                                         </div>
                                     ))
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Recent Activity Log Stream */}
+                        <div className="dashboard-section stagger-item" style={{ '--index': 7 } as any}>
+                            <div className="dashboard-section-header">
+                                <h3>Сүүлийн үйлдлүүд</h3>
+                                <a href="/app/settings?tab=activity" className="text-primary text-sm">Бүгд →</a>
+                            </div>
+                            <div className="activity-stream">
+                                {recentLogs.length === 0 ? (
+                                    <div className="empty-state-compact">
+                                        <p className="text-muted">Үйлдэл байхгүй</p>
+                                    </div>
+                                ) : (
+                                    recentLogs.map((log, i) => {
+                                        const date = log.createdAt instanceof Date ? log.createdAt : new Date(log.createdAt);
+                                        const timeStr = date.toLocaleTimeString('mn-MN', { hour: '2-digit', minute: '2-digit' });
+
+                                        let icon = '📝';
+                                        if (log.action.includes('created')) icon = '✨';
+                                        if (log.action.includes('updated')) icon = '🔄';
+                                        if (log.action.includes('deleted')) icon = '🗑️';
+                                        if (log.action.includes('settings')) icon = '⚙️';
+
+                                        return (
+                                            <div key={log.id} className="activity-item animate-fade-in" style={{ '--index': i } as any}>
+                                                <div className="activity-icon">{icon}</div>
+                                                <div className="activity-content">
+                                                    <div className="activity-text">
+                                                        <strong>{log.userName}</strong> {log.action}{' '}
+                                                        <span className="font-medium text-primary">{log.targetLabel}</span>
+                                                    </div>
+                                                    <div className="activity-time">{timeStr} &middot; {log.module}</div>
+                                                </div>
+                                            </div>
+                                        );
+                                    })
                                 )}
                             </div>
                         </div>

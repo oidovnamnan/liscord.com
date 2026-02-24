@@ -1,0 +1,107 @@
+.packages-page {
+    display: flex;
+    flex-direction: column;
+    padding-bottom: 32px;
+}
+
+.packages-dashboard.empty-state {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 48px 24px;
+    background: var(--surface-1);
+    border-radius: var(--radius-lg);
+    border: 1px dashed var(--border-color);
+}
+
+.empty-icon-wrap {
+    width: 80px;
+    height: 80px;
+    background: var(--surface-2);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 24px;
+}
+
+.empty-content h3 {
+    margin: 0 0 12px 0;
+    font-size: 1.5rem;
+}
+
+.empty-content p {
+    color: var(--text-muted);
+    max-width: 400px;
+    margin: 0 auto 24px;
+    line-height: 1.6;
+}
+
+/* Batch UI */
+.new-package-batch {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.batch-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.batch-header h2 {
+    margin: 0;
+    font-size: 1.25rem;
+}
+
+.batch-steps {
+    display: flex;
+    gap: 16px;
+    font-size: 0.9rem;
+    color: var(--text-muted);
+}
+
+.batch-steps span.active {
+    color: var(--primary);
+    font-weight: 600;
+}
+
+.batch-body {
+    padding: 32px;
+    min-height: 400px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+}
+
+.upload-zone {
+    border: 2px dashed var(--border-color);
+    border-radius: var(--radius-lg);
+    padding: 64px 32px;
+    background: var(--surface-1);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.upload-zone:hover {
+    border-color: var(--primary);
+    background: var(--surface-2);
+}
+
+.upload-zone h3 {
+    margin: 0 0 8px 0;
+}
+
+.upload-zone p {
+    color: var(--text-muted);
+    margin: 0;
+}
