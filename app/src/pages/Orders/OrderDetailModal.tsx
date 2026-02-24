@@ -244,8 +244,15 @@ export function OrderDetailModal({ bizId, order, onClose, statuses }: OrderDetai
                                             // Find timestamp from history
                                             const historyArray = Array.isArray(order.statusHistory) ? order.statusHistory : [];
                                             const historyItem = historyArray.slice().reverse().find(h => h.status.toLowerCase() === s.id.toLowerCase());
-                                            const timeLabel = historyItem?.at ? formatTime(historyItem.at) : (s.id.toLowerCase() === 'new' ? formatTime(order.createdAt) : 'Саяхан');
-                                            const actorName = historyItem?.byName || historyItem?.updatedBy || (s.id.toLowerCase() === 'new' ? (order.createdByName || 'Систем') : '');
+                                            const timeLabel = historyItem?.at ? formatTime(historyItem.at) : (
+                                                (s.id.toLowerCase() === 'new' || s.id.toLowerCase() === 'unpaid') ? formatTime(order.createdAt) : 'Саяхан'
+                                            );
+
+                                            // Extract actor name: try byName, updatedBy, then fallback for new orders
+                                            let actorName = historyItem?.byName || historyItem?.updatedBy || '';
+                                            if (!actorName && (s.id.toLowerCase() === 'new' || s.id.toLowerCase() === 'unpaid' || idx === 0)) {
+                                                actorName = order.createdByName || '';
+                                            }
 
                                             return (
                                                 <div key={s.id} className={`timeline-item ${isCompleted ? 'active' : ''}`}>
