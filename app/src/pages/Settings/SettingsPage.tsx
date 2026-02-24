@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
+import { useSearchParams } from 'react-router-dom';
 import { Header } from '../../components/layout/Header';
 import { Building2, Palette, Bell, Shield, Users, Globe, Moon, Sun, Monitor, Loader2, Plus, MoreVertical, Trash2, Share2, X, CheckSquare, ListOrdered, ChevronUp, ChevronDown, ShoppingBag } from 'lucide-react';
 import { useBusinessStore, useUIStore } from '../../store';
@@ -13,7 +14,8 @@ import './SettingsPage.css';
 export function SettingsPage() {
     const { business } = useBusinessStore();
     const { theme, setTheme } = useUIStore();
-    const [activeTab, setActiveTab] = useState('general');
+    const [searchParams, setSearchParams] = useSearchParams();
+    const activeTab = searchParams.get('tab') || 'general';
     const [language, setLanguage] = useState('mn');
     const [notifications, setNotifications] = useState({
         newOrders: true,
@@ -118,16 +120,20 @@ export function SettingsPage() {
             <div className="page">
                 <div className="settings-layout">
                     <div className="settings-sidebar">
-                        {tabs.map(t => {
-                            const Icon = t.icon;
+                        {tabs.map((tab) => {
+                            const Icon = tab.icon;
                             return (
-                                <button key={t.id} className={`settings-tab ${activeTab === t.id ? 'active' : ''}`} onClick={() => setActiveTab(t.id)}>
-                                    <Icon size={18} /> {t.label}
+                                <button
+                                    key={tab.id}
+                                    className={`settings-tab ${activeTab === tab.id ? 'active' : ''}`}
+                                    onClick={() => setSearchParams({ tab: tab.id }, { replace: true })}
+                                >
+                                    <Icon size={18} />
+                                    {tab.label}
                                 </button>
                             );
                         })}
-                    </div>
-                    <div className="settings-content">
+                    </div>    <div className="settings-content">
                         {activeTab === 'general' && (
                             <div className="settings-section animate-fade-in">
                                 <h2>Бизнесийн тохиргоо</h2>
