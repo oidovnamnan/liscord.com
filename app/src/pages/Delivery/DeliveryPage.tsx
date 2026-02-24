@@ -1,6 +1,9 @@
-import { useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { Header } from '../../components/layout/Header';
 import { Search, Phone, MapPin, Clock, CheckCircle, Truck, Package, Navigation } from 'lucide-react';
+import { useBusinessStore } from '../../store';
+import { orderService } from '../../services/db';
+import type { Order } from '../../types';
 import './DeliveryPage.css';
 
 interface DeliveryRow {
@@ -19,15 +22,6 @@ interface DeliveryRow {
     zone: string;
 }
 
-const demoDeliveries: DeliveryRow[] = [
-    { id: '1', orderNumber: 'ORD-0055', customer: 'Болд', phone: '8800-1234', address: 'БЗД, 3-р хороо, 15-р байр, 301', driver: 'Нараа', driverPhone: '8833-2222', status: 'on_way', fee: 5000, cod: 4000000, scheduledAt: '14:00-15:00', distance: '4.2 км', zone: 'БЗД' },
-    { id: '2', orderNumber: 'ORD-0053', customer: 'Дорж', phone: '8855-9012', address: 'ХУД, 15-р хороо, Хурд тауэр', driver: 'Нараа', driverPhone: '8833-2222', status: 'picked', fee: 7000, cod: 0, scheduledAt: '15:00-16:00', distance: '8.1 км', zone: 'ХУД' },
-    { id: '3', orderNumber: 'ORD-0051', customer: 'Ганаа', phone: '8811-7890', address: 'БГД, 2-р хороо, 44-р байр', driver: 'Тамир', driverPhone: '9922-1111', status: 'pending', fee: 5000, cod: 1600000, scheduledAt: '16:00-17:00', distance: '3.5 км', zone: 'БГД' },
-    { id: '4', orderNumber: 'ORD-0048', customer: 'Мөнхбат', phone: '9944-3333', address: 'ЧД, 9-р хороо, Ривер гарден', driver: '', driverPhone: '', status: 'pending', fee: 8000, cod: 2500000, scheduledAt: '17:00-18:00', distance: '6.3 км', zone: 'ЧД' },
-    { id: '5', orderNumber: 'ORD-0049', customer: 'Нараа', phone: '8833-2222', address: 'БЗД, 11-р хороо, 23-р байр, 502', driver: 'Тамир', driverPhone: '9922-1111', status: 'delivered', fee: 5000, cod: 750000, scheduledAt: '10:00-11:00', distance: '2.1 км', zone: 'БЗД' },
-    { id: '6', orderNumber: 'ORD-0050', customer: 'Тамир', phone: '9922-1111', address: 'СХД, 8-р хороо, Мишил тауэр', driver: 'Нараа', driverPhone: '8833-2222', status: 'delivered', fee: 6000, cod: 0, scheduledAt: '11:00-12:00', distance: '5.5 км', zone: 'СХД' },
-];
-
 const statusConfig: Record<string, { label: string; cls: string; icon: typeof Clock }> = {
     pending: { label: 'Хүлээгдэж буй', cls: 'badge-preparing', icon: Clock },
     picked: { label: 'Авсан', cls: 'badge-confirmed', icon: Package },
@@ -39,23 +33,61 @@ const statusConfig: Record<string, { label: string; cls: string; icon: typeof Cl
 function fmt(n: number) { return '₮' + n.toLocaleString('mn-MN'); }
 
 export function DeliveryPage() {
+    const { business } = useBusinessStore();
     const [statusFilter, setStatusFilter] = useState('all');
     const [search, setSearch] = useState('');
+    const [orders, setOrders] = useState<Order[]>([]);
 
-    const filtered = demoDeliveries.filter(d => {
+    useEffect(() => {
+        if (!business) return;
+        return orderService.subscribeOrders(business.id, (data) => {
+            setOrders(data);
+        });
+    }, [business]);
+
+    // Derived deliveries array from relevant orders
+    const deliveries = useMemo(() => {
+        return orders
+            .filter(o => !o.isDeleted && o.status !== 'cancelled')
+            // Only include orders that require delivery (have shipping status OR delivery fee or cargo)
+            .filter(o => o.status === 'shipping' || (o.financials?.deliveryFee || 0) > 0 || (o.financials?.cargoFee || 0) > 0)
+            .map(o => {
+                let mappedStatus: DeliveryRow['status'] = 'pending';
+                if (o.status === 'completed') mappedStatus = 'delivered';
+                else if (o.status === 'shipping') mappedStatus = 'on_way';
+
+                return {
+                    id: o.id,
+                    orderNumber: o.orderNumber || o.id.substring(0, 6),
+                    customer: o.customer?.name || 'Тодорхойгүй',
+                    phone: o.customer?.phone || '-',
+                    address: (o.customer as any)?.address || 'Хаяггүй',
+                    driver: '', // Drivers aren't strictly modeled on user level right now
+                    driverPhone: '',
+                    status: mappedStatus,
+                    fee: o.financials?.deliveryFee || 0,
+                    cod: o.financials?.balanceDue || 0, // Assume balance equals COD out in the field
+                    scheduledAt: o.createdAt ? (o.createdAt instanceof Date ? `${(o.createdAt.getMonth() + 1)}.${o.createdAt.getDate()} ${o.createdAt.getHours()}:${o.createdAt.getMinutes()}` : 'Саяхан') : '-',
+                    distance: '-',
+                    zone: 'Хот дотор',
+                } as DeliveryRow;
+            });
+    }, [orders]);
+
+    const filtered = deliveries.filter(d => {
         const matchStatus = statusFilter === 'all' || d.status === statusFilter;
         const matchSearch = !search || d.customer.toLowerCase().includes(search.toLowerCase()) || d.orderNumber.toLowerCase().includes(search.toLowerCase()) || d.address.toLowerCase().includes(search.toLowerCase());
         return matchStatus && matchSearch;
     });
 
-    const pending = demoDeliveries.filter(d => d.status === 'pending').length;
-    const onWay = demoDeliveries.filter(d => d.status === 'on_way' || d.status === 'picked').length;
-    const delivered = demoDeliveries.filter(d => d.status === 'delivered').length;
-    const totalCod = demoDeliveries.filter(d => d.status !== 'delivered').reduce((s, d) => s + d.cod, 0);
+    const pending = deliveries.filter(d => d.status === 'pending').length;
+    const onWay = deliveries.filter(d => d.status === 'on_way' || d.status === 'picked').length;
+    const delivered = deliveries.filter(d => d.status === 'delivered').length;
+    const totalCod = deliveries.filter(d => d.status !== 'delivered').reduce((s, d) => s + d.cod, 0);
 
     return (
         <>
-            <Header title="Хүргэлт" subtitle={`Өнөөдөр ${demoDeliveries.length} хүргэлт`} />
+            <Header title="Хүргэлт" subtitle={`Өнөөдөр ${deliveries.length} хүргэлт`} />
             <div className="page">
                 <div className="grid-4 stagger-children" style={{ marginBottom: 'var(--space-lg)' }}>
                     <div className="stat-card"><div className="stat-card-label">Хүлээгдэж буй</div><div className="stat-card-value">{pending}</div></div>
@@ -73,7 +105,7 @@ export function DeliveryPage() {
 
                 <div className="orders-status-bar">
                     {['all', 'pending', 'picked', 'on_way', 'delivered'].map(s => {
-                        const count = s === 'all' ? demoDeliveries.length : demoDeliveries.filter(d => d.status === s).length;
+                        const count = s === 'all' ? deliveries.length : deliveries.filter(d => d.status === s).length;
                         const label = s === 'all' ? 'Бүгд' : statusConfig[s]?.label;
                         return (
                             <button key={s} className={`orders-status-chip ${statusFilter === s ? 'active' : ''}`} onClick={() => setStatusFilter(s)}>

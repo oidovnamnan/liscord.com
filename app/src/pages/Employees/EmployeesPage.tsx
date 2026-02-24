@@ -1,39 +1,36 @@
-import { useState } from 'react';
-import { Header } from '../../components/layout/Header';
+import { useEffect, useState } from 'react';
 import { Search, Plus, Phone, Shield, MoreVertical, Clock } from 'lucide-react';
+import { useBusinessStore } from '../../store';
+import { teamService } from '../../services/db';
+import type { Employee } from '../../types';
+import { Header } from '../../components/layout/Header';
 import './EmployeesPage.css';
 
-interface EmployeeRow {
-    id: string;
-    name: string;
-    phone: string;
-    position: string;
-    positionColor: string;
-    status: 'active' | 'inactive';
-    joinedAt: string;
-    lastActive: string;
-    ordersToday: number;
-    permissions: string[];
-}
-
-const demoEmployees: EmployeeRow[] = [
-    { id: '1', name: 'Бат-Эрдэнэ', phone: '9900-1234', position: 'Эзэмшигч', positionColor: '#6c5ce7', status: 'active', joinedAt: '2024.01.01', lastActive: '2 мин', ordersToday: 8, permissions: ['Бүгд'] },
-    { id: '2', name: 'Сараа', phone: '9911-5678', position: 'Менежер', positionColor: '#0dbff0', status: 'active', joinedAt: '2024.06.15', lastActive: '15 мин', ordersToday: 12, permissions: ['Захиалга', 'Бараа', 'Тайлан'] },
-    { id: '3', name: 'Дорж', phone: '8855-9012', position: 'Борлуулагч', positionColor: '#ff6b9d', status: 'active', joinedAt: '2025.01.10', lastActive: '1 цаг', ordersToday: 5, permissions: ['Захиалга', 'Бараа'] },
-    { id: '4', name: 'Нараа', phone: '8833-2222', position: 'Хүргэгч', positionColor: '#ff9f43', status: 'active', joinedAt: '2025.03.01', lastActive: '30 мин', ordersToday: 7, permissions: ['Хүргэлт'] },
-    { id: '5', name: 'Тамир', phone: '9922-1111', position: 'Нягтлан', positionColor: '#0be881', status: 'inactive', joinedAt: '2025.06.01', lastActive: '3 өдөр', ordersToday: 0, permissions: ['Тайлан', 'Төлбөр'] },
-];
-
 export function EmployeesPage() {
+    const { business } = useBusinessStore();
     const [search, setSearch] = useState('');
     const [showInvite, setShowInvite] = useState(false);
-    const [employees] = useState(demoEmployees);
+    const [employees, setEmployees] = useState<Employee[]>([]);
+
+    useEffect(() => {
+        if (!business) return;
+        return teamService.subscribeEmployees(business.id, (data) => {
+            setEmployees(data);
+        });
+    }, [business]);
 
     const filtered = employees.filter(e => {
         if (!search) return true;
         const s = search.toLowerCase();
-        return e.name.toLowerCase().includes(s) || e.phone.includes(s) || e.position.toLowerCase().includes(s);
+        return e.name?.toLowerCase().includes(s) ||
+            e.phone?.includes(s) ||
+            e.positionName?.toLowerCase().includes(s);
     });
+
+    const getRoleColor = (role?: string) => {
+        if (role === 'owner') return '#6c5ce7';
+        return '#0dbff0';
+    };
 
     return (
         <>
@@ -52,41 +49,44 @@ export function EmployeesPage() {
                         <div className="stat-card-value">{employees.filter(e => e.status === 'active').length}</div>
                     </div>
                     <div className="stat-card">
-                        <div className="stat-card-label">Өнөөдрийн нийт захиалга</div>
-                        <div className="stat-card-value">{employees.reduce((s, e) => s + e.ordersToday, 0)}</div>
+                        <div className="stat-card-label">Нийт баг</div>
+                        <div className="stat-card-value">{employees.length}</div>
                     </div>
                     <div className="stat-card">
                         <div className="stat-card-label">Албан тушаал</div>
-                        <div className="stat-card-value">{new Set(employees.map(e => e.position)).size}</div>
+                        <div className="stat-card-value">{new Set(employees.map(e => e.positionId)).size}</div>
                     </div>
                 </div>
 
                 <div className="employees-list stagger-children">
-                    {filtered.map(emp => (
-                        <div key={emp.id} className="employee-card card card-clickable">
-                            <div className="employee-header">
-                                <div className="employee-avatar" style={{ borderColor: emp.positionColor }}>
-                                    {emp.name.charAt(0)}
-                                    <span className={`employee-status-dot ${emp.status}`} />
-                                </div>
-                                <div className="employee-info">
-                                    <div className="employee-name">{emp.name}</div>
-                                    <div className="employee-position" style={{ color: emp.positionColor }}>
-                                        <Shield size={12} /> {emp.position}
+                    {filtered.map(emp => {
+                        const displayName = emp.name || emp.userId || 'Мэдэгдэхгүй';
+                        const roleColor = getRoleColor(emp.role);
+                        return (
+                            <div key={emp.id} className="employee-card card card-clickable">
+                                <div className="employee-header">
+                                    <div className="employee-avatar" style={{ borderColor: roleColor }}>
+                                        {displayName.charAt(0).toUpperCase()}
+                                        <span className={`employee-status-dot ${emp.status || 'inactive'}`} />
+                                    </div>
+                                    <div className="employee-info">
+                                        <div className="employee-name">{displayName}</div>
+                                        <div className="employee-position" style={{ color: roleColor }}>
+                                            <Shield size={12} /> {emp.positionName || 'Ажилтан'}
+                                        </div>
+                                    </div>
+                                    <div className="employee-meta">
+                                        <div className="employee-active"><Clock size={12} /> {emp.status === 'active' ? 'Идэвхтэй' : 'Хүлээгдэж буй'}</div>
+                                        <button className="btn btn-ghost btn-sm btn-icon"><MoreVertical size={16} /></button>
                                     </div>
                                 </div>
-                                <div className="employee-meta">
-                                    <div className="employee-active"><Clock size={12} /> {emp.lastActive}</div>
-                                    <button className="btn btn-ghost btn-sm btn-icon"><MoreVertical size={16} /></button>
+                                <div className="employee-details">
+                                    <span><Phone size={12} /> {emp.phone || 'Утасгүй'}</span>
+                                    <span>Өнөөдөр: {emp.stats?.totalOrdersHandled || 0} захиалга</span>
                                 </div>
                             </div>
-                            <div className="employee-details">
-                                <span><Phone size={12} /> {emp.phone}</span>
-                                <span>Өнөөдөр: {emp.ordersToday} захиалга</span>
-                                <span>Эрх: {emp.permissions.join(', ')}</span>
-                            </div>
-                        </div>
-                    ))}
+                        );
+                    })}
                 </div>
             </div>
 

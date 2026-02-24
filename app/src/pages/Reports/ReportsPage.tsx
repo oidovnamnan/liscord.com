@@ -1,39 +1,87 @@
-import { useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { Header } from '../../components/layout/Header';
-import { TrendingUp, TrendingDown, DollarSign, ShoppingCart, Users } from 'lucide-react';
+import { DollarSign, ShoppingCart, Users } from 'lucide-react';
+import { useBusinessStore } from '../../store';
+import { orderService } from '../../services/db';
+import type { Order } from '../../types';
 import './ReportsPage.css';
 
 function fmt(n: number) { return '₮' + n.toLocaleString('mn-MN'); }
 
-const dailyData = [
-    { date: '02.16', orders: 18, revenue: 6200000 },
-    { date: '02.17', orders: 22, revenue: 7800000 },
-    { date: '02.18', orders: 15, revenue: 5100000 },
-    { date: '02.19', orders: 28, revenue: 9500000 },
-    { date: '02.20', orders: 20, revenue: 7200000 },
-    { date: '02.21', orders: 31, revenue: 11000000 },
-    { date: '02.22', orders: 24, revenue: 8500000 },
-];
-
-const topProducts = [
-    { name: 'iPhone 15 Pro', sold: 24, revenue: 108000000 },
-    { name: 'MacBook Air M3', sold: 12, revenue: 50400000 },
-    { name: 'Galaxy S24 Ultra', sold: 18, revenue: 68400000 },
-    { name: 'AirPods Pro 2', sold: 35, revenue: 14700000 },
-    { name: 'Apple Watch Ultra 2', sold: 15, revenue: 27000000 },
-];
-
-const topCustomers = [
-    { name: 'Мөнхбат', orders: 20, spent: 55000000 },
-    { name: 'Дорж', orders: 25, spent: 48000000 },
-    { name: 'Ганаа', orders: 15, spent: 31000000 },
-    { name: 'Болд', orders: 12, spent: 25600000 },
-    { name: 'Сараа', orders: 8, spent: 12400000 },
-];
-
 export function ReportsPage() {
+    const { business } = useBusinessStore();
     const [period, setPeriod] = useState('7d');
-    const maxRevenue = Math.max(...dailyData.map(d => d.revenue));
+    const [orders, setOrders] = useState<Order[]>([]);
+
+    useEffect(() => {
+        if (!business) return;
+        return orderService.subscribeOrders(business.id, (data) => {
+            setOrders(data);
+        });
+    }, [business]);
+
+    // Active orders are those not cancelled/deleted
+    const activeOrders = useMemo(() => orders.filter(o => !o.isDeleted && o.status !== 'cancelled'), [orders]);
+
+    // Calculate Summary Stats
+    const totalRevenue = useMemo(() => activeOrders.reduce((sum, o) => sum + (o.financials?.totalAmount || 0), 0), [activeOrders]);
+    const totalOrders = activeOrders.length;
+    const avgOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
+
+    // Calculate Daily Data (Simple grouping by date string)
+    const dailyData = useMemo(() => {
+        const grouped: Record<string, { orders: number, revenue: number }> = {};
+
+        // Setup last 7 days
+        for (let i = 6; i >= 0; i--) {
+            const d = new Date();
+            d.setDate(d.getDate() - i);
+            const key = `${(d.getMonth() + 1).toString().padStart(2, '0')}.${d.getDate().toString().padStart(2, '0')}`;
+            grouped[key] = { orders: 0, revenue: 0 };
+        }
+
+        activeOrders.forEach(o => {
+            if (!o.createdAt) return;
+            // Assuming createdAt is a JS Date from our convertTimestamps wrapper
+            const d = o.createdAt instanceof Date ? o.createdAt : new Date(o.createdAt as any);
+            const key = `${(d.getMonth() + 1).toString().padStart(2, '0')}.${d.getDate().toString().padStart(2, '0')}`;
+            if (grouped[key]) {
+                grouped[key].orders += 1;
+                grouped[key].revenue += (o.financials?.totalAmount || 0);
+            }
+        });
+
+        return Object.entries(grouped).map(([date, data]) => ({ date, ...data }));
+    }, [activeOrders]);
+
+    // Calculate Top Products
+    const topProducts = useMemo(() => {
+        const prods: Record<string, { name: string, sold: number, revenue: number }> = {};
+        activeOrders.forEach(o => {
+            o.items?.forEach(item => {
+                const key = item.productId || item.name;
+                if (!prods[key]) prods[key] = { name: item.name, sold: 0, revenue: 0 };
+                prods[key].sold += item.quantity;
+                prods[key].revenue += item.totalPrice;
+            });
+        });
+        return Object.values(prods).sort((a, b) => b.revenue - a.revenue).slice(0, 5);
+    }, [activeOrders]);
+
+    // Calculate Top Customers
+    const topCustomers = useMemo(() => {
+        const custs: Record<string, { name: string, orders: number, spent: number }> = {};
+        activeOrders.forEach(o => {
+            if (!o.customer?.phone) return;
+            const key = o.customer.phone;
+            if (!custs[key]) custs[key] = { name: o.customer.name || key, orders: 0, spent: 0 };
+            custs[key].orders += 1;
+            custs[key].spent += (o.financials?.totalAmount || 0);
+        });
+        return Object.values(custs).sort((a, b) => b.spent - a.spent).slice(0, 5);
+    }, [activeOrders]);
+
+    const maxRevenue = Math.max(...dailyData.map(d => d.revenue), 100000);
 
     return (
         <>
@@ -53,38 +101,33 @@ export function ReportsPage() {
                     ))}
                 </div>
 
-                {/* Summary stats */}
                 <div className="grid-4 stagger-children" style={{ marginBottom: 'var(--space-xl)' }}>
                     <div className="stat-card">
                         <div className="stat-card-header">
                             <div className="stat-card-icon" style={{ background: 'rgba(108, 92, 231, 0.15)', color: '#6c5ce7' }}><DollarSign size={20} /></div>
-                            <span className="stat-card-change positive"><TrendingUp size={14} /> +18%</span>
                         </div>
-                        <div className="stat-card-value">{fmt(55300000)}</div>
+                        <div className="stat-card-value">{fmt(totalRevenue)}</div>
                         <div className="stat-card-label">Нийт орлого</div>
                     </div>
                     <div className="stat-card">
                         <div className="stat-card-header">
                             <div className="stat-card-icon" style={{ background: 'rgba(13, 191, 240, 0.15)', color: '#0dbff0' }}><ShoppingCart size={20} /></div>
-                            <span className="stat-card-change positive"><TrendingUp size={14} /> +12%</span>
                         </div>
-                        <div className="stat-card-value">158</div>
+                        <div className="stat-card-value">{totalOrders}</div>
                         <div className="stat-card-label">Нийт захиалга</div>
                     </div>
                     <div className="stat-card">
                         <div className="stat-card-header">
                             <div className="stat-card-icon" style={{ background: 'rgba(11, 232, 129, 0.15)', color: '#0be881' }}><DollarSign size={20} /></div>
-                            <span className="stat-card-change positive"><TrendingUp size={14} /> +8%</span>
                         </div>
-                        <div className="stat-card-value">{fmt(12800000)}</div>
-                        <div className="stat-card-label">Цэвэр ашиг</div>
+                        <div className="stat-card-value">{fmt(totalRevenue * 0.85)}</div>
+                        <div className="stat-card-label">Ойролцоо ашиг (15% өртөг)</div>
                     </div>
                     <div className="stat-card">
                         <div className="stat-card-header">
                             <div className="stat-card-icon" style={{ background: 'rgba(255, 107, 157, 0.15)', color: '#ff6b9d' }}><Users size={20} /></div>
-                            <span className="stat-card-change negative"><TrendingDown size={14} /> -3%</span>
                         </div>
-                        <div className="stat-card-value">{fmt(350000)}</div>
+                        <div className="stat-card-value">{fmt(avgOrderValue)}</div>
                         <div className="stat-card-label">Дундаж захиалга</div>
                     </div>
                 </div>

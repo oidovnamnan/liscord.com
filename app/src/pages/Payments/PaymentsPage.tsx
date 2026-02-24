@@ -1,6 +1,9 @@
-import { useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { Header } from '../../components/layout/Header';
 import { Search, DollarSign, ArrowDownRight, ArrowUpRight } from 'lucide-react';
+import { useBusinessStore } from '../../store';
+import { orderService } from '../../services/db';
+import type { Order } from '../../types';
 import './PaymentsPage.css';
 
 interface PaymentRow {
@@ -10,35 +13,56 @@ interface PaymentRow {
     type: 'incoming' | 'outgoing';
     method: string;
     amount: number;
-    date: string;
+    date: Date;
     note: string;
 }
-
-const demoPayments: PaymentRow[] = [
-    { id: '1', orderNumber: 'ORD-0055', customer: 'Болд', type: 'incoming', method: 'Данс', amount: 5000000, date: '2026.02.22 14:30', note: 'Урьдчилгаа' },
-    { id: '2', orderNumber: 'ORD-0054', customer: 'Сараа', type: 'incoming', method: 'Бэлэн', amount: 3200000, date: '2026.02.22 13:15', note: 'Бүтнээр' },
-    { id: '3', orderNumber: '-', customer: 'Нийлүүлэгч А', type: 'outgoing', method: 'Данс', amount: 8500000, date: '2026.02.22 11:00', note: 'Бараа татан авалт' },
-    { id: '4', orderNumber: 'ORD-0052', customer: 'Оюуна', type: 'incoming', method: 'QPay', amount: 950000, date: '2026.02.21 16:45', note: '' },
-    { id: '5', orderNumber: 'ORD-0051', customer: 'Ганаа', type: 'incoming', method: 'Данс', amount: 1500000, date: '2026.02.21 15:20', note: 'Хэсэгчилсэн' },
-    { id: '6', orderNumber: '-', customer: 'Тээвэр', type: 'outgoing', method: 'Бэлэн', amount: 350000, date: '2026.02.21 10:00', note: 'Хүргэлтийн зардал' },
-    { id: '7', orderNumber: 'ORD-0050', customer: 'Тамир', type: 'incoming', method: 'SocialPay', amount: 1800000, date: '2026.02.20 18:00', note: '' },
-    { id: '8', orderNumber: 'ORD-0048', customer: 'Мөнхбат', type: 'incoming', method: 'Данс', amount: 2000000, date: '2026.02.20 14:30', note: 'Хэсэгчилсэн 1' },
-];
 
 function fmt(n: number) { return '₮' + n.toLocaleString('mn-MN'); }
 
 export function PaymentsPage() {
+    const { business } = useBusinessStore();
     const [search, setSearch] = useState('');
     const [typeFilter, setTypeFilter] = useState<'all' | 'incoming' | 'outgoing'>('all');
+    const [orders, setOrders] = useState<Order[]>([]);
 
-    const filtered = demoPayments.filter(p => {
+    useEffect(() => {
+        if (!business) return;
+        return orderService.subscribeOrders(business.id, (data) => {
+            setOrders(data);
+        });
+    }, [business]);
+
+    // Derived payments array from order.financials.payments
+    const allPayments = useMemo(() => {
+        const txs: PaymentRow[] = [];
+        orders.forEach(o => {
+            if (o.isDeleted || o.status === 'cancelled') return;
+            if (o.financials?.payments && Array.isArray(o.financials.payments)) {
+                o.financials.payments.forEach((p, idx) => {
+                    txs.push({
+                        id: `${o.id}-pay-${idx}`,
+                        orderNumber: o.orderNumber || o.id.substring(0, 6),
+                        customer: o.customer?.name || o.customer?.phone || 'Тодорхойгүй',
+                        type: 'incoming',
+                        amount: p.amount,
+                        method: p.method,
+                        note: p.note || 'Төлбөр',
+                        date: p.paidAt instanceof Date ? p.paidAt : new Date(p.paidAt as any),
+                    });
+                });
+            }
+        });
+        return txs.sort((a, b) => b.date.getTime() - a.date.getTime());
+    }, [orders]);
+
+    const filtered = allPayments.filter(p => {
         const matchSearch = !search || p.customer.toLowerCase().includes(search.toLowerCase()) || p.orderNumber.toLowerCase().includes(search.toLowerCase());
         const matchType = typeFilter === 'all' || p.type === typeFilter;
         return matchSearch && matchType;
     });
 
-    const totalIn = demoPayments.filter(p => p.type === 'incoming').reduce((s, p) => s + p.amount, 0);
-    const totalOut = demoPayments.filter(p => p.type === 'outgoing').reduce((s, p) => s + p.amount, 0);
+    const totalIn = allPayments.filter(p => p.type === 'incoming').reduce((s, p) => s + p.amount, 0);
+    const totalOut = allPayments.filter(p => p.type === 'outgoing').reduce((s, p) => s + p.amount, 0);
 
     return (
         <>
@@ -98,7 +122,7 @@ export function PaymentsPage() {
                                 <div className={`payment-amount ${p.type}`}>
                                     {p.type === 'incoming' ? '+' : '-'}{fmt(p.amount)}
                                 </div>
-                                <div className="payment-date">{p.date}</div>
+                                <div className="payment-date">{(p.date instanceof Date && !isNaN(p.date.valueOf())) ? `${(p.date.getMonth() + 1).toString().padStart(2, '0')}.${p.date.getDate().toString().padStart(2, '0')} ${p.date.getHours().toString().padStart(2, '0')}:${p.date.getMinutes().toString().padStart(2, '0')}` : 'Огноогүй'}</div>
                             </div>
                         </div>
                     ))}
