@@ -270,6 +270,7 @@ export interface Order {
         updatedBy?: string;
         timestamp?: Date;
     }>;
+    tags: string[];
 
     createdBy: string;
     createdByName: string;
