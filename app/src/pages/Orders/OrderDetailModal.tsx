@@ -237,7 +237,7 @@ export function OrderDetailModal({ bizId, order, onClose, statuses }: OrderDetai
                                             const isCompleted = !order.isDeleted && (currentStatusIndex >= idx);
 
                                             // Find timestamp from history
-                                            const historyItem = order.statusHistory?.slice().reverse().find(h => h.status.toLowerCase() === s.id.toLowerCase());
+                                            const historyItem = (order.statusHistory || []).slice().reverse().find(h => h.status.toLowerCase() === s.id.toLowerCase());
                                             const timeLabel = historyItem?.at ? formatTime(historyItem.at) : (s.id.toLowerCase() === 'new' ? formatTime(order.createdAt) : 'Саяхан');
 
                                             return (
