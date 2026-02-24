@@ -88,6 +88,7 @@ export interface BusinessSettings {
     storefront?: {
         enabled: boolean;
         theme?: 'light' | 'dark';
+        name?: string;
     };
 }
 

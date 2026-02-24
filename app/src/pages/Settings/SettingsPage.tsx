@@ -83,6 +83,7 @@ export function SettingsPage() {
         if (!business) return;
         const fd = new FormData(e.currentTarget);
         const slug = (fd.get('slug') as string)?.trim().toLowerCase();
+        const storefrontName = (fd.get('storefrontName') as string)?.trim() || '';
         const enabled = fd.get('storefrontEnabled') === 'on';
         setLoading(true);
         try {
@@ -101,7 +102,8 @@ export function SettingsPage() {
                     ...business.settings,
                     storefront: {
                         enabled,
-                        theme: business.settings.storefront?.theme || 'light'
+                        theme: business.settings.storefront?.theme || 'light',
+                        name: storefrontName,
                     }
                 }
             });
@@ -179,6 +181,11 @@ export function SettingsPage() {
                                         <h3>Онлайн дэлгүүрийн холбоос болон нээлттэй эсэх</h3>
                                     </div>
                                     <form className="settings-form" onSubmit={handleUpdateStorefront} onChange={() => setIsDirty(true)}>
+                                        <div className="input-group">
+                                            <label className="input-label">Дэлгүүрийн нэр</label>
+                                            <input className="input" name="storefrontName" defaultValue={business?.settings?.storefront?.name || ''} placeholder="Жнь: NamShop" />
+                                            <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: '4px 0 0 0' }}>Дэлгүүрийн хуудсан дээр харагдах нэр. Хоосон орхивол бизнесийн нэр харагдана.</p>
+                                        </div>
                                         <div className="input-group">
                                             <label className="input-label">Дэлгүүрийн холбоос (Slug)</label>
                                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
