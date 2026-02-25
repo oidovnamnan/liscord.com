@@ -525,17 +525,35 @@ export function SettingsPage() {
                         </div>
                         <form onSubmit={handleSubmitRequest} className="modal-body">
                             <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', marginBottom: 16 }}>
-                                Дэлгүүрийн нэр болон холбоосыг <strong>жилд нэг л удаа</strong> өөрчилдөг тул Супер Админы зөвшөөрөл шаардлагатай. Та доорх хэсэгт ямар шалтгаанаар өөрчилж байгаагаа тодорхой бичиж үлдээнэ үү.
+                                Дэлгүүрийн нэр болон холбоосыг <strong style={{ color: 'var(--danger)' }}>жилд нэг л удаа</strong> өөрчилдөг тул Супер Админы зөвшөөрөл шаардлагатай.
                             </p>
-                            <textarea
-                                className="input"
-                                style={{ height: '100px', resize: 'vertical' }}
-                                placeholder="Шалтгаанаа тодорхой бичнэ үү..."
-                                value={requestReason}
-                                onChange={e => setRequestReason(e.target.value)}
-                                required
-                                minLength={10}
-                            />
+
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 16, marginBottom: 16 }}>
+                                <div className="input-group">
+                                    <label className="input-label" style={{ marginBottom: 4 }}>Шинэ дэлгүүрийн нэр</label>
+                                    <input className="input" value={requestedChanges?.name || ''} onChange={e => setRequestedChanges(p => ({ ...p, name: e.target.value }))} placeholder="NamShop" required />
+                                </div>
+                                <div className="input-group">
+                                    <label className="input-label" style={{ marginBottom: 4 }}>Шинэ холбоос (уншихад амархан)</label>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                        <span style={{ color: 'var(--text-muted)' }}>{window.location.origin}/s/</span>
+                                        <input className="input" style={{ flex: 1 }} value={requestedChanges?.slug || ''} onChange={e => setRequestedChanges(p => ({ ...p, slug: e.target.value.toLowerCase() }))} placeholder="zara-mongolia" required pattern="[a-z0-9-]+" title="Зөвхөн жижиг англи үсэг, тоо болон зураас ашиглана уу" />
+                                    </div>
+                                </div>
+                                <div className="input-group">
+                                    <label className="input-label" style={{ marginBottom: 4 }}>Өөрчлөх шалтгаан</label>
+                                    <textarea
+                                        className="input"
+                                        style={{ height: '80px', resize: 'vertical' }}
+                                        placeholder="Шалтгаанаа тодорхой бичнэ үү..."
+                                        value={requestReason}
+                                        onChange={e => setRequestReason(e.target.value)}
+                                        required
+                                        minLength={10}
+                                    />
+                                </div>
+                            </div>
+
                             <div className="modal-footer" style={{ marginTop: 24 }}>
                                 <button type="button" className="btn btn-ghost" onClick={() => setShowRequestModal(false)}>Цуцлах</button>
                                 <button type="submit" className="btn btn-primary" disabled={loading}>
