@@ -1,0 +1,101 @@
+.app-v2 {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    background: #0f172a;
+    color: #e2e8f0;
+    position: relative;
+    overflow-x: hidden;
+}
+
+.app-v2-container {
+    display: flex;
+    flex: 1;
+    position: relative;
+    z-index: 10;
+}
+
+.app-v2-main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background: rgba(255, 255, 255, 0.02);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-top-left-radius: 24px;
+    border-left: 1px solid rgba(255, 255, 255, 0.05);
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    margin-top: 8px;
+    box-shadow: -10px 0 40px rgba(0, 0, 0, 0.2);
+    overflow-y: auto;
+    height: calc(100vh - 8px);
+    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.app-v2-container.sidebar-open .app-v2-main {
+    margin-left: 240px;
+}
+
+.app-v2-container.sidebar-closed .app-v2-main {
+    margin-left: 0;
+}
+
+@media (max-width: 768px) {
+    .app-v2-container.sidebar-open .app-v2-main {
+        margin-left: 0;
+    }
+}
+
+/* Background V2 Glows */
+.v2-bg-glow {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(100px);
+    z-index: 1;
+    opacity: 0.4;
+    animation: floatGlow 15s infinite alternate ease-in-out;
+}
+
+.glow-1 {
+    width: 600px;
+    height: 600px;
+    background: radial-gradient(circle, rgba(168, 85, 247, 0.3) 0%, rgba(59, 130, 246, 0) 70%);
+    top: -100px;
+    right: -100px;
+}
+
+.glow-2 {
+    width: 500px;
+    height: 500px;
+    background: radial-gradient(circle, rgba(59, 130, 246, 0.2) 0%, rgba(16, 185, 129, 0) 70%);
+    bottom: -100px;
+    left: 10%;
+    animation-delay: -5s;
+}
+
+@keyframes floatGlow {
+    0% {
+        transform: translateY(0) scale(1);
+    }
+
+    50% {
+        transform: translateY(50px) scale(1.1);
+    }
+
+    100% {
+        transform: translateY(-30px) scale(0.9);
+    }
+}
+
+/* Base override for V2 specifics inside main */
+.app-v2-main .page-header {
+    background: transparent !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
+}
+
+.app-v2-main .card {
+    background: rgba(255, 255, 255, 0.03) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    backdrop-filter: blur(10px) !important;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2) !important;
+}

@@ -1,5 +1,8 @@
-import { Menu, Bell, Search, Plus } from 'lucide-react';
-import { useUIStore, useAuthStore } from '../../store';
+import { useState } from 'react';
+import { Menu, Bell, Search, Plus, Zap } from 'lucide-react';
+import { useUIStore, useAuthStore, useBusinessStore } from '../../store';
+import { V2UpgradeModal } from '../common/V2UpgradeModal';
+import { userService } from '../../services/db';
 import './Header.css';
 
 interface HeaderProps {
@@ -13,7 +16,26 @@ interface HeaderProps {
 
 export function Header({ title, subtitle, action }: HeaderProps) {
     const { toggleSidebar } = useUIStore();
-    const { user } = useAuthStore();
+    const { user, setUser } = useAuthStore();
+    const { business } = useBusinessStore();
+
+    const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(false);
+
+    const handleToggleV2 = async () => {
+        if (!user) return;
+
+        // Super admins OR businesses that paid for V2 can switch freely
+        const isAuthorized = user.isSuperAdmin || business?.subscription?.hasV2Access;
+
+        if (isAuthorized) {
+            const nextVersion = user.uiVersion === 'v2' ? 'v1' : 'v2';
+            await userService.updateProfile(user.uid, { uiVersion: nextVersion });
+            setUser({ ...user, uiVersion: nextVersion });
+        } else {
+            // Unpaid normal user -> Show Paywall
+            setIsUpgradeModalOpen(true);
+        }
+    };
 
     return (
         <header className="header">
@@ -44,10 +66,42 @@ export function Header({ title, subtitle, action }: HeaderProps) {
                     </button>
                 )}
 
+                {/* V2 Toggle Switcher */}
+                <button
+                    onClick={handleToggleV2}
+                    className="btn btn-sm"
+                    style={{
+                        background: user?.uiVersion === 'v2' ? 'linear-gradient(135deg, #fcd34d 0%, #f59e0b 100%)' : 'rgba(255,255,255,0.1)',
+                        color: user?.uiVersion === 'v2' ? '#000' : 'var(--text-primary)',
+                        border: '1px solid var(--border-color)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 6,
+                        fontWeight: 600
+                    }}
+                    title="Switch Workspace Version"
+                >
+                    <Zap size={14} />
+                    <span className="hide-mobile">{user?.uiVersion === 'v2' ? 'V2' : 'V1'}</span>
+                </button>
+
                 <div className="header-avatar" title={user?.displayName || 'Хэрэглэгч'}>
                     {user?.displayName?.charAt(0) || '?'}
                 </div>
             </div>
+
+            <V2UpgradeModal
+                isOpen={isUpgradeModalOpen}
+                onClose={() => setIsUpgradeModalOpen(false)}
+                onSuccess={() => {
+                    setIsUpgradeModalOpen(false);
+                    if (user) {
+                        const newV = 'v2';
+                        userService.updateProfile(user.uid, { uiVersion: newV });
+                        setUser({ ...user, uiVersion: newV });
+                    }
+                }}
+            />
         </header>
     );
 }

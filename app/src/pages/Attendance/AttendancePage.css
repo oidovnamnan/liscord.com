@@ -1,0 +1,133 @@
+.attendance-page {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.attendance-toolbar {
+    padding: var(--space-md);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--border-primary);
+    background: var(--surface-1);
+}
+
+.attendance-board {
+    flex: 1;
+    overflow-y: auto;
+    padding: var(--space-lg);
+    background: var(--bg-primary);
+}
+
+.clock-panel {
+    background: white;
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-lg);
+    padding: var(--space-xl);
+    text-align: center;
+    max-width: 600px;
+    margin: 0 auto var(--space-xl);
+    box-shadow: var(--shadow-sm);
+}
+
+.live-clock-time {
+    font-size: 48px;
+    font-weight: 800;
+    font-family: var(--font-mono);
+    color: var(--text-primary);
+    margin: var(--space-md) 0;
+}
+
+.live-clock-date {
+    font-size: var(--font-size-lg);
+    color: var(--text-secondary);
+    margin-bottom: var(--space-xl);
+}
+
+.clock-actions {
+    display: flex;
+    justify-content: center;
+    gap: var(--space-md);
+}
+
+.clock-btn {
+    padding: 16px 32px;
+    border-radius: var(--radius-full);
+    font-size: var(--font-size-md);
+    font-weight: 700;
+    cursor: pointer;
+    border: none;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.clock-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+.clock-btn.in {
+    background: var(--success);
+    color: white;
+}
+
+.clock-btn.out {
+    background: var(--danger);
+    color: white;
+}
+
+.clock-btn.break {
+    background: var(--warning);
+    color: #92400e;
+}
+
+.attendance-table-container {
+    background: white;
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+}
+
+.attendance-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.attendance-table th {
+    background: var(--surface-2);
+    padding: var(--space-md);
+    text-align: left;
+    font-weight: 600;
+    color: var(--text-secondary);
+    font-size: var(--font-size-sm);
+    border-bottom: 2px solid var(--border-primary);
+}
+
+.attendance-table td {
+    padding: var(--space-md);
+    border-bottom: 1px solid var(--border-primary);
+    font-size: var(--font-size-md);
+    color: var(--text-primary);
+    vertical-align: middle;
+}
+
+.attendance-table tr:hover td {
+    background: var(--surface-1);
+}
+
+.time-badge {
+    background: var(--surface-2);
+    padding: 4px 8px;
+    border-radius: var(--radius-sm);
+    font-family: var(--font-mono);
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+}
+
+.time-badge.active {
+    background: rgba(34, 197, 94, 0.1);
+    color: var(--success);
+}

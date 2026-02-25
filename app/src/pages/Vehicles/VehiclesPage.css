@@ -1,0 +1,148 @@
+.vehicles-page {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.vehicles-toolbar {
+    padding: var(--space-md);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--border-primary);
+    background: var(--surface-1);
+}
+
+.timeline-container {
+    flex: 1;
+    overflow-x: auto;
+    overflow-y: auto;
+    padding: var(--space-md);
+    background: var(--bg-primary);
+}
+
+.timeline-grid {
+    display: grid;
+    /* First col is vehicle info, rest are days */
+    grid-template-columns: 250px repeat(14, minmax(80px, 1fr));
+    gap: 1px;
+    background: var(--border-primary);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-md);
+}
+
+.timeline-header-cell {
+    background: var(--surface-2);
+    padding: var(--space-sm);
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    text-align: center;
+    color: var(--text-secondary);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+.timeline-header-cell.sticky-col {
+    position: sticky;
+    left: 0;
+    z-index: 10;
+    text-align: left;
+    align-items: flex-start;
+    border-right: 1px solid var(--border-primary);
+}
+
+.timeline-row-cell {
+    background: var(--bg-primary);
+    padding: var(--space-xs);
+    position: relative;
+    min-height: 60px;
+}
+
+.timeline-row-cell.sticky-col {
+    position: sticky;
+    left: 0;
+    z-index: 10;
+    background: var(--surface-1);
+    border-right: 1px solid var(--border-primary);
+    padding: var(--space-md);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.vehicle-name {
+    font-weight: 700;
+    font-size: var(--font-size-md);
+    color: var(--text-primary);
+}
+
+.vehicle-meta {
+    font-size: var(--font-size-xs);
+    color: var(--text-secondary);
+    margin-top: 4px;
+}
+
+.status-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    margin-right: 6px;
+}
+
+.status-dot.available {
+    background-color: var(--success);
+}
+
+.status-dot.rented {
+    background-color: var(--danger);
+}
+
+.status-dot.maintenance {
+    background-color: var(--warning);
+}
+
+.status-dot.out_of_service {
+    background-color: var(--text-secondary);
+}
+
+/* The actual Trip Bar that spans across cells */
+.trip-bar {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    height: 40px;
+    background: var(--primary);
+    color: white;
+    border-radius: var(--radius-sm);
+    padding: 0 var(--space-sm);
+    display: flex;
+    align-items: center;
+    font-size: var(--font-size-xs);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    box-shadow: var(--shadow-sm);
+    z-index: 5;
+    cursor: pointer;
+    transition: opacity 0.2s ease;
+}
+
+.trip-bar:hover {
+    opacity: 0.9;
+}
+
+.trip-bar.reserved {
+    background: var(--secondary);
+}
+
+.trip-bar.active {
+    background: var(--danger);
+}
+
+.trip-bar.completed {
+    background: var(--success);
+    opacity: 0.7;
+}

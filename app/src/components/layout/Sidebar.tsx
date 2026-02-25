@@ -18,25 +18,59 @@ import {
     ChevronDown,
     Plus,
     ScanLine,
+    Clock,
+    DollarSign,
+    Landmark,
+    Layers,
+    Calendar,
+    PieChart,
+    HeadphonesIcon,
+    Building,
+    Factory
 } from 'lucide-react';
 import { useUIStore, useBusinessStore, useAuthStore } from '../../store';
 import { usePermissions } from '../../hooks/usePermissions';
-import { businessService } from '../../services/db';
 import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '../../services/firebase';
+import { businessService } from '../../services/db';
 import { toast } from 'react-hot-toast';
+import { getFeatures } from '../../config/features';
+import type { BusinessFeatures } from '../../config/features';
 import './Sidebar.css';
 
-const navItems = [
+type NavItem = {
+    id: string;
+    label: string;
+    icon: React.ElementType;
+    path: string;
+    permission?: string;
+    feature?: keyof BusinessFeatures;
+};
+
+const navItems: NavItem[] = [
     { id: 'dashboard', label: 'Хянах самбар', icon: LayoutDashboard, path: '/app', permission: 'reports.view_dashboard' },
-    { id: 'orders', label: 'Захиалга', icon: ShoppingCart, path: '/app/orders', permission: 'orders.view_all' },
+    { id: 'orders', label: 'Борлуулалт', icon: ShoppingCart, path: '/app/orders', permission: 'orders.view_all', feature: 'hasOrders' },
+    { id: 'appointments', label: 'Цаг захиалга', icon: Calendar, path: '/app/appointments', feature: 'hasAppointments' },
+    { id: 'projects', label: 'Төсөл / Ажил', icon: Warehouse, path: '/app/projects', feature: 'hasProjects' },
+    { id: 'manufacturing', label: 'Үйлдвэрлэл', icon: Factory, path: '/app/manufacturing' },
+    { id: 'contracts', label: 'Гэрээ / Зээл', icon: Receipt, path: '/app/contracts', feature: 'hasContracts' },
+    { id: 'rooms', label: 'Өрөө / Талбай', icon: LayoutDashboard, path: '/app/rooms', feature: 'hasRooms' },
+    { id: 'vehicles', label: 'Машин / Техник', icon: Truck, path: '/app/vehicles', feature: 'hasVehicles' },
+    { id: 'tickets', label: 'Тасалбар', icon: ScanLine, path: '/app/tickets', feature: 'hasTickets' },
     { id: 'customers', label: 'Харилцагч', icon: Users, path: '/app/customers', permission: 'customers.view' },
-    { id: 'products', label: 'Бараа', icon: Package, path: '/app/products', permission: 'products.view' },
-    { id: 'delivery', label: 'Хүргэлт', icon: Truck, path: '/app/delivery' },
-    { id: 'packages', label: 'Ачаа (AI)', icon: ScanLine, path: '/app/packages' },
-    { id: 'inventory', label: 'Нөөц', icon: Warehouse, permission: 'products.manage_stock', path: '/app/inventory' },
+    { id: 'b2b', label: 'B2B Портал', icon: Building, path: '/app/b2b' },
+    { id: 'products', label: 'Бараа', icon: Package, path: '/app/products', permission: 'products.view', feature: 'hasProducts' },
+    { id: 'delivery', label: 'Хүргэлт', icon: Truck, path: '/app/delivery', feature: 'hasDelivery' },
+    { id: 'packages', label: 'Ачаа (AI)', icon: ScanLine, path: '/app/packages', feature: 'hasPackages' },
+    { id: 'inventory', label: 'Нөөц', icon: Warehouse, permission: 'products.manage_stock', path: '/app/inventory', feature: 'hasInventory' },
+    { id: 'loans', label: 'Ломбард / Зээл', icon: Landmark, path: '/app/loans' },
+    { id: 'queue', label: 'Дараалал', icon: Layers, path: '/app/queue' },
+    { id: 'attendance', label: 'Цаг бүртгэл', icon: Clock, path: '/app/attendance' },
+    { id: 'payroll', label: 'Цалин', icon: DollarSign, path: '/app/payroll' },
+    { id: 'finance', label: 'Санхүү', icon: PieChart, path: '/app/finance' },
     { id: 'payments', label: 'Төлбөр', icon: Receipt, path: '/app/payments', permission: 'orders.manage_payments' },
     { id: 'reports', label: 'Тайлан', icon: BarChart3, path: '/app/reports', permission: 'reports.view_sales' },
+    { id: 'support', label: 'Гомдол / Буцаалт', icon: HeadphonesIcon, path: '/app/support' },
     { id: 'chat', label: 'Чат', icon: MessageSquare, path: '/app/chat' },
     { id: 'employees', label: 'Ажилтан', icon: UserCog, path: '/app/employees', permission: 'team.view' },
     { id: 'settings', label: 'Тохиргоо', icon: Settings, path: '/app/settings', permission: 'settings.view' },
@@ -92,7 +126,34 @@ export function Sidebar() {
         window.location.reload(); // App.tsx will show BusinessWizard
     };
 
-    const filteredNavItems = navItems.filter(item => !item.permission || hasPermission(item.permission));
+    const features = getFeatures(business?.category);
+
+    const filteredNavItems = navItems.filter(item => {
+        // First check permissions
+        const hasPerm = !item.permission || hasPermission(item.permission);
+        if (!hasPerm) return false;
+
+        // The core items everyone should see (unless permission blocked)
+        const ALWAYS_VISIBLE = ['dashboard', 'reports', 'settings', 'chat', 'employees'];
+
+        // If the business has explicit activeModules set (The New App Store Way)
+        if (business?.activeModules && business.activeModules.length > 0) {
+            if (ALWAYS_VISIBLE.includes(item.id)) return true;
+            return business.activeModules.includes(item.id);
+        }
+
+        // Fallback: Old hardcoded feature flags category logic (The Old Way)
+        if (item.feature) {
+            return features[item.feature];
+        }
+
+        // For new modules without 'feature' tags added yet when activeModules is empty
+        if (['loans', 'queue', 'attendance', 'payroll'].includes(item.id)) {
+            return false; // Hide by default until activated in App Store
+        }
+
+        return true;
+    });
 
 
     return (

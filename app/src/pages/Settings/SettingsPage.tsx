@@ -2,12 +2,14 @@ import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useSearchParams } from 'react-router-dom';
 import { Header } from '../../components/layout/Header';
-import { Building2, Palette, Bell, Shield, Users, Globe, Moon, Sun, Monitor, Loader2, Plus, MoreVertical, Trash2, Share2, X, CheckSquare, ListOrdered, ChevronUp, ChevronDown, ShoppingBag } from 'lucide-react';
+import { Building2, Palette, Bell, Shield, Users, Globe, Moon, Sun, Monitor, Loader2, Plus, MoreVertical, Trash2, Share2, X, CheckSquare, ListOrdered, ChevronUp, ChevronDown, ShoppingBag, Layers, CreditCard } from 'lucide-react';
 import { useBusinessStore, useUIStore } from '../../store';
 import { businessService, teamService, cargoService, sourceService, orderStatusService } from '../../services/db';
 import { toast } from 'react-hot-toast';
 import { PINModal } from '../../components/common/PINModal';
 import { ActivityTab } from './components/ActivityTab';
+import { ModulesTab } from './components/ModulesTab';
+import { PaymentTab } from './components/PaymentTab';
 import { ALL_PERMISSIONS, type Position, type Employee, type CargoType, type OrderSource, type SocialAccount, type OrderStatusConfig } from '../../types';
 import './SettingsPage.css';
 
@@ -34,6 +36,8 @@ export function SettingsPage() {
 
     const tabs = [
         { id: 'general', label: 'Ерөнхий', icon: Building2 },
+        { id: 'payment', label: 'Төлбөр & НӨАТ', icon: CreditCard },
+        { id: 'modules', label: 'Бизнес Модуль', icon: Layers },
         { id: 'storefront', label: 'Дэлгүүр', icon: ShoppingBag },
         { id: 'appearance', label: 'Харагдац', icon: Palette },
         { id: 'notifications', label: 'Мэдэгдэл', icon: Bell },
@@ -57,6 +61,7 @@ export function SettingsPage() {
                 phone: fd.get('phone') as string,
                 email: fd.get('email') as string,
                 address: fd.get('address') as string,
+                brandColor: fd.get('brandColor') as string,
                 settings: {
                     ...business.settings,
                     orderPrefix: (fd.get('orderPrefix') as string)?.trim() || '',
@@ -167,6 +172,23 @@ export function SettingsPage() {
                                                 <label className="input-label">Захиалгын кодын эхлэл (Угтвар)</label>
                                                 <input className="input" name="orderPrefix" defaultValue={business?.settings?.orderPrefix || 'ORD-'} placeholder="Жнь: ORD-" />
                                             </div>
+                                            <div className="input-group">
+                                                <label className="input-label">Брэндийн үндсэн өнгө (Hex code)</label>
+                                                <div style={{ display: 'flex', gap: '8px' }}>
+                                                    <input
+                                                        type="color"
+                                                        title="Өнгө сонгох"
+                                                        style={{ width: '40px', height: '40px', padding: '0', border: 'none', borderRadius: '8px', cursor: 'pointer', background: 'transparent' }}
+                                                        defaultValue={business?.brandColor || '#6c5ce7'}
+                                                        onChange={(e) => {
+                                                            const textInput = e.currentTarget.nextElementSibling as HTMLInputElement;
+                                                            if (textInput) textInput.value = e.currentTarget.value;
+                                                            setIsDirty(true);
+                                                        }}
+                                                    />
+                                                    <input className="input" style={{ flex: 1 }} name="brandColor" defaultValue={business?.brandColor} placeholder="Жнь: #6c5ce7 (Хоосон бол автоматаар сонгогдоно)" />
+                                                </div>
+                                            </div>
                                         </div>
                                         <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 12 }}>
                                             <button className="btn btn-primary gradient-btn" type="submit" disabled={loading || !isDirty} style={{ minWidth: 120 }}>
@@ -176,6 +198,12 @@ export function SettingsPage() {
                                     </form>
                                 </div>
                             </div>
+                        )}
+                        {activeTab === 'payment' && (
+                            <PaymentTab />
+                        )}
+                        {activeTab === 'modules' && (
+                            <ModulesTab />
                         )}
                         {activeTab === 'storefront' && (
                             <div className="settings-section animate-fade-in">

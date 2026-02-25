@@ -1,12 +1,48 @@
-import { TrendingUp, ShoppingCart, DollarSign, Users, Package } from 'lucide-react';
-import type { BusinessStats } from '../../../types';
+import { TrendingUp, ShoppingCart, DollarSign, Users, Package, ScanLine, Truck, CheckCircle2 } from 'lucide-react';
+import type { BusinessStats, BusinessCategory } from '../../../types';
 
 interface KPICardsProps {
     stats: BusinessStats;
+    category?: BusinessCategory;
 }
 
-export function KPICards({ stats }: KPICardsProps) {
-    const cards = [
+export function KPICards({ stats, category }: KPICardsProps) {
+    const isCargo = category === 'cargo';
+
+    const cards = isCargo ? [
+        {
+            label: 'Нийт ачаа',
+            value: (stats.totalPackages || 0).toLocaleString(),
+            icon: ScanLine,
+            color: 'var(--primary-color)',
+            bg: 'rgba(108, 92, 231, 0.1)',
+            trend: 'Шинэ',
+        },
+        {
+            label: 'Замдаа яваа',
+            value: (stats.packagesInTransit || 0).toLocaleString(),
+            icon: Truck,
+            color: '#ff9f43',
+            bg: 'rgba(255, 159, 67, 0.1)',
+            trend: (stats.totalBatches || 0) + ' багц',
+        },
+        {
+            label: 'УБ-д ирсэн',
+            value: (stats.packagesArrived || 0).toLocaleString(),
+            icon: CheckCircle2,
+            color: '#0be881',
+            bg: 'rgba(11, 232, 129, 0.1)',
+            trend: 'Бэлэн',
+        },
+        {
+            label: 'Нийт орлого',
+            value: `₮${stats.totalRevenue.toLocaleString()}`,
+            icon: DollarSign,
+            color: '#0dbff0',
+            bg: 'rgba(13, 191, 240, 0.1)',
+            trend: '+8%',
+        },
+    ] : [
         {
             label: 'Нийт захиалга',
             value: stats.totalOrders.toLocaleString(),

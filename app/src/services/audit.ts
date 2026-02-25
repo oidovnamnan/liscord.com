@@ -1,4 +1,4 @@
-import { collection, addDoc, serverTimestamp, query, orderBy, limit, onSnapshot } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, query, orderBy, limit, onSnapshot, collectionGroup, getDocs } from 'firebase/firestore';
 import { db, auth } from './firebase';
 
 export type AuditSeverity = 'normal' | 'warning' | 'critical';
@@ -55,6 +55,29 @@ export const auditService = {
                 };
             });
             callback(logs);
+        });
+    },
+
+    async getPlatformAuditLogs(limitCount: number = 200): Promise<any[]> {
+        const q = query(
+            collectionGroup(db, 'auditLog'),
+            orderBy('createdAt', 'desc'),
+            limit(limitCount)
+        );
+        const snapshot = await getDocs(q);
+
+        return snapshot.docs.map(d => {
+            const data = d.data();
+            // To figure out which business this belongs to, we can look at the path:
+            // businesses/{bizId}/auditLog/{logId}
+            const bizId = d.ref.path.split('/')[1] || 'Unknown';
+
+            return {
+                id: d.id,
+                businessId: bizId,
+                ...data,
+                createdAt: data.createdAt?.toDate() || new Date()
+            };
         });
     }
 };

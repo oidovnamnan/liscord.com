@@ -1,9 +1,8 @@
 import { useState } from 'react';
 import { ArrowRight, Loader2, Check } from 'lucide-react';
-import { BUSINESS_CATEGORIES } from '../../types';
+import { useAuthStore, useSystemCategoriesStore } from '../../store';
 import type { BusinessCategory } from '../../types';
 import { businessService } from '../../services/db';
-import { useAuthStore } from '../../store';
 import { toast } from 'react-hot-toast';
 import { arrayUnion, doc, setDoc } from 'firebase/firestore';
 import { db } from '../../services/firebase';
@@ -11,6 +10,7 @@ import './BusinessWizard.css';
 
 export function BusinessWizard() {
     const { user } = useAuthStore();
+    const { categories } = useSystemCategoriesStore();
     const [step, setStep] = useState<1 | 2>(1);
     const [loading, setLoading] = useState(false);
 
@@ -97,15 +97,15 @@ export function BusinessWizard() {
                             <p className="wizard-subtitle">Бизнесийнхээ төрлийг сонгоно уу</p>
                         </div>
                         <div className="wizard-grid">
-                            {(Object.entries(BUSINESS_CATEGORIES) as [BusinessCategory, any][]).map(([key, cfg]) => (
+                            {categories.filter(c => c.isActive).map((cfg) => (
                                 <button
-                                    key={key}
-                                    className={`wizard-category-card ${category === key ? 'active' : ''}`}
-                                    onClick={() => setCategory(key)}
+                                    key={cfg.id}
+                                    className={`wizard-category-card ${category === cfg.id ? 'active' : ''}`}
+                                    onClick={() => setCategory(cfg.id)}
                                 >
                                     <div className="wizard-category-icon">{cfg.icon}</div>
                                     <div className="wizard-category-name">{cfg.label}</div>
-                                    {category === key && <div className="checked-badge"><Check size={12} /></div>}
+                                    {category === cfg.id && <div className="checked-badge"><Check size={12} /></div>}
                                 </button>
                             ))}
                         </div>

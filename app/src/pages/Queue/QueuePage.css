@@ -1,0 +1,187 @@
+.queue-page {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.queue-toolbar {
+    padding: var(--space-md);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--border-primary);
+    background: var(--surface-1);
+}
+
+.queue-board {
+    flex: 1;
+    display: flex;
+    gap: var(--space-lg);
+    padding: var(--space-lg);
+    background: var(--bg-primary);
+    overflow-x: auto;
+}
+
+.queue-column {
+    flex: 1;
+    min-width: 320px;
+    background: var(--surface-2);
+    border-radius: var(--radius-lg);
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden;
+    border: 1px solid var(--border-primary);
+}
+
+.queue-column-header {
+    padding: var(--space-md);
+    font-weight: 700;
+    font-size: var(--font-size-md);
+    color: var(--text-primary);
+    border-bottom: 2px solid var(--border-primary);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--surface-1);
+}
+
+.queue-column-count {
+    background: var(--bg-primary);
+    padding: 2px 8px;
+    border-radius: var(--radius-full);
+    font-size: var(--font-size-sm);
+    color: var(--text-secondary);
+}
+
+.queue-column-body {
+    flex: 1;
+    padding: var(--space-md);
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+}
+
+/* Specific Column Colors */
+.queue-column.waiting .queue-column-header {
+    border-bottom-color: var(--warning);
+}
+
+.queue-column.waiting .queue-column-count {
+    color: var(--warning);
+    background: var(--warning-light, #fef3c7);
+}
+
+.queue-column.in-progress .queue-column-header {
+    border-bottom-color: var(--primary);
+}
+
+.queue-column.in-progress .queue-column-count {
+    color: var(--primary);
+    background: rgba(59, 130, 246, 0.1);
+}
+
+/* The Ticket Card */
+.service-ticket {
+    background: white;
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-md);
+    padding: var(--space-md);
+    box-shadow: var(--shadow-sm);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    cursor: pointer;
+}
+
+.service-ticket:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+    border-color: var(--primary-light, #93c5fd);
+}
+
+.ticket-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+
+.ticket-id {
+    font-family: var(--font-mono);
+    font-weight: 800;
+    font-size: var(--font-size-lg);
+    color: var(--text-primary);
+}
+
+.ticket-time {
+    font-size: var(--font-size-xs);
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.ticket-item {
+    font-size: var(--font-size-md);
+    font-weight: 700;
+    color: var(--text-primary);
+    line-height: 1.2;
+}
+
+.ticket-service {
+    font-size: var(--font-size-sm);
+    color: var(--text-secondary);
+}
+
+.ticket-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px dashed var(--border-primary);
+}
+
+.ticket-worker {
+    font-size: var(--font-size-xs);
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.ticket-action-btn {
+    appearance: none;
+    border: none;
+    background: var(--primary);
+    color: white;
+    padding: 6px 12px;
+    border-radius: var(--radius-sm);
+    font-size: var(--font-size-xs);
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.2s;
+}
+
+.ticket-action-btn:hover {
+    opacity: 0.9;
+}
+
+/* Animation for entering state */
+@keyframes slideInUp {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.service-ticket {
+    animation: slideInUp 0.3s ease forwards;
+}

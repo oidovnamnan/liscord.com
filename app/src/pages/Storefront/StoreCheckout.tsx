@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate, useParams, useOutletContext } from 'react-router-dom';
 import { useCartStore } from '../../store';
 import { orderService } from '../../services/db';
+import { qpayService, type QPayInvoiceResponse } from '../../services/qpay';
 import { ChevronLeft, CheckCircle } from 'lucide-react';
 import type { Business, Order } from '../../types';
 
@@ -13,6 +14,7 @@ export function StoreCheckout() {
 
     const [loading, setLoading] = useState(false);
     const [successId, setSuccessId] = useState<string | null>(null);
+    const [qpayInvoice, setQpayInvoice] = useState<QPayInvoiceResponse | null>(null);
 
     const [deliveryZone, setDeliveryZone] = useState('ub_center');
 
@@ -83,6 +85,22 @@ export function StoreCheckout() {
             const newId = await orderService.createOrder(business.id, orderPayload);
             setSuccessId(newId);
             clearCart();
+
+            // Generate QPay QR if enabled
+            if (business.settings?.qpay?.enabled) {
+                try {
+                    const invoice = await qpayService.mockCreateInvoice({
+                        invoice_code: business.settings.qpay.merchantId,
+                        sender_invoice_no: newId,
+                        invoice_receiver_code: phone,
+                        invoice_description: `${business.name} захиалга #${newId.slice(-4)}`,
+                        amount: finalTotal
+                    }, business.settings);
+                    setQpayInvoice(invoice);
+                } catch (e) {
+                    console.error('QPay generation failed', e);
+                }
+            }
         } catch (error) {
             console.error('Failed to create order', error);
             alert('Захиалга үүсгэхэд алдаа гарлаа. Та дахин оролдоно уу.');
@@ -97,7 +115,35 @@ export function StoreCheckout() {
                 <div style={{ background: '#fff', padding: '40px', borderRadius: '24px', textAlign: 'center', maxWidth: 400, width: '100%', boxShadow: '0 10px 25px rgba(0,0,0,0.05)' }}>
                     <CheckCircle size={64} color="var(--success)" style={{ marginBottom: 20 }} />
                     <h2 style={{ marginBottom: 10, fontSize: '1.5rem', fontWeight: 800 }}>Захиалга амжилттай!</h2>
-                    <p style={{ color: 'var(--text-muted)', marginBottom: 30 }}>Таны захиалга админ руу илгээгдлээ. Бид удахгүй холбогдох болно.</p>
+
+                    {qpayInvoice ? (
+                        <div style={{ margin: '20px 0', border: '1px solid var(--border-color)', padding: 20, borderRadius: 16 }}>
+                            <p style={{ fontWeight: 600, marginBottom: 10 }}>Төлбөр төлөх (QPay)</p>
+
+                            <div style={{
+                                width: 220, height: 220, margin: '0 auto',
+                                background: '#f5f5f5', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                border: '2px solid var(--primary-light)', borderRadius: 16, borderStyle: 'dashed'
+                            }}>
+                                <div style={{ textAlign: 'center' }}>
+                                    <div style={{ fontSize: '2rem', marginBottom: 8 }}>📱</div>
+                                    <div style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>Дэлгэцэн дээрх<br />QPay QR</div>
+                                </div>
+                            </div>
+
+                            <div style={{ display: 'flex', gap: 10, marginTop: 16, overflowX: 'auto', paddingBottom: 10, justifyContent: 'center' }}>
+                                {qpayInvoice.urls.map(url => (
+                                    <a key={url.name} href={url.link} className="btn btn-outline btn-sm" style={{ flexShrink: 0, textDecoration: 'none' }}>
+                                        {url.name}
+                                    </a>
+                                ))}
+                            </div>
+                            <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginTop: 10 }}>Төлбөр төлснөөр захиалга баталгаажихыг анхаарна уу.</p>
+                        </div>
+                    ) : (
+                        <p style={{ color: 'var(--text-muted)', marginBottom: 30 }}>Таны захиалга админ руу илгээгдлээ. Бид удахгүй холбогдох болно.</p>
+                    )}
+
                     <button className="btn btn-primary gradient-btn" onClick={() => navigate(`/s/${slug}`)} style={{ width: '100%' }}>
                         Дэлгүүр рүү буцах
                     </button>

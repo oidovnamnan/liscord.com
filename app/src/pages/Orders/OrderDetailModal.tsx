@@ -2,9 +2,10 @@ import { X, Printer, Clock, User, Package, CreditCard, CheckCircle2, ChevronDown
 import { useState } from 'react';
 import { createPortal } from 'react-dom';
 import type { Order, OrderStatusConfig } from '../../types';
+import { ebarimtService } from '../../services/ebarimt';
 import { orderService } from '../../services/db';
 import { toast } from 'react-hot-toast';
-import { useAuthStore } from '../../store';
+import { useAuthStore, useBusinessStore } from '../../store';
 import './OrderDetailModal.css';
 
 interface OrderDetailModalProps {
@@ -16,7 +17,10 @@ interface OrderDetailModalProps {
 
 export function OrderDetailModal({ bizId, order, onClose, statuses }: OrderDetailModalProps) {
     const { user } = useAuthStore();
+    const { business } = useBusinessStore();
     const [updating, setUpdating] = useState(false);
+    const [ebarimtData, setEbarimtData] = useState<any>(null);
+    const [generatingBarimt, setGeneratingBarimt] = useState(false);
     const [currentStatusId, setCurrentStatusId] = useState(order.status);
     const fmt = (n: number) => '₮' + n.toLocaleString('mn-MN');
 
@@ -67,6 +71,25 @@ export function OrderDetailModal({ bizId, order, onClose, statuses }: OrderDetai
     };
     const handlePrint = () => {
         window.print();
+    };
+
+    const handleGenerateEbarimt = async () => {
+        if (!business?.settings?.ebarimt) return;
+        setGeneratingBarimt(true);
+        try {
+            const payload = ebarimtService.buildPayload(business.settings, order);
+            const response = await ebarimtService.mockPutReceipt(payload);
+            setEbarimtData(response);
+            toast.success('НӨАТ-ын баримт амжилттай үүслээ');
+
+            // Note: In a real app we would save this to the order doc immediately
+            // orderService.updateOrder(business.id, order.id, { ebarimt: response });
+
+        } catch (error) {
+            toast.error('Баримт үүсгэхэд алдаа гарлаа');
+        } finally {
+            setGeneratingBarimt(false);
+        }
     };
 
     const activeStatus = statuses.find(s => s.id.toLowerCase() === currentStatusId?.toLowerCase()) ||
@@ -192,6 +215,26 @@ export function OrderDetailModal({ bizId, order, onClose, statuses }: OrderDetai
                             </section>
                         </div>
 
+                        {/* E-BARIMT PRINT SECTION */}
+                        {ebarimtData && (
+                            <div className="print-only ebarimt-container" style={{ marginTop: 30, textAlign: 'center', borderTop: '2px dashed #000', paddingTop: 20 }}>
+                                <div style={{ fontSize: '1.2rem', fontWeight: 800, marginBottom: 10 }}>АШИГТ МАЛТМАЛ ТАТВАРЫН ЕРӨНХИЙ ГАЗАР</div>
+                                <div style={{ display: 'grid', gridTemplateColumns: 'auto 1fr', gap: '4px', textAlign: 'left', width: '220px', margin: '0 auto', fontSize: '0.9rem', marginBottom: 10 }}>
+                                    <b>ДДТД:</b> <span>{ebarimtData.billId}</span>
+                                    <b>Сугалаа:</b> <span style={{ fontSize: '1.1rem', fontWeight: 800 }}>{ebarimtData.lottery}</span>
+                                    <b>Бүртгэл:</b> <span>{ebarimtData.internalCode}</span>
+                                </div>
+                                <div style={{
+                                    width: 150, height: 150, margin: '15px auto',
+                                    background: '#000', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                    fontSize: '0.8rem', position: 'relative'
+                                }}>
+                                    [QR Code]
+                                </div>
+                                <p style={{ fontSize: '0.8rem', marginTop: 10 }}>Баримтаа ebarimt апп-аар уншуулна уу</p>
+                            </div>
+                        )}
+
                         <div className="order-sidebar-info">
                             <section className="info-section">
                                 <h3 className="section-title"><CreditCard size={16} /> Төлбөрийн мэдээлэл</h3>
@@ -228,6 +271,22 @@ export function OrderDetailModal({ bizId, order, onClose, statuses }: OrderDetai
                                             {fmt(order.financials.balanceDue)}
                                         </span>
                                     </div>
+
+                                    {business?.settings?.ebarimt?.enabled && (
+                                        <>
+                                            <hr />
+                                            <div className="fin-row hide-print" style={{ alignItems: 'center' }}>
+                                                <span>НӨАТ:</span>
+                                                {ebarimtData ? (
+                                                    <span className="badge badge-success">Үүссэн</span>
+                                                ) : (
+                                                    <button className="btn btn-outline btn-sm" onClick={handleGenerateEbarimt} disabled={generatingBarimt}>
+                                                        {generatingBarimt ? 'Уншиж байна...' : 'Баримт олгох'}
+                                                    </button>
+                                                )}
+                                            </div>
+                                        </>
+                                    )}
                                 </div>
                             </section>
 

@@ -9,9 +9,10 @@ import {
     orderService,
     sourceService,
     customerService,
-    orderStatusService
+    orderStatusService,
+    cargoService
 } from '../../services/db';
-import type { OrderSource, SocialAccount, OrderStatusConfig } from '../../types';
+import type { OrderSource, SocialAccount, OrderStatusConfig, CargoType } from '../../types';
 import { OrderDetailModal } from './OrderDetailModal';
 import type { Order } from '../../types';
 import './OrdersPage.css';
@@ -543,6 +544,11 @@ function CreateOrderModal({ onClose, nextNumber, statuses }: {
     const [size, setSize] = useState('');
     const [unitPrice, setUnitPrice] = useState('0');
 
+    // Cargo specific
+    const [allCargoTypes, setAllCargoTypes] = useState<CargoType[]>([]);
+    const [selectedCargoTypeId, setSelectedCargoTypeId] = useState<string>('');
+    const [cargoMeasure, setCargoMeasure] = useState<number>(1);
+
     // List of added items
     const [items, setItems] = useState<any[]>([]);
 
@@ -578,6 +584,17 @@ function CreateOrderModal({ onClose, nextNumber, statuses }: {
             }
         });
 
+        // Fetch cargo types if cargo business
+        let unsubCargoTypes = () => { };
+        if (business.category === 'cargo') {
+            unsubCargoTypes = cargoService.subscribeCargoTypes(business.id, (data) => {
+                setAllCargoTypes(data);
+                if (data.length > 0 && !selectedCargoTypeId) {
+                    setSelectedCargoTypeId(data[0].id);
+                }
+            });
+        }
+
         // Fetch all accounts for this business
         const unsubAccounts = sourceService.subscribeAccounts(business.id, null, (data) => {
             setAllAccounts(data);
@@ -593,8 +610,9 @@ function CreateOrderModal({ onClose, nextNumber, statuses }: {
             unsubSources();
             unsubAccounts();
             unsubCustomers();
+            unsubCargoTypes();
         };
-    }, [business?.id, sourceId]); // Added sourceId to dependencies to re-evaluate auto-selection if sourceId changes
+    }, [business?.id, sourceId, business?.category]); // Added sourceId to dependencies to re-evaluate auto-selection if sourceId changes
 
     const filteredProducts = searchQuery.length > 0
         ? allProducts.filter(p =>
@@ -612,12 +630,18 @@ function CreateOrderModal({ onClose, nextNumber, statuses }: {
 
     // Dynamic Preview calculation
     const getPreviewItems = () => {
-        const name = selectedProduct ? selectedProduct.name : manualItemName;
+        const cargoType = allCargoTypes.find(c => c.id === selectedCargoTypeId);
+        const name = selectedProduct ? selectedProduct.name : manualItemName || (cargoType ? `Карго: ${cargoType.name}` : '');
         if (!name) return items;
 
         const variant = [color, size].filter(Boolean).join(' / ');
         const unitPriceNum = Number(unitPrice);
-        const unitCargoFee = selectedProduct?.cargoFee && !selectedProduct.cargoFee.isIncluded ? selectedProduct.cargoFee.amount : 0;
+
+        let unitCargoFee = selectedProduct?.cargoFee && !selectedProduct.cargoFee.isIncluded ? selectedProduct.cargoFee.amount : 0;
+
+        if (business?.category === 'cargo' && cargoType) {
+            unitCargoFee = cargoType.fee * cargoMeasure;
+        }
 
         // Check if item with same identity already exists
         const existingItemIndex = items.findIndex(item =>
@@ -672,6 +696,7 @@ function CreateOrderModal({ onClose, nextNumber, statuses }: {
         setSize('');
         setUnitPrice('0');
         setSearchQuery('');
+        setCargoMeasure(1);
     };
 
     const removeItem = (index: number) => {
@@ -965,7 +990,25 @@ function CreateOrderModal({ onClose, nextNumber, statuses }: {
                                             <input className="input" placeholder="XL" value={size} onChange={e => setSize(e.target.value)} />
                                         </div>
                                     </div>
-                                    <div className="input-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+
+                                    {business?.category === 'cargo' && allCargoTypes.length > 0 && (
+                                        <div className="input-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginTop: 12 }}>
+                                            <div className="input-group">
+                                                <label className="input-label">Каргоны төрөл</label>
+                                                <select className="input select" value={selectedCargoTypeId} onChange={e => setSelectedCargoTypeId(e.target.value)}>
+                                                    {allCargoTypes.map(c => (
+                                                        <option key={c.id} value={c.id}>{c.name} ({fmt(c.fee)}/{c.unit})</option>
+                                                    ))}
+                                                </select>
+                                            </div>
+                                            <div className="input-group">
+                                                <label className="input-label">Хэмжээ ({allCargoTypes.find(c => c.id === selectedCargoTypeId)?.unit || 'хэмжигдэхүүн'})</label>
+                                                <input className="input" type="number" step="0.01" min="0" value={cargoMeasure} onChange={e => setCargoMeasure(Number(e.target.value))} />
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    <div className="input-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginTop: 12 }}>
                                         <div className="input-group">
                                             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
                                                 <label className="input-label" style={{ margin: 0 }}>Нэгж үнэ</label>

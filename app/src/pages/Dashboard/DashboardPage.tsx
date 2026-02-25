@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Header } from '../../components/layout/Header';
-import { ShoppingCart, Package, Loader2, ArrowRight, CheckCircle2 } from 'lucide-react';
+import { ShoppingCart, Package, Loader2, ArrowRight, CheckCircle2, ScanLine, Truck as TruckIcon } from 'lucide-react';
 import { useBusinessStore, useAuthStore } from '../../store';
 import { dashboardService } from '../../services/db';
 import { auditService } from '../../services/audit';
@@ -92,14 +92,20 @@ export function DashboardPage() {
                         <p className="text-secondary">{business?.name} бизнесийн өнөөдрийн тойм.</p>
                     </div>
                     <div className="dashboard-hero-action hide-mobile">
-                        <a href="/app/orders" className="btn btn-primary">
-                            <ShoppingCart size={18} /> Шинэ захиалга
-                        </a>
+                        {business?.category === 'cargo' ? (
+                            <a href="/app/packages" className="btn btn-primary">
+                                <ScanLine size={18} /> Ачаа бүртгэх
+                            </a>
+                        ) : (
+                            <a href="/app/orders" className="btn btn-primary">
+                                <ShoppingCart size={18} /> Шинэ захиалга
+                            </a>
+                        )}
                     </div>
                 </div>
 
                 {/* KPI Cards */}
-                <KPICards stats={stats} />
+                <KPICards stats={stats} category={business?.category} />
 
                 <div className="grid-2-1">
                     {/* Chart & Activity */}
@@ -116,16 +122,33 @@ export function DashboardPage() {
                                         <CheckCircle2 size={18} color="#0be881" />
                                         <span>Бизнес үүсгэсэн</span>
                                     </div>
-                                    <a href="/app/products" className="checklist-item">
-                                        <Package size={18} />
-                                        <span>Эхний бараа нэмэх</span>
-                                        <ArrowRight size={14} style={{ marginLeft: 'auto' }} />
-                                    </a>
-                                    <a href="/app/orders" className="checklist-item">
-                                        <ShoppingCart size={18} />
-                                        <span>Эхний захиалга авах</span>
-                                        <ArrowRight size={14} style={{ marginLeft: 'auto' }} />
-                                    </a>
+                                    {business?.category === 'cargo' ? (
+                                        <>
+                                            <a href="/app/packages" className="checklist-item">
+                                                <TruckIcon size={18} />
+                                                <span>Анхны багц (Batch) ачих</span>
+                                                <ArrowRight size={14} style={{ marginLeft: 'auto' }} />
+                                            </a>
+                                            <a href="/app/packages" className="checklist-item">
+                                                <ScanLine size={18} />
+                                                <span>Ачаа сканнердаж бүртгэх</span>
+                                                <ArrowRight size={14} style={{ marginLeft: 'auto' }} />
+                                            </a>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <a href="/app/products" className="checklist-item">
+                                                <Package size={18} />
+                                                <span>Эхний бараа нэмэх</span>
+                                                <ArrowRight size={14} style={{ marginLeft: 'auto' }} />
+                                            </a>
+                                            <a href="/app/orders" className="checklist-item">
+                                                <ShoppingCart size={18} />
+                                                <span>Эхний захиалга авах</span>
+                                                <ArrowRight size={14} style={{ marginLeft: 'auto' }} />
+                                            </a>
+                                        </>
+                                    )}
                                 </div>
                             </div>
                         )}

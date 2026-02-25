@@ -70,3 +70,50 @@ export const useUIStore = create<UIState>((set) => ({
         set({ theme });
     },
 }));
+
+// ============ SYSTEM CATEGORIES STORE ============
+import { businessCategoryService } from '../services/db';
+import { DEFAULT_BUSINESS_CATEGORIES } from '../types';
+import type { BusinessCategoryConfig } from '../types';
+
+interface SystemCategoriesState {
+    categories: BusinessCategoryConfig[];
+    loading: boolean;
+    fetched: boolean;
+    fetchCategories: () => Promise<void>;
+    refresh: () => void;
+}
+
+export const useSystemCategoriesStore = create<SystemCategoriesState>((set, get) => ({
+    categories: [],
+    loading: false,
+    fetched: false,
+    fetchCategories: async () => {
+        if (get().fetched || get().loading) return;
+        set({ loading: true });
+        try {
+            const data = await businessCategoryService.getCategories();
+            if (data.length > 0) {
+                set({ categories: data, fetched: true });
+            } else {
+                // Fallback to defaults if DB is empty
+                const fallbacks: BusinessCategoryConfig[] = Object.entries(DEFAULT_BUSINESS_CATEGORIES).map(([id, cfg], index) => ({
+                    id,
+                    ...cfg,
+                    isActive: true,
+                    order: index
+                }));
+                set({ categories: fallbacks, fetched: true });
+            }
+        } catch (error) {
+            console.error('Failed to fetch categories:', error);
+        } finally {
+            set({ loading: false });
+        }
+    },
+    // Optional: method to force refresh after mutation
+    refresh: () => {
+        set({ fetched: false });
+        get().fetchCategories();
+    }
+} as SystemCategoriesState & { refresh: () => void }));

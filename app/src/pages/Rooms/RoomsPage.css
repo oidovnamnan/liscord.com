@@ -1,0 +1,148 @@
+.rooms-page {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.rooms-toolbar {
+    padding: var(--space-md);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--border-primary);
+    background: var(--surface-1);
+}
+
+.room-stats {
+    display: flex;
+    gap: var(--space-lg);
+}
+
+.stat-item {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    font-size: var(--font-size-sm);
+    font-weight: 500;
+}
+
+.stat-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+}
+
+.stat-dot.available {
+    background-color: var(--success);
+}
+
+.stat-dot.occupied {
+    background-color: var(--danger);
+}
+
+.stat-dot.cleaning {
+    background-color: var(--warning);
+}
+
+.stat-dot.maintenance {
+    background-color: var(--text-secondary);
+}
+
+.room-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: var(--space-md);
+    padding: var(--space-md);
+    overflow-y: auto;
+    flex: 1;
+}
+
+.room-card {
+    background: var(--bg-primary);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-md);
+    padding: var(--space-md);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.room-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+    border-color: var(--border-secondary);
+}
+
+.room-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+
+.room-name {
+    font-size: var(--font-size-lg);
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.room-type {
+    font-size: var(--font-size-xs);
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.room-status-bar {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 4px;
+}
+
+.room-status-bar.available {
+    background-color: var(--success);
+}
+
+.room-status-bar.occupied {
+    background-color: var(--danger);
+}
+
+.room-status-bar.cleaning {
+    background-color: var(--warning);
+}
+
+.room-status-bar.maintenance {
+    background-color: var(--text-secondary);
+}
+
+.room-details {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-top: var(--space-sm);
+    font-size: var(--font-size-sm);
+    color: var(--text-secondary);
+}
+
+.room-detail-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.active-booking {
+    margin-top: auto;
+    padding-top: var(--space-sm);
+    border-top: 1px dashed var(--border-primary);
+    font-size: var(--font-size-sm);
+}
+
+.active-booking-name {
+    font-weight: 600;
+    color: var(--text-primary);
+}

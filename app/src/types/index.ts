@@ -18,24 +18,23 @@ export interface User {
     activeBusiness: string | null;
     language: string;
     isSuperAdmin?: boolean;
+    uiVersion?: 'v1' | 'v2'; // For toggling UX versions
     createdAt: Date;
 }
 
 // ============ BUSINESS ============
-export type BusinessCategory =
-    | 'cargo'
-    | 'wholesale'
-    | 'online_shop'
-    | 'food_delivery'
-    | 'repair'
-    | 'printing'
-    | 'furniture'
-    | 'flowers'
-    | 'pharmacy'
-    | 'auto_parts'
-    | 'general';
+export type BusinessCategory = string;
 
-export const BUSINESS_CATEGORIES: Record<BusinessCategory, { label: string; icon: string; desc: string }> = {
+export interface BusinessCategoryConfig {
+    id: string;
+    label: string;
+    icon: string;
+    desc: string;
+    isActive: boolean;
+    order: number;
+}
+export const DEFAULT_BUSINESS_CATEGORIES: Record<string, { label: string; icon: string; desc: string }> = {
+    // Original 11
     cargo: { label: 'Карго / Импорт', icon: '📦', desc: 'Хятадаас бараа тээвэрлэх' },
     wholesale: { label: 'Бөөний худалдаа', icon: '🏪', desc: 'Бөөний борлуулалт' },
     online_shop: { label: 'Онлайн / Сошиал шоп', icon: '📱', desc: 'Facebook, Instagram дэлгүүр' },
@@ -46,6 +45,42 @@ export const BUSINESS_CATEGORIES: Record<BusinessCategory, { label: string; icon
     flowers: { label: 'Цэцэг / Бэлэг', icon: '🌸', desc: 'Цэцэгчин, бэлэгний дэлгүүр' },
     pharmacy: { label: 'Эм / Эрүүл мэнд', icon: '💊', desc: 'Эмийн сан' },
     auto_parts: { label: 'Авто сэлбэг', icon: '🚗', desc: 'Авто сэлбэг, тос' },
+    // 14 New
+    beauty_salon: { label: 'Гоо сайхан / Салон', icon: '💅', desc: 'Цаг захиалга, үйлчилгээ' },
+    tailoring: { label: 'Оёдол / Загвар', icon: '✂️', desc: 'Хэмжээ авах, захиалгат хувцас' },
+    real_estate: { label: 'Үл хөдлөх хөрөнгө', icon: '🏢', desc: 'Түрээс, борлуулалт' },
+    education: { label: 'Сургалтын төв', icon: '🎓', desc: 'Элсэлт, ирц бүртгэл' },
+    rentals: { label: 'Түрээсийн үйлчилгээ', icon: '🔄', desc: 'Хувцас, тоног төхөөрөмж түрээс' },
+    events: { label: 'Арга хэмжээ / Ивент', icon: '🎟️', desc: 'Тасалбар, зохион байгуулалт' },
+    cleaning: { label: 'Гэр цэвэрлэгээ', icon: '🧹', desc: 'Дуудлагын үйлчилгээ' },
+    clinic: { label: 'Эмнэлэг / Клиник', icon: '🩺', desc: 'Шүд, дотор, жижиг клиник' },
+    agency: { label: 'Агентлаг / Үйлчилгээ', icon: '💼', desc: 'Хууль, санхүү, зөвлөх' },
+    veterinary: { label: 'Мал эмнэлэг', icon: '🐾', desc: 'Гэрийн тэжээвэр амьтны эмнэлэг' },
+    laundry: { label: 'Хими цэвэрлэгээ', icon: '👕', desc: 'Угаалга, индүүдлэг' },
+    utilities: { label: 'Дэд бүтэц / Хөгжил', icon: '💧', desc: 'Ус, цахилгаан түгээх' },
+    tourism: { label: 'Аялал жуулчлал', icon: '✈️', desc: 'Аяллын багц, урьдчилсан захиалга' },
+    fitness: { label: 'Спорт / Фитнес', icon: '🏋️', desc: 'Клубийн гишүүнчлэл' },
+    // 19 Massive Expansion
+    construction: { label: 'Барилга / Гүйцэтгэл', icon: '🏗️', desc: 'Барилга угсралт, төслийн удирдлага' },
+    heavy_equipment: { label: 'Техник түрээс', icon: '🚜', desc: 'Хүнд машин механизм түрээс' },
+    car_rental: { label: 'Авто машин түрээс', icon: '🚙', desc: 'Өдрийн болон урт хугацааны түрээс' },
+    pawnshop: { label: 'Ломбард / Зээл', icon: '🏦', desc: 'Бацаалан зээлдүүлэх' },
+    car_wash: { label: 'Авто угаалга / Detailing', icon: '🧽', desc: 'Угаалга, өнгөлгөө' },
+    photo_studio: { label: 'Фото студи / Продакшн', icon: '📸', desc: 'Зураг авалт, студи түрээс' },
+    bakery: { label: 'Бэйкери / Кофе', icon: '🥐', desc: 'Нарийн боов, кофе шоп' },
+    bar_pub: { label: 'Бар / Паб / Клуб', icon: '🍻', desc: 'Шөнийн цэнгээний газар, уушийн газар' },
+    hotel: { label: 'Зочид буудал / Ресорт', icon: '🏨', desc: 'Өрөө захиалга, амралтын газар' },
+    coworking: { label: 'Дундын оффис', icon: '💻', desc: 'Ширээ болон оффис түрээс' },
+    agriculture: { label: 'ХАА / Ферм', icon: '🌾', desc: 'Газар тариалан, мал аж ахуй' },
+    delivery_fleet: { label: 'Хот доторх түгээлт', icon: '🛵', desc: 'Шуудан, илгээмжийн түгээлт' },
+    childcare: { label: 'Цэцэрлэг / Өдөр өнжүүлэх', icon: '🧸', desc: 'Хүүхэд харах үйлчилгээ' },
+    entertainment: { label: 'Тоглоомын төв / PC', icon: '🎮', desc: 'PS5, PC, VR тоглоомын газар' },
+    hardware_store: { label: 'Барилгын материал', icon: '🧱', desc: 'Түмэн бодис, барилгын дэлгүүр' },
+    thrift_store: { label: 'Хуучин хувцас / Комисс', icon: '♻️', desc: 'Комиссын дэлгүүр' },
+    moving: { label: 'Нүүлгэлт / Ачаа', icon: '📦', desc: 'Гэр болон оффис нүүлгэлт' },
+    transport: { label: 'Зорчигч тээвэр', icon: '🚌', desc: 'Хот хооронд болон тусгай тээвэр' },
+    storage: { label: 'Агуулах түрээс', icon: '🔐', desc: 'Self-storage, эд зүйлс хадгалах' },
+    // General
     general: { label: 'Ерөнхий бизнес', icon: '📋', desc: 'Бусад төрлийн бизнес' },
 };
 
@@ -64,13 +99,28 @@ export interface Business {
     address: string;
     settings: BusinessSettings;
     features: Record<string, boolean>;
+    activeModules?: string[]; // E.g., ['pos', 'inventory', 'rooms', 'queue']
+    brandColor?: string; // Phase 40: Dynamic Theme Color
     stats: BusinessStats;
     subscription: {
         plan: 'free' | 'pro' | 'business';
         expiresAt: Date | null;
+        hasV2Access?: boolean; // Access flag for V2 Pro Max
     };
     createdAt: Date;
     updatedAt: Date;
+}
+
+export interface PlatformPayment {
+    id: string;
+    businessId: string;
+    businessName: string;
+    plan: 'pro' | 'business';
+    amount: number;
+    months: number;
+    paymentMethod: 'qpay' | 'bank_transfer' | 'cash' | 'manual';
+    status: 'pending' | 'success' | 'failed';
+    createdAt: Date;
 }
 
 export interface BusinessSettings {
@@ -89,6 +139,18 @@ export interface BusinessSettings {
         enabled: boolean;
         theme?: 'light' | 'dark';
         name?: string;
+    };
+    ebarimt?: {
+        enabled: boolean;
+        companyRegNo: string;
+        posId: string;
+        vatPercent: number;
+        cityTaxPercent: number;
+    };
+    qpay?: {
+        enabled: boolean;
+        merchantId: string;
+        username: string;
     };
 }
 
@@ -117,6 +179,11 @@ export interface BusinessStats {
     totalCustomers: number;
     totalProducts: number;
     totalEmployees: number;
+    // Cargo specific
+    totalPackages?: number;
+    packagesInTransit?: number;
+    packagesArrived?: number;
+    totalBatches?: number;
 }
 
 // ============ EMPLOYEE / PERMISSION ============
@@ -136,6 +203,8 @@ export interface Employee {
     status: EmployeeStatus;
     joinedAt: Date;
     lastActiveAt: Date | null;
+    baseSalary?: number;
+    commissionRate?: number;
     stats: {
         totalOrdersCreated: number;
         totalOrdersHandled: number;
@@ -187,6 +256,8 @@ export const ALL_PERMISSIONS: Record<string, { label: string; group: string }> =
     'team.edit': { label: 'Ажилтан засах', group: 'Баг' },
     'team.remove': { label: 'Ажилтан хасах', group: 'Баг' },
     'team.manage_positions': { label: 'Албан тушаал удирдах', group: 'Баг' },
+    'payroll.view': { label: 'Цалингийн түүх харах', group: 'Баг' },
+    'payroll.manage': { label: 'Цалин бодох, шинэчлэх', group: 'Баг' },
     'settings.view': { label: 'Тохиргоо харах', group: 'Тохиргоо' },
     'settings.edit_business': { label: 'Бизнес мэдээлэл засах', group: 'Тохиргоо' },
     'settings.manage_cargo_sources': { label: 'Карго, эх сурвалж удирдах', group: 'Тохиргоо' },
@@ -314,6 +385,24 @@ export interface Customer {
     isDeleted: boolean;
 }
 
+// ============ PAYROLL ============
+export interface PayrollEntry {
+    id: string;
+    employeeId: string;
+    employeeName: string;
+    month: string; // e.g. "2024-05"
+    baseSalary: number;
+    workedHours: number;
+    hourlyRate?: number;
+    commissions: number;
+    deductions: number;
+    advances: number;
+    netPay: number;
+    status: 'draft' | 'paid';
+    paidAt?: Date;
+    createdAt: Date;
+}
+
 // ============ PRODUCT ============
 export interface Product {
     id: string;
@@ -410,4 +499,409 @@ export interface Shelf {
     isFull: boolean;
     createdBy: string;
     createdAt: Date;
+}
+
+// ============ APPOINTMENTS ============
+
+export type AppointmentStatus = 'scheduled' | 'arrived' | 'in_progress' | 'completed' | 'cancelled';
+
+export interface Appointment {
+    id: string;
+    businessId: string;
+    customerId: string | null;
+    customerName: string;
+    customerPhone: string;
+
+    serviceId: string;
+    serviceName: string;
+    durationMinutes: number; // e.g., 60
+
+    employeeId: string; // Assigned staff member
+    employeeName: string;
+
+    startTime: Date;
+    endTime: Date;
+
+    status: AppointmentStatus;
+    notes: string;
+
+    totalPrice: number;
+    paymentStatus: PaymentStatus;
+
+    isDeleted: boolean;
+    createdAt: Date;
+    updatedAt: Date;
+}
+
+export interface Service {
+    id: string;
+    businessId: string;
+    name: string;
+    description: string;
+    durationMinutes: number;
+    price: number;
+    color: string; // Hex color for the calendar block
+    isActive: boolean;
+    isDeleted: boolean;
+    createdAt: Date;
+}
+
+// ============ PROJECTS & TASKS ============
+
+export type ProjectStatus = 'planning' | 'in_progress' | 'review' | 'completed' | 'on_hold' | 'cancelled';
+export type TaskStatus = 'backlog' | 'todo' | 'in_progress' | 'review' | 'done';
+export type Priority = 'low' | 'medium' | 'high' | 'urgent';
+
+export interface Project {
+    id: string;
+    businessId: string;
+
+    name: string;
+    description: string;
+
+    customerId: string | null;
+    customerName: string;
+
+    managerId: string;  // Employee leading the project
+    managerName: string;
+
+    startDate: Date | null;
+    endDate: Date | null;
+
+    budget: number;
+    actualCost: number;
+
+    status: ProjectStatus;
+    tags: string[];
+
+    isDeleted: boolean;
+    createdAt: Date;
+    updatedAt: Date;
+}
+
+export interface ProjectTask {
+    id: string;
+    businessId: string;
+    projectId: string;
+
+    title: string;
+    description: string;
+
+    status: TaskStatus;
+    priority: Priority;
+
+    assignedTo: string | null; // Employee ID
+    assignedToName: string | null;
+
+    dueDate: Date | null;
+    estimatedHours: number;
+    loggedHours: number;
+
+    orderIndex: number; // For drag and drop ordering within columns
+
+    isDeleted: boolean;
+    createdAt: Date;
+    updatedAt: Date;
+}
+
+// ============ ROOMS & BOOKINGS (Hotels, Coworking) ============
+
+export type RoomStatus = 'available' | 'occupied' | 'cleaning' | 'maintenance';
+export type BookingStatus = 'reserved' | 'checked_in' | 'checked_out' | 'cancelled';
+
+export interface Room {
+    id: string;
+    businessId: string;
+
+    name: string; // e.g., "101", "Meeting Room A"
+    type: string; // e.g., "Standard", "Suite", "Hot Desk"
+
+    capacity: number;
+    pricePerNight: number; // Or per hour depending on business type
+
+    status: RoomStatus;
+    amenities: string[];
+
+    isDeleted: boolean;
+}
+
+export interface Booking {
+    id: string;
+    businessId: string;
+
+    roomId: string;
+    roomName: string;
+
+    customerId: string | null;
+    customerName: string;
+    customerPhone: string;
+
+    checkInTime: Date;
+    checkOutTime: Date;
+
+    status: BookingStatus;
+
+    totalAmount: number;
+    depositAmount: number;
+    paidAmount: number;
+
+    guestCount: number;
+    notes: string;
+
+    isDeleted: boolean;
+    createdAt: Date;
+    updatedAt: Date;
+}
+
+// ============ VEHICLES & TRIPS (Car Rental, Transport) ============
+
+export type VehicleStatus = 'available' | 'rented' | 'maintenance' | 'out_of_service';
+
+export interface Vehicle {
+    id: string;
+    businessId: string;
+
+    make: string; // e.g., "Toyota"
+    model: string; // e.g., "Prius"
+    plateNumber: string;
+
+    category: string; // e.g., "Sedan", "Heavy Equipment"
+    year: number;
+    color: string;
+
+    pricePerDay: number;
+    depositAmount: number; // Required safety deposit
+
+    status: VehicleStatus;
+    conditionNotes: string; // Base condition/damages
+    currentMileage: number;
+
+    isDeleted: boolean;
+    createdAt: Date;
+    updatedAt: Date;
+}
+
+export interface Trip {
+    id: string;
+    businessId: string;
+
+    vehicleId: string;
+    vehicleName: string; // e.g., "Toyota Prius (0001 УБН)"
+
+    customerId: string | null;
+    customerName: string;
+    customerPhone: string;
+
+    driverId: string | null; // If rented with a driver/operator
+    driverName: string | null;
+
+    startDate: Date;
+    endDate: Date;
+
+    startMileage: number;
+    endMileage: number | null;
+
+    status: 'reserved' | 'active' | 'completed' | 'cancelled';
+
+    totalAmount: number;
+    paidAmount: number;
+    depositHeld: number; // Actually held deposit
+
+    damageMarkup: string; // JSON or link to before/after conditions
+    notes: string;
+
+    isDeleted: boolean;
+    createdAt: Date;
+    updatedAt: Date;
+}
+
+// ============ TICKETS & EVENTS (Events, Tourism, Entertainment) ============
+
+export interface Event {
+    id: string;
+    businessId: string;
+
+    title: string;
+    description: string;
+
+    venue: string; // e.g. "UG Arena", "Turquoise trip bus"
+
+    startDate: Date;
+    endDate: Date;
+
+    totalCapacity: number;
+    ticketsSold: number;
+
+    basePrice: number;
+
+    status: 'draft' | 'published' | 'ongoing' | 'completed' | 'cancelled';
+
+    isDeleted: boolean;
+    createdAt: Date;
+    updatedAt: Date;
+}
+
+export type TicketStatus = 'reserved' | 'paid' | 'checked_in' | 'cancelled';
+
+export interface Ticket {
+    id: string; // Used as the base for the QR Code
+    businessId: string;
+
+    eventId: string;
+    eventTitle: string;
+
+    customerId: string | null;
+    customerName: string;
+    customerPhone: string;
+
+    seatNumber: string | null; // e.g., "A-12"
+    ticketType: string; // e.g., "VIP", "Standard"
+
+    price: number;
+    status: TicketStatus;
+
+    checkedInAt: Date | null;
+
+    isDeleted: boolean;
+    createdAt: Date;
+    updatedAt: Date;
+}
+
+// ============ FINANCE & PAWNSHOP (Micro-loans, Pawn) ============
+
+export type LoanStatus = 'active' | 'overdue' | 'closed' | 'foreclosed';
+
+export interface PawnItem {
+    id: string; // Used to track the physical item in vault
+    businessId: string;
+
+    categoryId: string; // e.g., "Electronics", "Gold"
+    description: string; // e.g., "iPhone 14 Pro Max 256GB"
+    estimatedValue: number;
+
+    status: 'vault' | 'for_sale' | 'sold' | 'returned';
+
+    isDeleted: boolean;
+}
+
+export interface Loan {
+    id: string;
+    businessId: string;
+
+    customerId: string;
+    customerName: string;
+    customerPhone: string;
+
+    pawnItemId: string | null; // Null if unsecured micro-loan
+    pawnItemDescription: string | null;
+
+    principalAmount: number;
+    interestRatePercent: number; // e.g., 0.5 for 0.5%
+    interestType: 'daily' | 'monthly';
+
+    startDate: Date;
+    dueDate: Date;
+
+    totalPaid: number;
+    currentBalance: number; // principal + accumulated interest - paid
+
+    status: LoanStatus;
+
+    isDeleted: boolean;
+    createdAt: Date;
+    updatedAt: Date;
+}
+
+// ============ SERVICE QUEUES (Car Wash, Salons, Repair) ============
+
+export type QueueStatus = 'waiting' | 'in_progress' | 'done' | 'cancelled';
+
+export interface ServiceTicket {
+    id: string; // e.g., "T-104"
+    businessId: string;
+
+    customerId: string | null;
+    customerName: string;
+    customerPhone: string;
+
+    vehicleOrItemInfo: string; // e.g., "0001 УБН Prius 20", "Nail Polish"
+    serviceName: string; // e.g., "Full Wash + Wax"
+
+    price: number;
+
+    assignedWorkerId: string | null;
+    assignedWorkerName: string | null;
+
+    status: QueueStatus;
+
+    startTime: Date | null;
+    endTime: Date | null;
+
+    isDeleted: boolean;
+    createdAt: Date;
+    updatedAt: Date;
+}
+
+// ============ HR & ATTENDANCE (Цаг бүртгэл) ============
+
+export interface Attendance {
+    id: string; // Document ID
+    businessId: string;
+
+    employeeId: string;
+    employeeName: string;
+
+    dateString: string; // The specific day, e.g. "2024-03-15" for easy querying
+
+    clockInTime: Date | null;
+    clockOutTime: Date | null;
+
+    breakStartTime: Date | null;
+    breakEndTime: Date | null;
+
+    totalWorkedMinutes: number; // Computed on clock-out
+
+    notes: string;
+    isDeleted: boolean;
+    createdAt: Date;
+    updatedAt: Date;
+}
+
+// ============ PAYROLL (Цалингийн систем) ============
+
+export interface PayrollRule {
+    id: string; // Usually same as employeeId for 1:1 mapping
+    businessId: string;
+    employeeId: string;
+    employeeName: string;
+
+    baseSalary: number; // Сарын үндсэн цалин
+    hourlyRate: number; // Цагийн хөлс (0 if not hourly)
+    commissionPercent: number; // Үйлчилгээ/Борлуулалтын хувь (0-100)
+
+    isDeleted: boolean;
+    updatedAt: Date;
+}
+
+export interface PayrollRecord {
+    id: string;
+    businessId: string;
+
+    employeeId: string;
+    employeeName: string;
+
+    periodStart: string; // YYYY-MM-DD
+    periodEnd: string;   // YYYY-MM-DD
+
+    baseAmount: number;       // Олгох үндсэн цалингийн дүн
+    commissionAmount: number; // Бодогдсон урамшуулал
+    deductionAmount: number;  // Суутгал, Торгууль, Урьдчилгаа
+    netPay: number;           // Гарт олгох цэвэр цалин
+
+    status: 'draft' | 'paid';
+
+    notes: string;
+    isDeleted: boolean;
+    createdAt: Date;
+    updatedAt: Date;
 }

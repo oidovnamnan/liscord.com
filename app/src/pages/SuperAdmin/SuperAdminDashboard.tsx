@@ -5,11 +5,17 @@ import {
     Activity,
     ArrowUpRight,
     TrendingUp,
-    ShieldAlert
+    ShieldAlert,
+    Settings,
+    DollarSign,
+    Globe
 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import './SuperAdmin.css';
 
 export function SuperAdminDashboard() {
+    const navigate = useNavigate();
+
     // Mock stats for now
     const stats = [
         { label: 'Нийт Бизнес', value: '124', icon: Building2, color: 'blue', growth: '+12%' },
@@ -25,9 +31,26 @@ export function SuperAdminDashboard() {
                     <h1 className="page-title">🦅 Платформ Админ</h1>
                     <p className="text-secondary">Liscord системийн нэгдсэн хяналт</p>
                 </div>
-                <div className="system-status">
-                    <span className="status-dot online"></span>
-                    Систем хэвийн
+                <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
+                    <div className="system-status">
+                        <span className="status-dot online"></span>
+                        Систем хэвийн
+                    </div>
+                    <button className="btn btn-outline" onClick={() => navigate('/super/categories')}>
+                        <Building2 size={18} /> Бизнесийн ангилал
+                    </button>
+                    <button className="btn btn-outline" onClick={() => navigate('/super/finance')}>
+                        <DollarSign size={18} /> Санхүү
+                    </button>
+                    <button className="btn btn-outline" onClick={() => navigate('/super/audit')}>
+                        <ShieldAlert size={18} /> Аудит
+                    </button>
+                    <button className="btn btn-outline" onClick={() => navigate('/super/settings')}>
+                        <Settings size={18} /> Модуль тохиргоо
+                    </button>
+                    <button className="btn btn-outline" onClick={() => navigate('/super/global-settings')}>
+                        <Globe size={18} /> Глобал Тохиргоо
+                    </button>
                 </div>
             </header>
 

@@ -26,11 +26,31 @@ import { ReportsPage } from './pages/Reports/ReportsPage';
 import { PaymentsPage } from './pages/Payments/PaymentsPage';
 import { DeliveryPage } from './pages/Delivery/DeliveryPage';
 import { PackagesPage } from './pages/Cargo/Packages/PackagesPage';
-import { InventoryPage } from './pages/Inventory/InventoryPage';
+// --- New Generic Modules ---
+import { AppointmentsPage } from './pages/Appointments/AppointmentsPage';
+import { ProjectsPage } from './pages/Projects/ProjectsPage';
+import { RoomsPage } from './pages/Rooms/RoomsPage';
+import { VehiclesPage } from './pages/Vehicles/VehiclesPage';
+import { TicketsPage } from './pages/Tickets/TicketsPage';
+import { LoansPage } from './pages/Loans/LoansPage';
+import { QueuePage } from './pages/Queue/QueuePage';
+import { AttendancePage } from './pages/Attendance/AttendancePage';
+import { PayrollPage } from './pages/Payroll/PayrollPage';
+// --- App Store Expansion ---
+import { FinancePage } from './pages/Finance/FinancePage';
+import { SupportPage } from './pages/Support/SupportPage';
+import { B2BPage } from './pages/B2B/B2BPage';
 import { ChatPage } from './pages/Chat/ChatPage';
+import { ManufacturingPage } from './pages/Manufacturing/ManufacturingPage';
+// ---------------------------------
 import { SuperAdminDashboard } from './pages/SuperAdmin/SuperAdminDashboard';
 import { SuperAdminBusinesses } from './pages/SuperAdmin/SuperAdminBusinesses';
 import { SuperAdminUsers } from './pages/SuperAdmin/SuperAdminUsers';
+import { SuperAdminSettings } from './pages/SuperAdmin/SuperAdminSettings';
+import { SuperAdminCategories } from './pages/SuperAdmin/SuperAdminCategories';
+import { SuperAdminFinance } from './pages/SuperAdmin/SuperAdminFinance';
+import { SuperAdminAudit } from './pages/SuperAdmin/SuperAdminAudit';
+import { SuperAdminGlobalSettings } from './pages/SuperAdmin/SuperAdminGlobalSettings';
 
 // Storefront Pages
 import { StorefrontWrapper } from './pages/Storefront/StorefrontWrapper';
@@ -39,6 +59,7 @@ import { StoreCheckout } from './pages/Storefront/StoreCheckout';
 
 // Components
 import { BusinessWizard } from './components/auth/BusinessWizard';
+import { AppLayoutV2 } from './components/layout/AppLayoutV2';
 
 // Protected Route wrapper
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -69,6 +90,15 @@ function SuperAdminRoute({ children }: { children: React.ReactNode }) {
   if (!user || !user.isSuperAdmin) return <Navigate to="/app" replace />;
 
   return <>{children}</>;
+}
+
+// Layout Switcher Route wrapper
+function DynamicAppLayout() {
+  const { user } = useAuthStore();
+  if (user?.uiVersion === 'v2') {
+    return <AppLayoutV2 />;
+  }
+  return <AppLayout />;
 }
 
 export default function App() {
@@ -197,7 +227,7 @@ export default function App() {
           path="/app"
           element={
             <ProtectedRoute>
-              <AppLayout />
+              <DynamicAppLayout />
             </ProtectedRoute>
           }
         >
@@ -207,10 +237,27 @@ export default function App() {
           <Route path="products" element={<ProductsPage />} />
           <Route path="delivery" element={<DeliveryPage />} />
           <Route path="packages" element={<PackagesPage />} />
-          <Route path="inventory" element={<InventoryPage />} />
+          {/* --- New Modules --- */}
+          <Route path="appointments" element={<AppointmentsPage />} />
+          <Route path="projects" element={<ProjectsPage />} />
+          <Route path="rooms" element={<RoomsPage />} />
+          <Route path="vehicles" element={<VehiclesPage />} />
+          <Route path="tickets" element={<TicketsPage />} />
+          <Route path="loans" element={<LoansPage />} />
+          <Route path="queue" element={<QueuePage />} />
+          <Route path="attendance" element={<AttendancePage />} />
+          <Route path="payroll" element={<PayrollPage />} />
+
+          {/* --- App Store Expansion --- */}
+          <Route path="finance" element={<FinancePage />} />
+          <Route path="support" element={<SupportPage />} />
+          <Route path="b2b" element={<B2BPage />} />
+          <Route path="chat" element={<ChatPage />} />
+          <Route path="manufacturing" element={<ManufacturingPage />} />
+          {/* -------------------------------------- */}
+
           <Route path="payments" element={<PaymentsPage />} />
           <Route path="reports" element={<ReportsPage />} />
-          <Route path="chat" element={<ChatPage />} />
           <Route path="employees" element={<EmployeesPage />} />
           <Route path="settings" element={<SettingsPage />} />
         </Route>
@@ -220,13 +267,18 @@ export default function App() {
           path="/super"
           element={
             <SuperAdminRoute>
-              <AppLayout />
+              <DynamicAppLayout />
             </SuperAdminRoute>
           }
         >
           <Route index element={<SuperAdminDashboard />} />
           <Route path="businesses" element={<SuperAdminBusinesses />} />
           <Route path="users" element={<SuperAdminUsers />} />
+          <Route path="settings" element={<SuperAdminSettings />} />
+          <Route path="categories" element={<SuperAdminCategories />} />
+          <Route path="finance" element={<SuperAdminFinance />} />
+          <Route path="audit" element={<SuperAdminAudit />} />
+          <Route path="global-settings" element={<SuperAdminGlobalSettings />} />
         </Route>
 
         {/* Fallback */}
