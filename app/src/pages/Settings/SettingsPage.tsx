@@ -122,31 +122,24 @@ export function SettingsPage() {
             const nameChanged = storefrontName !== (business.settings?.storefront?.name || '');
 
             if (slugChanged || nameChanged) {
-                // If they changed and we locked, user shouldn't be here, but just in case
-                if (isStorefrontLocked || pendingRequest) {
-                    toast.error('Одоогоор өөрчлөх боломжгүй байна.');
+                // If it's the very first setup (no previous slug), we allow it to be saved directly
+                if (!business.slug) {
+                    // Verify slug uniqueness first
+                    if (slug) {
+                        const existing = await businessService.getBusinessBySlug(slug);
+                        if (existing) {
+                            toast.error('Энэ дэлгүүрийн холбоос давхардсан байна. Өөр үг сонгоно уу.');
+                            setLoading(false);
+                            return;
+                        }
+                    }
+                } else {
+                    // Otherwise, user shouldn't be able to edit directly here. The inputs are disabled.
+                    // This block is just a fallback guard.
+                    toast.error('Шууд өөрчлөх боломжгүй. Хүсэлт илгээж өөрчилнө үү.');
                     setLoading(false);
                     return;
                 }
-
-                // Verify slug uniqueness first
-                if (slugChanged && slug) {
-                    const existing = await businessService.getBusinessBySlug(slug);
-                    if (existing) {
-                        toast.error('Энэ дэлгүүрийн холбоос давхардсан байна. Өөр үг сонгоно уу.');
-                        setLoading(false);
-                        return;
-                    }
-                }
-
-                // Prepare changes and open modal
-                setRequestedChanges({
-                    ...(slugChanged ? { slug } : {}),
-                    ...(nameChanged ? { name: storefrontName } : {})
-                });
-                setShowRequestModal(true);
-                setLoading(false);
-                return;
             }
 
             // Only saving straightforward toggle (enabled/disabled) directly
@@ -299,18 +292,33 @@ export function SettingsPage() {
 
                                     <form className="settings-form" onSubmit={handleUpdateStorefront} onChange={() => setIsDirty(true)}>
                                         <div className="input-group">
-                                            <label className="input-label">Дэлгүүрийн нэр <span style={{ color: 'var(--danger)', fontSize: '0.8rem' }}>*жилд 1 удаа</span></label>
-                                            <input className="input" name="storefrontName" defaultValue={business?.settings?.storefront?.name || ''} placeholder="NamShop" disabled={isStorefrontLocked || !!pendingRequest} />
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                                                <label className="input-label" style={{ margin: 0 }}>Дэлгүүрийн нэр <span style={{ color: 'var(--danger)', fontSize: '0.8rem' }}>*жилд 1 удаа</span></label>
+                                            </div>
+                                            <input className="input" name="storefrontName" defaultValue={business?.settings?.storefront?.name || ''} placeholder="NamShop" disabled={!!business?.slug || !!pendingRequest} />
                                             <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: '4px 0 0 0' }}>Дэлгүүрийн хуудсан дээр харагдах нэр. Хоосон орхивол бизнесийн нэр харагдана.</p>
                                         </div>
                                         <div className="input-group">
-                                            <label className="input-label">Дэлгүүрийн холбоос (Slug) <span style={{ color: 'var(--danger)', fontSize: '0.8rem' }}>*жилд 1 удаа</span></label>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                                                <label className="input-label" style={{ margin: 0 }}>Дэлгүүрийн холбоос (Slug) <span style={{ color: 'var(--danger)', fontSize: '0.8rem' }}>*жилд 1 удаа</span></label>
+                                            </div>
                                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                                 <span style={{ color: 'var(--text-muted)' }}>{window.location.origin}/s/</span>
-                                                <input className="input" name="slug" value={storefrontSlug} onChange={(e) => { setStorefrontSlug(e.target.value.toLowerCase()); setIsDirty(true); }} placeholder="zara-mongolia" required pattern="[a-z0-9-]+" title="Зөвхөн жижиг англи үсэг, тоо болон зураас ашиглана уу" style={{ flex: 1 }} disabled={isStorefrontLocked || !!pendingRequest} />
+                                                <input className="input" name="slug" value={storefrontSlug} onChange={(e) => { setStorefrontSlug(e.target.value.toLowerCase()); setIsDirty(true); }} placeholder="zara-mongolia" required pattern="[a-z0-9-]+" title="Зөвхөн жижиг англи үсэг, тоо болон зураас ашиглана уу" style={{ flex: 1 }} disabled={!!business?.slug || !!pendingRequest} />
                                             </div>
                                             <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: '4px 0 0 0' }}>Зөвхөн жижиг англи үсэг, тоо болон дундуур зураас орж болно.</p>
                                         </div>
+
+                                        {!!business?.slug && !pendingRequest && !isStorefrontLocked && (
+                                            <div style={{ display: 'flex', justifyContent: 'flex-start', marginTop: 12 }}>
+                                                <button type="button" className="btn btn-outline" onClick={() => {
+                                                    setRequestedChanges({});
+                                                    setShowRequestModal(true);
+                                                }}>
+                                                    Түгжээ гаргах / Өөрчлөх хүсэлт илгээх
+                                                </button>
+                                            </div>
+                                        )}
                                         <div className="notification-item" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 0', borderTop: '1px solid var(--border-color)', marginTop: '16px' }}>
                                             <div>
                                                 <div style={{ fontWeight: 600, fontSize: '1rem' }}>Дэлгүүрийг нээх (Онлайн худалдаа)</div>
