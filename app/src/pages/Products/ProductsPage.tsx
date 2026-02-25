@@ -220,7 +220,9 @@ function CreateProductModal({ onClose }: { onClose: () => void }) {
 
     // Cargo Features
     const [cargoTypes, setCargoTypes] = useState<CargoType[]>([]);
+    const [cargoInput, setCargoInput] = useState('');
     const [selectedCargoTypeId, setSelectedCargoTypeId] = useState<string>('');
+    const [showCargoDropdown, setShowCargoDropdown] = useState(false);
     const [imageFiles, setImageFiles] = useState<File[]>([]);
     const [existingImages, setExistingImages] = useState<string[]>([]);
     const [cargoValue, setCargoValue] = useState<string>('1');
@@ -234,13 +236,15 @@ function CreateProductModal({ onClose }: { onClose: () => void }) {
         return () => { u1(); u2(); };
     }, [business?.id]);
 
-    const handleCargoTypeChange = (id: string) => {
+    const handleCargoTypeChange = (id: string, name: string) => {
         setSelectedCargoTypeId(id);
+        setCargoInput(name);
         const selected = cargoTypes.find(t => t.id === id);
         if (selected) {
             const val = Number(cargoValue) || 1;
             setCargoFee(Math.round(selected.fee * val).toString());
         }
+        setShowCargoDropdown(false);
     };
 
     const handleCargoValueChange = (val: string) => {
@@ -335,6 +339,19 @@ function CreateProductModal({ onClose }: { onClose: () => void }) {
                 }
             }
 
+            let finalCargoTypeId = selectedCargoTypeId;
+            if (productType === 'preorder' && !selectedCargoTypeId && cargoInput) {
+                const existing = cargoTypes.find(c => c.name.toLowerCase() === cargoInput.toLowerCase());
+                if (existing) {
+                    finalCargoTypeId = existing.id;
+                } else {
+                    finalCargoTypeId = await cargoService.createCargoType(business.id, {
+                        name: cargoInput,
+                        fee: Number(cargoFee) || 0,
+                    });
+                }
+            }
+
             await productService.createProduct(business.id, {
                 name,
                 categoryId,
@@ -358,7 +375,7 @@ function CreateProductModal({ onClose }: { onClose: () => void }) {
                     cargoFee: {
                         amount: Number(cargoFee) || 0,
                         isIncluded: isCargoIncluded,
-                        ...(selectedCargoTypeId ? { cargoTypeId: selectedCargoTypeId } : {}),
+                        ...(finalCargoTypeId ? { cargoTypeId: finalCargoTypeId } : {}),
                         cargoValue: Number(cargoValue) || 1
                     }
                 } : {}),
@@ -378,6 +395,7 @@ function CreateProductModal({ onClose }: { onClose: () => void }) {
     };
 
     const filteredCats = categories.filter(c => c.name.toLowerCase().includes(categoryInput.toLowerCase()));
+    const filteredCargo = cargoTypes.filter(c => c.name.toLowerCase().includes(cargoInput.toLowerCase()));
 
     return createPortal(
         <div className="modal-backdrop" onClick={onClose}>
@@ -496,11 +514,42 @@ function CreateProductModal({ onClose }: { onClose: () => void }) {
                                     <Globe size={16} /> Каргоны тохиргоо
                                 </div>
                                 <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.8fr 1fr', gap: 12 }}>
-                                    <div className="input-group">
-                                        <select className="input select" value={selectedCargoTypeId} onChange={e => handleCargoTypeChange(e.target.value)}>
-                                            <option value="">-- Төрөл --</option>
-                                            {cargoTypes.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
-                                        </select>
+                                    <div className="input-group" style={{ position: 'relative' }}>
+                                        <div className="input-with" onClick={() => setShowCargoDropdown(true)}>
+                                            <input
+                                                className="input"
+                                                placeholder="Төрөл (жишээ: 1 кг)"
+                                                value={cargoInput}
+                                                onChange={e => {
+                                                    setCargoInput(e.target.value);
+                                                    setSelectedCargoTypeId('');
+                                                    setShowCargoDropdown(true);
+                                                }}
+                                                onFocus={() => setShowCargoDropdown(true)}
+                                            />
+                                        </div>
+                                        {showCargoDropdown && (cargoInput || cargoTypes.length > 0) && (
+                                            <>
+                                                <div className="dropdown-backdrop" onClick={() => setShowCargoDropdown(false)} />
+                                                <div className="dropdown-menu show shadow-lg" style={{
+                                                    width: '100%', top: '100%', left: 0, marginTop: 4,
+                                                    maxHeight: 240, overflowY: 'auto', borderRadius: 10,
+                                                    border: '1px solid var(--border-color)', padding: '4px',
+                                                    zIndex: 100, background: 'var(--bg-main)'
+                                                }}>
+                                                    {filteredCargo.map(c => (
+                                                        <div key={c.id} className="dropdown-item" onClick={() => handleCargoTypeChange(c.id, c.name)}>
+                                                            {c.name} ({fmt(c.fee)}/нэгж)
+                                                        </div>
+                                                    ))}
+                                                    {cargoInput && !cargoTypes.some(c => c.name.toLowerCase() === cargoInput.toLowerCase()) && (
+                                                        <div className="dropdown-item" style={{ color: 'var(--primary)', fontWeight: 600 }} onClick={() => setShowCargoDropdown(false)}>
+                                                            <Plus size={16} /> Шинээр: "{cargoInput}"
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </>
+                                        )}
                                     </div>
                                     <div className="input-group">
                                         <input className="input" type="number" value={cargoValue} onChange={e => handleCargoValueChange(e.target.value)} placeholder="1" />
@@ -557,7 +606,9 @@ function EditProductModal({ product, onClose }: { product: Product; onClose: () 
 
     // Cargo
     const [cargoTypes, setCargoTypes] = useState<CargoType[]>([]);
+    const [cargoInput, setCargoInput] = useState('');
     const [selectedCargoTypeId, setSelectedCargoTypeId] = useState<string>(product.cargoFee?.cargoTypeId || '');
+    const [showCargoDropdown, setShowCargoDropdown] = useState(false);
     const [cargoValue, setCargoValue] = useState<string>(product.cargoFee?.cargoValue?.toString() || '1');
     const [cargoFee, setCargoFee] = useState<string>(product.cargoFee?.amount?.toString() || '');
     const [isCargoIncluded, setIsCargoIncluded] = useState(product.cargoFee?.isIncluded || false);
@@ -575,6 +626,14 @@ function EditProductModal({ product, onClose }: { product: Product; onClose: () 
             });
         }
 
+        // Find current cargo
+        if (product.cargoFee?.cargoTypeId) {
+            cargoService.subscribeCargoTypes(business.id, (types) => {
+                const found = types.find(t => t.id === product.cargoFee?.cargoTypeId);
+                if (found) setCargoInput(found.name);
+            });
+        }
+
         // Set margin
         if (product.pricing.costPrice && product.pricing.salePrice) {
             const m = Math.round((product.pricing.salePrice - product.pricing.costPrice) / product.pricing.costPrice * 100);
@@ -584,13 +643,15 @@ function EditProductModal({ product, onClose }: { product: Product; onClose: () 
         return () => { u1(); u2(); };
     }, [business?.id, product]);
 
-    const handleCargoTypeChange = (id: string) => {
+    const handleCargoTypeChange = (id: string, name: string) => {
         setSelectedCargoTypeId(id);
+        setCargoInput(name);
         const selected = cargoTypes.find(t => t.id === id);
         if (selected) {
             const val = Number(cargoValue) || 1;
             setCargoFee(Math.round(selected.fee * val).toString());
         }
+        setShowCargoDropdown(false);
     };
 
     const handleCargoValueChange = (val: string) => {
@@ -640,6 +701,19 @@ function EditProductModal({ product, onClose }: { product: Product; onClose: () 
             let categoryId = selectedCategory?.id || product.categoryId || 'general';
             let categoryName = selectedCategory?.name || categoryInput || 'Бусад';
 
+            let finalCargoTypeId = selectedCargoTypeId;
+            if (productType === 'preorder' && !selectedCargoTypeId && cargoInput) {
+                const existing = cargoTypes.find(c => c.name.toLowerCase() === cargoInput.toLowerCase());
+                if (existing) {
+                    finalCargoTypeId = existing.id;
+                } else {
+                    finalCargoTypeId = await cargoService.createCargoType(business.id, {
+                        name: cargoInput,
+                        fee: Number(cargoFee) || 0,
+                    });
+                }
+            }
+
             await productService.updateProduct(business.id, product.id, {
                 name,
                 categoryId,
@@ -662,7 +736,7 @@ function EditProductModal({ product, onClose }: { product: Product; onClose: () 
                     cargoFee: {
                         amount: Number(cargoFee) || 0,
                         isIncluded: isCargoIncluded,
-                        ...(selectedCargoTypeId ? { cargoTypeId: selectedCargoTypeId } : {}),
+                        ...(finalCargoTypeId ? { cargoTypeId: finalCargoTypeId } : {}),
                         cargoValue: Number(cargoValue) || 1
                     }
                 } : {}),
@@ -680,6 +754,7 @@ function EditProductModal({ product, onClose }: { product: Product; onClose: () 
     };
 
     const filteredCats = categories.filter(c => c.name.toLowerCase().includes(categoryInput.toLowerCase()));
+    const filteredCargo = cargoTypes.filter(c => c.name.toLowerCase().includes(cargoInput.toLowerCase()));
 
     return createPortal(
         <div className="modal-backdrop" onClick={onClose}>
@@ -794,11 +869,42 @@ function EditProductModal({ product, onClose }: { product: Product; onClose: () 
                                     <Globe size={16} /> Каргоны тохиргоо
                                 </div>
                                 <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.8fr 1fr', gap: 12 }}>
-                                    <div className="input-group">
-                                        <select className="input select" value={selectedCargoTypeId} onChange={e => handleCargoTypeChange(e.target.value)}>
-                                            <option value="">-- Төрөл --</option>
-                                            {cargoTypes.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
-                                        </select>
+                                    <div className="input-group" style={{ position: 'relative' }}>
+                                        <div className="input-with" onClick={() => setShowCargoDropdown(true)}>
+                                            <input
+                                                className="input"
+                                                placeholder="Төрөл (жишээ: 1 кг)"
+                                                value={cargoInput}
+                                                onChange={e => {
+                                                    setCargoInput(e.target.value);
+                                                    setSelectedCargoTypeId('');
+                                                    setShowCargoDropdown(true);
+                                                }}
+                                                onFocus={() => setShowCargoDropdown(true)}
+                                            />
+                                        </div>
+                                        {showCargoDropdown && (cargoInput || cargoTypes.length > 0) && (
+                                            <>
+                                                <div className="dropdown-backdrop" onClick={() => setShowCargoDropdown(false)} />
+                                                <div className="dropdown-menu show shadow-lg" style={{
+                                                    width: '100%', top: '100%', left: 0, marginTop: 4,
+                                                    maxHeight: 240, overflowY: 'auto', borderRadius: 10,
+                                                    border: '1px solid var(--border-color)', padding: '4px',
+                                                    zIndex: 100, background: 'var(--bg-main)'
+                                                }}>
+                                                    {filteredCargo.map(c => (
+                                                        <div key={c.id} className="dropdown-item" onClick={() => handleCargoTypeChange(c.id, c.name)}>
+                                                            {c.name} ({fmt(c.fee)}/нэгж)
+                                                        </div>
+                                                    ))}
+                                                    {cargoInput && !cargoTypes.some(c => c.name.toLowerCase() === cargoInput.toLowerCase()) && (
+                                                        <div className="dropdown-item" style={{ color: 'var(--primary)', fontWeight: 600 }} onClick={() => setShowCargoDropdown(false)}>
+                                                            <Plus size={16} /> Шинээр: "{cargoInput}"
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </>
+                                        )}
                                     </div>
                                     <div className="input-group">
                                         <input className="input" type="number" step="any" value={cargoValue} onChange={e => handleCargoValueChange(e.target.value)} placeholder="1" />
