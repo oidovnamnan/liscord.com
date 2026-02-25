@@ -36,57 +36,63 @@ export function FinancePage() {
             />
 
             <div className="page-content">
-                <div style={{ display: 'flex', gap: '12px', marginBottom: '24px' }}>
+                <div style={{ display: 'flex', gap: '12px', marginBottom: '24px', flexWrap: 'wrap' }}>
                     <button className="btn btn-primary gradient-btn" style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 20px' }}>
                         <TrendingUp size={18} /> Орлого бүртгэх
                     </button>
                     <button className="btn btn-outline" style={{ color: 'var(--text-primary)', borderColor: 'var(--border-secondary)', display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 20px' }}>
                         <TrendingDown size={18} /> Зарлага гаргах
                     </button>
-                    <button className="btn btn-outline" style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 20px' }}>
+                    <button className="btn btn-outline" style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 20px', marginLeft: 'auto' }}>
                         <Download size={18} /> Тайлан татах
                     </button>
                 </div>
 
                 {/* KPI Cards */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '20px', marginBottom: '32px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px', marginBottom: '32px' }}>
                     <div className="stat-card">
-                        <div className="stat-header">
-                            <span className="stat-title">Нийт Орлого (Сараар)</span>
-                            <div className="stat-icon" style={{ background: 'rgba(39, 174, 96, 0.1)', color: '#27ae60' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
+                            <span className="stat-card-label">Нийт Орлого (Сараар)</span>
+                            <div style={{ width: 40, height: 40, borderRadius: 'var(--radius-md)', background: 'rgba(39, 174, 96, 0.1)', color: '#27ae60', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                                 <TrendingUp size={20} />
                             </div>
                         </div>
-                        <div className="stat-value" style={{ color: '#27ae60' }}>
-                            {stats.totalRevenue.toLocaleString()} ₮
+                        <div style={{ display: 'flex', alignItems: 'baseline', gap: '12px', flexWrap: 'wrap' }}>
+                            <div className="stat-card-value" style={{ color: '#27ae60', margin: 0, wordBreak: 'break-word' }}>
+                                {stats.totalRevenue.toLocaleString()} ₮
+                            </div>
+                            <div className="stat-card-change positive">↑ 12% өссөн</div>
                         </div>
-                        <div className="stat-change positive">↑ 12% өссөн</div>
                     </div>
 
                     <div className="stat-card">
-                        <div className="stat-header">
-                            <span className="stat-title">Нийт Зарлага (Сараар)</span>
-                            <div className="stat-icon" style={{ background: 'rgba(231, 76, 60, 0.1)', color: '#e74c3c' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
+                            <span className="stat-card-label">Нийт Зарлага (Сараар)</span>
+                            <div style={{ width: 40, height: 40, borderRadius: 'var(--radius-md)', background: 'rgba(231, 76, 60, 0.1)', color: '#e74c3c', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                                 <TrendingDown size={20} />
                             </div>
                         </div>
-                        <div className="stat-value" style={{ color: '#e74c3c' }}>
-                            {stats.totalExpenses.toLocaleString()} ₮
+                        <div style={{ display: 'flex', alignItems: 'baseline', gap: '12px', flexWrap: 'wrap' }}>
+                            <div className="stat-card-value" style={{ color: '#e74c3c', margin: 0, wordBreak: 'break-word' }}>
+                                {stats.totalExpenses.toLocaleString()} ₮
+                            </div>
+                            <div className="stat-card-change negative">↓ 5% буурсан</div>
                         </div>
-                        <div className="stat-change negative">↓ 5% буурсан</div>
                     </div>
 
                     <div className="stat-card">
-                        <div className="stat-header">
-                            <span className="stat-title">Цэвэр Ашиг</span>
-                            <div className="stat-icon" style={{ background: 'var(--primary-light)', color: 'var(--primary)' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
+                            <span className="stat-card-label">Цэвэр Ашиг</span>
+                            <div style={{ width: 40, height: 40, borderRadius: 'var(--radius-md)', background: 'var(--primary-light)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                                 <Wallet size={20} />
                             </div>
                         </div>
-                        <div className="stat-value">
-                            {stats.netIncome.toLocaleString()} ₮
+                        <div style={{ display: 'flex', alignItems: 'baseline', gap: '12px', flexWrap: 'wrap' }}>
+                            <div className="stat-card-value" style={{ margin: 0, wordBreak: 'break-word' }}>
+                                {stats.netIncome.toLocaleString()} ₮
+                            </div>
+                            <div className="stat-card-change positive">Эрүүл үзүүлэлттэй</div>
                         </div>
-                        <div className="stat-change positive">Эрүүл үзүүлэлттэй</div>
                     </div>
                 </div>
 
