@@ -5,12 +5,12 @@ import { useUIStore } from '../../store';
 import './AppLayoutV2.css';
 
 export function AppLayoutV2() {
-    const { sidebarOpen } = useUIStore();
+    const { sidebarCollapsed } = useUIStore();
 
     return (
         <div className="app-v2">
             <GlobalBanner />
-            <div className={`app-v2-container ${sidebarOpen ? 'sidebar-open' : 'sidebar-closed'}`}>
+            <div className={`app-v2-container ${sidebarCollapsed ? 'sidebar-collapsed' : 'sidebar-expanded'}`}>
                 <Sidebar />
                 <main className="app-v2-main">
                     <Outlet />

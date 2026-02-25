@@ -6,6 +6,28 @@
     color: #e2e8f0;
     position: relative;
     overflow-x: hidden;
+
+    /* FORCE DARK THEME VARIABLES WITH V2 GLASS ENHANCEMENTS */
+    --bg-primary: rgba(10, 10, 18, 0.4);
+    --bg-secondary: rgba(18, 18, 30, 0.4);
+    --bg-tertiary: rgba(26, 26, 46, 0.4);
+    --bg-elevated: rgba(34, 34, 58, 0.6);
+    --bg-hover: rgba(255, 255, 255, 0.05);
+    --bg-active: rgba(255, 255, 255, 0.1);
+
+    --surface-1: rgba(255, 255, 255, 0.03);
+    --surface-2: rgba(255, 255, 255, 0.05);
+    --surface-3: rgba(255, 255, 255, 0.08);
+
+    --border-primary: rgba(255, 255, 255, 0.08);
+    --border-secondary: rgba(255, 255, 255, 0.15);
+
+    --text-primary: #ffffff;
+    --text-secondary: rgba(255, 255, 255, 0.7);
+    --text-muted: rgba(255, 255, 255, 0.5);
+    --text-inverse: #000000;
+    --border-color: rgba(255, 255, 255, 0.08);
+    /* Fallback */
 }
 
 .app-v2-container {
@@ -35,21 +57,22 @@
     transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.app-v2-container.sidebar-open .app-v2-main {
-    margin-left: 280px;
+.app-v2-container.sidebar-expanded .app-v2-main {
+    margin-left: 260px;
     /* Matched the Sidebar width */
-    width: calc(100% - 280px);
+    width: calc(100% - 260px);
 }
 
-.app-v2-container.sidebar-closed .app-v2-main {
-    margin-left: 80px;
+.app-v2-container.sidebar-collapsed .app-v2-main {
+    margin-left: 72px;
     /* Matched collapsed Sidebar width */
-    width: calc(100% - 80px);
+    width: calc(100% - 72px);
 }
 
 @media (max-width: 768px) {
-    .app-v2-container.sidebar-open .app-v2-main {
+    .app-v2-container.sidebar-expanded .app-v2-main {
         margin-left: 0;
+        width: 100%;
     }
 }
 
@@ -234,4 +257,69 @@
 
 .app-v2 .badge {
     backdrop-filter: blur(4px);
+}
+
+/* Orders Page Hardcoded Light Theme Overrides */
+.app-v2 .orders-status-bar {
+    background: rgba(0, 0, 0, 0.2) !important;
+    border-color: rgba(255, 255, 255, 0.05) !important;
+}
+
+.app-v2 .orders-status-chip {
+    background: rgba(255, 255, 255, 0.03) !important;
+    border-color: rgba(255, 255, 255, 0.05) !important;
+    color: rgba(255, 255, 255, 0.7) !important;
+}
+
+.app-v2 .orders-status-chip:hover {
+    background: rgba(255, 255, 255, 0.08) !important;
+    color: #fff !important;
+}
+
+.app-v2 .orders-status-chip.active {
+    background: rgba(168, 85, 247, 0.2) !important;
+    border-color: rgba(168, 85, 247, 0.4) !important;
+    color: #d8b4fe !important;
+}
+
+.app-v2 .order-card.pro-layout {
+    background: rgba(255, 255, 255, 0.03) !important;
+    border-color: rgba(255, 255, 255, 0.08) !important;
+    backdrop-filter: blur(10px) !important;
+}
+
+.app-v2 .order-card.pro-layout:hover {
+    border-color: rgba(255, 255, 255, 0.15) !important;
+    background: rgba(255, 255, 255, 0.05) !important;
+}
+
+.app-v2 .order-card.is-deleted {
+    background: rgba(239, 68, 68, 0.05) !important;
+}
+
+.app-v2 .pro-item-row {
+    background: rgba(255, 255, 255, 0.02) !important;
+    border-color: rgba(255, 255, 255, 0.04) !important;
+}
+
+.app-v2 .pro-card-meta-bar {
+    background: rgba(0, 0, 0, 0.2) !important;
+    color: rgba(255, 255, 255, 0.6) !important;
+}
+
+.app-v2 .order-id {
+    background: rgba(255, 255, 255, 0.1) !important;
+    color: #fff !important;
+}
+
+.app-v2 .pro-total-value {
+    color: #fff !important;
+}
+
+.app-v2 .pro-item-name {
+    color: rgba(255, 255, 255, 0.9) !important;
+}
+
+.app-v2 .pro-item-price {
+    color: #fff !important;
 }
