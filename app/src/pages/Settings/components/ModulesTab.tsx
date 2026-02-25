@@ -2,56 +2,84 @@ import { useState } from 'react';
 import { useBusinessStore } from '../../../store';
 import { businessService } from '../../../services/db';
 import { toast } from 'react-hot-toast';
-import { Layers, Package, Users, Truck, ShoppingCart, Landmark, Clock, DollarSign, ScanLine, Sofa, PieChart, HeadphonesIcon, Building, MessageSquare, Factory, Calendar } from 'lucide-react';
+import { Layers, Package, Users, Truck, ShoppingCart, Landmark, Clock, DollarSign, ScanLine, Sofa, PieChart, HeadphonesIcon, Building, MessageSquare, Factory, Calendar, Trash2, Download } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 export const ALL_MODULES = [
-    { id: 'orders', label: 'Борлуулалт / POS', desc: 'Дэлгүүр, кассын борлуулалт', icon: ShoppingCart },
-    { id: 'products', label: 'Бараа бүртгэл', desc: 'Агуулах болон барааны үлдэгдэл', icon: Package },
-    { id: 'customers', label: 'Харилцагч', desc: 'Үйлчлүүлэгчдийн түүх, өр', icon: Users },
-    { id: 'delivery', label: 'Хүргэлт', desc: 'Хүргэлтийн жолооч, статус', icon: Truck },
-    { id: 'packages', label: 'Карго (AI)', desc: 'Хил дамнасан ачаа тээвэр', icon: ScanLine },
-    { id: 'inventory', label: 'Олон агуулах', desc: 'Агуулах хооронд шилжүүлэх', icon: Package }, // Reusing Package since Warehouse might conflict inside map
-    { id: 'loans', label: 'Зээл / Ломбард', desc: 'Хүүний бодолт, барьцаа', icon: Landmark },
-    { id: 'queue', label: 'Дараалал', icon: Layers, desc: 'Угаалга, салон, үйлчилгээний самбар' },
-    { id: 'attendance', label: 'Цаг бүртгэл', icon: Clock, desc: 'Ажилчдын ирсэн/гарсан цаг' },
-    { id: 'payroll', label: 'Цалин', icon: DollarSign, desc: 'Цэвэр цалин, суутгал тооцох' },
-    { id: 'rooms', label: 'Өрөө / Буудал', icon: Sofa, desc: 'Амралтын газар, зочид буудал' }, // Used Sofa
-    { id: 'vehicles', label: 'Түрээс', icon: Truck, desc: 'Машин болон тоног төхөөрөмж' },
-    { id: 'tickets', label: 'Тасалбар', icon: ScanLine, desc: 'Эвэнт зохион байгуулах' },
-
-    // Phase 40: Expansion Modules
-    { id: 'finance', label: 'Санхүү & Татвар', icon: PieChart, desc: 'Орлого, зарлага, авлага өглөг' },
-    { id: 'support', label: 'Гомдол / Буцаалт', icon: HeadphonesIcon, desc: 'Баталгаат засвар, хэрэглэгчийн санал' },
-    { id: 'b2b', label: 'B2B Портал', icon: Building, desc: 'Бөөний харилцагчийн систем' },
-    { id: 'chat', label: 'Дотоод Чат', icon: MessageSquare, desc: 'Багийн гишүүд болон салбар хооронд' },
-    { id: 'manufacturing', label: 'Үйлдвэрлэл', icon: Factory, desc: 'Үе шаттай үйлдвэрлэлийн удирдлага' },
-    { id: 'appointments', label: 'Цаг захиалга', icon: Calendar, desc: 'Урьдчилан цаг авах, уулзалт' },
+    { id: 'orders', label: 'Борлуулалт / POS', desc: 'Дэлгүүр, кассын борлуулалт', icon: ShoppingCart, path: '/app/orders' },
+    { id: 'products', label: 'Бараа бүртгэл', desc: 'Агуулах болон барааны үлдэгдэл', icon: Package, path: '/app/products' },
+    { id: 'customers', label: 'Харилцагч', desc: 'Үйлчлүүлэгчдийн түүх, өр', icon: Users, path: '/app/customers' },
+    { id: 'delivery', label: 'Хүргэлт', desc: 'Хүргэлтийн жолооч, статус', icon: Truck, path: '/app/delivery' },
+    { id: 'packages', label: 'Карго (AI)', desc: 'Хил дамнасан ачаа тээвэр', icon: ScanLine, path: '/app/packages' },
+    { id: 'inventory', label: 'Олон агуулах', desc: 'Агуулах хооронд шилжүүлэх', icon: Package, path: '/app/inventory' },
+    { id: 'loans', label: 'Зээл / Ломбард', desc: 'Хүүний бодолт, барьцаа', icon: Landmark, path: '/app/loans' },
+    { id: 'queue', label: 'Дараалал', icon: Layers, desc: 'Угаалга, салон, үйлчилгээний самбар', path: '/app/queue' },
+    { id: 'attendance', label: 'Цаг бүртгэл', icon: Clock, desc: 'Ажилчдын ирсэн/гарсан цаг', path: '/app/attendance' },
+    { id: 'payroll', label: 'Цалин', icon: DollarSign, desc: 'Цэвэр цалин, суутгал тооцох', path: '/app/payroll' },
+    { id: 'rooms', label: 'Өрөө / Буудал', icon: Sofa, desc: 'Амралтын газар, зочид буудал', path: '/app/rooms' },
+    { id: 'vehicles', label: 'Түрээс', icon: Truck, desc: 'Машин болон тоног төхөөрөмж', path: '/app/vehicles' },
+    { id: 'tickets', label: 'Тасалбар', icon: ScanLine, desc: 'Эвэнт зохион байгуулах', path: '/app/tickets' },
+    { id: 'finance', label: 'Санхүү & Татвар', icon: PieChart, desc: 'Орлого, зарлага, авлага өглөг', path: '/app/finance' },
+    { id: 'support', label: 'Гомдол / Буцаалт', icon: HeadphonesIcon, desc: 'Баталгаат засвар, хэрэглэгчийн санал', path: '/app/support' },
+    { id: 'b2b', label: 'B2B Портал', icon: Building, desc: 'Бөөний харилцагчийн систем', path: '/app/b2b' },
+    { id: 'chat', label: 'Дотоод Чат', icon: MessageSquare, desc: 'Багийн гишүүд болон салбар хооронд', path: '/app/chat' },
+    { id: 'manufacturing', label: 'Үйлдвэрлэл', icon: Factory, desc: 'Үе шаттай үйлдвэрлэлийн удирдлага', path: '/app/manufacturing' },
+    { id: 'appointments', label: 'Цаг захиалга', icon: Calendar, desc: 'Урьдчилан цаг авах, уулзалт', path: '/app/appointments' },
 ];
 
 export function ModulesTab() {
     const { business, setBusiness } = useBusinessStore();
+    const navigate = useNavigate();
     const [loading, setLoading] = useState(false);
 
-    // If business doesn't have activeModules array initialized yet, fallback to an empty array
-    // Our Sidebar backwards compatibility shows core features until we explicitly enable them here.
+    // Installation states
+    const [installingId, setInstallingId] = useState<string | null>(null);
+    const [installProgress, setInstallProgress] = useState(0);
+
     const activeMods = business?.activeModules || [];
 
-    const handleToggleModule = async (moduleId: string) => {
-        if (!business) return;
+    const handleInstallModule = async (moduleId: string) => {
+        if (!business || loading || installingId) return;
+
+        // Start simulated installation
+        setInstallingId(moduleId);
+        setInstallProgress(0);
+
+        // Simulate progress
+        for (let i = 0; i <= 100; i += 10) {
+            await new Promise(resolve => setTimeout(resolve, 150));
+            setInstallProgress(Math.min(i + Math.random() * 15, 95));
+        }
+
+        try {
+            const newModules = [...activeMods, moduleId];
+            await businessService.updateBusiness(business.id, { activeModules: newModules });
+            setBusiness({ ...business, activeModules: newModules });
+
+            setInstallProgress(100);
+            await new Promise(resolve => setTimeout(resolve, 300)); // Brief pause at 100%
+            toast.success('Амжилттай суулгалаа');
+        } catch (error) {
+            toast.error('Суулгах үед алдаа гарлаа');
+        } finally {
+            setInstallingId(null);
+            setInstallProgress(0);
+        }
+    };
+
+    const handleUninstallModule = async (moduleId: string) => {
+        if (!business || loading || installingId) return;
+
+        if (!confirm('Энэ модулийг устгахдаа итгэлтэй байна уу?')) return;
+
         setLoading(true);
         try {
-            const isEnabled = activeMods.includes(moduleId);
-            const newModules = isEnabled
-                ? activeMods.filter(m => m !== moduleId)
-                : [...activeMods, moduleId];
-
+            const newModules = activeMods.filter(m => m !== moduleId);
             await businessService.updateBusiness(business.id, { activeModules: newModules });
-
-            // Local store update for immediate UI react
             setBusiness({ ...business, activeModules: newModules });
-            toast.success(isEnabled ? 'Модулийг унтраалаа' : 'Модулийг амжилттай идэвхжүүллээ');
+            toast.success('Модулийг устгалаа');
         } catch (error) {
-            toast.error('Алдаа гарлаа');
+            toast.error('Устгах үед алдаа гарлаа');
         } finally {
             setLoading(false);
         }
@@ -61,52 +89,104 @@ export function ModulesTab() {
         <div className="settings-section animate-fade-in">
             <h2 style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <Layers size={24} color="var(--primary)" />
-                Модуль / App Store
+                Liscord App Store
             </h2>
-            <p style={{ color: 'var(--text-secondary)', marginBottom: '24px' }}>
-                Та өөрийн бизнесийн онцлогт тохирсон хэрэгслүүдээ (Modules) эндээс сонгон идэвхжүүлж удирдах боломжтой. Идэвхжүүлсэн модулиуд зүүн талын үндсэн цэсэнд харагдах болно.
+            <p style={{ color: 'var(--text-secondary)', marginBottom: '32px' }}>
+                Та өөрийн бизнестээ хэрэгцээт апп-уудыг эндээс суулгах тохируулах боломжтой. Суулгасан апп-ууд зүүн талын үндсэн цэсэнд харагдах болно.
             </p>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '16px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '20px' }}>
                 {ALL_MODULES.map(mod => {
                     const Icon = mod.icon;
-                    const isEnabled = activeMods.includes(mod.id);
+                    const isInstalled = activeMods.includes(mod.id);
+                    const isInstalling = installingId === mod.id;
+
                     return (
                         <div
                             key={mod.id}
                             style={{
-                                border: `1px solid ${isEnabled ? 'var(--primary)' : 'var(--border-primary)'}`,
-                                borderRadius: 'var(--radius-lg)',
-                                padding: '16px',
-                                background: isEnabled ? 'rgba(74, 107, 255, 0.05)' : 'var(--surface-1)',
+                                border: `1px solid ${isInstalled ? 'var(--primary)' : 'var(--border-primary)'}`,
+                                borderRadius: '16px',
+                                padding: '20px',
+                                background: isInstalled ? 'rgba(74, 107, 255, 0.03)' : 'var(--surface-1)',
                                 display: 'flex',
-                                flexDirection: 'column',
-                                gap: '12px',
-                                transition: 'all 0.2s'
+                                alignItems: 'center',
+                                gap: '16px',
+                                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                                boxShadow: isInstalled ? '0 4px 20px rgba(74, 107, 255, 0.08)' : '0 1px 3px rgba(0,0,0,0.02)',
+                                transform: isInstalling ? 'scale(0.98)' : 'scale(1)',
                             }}
                         >
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                                <div style={{
-                                    background: isEnabled ? 'var(--primary)' : 'var(--surface-2)',
-                                    color: isEnabled ? 'white' : 'var(--text-secondary)',
-                                    padding: '10px',
-                                    borderRadius: '12px'
-                                }}>
-                                    <Icon size={20} />
-                                </div>
-                                <label className="switch">
-                                    <input
-                                        type="checkbox"
-                                        checked={isEnabled}
-                                        onChange={() => handleToggleModule(mod.id)}
-                                        disabled={loading}
-                                    />
-                                    <span className="slider round"></span>
-                                </label>
+                            <div style={{
+                                width: '60px',
+                                height: '60px',
+                                background: isInstalled ? 'var(--gradient-primary)' : 'var(--surface-2)',
+                                color: isInstalled ? 'white' : 'var(--text-secondary)',
+                                borderRadius: '16px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                flexShrink: 0,
+                                boxShadow: isInstalled ? '0 4px 12px rgba(74, 107, 255, 0.3)' : 'none'
+                            }}>
+                                <Icon size={28} />
                             </div>
-                            <div>
-                                <h3 style={{ margin: 0, fontSize: '16px', color: 'var(--text-primary)' }}>{mod.label}</h3>
-                                <p style={{ margin: 0, fontSize: '13px', color: 'var(--text-secondary)', marginTop: '4px' }}>{mod.desc}</p>
+
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                                <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 700, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                    {mod.label}
+                                </h3>
+                                <p style={{ margin: '4px 0 0 0', fontSize: '0.85rem', color: 'var(--text-muted)', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                                    {mod.desc}
+                                </p>
+                            </div>
+
+                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', minWidth: '80px' }}>
+                                {isInstalling ? (
+                                    <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
+                                        <div style={{ position: 'relative', width: '36px', height: '36px' }}>
+                                            <svg width="36" height="36" viewBox="0 0 36 36" style={{ transform: 'rotate(-90deg)' }}>
+                                                <circle cx="18" cy="18" r="16" fill="none" stroke="var(--border-primary)" strokeWidth="3" />
+                                                <circle
+                                                    cx="18" cy="18" r="16"
+                                                    fill="none"
+                                                    stroke="var(--primary)"
+                                                    strokeWidth="3"
+                                                    strokeDasharray={`${2 * Math.PI * 16}`}
+                                                    strokeDashoffset={`${2 * Math.PI * 16 * (1 - installProgress / 100)}`}
+                                                    style={{ transition: 'stroke-dashoffset 0.15s linear' }}
+                                                />
+                                            </svg>
+                                            <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                                <span style={{ fontSize: '0.6rem', fontWeight: 700, color: 'var(--primary)' }}>{Math.round(installProgress)}%</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ) : isInstalled ? (
+                                    <>
+                                        <button
+                                            className="btn btn-primary btn-sm"
+                                            style={{ width: '100%', borderRadius: '20px', padding: '6px 0', fontSize: '0.85rem', fontWeight: 600 }}
+                                            onClick={() => navigate(mod.path)}
+                                        >
+                                            Нээх
+                                        </button>
+                                        <div
+                                            style={{ display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer', color: 'var(--text-muted)', fontSize: '0.75rem' }}
+                                            onClick={() => handleUninstallModule(mod.id)}
+                                        >
+                                            <Trash2 size={12} /> Устгах
+                                        </div>
+                                    </>
+                                ) : (
+                                    <button
+                                        className="btn btn-outline btn-sm"
+                                        style={{ width: '100%', borderRadius: '20px', padding: '6px 0', fontSize: '0.85rem', fontWeight: 600, color: 'var(--primary)', borderColor: 'var(--primary)', background: 'rgba(74, 107, 255, 0.05)' }}
+                                        onClick={() => handleInstallModule(mod.id)}
+                                    >
+                                        <Download size={14} style={{ marginRight: 4 }} /> Суулгах
+                                    </button>
+                                )}
                             </div>
                         </div>
                     );
