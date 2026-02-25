@@ -136,15 +136,16 @@ export function Sidebar() {
         if (!hasPerm) return false;
 
         // The core items everyone should see (unless permission blocked)
-        const ALWAYS_VISIBLE = ['dashboard', 'reports', 'settings', 'chat', 'employees'];
+        const ALWAYS_VISIBLE = ['dashboard', 'reports', 'settings', 'chat', 'employees', 'b2b'];
 
         // If the business has explicit activeModules set (The New App Store Way)
-        if (business?.activeModules && business.activeModules.length > 0) {
+        if (business?.activeModules !== undefined) {
+            // Even if empty [], we only show ALWAYS_VISIBLE + explicitly active ones
             if (ALWAYS_VISIBLE.includes(item.id)) return true;
             return business.activeModules.includes(item.id);
         }
 
-        // Fallback: Old hardcoded feature flags category logic (The Old Way)
+        // Fallback: Old hardcoded feature flags category logic (The Old Way) - Only applies to legacy accounts
         if (item.feature) {
             if (item.feature === 'isB2BProvider') return business?.serviceProfile?.isProvider === true;
             return features[item.feature as keyof BusinessFeatures];
