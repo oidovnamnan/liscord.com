@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { useSearchParams } from 'react-router-dom';
 import { Header } from '../../components/layout/Header';
-import { Building2, Palette, Bell, Shield, Users, Globe, Moon, Sun, Monitor, Loader2, Plus, MoreVertical, Trash2, Share2, X, CheckSquare, ListOrdered, ChevronUp, ChevronDown, ShoppingBag, Layers, CreditCard } from 'lucide-react';
+import { Building2, Palette, Bell, Shield, Users, Globe, Moon, Sun, Monitor, Loader2, Plus, MoreVertical, Trash2, Share2, X, CheckSquare, ListOrdered, ChevronUp, ChevronDown, ShoppingBag, Layers, CreditCard, Network } from 'lucide-react';
 import { useBusinessStore, useUIStore } from '../../store';
 import { businessService, teamService, cargoService, sourceService, orderStatusService, businessRequestService } from '../../services/db';
 import { toast } from 'react-hot-toast';
@@ -10,6 +10,7 @@ import { PINModal } from '../../components/common/PINModal';
 import { ActivityTab } from './components/ActivityTab';
 import { ModulesTab } from './components/ModulesTab';
 import { PaymentTab } from './components/PaymentTab';
+import { B2BTab } from './components/B2BTab';
 import { ALL_PERMISSIONS, type Position, type Employee, type CargoType, type OrderSource, type SocialAccount, type OrderStatusConfig, type BusinessRequest } from '../../types';
 import './SettingsPage.css';
 
@@ -52,6 +53,7 @@ export function SettingsPage() {
 
     const tabs = [
         { id: 'general', label: 'Ерөнхий', icon: Building2 },
+        { id: 'b2b', label: 'B2B Платформ', icon: Network },
         { id: 'payment', label: 'Төлбөр & НӨАТ', icon: CreditCard },
         { id: 'modules', label: 'Бизнес Модуль', icon: Layers },
         { id: 'storefront', label: 'Дэлгүүр', icon: ShoppingBag },
@@ -262,6 +264,9 @@ export function SettingsPage() {
                                     </form>
                                 </div>
                             </div>
+                        )}
+                        {activeTab === 'b2b' && (
+                            <B2BTab />
                         )}
                         {activeTab === 'payment' && (
                             <PaymentTab />

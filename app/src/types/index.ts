@@ -97,6 +97,9 @@ export interface Business {
     phone: string;
     email: string;
     address: string;
+    // B2B Ecosystem
+    serviceProfile?: ServiceProfile;
+    // Config
     settings: BusinessSettings;
     features: Record<string, boolean>;
     activeModules?: string[]; // E.g., ['pos', 'inventory', 'rooms', 'queue']
@@ -201,6 +204,121 @@ export interface BusinessStats {
     packagesInTransit?: number;
     packagesArrived?: number;
     totalBatches?: number;
+}
+
+// ============ B2B ECOSYSTEM ============
+export type B2BServiceType = 'cargo' | 'delivery' | 'wholesale' | 'printing' | 'generic';
+
+export interface ServicePricing {
+    type: 'flat' | 'zone_based' | 'weight_based' | 'custom';
+    basePrice: number;
+    zones?: { district: string; price: number }[];
+    urgentMultiplier?: number;
+    fragileExtra?: number;
+    weightExtra?: { above: number; perKg: number };
+}
+
+export interface ServiceProfile {
+    isProvider: boolean;
+    services: {
+        id: string;
+        type: B2BServiceType;
+        name: string;
+        description: string;
+        isActive: boolean;
+        terms: {
+            coverageAreas?: string[];
+            operatingHours?: { start: string; end: string };
+            estimatedTime?: string;
+            maxWeight?: number;
+            customTerms?: string;
+        };
+        pricing: ServicePricing;
+    }[];
+    isPublicListed: boolean;
+    rating: { average: number; count: number };
+}
+
+export interface BusinessLink {
+    id: string;
+    consumer: {
+        businessId: string;
+        businessName: string;
+        category: string;
+    };
+    provider: {
+        businessId: string;
+        businessName: string;
+        category: string;
+        serviceType: B2BServiceType;
+    };
+    status: 'pending' | 'active' | 'paused' | 'terminated';
+    terms: {
+        pricingAgreed: boolean;
+        specialRate?: number;
+        paymentTerms: 'per_order' | 'weekly' | 'monthly' | 'prepaid';
+        autoAccept: boolean;
+        notifyOn: string[];
+    };
+    stats: {
+        totalRequests: number;
+        completedRequests: number;
+        averageRating: number;
+        totalSpent: number;
+    };
+    initiatedBy: 'consumer' | 'provider';
+    createdAt: Date;
+    updatedAt: Date;
+}
+
+export interface ServiceRequest {
+    id: string;
+    linkId: string; // ID of the BusinessLink
+    serviceType: B2BServiceType;
+    consumer: {
+        businessId: string;
+        businessName: string;
+    };
+    provider: {
+        businessId: string;
+        businessName: string;
+    };
+    sourceOrder?: {
+        orderId: string;
+        orderNumber: string;
+        customerName: string;
+        customerPhone: string;
+    };
+    providerOrder?: {
+        orderId: string;
+        orderNumber: string;
+    };
+    details: any; // Dynamic based on serviceType (delivery details, cargo details, wholesale items)
+    pricing: {
+        estimatedFee: number;
+        finalFee: number;
+        paidByConsumer: boolean;
+        paymentMethod: 'per_order' | 'monthly_invoice' | 'prepaid';
+    };
+    status: 'pending' | 'accepted' | 'in_progress' | 'completed' | 'cancelled' | 'failed';
+    statusHistory: {
+        status: string;
+        at: Date;
+        by?: string;
+        note?: string;
+    }[];
+    assignedTo?: {
+        userId: string;
+        name: string;
+        phone: string;
+    };
+    review?: {
+        rating: number;
+        comment: string;
+        reviewedAt: Date;
+    };
+    createdAt: Date;
+    updatedAt: Date;
 }
 
 // ============ EMPLOYEE / PERMISSION ============

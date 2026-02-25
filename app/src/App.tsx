@@ -39,7 +39,8 @@ import { PayrollPage } from './pages/Payroll/PayrollPage';
 // --- App Store Expansion ---
 import { FinancePage } from './pages/Finance/FinancePage';
 import { SupportPage } from './pages/Support/SupportPage';
-import { B2BPage } from './pages/B2B/B2BPage';
+import { B2BMarketplacePage } from './pages/B2B/B2BMarketplacePage';
+import { B2BProviderDashboard } from './pages/B2B/B2BProviderDashboard';
 import { ChatPage } from './pages/Chat/ChatPage';
 import { ManufacturingPage } from './pages/Manufacturing/ManufacturingPage';
 // ---------------------------------
@@ -254,7 +255,8 @@ export default function App() {
           {/* --- App Store Expansion --- */}
           <Route path="finance" element={<FinancePage />} />
           <Route path="support" element={<SupportPage />} />
-          <Route path="b2b" element={<B2BPage />} />
+          <Route path="b2b" element={<B2BMarketplacePage />} />
+          <Route path="b2b-provider" element={<B2BProviderDashboard />} />
           <Route path="chat" element={<ChatPage />} />
           <Route path="manufacturing" element={<ManufacturingPage />} />
           {/* -------------------------------------- */}

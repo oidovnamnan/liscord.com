@@ -26,7 +26,8 @@ import {
     PieChart,
     HeadphonesIcon,
     Building,
-    Factory
+    Factory,
+    Network
 } from 'lucide-react';
 import { useUIStore, useBusinessStore, useAuthStore } from '../../store';
 import { usePermissions } from '../../hooks/usePermissions';
@@ -44,7 +45,7 @@ type NavItem = {
     icon: React.ElementType;
     path: string;
     permission?: string;
-    feature?: keyof BusinessFeatures;
+    feature?: string;
 };
 
 const navItems: NavItem[] = [
@@ -58,7 +59,8 @@ const navItems: NavItem[] = [
     { id: 'vehicles', label: 'Машин / Техник', icon: Truck, path: '/app/vehicles', feature: 'hasVehicles' },
     { id: 'tickets', label: 'Тасалбар', icon: ScanLine, path: '/app/tickets', feature: 'hasTickets' },
     { id: 'customers', label: 'Харилцагч', icon: Users, path: '/app/customers', permission: 'customers.view' },
-    { id: 'b2b', label: 'B2B Портал', icon: Building, path: '/app/b2b' },
+    { id: 'b2b', label: 'B2B Маркет', icon: Building, path: '/app/b2b' },
+    { id: 'b2b-provider', label: 'B2B Хүсэлтүүд', icon: Network, path: '/app/b2b-provider', feature: 'isB2BProvider' },
     { id: 'products', label: 'Бараа', icon: Package, path: '/app/products', permission: 'products.view', feature: 'hasProducts' },
     { id: 'delivery', label: 'Хүргэлт', icon: Truck, path: '/app/delivery', feature: 'hasDelivery' },
     { id: 'packages', label: 'Ачаа (AI)', icon: ScanLine, path: '/app/packages', feature: 'hasPackages' },
@@ -144,7 +146,8 @@ export function Sidebar() {
 
         // Fallback: Old hardcoded feature flags category logic (The Old Way)
         if (item.feature) {
-            return features[item.feature];
+            if (item.feature === 'isB2BProvider') return business?.serviceProfile?.isProvider === true;
+            return features[item.feature as keyof BusinessFeatures];
         }
 
         // For new modules without 'feature' tags added yet when activeModules is empty

@@ -14,6 +14,7 @@ import {
 } from '../../services/db';
 import type { OrderSource, SocialAccount, OrderStatusConfig, CargoType } from '../../types';
 import { OrderDetailModal } from './OrderDetailModal';
+import { SendToProviderModal } from './SendToProviderModal';
 import type { Order } from '../../types';
 import './OrdersPage.css';
 
@@ -53,6 +54,7 @@ export function OrdersPage() {
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [selectedOrderIds, setSelectedOrderIds] = useState<Set<string>>(new Set());
     const [showBulkStatusModal, setShowBulkStatusModal] = useState(false);
+    const [showSendToProviderModal, setShowSendToProviderModal] = useState(false);
     const { user } = useAuthStore();
     const menuRef = useRef<HTMLDivElement>(null);
 
@@ -386,6 +388,9 @@ export function OrdersPage() {
                             <button className="btn-text btn-sm" onClick={() => setSelectedOrderIds(new Set())}>Цуцлах</button>
                         </div>
                         <div className="bulk-actions">
+                            <button className="btn btn-primary btn-sm gradient-btn" onClick={() => setShowSendToProviderModal(true)}>
+                                🚚 Нийлүүлэгч рүү илгээх ({selectedOrderIds.size})
+                            </button>
                             <button className="btn btn-secondary btn-sm" onClick={() => setShowBulkStatusModal(true)}>
                                 <Settings size={14} /> Төлөв өөрчлөх
                             </button>
@@ -396,6 +401,17 @@ export function OrdersPage() {
                     </div>
                 )}
             </div>
+
+            {showSendToProviderModal && business && (
+                <SendToProviderModal
+                    orders={orders.filter(o => selectedOrderIds.has(o.id))}
+                    onClose={() => setShowSendToProviderModal(false)}
+                    onSuccess={() => {
+                        setShowSendToProviderModal(false);
+                        setSelectedOrderIds(new Set());
+                    }}
+                />
+            )}
 
             {selectedOrder && business && (
                 <OrderDetailModal
