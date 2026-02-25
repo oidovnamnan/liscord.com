@@ -53,17 +53,17 @@ export function SettingsPage() {
 
     const tabs = [
         { id: 'general', label: 'Ерөнхий', icon: Building2 },
-        { id: 'b2b', label: 'B2B Платформ', icon: Network },
-        { id: 'payment', label: 'Төлбөр & НӨАТ', icon: CreditCard },
         { id: 'modules', label: 'Бизнес Модуль', icon: Layers },
+        { id: 'team', label: 'Баг', icon: Users },
         { id: 'storefront', label: 'Дэлгүүр', icon: ShoppingBag },
+        { id: 'payment', label: 'Төлбөр & НӨАТ', icon: CreditCard },
+        { id: 'statuses', label: 'Захиалгын төлөв', icon: CheckSquare },
+        { id: 'cargo', label: 'Карго', icon: Globe },
+        { id: 'sources', label: 'Эх сурвалж', icon: Share2 },
+        { id: 'b2b', label: 'B2B Платформ', icon: Network },
         { id: 'appearance', label: 'Харагдац', icon: Palette },
         { id: 'notifications', label: 'Мэдэгдэл', icon: Bell },
         { id: 'security', label: 'Аюулгүй байдал', icon: Shield },
-        { id: 'team', label: 'Баг', icon: Users },
-        { id: 'cargo', label: 'Карго', icon: Globe },
-        { id: 'sources', label: 'Эх сурвалж', icon: Share2 },
-        { id: 'statuses', label: 'Захиалгын төлөв', icon: CheckSquare },
         { id: 'activity', label: 'Ажиллагсдын үйлдэл', icon: ListOrdered },
         { id: 'language', label: 'Хэл', icon: Globe },
     ];
