@@ -175,7 +175,7 @@ export function ModulesTab() {
                                             style={{ display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer', color: 'var(--text-muted)', fontSize: '0.75rem' }}
                                             onClick={() => handleUninstallModule(mod.id)}
                                         >
-                                            <Trash2 size={12} /> Устгах
+                                            <Trash2 size={12} /> Uninstall
                                         </div>
                                     </>
                                 ) : (
