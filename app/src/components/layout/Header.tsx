@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Menu, Bell, Search, Plus, Zap } from 'lucide-react';
 import { useUIStore, useAuthStore, useBusinessStore } from '../../store';
 import { V2UpgradeModal } from '../common/V2UpgradeModal';
@@ -20,6 +20,24 @@ export function Header({ title, subtitle, action }: HeaderProps) {
     const { business } = useBusinessStore();
 
     const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(false);
+    const [isNotifOpen, setIsNotifOpen] = useState(false);
+    const notifRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        function handleClickOutside(event: MouseEvent) {
+            if (notifRef.current && !notifRef.current.contains(event.target as Node)) {
+                setIsNotifOpen(false);
+            }
+        }
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    const dummyNotifications = [
+        { id: 1, text: "Шинэ захиалга ирлээ (#1024)", time: "10 минутын өмнө", unread: true },
+        { id: 2, text: "Каргоны төлбөр төлөгдсөн (#1022)", time: "1 цагийн өмнө", unread: true },
+        { id: 3, text: "Системийн шинэчлэл амжилттай хийгдлээ", time: "Өчигдөр", unread: false },
+    ];
 
     const handleToggleV2 = async () => {
         if (!user) return;
@@ -54,10 +72,55 @@ export function Header({ title, subtitle, action }: HeaderProps) {
                     <Search size={20} />
                 </button>
 
-                <button className="header-icon-btn header-notif-btn" title="Мэдэгдэл">
-                    <Bell size={20} />
-                    <span className="header-notif-badge">3</span>
-                </button>
+                <div className="header-notif-container" ref={notifRef} style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                    <button className="header-icon-btn header-notif-btn" title="Мэдэгдэл" onClick={() => setIsNotifOpen(!isNotifOpen)}>
+                        <Bell size={20} />
+                        <span className="header-notif-badge">3</span>
+                    </button>
+
+                    {isNotifOpen && (
+                        <div className="notif-dropdown shadow-lg animate-slide-up" style={{
+                            position: 'absolute', top: '100%', right: 0, marginTop: '8px',
+                            width: '320px', background: 'var(--bg-main)', borderRadius: '12px',
+                            border: '1px solid var(--border-color)',
+                            zIndex: 100, display: 'flex', flexDirection: 'column'
+                        }}>
+                            <div style={{ padding: '16px', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 600 }}>Мэдэгдэл</h3>
+                                <span style={{ fontSize: '0.8rem', color: 'var(--primary)', cursor: 'pointer', fontWeight: 500 }}>Бүгдийг уншсан</span>
+                            </div>
+                            <div style={{ maxHeight: '360px', overflowY: 'auto' }}>
+                                {dummyNotifications.length > 0 ? dummyNotifications.map(n => (
+                                    <div key={n.id} className="notif-item" style={{
+                                        padding: '12px 16px', borderBottom: '1px solid var(--border-color)',
+                                        background: n.unread ? 'var(--bg-hover)' : 'transparent',
+                                        cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: '4px',
+                                        transition: 'background 0.2s',
+                                        position: 'relative'
+                                    }}
+                                        onMouseEnter={e => e.currentTarget.style.background = 'var(--bg-input)'}
+                                        onMouseLeave={e => e.currentTarget.style.background = n.unread ? 'var(--bg-hover)' : 'transparent'}
+                                    >
+                                        {n.unread && <div style={{ position: 'absolute', left: '6px', top: '18px', width: '6px', height: '6px', borderRadius: '50%', background: 'var(--primary)' }} />}
+                                        <div style={{ fontSize: '0.9rem', color: 'var(--text-primary)', fontWeight: n.unread ? 600 : 400, marginLeft: n.unread ? '8px' : '0' }}>{n.text}</div>
+                                        <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginLeft: n.unread ? '8px' : '0' }}>{n.time}</div>
+                                    </div>
+                                )) : (
+                                    <div style={{ padding: '32px 16px', textAlign: 'center', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
+                                        <Bell size={32} style={{ opacity: 0.2, marginBottom: '12px', display: 'inline-block' }} />
+                                        <br />Шинэ мэдэгдэл алга байна
+                                    </div>
+                                )}
+                            </div>
+                            <div style={{ padding: '12px', textAlign: 'center', cursor: 'pointer', color: 'var(--text-secondary)', fontSize: '0.85rem', fontWeight: 500 }}
+                                onMouseEnter={e => e.currentTarget.style.color = 'var(--primary)'}
+                                onMouseLeave={e => e.currentTarget.style.color = 'var(--text-secondary)'}
+                            >
+                                Бүх мэдэгдлийг харах
+                            </div>
+                        </div>
+                    )}
+                </div>
 
                 {action && (
                     <button className="btn btn-primary btn-sm" onClick={action.onClick}>
