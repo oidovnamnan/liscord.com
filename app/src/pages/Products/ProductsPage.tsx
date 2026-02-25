@@ -354,12 +354,14 @@ function CreateProductModal({ onClose }: { onClose: () => void }) {
                     lowStockThreshold: 3,
                     trackInventory: productType === 'ready'
                 },
-                cargoFee: productType === 'preorder' ? {
-                    amount: Number(cargoFee) || 0,
-                    isIncluded: isCargoIncluded,
-                    cargoTypeId: selectedCargoTypeId || undefined,
-                    cargoValue: Number(cargoValue) || 1
-                } : undefined,
+                ...(productType === 'preorder' ? {
+                    cargoFee: {
+                        amount: Number(cargoFee) || 0,
+                        isIncluded: isCargoIncluded,
+                        ...(selectedCargoTypeId ? { cargoTypeId: selectedCargoTypeId } : {}),
+                        cargoValue: Number(cargoValue) || 1
+                    }
+                } : {}),
                 unitType: 'ш',
                 isActive: true,
                 stats: { totalSold: 0, totalRevenue: 0 },
@@ -656,12 +658,14 @@ function EditProductModal({ product, onClose }: { product: Product; onClose: () 
                     lowStockThreshold: 3,
                     trackInventory: productType === 'ready'
                 },
-                cargoFee: productType === 'preorder' ? {
-                    amount: Number(cargoFee) || 0,
-                    isIncluded: isCargoIncluded,
-                    cargoTypeId: selectedCargoTypeId || undefined,
-                    cargoValue: Number(cargoValue) || 1
-                } : undefined,
+                ...(productType === 'preorder' ? {
+                    cargoFee: {
+                        amount: Number(cargoFee) || 0,
+                        isIncluded: isCargoIncluded,
+                        ...(selectedCargoTypeId ? { cargoTypeId: selectedCargoTypeId } : {}),
+                        cargoValue: Number(cargoValue) || 1
+                    }
+                } : {}),
                 updatedAt: new Date()
             });
 
