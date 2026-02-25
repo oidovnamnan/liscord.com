@@ -223,6 +223,7 @@ function CreateProductModal({ onClose }: { onClose: () => void }) {
     const [cargoInput, setCargoInput] = useState('');
     const [selectedCargoTypeId, setSelectedCargoTypeId] = useState<string>('');
     const [showCargoDropdown, setShowCargoDropdown] = useState(false);
+    const [showCreateCargoType, setShowCreateCargoType] = useState(false);
     const [imageFiles, setImageFiles] = useState<File[]>([]);
     const [existingImages, setExistingImages] = useState<string[]>([]);
     const [cargoValue, setCargoValue] = useState<string>('1');
@@ -543,8 +544,11 @@ function CreateProductModal({ onClose }: { onClose: () => void }) {
                                                         </div>
                                                     ))}
                                                     {cargoInput && !cargoTypes.some(c => c.name.toLowerCase() === cargoInput.toLowerCase()) && (
-                                                        <div className="dropdown-item" style={{ color: 'var(--primary)', fontWeight: 600 }} onClick={() => setShowCargoDropdown(false)}>
-                                                            <Plus size={16} /> Шинээр: "{cargoInput}"
+                                                        <div className="dropdown-item" style={{ color: 'var(--primary)', fontWeight: 600 }} onClick={() => {
+                                                            setShowCargoDropdown(false);
+                                                            setShowCreateCargoType(true);
+                                                        }}>
+                                                            <Plus size={16} /> Шинээр үүсгэх: "{cargoInput}"
                                                         </div>
                                                     )}
                                                 </div>
@@ -578,6 +582,18 @@ function CreateProductModal({ onClose }: { onClose: () => void }) {
                     </div>
                 </form>
             </div>
+            {showCreateCargoType && (
+                <CreateCargoTypeModal
+                    initialName={cargoInput}
+                    onClose={() => setShowCreateCargoType(false)}
+                    onSuccess={(id, name, fee) => {
+                        setSelectedCargoTypeId(id);
+                        setCargoInput(name);
+                        setCargoFee(fee.toString());
+                        setShowCreateCargoType(false);
+                    }}
+                />
+            )}
         </div>,
         document.body
     );
@@ -609,6 +625,7 @@ function EditProductModal({ product, onClose }: { product: Product; onClose: () 
     const [cargoInput, setCargoInput] = useState('');
     const [selectedCargoTypeId, setSelectedCargoTypeId] = useState<string>(product.cargoFee?.cargoTypeId || '');
     const [showCargoDropdown, setShowCargoDropdown] = useState(false);
+    const [showCreateCargoType, setShowCreateCargoType] = useState(false);
     const [cargoValue, setCargoValue] = useState<string>(product.cargoFee?.cargoValue?.toString() || '1');
     const [cargoFee, setCargoFee] = useState<string>(product.cargoFee?.amount?.toString() || '');
     const [isCargoIncluded, setIsCargoIncluded] = useState(product.cargoFee?.isIncluded || false);
@@ -898,8 +915,11 @@ function EditProductModal({ product, onClose }: { product: Product; onClose: () 
                                                         </div>
                                                     ))}
                                                     {cargoInput && !cargoTypes.some(c => c.name.toLowerCase() === cargoInput.toLowerCase()) && (
-                                                        <div className="dropdown-item" style={{ color: 'var(--primary)', fontWeight: 600 }} onClick={() => setShowCargoDropdown(false)}>
-                                                            <Plus size={16} /> Шинээр: "{cargoInput}"
+                                                        <div className="dropdown-item" style={{ color: 'var(--primary)', fontWeight: 600 }} onClick={() => {
+                                                            setShowCargoDropdown(false);
+                                                            setShowCreateCargoType(true);
+                                                        }}>
+                                                            <Plus size={16} /> Шинээр үүсгэх: "{cargoInput}"
                                                         </div>
                                                     )}
                                                 </div>
@@ -929,6 +949,74 @@ function EditProductModal({ product, onClose }: { product: Product; onClose: () 
                         <button type="button" className="btn btn-secondary" onClick={onClose} disabled={loading}>Болих</button>
                         <button type="submit" className="btn btn-primary" disabled={loading}>
                             {loading ? <Loader2 size={16} className="animate-spin" /> : 'Хадгалах'}
+                        </button>
+                    </div>
+                </form>
+            </div>
+            {showCreateCargoType && (
+                <CreateCargoTypeModal
+                    initialName={cargoInput}
+                    onClose={() => setShowCreateCargoType(false)}
+                    onSuccess={(id, name, fee) => {
+                        setSelectedCargoTypeId(id);
+                        setCargoInput(name);
+                        setCargoFee(fee.toString());
+                        setShowCreateCargoType(false);
+                    }}
+                />
+            )}
+        </div>,
+        document.body
+    );
+}
+
+function CreateCargoTypeModal({ initialName, onClose, onSuccess }: { initialName: string, onClose: () => void, onSuccess: (id: string, name: string, fee: number) => void }) {
+    const { business } = useBusinessStore();
+    const [name, setName] = useState(initialName);
+    const [fee, setFee] = useState('');
+    const [loading, setLoading] = useState(false);
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!business) return;
+        setLoading(true);
+        try {
+            const numFee = Number(fee) || 0;
+            const id = await cargoService.createCargoType(business.id, {
+                name,
+                fee: numFee
+            });
+            toast.success('Каргоны төрөл амжилттай үүсгэлээ');
+            onSuccess(id, name, numFee);
+        } catch (error) {
+            toast.error('Алдаа гарлаа');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    return createPortal(
+        <div className="modal-backdrop" style={{ zIndex: 1100 }} onClick={onClose}>
+            <div className="modal modal-sm" style={{ maxWidth: 400 }} onClick={e => e.stopPropagation()}>
+                <div className="modal-header">
+                    <h2>Шинэ карго төрөл</h2>
+                    <button type="button" className="btn btn-ghost btn-icon" onClick={onClose}>✕</button>
+                </div>
+                <form onSubmit={handleSubmit}>
+                    <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                        <div className="input-group">
+                            <label className="input-label">Төрлийн нэр <span className="required">*</span></label>
+                            <input className="input" value={name} onChange={e => setName(e.target.value)} required autoFocus placeholder="Жнь: 1 кг, Овортой..." />
+                        </div>
+                        <div className="input-group">
+                            <label className="input-label">Үндсэн үнэ (₮) <span className="required">*</span></label>
+                            <input className="input" type="number" value={fee} onChange={e => setFee(e.target.value)} required placeholder="Төлбөрийн хэмжээг оруулна уу" />
+                        </div>
+                    </div>
+                    <div className="modal-footer">
+                        <button type="button" className="btn btn-secondary" onClick={onClose} disabled={loading}>Болих</button>
+                        <button type="submit" className="btn btn-primary" disabled={loading}>
+                            {loading ? <Loader2 size={16} className="animate-spin" /> : 'Үүсгэх'}
                         </button>
                     </div>
                 </form>
