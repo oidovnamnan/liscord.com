@@ -37,13 +37,13 @@ export function FinancePage() {
 
             <div className="page-content">
                 <div style={{ display: 'flex', gap: '12px', marginBottom: '24px' }}>
-                    <button className="btn btn-primary gradient-btn">
+                    <button className="btn btn-primary gradient-btn" style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 20px' }}>
                         <TrendingUp size={18} /> Орлого бүртгэх
                     </button>
-                    <button className="btn btn-outline" style={{ color: 'var(--text-primary)', borderColor: 'var(--border-secondary)' }}>
+                    <button className="btn btn-outline" style={{ color: 'var(--text-primary)', borderColor: 'var(--border-secondary)', display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 20px' }}>
                         <TrendingDown size={18} /> Зарлага гаргах
                     </button>
-                    <button className="btn btn-outline" style={{ marginLeft: 'auto' }}>
+                    <button className="btn btn-outline" style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 20px' }}>
                         <Download size={18} /> Тайлан татах
                     </button>
                 </div>
@@ -118,27 +118,27 @@ export function FinancePage() {
 
                 {/* Ledger / Recent Transactions */}
                 <h2 style={{ fontSize: '1.2rem', marginBottom: '16px' }}>Сүүлийн гүйлгээнүүд</h2>
-                <div className="data-table-container">
-                    <table className="data-table">
+                <div className="data-table-container" style={{ overflowX: 'auto' }}>
+                    <table className="data-table" style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
                         <thead>
-                            <tr>
-                                <th>Огноо</th>
-                                <th>Гүйлгээний утга</th>
-                                <th>Төрөл</th>
-                                <th>Харилцагч</th>
-                                <th style={{ textAlign: 'right' }}>Дүн</th>
+                            <tr style={{ borderBottom: '1px solid var(--border-color)', backgroundColor: 'var(--surface-2)' }}>
+                                <th style={{ padding: '14px 16px', fontWeight: 600, color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>Огноо</th>
+                                <th style={{ padding: '14px 16px', fontWeight: 600, color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>Гүйлгээний утга</th>
+                                <th style={{ padding: '14px 16px', fontWeight: 600, color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>Төрөл</th>
+                                <th style={{ padding: '14px 16px', fontWeight: 600, color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>Харилцагч</th>
+                                <th style={{ padding: '14px 16px', fontWeight: 600, color: 'var(--text-secondary)', whiteSpace: 'nowrap', textAlign: 'right' }}>Дүн</th>
                             </tr>
                         </thead>
                         <tbody>
                             {orders.map(o => (
-                                <tr key={o.id}>
-                                    <td>{o.createdAt.toLocaleDateString()}</td>
-                                    <td>Борлуулалтын орлого #{o.orderNumber}</td>
-                                    <td>
+                                <tr key={o.id} style={{ borderBottom: '1px solid var(--border-color)' }}>
+                                    <td style={{ padding: '16px' }}>{o.createdAt.toLocaleDateString()}</td>
+                                    <td style={{ padding: '16px', fontWeight: 500 }}>Борлуулалтын орлого #{o.orderNumber}</td>
+                                    <td style={{ padding: '16px' }}>
                                         <span className="badge badge-success">Орлого</span>
                                     </td>
-                                    <td>{o.customer?.name || 'Зочин'}</td>
-                                    <td style={{ textAlign: 'right', fontWeight: 600, color: '#27ae60' }}>
+                                    <td style={{ padding: '16px', color: 'var(--text-secondary)' }}>{o.customer?.name || 'Зочин'}</td>
+                                    <td style={{ padding: '16px', textAlign: 'right', fontWeight: 600, color: '#27ae60' }}>
                                         +{(o.financials?.totalAmount || 0).toLocaleString()} ₮
                                     </td>
                                 </tr>
