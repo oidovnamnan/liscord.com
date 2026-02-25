@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { Header } from '../../components/layout/Header';
 import { ImageUpload } from '../../components/common/ImageUpload';
-import { Search, Plus, AlertTriangle, Grid3X3, List, Loader2, MoreVertical, Globe } from 'lucide-react';
+import { Search, Plus, AlertTriangle, Grid3X3, List, Loader2, MoreVertical, Globe, EyeOff } from 'lucide-react';
 import { useBusinessStore, useAuthStore } from '../../store';
 import { productService, categoryService, cargoService } from '../../services/db';
 import { storageService as storage } from '../../services/storage';
@@ -167,6 +167,14 @@ export function ProductsPage() {
                                                 <span className="badge badge-soft" style={{ fontSize: '0.65rem' }}>{p.categoryName || 'АНГИЛАЛГҮЙ'}</span>
                                                 <span>•</span>
                                                 <span className="sku-text">{p.sku || '-'}</span>
+                                                {p.isHidden && (
+                                                    <>
+                                                        <span>•</span>
+                                                        <span style={{ fontSize: '0.65rem', color: 'var(--accent-orange)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4 }}>
+                                                            <EyeOff size={10} /> НУУЦЛАГДМАН
+                                                        </span>
+                                                    </>
+                                                )}
                                             </div>
 
                                             <div className="product-card-price-section">
@@ -229,6 +237,9 @@ function CreateProductModal({ onClose }: { onClose: () => void }) {
     const [cargoValue, setCargoValue] = useState<string>('1');
     const [cargoFee, setCargoFee] = useState<string>(business?.settings?.cargoConfig?.defaultFee?.toString() || '');
     const [isCargoIncluded, setIsCargoIncluded] = useState(business?.settings?.cargoConfig?.isIncludedByDefault || false);
+
+    // Visibility
+    const [isHidden, setIsHidden] = useState(false);
 
     useEffect(() => {
         if (!business?.id) return;
@@ -382,6 +393,7 @@ function CreateProductModal({ onClose }: { onClose: () => void }) {
                 } : {}),
                 unitType: 'ш',
                 isActive: true,
+                isHidden,
                 stats: { totalSold: 0, totalRevenue: 0 },
                 isDeleted: false
             });
@@ -573,6 +585,17 @@ function CreateProductModal({ onClose }: { onClose: () => void }) {
                                 </div>
                             </div>
                         )}
+
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px', background: isHidden ? 'var(--bg-hover)' : 'var(--bg-soft)', borderRadius: 8, border: '1px solid var(--border-color)', marginTop: 8 }}>
+                            <div style={{ flex: 1 }}>
+                                <div style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--text-primary)' }}>Онлайн дэлгүүрт харуулах эсэх?</div>
+                                <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Энэ барааг хэрэглэгчийн веб хуудаснаас нуух</div>
+                            </div>
+                            <div className={`input select-custom ${isHidden ? 'active' : ''}`} onClick={() => setIsHidden(!isHidden)} style={{ padding: '6px 12px', borderRadius: 6, border: '1px solid', borderColor: isHidden ? 'var(--accent-orange)' : 'var(--border-color)', background: isHidden ? 'rgba(255,159,67,0.1)' : 'transparent', color: isHidden ? 'var(--accent-orange)' : 'var(--text-secondary)', cursor: 'pointer', fontWeight: 600, fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: 6 }}>
+                                {isHidden ? <><EyeOff size={14} /> НУУГДСАН</> : <><Globe size={14} /> НЭЭЛТТЭЙ</>}
+                            </div>
+                        </div>
+
                     </div>
                     <div className="modal-footer">
                         <button type="button" className="btn btn-secondary" onClick={onClose} disabled={loading}>Болих</button>
@@ -629,6 +652,9 @@ function EditProductModal({ product, onClose }: { product: Product; onClose: () 
     const [cargoValue, setCargoValue] = useState<string>(product.cargoFee?.cargoValue?.toString() || '1');
     const [cargoFee, setCargoFee] = useState<string>(product.cargoFee?.amount?.toString() || '');
     const [isCargoIncluded, setIsCargoIncluded] = useState(product.cargoFee?.isIncluded || false);
+
+    // Visibility
+    const [isHidden, setIsHidden] = useState(product.isHidden || false);
 
     useEffect(() => {
         if (!business?.id) return;
@@ -757,7 +783,8 @@ function EditProductModal({ product, onClose }: { product: Product; onClose: () 
                         cargoValue: Number(cargoValue) || 1
                     }
                 } : {}),
-                updatedAt: new Date()
+                updatedAt: new Date(),
+                isHidden
             });
 
             toast.success('Амжилттай шинэчлэгдлээ');
@@ -944,6 +971,16 @@ function EditProductModal({ product, onClose }: { product: Product; onClose: () 
                                 </div>
                             </div>
                         )}
+
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px', background: isHidden ? 'var(--bg-hover)' : 'var(--bg-soft)', borderRadius: 8, border: '1px solid var(--border-color)', marginTop: 8 }}>
+                            <div style={{ flex: 1 }}>
+                                <div style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--text-primary)' }}>Онлайн дэлгүүрт харуулах эсэх?</div>
+                                <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Энэ барааг хэрэглэгчийн веб хуудаснаас нуух</div>
+                            </div>
+                            <div className={`input select-custom ${isHidden ? 'active' : ''}`} onClick={() => setIsHidden(!isHidden)} style={{ padding: '6px 12px', borderRadius: 6, border: '1px solid', borderColor: isHidden ? 'var(--accent-orange)' : 'var(--border-color)', background: isHidden ? 'rgba(255,159,67,0.1)' : 'transparent', color: isHidden ? 'var(--accent-orange)' : 'var(--text-secondary)', cursor: 'pointer', fontWeight: 600, fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: 6 }}>
+                                {isHidden ? <><EyeOff size={14} /> НУУГДСАН</> : <><Globe size={14} /> НЭЭЛТТЭЙ</>}
+                            </div>
+                        </div>
                     </div>
                     <div className="modal-footer">
                         <button type="button" className="btn btn-secondary" onClick={onClose} disabled={loading}>Болих</button>

@@ -439,6 +439,7 @@ export interface Product {
     createdAt: Date;
     updatedAt: Date;
     isDeleted: boolean;
+    isHidden?: boolean;
 }
 
 // ============ CATEGORY ============
