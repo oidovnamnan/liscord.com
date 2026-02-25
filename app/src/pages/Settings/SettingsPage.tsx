@@ -94,6 +94,13 @@ export function SettingsPage() {
         const enabled = fd.get('storefrontEnabled') === 'on';
         setLoading(true);
         try {
+            // Validate slug format
+            if (slug && !/^[a-z0-9-]+$/.test(slug)) {
+                toast.error('Холбоос зөвхөн жижиг англи үсэг, тоо болон дундуур зураас байж болно.');
+                setLoading(false);
+                return;
+            }
+
             // Check if slug is unique (if it changed)
             if (slug && slug !== business.slug) {
                 const existing = await businessService.getBusinessBySlug(slug);

@@ -103,7 +103,8 @@ export const businessService = {
         const q = query(collection(db, 'businesses'), where('slug', '==', slug), limit(1));
         const querySnapshot = await getDocs(q);
         if (querySnapshot.empty) return null;
-        return convertTimestamps(querySnapshot.docs[0].data()) as Business;
+        const doc = querySnapshot.docs[0];
+        return convertTimestamps({ id: doc.id, ...doc.data() }) as Business;
     },
 
     async createBusiness(business: Partial<Business>, ownerUid: string): Promise<string> {
