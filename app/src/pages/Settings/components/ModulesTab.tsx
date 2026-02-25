@@ -10,7 +10,7 @@ export const ALL_MODULES = [
     { id: 'products', label: 'Бараа бүртгэл', desc: 'Агуулах болон барааны үлдэгдэл', icon: Package, path: '/app/products' },
     { id: 'customers', label: 'Харилцагч', desc: 'Үйлчлүүлэгчдийн түүх, өр', icon: Users, path: '/app/customers' },
     { id: 'delivery', label: 'Хүргэлт', desc: 'Хүргэлтийн жолооч, статус', icon: Truck, path: '/app/delivery' },
-    { id: 'packages', label: 'Карго (AI)', desc: 'Хил дамнасан ачаа тээвэр', icon: ScanLine, path: '/app/packages' },
+    { id: 'packages', label: 'Ачаа (AI)', desc: 'Хил дамнасан ачаа тээвэр', icon: ScanLine, path: '/app/packages' },
     { id: 'inventory', label: 'Олон агуулах', desc: 'Агуулах хооронд шилжүүлэх', icon: Package, path: '/app/inventory' },
     { id: 'loans', label: 'Зээл / Ломбард', desc: 'Хүүний бодолт, барьцаа', icon: Landmark, path: '/app/loans' },
     { id: 'queue', label: 'Дараалал', icon: Layers, desc: 'Угаалга, салон, үйлчилгээний самбар', path: '/app/queue' },
