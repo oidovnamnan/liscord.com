@@ -11,7 +11,8 @@ import {
     LogOut,
     ChevronLeft,
     ChevronRight,
-    ArrowLeft
+    ArrowLeft,
+    CheckSquare
 } from 'lucide-react';
 import { useUIStore } from '../../store';
 import './Sidebar.css';
@@ -32,6 +33,7 @@ const navItems: NavItem[] = [
     { id: 'categories', label: 'Ангилал & Төрөл', icon: Tags, path: '/super/categories' },
     { id: 'global', label: 'Глобал Тохиргоо', icon: Globe, path: '/super/global-settings' },
     { id: 'settings', label: 'Модуль Тохиргоо', icon: Settings, path: '/super/settings' },
+    { id: 'requests', label: 'Хүсэлтүүд', icon: CheckSquare, path: '/super/requests' },
 ];
 
 export function SuperAdminSidebar() {

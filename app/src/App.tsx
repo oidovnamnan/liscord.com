@@ -51,6 +51,7 @@ import { SuperAdminCategories } from './pages/SuperAdmin/SuperAdminCategories';
 import { SuperAdminFinance } from './pages/SuperAdmin/SuperAdminFinance';
 import { SuperAdminAudit } from './pages/SuperAdmin/SuperAdminAudit';
 import { SuperAdminGlobalSettings } from './pages/SuperAdmin/SuperAdminGlobalSettings';
+import { SuperAdminRequests } from './pages/SuperAdmin/SuperAdminRequests';
 
 // Storefront Pages
 import { StorefrontWrapper } from './pages/Storefront/StorefrontWrapper';
@@ -280,6 +281,7 @@ export default function App() {
           <Route path="categories" element={<SuperAdminCategories />} />
           <Route path="finance" element={<SuperAdminFinance />} />
           <Route path="audit" element={<SuperAdminAudit />} />
+          <Route path="requests" element={<SuperAdminRequests />} />
           <Route path="global-settings" element={<SuperAdminGlobalSettings />} />
         </Route>
 

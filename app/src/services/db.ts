@@ -21,7 +21,7 @@ import { db } from './firebase';
 import { auditService } from './audit';
 import type {
     Business, User, Employee, Order, Customer, Product, Position, Category, CargoType, OrderSource, SocialAccount, OrderStatusConfig, BusinessStats,
-    PayrollEntry, BusinessCategoryConfig, PlatformPayment
+    PayrollEntry, BusinessCategoryConfig, PlatformPayment, BusinessRequest
 } from '../types';
 
 // ============ GENERIC HELPERS ============
@@ -165,6 +165,95 @@ export const businessService = {
     async updateBusiness(bizId: string, data: Partial<Business>) {
         await updateDoc(doc(db, 'businesses', bizId), {
             ...data,
+            updatedAt: serverTimestamp()
+        });
+    }
+};
+
+// ============ BUSINESS REQUEST SERVICES ============
+
+export const businessRequestService = {
+    async requestStorefrontChange(
+        businessId: string,
+        businessName: string,
+        requestedData: { name?: string; slug?: string },
+        reason: string
+    ): Promise<string> {
+        const reqRef = collection(db, 'business_requests');
+        const docRef = await addDoc(reqRef, {
+            businessId,
+            businessName,
+            type: 'storefront_change',
+            requestedData,
+            reason,
+            status: 'pending',
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp()
+        });
+        return docRef.id;
+    },
+
+    async getPendingRequest(businessId: string): Promise<BusinessRequest | null> {
+        const q = query(
+            collection(db, 'business_requests'),
+            where('businessId', '==', businessId),
+            where('type', '==', 'storefront_change'),
+            where('status', '==', 'pending'),
+            limit(1)
+        );
+        const snap = await getDocs(q);
+        if (snap.empty) return null;
+        const docSnap = snap.docs[0];
+        return convertTimestamps({ id: docSnap.id, ...docSnap.data() }) as BusinessRequest;
+    },
+
+    async getPendingRequests(): Promise<BusinessRequest[]> {
+        const q = query(
+            collection(db, 'business_requests'),
+            where('status', '==', 'pending'),
+            orderBy('createdAt', 'desc')
+        );
+        const snap = await getDocs(q);
+        return snap.docs.map(doc => convertTimestamps({ id: doc.id, ...doc.data() }) as BusinessRequest);
+    },
+
+    async approveRequest(requestId: string, businessId: string, requestedData: { name?: string; slug?: string }): Promise<void> {
+        const batch = writeBatch(db);
+
+        // Update the request document
+        const reqRef = doc(db, 'business_requests', requestId);
+        batch.update(reqRef, {
+            status: 'approved',
+            resolvedAt: serverTimestamp(),
+            updatedAt: serverTimestamp()
+        });
+
+        // Update the business document
+        const bizRef = doc(db, 'businesses', businessId);
+        const businessUpdate: any = {
+            lastStorefrontChangeAt: serverTimestamp(),
+            updatedAt: serverTimestamp()
+        };
+
+        if (requestedData.slug) {
+            businessUpdate.slug = requestedData.slug;
+        }
+
+        // Settings name update requires reading the document first to preserve other settings usually,
+        // but since settings is a nested map, we can use dot notation in firestore
+        if (requestedData.name !== undefined) {
+            businessUpdate['settings.storefront.name'] = requestedData.name;
+        }
+
+        batch.update(bizRef, businessUpdate);
+
+        await batch.commit();
+    },
+
+    async rejectRequest(requestId: string): Promise<void> {
+        await updateDoc(doc(db, 'business_requests', requestId), {
+            status: 'rejected',
+            resolvedAt: serverTimestamp(),
             updatedAt: serverTimestamp()
         });
     }

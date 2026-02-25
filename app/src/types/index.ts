@@ -109,6 +109,23 @@ export interface Business {
     };
     createdAt: Date;
     updatedAt: Date;
+    lastStorefrontChangeAt?: Date;
+}
+
+export interface BusinessRequest {
+    id: string;
+    businessId: string;
+    businessName: string;
+    type: 'storefront_change';
+    requestedData: {
+        name?: string;
+        slug?: string;
+    };
+    reason: string;
+    status: 'pending' | 'approved' | 'rejected';
+    createdAt: Date;
+    updatedAt: Date;
+    resolvedAt?: Date;
 }
 
 export interface PlatformPayment {

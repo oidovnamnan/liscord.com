@@ -1,16 +1,16 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { useSearchParams } from 'react-router-dom';
 import { Header } from '../../components/layout/Header';
 import { Building2, Palette, Bell, Shield, Users, Globe, Moon, Sun, Monitor, Loader2, Plus, MoreVertical, Trash2, Share2, X, CheckSquare, ListOrdered, ChevronUp, ChevronDown, ShoppingBag, Layers, CreditCard } from 'lucide-react';
 import { useBusinessStore, useUIStore } from '../../store';
-import { businessService, teamService, cargoService, sourceService, orderStatusService } from '../../services/db';
+import { businessService, teamService, cargoService, sourceService, orderStatusService, businessRequestService } from '../../services/db';
 import { toast } from 'react-hot-toast';
 import { PINModal } from '../../components/common/PINModal';
 import { ActivityTab } from './components/ActivityTab';
 import { ModulesTab } from './components/ModulesTab';
 import { PaymentTab } from './components/PaymentTab';
-import { ALL_PERMISSIONS, type Position, type Employee, type CargoType, type OrderSource, type SocialAccount, type OrderStatusConfig } from '../../types';
+import { ALL_PERMISSIONS, type Position, type Employee, type CargoType, type OrderSource, type SocialAccount, type OrderStatusConfig, type BusinessRequest } from '../../types';
 import './SettingsPage.css';
 
 export function SettingsPage() {
@@ -28,11 +28,27 @@ export function SettingsPage() {
     const [loading, setLoading] = useState(false);
     const [isDirty, setIsDirty] = useState(false);
     const [storefrontSlug, setStorefrontSlug] = useState(business?.slug || '');
+    const [pendingRequest, setPendingRequest] = useState<BusinessRequest | null>(null);
+    const [showRequestModal, setShowRequestModal] = useState(false);
+    const [requestReason, setRequestReason] = useState('');
+    const [requestedChanges, setRequestedChanges] = useState<{ name?: string, slug?: string }>({});
+
+    const isStorefrontLocked = useMemo(() => {
+        if (!business?.lastStorefrontChangeAt) return false;
+        const daysSince = (new Date().getTime() - business.lastStorefrontChangeAt.getTime()) / (1000 * 3600 * 24);
+        return daysSince < 365;
+    }, [business?.lastStorefrontChangeAt]);
 
     useEffect(() => {
         setIsDirty(false);
         setStorefrontSlug(business?.slug || '');
-    }, [activeTab, business?.slug]);
+
+        if (activeTab === 'storefront' && business) {
+            businessRequestService.getPendingRequest(business.id)
+                .then(setPendingRequest)
+                .catch(console.error);
+        }
+    }, [activeTab, business?.slug, business?.id]);
 
     const tabs = [
         { id: 'general', label: 'Ерөнхий', icon: Building2 },
@@ -101,15 +117,40 @@ export function SettingsPage() {
                 return;
             }
 
-            // Check if slug is unique (if it changed)
-            if (slug && slug !== business.slug) {
-                const existing = await businessService.getBusinessBySlug(slug);
-                if (existing) {
-                    toast.error('Энэ дэлгүүрийн холбоос давхардсан байна. Өөр үг сонгоно уу.');
+            // Check if slug or name actually changed
+            const slugChanged = slug !== business.slug;
+            const nameChanged = storefrontName !== (business.settings?.storefront?.name || '');
+
+            if (slugChanged || nameChanged) {
+                // If they changed and we locked, user shouldn't be here, but just in case
+                if (isStorefrontLocked || pendingRequest) {
+                    toast.error('Одоогоор өөрчлөх боломжгүй байна.');
                     setLoading(false);
                     return;
                 }
+
+                // Verify slug uniqueness first
+                if (slugChanged && slug) {
+                    const existing = await businessService.getBusinessBySlug(slug);
+                    if (existing) {
+                        toast.error('Энэ дэлгүүрийн холбоос давхардсан байна. Өөр үг сонгоно уу.');
+                        setLoading(false);
+                        return;
+                    }
+                }
+
+                // Prepare changes and open modal
+                setRequestedChanges({
+                    ...(slugChanged ? { slug } : {}),
+                    ...(nameChanged ? { name: storefrontName } : {})
+                });
+                setShowRequestModal(true);
+                setLoading(false);
+                return;
             }
+
+            // Only saving straightforward toggle (enabled/disabled) directly
+
             await businessService.updateBusiness(business.id, {
                 slug: slug || business.slug || '',
                 settings: {
@@ -124,6 +165,29 @@ export function SettingsPage() {
             setIsDirty(false);
             toast.success('Дэлгүүрийн тохиргоо хадгалагдлаа');
         } catch (error) { toast.error('Алдаа гарлаа'); } finally { setLoading(false); }
+    };
+
+    const handleSubmitRequest = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!business) return;
+        setLoading(true);
+        try {
+            await businessRequestService.requestStorefrontChange(
+                business.id,
+                business.name,
+                requestedChanges,
+                requestReason
+            );
+            toast.success('Хүсэлт амжилттай илгээгдлээ');
+            setShowRequestModal(false);
+            setRequestReason('');
+            const pending = await businessRequestService.getPendingRequest(business.id);
+            setPendingRequest(pending);
+        } catch (error) {
+            toast.error('Алдаа гарлаа');
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (
@@ -217,21 +281,33 @@ export function SettingsPage() {
                                 <h2>Дэлгүүрийн тохиргоо</h2>
 
                                 <div className="settings-card">
-                                    <div className="settings-card-header">
+                                    <div className="settings-card-header" style={{ marginBottom: 12 }}>
                                         <div className="settings-card-icon"><ShoppingBag size={20} /></div>
                                         <h3>Онлайн дэлгүүрийн холбоос болон нээлттэй эсэх</h3>
                                     </div>
+
+                                    {pendingRequest && (
+                                        <div style={{ padding: 12, borderRadius: 8, background: 'var(--warning-light)', color: 'var(--warning-dark)', marginBottom: 16, fontSize: '0.9rem', border: '1px solid var(--warning)' }}>
+                                            <strong>Зөвшөөрөл хүлээгдэж байна!</strong> Таны нэр эсвэл холбоос солих хүсэлт Субер Админ руу илгээгдсэн тул одоогоор өөрчлөх боломжгүй байна.
+                                        </div>
+                                    )}
+                                    {isStorefrontLocked && !pendingRequest && (
+                                        <div style={{ padding: 12, borderRadius: 8, background: 'var(--info-light)', color: 'var(--info-dark)', marginBottom: 16, fontSize: '0.9rem', border: '1px solid var(--info)' }}>
+                                            <strong>Хязгаарлалт:</strong> Дэлгүүрийн нэр болон холбоосыг жилд нэг л удаа өөрчлөх боломжтой.
+                                        </div>
+                                    )}
+
                                     <form className="settings-form" onSubmit={handleUpdateStorefront} onChange={() => setIsDirty(true)}>
                                         <div className="input-group">
-                                            <label className="input-label">Дэлгүүрийн нэр</label>
-                                            <input className="input" name="storefrontName" defaultValue={business?.settings?.storefront?.name || ''} placeholder="Жнь: NamShop" />
+                                            <label className="input-label">Дэлгүүрийн нэр <span style={{ color: 'var(--danger)', fontSize: '0.8rem' }}>*жилд 1 удаа</span></label>
+                                            <input className="input" name="storefrontName" defaultValue={business?.settings?.storefront?.name || ''} placeholder="NamShop" disabled={isStorefrontLocked || !!pendingRequest} />
                                             <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: '4px 0 0 0' }}>Дэлгүүрийн хуудсан дээр харагдах нэр. Хоосон орхивол бизнесийн нэр харагдана.</p>
                                         </div>
                                         <div className="input-group">
-                                            <label className="input-label">Дэлгүүрийн холбоос (Slug)</label>
+                                            <label className="input-label">Дэлгүүрийн холбоос (Slug) <span style={{ color: 'var(--danger)', fontSize: '0.8rem' }}>*жилд 1 удаа</span></label>
                                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                                 <span style={{ color: 'var(--text-muted)' }}>{window.location.origin}/s/</span>
-                                                <input className="input" name="slug" value={storefrontSlug} onChange={(e) => { setStorefrontSlug(e.target.value.toLowerCase()); setIsDirty(true); }} placeholder="zara-mongolia" required pattern="[a-z0-9-]+" title="Зөвхөн жижиг англи үсэг, тоо болон зураас ашиглана уу" style={{ flex: 1 }} />
+                                                <input className="input" name="slug" value={storefrontSlug} onChange={(e) => { setStorefrontSlug(e.target.value.toLowerCase()); setIsDirty(true); }} placeholder="zara-mongolia" required pattern="[a-z0-9-]+" title="Зөвхөн жижиг англи үсэг, тоо болон зураас ашиглана уу" style={{ flex: 1 }} disabled={isStorefrontLocked || !!pendingRequest} />
                                             </div>
                                             <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: '4px 0 0 0' }}>Зөвхөн жижиг англи үсэг, тоо болон дундуур зураас орж болно.</p>
                                         </div>
@@ -430,6 +506,39 @@ export function SettingsPage() {
                     </div>
                 </div>
             </div>
+
+            {/* Request Modal */}
+            {showRequestModal && createPortal(
+                <div className="modal-overlay">
+                    <div className="modal-content animate-scale" style={{ maxWidth: '400px' }}>
+                        <div className="modal-header">
+                            <h3><Shield size={18} style={{ color: 'var(--warning)', marginRight: 8, display: 'inline' }} /> Өөрчлөх хүсэлт илгээх</h3>
+                            <button className="icon-btn" onClick={() => setShowRequestModal(false)}><X size={20} /></button>
+                        </div>
+                        <form onSubmit={handleSubmitRequest} className="modal-body">
+                            <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', marginBottom: 16 }}>
+                                Дэлгүүрийн нэр болон холбоосыг <strong>жилд нэг л удаа</strong> өөрчилдөг тул Супер Админы зөвшөөрөл шаардлагатай. Та доорх хэсэгт ямар шалтгаанаар өөрчилж байгаагаа тодорхой бичиж үлдээнэ үү.
+                            </p>
+                            <textarea
+                                className="input"
+                                style={{ height: '100px', resize: 'vertical' }}
+                                placeholder="Шалтгаанаа тодорхой бичнэ үү..."
+                                value={requestReason}
+                                onChange={e => setRequestReason(e.target.value)}
+                                required
+                                minLength={10}
+                            />
+                            <div className="modal-footer" style={{ marginTop: 24 }}>
+                                <button type="button" className="btn btn-ghost" onClick={() => setShowRequestModal(false)}>Цуцлах</button>
+                                <button type="submit" className="btn btn-primary" disabled={loading}>
+                                    {loading ? <Loader2 className="animate-spin" size={16} /> : 'Хүсэлт илгээх'}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>,
+                document.body
+            )}
         </>
     );
 }
