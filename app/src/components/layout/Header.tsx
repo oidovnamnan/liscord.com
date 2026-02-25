@@ -81,9 +81,9 @@ export function Header({ title, subtitle, action }: HeaderProps) {
                     {isNotifOpen && (
                         <div className="notif-dropdown shadow-lg animate-slide-up" style={{
                             position: 'absolute', top: '100%', right: 0, marginTop: '8px',
-                            width: '320px', background: 'var(--bg-main)', borderRadius: '12px',
+                            width: '320px', background: 'var(--surface-1)', borderRadius: '12px',
                             border: '1px solid var(--border-color)',
-                            zIndex: 100, display: 'flex', flexDirection: 'column'
+                            zIndex: 1000, display: 'flex', flexDirection: 'column'
                         }}>
                             <div style={{ padding: '16px', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                 <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 600 }}>Мэдэгдэл</h3>
