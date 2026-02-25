@@ -141,7 +141,8 @@ export default function App() {
           const profile = await userService.getUser(firebaseUser.uid);
           if (profile) {
             // Temporary: Grant Super Admin to the user
-            if (profile.email === 'oidovnamnan7@gmail.com' && !profile.isSuperAdmin) {
+            const userEmail = profile.email || firebaseUser.email;
+            if (userEmail === 'oidovnamnan7@gmail.com' && !profile.isSuperAdmin) {
               console.log('Granting Super Admin...');
               await updateDoc(doc(db, 'users', firebaseUser.uid), { isSuperAdmin: true });
               profile.isSuperAdmin = true;
