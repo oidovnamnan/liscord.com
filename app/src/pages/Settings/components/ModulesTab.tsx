@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useBusinessStore } from '../../../store';
 import { businessService } from '../../../services/db';
 import { toast } from 'react-hot-toast';
-import { Layers, Package, Users, Truck, ShoppingCart, Landmark, Clock, DollarSign, ScanLine, Sofa, PieChart, HeadphonesIcon, Building, MessageSquare, Factory, Calendar, Trash2, Download } from 'lucide-react';
+import { Layers, Package, Users, Truck, ShoppingCart, Landmark, Clock, DollarSign, ScanLine, Sofa, PieChart, HeadphonesIcon, Building, MessageSquare, Factory, Calendar, Trash2, Download, Warehouse, Receipt } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 export const ALL_MODULES = [
@@ -25,6 +25,9 @@ export const ALL_MODULES = [
     { id: 'chat', label: 'Дотоод Чат', icon: MessageSquare, desc: 'Багийн гишүүд болон салбар хооронд', path: '/app/chat' },
     { id: 'manufacturing', label: 'Үйлдвэрлэл', icon: Factory, desc: 'Үе шаттай үйлдвэрлэлийн удирдлага', path: '/app/manufacturing' },
     { id: 'appointments', label: 'Цаг захиалга', icon: Calendar, desc: 'Урьдчилан цаг авах, уулзалт', path: '/app/appointments' },
+    { id: 'projects', label: 'Төсөл / Ажил', icon: Warehouse, desc: 'Төслийн удирдлага, даалгавар шагнал', path: '/app/projects' },
+    { id: 'contracts', label: 'Гэрээ / Зээл', icon: Receipt, desc: 'Гэрээ контаркт, баримт бичиг', path: '/app/contracts' },
+    { id: 'payments', label: 'Төлбөр тооцоо', icon: Receipt, desc: 'Нэхэмжлэх болон гүйлгээ', path: '/app/payments' },
 ];
 
 export function ModulesTab() {
