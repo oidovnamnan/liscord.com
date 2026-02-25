@@ -19,10 +19,13 @@
     flex: 1;
     display: flex;
     flex-direction: column;
-    background: rgba(255, 255, 255, 0.02);
+    background: rgba(15, 23, 42, 0.4);
+    /* Darker blur matching Liscord */
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
     border-top-left-radius: 24px;
+    padding: 24px;
+    /* Added internal padding */
     border-left: 1px solid rgba(255, 255, 255, 0.05);
     border-top: 1px solid rgba(255, 255, 255, 0.05);
     margin-top: 8px;
@@ -33,11 +36,15 @@
 }
 
 .app-v2-container.sidebar-open .app-v2-main {
-    margin-left: 240px;
+    margin-left: 280px;
+    /* Matched the Sidebar width */
+    width: calc(100% - 280px);
 }
 
 .app-v2-container.sidebar-closed .app-v2-main {
-    margin-left: 0;
+    margin-left: 80px;
+    /* Matched collapsed Sidebar width */
+    width: calc(100% - 80px);
 }
 
 @media (max-width: 768px) {
@@ -98,4 +105,133 @@
     border: 1px solid rgba(255, 255, 255, 0.08) !important;
     backdrop-filter: blur(10px) !important;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2) !important;
+}
+
+.app-v2-main .page-header-title {
+    color: #fff !important;
+}
+
+.app-v2-main .page-header-subtitle {
+    color: rgba(255, 255, 255, 0.7) !important;
+}
+
+.app-v2-main .text-secondary {
+    color: rgba(255, 255, 255, 0.6) !important;
+}
+
+/* Overrides for the standard .page class */
+.app-v2-main .page {
+    padding: 0 !important;
+    max-width: 100%;
+    margin: 0;
+}
+
+/* Fix overlaps for specific child views mapping to page class */
+.app-v2-main .page-container {
+    padding: 0 !important;
+    max-width: 100%;
+}
+
+.app-v2-main .page-content {
+    padding-top: 16px;
+}
+
+/* Overrides for Header in V2 */
+.app-v2 .header {
+    background: transparent !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
+    backdrop-filter: blur(20px) !important;
+}
+
+.app-v2 .header-title {
+    color: #fff !important;
+}
+
+.app-v2 .header-subtitle {
+    color: rgba(255, 255, 255, 0.7) !important;
+}
+
+.app-v2 .page-container,
+.app-v2 .page-content {
+    background: transparent !important;
+    box-shadow: none !important;
+}
+
+.app-v2 .header-title {
+    color: #fff !important;
+}
+
+.app-v2 .header-subtitle {
+    color: rgba(255, 255, 255, 0.7) !important;
+}
+
+/* Overrides for Sidebar in V2 */
+.app-v2-container .sidebar {
+    background: transparent !important;
+    border-right: 1px solid rgba(255, 255, 255, 0.05) !important;
+}
+
+.app-v2-container .sidebar-business-name {
+    color: #fff !important;
+}
+
+.app-v2-container .switcher-arrow {
+    color: rgba(255, 255, 255, 0.5) !important;
+}
+
+.app-v2-container .sidebar-link {
+    color: rgba(255, 255, 255, 0.7) !important;
+}
+
+.app-v2-container .sidebar-link:hover {
+    background: rgba(255, 255, 255, 0.05) !important;
+    color: #fff !important;
+}
+
+.app-v2-container .sidebar-link.active {
+    background: rgba(168, 85, 247, 0.15) !important;
+    color: #d8b4fe !important;
+}
+
+/* Deep component overrides for V2 */
+.app-v2 .stat-card {
+    background: rgba(255, 255, 255, 0.03) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    backdrop-filter: blur(10px) !important;
+}
+
+.app-v2 .stat-card-label {
+    color: rgba(255, 255, 255, 0.7) !important;
+}
+
+.app-v2 .input,
+.app-v2 .select,
+.app-v2 .textarea {
+    background: rgba(0, 0, 0, 0.2) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    color: #fff !important;
+}
+
+.app-v2 .input::placeholder,
+.app-v2 .textarea::placeholder {
+    color: rgba(255, 255, 255, 0.4) !important;
+}
+
+.app-v2 .input-label {
+    color: rgba(255, 255, 255, 0.8) !important;
+}
+
+.app-v2 table th {
+    background: rgba(255, 255, 255, 0.05) !important;
+    color: #fff !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+.app-v2 table td {
+    color: rgba(255, 255, 255, 0.85) !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
+}
+
+.app-v2 .badge {
+    backdrop-filter: blur(4px);
 }
