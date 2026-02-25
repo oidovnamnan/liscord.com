@@ -60,6 +60,7 @@ import { StoreCheckout } from './pages/Storefront/StoreCheckout';
 // Components
 import { BusinessWizard } from './components/auth/BusinessWizard';
 import { AppLayoutV2 } from './components/layout/AppLayoutV2';
+import { SuperAdminLayout } from './components/layout/SuperAdminLayout';
 
 // Protected Route wrapper
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -268,7 +269,7 @@ export default function App() {
           path="/super"
           element={
             <SuperAdminRoute>
-              <DynamicAppLayout />
+              <SuperAdminLayout />
             </SuperAdminRoute>
           }
         >
