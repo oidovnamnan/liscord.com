@@ -141,7 +141,7 @@ export function ModulesTab() {
                                 </p>
                             </div>
 
-                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', minWidth: '80px' }}>
+                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', minWidth: '100px' }}>
                                 {isInstalling ? (
                                     <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
                                         <div style={{ position: 'relative', width: '36px', height: '36px' }}>
@@ -166,7 +166,7 @@ export function ModulesTab() {
                                     <>
                                         <button
                                             className="btn btn-primary btn-sm"
-                                            style={{ width: '100%', borderRadius: '20px', padding: '6px 0', fontSize: '0.85rem', fontWeight: 600 }}
+                                            style={{ width: '100%', borderRadius: '20px', padding: '6px 12px', fontSize: '0.85rem', fontWeight: 600 }}
                                             onClick={() => navigate(mod.path)}
                                         >
                                             Нээх
@@ -181,10 +181,10 @@ export function ModulesTab() {
                                 ) : (
                                     <button
                                         className="btn btn-outline btn-sm"
-                                        style={{ width: '100%', borderRadius: '20px', padding: '6px 0', fontSize: '0.85rem', fontWeight: 600, color: 'var(--primary)', borderColor: 'var(--primary)', background: 'rgba(74, 107, 255, 0.05)' }}
+                                        style={{ width: '100%', borderRadius: '20px', padding: '6px 12px', fontSize: '0.85rem', fontWeight: 600, color: 'var(--primary)', borderColor: 'var(--primary)', background: 'rgba(74, 107, 255, 0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                                         onClick={() => handleInstallModule(mod.id)}
                                     >
-                                        <Download size={14} style={{ marginRight: 4 }} /> Суулгах
+                                        <Download size={14} style={{ marginRight: 6 }} /> Суулгах
                                     </button>
                                 )}
                             </div>
