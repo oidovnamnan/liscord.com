@@ -117,41 +117,46 @@ export function FinancePage() {
                 </div>
 
                 {/* Ledger / Recent Transactions */}
-                <h2 style={{ fontSize: '1.2rem', marginBottom: '16px' }}>Сүүлийн гүйлгээнүүд</h2>
-                <div className="data-table-container" style={{ overflowX: 'auto' }}>
-                    <table className="data-table" style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-                        <thead>
-                            <tr style={{ borderBottom: '1px solid var(--border-color)', backgroundColor: 'var(--surface-2)' }}>
-                                <th style={{ padding: '14px 16px', fontWeight: 600, color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>Огноо</th>
-                                <th style={{ padding: '14px 16px', fontWeight: 600, color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>Гүйлгээний утга</th>
-                                <th style={{ padding: '14px 16px', fontWeight: 600, color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>Төрөл</th>
-                                <th style={{ padding: '14px 16px', fontWeight: 600, color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>Харилцагч</th>
-                                <th style={{ padding: '14px 16px', fontWeight: 600, color: 'var(--text-secondary)', whiteSpace: 'nowrap', textAlign: 'right' }}>Дүн</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {orders.map(o => (
-                                <tr key={o.id} style={{ borderBottom: '1px solid var(--border-color)' }}>
-                                    <td style={{ padding: '16px' }}>{o.createdAt.toLocaleDateString()}</td>
-                                    <td style={{ padding: '16px', fontWeight: 500 }}>Борлуулалтын орлого #{o.orderNumber}</td>
-                                    <td style={{ padding: '16px' }}>
-                                        <span className="badge badge-success">Орлого</span>
-                                    </td>
-                                    <td style={{ padding: '16px', color: 'var(--text-secondary)' }}>{o.customer?.name || 'Зочин'}</td>
-                                    <td style={{ padding: '16px', textAlign: 'right', fontWeight: 600, color: '#27ae60' }}>
-                                        +{(o.financials?.totalAmount || 0).toLocaleString()} ₮
-                                    </td>
+                <div style={{ background: 'var(--surface-1)', padding: '24px', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-color)' }}>
+                    <h2 style={{ fontSize: '1.2rem', marginBottom: '20px', marginTop: 0 }}>Сүүлийн гүйлгээнүүд</h2>
+                    <div className="data-table-container" style={{ overflowX: 'auto' }}>
+                        <table className="data-table" style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+                            <thead>
+                                <tr style={{ borderBottom: '1px solid var(--border-color)', backgroundColor: 'var(--surface-2)' }}>
+                                    <th style={{ padding: '14px 16px', fontWeight: 600, color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>Огноо</th>
+                                    <th style={{ padding: '14px 16px', fontWeight: 600, color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>Гүйлгээний утга</th>
+                                    <th style={{ padding: '14px 16px', fontWeight: 600, color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>Төрөл</th>
+                                    <th style={{ padding: '14px 16px', fontWeight: 600, color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>Харилцагч</th>
+                                    <th style={{ padding: '14px 16px', fontWeight: 600, color: 'var(--text-secondary)', whiteSpace: 'nowrap', textAlign: 'right' }}>Дүн</th>
                                 </tr>
-                            ))}
-                            {orders.length === 0 && !loading && (
-                                <tr>
-                                    <td colSpan={5} style={{ textAlign: 'center', padding: '32px', color: 'var(--text-muted)' }}>
-                                        Гүйлгээ олдсонгүй
-                                    </td>
-                                </tr>
-                            )}
-                        </tbody>
-                    </table>
+                            </thead>
+                            <tbody>
+                                {orders.map(o => (
+                                    <tr key={o.id} style={{ borderBottom: '1px solid var(--border-color)' }}>
+                                        <td style={{ padding: '16px' }}>{o.createdAt.toLocaleDateString()}</td>
+                                        <td style={{ padding: '16px', fontWeight: 500 }}>Борлуулалтын орлого #{o.orderNumber}</td>
+                                        <td style={{ padding: '16px' }}>
+                                            <span className="badge badge-success">Орлого</span>
+                                        </td>
+                                        <td style={{ padding: '16px', color: 'var(--text-secondary)' }}>{o.customer?.name || 'Зочин'}</td>
+                                        <td style={{ padding: '16px', textAlign: 'right', fontWeight: 600, color: '#27ae60' }}>
+                                            +{(o.financials?.totalAmount || 0).toLocaleString()} ₮
+                                        </td>
+                                    </tr>
+                                ))}
+                                {orders.length === 0 && !loading && (
+                                    <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
+                                        <td colSpan={5} style={{ textAlign: 'center', padding: '48px 16px', color: 'var(--text-muted)' }}>
+                                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
+                                                <span style={{ fontSize: '1rem', fontWeight: 500 }}>Гүйлгээ олдсонгүй</span>
+                                                <span style={{ fontSize: '0.85rem' }}>Одоогоор бүртгэгдсэн гүйлгээ байхгүй байна.</span>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
 
             </div>
