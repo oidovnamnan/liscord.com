@@ -2,34 +2,10 @@ import { useState } from 'react';
 import { useBusinessStore } from '../../../store';
 import { businessService } from '../../../services/db';
 import { toast } from 'react-hot-toast';
-import { Layers, Package, Users, Truck, ShoppingCart, Landmark, Clock, DollarSign, ScanLine, Sofa, PieChart, HeadphonesIcon, Building, MessageSquare, Factory, Calendar, Trash2, Download, Warehouse, Receipt, Globe } from 'lucide-react';
+import { Layers, Trash2, Download } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
-export const ALL_MODULES = [
-    { id: 'orders', label: 'Борлуулалт / POS', desc: 'Дэлгүүр, кассын борлуулалт', icon: ShoppingCart, path: '/app/orders' },
-    { id: 'products', label: 'Бараа бүртгэл', desc: 'Агуулах болон барааны үлдэгдэл', icon: Package, path: '/app/products' },
-    { id: 'customers', label: 'Харилцагч', desc: 'Үйлчлүүлэгчдийн түүх, өр', icon: Users, path: '/app/customers' },
-    { id: 'delivery', label: 'Хүргэлт', desc: 'Хүргэлтийн жолооч, статус', icon: Truck, path: '/app/delivery' },
-    { id: 'packages', label: 'Ачаа (AI)', desc: 'Хил дамнасан ачаа тээвэр', icon: ScanLine, path: '/app/packages' },
-    { id: 'cargo_settings', label: 'Ухаалаг Карго', desc: 'Кг, м3, ширхгээр үнэ бодох (Zamex)', icon: Globe, path: '/app/settings?tab=cargo' },
-    { id: 'inventory', label: 'Олон агуулах', desc: 'Агуулах хооронд шилжүүлэх', icon: Package, path: '/app/inventory' },
-    { id: 'loans', label: 'Зээл / Ломбард', desc: 'Хүүний бодолт, барьцаа', icon: Landmark, path: '/app/loans' },
-    { id: 'queue', label: 'Дараалал', icon: Layers, desc: 'Угаалга, салон, үйлчилгээний самбар', path: '/app/queue' },
-    { id: 'attendance', label: 'Цаг бүртгэл', icon: Clock, desc: 'Ажилчдын ирсэн/гарсан цаг', path: '/app/attendance' },
-    { id: 'payroll', label: 'Цалин', icon: DollarSign, desc: 'Цэвэр цалин, суутгал тооцох', path: '/app/payroll' },
-    { id: 'rooms', label: 'Өрөө / Буудал', icon: Sofa, desc: 'Амралтын газар, зочид буудал', path: '/app/rooms' },
-    { id: 'vehicles', label: 'Түрээс', icon: Truck, desc: 'Машин болон тоног төхөөрөмж', path: '/app/vehicles' },
-    { id: 'tickets', label: 'Тасалбар', icon: ScanLine, desc: 'Эвэнт зохион байгуулах', path: '/app/tickets' },
-    { id: 'finance', label: 'Санхүү & Татвар', icon: PieChart, desc: 'Орлого, зарлага, авлага өглөг', path: '/app/finance' },
-    { id: 'support', label: 'Гомдол / Буцаалт', icon: HeadphonesIcon, desc: 'Баталгаат засвар, хэрэглэгчийн санал', path: '/app/support' },
-    { id: 'b2b', label: 'B2B Портал', icon: Building, desc: 'Бөөний харилцагчийн систем', path: '/app/b2b' },
-    { id: 'chat', label: 'Дотоод Чат', icon: MessageSquare, desc: 'Багийн гишүүд болон салбар хооронд', path: '/app/chat' },
-    { id: 'manufacturing', label: 'Үйлдвэрлэл', icon: Factory, desc: 'Үе шаттай үйлдвэрлэлийн удирдлага', path: '/app/manufacturing' },
-    { id: 'appointments', label: 'Цаг захиалга', icon: Calendar, desc: 'Урьдчилан цаг авах, уулзалт', path: '/app/appointments' },
-    { id: 'projects', label: 'Төсөл / Ажил', icon: Warehouse, desc: 'Төслийн удирдлага, даалгавар шагнал', path: '/app/projects' },
-    { id: 'contracts', label: 'Гэрээ / Зээл', icon: Receipt, desc: 'Гэрээ контаркт, баримт бичиг', path: '/app/contracts' },
-    { id: 'payments', label: 'Төлбөр тооцоо', icon: Receipt, desc: 'Нэхэмжлэх болон гүйлгээ', path: '/app/payments' },
-];
+import { APP_MODULES } from '../../../config/modules';
 
 export function ModulesTab() {
     const { business, setBusiness } = useBusinessStore();
@@ -100,7 +76,7 @@ export function ModulesTab() {
             </p>
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '20px' }}>
-                {ALL_MODULES.map(mod => {
+                {APP_MODULES.filter(mod => !mod.isCore).map(mod => {
                     const Icon = mod.icon;
                     const isInstalled = activeMods.includes(mod.id);
                     const isInstalling = installingId === mod.id;
@@ -138,10 +114,10 @@ export function ModulesTab() {
 
                             <div style={{ flex: 1, minWidth: 0 }}>
                                 <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 700, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                    {mod.label}
+                                    {mod.name}
                                 </h3>
                                 <p style={{ margin: '4px 0 0 0', fontSize: '0.85rem', color: 'var(--text-muted)', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
-                                    {mod.desc}
+                                    {mod.description}
                                 </p>
                             </div>
 
@@ -171,7 +147,7 @@ export function ModulesTab() {
                                         <button
                                             className="btn btn-primary btn-sm"
                                             style={{ width: '100%', borderRadius: '20px', padding: '6px 12px', fontSize: '0.85rem', fontWeight: 600 }}
-                                            onClick={() => navigate(mod.path)}
+                                            onClick={() => navigate(mod.path || `/app/${mod.id}`)}
                                         >
                                             Нээх
                                         </button>

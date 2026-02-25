@@ -135,28 +135,30 @@ export function Sidebar() {
         const hasPerm = !item.permission || hasPermission(item.permission);
         if (!hasPerm) return false;
 
-        // The core items everyone should see (unless permission blocked)
-        const ALWAYS_VISIBLE = ['dashboard', 'reports', 'settings', 'chat', 'employees', 'b2b'];
+        // Settings is the ONLY core item always visible regardless of modules
+        if (item.id === 'settings') return true;
 
-        // If the business has explicit activeModules set (The New App Store Way)
-        if (business?.activeModules !== undefined) {
-            // Even if empty [], we only show ALWAYS_VISIBLE + explicitly active ones
-            if (ALWAYS_VISIBLE.includes(item.id)) return true;
+        // For all other items, they MUST be explicitly in the activeModules array
+        // If activeModules is undefined (legacy account not migrated yet), we might 
+        // temporarily show a default set, or just rely on the migration script. 
+        // Since we are forcing the App Store model, we will trust activeModules.
+        if (business?.activeModules) {
             return business.activeModules.includes(item.id);
         }
 
-        // Fallback: Old hardcoded feature flags category logic (The Old Way) - Only applies to legacy accounts
+        // --- LEGACY FALLBACK (Will be removed after DB is fully migrated) ---
+        // If the business doesn't even have the activeModules field yet, 
+        // fallback to old feature logic just to prevent a completely blank screen today.
         if (item.feature) {
             if (item.feature === 'isB2BProvider') return business?.serviceProfile?.isProvider === true;
             return features[item.feature as keyof BusinessFeatures];
         }
 
-        // For new modules without 'feature' tags added yet when activeModules is empty
-        if (['loans', 'queue', 'attendance', 'payroll'].includes(item.id)) {
-            return false; // Hide by default until activated in App Store
-        }
+        // Show core legacy items if no activeModules array exists at all
+        const LEGACY_VISIBLE = ['dashboard', 'reports', 'chat', 'employees', 'b2b'];
+        if (LEGACY_VISIBLE.includes(item.id)) return true;
 
-        return true;
+        return false;
     });
 
 

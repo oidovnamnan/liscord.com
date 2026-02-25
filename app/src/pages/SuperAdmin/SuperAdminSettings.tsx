@@ -4,12 +4,13 @@ import { Header } from '../../components/layout/Header';
 import { toast } from 'react-hot-toast';
 import { systemSettingsService } from '../../services/db';
 import { useSystemCategoriesStore } from '../../store';
-import { ALL_MODULES } from '../Settings/components/ModulesTab';
+import { APP_MODULES } from '../../config/modules';
 
 export function SuperAdminSettings() {
     const { categories } = useSystemCategoriesStore();
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
+    const [migrating, setMigrating] = useState(false);
     const [defaults, setDefaults] = useState<Record<string, string[]>>({});
 
     useEffect(() => {
@@ -48,6 +49,21 @@ export function SuperAdminSettings() {
             toast.error('Хадгалахад алдаа гарлаа');
         } finally {
             setSaving(false);
+        }
+    };
+
+    const handleMigrate = async () => {
+        if (!confirm('ХУУЧИН БИЗНЕСҮҮДИЙН СОНГОЛТЫГ ШИНЭЧЛЭХ\n\nЭнэ үйлдэл нь хуучин бүртгэгдсэн бүх бизнесүүдийг шалгаад, тэдний өмнө нь ашиглаж байсан функцүүдийг шинэ App Store (activeModules) систем рүүөрвүүлэх болно. Шууд дарж ажиллуулна уу?')) return;
+
+        setMigrating(true);
+        try {
+            const result = await systemSettingsService.migrateLegacyBusinesses();
+            toast.success(`Нийт ${result.migratedCount} бизнесийг шинэ App Store систем рүү шилжүүллээ!`);
+        } catch (error) {
+            console.error('Migration failed:', error);
+            toast.error('Шилжүүлэг хийх үед алдаа гарлаа');
+        } finally {
+            setMigrating(false);
         }
     };
 
@@ -102,7 +118,7 @@ export function SuperAdminSettings() {
                                     </div>
 
                                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '12px' }}>
-                                        {ALL_MODULES.map(module => {
+                                        {APP_MODULES.map(module => {
                                             const isActive = activeMods.includes(module.id);
                                             const Icon = module.icon;
                                             return (
@@ -130,7 +146,7 @@ export function SuperAdminSettings() {
                                                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1 }}>
                                                         <Icon size={16} color={isActive ? 'var(--primary)' : 'var(--text-secondary)'} />
                                                         <span style={{ fontWeight: isActive ? 600 : 400, fontSize: '0.85rem' }}>
-                                                            {module.label}
+                                                            {module.name}
                                                         </span>
                                                     </div>
                                                 </label>
@@ -140,6 +156,25 @@ export function SuperAdminSettings() {
                                 </div>
                             );
                         })}
+                    </div>
+                </div>
+
+                <div style={{ background: 'var(--surface-1)', borderRadius: 'var(--radius-lg)', padding: '24px', border: '1px solid var(--border-color)', marginTop: '24px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <div>
+                            <h3 style={{ margin: '0 0 8px 0', fontSize: '1.1rem', color: 'var(--danger)' }}>🚨 Хуучин системийн шилжүүлэг (Migration)</h3>
+                            <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: '0.95rem' }}>
+                                Өмнө нь бүртгүүлсэн бизнесүүдийн тохиргоог шинэ App Store (activeModules) бүтэц рүү хөрвүүлэх скрипт. Зөвхөн 1 удаа дарахад хангалттай.
+                            </p>
+                        </div>
+                        <button
+                            className="btn btn-primary"
+                            style={{ background: 'var(--danger)', color: 'white', border: 'none' }}
+                            onClick={handleMigrate}
+                            disabled={migrating}
+                        >
+                            {migrating ? <Loader2 className="animate-spin" size={18} /> : 'Шилжүүлэг эхлүүлэх'}
+                        </button>
                     </div>
                 </div>
 

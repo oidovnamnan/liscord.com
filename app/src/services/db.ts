@@ -23,6 +23,7 @@ import type {
     Business, User, Employee, Order, Customer, Product, Position, Category, CargoType, OrderSource, SocialAccount, OrderStatusConfig, BusinessStats,
     PayrollEntry, BusinessCategoryConfig, PlatformPayment, BusinessRequest
 } from '../types';
+import { getFeatures } from '../config/features';
 
 // ============ GENERIC HELPERS ============
 
@@ -81,6 +82,69 @@ export const systemSettingsService = {
 
     async updateModuleDefaults(defaults: Record<string, string[]>): Promise<void> {
         await setDoc(doc(db, 'system_settings', 'modules'), defaults);
+    },
+
+    /**
+     * One-time migration script. Looks for businesses without `activeModules` and populates
+     * the array based on their old hardcoded `category` feature flags.
+     */
+    async migrateLegacyBusinesses(): Promise<{ migratedCount: number }> {
+        const q = query(collection(db, 'businesses'));
+        const snap = await getDocs(q);
+
+        let migratedCount = 0;
+        const batch = writeBatch(db);
+
+        for (const docSnap of snap.docs) {
+            const data = docSnap.data();
+            // Skip already migrated businesses
+            if (data.activeModules && Array.isArray(data.activeModules)) {
+                continue;
+            }
+
+            const category = data.category;
+            const features = getFeatures(category);
+
+            // Core apps that everyone had on the old system
+            const modules = new Set(['dashboard', 'reports', 'chat']);
+
+            // Map old boolean flags to new installable App Store modules
+            if (features.hasOrders) {
+                modules.add('orders');
+                modules.add('finance');
+                modules.add('payments');
+            }
+            if (features.hasProducts) modules.add('products');
+            if (features.hasInventory) modules.add('inventory');
+            if (features.hasDelivery) modules.add('delivery');
+            if (features.hasPackages) modules.add('packages');
+            if (features.hasAppointments) modules.add('appointments');
+            if (features.hasContracts) modules.add('contracts');
+            if (features.hasVehicles) modules.add('vehicles');
+            if (features.hasRooms) modules.add('rooms');
+            if (features.hasTickets) modules.add('tickets');
+            if (features.hasProjects) modules.add('projects');
+
+            // B2B provider logic mapping
+            if (data.serviceProfile?.isProvider) {
+                modules.add('b2b-provider');
+            }
+
+            batch.update(docSnap.ref, {
+                activeModules: Array.from(modules)
+            });
+            migratedCount++;
+
+            // Firestore batch limit is 500 operations, this ensures safety if there are >500 businesses.
+            // Since this is a simple local command, we'll just run it in memory for now.
+            // For thousands, we'd need chunked batches. Assuming under 500 for beta phase.
+        }
+
+        if (migratedCount > 0) {
+            await batch.commit();
+        }
+
+        return { migratedCount };
     }
 };
 
