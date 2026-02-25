@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useBusinessStore } from '../../../store';
 import { businessService } from '../../../services/db';
 import { toast } from 'react-hot-toast';
-import { Layers, Package, Users, Truck, ShoppingCart, Landmark, Clock, DollarSign, ScanLine, Sofa, PieChart, HeadphonesIcon, Building, MessageSquare, Factory, Calendar, Trash2, Download, Warehouse, Receipt } from 'lucide-react';
+import { Layers, Package, Users, Truck, ShoppingCart, Landmark, Clock, DollarSign, ScanLine, Sofa, PieChart, HeadphonesIcon, Building, MessageSquare, Factory, Calendar, Trash2, Download, Warehouse, Receipt, Globe } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 export const ALL_MODULES = [
@@ -11,6 +11,7 @@ export const ALL_MODULES = [
     { id: 'customers', label: 'Харилцагч', desc: 'Үйлчлүүлэгчдийн түүх, өр', icon: Users, path: '/app/customers' },
     { id: 'delivery', label: 'Хүргэлт', desc: 'Хүргэлтийн жолооч, статус', icon: Truck, path: '/app/delivery' },
     { id: 'packages', label: 'Ачаа (AI)', desc: 'Хил дамнасан ачаа тээвэр', icon: ScanLine, path: '/app/packages' },
+    { id: 'cargo_settings', label: 'Ухаалаг Карго', desc: 'Кг, м3, ширхгээр үнэ бодох (Zamex)', icon: Globe, path: '/app/settings?tab=cargo' },
     { id: 'inventory', label: 'Олон агуулах', desc: 'Агуулах хооронд шилжүүлэх', icon: Package, path: '/app/inventory' },
     { id: 'loans', label: 'Зээл / Ломбард', desc: 'Хүүний бодолт, барьцаа', icon: Landmark, path: '/app/loans' },
     { id: 'queue', label: 'Дараалал', icon: Layers, desc: 'Угаалга, салон, үйлчилгээний самбар', path: '/app/queue' },
