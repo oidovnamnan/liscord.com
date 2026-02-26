@@ -30,7 +30,6 @@ import {
     Network
 } from 'lucide-react';
 import { useUIStore, useBusinessStore, useAuthStore } from '../../store';
-import { usePermissions } from '../../hooks/usePermissions';
 import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '../../services/firebase';
 import { businessService } from '../../services/db';
@@ -83,7 +82,6 @@ export function Sidebar() {
     const { sidebarOpen, sidebarCollapsed, toggleSidebar, toggleSidebarCollapsed } = useUIStore();
     const { business, setBusiness, setEmployee } = useBusinessStore();
     const { user } = useAuthStore();
-    const { hasPermission } = usePermissions();
     const [switching, setSwitching] = useState(false);
     const [showSwitcher, setShowSwitcher] = useState(false);
     const [userBusinesses, setUserBusinesses] = useState<any[]>([]);
