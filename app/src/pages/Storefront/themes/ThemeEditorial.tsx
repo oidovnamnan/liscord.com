@@ -2,6 +2,7 @@ import { ShoppingBag } from 'lucide-react';
 import type { Business, Product } from '../../../types';
 import { useCartStore } from '../../../store';
 import { useStorefrontData } from '../hooks/useStorefrontData';
+import { StorefrontEmpty } from '../../../components/Storefront/StorefrontEmpty';
 import './ThemeEditorial.css';
 
 export function ThemeEditorial({ business }: { business: Business }) {
@@ -75,11 +76,9 @@ export function ThemeEditorial({ business }: { business: Business }) {
 
                     <div className="editorial-grid animate-fade-in" style={{ animationDelay: '0.1s' }}>
                         {products.length === 0 ? (
-                            <div style={{ color: 'var(--text-muted)' }}>Агнах бараа алга</div>
+                            <StorefrontEmpty message="Агнах бараа алга" />
                         ) : filteredProducts.length === 0 ? (
-                            <div style={{ gridColumn: '1 / -1', padding: '40px', color: 'var(--text-muted)' }}>
-                                Илэрц олдсонгүй
-                            </div>
+                            <StorefrontEmpty />
                         ) : (
                             filteredProducts.map(p => (
                                 <div key={p.id} className="editorial-card">

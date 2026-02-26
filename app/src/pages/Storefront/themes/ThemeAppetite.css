@@ -143,10 +143,10 @@
 }
 
 .appetite-cat-btn.active {
-    background: var(--primary, #0ea5e9);
+    background: var(--sf-brand-color, #0ea5e9);
     color: #fff;
-    border-color: var(--primary, #0ea5e9);
-    box-shadow: 0 4px 12px rgba(14, 165, 233, 0.2);
+    border-color: var(--sf-brand-color, #0ea5e9);
+    box-shadow: 0 4px 12px var(--sf-brand-color-soft);
 }
 
 /* Main Display */
@@ -240,7 +240,7 @@
     height: 32px;
     border-radius: 50%;
     background: #fff;
-    color: var(--primary, #0ea5e9);
+    color: var(--sf-brand-color, #0ea5e9);
     border: none;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
     display: flex;

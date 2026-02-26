@@ -2,6 +2,7 @@ import { ShoppingBag, Search } from 'lucide-react';
 import type { Business, Product } from '../../../types';
 import { useCartStore } from '../../../store';
 import { useStorefrontData } from '../hooks/useStorefrontData';
+import { StorefrontEmpty } from '../../../components/Storefront/StorefrontEmpty';
 import './ThemeLookbook.css';
 
 export function ThemeLookbook({ business }: { business: Business }) {
@@ -29,9 +30,6 @@ export function ThemeLookbook({ business }: { business: Business }) {
 
     const storeName = business.settings?.storefront?.name || business.name;
 
-    // We can simulate Masonry heights by injecting a pseudo-random aspect ratio multiplier based on product ID
-    // but actual images will dictate the height if we leave height: auto. 
-    // To prevent layout jumps before images load, it's better to force aspect ratios.
     const getPaddingTop = (id: string) => {
         const charCode = id.charCodeAt(id.length - 1);
         if (charCode % 3 === 0) return '150%'; // tall
@@ -95,11 +93,9 @@ export function ThemeLookbook({ business }: { business: Business }) {
             <main className="lookbook-main">
                 <div className="lookbook-masonry animate-fade-in" style={{ animationDelay: '0.1s' }}>
                     {products.length === 0 ? (
-                        <div style={{ color: 'var(--text-muted)' }}>Агнах бараа алга</div>
+                        <StorefrontEmpty message="Агнах бараа алга" />
                     ) : filteredProducts.length === 0 ? (
-                        <div style={{ padding: '40px', color: 'var(--text-muted)' }}>
-                            Илэрц олдсонгүй
-                        </div>
+                        <StorefrontEmpty />
                     ) : (
                         filteredProducts.map(p => (
                             <div key={p.id} className="lookbook-card" onClick={(e) => handleAddToCart(e, p)}>

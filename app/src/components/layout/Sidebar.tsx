@@ -97,7 +97,11 @@ export function Sidebar() {
                     <div className="sidebar-business-container">
                         <div className="sidebar-business" onClick={() => setShowSwitcher(!showSwitcher)}>
                             <div className="sidebar-business-avatar">
-                                {business.name.charAt(0)}
+                                {business.logo ? (
+                                    <img src={business.logo} alt={business.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                ) : (
+                                    business.name.charAt(0)
+                                )}
                             </div>
                             <div className="sidebar-business-info">
                                 <div className="sidebar-business-name">{business.name}</div>
@@ -118,9 +122,17 @@ export function Sidebar() {
                                         onClick={() => handleSwitch(biz.id)}
                                         disabled={switching}
                                     >
-                                        <div className="switcher-item-icon">{biz.name.charAt(0)}</div>
-                                        <div className="switcher-item-name">{biz.name}</div>
-                                        {biz.id === business.id && <div className="switcher-active-dot" />}
+                                        <div className="switcher-item-icon">
+                                            {biz.logo ? (
+                                                <img src={biz.logo} alt={biz.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                            ) : (
+                                                biz.name.charAt(0)
+                                            )}
+                                        </div>
+                                        <div className="sidebar-business-info">
+                                            <div className="sidebar-business-name">{biz.name}</div>
+                                            {biz.id === business.id && <div className="switcher-active-dot" />}
+                                        </div>
                                     </button>
                                 ))}
                                 <button className="switcher-item add-new" onClick={handleAddNew}>

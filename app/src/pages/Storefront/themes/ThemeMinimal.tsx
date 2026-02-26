@@ -2,7 +2,7 @@ import { ShoppingBag, Search, Plus } from 'lucide-react';
 import type { Business, Product } from '../../../types';
 import { useCartStore } from '../../../store';
 import { useStorefrontData } from '../hooks/useStorefrontData';
-// For now, it re-uses the global Storefront.css. We can split it later if needed.
+import { StorefrontEmpty } from '../../../components/Storefront/StorefrontEmpty';
 import '../Storefront.css';
 
 export function ThemeMinimal({ business }: { business: Business }) {
@@ -69,7 +69,7 @@ export function ThemeMinimal({ business }: { business: Business }) {
                                 outline: 'none',
                                 transition: 'border-color 0.2s',
                             }}
-                            onFocus={(e) => e.target.style.borderColor = 'var(--primary)'}
+                            onFocus={(e) => e.target.style.borderColor = 'var(--sf-brand-color)'}
                             onBlur={(e) => e.target.style.borderColor = 'var(--border-color)'}
                         />
                     </div>
@@ -89,23 +89,9 @@ export function ThemeMinimal({ business }: { business: Business }) {
 
                 <div className="product-grid animate-fade-in" style={{ animationDelay: '0.1s' }}>
                     {products.length === 0 ? (
-                        <>
-                            {[1, 2, 3, 4].map(i => (
-                                <div key={i} className="product-card" style={{ opacity: 0.6 }}>
-                                    <div className="product-image-wrap" style={{ borderStyle: 'dashed', borderColor: 'var(--border-color)' }}>
-                                        <div style={{ color: 'var(--text-muted)' }}>Агнах бараа алга</div>
-                                    </div>
-                                    <div className="product-info" style={{ gap: '8px' }}>
-                                        <div style={{ height: '16px', borderRadius: '4px', background: 'var(--bg-soft)', width: '80%' }}></div>
-                                        <div style={{ height: '20px', borderRadius: '4px', background: 'var(--bg-soft)', width: '40%' }}></div>
-                                    </div>
-                                </div>
-                            ))}
-                        </>
+                        <StorefrontEmpty message="Агнах бараа алга" />
                     ) : filteredProducts.length === 0 ? (
-                        <div style={{ gridColumn: '1 / -1', padding: '40px', textAlign: 'center', color: 'var(--text-muted)' }}>
-                            Илэрц олдсонгүй
-                        </div>
+                        <StorefrontEmpty />
                     ) : (
                         filteredProducts.map(p => (
                             <div key={p.id} className="product-card">

@@ -135,7 +135,7 @@
 }
 
 .category-pill.active {
-    background: #000;
+    background: var(--sf-brand-color, #000);
     color: #fff;
 }
 
@@ -238,7 +238,7 @@
 }
 
 .product-add-overlay:hover {
-    background: #000;
+    background: var(--sf-brand-color, #000);
     color: #fff;
     transform: scale(1.1);
 }
@@ -505,6 +505,8 @@
     display: flex;
     justify-content: center;
     gap: 8px;
+    background: var(--sf-brand-color, #000);
+    border-color: var(--sf-brand-color, #000);
 }
 
 @keyframes slideInRight {

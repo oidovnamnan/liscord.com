@@ -2,6 +2,7 @@ import { ShoppingBag, Search, Plus } from 'lucide-react';
 import type { Business, Product } from '../../../types';
 import { useCartStore } from '../../../store';
 import { useStorefrontData } from '../hooks/useStorefrontData';
+import { StorefrontEmpty } from '../../../components/Storefront/StorefrontEmpty';
 import './ThemeAppetite.css';
 
 export function ThemeAppetite({ business }: { business: Business }) {
@@ -74,11 +75,9 @@ export function ThemeAppetite({ business }: { business: Business }) {
             <main className="appetite-main">
                 <div className="appetite-grid animate-fade-in" style={{ animationDelay: '0.1s' }}>
                     {products.length === 0 ? (
-                        <div style={{ color: 'var(--text-muted)', textAlign: 'center', padding: '40px' }}>Цэс хоосон байна</div>
+                        <StorefrontEmpty message="Цэс хоосон байна" />
                     ) : filteredProducts.length === 0 ? (
-                        <div style={{ padding: '40px', color: 'var(--text-muted)', textAlign: 'center' }}>
-                            Илэрц олдсонгүй
-                        </div>
+                        <StorefrontEmpty />
                     ) : (
                         filteredProducts.map(p => (
                             <div key={p.id} className="appetite-card" onClick={(e) => handleAddToCart(e, p)}>

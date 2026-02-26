@@ -2,6 +2,7 @@ import { ShoppingBag, Search, ShoppingCart } from 'lucide-react';
 import type { Business, Product } from '../../../types';
 import { useCartStore } from '../../../store';
 import { useStorefrontData } from '../hooks/useStorefrontData';
+import { StorefrontEmpty } from '../../../components/Storefront/StorefrontEmpty';
 import './ThemeCommerce.css';
 
 export function ThemeCommerce({ business }: { business: Business }) {
@@ -75,11 +76,9 @@ export function ThemeCommerce({ business }: { business: Business }) {
             <main className="commerce-main">
                 <div className="commerce-grid animate-fade-in" style={{ animationDelay: '0.1s' }}>
                     {products.length === 0 ? (
-                        <div style={{ color: 'var(--text-muted)' }}>Агнах бараа алга</div>
+                        <StorefrontEmpty message="Агнах бараа алга" />
                     ) : filteredProducts.length === 0 ? (
-                        <div style={{ gridColumn: '1 / -1', padding: '40px', color: 'var(--text-muted)', textAlign: 'center' }}>
-                            Илэрц олдсонгүй
-                        </div>
+                        <StorefrontEmpty />
                     ) : (
                         filteredProducts.map(p => (
                             <div key={p.id} className="commerce-card">

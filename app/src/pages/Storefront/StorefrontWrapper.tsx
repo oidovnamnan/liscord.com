@@ -30,10 +30,41 @@ export function StorefrontWrapper() {
         loadBusiness();
     }, [slug]);
 
+    useEffect(() => {
+        if (!business) return;
+
+        const storeName = business.settings?.storefront?.name || business.name;
+        document.title = `${storeName} | Liscord`;
+
+        // SEO Meta
+        let metaDesc = document.querySelector('meta[name="description"]');
+        if (!metaDesc) {
+            metaDesc = document.createElement('meta');
+            metaDesc.setAttribute('name', 'description');
+            document.head.appendChild(metaDesc);
+        }
+        metaDesc.setAttribute('content', `${storeName} - Онлайн дэлгүүр. ${business.address || ''}`);
+
+        // Favicon
+        if (business.logo) {
+            let link: HTMLLinkElement | null = document.querySelector("link[rel~='icon']");
+            if (!link) {
+                link = document.createElement('link');
+                link.rel = 'icon';
+                document.head.appendChild(link);
+            }
+            link.href = business.logo;
+        }
+
+        return () => {
+            document.title = 'Liscord';
+        };
+    }, [business]);
+
     if (loading) {
         return (
             <div style={{ display: 'flex', height: '100vh', alignItems: 'center', justifyContent: 'center' }}>
-                Loading...
+                <div className="animate-pulse" style={{ color: 'var(--primary)' }}>Ачаалж байна...</div>
             </div>
         );
     }
@@ -51,10 +82,17 @@ export function StorefrontWrapper() {
         );
     }
 
-    // Pass business context to all storefront routes via Outlet context or we can use a store/React Context.
-    // Since it's public, maybe a dedicated StoreContext is better, but Outlet context is easiest.
+    const brandColor = business.brandColor || '#4a6bff';
+
     return (
-        <div className="storefront-layout">
+        <div
+            className="storefront-layout"
+            style={{
+                // @ts-ignore - CSS variable injection
+                '--sf-brand-color': brandColor,
+                '--sf-brand-color-soft': `${brandColor}15`
+            }}
+        >
             <Outlet context={{ business }} />
             <StorefrontFooter business={business} />
             <CartDrawer />

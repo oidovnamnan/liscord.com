@@ -5,7 +5,9 @@ import { Header } from '../../components/layout/Header';
 import { Building2, Palette, Bell, Shield, Users, Globe, Moon, Sun, Monitor, Loader2, Plus, MoreVertical, Trash2, Share2, X, CheckSquare, ListOrdered, ChevronUp, ChevronDown, ShoppingBag, Layers, CreditCard, Network, CheckCircle2 } from 'lucide-react';
 import { useBusinessStore, useUIStore } from '../../store';
 import { businessService, teamService, cargoService, sourceService, orderStatusService, businessRequestService } from '../../services/db';
+import { storageService as storage } from '../../services/storage';
 import { toast } from 'react-hot-toast';
+import { ImageUpload } from '../../components/common/ImageUpload';
 import { PINModal } from '../../components/common/PINModal';
 import { ActivityTab } from './components/ActivityTab';
 import { ModulesTab } from './components/ModulesTab';
@@ -35,6 +37,8 @@ export function SettingsPage() {
     const [requestReason, setRequestReason] = useState('');
     const [requestedChanges, setRequestedChanges] = useState<{ name?: string, slug?: string }>({});
     const [selectedThemeId, setSelectedThemeId] = useState(business?.settings?.storefront?.theme || 'minimal');
+    const [logoFiles, setLogoFiles] = useState<File[]>([]);
+    const [existingLogo, setExistingLogo] = useState<string[]>(business?.logo ? [business.logo] : []);
 
     const isStorefrontLocked = useMemo(() => {
         if (!business?.lastStorefrontChangeAt) return false;
@@ -55,7 +59,11 @@ export function SettingsPage() {
         if (business?.settings?.storefront?.theme) {
             setSelectedThemeId(business.settings.storefront.theme);
         }
-    }, [activeTab, business?.slug, business?.id, business?.settings?.storefront?.theme]);
+
+        if (business?.logo) {
+            setExistingLogo([business.logo]);
+        }
+    }, [activeTab, business?.slug, business?.id, business?.settings?.storefront?.theme, business?.logo]);
 
     const isStorefrontEnabled = business?.settings?.storefront?.enabled || business?.category === 'online_shop';
 
@@ -83,20 +91,35 @@ export function SettingsPage() {
         const fd = new FormData(e.currentTarget);
         setLoading(true);
         try {
+            let logoUrl = business.logo;
+
+            if (logoFiles.length > 0) {
+                const file = logoFiles[0];
+                const path = `businesses/${business.id}/logo/logo_${Date.now()}`;
+                logoUrl = await storage.uploadImage(file, path);
+            } else if (existingLogo.length === 0) {
+                logoUrl = null;
+            }
+
             await businessService.updateBusiness(business.id, {
                 name: fd.get('name') as string,
                 phone: fd.get('phone') as string,
                 email: fd.get('email') as string,
                 address: fd.get('address') as string,
                 brandColor: fd.get('brandColor') as string,
+                logo: logoUrl,
                 settings: {
                     ...business.settings,
                     orderPrefix: (fd.get('orderPrefix') as string)?.trim() || '',
                 }
             });
+            setLogoFiles([]);
             setIsDirty(false);
             toast.success('Тохиргоо хадгалагдлаа');
-        } catch (error) { toast.error('Алдаа гарлаа'); } finally { setLoading(false); }
+        } catch (error) {
+            console.error(error);
+            toast.error('Алдаа гарлаа');
+        } finally { setLoading(false); }
     };
 
     const handleUpdatePIN = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -226,6 +249,21 @@ export function SettingsPage() {
                                         <h3>Үндсэн мэдээлэл</h3>
                                     </div>
                                     <form className="settings-form" onSubmit={handleUpdateBusiness} onChange={() => setIsDirty(true)}>
+                                        <div style={{ marginBottom: 20 }}>
+                                            <ImageUpload
+                                                images={existingLogo}
+                                                onImagesChange={(urls) => {
+                                                    setExistingLogo(urls);
+                                                    setIsDirty(true);
+                                                }}
+                                                onFilesChange={(files) => {
+                                                    setLogoFiles(files);
+                                                    setIsDirty(true);
+                                                }}
+                                                maxImages={1}
+                                                label="Бизнесийн лого"
+                                            />
+                                        </div>
                                         <div className="input-group">
                                             <label className="input-label">Бизнесийн нэр</label>
                                             <input className="input" name="name" defaultValue={business?.name} required placeholder="Танай бизнесийн нэр" />
