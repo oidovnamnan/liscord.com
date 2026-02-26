@@ -67,23 +67,50 @@ export function SettingsPage() {
 
     const isStorefrontEnabled = business?.settings?.storefront?.enabled || business?.category === 'online_shop';
 
-    const tabs = [
-        { id: 'general', label: 'Ерөнхий', icon: Building2 },
-        { id: 'appstore', label: 'App Store', icon: Layers },
-        { id: 'team', label: 'Баг', icon: Users },
-        { id: 'storefront', label: 'Дэлгүүр', icon: ShoppingBag },
-        ...(isStorefrontEnabled ? [{ id: 'themes', label: 'Загварууд', icon: Palette }] : []),
-        { id: 'payment', label: 'Төлбөр & НӨАТ', icon: CreditCard },
-        { id: 'statuses', label: 'Захиалгын төлөв', icon: CheckSquare },
-        { id: 'cargo', label: 'Карго', icon: Globe },
-        { id: 'sources', label: 'Эх сурвалж', icon: Share2 },
-        { id: 'b2b', label: 'B2B Платформ', icon: Network },
-        { id: 'appearance', label: 'Харагдац', icon: Palette },
-        { id: 'notifications', label: 'Мэдэгдэл', icon: Bell },
-        { id: 'security', label: 'Аюулгүй байдал', icon: Shield },
-        { id: 'activity', label: 'Ажиллагсдын үйлдэл', icon: ListOrdered },
-        { id: 'language', label: 'Хэл', icon: Globe },
-    ];
+    const [moduleDefaults, setModuleDefaults] = useState<Record<string, Record<string, string>>>({});
+
+    useEffect(() => {
+        const fetchDefaults = async () => {
+            try {
+                const data = await systemSettingsService.getModuleDefaults();
+                setModuleDefaults(data);
+            } catch (e) {
+                console.error('Fetch defaults error:', e);
+            }
+        };
+        fetchDefaults();
+    }, []);
+
+    const tabs = useMemo(() => {
+        const baseTabs = [
+            { id: 'general', label: 'Ерөнхий', icon: Building2 },
+            { id: 'appstore', label: 'App Store', icon: Layers },
+            { id: 'team', label: 'Баг', icon: Users },
+            { id: 'storefront', label: 'Дэлгүүр', icon: ShoppingBag },
+            ...(isStorefrontEnabled ? [{ id: 'themes', label: 'Загварууд', icon: Palette }] : []),
+            { id: 'payment', label: 'Төлбөр & НӨАТ', icon: CreditCard },
+            { id: 'statuses', label: 'Захиалгын төлөв', icon: CheckSquare, moduleId: 'orders' },
+            { id: 'cargo', label: 'Карго', icon: Globe, moduleId: 'packages' },
+            { id: 'sources', label: 'Эх сурвалж', icon: Share2, moduleId: 'orders' },
+            { id: 'b2b', label: 'B2B Платформ', icon: Network, moduleId: 'b2b-provider' },
+            { id: 'appearance', label: 'Харагдац', icon: Palette },
+            { id: 'notifications', label: 'Мэдэгдэл', icon: Bell },
+            { id: 'security', label: 'Аюулгүй байдал', icon: Shield },
+            { id: 'activity', label: 'Ажиллагсдын үйлдэл', icon: ListOrdered },
+            { id: 'language', label: 'Хэл', icon: Globe },
+        ];
+
+        // Filter based on Super Admin settings if available
+        if (business?.category && moduleDefaults[business.category]) {
+            const catSettings = moduleDefaults[business.category];
+            return baseTabs.filter(tab => {
+                if (!(tab as any).moduleId) return true;
+                return !!catSettings[(tab as any).moduleId];
+            });
+        }
+
+        return baseTabs;
+    }, [business?.category, moduleDefaults, isStorefrontEnabled]);
 
     const handleUpdateBusiness = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();

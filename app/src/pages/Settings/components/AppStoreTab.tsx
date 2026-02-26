@@ -136,6 +136,20 @@ export function AppStoreTab() {
         }
     };
 
+    const [moduleDefaults, setModuleDefaults] = useState<Record<string, Record<string, string>>>({});
+
+    useEffect(() => {
+        const fetchDefaults = async () => {
+            try {
+                const data = await systemSettingsService.getModuleDefaults();
+                setModuleDefaults(data);
+            } catch (e) {
+                console.error('Fetch defaults error:', e);
+            }
+        };
+        fetchDefaults();
+    }, []);
+
     return (
         <div className="settings-section animate-fade-in">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
@@ -171,7 +185,14 @@ export function AppStoreTab() {
 
             {activeStoreTab === 'modules' ? (
                 <div className="app-store-grid">
-                    {LISCORD_MODULES.filter(mod => !mod.isCore).map(mod => {
+                    {LISCORD_MODULES.filter(mod => {
+                        if (mod.isCore) return false;
+                        // Filter based on Super Admin dynamic config
+                        if (business?.category && moduleDefaults[business.category]) {
+                            return !!moduleDefaults[business.category][mod.id];
+                        }
+                        return true;
+                    }).map(mod => {
                         const Icon = (Icons as any)[mod.icon] || Icons.Box;
                         const isInstalled = activeMods.includes(mod.id);
                         const isInstalling = installingId === mod.id;

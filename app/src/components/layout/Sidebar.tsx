@@ -68,6 +68,20 @@ export function Sidebar() {
         window.location.reload(); // App.tsx will show BusinessWizard
     };
 
+    const [moduleDefaults, setModuleDefaults] = useState<Record<string, Record<string, string>>>({});
+
+    useEffect(() => {
+        const fetchDefaults = async () => {
+            try {
+                const data = await systemSettingsService.getModuleDefaults();
+                setModuleDefaults(data);
+            } catch (e) {
+                console.error('Failed to fetch module defaults:', e);
+            }
+        };
+        fetchDefaults();
+    }, []);
+
     const filteredNavItems = LISCORD_MODULES.filter((mod, index, self) => {
         // Core modules (like Dashboard, Reports, Settings) are always visible
         if (mod.isCore) {
@@ -76,6 +90,12 @@ export function Sidebar() {
                 return self.findIndex(m => m.hubId === mod.hubId) === index;
             }
             return true;
+        }
+
+        // Global check: Is this module allowed for this business category by Super Admin?
+        if (business?.category && moduleDefaults[business.category]) {
+            const status = moduleDefaults[business.category][mod.id];
+            if (!status) return false; // Not allowed (Off)
         }
 
         // Show only if enabled in business AND not expired
