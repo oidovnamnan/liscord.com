@@ -24,7 +24,7 @@
     justify-content: center;
     font-weight: 700;
     font-size: 1.1rem;
-    color: #fff;
+    color: var(--text-inverse);
     flex-shrink: 0;
 }
 

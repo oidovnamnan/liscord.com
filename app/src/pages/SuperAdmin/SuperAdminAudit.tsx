@@ -46,9 +46,9 @@ export function SuperAdminAudit() {
 
     const getSeverityBadge = (severity: string) => {
         switch (severity) {
-            case 'critical': return <span className="badge badge-danger">Critical</span>;
-            case 'warning': return <span className="badge badge-warning">Warning</span>;
-            default: return <span className="badge badge-neutral">Normal</span>;
+            case 'critical': return <span className="badge badge-cancelled">Critical</span>;
+            case 'warning': return <span className="badge badge-preparing">Warning</span>;
+            default: return <span className="badge badge-soft">Normal</span>;
         }
     };
 

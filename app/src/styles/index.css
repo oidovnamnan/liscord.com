@@ -79,6 +79,14 @@ body {
   --accent-green: #0be881;
   --accent-red: #ff4757;
 
+  /* Accent Tints (for icon backgrounds) */
+  --primary-tint: rgba(108, 92, 231, 0.12);
+  --pink-tint: rgba(255, 107, 157, 0.12);
+  --orange-tint: rgba(255, 159, 67, 0.12);
+  --green-tint: rgba(11, 232, 129, 0.12);
+  --cyan-tint: rgba(13, 191, 240, 0.12);
+  --red-tint: rgba(255, 71, 87, 0.12);
+
   /* Status */
   --status-new: #3b82f6;
   --status-confirmed: #8b5cf6;
@@ -136,6 +144,9 @@ body {
   --header-height: 64px;
   --bottom-nav-height: 64px;
 
+  /* Glass Border */
+  --border-glass: rgba(255, 255, 255, 0.08);
+
   /* Z-index */
   --z-dropdown: 100;
   --z-sticky: 200;
@@ -160,19 +171,20 @@ body {
   --surface-2: #f8f8fc;
   --surface-3: #f0f0f6;
 
-  --border-primary: #e0e0ea;
-  --border-secondary: #d0d0da;
+  --border-primary: #e2e2ec;
+  --border-secondary: #d4d4e0;
+  --border-glass: rgba(0, 0, 0, 0.08);
 
   --text-primary: #1a1a2e;
   --text-secondary: #4a4a6a;
-  --text-tertiary: #787898;
-  --text-muted: #a0a0b0;
+  --text-tertiary: #585878;
+  --text-muted: #787890;
   --text-inverse: #f0f0f8;
 
-  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.06);
-  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
-  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.1);
-  --shadow-xl: 0 16px 48px rgba(0, 0, 0, 0.12);
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.04);
+  --shadow-md: 0 6px 16px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.08);
+  --shadow-xl: 0 20px 60px rgba(0, 0, 0, 0.1);
 }
 
 /* ====================================
@@ -285,6 +297,76 @@ a:hover {
 
 .text-muted {
   color: var(--text-muted);
+}
+
+/* ====================================
+   BADGES
+   ==================================== */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
+  font-size: 0.75rem;
+  font-weight: 700;
+  white-space: nowrap;
+  gap: 6px;
+  transition: all var(--transition-fast);
+}
+
+.badge-soft {
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
+}
+
+.badge-primary {
+  background: var(--primary-light);
+  color: var(--primary);
+  border: 1px solid rgba(108, 92, 231, 0.2);
+}
+
+.badge-new {
+  background: rgba(59, 130, 246, 0.1);
+  color: #3b82f6;
+  border: 1px solid rgba(59, 130, 246, 0.2);
+}
+
+.badge-confirmed {
+  background: rgba(139, 92, 246, 0.1);
+  color: #8b5cf6;
+  border: 1px solid rgba(139, 92, 246, 0.2);
+}
+
+.badge-preparing {
+  background: rgba(245, 158, 11, 0.1);
+  color: #f59e0b;
+  border: 1px solid rgba(245, 158, 11, 0.2);
+}
+
+.badge-shipping {
+  background: rgba(6, 182, 212, 0.1);
+  color: #06b6d4;
+  border: 1px solid rgba(6, 182, 212, 0.2);
+}
+
+.badge-delivered,
+.badge-paid {
+  background: rgba(16, 185, 129, 0.1);
+  color: #10b981;
+  border: 1px solid rgba(16, 185, 129, 0.2);
+}
+
+.badge-cancelled {
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+.badge-info {
+  background: rgba(13, 191, 240, 0.1);
+  color: #0dbff0;
+  border: 1px solid rgba(13, 191, 240, 0.2);
 }
 
 .truncate {

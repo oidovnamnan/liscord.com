@@ -132,23 +132,23 @@
 }
 
 .stat-icon.blue {
-    background: rgba(59, 130, 246, 0.1);
-    color: #3b82f6;
+    background: var(--primary-tint);
+    color: var(--status-new);
 }
 
 .stat-icon.purple {
-    background: rgba(168, 85, 247, 0.1);
+    background: rgba(168, 85, 247, 0.12);
     color: #a855f7;
 }
 
 .stat-icon.green {
-    background: rgba(16, 185, 129, 0.1);
-    color: #10b981;
+    background: var(--green-tint);
+    color: var(--accent-green);
 }
 
 .stat-icon.orange {
-    background: rgba(245, 158, 11, 0.1);
-    color: #f59e0b;
+    background: var(--orange-tint);
+    color: var(--accent-orange);
 }
 
 .stat-info {
@@ -208,8 +208,8 @@
 }
 
 [data-theme="light"] .card {
-    box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.02);
-    border-color: rgba(0, 0, 0, 0.05);
+    box-shadow: var(--shadow-lg);
+    border-color: var(--border-glass);
 }
 
 .card:hover {
@@ -406,11 +406,13 @@
 .plan-tag.pro {
     background: rgba(59, 130, 246, 0.1);
     color: #3b82f6;
+    border: 1px solid rgba(59, 130, 246, 0.2);
 }
 
 .plan-tag.business {
     background: rgba(168, 85, 247, 0.1);
     color: #a855f7;
+    border: 1px solid rgba(168, 85, 247, 0.2);
 }
 
 .status-badge {
@@ -469,12 +471,12 @@
 
 .badge-primary {
     background: var(--primary);
-    color: white;
+    color: var(--text-inverse);
 }
 
 .badge-success {
-    background: var(--success);
-    color: white;
+    background: var(--accent-green);
+    color: var(--text-inverse);
 }
 
 .input-with-icon {

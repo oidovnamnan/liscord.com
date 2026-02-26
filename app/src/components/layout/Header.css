@@ -87,7 +87,7 @@
     min-width: 16px;
     height: 16px;
     background: var(--accent-red);
-    color: #fff;
+    color: var(--text-inverse);
     font-size: 0.65rem;
     font-weight: 700;
     border-radius: var(--radius-full);
@@ -108,7 +108,7 @@
     justify-content: center;
     font-weight: 700;
     font-size: 0.85rem;
-    color: #fff;
+    color: var(--text-inverse);
     cursor: pointer;
     transition: transform var(--transition-fast);
     flex-shrink: 0;

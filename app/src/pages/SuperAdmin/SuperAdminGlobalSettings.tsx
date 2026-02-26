@@ -144,7 +144,7 @@ export function SuperAdminGlobalSettings() {
                                         width: '40px',
                                         height: '40px',
                                         borderRadius: '10px',
-                                        background: 'rgba(108, 92, 231, 0.1)',
+                                        background: 'var(--primary-tint)',
                                         display: 'flex',
                                         alignItems: 'center',
                                         justifyContent: 'center',
@@ -248,8 +248,8 @@ export function SuperAdminGlobalSettings() {
                                     <div style={{ fontWeight: 700, fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px', color: 'var(--text-primary)' }}>
                                         Шинэ бүртгэл нээх
                                         {settings.registrationEnabled ?
-                                            <span style={{ background: 'var(--accent-green)', color: 'white', padding: '2px 10px', borderRadius: '20px', fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase' }}>Асаалттай</span> :
-                                            <span style={{ background: 'var(--text-muted)', color: 'white', padding: '2px 10px', borderRadius: '20px', fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase' }}>Унтраалтай</span>
+                                            <span className="badge badge-delivered">Асаалттай</span> :
+                                            <span className="badge badge-soft">Унтраалтай</span>
                                         }
                                     </div>
                                     <div style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', lineHeight: 1.5 }}>Унтраавал гаднаас шинэ хэрэглэгч системд бүртгүүлэх боломжгүй болно.</div>
@@ -301,7 +301,7 @@ export function SuperAdminGlobalSettings() {
                                 <div style={{ flex: 1, marginRight: '16px' }}>
                                     <div style={{ fontWeight: 700, color: settings.maintenanceMode ? '#ef4444' : 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px' }}>
                                         <AlertTriangle size={18} /> Maintenance Mode
-                                        {settings.maintenanceMode && <span style={{ background: '#ef4444', color: 'white', padding: '2px 10px', borderRadius: '20px', fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase' }}>Идэвхтэй</span>}
+                                        {settings.maintenanceMode && <span className="badge badge-cancelled">Идэвхтэй</span>}
                                     </div>
                                     <div style={{ color: settings.maintenanceMode ? 'rgba(239, 68, 68, 0.8)' : 'var(--text-secondary)', fontSize: '0.85rem', lineHeight: 1.5 }}>
                                         Системийн засварын горим. Асаавал бүх хэрэглэгчид системээс гарч, зөвхөн админ нэвтрэх боломжтой болно.
