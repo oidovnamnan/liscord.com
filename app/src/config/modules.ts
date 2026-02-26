@@ -1,7 +1,7 @@
 import type { AppModule } from '../types';
 
 export const LISCORD_MODULES: AppModule[] = [
-    // --- Operations & Inventory HUB ---
+    // --- 1. Operations Core (Most Important) ---
     {
         id: 'orders',
         name: 'Захиалга',
@@ -46,69 +46,21 @@ export const LISCORD_MODULES: AppModule[] = [
         ]
     },
     {
-        id: 'manufacturing',
-        name: 'Үйлдвэрлэл',
-        description: 'Бүтээгдэхүүн үйлдвэрлэлийн процесс, өртөг тооцоолол.',
-        icon: 'Factory',
-        route: '/app/manufacturing',
-        isCore: false,
+        id: 'analytics',
+        name: 'Анализ & Тайлан',
+        description: 'Бизнесийн өсөлтийн нарийвчилсан статистик графикууд.',
+        icon: 'BarChart3',
+        route: '/app/reports',
+        isCore: true,
         category: 'operations',
-        hubId: 'inventory-hub',
-        isFree: false,
-        plans: [
-            { id: 'monthly', name: '30 хоног', price: 35000, durationDays: 30 },
-            { id: 'yearly', name: '1 жил', price: 350000, durationDays: 365 }
-        ]
-    },
-
-    // --- CRM & Support HUB ---
-    {
-        id: 'customers',
-        name: 'Хэрэглэгчид (CRM)',
-        description: 'Харилцагчийн түүх, сегментчлэл, CRM систем.',
-        icon: 'Contact',
-        route: '/app/customers',
-        isCore: false,
-        category: 'sales',
-        hubId: 'crm-hub',
         isFree: true,
         plans: [
             { id: 'monthly', name: '30 хоног', price: 0, durationDays: 30 },
             { id: 'yearly', name: '1 жил', price: 0, durationDays: 365 }
         ]
     },
-    {
-        id: 'messenger',
-        name: 'Чаат & Харилцаа',
-        description: 'Сошиал сувгуудын зурвасуудыг нэг цонхноос хариулах.',
-        icon: 'MessageCircle',
-        route: '/app/chat',
-        isCore: false,
-        category: 'sales',
-        hubId: 'crm-hub',
-        isFree: false,
-        plans: [
-            { id: 'monthly', name: '30 хоног', price: 25000, durationDays: 30 },
-            { id: 'yearly', name: '1 жил', price: 250000, durationDays: 365 }
-        ]
-    },
-    {
-        id: 'support',
-        name: 'Гомдол & Буцаалт',
-        description: 'Хэрэглэгчийн санал гомдол, баталгаат засвар, буцаалт.',
-        icon: 'LifeBuoy',
-        route: '/app/support',
-        isCore: false,
-        category: 'services',
-        hubId: 'crm-hub',
-        isFree: false,
-        plans: [
-            { id: 'monthly', name: '30 хоног', price: 15000, durationDays: 30 },
-            { id: 'yearly', name: '1 жил', price: 150000, durationDays: 365 }
-        ]
-    },
 
-    // --- Finance & Payments HUB ---
+    // --- 2. Finance Hub ---
     {
         id: 'finance',
         name: 'Санхүү',
@@ -155,7 +107,69 @@ export const LISCORD_MODULES: AppModule[] = [
         ]
     },
 
-    // --- Staff & HR HUB ---
+    // --- 3. CRM & Sales Hub ---
+    {
+        id: 'customers',
+        name: 'Хэрэглэгчид (CRM)',
+        description: 'Харилцагчийн түүх, сегментчлэл, CRM систем.',
+        icon: 'Contact',
+        route: '/app/customers',
+        isCore: false,
+        category: 'sales',
+        hubId: 'crm-hub',
+        isFree: true,
+        plans: [
+            { id: 'monthly', name: '30 хоног', price: 0, durationDays: 30 },
+            { id: 'yearly', name: '1 жил', price: 0, durationDays: 365 }
+        ]
+    },
+    {
+        id: 'messenger',
+        name: 'Чаат & Харилцаа',
+        description: 'Сошиал сувгуудын зурвасуудыг нэг цонхноос хариулах.',
+        icon: 'MessageCircle',
+        route: '/app/chat',
+        isCore: false,
+        category: 'sales',
+        hubId: 'crm-hub',
+        isFree: false,
+        plans: [
+            { id: 'monthly', name: '30 хоног', price: 25000, durationDays: 30 },
+            { id: 'yearly', name: '1 жил', price: 250000, durationDays: 365 }
+        ]
+    },
+    {
+        id: 'b2b',
+        name: 'B2B Marketplace',
+        description: 'Бусад бизнесүүдтэй холбогдох, бараа нийлүүлэлт.',
+        icon: 'Globe',
+        route: '/app/b2b',
+        isCore: false,
+        category: 'sales',
+        hubId: 'b2b-hub',
+        isFree: true,
+        plans: [
+            { id: 'monthly', name: '30 хоног', price: 0, durationDays: 30 },
+            { id: 'yearly', name: '1 жил', price: 0, durationDays: 365 }
+        ]
+    },
+    {
+        id: 'b2b-provider',
+        name: 'Нийлүүлэгч самбар',
+        description: 'Нийлүүлэгчийн удирдлагын хянах самбар.',
+        icon: 'Building2',
+        route: '/app/b2b-provider',
+        isCore: false,
+        category: 'sales',
+        hubId: 'b2b-hub',
+        isFree: false,
+        plans: [
+            { id: 'monthly', name: '30 хоног', price: 45000, durationDays: 30 },
+            { id: 'yearly', name: '1 жил', price: 450000, durationDays: 365 }
+        ]
+    },
+
+    // --- 4. Staff & HR Hub ---
     {
         id: 'employees',
         name: 'Ажилтан',
@@ -202,7 +216,7 @@ export const LISCORD_MODULES: AppModule[] = [
         ]
     },
 
-    // --- Logistics & Cargo HUB ---
+    // --- 5. Logistics & Cargo ---
     {
         id: 'cargo',
         name: 'Карго Тээвэр',
@@ -249,7 +263,39 @@ export const LISCORD_MODULES: AppModule[] = [
         ]
     },
 
-    // --- Services & Booking HUB ---
+    // --- 6. Manufacturing & Projects ---
+    {
+        id: 'manufacturing',
+        name: 'Үйлдвэрлэл',
+        description: 'Бүтээгдэхүүн үйлдвэрлэлийн процесс, өртөг тооцоолол.',
+        icon: 'Factory',
+        route: '/app/manufacturing',
+        isCore: false,
+        category: 'operations',
+        hubId: 'inventory-hub',
+        isFree: false,
+        plans: [
+            { id: 'monthly', name: '30 хоног', price: 35000, durationDays: 30 },
+            { id: 'yearly', name: '1 жил', price: 350000, durationDays: 365 }
+        ]
+    },
+    {
+        id: 'projects',
+        name: 'Төсөл',
+        description: 'Төслийн төлөвлөлт, гүйцэтгэл, канбан самбар.',
+        icon: 'Briefcase',
+        route: '/app/projects',
+        isCore: false,
+        category: 'operations',
+        hubId: 'projects-hub',
+        isFree: false,
+        plans: [
+            { id: 'monthly', name: '30 хоног', price: 30000, durationDays: 30 },
+            { id: 'yearly', name: '1 жил', price: 300000, durationDays: 365 }
+        ]
+    },
+
+    // --- 7. Specialized Services ---
     {
         id: 'appointments',
         name: 'Цаг захиалга',
@@ -296,6 +342,21 @@ export const LISCORD_MODULES: AppModule[] = [
         ]
     },
     {
+        id: 'support',
+        name: 'Гомдол & Буцаалт',
+        description: 'Хэрэглэгчийн санал гомдол, баталгаат засвар, буцаалт.',
+        icon: 'LifeBuoy',
+        route: '/app/support',
+        isCore: false,
+        category: 'services',
+        hubId: 'crm-hub',
+        isFree: false,
+        plans: [
+            { id: 'monthly', name: '30 хоног', price: 15000, durationDays: 30 },
+            { id: 'yearly', name: '1 жил', price: 150000, durationDays: 365 }
+        ]
+    },
+    {
         id: 'contracts',
         name: 'Гэрээ',
         description: 'Түрээс, хамтын ажиллагааны гэрээний менежмент.',
@@ -308,23 +369,6 @@ export const LISCORD_MODULES: AppModule[] = [
         plans: [
             { id: 'monthly', name: '30 хоног', price: 20000, durationDays: 30 },
             { id: 'yearly', name: '1 жил', price: 200000, durationDays: 365 }
-        ]
-    },
-
-    // --- Projects & Tasks HUB ---
-    {
-        id: 'projects',
-        name: 'Төсөл',
-        description: 'Төслийн төлөвлөлт, гүйцэтгэл, канбан самбар.',
-        icon: 'Briefcase',
-        route: '/app/projects',
-        isCore: false,
-        category: 'operations',
-        hubId: 'projects-hub',
-        isFree: false,
-        plans: [
-            { id: 'monthly', name: '30 хоног', price: 30000, durationDays: 30 },
-            { id: 'yearly', name: '1 жил', price: 300000, durationDays: 365 }
         ]
     },
     {
@@ -340,54 +384,6 @@ export const LISCORD_MODULES: AppModule[] = [
         plans: [
             { id: 'monthly', name: '30 хоног', price: 15000, durationDays: 30 },
             { id: 'yearly', name: '1 жил', price: 150000, durationDays: 365 }
-        ]
-    },
-
-    // --- B2B Platform HUB ---
-    {
-        id: 'b2b',
-        name: 'B2B Marketplace',
-        description: 'Бусад бизнесүүдтэй холбогдох, бараа нийлүүлэлт.',
-        icon: 'Globe',
-        route: '/app/b2b',
-        isCore: false,
-        category: 'sales',
-        hubId: 'b2b-hub',
-        isFree: true,
-        plans: [
-            { id: 'monthly', name: '30 хоног', price: 0, durationDays: 30 },
-            { id: 'yearly', name: '1 жил', price: 0, durationDays: 365 }
-        ]
-    },
-    {
-        id: 'b2b-provider',
-        name: 'Нийлүүлэгч самбар',
-        description: 'Нийлүүлэгчийн удирдлагын хянах самбар.',
-        icon: 'Building2',
-        route: '/app/b2b-provider',
-        isCore: false,
-        category: 'sales',
-        hubId: 'b2b-hub',
-        isFree: false,
-        plans: [
-            { id: 'monthly', name: '30 хоног', price: 45000, durationDays: 30 },
-            { id: 'yearly', name: '1 жил', price: 450000, durationDays: 365 }
-        ]
-    },
-
-    // --- Independent / Core Features ---
-    {
-        id: 'analytics',
-        name: 'Анализ & Тайлан',
-        description: 'Бизнесийн өсөлтийн нарийвчилсан статистик графикууд.',
-        icon: 'BarChart3',
-        route: '/app/reports',
-        isCore: true,
-        category: 'operations',
-        isFree: true,
-        plans: [
-            { id: 'monthly', name: '30 хоног', price: 0, durationDays: 30 },
-            { id: 'yearly', name: '1 жил', price: 0, durationDays: 365 }
         ]
     }
 ];
