@@ -13,7 +13,7 @@ import {
 import { useUIStore, useBusinessStore, useAuthStore } from '../../store';
 import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '../../services/firebase';
-import { businessService } from '../../services/db';
+import { businessService, systemSettingsService } from '../../services/db';
 import { toast } from 'react-hot-toast';
 import * as Icons from 'lucide-react';
 import { LISCORD_MODULES } from '../../config/modules';

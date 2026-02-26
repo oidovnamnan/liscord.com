@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useBusinessStore } from '../../../store';
-import { businessService } from '../../../services/db';
+import { businessService, systemSettingsService } from '../../../services/db';
 import { toast } from 'react-hot-toast';
 import { Trash2, Download, ShoppingBag, CheckCircle2, Palette, Clock } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
