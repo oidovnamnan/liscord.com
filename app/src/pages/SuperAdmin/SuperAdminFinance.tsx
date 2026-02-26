@@ -115,73 +115,69 @@ export function SuperAdminFinance() {
 
             <div className="page-content">
                 {/* Dashboard Cards */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '24px', marginBottom: '32px' }}>
-                    <div className="card" style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                        <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: 'var(--success-light)', color: 'var(--success)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <div className="stats-grid">
+                    <div className="stats-card hover-card">
+                        <div className="stats-icon-wrapper online-tint">
                             <DollarSign size={24} />
                         </div>
-                        <div>
-                            <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '4px' }}>Нийт орлого</p>
-                            <h3 style={{ fontSize: '1.5rem', margin: 0 }}>{totalRevenue.toLocaleString()} ₮</h3>
+                        <div className="stats-info">
+                            <p className="stats-label">Нийт орлого</p>
+                            <h3 className="stats-value">{totalRevenue.toLocaleString()} ₮</h3>
                         </div>
                     </div>
 
-                    <div className="card" style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                        <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: 'var(--primary-light)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <div className="stats-card hover-card">
+                        <div className="stats-icon-wrapper active-tint">
                             <TrendingUp size={24} />
                         </div>
-                        <div>
-                            <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '4px' }}>Идэвхтэй харилцагч (Төлбөртэй)</p>
-                            <h3 style={{ fontSize: '1.5rem', margin: 0 }}>{activeCount} бизнес</h3>
+                        <div className="stats-info">
+                            <p className="stats-label">Идэвхтэй харилцагч (Төлбөртэй)</p>
+                            <h3 className="stats-value">{activeCount} бизнес</h3>
                         </div>
                     </div>
 
-                    <div className="card" style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                        <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: 'var(--surface-3)', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <div className="stats-card hover-card">
+                        <div className="stats-icon-wrapper neutral-tint" style={{ background: 'var(--surface-3)', color: 'var(--text-primary)' }}>
                             <Calendar size={24} />
                         </div>
-                        <div>
-                            <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '4px' }}>Систем дэх нийт бизнес</p>
-                            <h3 style={{ fontSize: '1.5rem', margin: 0 }}>{businesses.length}</h3>
+                        <div className="stats-info">
+                            <p className="stats-label">Систем дэх нийт бизнес</p>
+                            <h3 className="stats-value">{businesses.length}</h3>
                         </div>
                     </div>
                 </div>
 
                 {/* Subscriptions List */}
-                <div className="card" style={{ padding: '0', overflow: 'hidden' }}>
-                    <div style={{ padding: '20px', borderBottom: '1px solid var(--border-color)', display: 'flex', gap: '16px', flexWrap: 'wrap', justifyContent: 'space-between' }}>
-                        <h2 style={{ fontSize: '1.1rem', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <Calendar size={18} className="text-primary" />
-                            Багцын хугацаа (Subscriptions)
-                        </h2>
-                        <div style={{ display: 'flex', gap: '12px', flex: '1 1 auto', justifyContent: 'flex-end', maxWidth: '600px' }}>
-                            <div className="search-bar" style={{ flex: 1 }}>
-                                <Search size={18} />
-                                <input
-                                    type="text"
-                                    placeholder="Бизнесийн нэр, ID-гаар хайх..."
-                                    value={searchTerm}
-                                    onChange={e => setSearchTerm(e.target.value)}
-                                />
-                            </div>
-                            <div className="filter-group">
-                                <button className={`filter - btn ${filter === 'all' ? 'active' : ''} `} onClick={() => setFilter('all')}>Бүгд</button>
-                                <button className={`filter - btn ${filter === 'active' ? 'active' : ''} `} onClick={() => setFilter('active')}>Идэвхтэй</button>
-                                <button className={`filter - btn ${filter === 'free' ? 'active' : ''} `} onClick={() => setFilter('free')}>Free План</button>
-                                <button className={`filter - btn ${filter === 'expired' ? 'active' : ''} `} onClick={() => setFilter('expired')}>Хугацаа дууссан</button>
-                            </div>
+                <div className="table-actions-container">
+                    <div className="table-actions">
+                        <div className="search-box">
+                            <Search size={18} />
+                            <input
+                                type="text"
+                                placeholder="Бизнесийн нэр, ID-гаар хайх..."
+                                value={searchTerm}
+                                onChange={e => setSearchTerm(e.target.value)}
+                            />
+                        </div>
+                        <div className="filter-group">
+                            <button className={`filter-btn ${filter === 'all' ? 'active' : ''}`} onClick={() => setFilter('all')}>Бүгд</button>
+                            <button className={`filter-btn ${filter === 'active' ? 'active' : ''}`} onClick={() => setFilter('active')}>Идэвхтэй</button>
+                            <button className={`filter-btn ${filter === 'free' ? 'active' : ''}`} onClick={() => setFilter('free')}>Free План</button>
+                            <button className={`filter-btn ${filter === 'expired' ? 'active' : ''}`} onClick={() => setFilter('expired')}>Хугацаа дууссан</button>
                         </div>
                     </div>
+                </div>
 
-                    <table className="table" style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <div className="card no-padding overflow-hidden">
+                    <table className="super-table">
                         <thead>
-                            <tr style={{ background: 'var(--surface-2)', borderBottom: '1px solid var(--border-color)', textAlign: 'left' }}>
-                                <th style={{ padding: '16px' }}>Бизнес</th>
-                                <th style={{ padding: '16px' }}>Утас / Эзэн</th>
-                                <th style={{ padding: '16px' }}>Одоогийн Багц</th>
-                                <th style={{ padding: '16px' }}>Дуусах хугацаа</th>
-                                <th style={{ padding: '16px' }}>Төлөв</th>
-                                <th style={{ padding: '16px', textAlign: 'right' }}>Үйлдэл</th>
+                            <tr>
+                                <th>Бизнес</th>
+                                <th>Утас / Эзэн</th>
+                                <th>Одоогийн Багц</th>
+                                <th>Дуусах хугацаа</th>
+                                <th>Төлөв</th>
+                                <th className="text-right">Үйлдэл</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -191,46 +187,48 @@ export function SuperAdminFinance() {
                                 const isFree = b.subscription?.plan === 'free';
 
                                 return (
-                                    <tr key={b.id} style={{ borderBottom: '1px solid var(--border-color)' }}>
-                                        <td style={{ padding: '16px' }}>
-                                            <div style={{ fontWeight: 600 }}>{b.name}</div>
-                                            <div style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', fontFamily: 'monospace' }}>{b.id}</div>
+                                    <tr key={b.id}>
+                                        <td>
+                                            <div className="font-bold">{b.name}</div>
+                                            <div className="text-secondary text-xs font-mono">{b.id}</div>
                                         </td>
-                                        <td style={{ padding: '16px' }}>
+                                        <td>
                                             <div>{b.phone}</div>
-                                            <div style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>{b.ownerName}</div>
+                                            <div className="text-secondary text-xs">{b.ownerName}</div>
                                         </td>
-                                        <td style={{ padding: '16px' }}>
-                                            <span style={{ textTransform: 'capitalize', fontWeight: 600, color: isFree ? 'var(--text-secondary)' : 'var(--primary)' }}>
+                                        <td>
+                                            <span className={`capitalize font-bold ${isFree ? 'text-tertiary' : 'text-primary'}`}>
                                                 {b.subscription?.plan || 'Free'}
                                             </span>
                                         </td>
-                                        <td style={{ padding: '16px', color: isExpired && !isFree ? 'var(--danger)' : 'inherit' }}>
+                                        <td className={isExpired && !isFree ? 'text-danger' : ''}>
                                             {exp ? exp.toLocaleDateString('mn-MN') : 'Хязгааргүй'}
                                         </td>
-                                        <td style={{ padding: '16px' }}>
+                                        <td>
                                             {isFree ? (
                                                 <span className="badge badge-neutral">Free Plan</span>
                                             ) : isExpired ? (
                                                 <span className="badge badge-danger">Дууссан</span>
                                             ) : (
-                                                <span className="badge badge-success">Идэвхтэй</span>
+                                                <span className="badge badge-delivered">Идэвхтэй</span>
                                             )}
                                         </td>
-                                        <td style={{ padding: '16px', textAlign: 'right' }}>
-                                            <button
-                                                className="btn btn-primary btn-small gradient-btn"
-                                                onClick={() => handleOpenExtendModal(b)}
-                                            >
-                                                Сунгах
-                                            </button>
+                                        <td>
+                                            <div className="row-actions justify-end">
+                                                <button
+                                                    className="btn btn-primary btn-sm gradient-btn"
+                                                    onClick={() => handleOpenExtendModal(b)}
+                                                >
+                                                    Сунгах
+                                                </button>
+                                            </div>
                                         </td>
                                     </tr>
                                 )
                             })}
                             {filteredBusinesses.length === 0 && (
                                 <tr>
-                                    <td colSpan={6} style={{ padding: '32px', textAlign: 'center', color: 'var(--text-secondary)' }}>
+                                    <td colSpan={6} className="text-center py-8 text-secondary">
                                         Илэрц олдсонгүй
                                     </td>
                                 </tr>
@@ -240,50 +238,52 @@ export function SuperAdminFinance() {
                 </div>
 
                 {/* Recent Payments Log */}
-                <div className="card" style={{ marginTop: '24px', padding: 0, overflow: 'hidden' }}>
-                    <div style={{ padding: '20px', borderBottom: '1px solid var(--border-color)' }}>
+                <div style={{ marginTop: '24px' }}>
+                    <div className="section-header" style={{ marginBottom: '16px' }}>
                         <h2 style={{ fontSize: '1.1rem', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
                             <DollarSign size={18} className="text-success" />
                             Сүүлийн гүйлгээ (Төлөлтүүд)
                         </h2>
                     </div>
-                    <table className="table" style={{ width: '100%', borderCollapse: 'collapse' }}>
-                        <thead>
-                            <tr style={{ background: 'var(--surface-2)', borderBottom: '1px solid var(--border-color)', textAlign: 'left' }}>
-                                <th style={{ padding: '16px' }}>Огноо</th>
-                                <th style={{ padding: '16px' }}>Бизнес</th>
-                                <th style={{ padding: '16px' }}>Төрөл</th>
-                                <th style={{ padding: '16px' }}>Сар</th>
-                                <th style={{ padding: '16px' }}>Дүн</th>
-                                <th style={{ padding: '16px' }}>Хэлбэр</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {payments.slice(0, 50).map(p => (
-                                <tr key={p.id} style={{ borderBottom: '1px solid var(--border-color)' }}>
-                                    <td style={{ padding: '16px', color: 'var(--text-secondary)' }}>
-                                        {p.createdAt.toLocaleString('mn-MN')}
-                                    </td>
-                                    <td style={{ padding: '16px', fontWeight: 500 }}>{p.businessName}</td>
-                                    <td style={{ padding: '16px', textTransform: 'capitalize' }}>{p.plan}</td>
-                                    <td style={{ padding: '16px' }}>{p.months} сар</td>
-                                    <td style={{ padding: '16px', fontWeight: 600, color: 'var(--success)' }}>
-                                        +{p.amount.toLocaleString()} ₮
-                                    </td>
-                                    <td style={{ padding: '16px', textTransform: 'uppercase', fontSize: '0.85rem' }}>
-                                        {p.paymentMethod}
-                                    </td>
-                                </tr>
-                            ))}
-                            {payments.length === 0 && (
+                    <div className="card no-padding overflow-hidden">
+                        <table className="super-table">
+                            <thead>
                                 <tr>
-                                    <td colSpan={6} style={{ padding: '32px', textAlign: 'center', color: 'var(--text-secondary)' }}>
-                                        Одоогоор төлөлт бүртгэгдээгүй байна
-                                    </td>
+                                    <th>Огноо</th>
+                                    <th>Бизнес</th>
+                                    <th>Төрөл</th>
+                                    <th>Сар</th>
+                                    <th>Дүн</th>
+                                    <th>Хэлбэр</th>
                                 </tr>
-                            )}
-                        </tbody>
-                    </table>
+                            </thead>
+                            <tbody>
+                                {payments.slice(0, 50).map(p => (
+                                    <tr key={p.id}>
+                                        <td className="text-secondary text-xs">
+                                            {p.createdAt.toLocaleString('mn-MN')}
+                                        </td>
+                                        <td className="font-bold">{p.businessName}</td>
+                                        <td className="capitalize">{p.plan}</td>
+                                        <td>{p.months} сар</td>
+                                        <td className="font-bold text-success">
+                                            +{p.amount.toLocaleString()} ₮
+                                        </td>
+                                        <td className="uppercase text-xs font-bold">
+                                            {p.paymentMethod}
+                                        </td>
+                                    </tr>
+                                ))}
+                                {payments.length === 0 && (
+                                    <tr>
+                                        <td colSpan={6} className="text-center py-8 text-secondary">
+                                            Одоогоор төлөлт бүртгэгдээгүй байна
+                                        </td>
+                                    </tr>
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
 

@@ -117,42 +117,44 @@ export function SuperAdminCategories() {
             />
 
             <div className="page-content">
-                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginBottom: '24px' }}>
-                    <button className="btn btn-outline" onClick={handleSeedCategories} disabled={saving}>
-                        <Loader2 size={18} className={saving ? "animate-spin" : "hidden"} style={{ display: saving ? 'inline-block' : 'none' }} />
-                        Анхны өгөгдөл (Seed)
-                    </button>
+                <div className="table-actions">
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                        <button className="btn btn-outline btn-sm" onClick={handleSeedCategories} disabled={saving}>
+                            {saving ? <Loader2 size={16} className="animate-spin" /> : <Plus size={16} />}
+                            Анхны өгөгдөл (Seed)
+                        </button>
+                    </div>
                     <button className="btn btn-primary gradient-btn" onClick={() => handleOpenModal()}>
                         <Plus size={18} /> Шинэ ангилал нэмэх
                     </button>
                 </div>
 
-                <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
-                    <table className="table" style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <div className="card no-padding overflow-hidden">
+                    <table className="super-table">
                         <thead>
-                            <tr style={{ background: 'var(--surface-2)', borderBottom: '1px solid var(--border-color)', textAlign: 'left' }}>
-                                <th style={{ padding: '16px' }}>Icon</th>
-                                <th style={{ padding: '16px' }}>ID Code</th>
-                                <th style={{ padding: '16px' }}>Нэр</th>
-                                <th style={{ padding: '16px' }}>Тайлбар</th>
-                                <th style={{ padding: '16px' }}>Төлөв</th>
-                                <th style={{ padding: '16px', textAlign: 'right' }}>Үйлдэл</th>
+                            <tr>
+                                <th style={{ width: '80px' }}>Icon</th>
+                                <th>ID Code</th>
+                                <th>Нэр</th>
+                                <th>Тайлбар</th>
+                                <th>Төлөв</th>
+                                <th className="text-right">Үйлдэл</th>
                             </tr>
                         </thead>
                         <tbody>
                             {categories.map((cat) => (
-                                <tr key={cat.id} style={{ borderBottom: '1px solid var(--border-color)', opacity: cat.isActive ? 1 : 0.6 }}>
-                                    <td style={{ padding: '16px', fontSize: '1.5rem' }}>{cat.icon}</td>
-                                    <td style={{ padding: '16px', fontFamily: 'monospace', color: 'var(--text-secondary)' }}>{cat.id}</td>
-                                    <td style={{ padding: '16px', fontWeight: 600 }}>{cat.label}</td>
-                                    <td style={{ padding: '16px', color: 'var(--text-secondary)' }}>{cat.desc}</td>
-                                    <td style={{ padding: '16px' }}>
-                                        <span className={`badge badge-${cat.isActive ? 'success' : 'neutral'}`}>
+                                <tr key={cat.id} className={cat.isActive ? '' : 'text-tertiary'}>
+                                    <td style={{ fontSize: '1.5rem' }}>{cat.icon}</td>
+                                    <td className="font-mono text-xs">{cat.id}</td>
+                                    <td className="font-bold">{cat.label}</td>
+                                    <td className="text-secondary">{cat.desc}</td>
+                                    <td>
+                                        <span className={`badge ${cat.isActive ? 'badge-delivered' : 'badge-neutral'}`}>
                                             {cat.isActive ? 'Идэвхтэй' : 'Идэвхгүй'}
                                         </span>
                                     </td>
-                                    <td style={{ padding: '16px', textAlign: 'right' }}>
-                                        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
+                                    <td>
+                                        <div className="row-actions justify-end">
                                             <button
                                                 className="btn-icon"
                                                 title={cat.isActive ? "Идэвхгүй болгох" : "Идэвхжүүлэх"}
