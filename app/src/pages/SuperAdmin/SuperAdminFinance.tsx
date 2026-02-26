@@ -116,40 +116,53 @@ export function SuperAdminFinance() {
             <div className="page-content">
                 {/* Dashboard Cards */}
                 <div className="stats-grid">
-                    <div className="stats-card hover-card">
-                        <div className="stats-icon-wrapper online-tint">
+                    <div className="stat-card hover-card">
+                        <div className="stat-icon green">
                             <DollarSign size={24} />
                         </div>
-                        <div className="stats-info">
-                            <p className="stats-label">Нийт орлого</p>
-                            <h3 className="stats-value">{totalRevenue.toLocaleString()} ₮</h3>
+                        <div className="stat-info">
+                            <span className="stat-label">Нийт орлого</span>
+                            <div className="stat-value-row">
+                                <span className="stat-value">{totalRevenue.toLocaleString()} ₮</span>
+                            </div>
                         </div>
                     </div>
 
-                    <div className="stats-card hover-card">
-                        <div className="stats-icon-wrapper active-tint">
+                    <div className="stat-card hover-card">
+                        <div className="stat-icon purple">
                             <TrendingUp size={24} />
                         </div>
-                        <div className="stats-info">
-                            <p className="stats-label">Идэвхтэй харилцагч (Төлбөртэй)</p>
-                            <h3 className="stats-value">{activeCount} бизнес</h3>
+                        <div className="stat-info">
+                            <span className="stat-label">Идэвхтэй харилцагч (Төлбөртэй)</span>
+                            <div className="stat-value-row">
+                                <span className="stat-value">{activeCount} бизнес</span>
+                            </div>
                         </div>
                     </div>
 
-                    <div className="stats-card hover-card">
-                        <div className="stats-icon-wrapper neutral-tint" style={{ background: 'var(--surface-3)', color: 'var(--text-primary)' }}>
+                    <div className="stat-card hover-card">
+                        <div className="stat-icon blue">
                             <Calendar size={24} />
                         </div>
-                        <div className="stats-info">
-                            <p className="stats-label">Систем дэх нийт бизнес</p>
-                            <h3 className="stats-value">{businesses.length}</h3>
+                        <div className="stat-info">
+                            <span className="stat-label">Систем дэх нийт бизнес</span>
+                            <div className="stat-value-row">
+                                <span className="stat-value">{businesses.length}</span>
+                            </div>
                         </div>
                     </div>
                 </div>
 
                 {/* Subscriptions List */}
-                <div className="table-actions-container">
-                    <div className="table-actions">
+                <div className="table-actions">
+                    <div className="section-header">
+                        <div className="stats-icon-wrapper active-tint">
+                            <Activity size={20} />
+                        </div>
+                        <h2 className="text-xl font-bold">Бизнесүүдийн эрх</h2>
+                    </div>
+
+                    <div className="flex gap-3 flex-1 justify-end items-center max-w-4xl">
                         <div className="search-box">
                             <Search size={18} />
                             <input
@@ -162,8 +175,8 @@ export function SuperAdminFinance() {
                         <div className="filter-group">
                             <button className={`filter-btn ${filter === 'all' ? 'active' : ''}`} onClick={() => setFilter('all')}>Бүгд</button>
                             <button className={`filter-btn ${filter === 'active' ? 'active' : ''}`} onClick={() => setFilter('active')}>Идэвхтэй</button>
-                            <button className={`filter-btn ${filter === 'free' ? 'active' : ''}`} onClick={() => setFilter('free')}>Free План</button>
-                            <button className={`filter-btn ${filter === 'expired' ? 'active' : ''}`} onClick={() => setFilter('expired')}>Хугацаа дууссан</button>
+                            <button className={`filter-btn ${filter === 'free' ? 'active' : ''}`} onClick={() => setFilter('free')}>Free</button>
+                            <button className={`filter-btn ${filter === 'expired' ? 'active' : ''}`} onClick={() => setFilter('expired')}>Дууссан</button>
                         </div>
                     </div>
                 </div>
@@ -193,15 +206,15 @@ export function SuperAdminFinance() {
                                             <div className="text-secondary text-xs font-mono">{b.id}</div>
                                         </td>
                                         <td>
-                                            <div>{b.phone}</div>
+                                            <div className="text-sm">{b.phone}</div>
                                             <div className="text-secondary text-xs">{b.ownerName}</div>
                                         </td>
                                         <td>
-                                            <span className={`capitalize font-bold ${isFree ? 'text-tertiary' : 'text-primary'}`}>
-                                                {b.subscription?.plan || 'Free'}
+                                            <span className={`badge ${isFree ? 'badge-neutral' : 'badge-primary'} font-bold`}>
+                                                {b.subscription?.plan?.toUpperCase() || 'FREE'}
                                             </span>
                                         </td>
-                                        <td className={isExpired && !isFree ? 'text-danger' : ''}>
+                                        <td className={isExpired && !isFree ? 'text-danger font-bold' : 'text-secondary font-medium'}>
                                             {exp ? exp.toLocaleDateString('mn-MN') : 'Хязгааргүй'}
                                         </td>
                                         <td>
@@ -228,7 +241,7 @@ export function SuperAdminFinance() {
                             })}
                             {filteredBusinesses.length === 0 && (
                                 <tr>
-                                    <td colSpan={6} className="text-center py-8 text-secondary">
+                                    <td colSpan={6} className="text-center py-12 text-secondary">
                                         Илэрц олдсонгүй
                                     </td>
                                 </tr>
@@ -238,18 +251,21 @@ export function SuperAdminFinance() {
                 </div>
 
                 {/* Recent Payments Log */}
-                <div style={{ marginTop: '24px' }}>
-                    <div className="section-header" style={{ marginBottom: '16px' }}>
-                        <h2 style={{ fontSize: '1.1rem', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <DollarSign size={18} className="text-success" />
-                            Сүүлийн гүйлгээ (Төлөлтүүд)
-                        </h2>
+                <div className="mt-8">
+                    <div className="table-actions">
+                        <div className="section-header">
+                            <div className="stats-icon-wrapper success-tint">
+                                <DollarSign size={20} />
+                            </div>
+                            <h2 className="text-xl font-bold">Сүүлийн гүйлгээ (Төлөлтүүд)</h2>
+                        </div>
                     </div>
+
                     <div className="card no-padding overflow-hidden">
                         <table className="super-table">
                             <thead>
                                 <tr>
-                                    <th>Огноо</th>
+                                    <th style={{ width: '180px' }}>Огноо</th>
                                     <th>Бизнес</th>
                                     <th>Төрөл</th>
                                     <th>Сар</th>
@@ -263,20 +279,28 @@ export function SuperAdminFinance() {
                                         <td className="text-secondary text-xs">
                                             {p.createdAt.toLocaleString('mn-MN')}
                                         </td>
-                                        <td className="font-bold">{p.businessName}</td>
-                                        <td className="capitalize">{p.plan}</td>
-                                        <td>{p.months} сар</td>
-                                        <td className="font-bold text-success">
-                                            +{p.amount.toLocaleString()} ₮
+                                        <td>
+                                            <div className="font-bold">{p.businessName}</div>
                                         </td>
-                                        <td className="uppercase text-xs font-bold">
-                                            {p.paymentMethod}
+                                        <td>
+                                            <span className="badge badge-primary">{p.plan?.toUpperCase()}</span>
+                                        </td>
+                                        <td>{p.months} сар</td>
+                                        <td>
+                                            <div className="font-bold text-success">
+                                                +{p.amount.toLocaleString()} ₮
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <span className="text-[10px] font-bold uppercase tracking-wider bg-surface-2 px-2 py-1 rounded-md border border-primary-light/30">
+                                                {p.paymentMethod}
+                                            </span>
                                         </td>
                                     </tr>
                                 ))}
                                 {payments.length === 0 && (
                                     <tr>
-                                        <td colSpan={6} className="text-center py-8 text-secondary">
+                                        <td colSpan={6} className="text-center py-12 text-secondary">
                                             Одоогоор төлөлт бүртгэгдээгүй байна
                                         </td>
                                     </tr>
