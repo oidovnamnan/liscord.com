@@ -182,13 +182,12 @@ export function Sidebar() {
                         const Icon = (Icons as any)[mod.icon] || Icons.Box;
 
                         // Check if any module in the same hub is active
-                        const hubModules = LISCORD_MODULES.filter(m => m.hubId && m.hubId === mod.hubId);
+                        const hubModules = mod.hubId ? LISCORD_MODULES.filter(m => m.hubId === mod.hubId) : [];
                         const isAnyHubModuleActive = hubModules.some(m => location.pathname.startsWith(m.route));
                         const isActive = isAnyHubModuleActive || location.pathname.startsWith(mod.route);
 
-                        // Better labels for hubs to satisfy user (especially for inventory-hub)
+                        // Better labels for hubs to satisfy user
                         let displayName = mod.name;
-                        if (mod.hubId === 'inventory-hub') displayName = 'Бараа & Борлуулалт';
                         if (mod.hubId === 'crm-hub') displayName = 'Харилцагч & CRM';
                         if (mod.hubId === 'logistics-hub') displayName = 'Логистик & Карго';
 

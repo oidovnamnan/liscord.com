@@ -8,7 +8,6 @@ import { productService, categoryService, cargoService } from '../../services/db
 import { storageService as storage } from '../../services/storage';
 import type { Product, Category, CargoType } from '../../types';
 import { toast } from 'react-hot-toast';
-import { HubLayout } from '../../components/common/HubLayout';
 import './ProductsPage.css';
 
 function fmt(n: number) { return '₮' + n.toLocaleString('mn-MN'); }
@@ -62,10 +61,10 @@ export function ProductsPage() {
     }, []);
 
     return (
-        <HubLayout hubId="inventory-hub">
+        <>
             <Header
-                title="Бараа"
-                subtitle={loading ? 'Уншиж байна...' : `Нийт ${products.length} бараа`}
+                title="Бараа Материал"
+                subtitle={loading ? 'Уншиж байна...' : `Нийт ${products.length} төрлийн бараа`}
                 action={{ label: 'Шинэ бараа', onClick: () => setShowCreate(true) }}
             />
             <div className="page">
@@ -205,7 +204,7 @@ export function ProductsPage() {
                     onClose={() => setEditingProduct(null)}
                 />
             )}
-        </HubLayout>
+        </>
     );
 }
 

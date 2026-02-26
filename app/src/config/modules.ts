@@ -10,7 +10,6 @@ export const LISCORD_MODULES: AppModule[] = [
         route: '/app/orders',
         isCore: true,
         category: 'operations',
-        hubId: 'inventory-hub',
         isFree: true,
         price: 0,
         durationDays: 0
@@ -23,7 +22,6 @@ export const LISCORD_MODULES: AppModule[] = [
         route: '/app/products',
         isCore: true,
         category: 'operations',
-        hubId: 'inventory-hub',
         isFree: true,
         price: 0,
         durationDays: 0
