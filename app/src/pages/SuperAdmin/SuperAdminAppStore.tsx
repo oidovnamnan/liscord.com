@@ -16,15 +16,15 @@ export function SuperAdminAppStore() {
         const fetchConfig = async () => {
             try {
                 const config = await systemSettingsService.getAppStoreConfig();
-                // Merge static modules with dynamic config
-                const merged = LISCORD_MODULES.map(mod => {
+                // Filter and Merge static modules with dynamic config
+                const filtered = LISCORD_MODULES.filter(m => !m.isCore).map(mod => {
                     const dynamic = config[mod.id];
                     if (dynamic) {
                         return { ...mod, ...dynamic };
                     }
                     return mod;
                 });
-                setModules(merged);
+                setModules(filtered);
             } catch (error) {
                 console.error('Fetch config error:', error);
                 toast.error('Тохиргоо татахад алдаа гарлаа');
@@ -64,7 +64,7 @@ export function SuperAdminAppStore() {
     const handleSave = async () => {
         setSaving(true);
         try {
-            // Build config object from modules state
+            // Build config object from modules state (now only containing non-core modules)
             const config: Record<string, { isFree: boolean; plans: any[] }> = {};
             modules.forEach(mod => {
                 config[mod.id] = {
@@ -95,7 +95,7 @@ export function SuperAdminAppStore() {
         <div className="page-container animate-fade-in">
             <Header
                 title="App Store Удирдлага"
-                subtitle="Модулиудын үнэ болон захиалгын хугацааг тохируулах"
+                subtitle="Нэмэлт модулиудын үнэ болон захиалгын хугацааг тохируулах"
             />
 
             <div className="page-content">
@@ -172,7 +172,6 @@ export function SuperAdminAppStore() {
                         <thead>
                             <tr>
                                 <th style={{ paddingLeft: '32px' }}>Модуль</th>
-                                <th>Төрөл</th>
                                 <th>Үнэгүй эсэх</th>
                                 <th>Сонголт 1 (Сар)</th>
                                 <th>Сонголт 2 (Жил)</th>
@@ -195,11 +194,6 @@ export function SuperAdminAppStore() {
                                                 <div className="text-[0.7rem] text-tertiary font-mono" style={{ letterSpacing: '0.02em', opacity: 0.6 }}>{mod.id}</div>
                                             </div>
                                         </div>
-                                    </td>
-                                    <td>
-                                        <span className={`badge ${mod.isCore ? 'badge-primary' : 'badge-neutral'}`} style={{ fontSize: '0.7rem', height: '24px' }}>
-                                            {mod.isCore ? 'Core' : 'Optional'}
-                                        </span>
                                     </td>
                                     <td>
                                         <button
