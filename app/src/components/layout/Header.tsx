@@ -12,9 +12,10 @@ interface HeaderProps {
         label: string;
         onClick: () => void;
     };
+    extra?: React.ReactNode;
 }
 
-export function Header({ title, subtitle, action }: HeaderProps) {
+export function Header({ title, subtitle, action, extra }: HeaderProps) {
     const { toggleSidebar } = useUIStore();
     const { user, setUser } = useAuthStore();
     const { business } = useBusinessStore();
@@ -62,8 +63,8 @@ export function Header({ title, subtitle, action }: HeaderProps) {
                     <Menu size={22} />
                 </button>
                 <div className="header-title-section">
-                    {title && <h1 className="header-title">{title}</h1>}
                     {subtitle && <p className="header-subtitle">{subtitle}</p>}
+                    {extra && <div className="header-extra hide-mobile">{extra}</div>}
                 </div>
             </div>
 

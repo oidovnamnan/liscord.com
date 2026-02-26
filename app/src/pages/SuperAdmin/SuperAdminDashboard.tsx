@@ -7,7 +7,6 @@ import {
     TrendingUp,
     ShieldAlert,
     Settings,
-    DollarSign,
     Globe,
     CheckCircle2
 } from 'lucide-react';
