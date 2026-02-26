@@ -390,13 +390,15 @@ export function SettingsPage() {
                                                 return (
                                                     <label key={t.id} style={{
                                                         position: 'relative',
-                                                        border: isSelected ? '2px solid var(--primary)' : '1px solid var(--border-color)',
+                                                        border: isSelected ? '3px solid var(--primary)' : '1px solid var(--border-color)',
                                                         borderRadius: '16px',
                                                         padding: '20px',
                                                         cursor: 'pointer',
-                                                        background: isSelected ? 'var(--bg-soft)' : '#fff',
+                                                        background: isSelected ? 'rgba(74, 107, 255, 0.05)' : '#fff',
                                                         transition: 'all 0.2s',
-                                                        display: 'block'
+                                                        display: 'block',
+                                                        boxShadow: isSelected ? '0 8px 20px rgba(74, 107, 255, 0.15)' : 'none',
+                                                        transform: isSelected ? 'translateY(-2px)' : 'none'
                                                     }}>
                                                         <input
                                                             type="radio"
@@ -405,9 +407,14 @@ export function SettingsPage() {
                                                             defaultChecked={isSelected}
                                                             style={{ position: 'absolute', opacity: 0 }}
                                                         />
-                                                        <div style={{ width: 40, height: 40, borderRadius: 12, background: t.color, marginBottom: 12, border: '1px solid rgba(0,0,0,0.05)' }} />
-                                                        <div style={{ fontWeight: 700, fontSize: '0.95rem', marginBottom: 4 }}>{t.name}</div>
-                                                        <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{t.description}</div>
+                                                        {isSelected && (
+                                                            <div style={{ position: 'absolute', top: 12, right: 12, color: 'var(--primary)' }}>
+                                                                <CheckCircle2 size={20} />
+                                                            </div>
+                                                        )}
+                                                        <div style={{ width: 44, height: 44, borderRadius: 12, background: t.color, marginBottom: 12, border: '1px solid rgba(0,0,0,0.05)', boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.05)' }} />
+                                                        <div style={{ fontWeight: 800, fontSize: '1rem', marginBottom: 4, color: isSelected ? 'var(--primary)' : 'inherit' }}>{t.name}</div>
+                                                        <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', lineHeight: 1.4 }}>{t.description}</div>
                                                     </label>
                                                 );
                                             })}
@@ -419,24 +426,25 @@ export function SettingsPage() {
                                                     borderRadius: '16px',
                                                     padding: '20px',
                                                     cursor: 'pointer',
-                                                    background: 'rgba(74, 107, 255, 0.05)',
+                                                    background: 'rgba(74, 107, 255, 0.02)',
                                                     display: 'flex',
                                                     flexDirection: 'column',
                                                     alignItems: 'center',
                                                     justifyContent: 'center',
                                                     textAlign: 'center',
-                                                    gap: '8px'
+                                                    gap: '8px',
+                                                    minHeight: '140px'
                                                 }}
                                             >
                                                 <ShoppingBag size={24} color="var(--primary)" />
                                                 <div style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--primary)' }}>Шинэ загвар авах</div>
-                                                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Liscord App Store-оос илүү олон загвар үзэх</div>
+                                                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>App Store-оос илүү олон загвар үзэх</div>
                                             </div>
                                         </div>
 
-                                        <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 24 }}>
-                                            <button className="btn btn-primary gradient-btn" type="submit" disabled={loading || !isDirty} style={{ minWidth: 120 }}>
-                                                {loading ? <Loader2 size={16} className="animate-spin" /> : 'Хадгалах'}
+                                        <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 32 }}>
+                                            <button className="btn btn-primary gradient-btn" type="submit" disabled={loading || !isDirty} style={{ minWidth: 160, height: 48, borderRadius: 12, fontSize: '1rem' }}>
+                                                {loading ? <Loader2 size={18} className="animate-spin" /> : 'Загвар сонгох'}
                                             </button>
                                         </div>
                                     </form>
