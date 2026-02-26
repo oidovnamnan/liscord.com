@@ -62,19 +62,19 @@ export function SuperAdminGlobalSettings() {
             <div className="page-content" style={{ maxWidth: '800px' }}>
                 <form onSubmit={handleSave} style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
                     <div className="card">
-                        <h2 style={{ fontSize: '1.2rem', margin: '0 0 24px 0', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <Sun size={20} className="text-primary" />
+                        <h2 style={{ fontSize: '1.2rem', margin: '0 0 24px 0', display: 'flex', alignItems: 'center', gap: '10px', color: 'var(--text-primary)' }}>
+                            <Sun size={22} color="#f59e0b" fill="#f59e0b20" />
                             Системийн Ерөнхий Загвар (Theme Template)
                         </h2>
                         <p style={{ color: 'var(--text-secondary)', marginBottom: '24px' }}>
                             Супер Админ порталын харагдах байдлыг эндээс тохируулна уу.
                         </p>
 
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
                             {[
-                                { id: 'light', label: 'Цайвар (Light)', icon: Sun },
-                                { id: 'dark', label: 'Бараан (Dark)', icon: Moon },
-                                { id: 'system', label: 'Систем (System)', icon: Monitor },
+                                { id: 'light', label: 'Цайвар', icon: Sun, color: '#f59e0b' },
+                                { id: 'dark', label: 'Бараан', icon: Moon, color: '#6366f1' },
+                                { id: 'system', label: 'Систем', icon: Monitor, color: '#10b981' },
                             ].map((t) => (
                                 <button
                                     key={t.id}
@@ -84,17 +84,35 @@ export function SuperAdminGlobalSettings() {
                                         display: 'flex',
                                         flexDirection: 'column',
                                         alignItems: 'center',
-                                        gap: '12px',
-                                        padding: '24px',
-                                        background: theme === t.id ? 'var(--primary-light)' : 'var(--surface-2)',
-                                        border: `2px solid ${theme === t.id ? 'var(--primary)' : 'var(--border-color)'}`,
-                                        borderRadius: '16px',
+                                        gap: '8px',
+                                        padding: '16px',
+                                        background: theme === t.id ? 'var(--bg-secondary)' : 'var(--surface-2)',
+                                        border: `2px solid ${theme === t.id ? 'var(--primary)' : 'transparent'}`,
+                                        borderRadius: '12px',
                                         cursor: 'pointer',
-                                        transition: 'all 0.2s'
+                                        transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                                        boxShadow: theme === t.id ? 'var(--shadow-glow)' : 'var(--shadow-sm)',
+                                        transform: theme === t.id ? 'translateY(-2px)' : 'none'
                                     }}
                                 >
-                                    <t.icon size={24} color={theme === t.id ? 'var(--primary)' : 'var(--text-secondary)'} />
-                                    <span style={{ fontWeight: 600, color: theme === t.id ? 'var(--text-primary)' : 'var(--text-secondary)' }}>
+                                    <div style={{
+                                        width: '40px',
+                                        height: '40px',
+                                        borderRadius: '10px',
+                                        background: theme === t.id ? 'var(--primary-light)' : 'var(--bg-soft)',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        marginBottom: '4px',
+                                        transition: 'all 0.3s'
+                                    }}>
+                                        <t.icon size={20} color={theme === t.id ? 'var(--primary)' : 'var(--text-secondary)'} />
+                                    </div>
+                                    <span style={{
+                                        fontWeight: 600,
+                                        fontSize: '0.85rem',
+                                        color: theme === t.id ? 'var(--text-primary)' : 'var(--text-secondary)'
+                                    }}>
                                         {t.label}
                                     </span>
                                 </button>
@@ -111,8 +129,34 @@ export function SuperAdminGlobalSettings() {
                             Системийн хэмжээнд бүх хэрэглэгчдэд (business эзэд, ажилчид г.м) дээд хэсэгт харагдах мэдэгдэл.
                         </p>
 
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                            <label className="toggle" style={{ display: 'inline-flex', padding: '16px', background: 'var(--surface-2)', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                            <div style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'space-between',
+                                padding: '16px 20px',
+                                background: 'var(--bg-soft)',
+                                borderRadius: '14px',
+                                border: '1px solid var(--border-color)'
+                            }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                                    <div style={{
+                                        width: '40px',
+                                        height: '40px',
+                                        borderRadius: '10px',
+                                        background: 'rgba(108, 92, 231, 0.1)',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        color: 'var(--primary)'
+                                    }}>
+                                        <MessageSquare size={20} />
+                                    </div>
+                                    <div>
+                                        <div style={{ fontWeight: 700, fontSize: '1rem', color: 'var(--text-primary)' }}>Мэдэгдлийг идэвхжүүлэх</div>
+                                        <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Асаавал бүх хэрэглэгчийн дэлгэцийн дээд хэсэгт харагдана.</div>
+                                    </div>
+                                </div>
                                 <input
                                     type="checkbox"
                                     checked={settings.banner.isActive}
@@ -120,16 +164,22 @@ export function SuperAdminGlobalSettings() {
                                         ...settings,
                                         banner: { ...settings.banner, isActive: e.target.checked }
                                     })}
-                                    style={{ marginRight: '12px' }}
+                                    className="toggle-checkbox"
+                                    style={{ width: '22px', height: '22px', cursor: 'pointer', accentColor: 'var(--primary)' }}
                                 />
-                                <div>
-                                    <div style={{ fontWeight: 600 }}>Мэдэгдлийг идэвхжүүлэх</div>
-                                    <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Асаавал бүх хэрэглэгчийн дэлгэцийн дээд хэсэгт харагдана.</div>
-                                </div>
-                            </label>
+                            </div>
 
                             {settings.banner.isActive && (
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', padding: '16px', background: 'var(--bg-soft)', borderRadius: '8px' }}>
+                                <div style={{
+                                    display: 'grid',
+                                    gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+                                    gap: '16px',
+                                    padding: '24px',
+                                    background: 'var(--surface-2)',
+                                    borderRadius: '16px',
+                                    border: '1px solid var(--border-primary)',
+                                    animation: 'fadeIn 0.3s ease'
+                                }}>
                                     <div className="input-group">
                                         <label className="input-label">Мэдэгдлийн Төрөл (Өнгө)</label>
                                         <select
@@ -184,23 +234,25 @@ export function SuperAdminGlobalSettings() {
                         </h2>
 
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                            <label className="toggle-label" style={{
+                            <div style={{
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'space-between',
-                                padding: '20px',
-                                background: 'var(--surface-2)',
-                                borderRadius: '12px',
+                                padding: '20px 24px',
+                                background: 'var(--bg-soft)',
+                                borderRadius: '16px',
                                 border: '1px solid var(--border-color)',
-                                cursor: 'pointer',
                                 transition: 'all 0.2s'
                             }}>
                                 <div style={{ flex: 1, marginRight: '16px' }}>
-                                    <div style={{ fontWeight: 600, fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                                    <div style={{ fontWeight: 700, fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px', color: 'var(--text-primary)' }}>
                                         Шинэ бүртгэл нээх
-                                        {settings.registrationEnabled ? <span className="badge badge-success">Асаалттай</span> : <span className="badge badge-secondary">Унтраалтай</span>}
+                                        {settings.registrationEnabled ?
+                                            <span style={{ background: 'var(--accent-green)', color: 'white', padding: '2px 10px', borderRadius: '20px', fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase' }}>Асаалттай</span> :
+                                            <span style={{ background: 'var(--text-muted)', color: 'white', padding: '2px 10px', borderRadius: '20px', fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase' }}>Унтраалтай</span>
+                                        }
                                     </div>
-                                    <div style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', lineHeight: 1.4 }}>Унтраавал гаднаас шинэ хэрэглэгч системд бүртгүүлэх боломжгүй болно.</div>
+                                    <div style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', lineHeight: 1.5 }}>Унтраавал гаднаас шинэ хэрэглэгч системд бүртгүүлэх боломжгүй болно.</div>
                                 </div>
                                 <div className="toggle-switch">
                                     <input
@@ -234,25 +286,24 @@ export function SuperAdminGlobalSettings() {
                                         }} />
                                     </div>
                                 </div>
-                            </label>
+                            </div>
 
-                            <label className="toggle-label" style={{
+                            <div style={{
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'space-between',
-                                padding: '20px',
-                                background: settings.maintenanceMode ? 'rgba(239, 68, 68, 0.1)' : 'var(--surface-2)',
-                                borderRadius: '12px',
-                                border: `1px solid ${settings.maintenanceMode ? 'var(--danger)' : 'var(--border-color)'}`,
-                                cursor: 'pointer',
+                                padding: '20px 24px',
+                                background: settings.maintenanceMode ? 'rgba(239, 68, 68, 0.05)' : 'var(--bg-soft)',
+                                borderRadius: '16px',
+                                border: `1px solid ${settings.maintenanceMode ? 'rgba(239, 68, 68, 0.2)' : 'var(--border-color)'}`,
                                 transition: 'all 0.2s'
                             }}>
                                 <div style={{ flex: 1, marginRight: '16px' }}>
-                                    <div style={{ fontWeight: 600, color: settings.maintenanceMode ? 'var(--danger)' : 'inherit', display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-                                        <AlertTriangle size={16} /> Maintenance Mode
-                                        {settings.maintenanceMode && <span className="badge badge-danger">Асаалттай</span>}
+                                    <div style={{ fontWeight: 700, color: settings.maintenanceMode ? '#ef4444' : 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px' }}>
+                                        <AlertTriangle size={18} /> Maintenance Mode
+                                        {settings.maintenanceMode && <span style={{ background: '#ef4444', color: 'white', padding: '2px 10px', borderRadius: '20px', fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase' }}>Идэвхтэй</span>}
                                     </div>
-                                    <div style={{ color: settings.maintenanceMode ? 'var(--text-danger)' : 'var(--text-secondary)', fontSize: '0.85rem', lineHeight: 1.4 }}>
+                                    <div style={{ color: settings.maintenanceMode ? 'rgba(239, 68, 68, 0.8)' : 'var(--text-secondary)', fontSize: '0.85rem', lineHeight: 1.5 }}>
                                         Системийн засварын горим. Асаавал бүх хэрэглэгчид системээс гарч, зөвхөн админ нэвтрэх боломжтой болно.
                                     </div>
                                 </div>
@@ -288,7 +339,7 @@ export function SuperAdminGlobalSettings() {
                                         }} />
                                     </div>
                                 </div>
-                            </label>
+                            </div>
                         </div>
                     </div>
 
