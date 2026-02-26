@@ -89,25 +89,28 @@ export function SuperAdminSettings() {
             />
 
             <div className="page-content">
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '24px', alignItems: 'center' }}>
-                    <h2 style={{ fontSize: '1.2rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <Settings size={20} className="text-primary" />
-                        Динамик Модуль Тохиргоо (Default Configurations)
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '32px', alignItems: 'center', background: 'var(--bg-secondary)', padding: '20px 24px', borderRadius: '16px', border: '1px solid var(--border-glass)', boxShadow: 'var(--shadow-sm)' }}>
+                    <h2 style={{ fontSize: '1.25rem', display: 'flex', alignItems: 'center', gap: '12px', margin: 0, color: 'var(--text-primary)' }}>
+                        <div style={{ width: '40px', height: '40px', background: 'var(--primary-tint)', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <Settings size={22} className="text-primary" />
+                        </div>
+                        Динамик Модуль Тохиргоо
                     </h2>
                     <button
                         className="btn btn-primary gradient-btn"
                         onClick={handleSave}
                         disabled={saving}
+                        style={{ height: '44px', padding: '0 24px' }}
                     >
                         {saving ? <Loader2 className="animate-spin" size={18} /> : <Save size={18} />}
                         Хадгалах
                     </button>
                 </div>
 
-                <div style={{ background: 'var(--surface-1)', borderRadius: 'var(--radius-lg)', padding: '24px', border: '1px solid var(--border-color)' }}>
-                    <p style={{ color: 'var(--text-secondary)', marginBottom: '24px', lineHeight: 1.5 }}>
+                <div style={{ background: 'var(--surface-1)', borderRadius: '24px', padding: '32px', border: '1px solid var(--border-primary)', boxShadow: 'var(--shadow-md)' }}>
+                    <p style={{ color: 'var(--text-secondary)', marginBottom: '32px', lineHeight: 1.6, fontSize: '1rem', borderLeft: '3px solid var(--primary)', paddingLeft: '16px' }}>
                         Энд сонгосон модулиуд нь тухайн салбараар шинэ бизнес бүртгүүлэх үед автоматаар асаалттай (enabled) үүсэх болно. <br />
-                        Жишээ нь: "Онлайн шоп" бизнес бүртгүүлэхэд таны энд сонгосон модулиуд автоматаар залгагдана.
+                        <span style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>Жишээ нь: "Онлайн шоп" бизнес бүртгүүлэхэд таны энд сонгосон модулиуд автоматаар залгагдана.</span>
                     </p>
 
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
@@ -145,7 +148,7 @@ export function SuperAdminSettings() {
                                         </div>
                                     </div>
 
-                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '16px' }}>
+                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '20px' }}>
                                         {LISCORD_MODULES.map(module => {
                                             const isActive = activeMods.includes(module.id);
                                             const Icon = (Icons as any)[module.icon] || Icons.Box;
@@ -156,44 +159,51 @@ export function SuperAdminSettings() {
                                                     style={{
                                                         display: 'flex',
                                                         alignItems: 'center',
-                                                        gap: '12px',
-                                                        padding: '16px',
-                                                        borderRadius: '12px',
-                                                        border: `1px solid ${isActive ? 'var(--primary)' : 'var(--border-color)'}`,
-                                                        background: isActive ? 'rgba(var(--primary-rgb), 0.1)' : 'var(--surface-1)',
+                                                        gap: '16px',
+                                                        padding: '18px',
+                                                        borderRadius: '16px',
+                                                        border: `1px solid ${isActive ? 'var(--primary)' : 'var(--border-primary)'}`,
+                                                        background: isActive ? 'var(--primary-light)' : 'var(--bg-secondary)',
                                                         cursor: 'pointer',
                                                         transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-                                                        transform: isActive ? 'scale(1.02)' : 'scale(1)',
-                                                        boxShadow: isActive ? '0 4px 12px rgba(var(--primary-rgb), 0.2)' : 'none'
+                                                        transform: isActive ? 'translateY(-2px)' : 'none',
+                                                        boxShadow: isActive ? 'var(--shadow-md)' : 'var(--shadow-sm)'
                                                     }}
                                                 >
                                                     <div style={{
                                                         width: '24px',
                                                         height: '24px',
-                                                        borderRadius: '6px',
+                                                        borderRadius: '8px',
                                                         border: `2px solid ${isActive ? 'var(--primary)' : 'var(--text-muted)'}`,
                                                         display: 'flex',
                                                         alignItems: 'center',
                                                         justifyContent: 'center',
                                                         background: isActive ? 'var(--primary)' : 'transparent',
-                                                        transition: 'all 0.2s'
+                                                        transition: 'all 0.2s',
+                                                        flexShrink: 0
                                                     }}>
                                                         {isActive && <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'white' }} />}
                                                     </div>
-                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1 }}>
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flex: 1 }}>
                                                         <div style={{
-                                                            padding: '8px',
-                                                            borderRadius: '8px',
-                                                            background: isActive ? 'white' : 'var(--surface-2)',
-                                                            color: isActive ? 'var(--primary)' : 'var(--text-secondary)'
+                                                            width: '44px',
+                                                            height: '44px',
+                                                            borderRadius: '12px',
+                                                            background: isActive ? 'white' : 'var(--bg-soft)',
+                                                            color: isActive ? 'var(--primary)' : 'var(--text-secondary)',
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            justifyContent: 'center',
+                                                            flexShrink: 0,
+                                                            boxShadow: isActive ? '0 2px 8px rgba(0,0,0,0.05)' : 'none'
                                                         }}>
-                                                            <Icon size={18} />
+                                                            <Icon size={22} />
                                                         </div>
-                                                        <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                                            <span style={{ fontWeight: 600, fontSize: '0.9rem', color: isActive ? 'var(--text-primary)' : 'var(--text-secondary)' }}>
+                                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                                                            <span style={{ fontWeight: 700, fontSize: '0.95rem', color: isActive ? 'var(--text-primary)' : 'var(--text-secondary)' }}>
                                                                 {module.name}
                                                             </span>
-                                                            <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
+                                                            <span style={{ fontSize: '0.75rem', fontWeight: 600, color: isActive ? 'var(--primary)' : 'var(--text-muted)' }}>
                                                                 {module.id === 'orders' || module.id === 'products' ? 'Үндсэн модуль' : 'Нэмэлт модуль'}
                                                             </span>
                                                         </div>
