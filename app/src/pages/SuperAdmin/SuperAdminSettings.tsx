@@ -12,7 +12,7 @@ export function SuperAdminSettings() {
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [migrating, setMigrating] = useState(false);
-    const [defaults, setDefaults] = useState<Record<string, string[]>>({});
+    const [defaults, setDefaults] = useState<Record<string, Record<string, 'core' | 'addon'>>>({});
 
     useEffect(() => {
         const fetchDefaults = async () => {
@@ -35,12 +35,23 @@ export function SuperAdminSettings() {
 
     const handleToggle = (categoryKey: string, moduleId: string) => {
         setDefaults(prev => {
-            const current = prev[categoryKey] || [];
-            if (current.includes(moduleId)) {
-                return { ...prev, [categoryKey]: current.filter(id => id !== moduleId) };
+            const categoryDefaults = prev[categoryKey] || {};
+            const currentStatus = categoryDefaults[moduleId];
+
+            const newCategoryDefaults = { ...categoryDefaults };
+
+            if (!currentStatus) {
+                // Off -> Core
+                newCategoryDefaults[moduleId] = 'core';
+            } else if (currentStatus === 'core') {
+                // Core -> Addon
+                newCategoryDefaults[moduleId] = 'addon';
             } else {
-                return { ...prev, [categoryKey]: [...current, moduleId] };
+                // Addon -> Off
+                delete newCategoryDefaults[moduleId];
             }
+
+            return { ...prev, [categoryKey]: newCategoryDefaults };
         });
     };
 
@@ -117,7 +128,7 @@ export function SuperAdminSettings() {
                     <div className="module-category-list" style={{ padding: '0 24px 24px 24px' }}>
                         {categories.map((category) => {
                             const key = category.id;
-                            const activeMods = defaults[key] || [];
+                            const activeMods = defaults[key] || {};
 
                             return (
                                 <div key={key} className="module-category-card">
@@ -133,13 +144,14 @@ export function SuperAdminSettings() {
 
                                     <div className="module-grid">
                                         {LISCORD_MODULES.map(module => {
-                                            const isActive = activeMods.includes(module.id);
+                                            const status = activeMods[module.id]; // 'core' | 'addon' | undefined
+                                            const isActive = !!status;
                                             const Icon = (Icons as any)[module.icon] || Icons.Box;
                                             return (
                                                 <div
                                                     key={module.id}
                                                     onClick={() => handleToggle(key, module.id)}
-                                                    className={`module-item-card ${isActive ? 'active' : ''}`}
+                                                    className={`module-item-card ${status || ''}`}
                                                 >
                                                     <div className="module-check">
                                                         {isActive && <div className="module-check-dot" />}
@@ -152,7 +164,7 @@ export function SuperAdminSettings() {
                                                     <div className="module-info">
                                                         <span className="module-name">{module.name}</span>
                                                         <span className="module-type">
-                                                            {module.id === 'orders' || module.id === 'products' ? 'Core' : 'Add-on'}
+                                                            {status === 'core' ? 'Core' : status === 'addon' ? 'Add-on' : (module.id === 'orders' || module.id === 'products' ? 'Core' : 'Add-on')}
                                                         </span>
                                                     </div>
                                                 </div>
@@ -164,6 +176,7 @@ export function SuperAdminSettings() {
                         })}
                     </div>
                 </div>
+
 
                 <div className="card migration-card no-padding">
                     <div className="migration-content">

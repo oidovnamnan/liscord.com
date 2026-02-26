@@ -71,16 +71,16 @@ export const userService = {
 // ============ SYSTEM SETTINGS ============
 
 export const systemSettingsService = {
-    async getModuleDefaults(): Promise<Record<string, string[]>> {
+    async getModuleDefaults(): Promise<Record<string, Record<string, 'core' | 'addon'>>> {
         const docRef = doc(db, 'system_settings', 'modules');
         const docSnap = await getDoc(docRef);
         if (docSnap.exists()) {
-            return docSnap.data() as Record<string, string[]>;
+            return docSnap.data() as Record<string, Record<string, 'core' | 'addon'>>;
         }
         return {};
     },
 
-    async updateModuleDefaults(defaults: Record<string, string[]>): Promise<void> {
+    async updateModuleDefaults(defaults: Record<string, Record<string, 'core' | 'addon'>>): Promise<void> {
         await setDoc(doc(db, 'system_settings', 'modules'), defaults);
     },
 
@@ -182,8 +182,9 @@ export const businessService = {
         let defaultModules = ['orders', 'products', 'customers', 'inventory'];
 
         if (business.category && defaultsConfig[business.category]) {
-            // Merge static minimums with dynamic config
-            defaultModules = Array.from(new Set([...defaultModules, ...defaultsConfig[business.category]]));
+            // New structure: defaultsConfig[cat] is { moduleId: 'core' | 'addon' }
+            const configuredModules = Object.keys(defaultsConfig[business.category]);
+            defaultModules = Array.from(new Set([...defaultModules, ...configuredModules]));
         } else {
             // Hardcoded fallbacks if DB is empty for this category
             if (business.category === 'cargo') defaultModules.push('packages', 'delivery');
@@ -204,6 +205,7 @@ export const businessService = {
         await setDoc(bizRef, fullBusiness);
         return bizId;
     },
+
 
     async getEmployeeProfile(bizId: string, uid: string): Promise<Employee | null> {
         const q = query(
