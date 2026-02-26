@@ -12,7 +12,7 @@ export function SuperAdminSettings() {
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [migrating, setMigrating] = useState(false);
-    const [defaults, setDefaults] = useState<Record<string, Record<string, 'core' | 'addon'>>>({});
+    const [selectedCategoryId, setSelectedCategoryId] = useState<string>('all');
 
     useEffect(() => {
         const fetchDefaults = async () => {
@@ -32,6 +32,10 @@ export function SuperAdminSettings() {
         };
         fetchDefaults();
     }, [fetchCategories]);
+
+    const filteredCategories = selectedCategoryId === 'all'
+        ? categories
+        : categories.filter(c => c.id === selectedCategoryId);
 
     const handleToggle = (categoryKey: string, moduleId: string) => {
         setDefaults(prev => {
@@ -100,21 +104,47 @@ export function SuperAdminSettings() {
             />
 
             <div className="page-content">
-                <div className="table-actions">
-                    <div className="section-header">
+                <div className="table-actions" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '16px' }}>
+                    <div className="section-header" style={{ marginBottom: 0 }}>
                         <div className="stats-icon-wrapper active-tint">
                             <Settings size={20} />
                         </div>
                         <h2 className="text-xl font-bold">Динамик Модуль Тохиргоо</h2>
                     </div>
-                    <button
-                        className="btn btn-primary gradient-btn"
-                        onClick={handleSave}
-                        disabled={saving}
-                    >
-                        {saving ? <Loader2 className="animate-spin" size={18} /> : <Save size={18} />}
-                        Хадгалах
-                    </button>
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <select
+                            className="input-field"
+                            style={{
+                                minWidth: '220px',
+                                height: '42px',
+                                background: 'var(--surface-2)',
+                                border: '1px solid var(--border-primary)',
+                                borderRadius: '12px',
+                                padding: '0 12px',
+                                fontSize: '0.9rem',
+                                fontWeight: 600,
+                                color: 'var(--text-primary)'
+                            }}
+                            value={selectedCategoryId}
+                            onChange={(e) => setSelectedCategoryId(e.target.value)}
+                        >
+                            <option value="all">Бүх салбар / ангилал</option>
+                            {categories.map(cat => (
+                                <option key={cat.id} value={cat.id}>{cat.label}</option>
+                            ))}
+                        </select>
+
+                        <button
+                            className="btn btn-primary gradient-btn"
+                            onClick={handleSave}
+                            disabled={saving}
+                            style={{ height: '42px', padding: '0 20px' }}
+                        >
+                            {saving ? <Loader2 className="animate-spin" size={18} /> : <Save size={18} />}
+                            Хадгалах
+                        </button>
+                    </div>
                 </div>
 
                 <div className="card no-padding overflow-hidden">
@@ -126,7 +156,7 @@ export function SuperAdminSettings() {
                     </div>
 
                     <div className="module-category-list" style={{ padding: '0 24px 24px 24px' }}>
-                        {categories.map((category) => {
+                        {filteredCategories.map((category) => {
                             const key = category.id;
                             const activeMods = defaults[key] || {};
 
