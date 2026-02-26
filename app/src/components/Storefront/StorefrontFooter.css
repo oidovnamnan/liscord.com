@@ -1,0 +1,71 @@
+.sf-footer {
+    background: var(--bg-soft, #f9fafb);
+    border-top: 1px solid var(--border-color, rgba(0, 0, 0, 0.05));
+    padding: 60px 20px 40px;
+    margin-top: 60px;
+}
+
+.sf-footer-content {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.sf-footer-info {
+    margin-bottom: 40px;
+    text-align: center;
+}
+
+.sf-footer-biz-name {
+    font-size: 1.5rem;
+    font-weight: 800;
+    margin-bottom: 16px;
+    letter-spacing: -0.02em;
+}
+
+.sf-footer-details {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 20px;
+    color: var(--text-muted, #6b7280);
+    font-size: 0.9rem;
+}
+
+.sf-footer-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.sf-footer-bottom {
+    padding-top: 30px;
+    border-top: 1px solid var(--border-color, rgba(0, 0, 0, 0.05));
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+    font-size: 0.85rem;
+    color: var(--text-muted, #6b7280);
+}
+
+.sf-footer-powered {
+    font-weight: 500;
+}
+
+.sf-liscord-logo {
+    font-weight: 800;
+    color: var(--primary, #4a6bff);
+    letter-spacing: -0.01em;
+}
+
+@media (max-width: 640px) {
+    .sf-footer {
+        padding: 40px 20px 30px;
+    }
+
+    .sf-footer-bottom {
+        flex-direction: column;
+        text-align: center;
+    }
+}

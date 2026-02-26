@@ -119,6 +119,7 @@ export function SettingsPage() {
         const slug = fd.has('slug') ? (fd.get('slug') as string)?.trim().toLowerCase() : undefined;
         const storefrontName = fd.has('storefrontName') ? (fd.get('storefrontName') as string)?.trim() : undefined;
         const enabled = fd.has('storefrontEnabled') ? fd.get('storefrontEnabled') === 'on' : business.settings?.storefront?.enabled;
+        const showFooter = fd.has('showFooter') ? fd.get('showFooter') === 'on' : business.settings?.storefront?.showFooter;
         const newTheme = fd.get('storefrontTheme') as string;
 
         setLoading(true);
@@ -156,6 +157,7 @@ export function SettingsPage() {
                     storefront: {
                         ...business.settings?.storefront,
                         enabled: enabled ?? false,
+                        showFooter: showFooter ?? true,
                         theme: newTheme || business.settings?.storefront?.theme || 'minimal',
                         name: storefrontName !== undefined ? storefrontName : (business.settings?.storefront?.name || '')
                     }
@@ -384,6 +386,26 @@ export function SettingsPage() {
                                     </p>
 
                                     <form className="settings-form" onSubmit={handleUpdateStorefront} onChange={() => setIsDirty(true)}>
+                                        <div style={{ marginBottom: '24px', padding: '16px', borderRadius: '12px', background: 'var(--bg-soft)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                            <div>
+                                                <div style={{ fontWeight: 700, fontSize: '0.95rem', marginBottom: '4px' }}>Хөл хэсгийг харуулах (Footer)</div>
+                                                <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-muted)' }}>Дэлгүүрийн доод хэсэгт бизнесийн мэдээллийг харуулах.</p>
+                                            </div>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                <span style={{ fontSize: '0.8rem', fontWeight: 600, color: (business?.settings?.storefront?.showFooter ?? true) ? 'var(--primary)' : 'var(--text-muted)' }}>
+                                                    {(business?.settings?.storefront?.showFooter ?? true) ? 'Асаалттай' : 'Унтраасан'}
+                                                </span>
+                                                <label className="switch">
+                                                    <input
+                                                        type="checkbox"
+                                                        name="showFooter"
+                                                        defaultChecked={business?.settings?.storefront?.showFooter ?? true}
+                                                    />
+                                                    <span className="slider round"></span>
+                                                </label>
+                                            </div>
+                                        </div>
+
                                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px' }}>
                                             {STOREFRONT_THEMES.map(t => {
                                                 const installedThemes = business?.settings?.storefront?.installedThemes || ['minimal'];

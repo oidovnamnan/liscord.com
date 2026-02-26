@@ -3,6 +3,7 @@ import { useParams, Outlet, Navigate } from 'react-router-dom';
 import { businessService } from '../../services/db';
 import type { Business } from '../../types';
 import { CartDrawer } from '../../components/Storefront/CartDrawer';
+import { StorefrontFooter } from '../../components/Storefront/StorefrontFooter';
 
 export function StorefrontWrapper() {
     const { slug } = useParams<{ slug: string }>();
@@ -55,6 +56,7 @@ export function StorefrontWrapper() {
     return (
         <div className="storefront-layout">
             <Outlet context={{ business }} />
+            <StorefrontFooter business={business} />
             <CartDrawer />
         </div>
     );
