@@ -10,10 +10,10 @@ export const LISCORD_MODULES: AppModule[] = [
         route: '/app/orders',
         isCore: true,
         category: 'operations',
-        isFree: true,
+        isFree: false,
         plans: [
-            { id: 'monthly', name: '30 хоног', price: 0, durationDays: 30 },
-            { id: 'yearly', name: '1 жил', price: 0, durationDays: 365 }
+            { id: 'monthly', name: '30 хоног', price: 20000, durationDays: 30 },
+            { id: 'yearly', name: '1 жил', price: 192000, durationDays: 365 }
         ]
     },
     {
@@ -24,10 +24,10 @@ export const LISCORD_MODULES: AppModule[] = [
         route: '/app/products',
         isCore: true,
         category: 'operations',
-        isFree: true,
+        isFree: false,
         plans: [
-            { id: 'monthly', name: '30 хоног', price: 0, durationDays: 30 },
-            { id: 'yearly', name: '1 жил', price: 0, durationDays: 365 }
+            { id: 'monthly', name: '30 хоног', price: 20000, durationDays: 30 },
+            { id: 'yearly', name: '1 жил', price: 192000, durationDays: 365 }
         ]
     },
     {
@@ -39,10 +39,10 @@ export const LISCORD_MODULES: AppModule[] = [
         isCore: true,
         category: 'operations',
         hubId: 'inventory-hub',
-        isFree: true,
+        isFree: false,
         plans: [
-            { id: 'monthly', name: '30 хоног', price: 0, durationDays: 30 },
-            { id: 'yearly', name: '1 жил', price: 0, durationDays: 365 }
+            { id: 'monthly', name: '30 хоног', price: 20000, durationDays: 30 },
+            { id: 'yearly', name: '1 жил', price: 192000, durationDays: 365 }
         ]
     },
     {
@@ -53,10 +53,10 @@ export const LISCORD_MODULES: AppModule[] = [
         route: '/app/reports',
         isCore: true,
         category: 'operations',
-        isFree: true,
+        isFree: false,
         plans: [
-            { id: 'monthly', name: '30 хоног', price: 0, durationDays: 30 },
-            { id: 'yearly', name: '1 жил', price: 0, durationDays: 365 }
+            { id: 'monthly', name: '30 хоног', price: 15000, durationDays: 30 },
+            { id: 'yearly', name: '1 жил', price: 144000, durationDays: 365 }
         ]
     },
 
@@ -72,8 +72,8 @@ export const LISCORD_MODULES: AppModule[] = [
         hubId: 'finance-hub',
         isFree: false,
         plans: [
-            { id: 'monthly', name: '30 хоног', price: 25000, durationDays: 30 },
-            { id: 'yearly', name: '1 жил', price: 250000, durationDays: 365 }
+            { id: 'monthly', name: '30 хоног', price: 20000, durationDays: 30 },
+            { id: 'yearly', name: '1 жил', price: 192000, durationDays: 365 }
         ]
     },
     {
@@ -88,7 +88,7 @@ export const LISCORD_MODULES: AppModule[] = [
         isFree: false,
         plans: [
             { id: 'monthly', name: '30 хоног', price: 15000, durationDays: 30 },
-            { id: 'yearly', name: '1 жил', price: 150000, durationDays: 365 }
+            { id: 'yearly', name: '1 жил', price: 144000, durationDays: 365 }
         ]
     },
     {
@@ -102,8 +102,8 @@ export const LISCORD_MODULES: AppModule[] = [
         hubId: 'finance-hub',
         isFree: false,
         plans: [
-            { id: 'monthly', name: '30 хоног', price: 45000, durationDays: 30 },
-            { id: 'yearly', name: '1 жил', price: 450000, durationDays: 365 }
+            { id: 'monthly', name: '30 хоног', price: 20000, durationDays: 30 },
+            { id: 'yearly', name: '1 жил', price: 192000, durationDays: 365 }
         ]
     },
 
@@ -117,10 +117,10 @@ export const LISCORD_MODULES: AppModule[] = [
         isCore: false,
         category: 'sales',
         hubId: 'crm-hub',
-        isFree: true,
+        isFree: false,
         plans: [
-            { id: 'monthly', name: '30 хоног', price: 0, durationDays: 30 },
-            { id: 'yearly', name: '1 жил', price: 0, durationDays: 365 }
+            { id: 'monthly', name: '30 хоног', price: 15000, durationDays: 30 },
+            { id: 'yearly', name: '1 жил', price: 144000, durationDays: 365 }
         ]
     },
     {
@@ -134,8 +134,8 @@ export const LISCORD_MODULES: AppModule[] = [
         hubId: 'crm-hub',
         isFree: false,
         plans: [
-            { id: 'monthly', name: '30 хоног', price: 25000, durationDays: 30 },
-            { id: 'yearly', name: '1 жил', price: 250000, durationDays: 365 }
+            { id: 'monthly', name: '30 хоног', price: 15000, durationDays: 30 },
+            { id: 'yearly', name: '1 жил', price: 144000, durationDays: 365 }
         ]
     },
     {
@@ -147,10 +147,10 @@ export const LISCORD_MODULES: AppModule[] = [
         isCore: false,
         category: 'sales',
         hubId: 'b2b-hub',
-        isFree: true,
+        isFree: false,
         plans: [
-            { id: 'monthly', name: '30 хоног', price: 0, durationDays: 30 },
-            { id: 'yearly', name: '1 жил', price: 0, durationDays: 365 }
+            { id: 'monthly', name: '30 хоног', price: 15000, durationDays: 30 },
+            { id: 'yearly', name: '1 жил', price: 144000, durationDays: 365 }
         ]
     },
     {
@@ -164,8 +164,8 @@ export const LISCORD_MODULES: AppModule[] = [
         hubId: 'b2b-hub',
         isFree: false,
         plans: [
-            { id: 'monthly', name: '30 хоног', price: 45000, durationDays: 30 },
-            { id: 'yearly', name: '1 жил', price: 450000, durationDays: 365 }
+            { id: 'monthly', name: '30 хоног', price: 20000, durationDays: 30 },
+            { id: 'yearly', name: '1 жил', price: 192000, durationDays: 365 }
         ]
     },
 
@@ -181,8 +181,8 @@ export const LISCORD_MODULES: AppModule[] = [
         hubId: 'staff-hub',
         isFree: false,
         plans: [
-            { id: 'monthly', name: '30 хоног', price: 20000, durationDays: 30 },
-            { id: 'yearly', name: '1 жил', price: 200000, durationDays: 365 }
+            { id: 'monthly', name: '30 хоног', price: 15000, durationDays: 30 },
+            { id: 'yearly', name: '1 жил', price: 144000, durationDays: 365 }
         ]
     },
     {
@@ -196,8 +196,8 @@ export const LISCORD_MODULES: AppModule[] = [
         hubId: 'staff-hub',
         isFree: false,
         plans: [
-            { id: 'monthly', name: '30 хоног', price: 15000, durationDays: 30 },
-            { id: 'yearly', name: '1 жил', price: 150000, durationDays: 365 }
+            { id: 'monthly', name: '30 хоног', price: 10000, durationDays: 30 },
+            { id: 'yearly', name: '1 жил', price: 96000, durationDays: 365 }
         ]
     },
     {
@@ -211,8 +211,8 @@ export const LISCORD_MODULES: AppModule[] = [
         hubId: 'staff-hub',
         isFree: false,
         plans: [
-            { id: 'monthly', name: '30 хоног', price: 25000, durationDays: 30 },
-            { id: 'yearly', name: '1 жил', price: 250000, durationDays: 365 }
+            { id: 'monthly', name: '30 хоног', price: 15000, durationDays: 30 },
+            { id: 'yearly', name: '1 жил', price: 144000, durationDays: 365 }
         ]
     },
 
@@ -228,8 +228,8 @@ export const LISCORD_MODULES: AppModule[] = [
         hubId: 'logistics-hub',
         isFree: false,
         plans: [
-            { id: 'monthly', name: '30 хоног', price: 50000, durationDays: 30 },
-            { id: 'yearly', name: '1 жил', price: 500000, durationDays: 365 }
+            { id: 'monthly', name: '30 хоног', price: 20000, durationDays: 30 },
+            { id: 'yearly', name: '1 жил', price: 192000, durationDays: 365 }
         ]
     },
     {
@@ -243,8 +243,8 @@ export const LISCORD_MODULES: AppModule[] = [
         hubId: 'logistics-hub',
         isFree: false,
         plans: [
-            { id: 'monthly', name: '30 хоног', price: 25000, durationDays: 30 },
-            { id: 'yearly', name: '1 жил', price: 250000, durationDays: 365 }
+            { id: 'monthly', name: '30 хоног', price: 15000, durationDays: 30 },
+            { id: 'yearly', name: '1 жил', price: 144000, durationDays: 365 }
         ]
     },
     {
@@ -258,8 +258,8 @@ export const LISCORD_MODULES: AppModule[] = [
         hubId: 'logistics-hub',
         isFree: false,
         plans: [
-            { id: 'monthly', name: '30 хоног', price: 35000, durationDays: 30 },
-            { id: 'yearly', name: '1 жил', price: 350000, durationDays: 365 }
+            { id: 'monthly', name: '30 хоног', price: 15000, durationDays: 30 },
+            { id: 'yearly', name: '1 жил', price: 144000, durationDays: 365 }
         ]
     },
 
@@ -275,8 +275,8 @@ export const LISCORD_MODULES: AppModule[] = [
         hubId: 'inventory-hub',
         isFree: false,
         plans: [
-            { id: 'monthly', name: '30 хоног', price: 35000, durationDays: 30 },
-            { id: 'yearly', name: '1 жил', price: 350000, durationDays: 365 }
+            { id: 'monthly', name: '30 хоног', price: 20000, durationDays: 30 },
+            { id: 'yearly', name: '1 жил', price: 192000, durationDays: 365 }
         ]
     },
     {
@@ -290,8 +290,8 @@ export const LISCORD_MODULES: AppModule[] = [
         hubId: 'projects-hub',
         isFree: false,
         plans: [
-            { id: 'monthly', name: '30 хоног', price: 30000, durationDays: 30 },
-            { id: 'yearly', name: '1 жил', price: 300000, durationDays: 365 }
+            { id: 'monthly', name: '30 хоног', price: 15000, durationDays: 30 },
+            { id: 'yearly', name: '1 жил', price: 144000, durationDays: 365 }
         ]
     },
 
@@ -307,8 +307,8 @@ export const LISCORD_MODULES: AppModule[] = [
         hubId: 'services-hub',
         isFree: false,
         plans: [
-            { id: 'monthly', name: '30 хоног', price: 30000, durationDays: 30 },
-            { id: 'yearly', name: '1 жил', price: 300000, durationDays: 365 }
+            { id: 'monthly', name: '30 хоног', price: 15000, durationDays: 30 },
+            { id: 'yearly', name: '1 жил', price: 144000, durationDays: 365 }
         ]
     },
     {
@@ -322,8 +322,8 @@ export const LISCORD_MODULES: AppModule[] = [
         hubId: 'services-hub',
         isFree: false,
         plans: [
-            { id: 'monthly', name: '30 хоног', price: 40000, durationDays: 30 },
-            { id: 'yearly', name: '1 жил', price: 400000, durationDays: 365 }
+            { id: 'monthly', name: '30 хоног', price: 15000, durationDays: 30 },
+            { id: 'yearly', name: '1 жил', price: 144000, durationDays: 365 }
         ]
     },
     {
@@ -337,8 +337,8 @@ export const LISCORD_MODULES: AppModule[] = [
         hubId: 'services-hub',
         isFree: false,
         plans: [
-            { id: 'monthly', name: '30 хоног', price: 15000, durationDays: 30 },
-            { id: 'yearly', name: '1 жил', price: 150000, durationDays: 365 }
+            { id: 'monthly', name: '30 хоног', price: 10000, durationDays: 30 },
+            { id: 'yearly', name: '1 жил', price: 96000, durationDays: 365 }
         ]
     },
     {
@@ -352,8 +352,8 @@ export const LISCORD_MODULES: AppModule[] = [
         hubId: 'crm-hub',
         isFree: false,
         plans: [
-            { id: 'monthly', name: '30 хоног', price: 15000, durationDays: 30 },
-            { id: 'yearly', name: '1 жил', price: 150000, durationDays: 365 }
+            { id: 'monthly', name: '30 хоног', price: 10000, durationDays: 30 },
+            { id: 'yearly', name: '1 жил', price: 96000, durationDays: 365 }
         ]
     },
     {
@@ -367,8 +367,8 @@ export const LISCORD_MODULES: AppModule[] = [
         hubId: 'services-hub',
         isFree: false,
         plans: [
-            { id: 'monthly', name: '30 хоног', price: 20000, durationDays: 30 },
-            { id: 'yearly', name: '1 жил', price: 200000, durationDays: 365 }
+            { id: 'monthly', name: '30 хоног', price: 10000, durationDays: 30 },
+            { id: 'yearly', name: '1 жил', price: 96000, durationDays: 365 }
         ]
     },
     {
@@ -382,8 +382,8 @@ export const LISCORD_MODULES: AppModule[] = [
         hubId: 'projects-hub',
         isFree: false,
         plans: [
-            { id: 'monthly', name: '30 хоног', price: 15000, durationDays: 30 },
-            { id: 'yearly', name: '1 жил', price: 150000, durationDays: 365 }
+            { id: 'monthly', name: '30 хоног', price: 10000, durationDays: 30 },
+            { id: 'yearly', name: '1 жил', price: 96000, durationDays: 365 }
         ]
     }
 ];
