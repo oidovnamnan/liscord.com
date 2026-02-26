@@ -140,8 +140,8 @@ export function SuperAdminSettings() {
                                                     key={module.id}
                                                     onClick={() => handleToggle(key, module.id)}
                                                     className={`flex items-center gap-4 p-4 rounded-xl border cursor-pointer transition-all duration-200 ${isActive
-                                                            ? 'border-primary bg-primary-light shadow-sm'
-                                                            : 'border-transparent bg-bg-secondary hover:bg-surface-3'
+                                                        ? 'border-primary bg-primary-light shadow-sm'
+                                                        : 'border-transparent bg-bg-secondary hover:bg-surface-3'
                                                         }`}
                                                 >
                                                     <div className={`w-6 h-6 rounded-md border-2 flex items-center justify-center transition-colors ${isActive ? 'border-primary bg-primary' : 'border-neutral-300'
@@ -163,7 +163,7 @@ export function SuperAdminSettings() {
                                                             </span>
                                                         </div>
                                                     </div>
-                                                </tr>
+                                                </div>
                                             );
                                         })}
                                     </div>
