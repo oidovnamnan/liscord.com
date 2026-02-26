@@ -138,34 +138,110 @@ export function SuperAdminGlobalSettings() {
                         </h2>
 
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                            <label className="toggle" style={{ display: 'flex', justifyContent: 'space-between', padding: '16px', background: 'var(--surface-2)', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
-                                <div>
-                                    <div style={{ fontWeight: 600, display: 'flex', alignItems: 'center', gap: '8px' }}>Шинэ бүртгэл нээх <span className="badge badge-success">Асаалттай</span></div>
-                                    <div style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginTop: '4px' }}>Унтраавал гаднаас шинэ хэрэглэгч системд бүртгүүлэх боломжгүй болно.</div>
+                            <label className="toggle-label" style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'space-between',
+                                padding: '20px',
+                                background: 'var(--surface-2)',
+                                borderRadius: '12px',
+                                border: '1px solid var(--border-color)',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s'
+                            }}>
+                                <div style={{ flex: 1, marginRight: '16px' }}>
+                                    <div style={{ fontWeight: 600, fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                                        Шинэ бүртгэл нээх
+                                        {settings.registrationEnabled ? <span className="badge badge-success">Асаалттай</span> : <span className="badge badge-secondary">Унтраалтай</span>}
+                                    </div>
+                                    <div style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', lineHeight: 1.4 }}>Унтраавал гаднаас шинэ хэрэглэгч системд бүртгүүлэх боломжгүй болно.</div>
                                 </div>
-                                <input
-                                    type="checkbox"
-                                    checked={settings.registrationEnabled}
-                                    onChange={e => setSettings({ ...settings, registrationEnabled: e.target.checked })}
-                                />
-                                <span className="slider"></span>
+                                <div className="toggle-switch">
+                                    <input
+                                        type="checkbox"
+                                        checked={settings.registrationEnabled}
+                                        onChange={e => setSettings({ ...settings, registrationEnabled: e.target.checked })}
+                                        style={{ display: 'none' }}
+                                        id="reg-toggle"
+                                    />
+                                    <div
+                                        onClick={() => setSettings({ ...settings, registrationEnabled: !settings.registrationEnabled })}
+                                        style={{
+                                            width: '48px',
+                                            height: '24px',
+                                            background: settings.registrationEnabled ? 'var(--primary)' : 'var(--surface-3)',
+                                            borderRadius: '12px',
+                                            position: 'relative',
+                                            transition: 'all 0.3s'
+                                        }}
+                                    >
+                                        <div style={{
+                                            width: '18px',
+                                            height: '18px',
+                                            background: 'white',
+                                            borderRadius: '50%',
+                                            position: 'absolute',
+                                            top: '3px',
+                                            left: settings.registrationEnabled ? '27px' : '3px',
+                                            transition: 'all 0.3s',
+                                            boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+                                        }} />
+                                    </div>
+                                </div>
                             </label>
 
-                            <label className="toggle" style={{ display: 'flex', justifyContent: 'space-between', padding: '16px', background: 'var(--danger-light)', borderRadius: '8px', border: '1px solid var(--danger)' }}>
-                                <div>
-                                    <div style={{ fontWeight: 600, color: 'var(--danger)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <label className="toggle-label" style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'space-between',
+                                padding: '20px',
+                                background: settings.maintenanceMode ? 'rgba(239, 68, 68, 0.1)' : 'var(--surface-2)',
+                                borderRadius: '12px',
+                                border: `1px solid ${settings.maintenanceMode ? 'var(--danger)' : 'var(--border-color)'}`,
+                                cursor: 'pointer',
+                                transition: 'all 0.2s'
+                            }}>
+                                <div style={{ flex: 1, marginRight: '16px' }}>
+                                    <div style={{ fontWeight: 600, color: settings.maintenanceMode ? 'var(--danger)' : 'inherit', display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
                                         <AlertTriangle size={16} /> Maintenance Mode
+                                        {settings.maintenanceMode && <span className="badge badge-danger">Асаалттай</span>}
                                     </div>
-                                    <div style={{ color: 'var(--text-danger)', fontSize: '0.85rem', marginTop: '4px' }}>
-                                        Системийн засварын горим. Унтраавал бүх хэрэглэгчдийг хүчээр гаргана. (Сэрэмжтэй хэрэглэх)
+                                    <div style={{ color: settings.maintenanceMode ? 'var(--text-danger)' : 'var(--text-secondary)', fontSize: '0.85rem', lineHeight: 1.4 }}>
+                                        Системийн засварын горим. Асаавал бүх хэрэглэгчид системээс гарч, зөвхөн админ нэвтрэх боломжтой болно.
                                     </div>
                                 </div>
-                                <input
-                                    type="checkbox"
-                                    checked={settings.maintenanceMode}
-                                    onChange={e => setSettings({ ...settings, maintenanceMode: e.target.checked })}
-                                />
-                                <span className="slider" style={{ background: settings.maintenanceMode ? 'var(--danger)' : '' }}></span>
+                                <div className="toggle-switch">
+                                    <input
+                                        type="checkbox"
+                                        checked={settings.maintenanceMode}
+                                        onChange={e => setSettings({ ...settings, maintenanceMode: e.target.checked })}
+                                        style={{ display: 'none' }}
+                                        id="maint-toggle"
+                                    />
+                                    <div
+                                        onClick={() => setSettings({ ...settings, maintenanceMode: !settings.maintenanceMode })}
+                                        style={{
+                                            width: '48px',
+                                            height: '24px',
+                                            background: settings.maintenanceMode ? 'var(--danger)' : 'var(--surface-3)',
+                                            borderRadius: '12px',
+                                            position: 'relative',
+                                            transition: 'all 0.3s'
+                                        }}
+                                    >
+                                        <div style={{
+                                            width: '18px',
+                                            height: '18px',
+                                            background: 'white',
+                                            borderRadius: '50%',
+                                            position: 'absolute',
+                                            top: '3px',
+                                            left: settings.maintenanceMode ? '27px' : '3px',
+                                            transition: 'all 0.3s',
+                                            boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+                                        }} />
+                                    </div>
+                                </div>
                             </label>
                         </div>
                     </div>

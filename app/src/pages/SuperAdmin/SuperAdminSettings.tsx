@@ -110,47 +110,91 @@ export function SuperAdminSettings() {
                         {categories.map((category) => {
                             const key = category.id;
                             const activeMods = defaults[key] || [];
+
+                            // Filter modules for this specific category (if applicable) OR show relevant ones
+                            // For simplicity in Super Admin, we show all, but let's group them by their own category now
+
                             return (
-                                <div key={key} style={{ borderBottom: '1px solid var(--border-color)', paddingBottom: '24px' }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
-                                        <span style={{ fontSize: '1.5rem' }}>{category.icon}</span>
-                                        <h3 style={{ margin: 0, fontSize: '1.1rem' }}>{category.label}</h3>
-                                        <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginLeft: '8px' }}>({category.desc})</span>
+                                <div key={key} style={{
+                                    background: 'var(--surface-2)',
+                                    borderRadius: '16px',
+                                    padding: '24px',
+                                    border: '1px solid var(--border-color)',
+                                    boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+                                }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
+                                        <div style={{
+                                            width: '48px',
+                                            height: '48px',
+                                            background: 'var(--primary-light)',
+                                            borderRadius: '12px',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            fontSize: '1.5rem'
+                                        }}>
+                                            {category.icon}
+                                        </div>
+                                        <div>
+                                            <h3 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 600 }}>{category.label}</h3>
+                                            <span style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>{category.desc}</span>
+                                        </div>
                                     </div>
 
-                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '12px' }}>
+                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '16px' }}>
                                         {LISCORD_MODULES.map(module => {
                                             const isActive = activeMods.includes(module.id);
                                             const Icon = (Icons as any)[module.icon] || Icons.Box;
                                             return (
-                                                <label
+                                                <div
                                                     key={module.id}
+                                                    onClick={() => handleToggle(key, module.id)}
                                                     style={{
                                                         display: 'flex',
                                                         alignItems: 'center',
                                                         gap: '12px',
-                                                        padding: '12px',
-                                                        borderRadius: '8px',
+                                                        padding: '16px',
+                                                        borderRadius: '12px',
                                                         border: `1px solid ${isActive ? 'var(--primary)' : 'var(--border-color)'}`,
-                                                        background: isActive ? 'var(--surface-2)' : 'transparent',
+                                                        background: isActive ? 'rgba(var(--primary-rgb), 0.1)' : 'var(--surface-1)',
                                                         cursor: 'pointer',
-                                                        transition: 'all 0.2s',
-                                                        opacity: isActive ? 1 : 0.7
+                                                        transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                                                        transform: isActive ? 'scale(1.02)' : 'scale(1)',
+                                                        boxShadow: isActive ? '0 4px 12px rgba(var(--primary-rgb), 0.2)' : 'none'
                                                     }}
                                                 >
-                                                    <input
-                                                        type="checkbox"
-                                                        checked={isActive}
-                                                        onChange={() => handleToggle(key, module.id)}
-                                                        style={{ width: '18px', height: '18px', cursor: 'pointer', accentColor: 'var(--primary)' }}
-                                                    />
-                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1 }}>
-                                                        <Icon size={16} color={isActive ? 'var(--primary)' : 'var(--text-secondary)'} />
-                                                        <span style={{ fontWeight: isActive ? 600 : 400, fontSize: '0.85rem' }}>
-                                                            {module.name}
-                                                        </span>
+                                                    <div style={{
+                                                        width: '24px',
+                                                        height: '24px',
+                                                        borderRadius: '6px',
+                                                        border: `2px solid ${isActive ? 'var(--primary)' : 'var(--text-muted)'}`,
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'center',
+                                                        background: isActive ? 'var(--primary)' : 'transparent',
+                                                        transition: 'all 0.2s'
+                                                    }}>
+                                                        {isActive && <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'white' }} />}
                                                     </div>
-                                                </label>
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1 }}>
+                                                        <div style={{
+                                                            padding: '8px',
+                                                            borderRadius: '8px',
+                                                            background: isActive ? 'white' : 'var(--surface-2)',
+                                                            color: isActive ? 'var(--primary)' : 'var(--text-secondary)'
+                                                        }}>
+                                                            <Icon size={18} />
+                                                        </div>
+                                                        <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                                            <span style={{ fontWeight: 600, fontSize: '0.9rem', color: isActive ? 'var(--text-primary)' : 'var(--text-secondary)' }}>
+                                                                {module.name}
+                                                            </span>
+                                                            <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
+                                                                {module.id === 'orders' || module.id === 'products' ? 'Үндсэн модуль' : 'Нэмэлт модуль'}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                </div>
                                             );
                                         })}
                                     </div>
