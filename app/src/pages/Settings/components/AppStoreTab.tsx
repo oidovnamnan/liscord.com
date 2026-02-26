@@ -24,54 +24,6 @@ export function AppStoreTab() {
     const activeMods = business?.activeModules || [];
     const installedThemes = business?.settings?.storefront?.installedThemes || ['minimal'];
 
-    const handleInstallModule = async (moduleId: string) => {
-        if (!business || loading || installingId) return;
-
-        setInstallingId(moduleId);
-        setInstallProgress(0);
-
-        for (let i = 0; i <= 100; i += 10) {
-            await new Promise(resolve => setTimeout(resolve, 150));
-            setInstallProgress(Math.min(i + Math.random() * 15, 95));
-        }
-
-        try {
-            const mod = LISCORD_MODULES.find(m => m.id === moduleId);
-            const durationDays = mod?.durationDays || 30;
-            const expiresAt = new Date();
-            expiresAt.setDate(expiresAt.getDate() + durationDays);
-
-            const newModules = Array.from(new Set([...activeMods, moduleId]));
-            const newSubscriptions = {
-                ...(business.moduleSubscriptions || {}),
-                [moduleId]: {
-                    subscribedAt: new Date(),
-                    expiresAt: expiresAt,
-                    status: 'active' as const
-                }
-            };
-
-            await businessService.updateBusiness(business.id, {
-                activeModules: newModules,
-                moduleSubscriptions: newSubscriptions
-            });
-
-            setBusiness({
-                ...business,
-                activeModules: newModules,
-                moduleSubscriptions: newSubscriptions
-            });
-
-            setInstallProgress(100);
-            await new Promise(resolve => setTimeout(resolve, 300));
-            toast.success('Модуль амжилттай суулаа');
-        } catch (error) {
-            toast.error('Суулгах үед алдаа гарлаа');
-        } finally {
-            setInstallingId(null);
-            setInstallProgress(0);
-        }
-    };
 
     const handleInstallTheme = async (themeId: string, isPremium: boolean) => {
         if (!business || loading || installingId) return;

@@ -60,9 +60,9 @@ export function SuperAdminAppStore() {
             modules.forEach(mod => {
                 if (!mod.isCore) {
                     config[mod.id] = {
-                        price: mod.price,
-                        durationDays: mod.durationDays,
-                        isFree: mod.isFree
+                        price: mod.price ?? 0,
+                        durationDays: mod.durationDays ?? 0,
+                        isFree: mod.isFree ?? false
                     };
                 }
             });
