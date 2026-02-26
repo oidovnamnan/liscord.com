@@ -28,7 +28,7 @@ export interface AppModule {
     name: string;           // Display name in App Store
     description: string;    // Short description
     icon: string;           // Lucide icon name or emoji
-    route: string;          // Sidebar active route prefix (e.g. '/dashboard/inventory')
+    route: string;          // Sidebar active route prefix (e.g. '/app/inventory')
     isCore: boolean;        // If true, cannot be uninstalled (e.g. Settings, Dashboard)
     category: 'operations' | 'finance' | 'staff' | 'sales' | 'services'; // For grouping
 }

@@ -4,108 +4,108 @@ export const LISCORD_MODULES: AppModule[] = [
     {
         id: 'orders',
         name: 'Захиалга',
-        description: 'Бүх сувгаар орж ирсэн захиалгуудыг нэг цонхноос удирдах, төлөв өөрчлөх, нэхэмжлэх илгээх систем.',
+        description: 'Захиалга удирдлага болон ПОС борлуулалтын систем.',
         icon: 'PackageSearch',
-        route: '/dashboard/orders',
-        isCore: false,
+        route: '/app/orders',
+        isCore: true,
         category: 'operations'
     },
     {
         id: 'inventory',
         name: 'Агуулах & Бараа',
-        description: 'Бүтээгдэхүүний жагсаалт, үлдэгдэл хянах, үнэ тохируулах менежмент.',
+        description: 'Барааны үлдэгдэл, үнэ болон үйлдвэрлэлийн менежмент.',
         icon: 'Boxes',
-        route: '/dashboard/inventory',
-        isCore: false,
+        route: '/app/inventory',
+        isCore: true,
         category: 'operations'
     },
     {
-        id: 'pos',
-        name: 'ПОС / Борлуулалт',
-        description: 'Дэлгүүр дээрх биет борлуулалт, E-barimt уншуулах кассын систем.',
-        icon: 'MonitorSmartphone',
-        route: '/dashboard/pos',
-        isCore: false,
-        category: 'sales'
-    },
-    {
         id: 'finance',
-        name: 'Санхүү & Татвар',
-        description: 'Орлого, зарлага, авлага болон НӨАТ-ын тайлан, E-barimt уншуулах удирдлага.',
+        name: 'Санхүү & Төлбөр',
+        description: 'Орлого, зарлага, авлага болон зээлийн тооцоо.',
         icon: 'Wallet',
-        route: '/dashboard/finance',
+        route: '/app/finance',
         isCore: false,
         category: 'finance'
     },
     {
         id: 'hrm',
-        name: 'Хүний Нөөц',
-        description: 'Ажилчдын ирц, цалин бодолт, урьдчилгаа болон багийн гүйцэтгэлийн удирдлага.',
+        name: 'Хүний Нөөц (HRM)',
+        description: 'Ажилчдын ирц, цалин бодолт болон гүйцэтгэлийн удирдлага.',
         icon: 'Users',
-        route: '/dashboard/hrm',
+        route: '/app/employees',
         isCore: false,
         category: 'staff'
     },
     {
         id: 'cargo',
         name: 'Карго Тээвэр',
-        description: 'Хятадаас карго тээвэрлэдэг болон хот хооронд илгээмж хүргэдэг компаниудад зориулсан бүртгэл.',
+        description: 'Олон улсын болон дотоод тээвэр, илгээмжийн бүртгэл.',
         icon: 'Truck',
-        route: '/dashboard/cargo',
+        route: '/app/packages',
         isCore: false,
         category: 'services'
     },
     {
         id: 'delivery',
         name: 'Хүргэлт & Логистик',
-        description: 'Хот доторх хүргэлтийн тооцоо, жолоочийн удирдлага, газрын зурагтай интеграц.',
+        description: 'Хүргэлтийн тооцоо, жолооч болон тээврийн хэрэгслийн удирдлага.',
         icon: 'MapPin',
-        route: '/dashboard/delivery',
+        route: '/app/delivery',
         isCore: false,
         category: 'services'
     },
     {
-        id: 'b2b',
-        name: 'B2B Платформ',
-        description: 'Бусад бизнесүүдтэй холбогдох, ханган нийлүүлэлт авах, бөөний сүлжээ үүсгэх.',
-        icon: 'Building2',
-        route: '/dashboard/b2b',
+        id: 'projects',
+        name: 'Төсөл & Даалгавар',
+        description: 'Төслийн төлөвлөлт, гүйцэтгэл болон тасалбарын систем.',
+        icon: 'Briefcase',
+        route: '/app/projects',
         isCore: false,
-        category: 'sales'
+        category: 'operations'
+    },
+    {
+        id: 'booking',
+        name: 'Үйлчилгээ & Захиалга',
+        description: 'Цаг захиалга, өрөө түрээс болон очер дараалал.',
+        icon: 'CalendarClock',
+        route: '/app/appointments',
+        isCore: false,
+        category: 'services'
     },
     {
         id: 'customers',
         name: 'Хэрэглэгчид (CRM)',
-        description: 'Худалдан авагчдын түүх, оноо цуглуулах, сегментчлэл хийх харилцагчийн удирдлага.',
+        description: 'Харилцагчийн түүх, сегментчлэл болон харилцааны удирдлага.',
         icon: 'Contact',
-        route: '/dashboard/customers',
+        route: '/app/customers',
         isCore: false,
         category: 'sales'
     },
     {
-        id: 'booking',
-        name: 'Цаг Захиалга',
-        description: 'Гоо сайхан, эмнэлэг зэрэг үйлчилгээний байгууллагуудад зориулсан календарь, цаг захиалга.',
-        icon: 'CalendarClock',
-        route: '/dashboard/booking',
-        isCore: false,
-        category: 'services'
-    },
-    {
         id: 'analytics',
         name: 'Анализ & Тайлан',
-        description: 'Бизнесийн өсөлтийн графикууд, ашигт ажиллагааны нарийвчилсан тайлан.',
+        description: 'Бизнесийн өсөлт болон ашигт ажиллагааны нарийвчилсан тайлан.',
         icon: 'BarChart3',
-        route: '/dashboard/reports',
-        isCore: true, // Always visible for now, or maybe make it togglable later
+        route: '/app/reports',
+        isCore: true,
         category: 'operations'
     },
     {
         id: 'messenger',
         name: 'Чаат & Харилцаа',
-        description: 'Facebook, Instagram болон вэбсайтын зурвасуудыг нэг дор хүлээн авч хариулах.',
+        description: 'Сошиал сувгуудын зурвасуудыг нэг цонхноос хариулах.',
         icon: 'MessageCircle',
-        route: '/dashboard/chat',
+        route: '/app/chat',
+        isCore: false,
+        category: 'sales'
+    },
+    {
+        id: 'b2b',
+        name: 'B2B Платформ',
+        description: 'Бусад бизнесүүдтэй холбогдох, ханган нийлүүлэлтийн сүлжээ.',
+        icon: 'Building2',
+        route: '/app/b2b',
         isCore: false,
         category: 'sales'
     }
