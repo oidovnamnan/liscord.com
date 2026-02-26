@@ -107,19 +107,58 @@ export function SuperAdminAppStore() {
                     </button>
                 </div>
 
-                <div className="card no-padding overflow-hidden">
+                <div className="card no-padding overflow-hidden border-glass shadow-lg">
                     <style>{`
-                        .no-spin::-webkit-inner-spin-button, 
-                        .no-spin::-webkit-outer-spin-button { 
+                        .custom-input-group {
+                            display: flex;
+                            align-items: center;
+                            background: var(--bg-tertiary);
+                            border: 1px solid var(--border-primary);
+                            border-radius: 12px;
+                            padding: 0 12px;
+                            transition: all 0.2s ease;
+                            height: 40px;
+                        }
+                        .custom-input-group:focus-within {
+                            border-color: var(--primary);
+                            box-shadow: 0 0 0 3px var(--primary-light);
+                            background: var(--bg-secondary);
+                        }
+                        .custom-input {
+                            background: transparent;
+                            border: none;
+                            outline: none;
+                            color: var(--text-primary);
+                            font-size: 0.95rem;
+                            font-weight: 600;
+                            width: 100%;
+                            padding: 0 8px;
+                            text-align: right;
+                        }
+                        .custom-input:disabled {
+                            opacity: 0.4;
+                            cursor: not-allowed;
+                        }
+                        .custom-input::-webkit-inner-spin-button, 
+                        .custom-input::-webkit-outer-spin-button { 
                             -webkit-appearance: none; 
                             margin: 0; 
                         }
-                        .no-spin { -moz-appearance: textfield; }
+                        .app-store-table th {
+                            padding: 16px 20px;
+                            text-transform: uppercase;
+                            font-size: 0.7rem;
+                            letter-spacing: 0.05em;
+                            color: var(--text-tertiary);
+                        }
+                        .app-store-table td {
+                            padding: 16px 20px;
+                        }
                     `}</style>
-                    <table className="super-table">
+                    <table className="super-table app-store-table">
                         <thead>
                             <tr>
-                                <th style={{ paddingLeft: '24px' }}>Модуль</th>
+                                <th style={{ paddingLeft: '32px' }}>Модуль</th>
                                 <th>Төрөл</th>
                                 <th>Үнэгүй эсэх</th>
                                 <th>Үнэ (₮)</th>
@@ -129,101 +168,60 @@ export function SuperAdminAppStore() {
                         </thead>
                         <tbody>
                             {modules.map((mod) => (
-                                <tr key={mod.id} style={mod.isCore ? { opacity: 0.7, background: 'var(--bg-soft)' } : {}}>
-                                    <td style={{ paddingLeft: '24px' }}>
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-10 h-10 bg-surface-2 flex items-center justify-center rounded-xl border border-primary-light/30 text-primary shadow-sm">
+                                <tr key={mod.id} style={mod.isCore ? { opacity: 0.6 } : {}}>
+                                    <td style={{ paddingLeft: '32px' }}>
+                                        <div className="flex items-center gap-4">
+                                            <div className="w-12 h-12 bg-surface-2 flex items-center justify-center rounded-xl border border-primary-light/40 text-primary shadow-sm" style={{ flexShrink: 0 }}>
                                                 {(() => {
                                                     const Icon = (Icons as any)[mod.icon] || Icons.Box;
-                                                    return <Icon size={22} strokeWidth={1.5} />;
+                                                    return <Icon size={24} strokeWidth={1.5} />;
                                                 })()}
                                             </div>
                                             <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                                                <div className="font-bold text-sm" style={{ color: 'var(--text-primary)' }}>{mod.name}</div>
-                                                <div className="text-[0.65rem] text-tertiary font-mono" style={{ letterSpacing: '0.02em' }}>{mod.id}</div>
+                                                <div className="font-bold text-[0.95rem]" style={{ color: 'var(--text-primary)', lineHeight: 1.2 }}>{mod.name}</div>
+                                                <div className="text-[0.7rem] text-tertiary font-mono" style={{ letterSpacing: '0.02em', opacity: 0.6 }}>{mod.id}</div>
                                             </div>
                                         </div>
                                     </td>
                                     <td>
-                                        <span className={`badge ${mod.isCore ? 'badge-primary' : 'badge-neutral'}`} style={{ fontSize: '0.7rem' }}>
+                                        <span className={`badge ${mod.isCore ? 'badge-primary' : 'badge-neutral'}`} style={{ fontSize: '0.7rem', height: '24px' }}>
                                             {mod.isCore ? 'Core' : 'Optional'}
                                         </span>
                                     </td>
                                     <td>
                                         <button
-                                            className={`btn btn-sm ${mod.isFree ? 'btn-success' : 'btn-outline'} min-w-[110px]`}
+                                            className={`btn btn-sm ${mod.isFree ? 'btn-success' : 'btn-outline'} min-w-[115px]`}
                                             onClick={() => handleToggleFree(mod.id)}
                                             disabled={mod.isCore}
-                                            style={{ height: '32px', borderRadius: '10px' }}
+                                            style={{ height: '34px', borderRadius: '10px', fontSize: '0.8rem' }}
                                         >
                                             {mod.isFree ? <CheckCircle2 size={14} /> : <XCircle size={14} />}
                                             {mod.isFree ? 'Үнэгүй' : 'Төлбөртэй'}
                                         </button>
                                     </td>
                                     <td>
-                                        <div className="input-with-icon" style={{ maxWidth: '160px', position: 'relative' }}>
-                                            <span style={{
-                                                position: 'absolute',
-                                                left: '12px',
-                                                top: '50%',
-                                                transform: 'translateY(-50%)',
-                                                color: 'var(--text-tertiary)',
-                                                fontWeight: 800,
-                                                fontSize: '0.9rem',
-                                                pointerEvents: 'none'
-                                            }}>₮</span>
+                                        <div className="custom-input-group" style={{ maxWidth: '160px', opacity: mod.isFree || mod.isCore ? 0.5 : 1 }}>
+                                            <span style={{ color: 'var(--text-tertiary)', fontWeight: 700, fontSize: '0.9rem' }}>₮</span>
                                             <input
                                                 type="number"
-                                                className="input no-spin"
+                                                className="custom-input"
                                                 value={mod.price}
                                                 disabled={mod.isFree || mod.isCore}
                                                 onChange={(e) => handleUpdatePrice(mod.id, parseInt(e.target.value) || 0)}
-                                                style={{
-                                                    paddingLeft: '32px',
-                                                    height: '40px',
-                                                    borderRadius: '12px',
-                                                    textAlign: 'right',
-                                                    paddingRight: '12px',
-                                                    fontWeight: 600
-                                                }}
                                             />
                                         </div>
                                     </td>
                                     <td>
-                                        <div className="input-with-icon" style={{ maxWidth: '140px', position: 'relative' }}>
-                                            <Clock size={16} style={{
-                                                position: 'absolute',
-                                                left: '12px',
-                                                top: '50%',
-                                                transform: 'translateY(-50%)',
-                                                color: 'var(--text-tertiary)',
-                                                pointerEvents: 'none'
-                                            }} />
+                                        <div className="custom-input-group" style={{ maxWidth: '140px', opacity: mod.isFree || mod.isCore ? 0.5 : 1 }}>
+                                            <Clock size={16} className="text-tertiary" />
                                             <input
                                                 type="number"
-                                                className="input no-spin"
+                                                className="custom-input"
                                                 value={mod.durationDays}
                                                 disabled={mod.isFree || mod.isCore}
                                                 onChange={(e) => handleUpdateDuration(mod.id, parseInt(e.target.value) || 0)}
-                                                style={{
-                                                    paddingLeft: '36px',
-                                                    height: '40px',
-                                                    borderRadius: '12px',
-                                                    textAlign: 'right',
-                                                    paddingRight: '45px',
-                                                    fontWeight: 600
-                                                }}
                                             />
-                                            <span style={{
-                                                position: 'absolute',
-                                                right: '12px',
-                                                top: '50%',
-                                                transform: 'translateY(-50%)',
-                                                fontSize: '0.75rem',
-                                                color: 'var(--text-tertiary)',
-                                                fontWeight: 500,
-                                                pointerEvents: 'none'
-                                            }}>өдөр</span>
+                                            <span style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)', fontWeight: 500, paddingLeft: '8px' }}>өдөр</span>
                                         </div>
                                     </td>
                                     <td className="text-tertiary text-xs font-mono" style={{ opacity: 0.6 }}>
