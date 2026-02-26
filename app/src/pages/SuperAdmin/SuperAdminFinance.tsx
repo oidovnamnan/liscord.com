@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Header } from '../../components/layout/Header';
 import { platformFinanceService, businessService } from '../../services/db';
-import { TrendingUp, DollarSign, Calendar, Loader2, Search } from 'lucide-react';
+import { TrendingUp, DollarSign, Calendar, Loader2, Search, Activity } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import type { PlatformPayment, Business } from '../../types';
 
