@@ -37,22 +37,20 @@ export function SuperAdminDashboard() {
         <div className="page-container animate-fade-in">
             <Header
                 title="Платформ Админ"
-                subtitle="Liscord системийн нэгдсэн хяналт болон статистик"
+                subtitle="Liscord систем"
                 extra={
-                    <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                        <div className="system-status" style={{ background: 'var(--success-tint)', color: 'var(--success)', border: '1px solid var(--success-border)' }}>
+                    <>
+                        <div className="system-status online-tint">
                             <CheckCircle2 size={14} />
                             Систем хэвийн
                         </div>
-                        <div style={{ display: 'flex', gap: '8px' }}>
-                            <button className="btn btn-outline btn-sm" onClick={() => navigate('/super/global-settings')}>
-                                <Globe size={16} />
-                            </button>
-                            <button className="btn btn-outline btn-sm" onClick={() => navigate('/super/settings')}>
-                                <Settings size={16} />
-                            </button>
-                        </div>
-                    </div>
+                        <button className="btn btn-outline btn-sm" onClick={() => navigate('/super/global-settings')}>
+                            <Globe size={16} />
+                        </button>
+                        <button className="btn btn-outline btn-sm" onClick={() => navigate('/super/settings')}>
+                            <Settings size={16} />
+                        </button>
+                    </>
                 }
             />
 

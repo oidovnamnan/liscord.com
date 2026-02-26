@@ -39,7 +39,19 @@
 
 .header-title-section {
     display: flex;
+    align-items: center;
+    gap: var(--space-md);
+}
+
+.header-title-container {
+    display: flex;
     flex-direction: column;
+}
+
+.header-extra {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
 }
 
 .header-title {
