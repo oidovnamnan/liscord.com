@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Header } from '../../components/layout/Header';
 import { Kanban, Filter, Plus, MessageSquareWarning, PackageOpen, Wrench, CheckCircle2 } from 'lucide-react';
+import { HubLayout } from '../../components/common/HubLayout';
 
 type TicketStatus = 'new' | 'inspecting' | 'repairing' | 'resolved' | 'closed';
 
@@ -49,96 +50,98 @@ export function SupportPage() {
     ];
 
     return (
-        <div className="page-container animate-fade-in" style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-            <Header
-                title="Гомдол & Буцаалт"
-                subtitle="Хэрэглэгчийн санал гомдол, баталгаат засвар болон буцаалтын хяналт"
-            />
+        <HubLayout hubId="crm-hub">
+            <div className="page-container animate-fade-in" style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+                <Header
+                    title="Гомдол & Буцаалт"
+                    subtitle="Хэрэглэгчийн санал гомдол, баталгаат засвар болон буцаалтын хяналт"
+                />
 
-            <div className="page-content" style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '24px' }}>
-                    <div style={{ display: 'flex', gap: '12px' }}>
-                        <button className="btn btn-outline">
-                            <Filter size={18} /> Шүүлтүүр
+                <div className="page-content" style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '24px' }}>
+                        <div style={{ display: 'flex', gap: '12px' }}>
+                            <button className="btn btn-outline">
+                                <Filter size={18} /> Шүүлтүүр
+                            </button>
+                        </div>
+                        <button className="btn btn-primary gradient-btn">
+                            <Plus size={18} /> Шинэ бүртгэл
                         </button>
                     </div>
-                    <button className="btn btn-primary gradient-btn">
-                        <Plus size={18} /> Шинэ бүртгэл
-                    </button>
-                </div>
 
-                {/* Kanban Board */}
-                <div style={{ display: 'flex', gap: '20px', flex: 1, overflowX: 'auto', paddingBottom: '16px' }}>
-                    {columns.map(col => {
-                        const colTickets = tickets.filter(t => t.status === col.id);
-                        return (
-                            <div key={col.id} style={{
-                                flex: '0 0 320px',
-                                background: 'var(--surface-1)',
-                                borderRadius: 'var(--radius-lg)',
-                                display: 'flex',
-                                flexDirection: 'column',
-                                maxHeight: '100%'
-                            }}>
-                                {/* Header */}
-                                <div style={{
-                                    padding: '16px',
-                                    borderBottom: '2px solid',
-                                    borderBottomColor: col.color,
+                    {/* Kanban Board */}
+                    <div style={{ display: 'flex', gap: '20px', flex: 1, overflowX: 'auto', paddingBottom: '16px' }}>
+                        {columns.map(col => {
+                            const colTickets = tickets.filter(t => t.status === col.id);
+                            return (
+                                <div key={col.id} style={{
+                                    flex: '0 0 320px',
+                                    background: 'var(--surface-1)',
+                                    borderRadius: 'var(--radius-lg)',
                                     display: 'flex',
-                                    justifyContent: 'space-between',
-                                    alignItems: 'center'
+                                    flexDirection: 'column',
+                                    maxHeight: '100%'
                                 }}>
-                                    <h3 style={{ margin: 0, fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                        {getColIcon(col.id)} {col.title}
-                                    </h3>
-                                    <span style={{
-                                        background: 'var(--surface-2)',
-                                        padding: '2px 8px',
-                                        borderRadius: '12px',
-                                        fontSize: '0.8rem',
-                                        fontWeight: 600
+                                    {/* Header */}
+                                    <div style={{
+                                        padding: '16px',
+                                        borderBottom: '2px solid',
+                                        borderBottomColor: col.color,
+                                        display: 'flex',
+                                        justifyContent: 'space-between',
+                                        alignItems: 'center'
                                     }}>
-                                        {colTickets.length}
-                                    </span>
-                                </div>
-
-                                {/* List */}
-                                <div style={{ padding: '12px', overflowY: 'auto', flex: 1, display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                                    {colTickets.map(ticket => (
-                                        <div key={ticket.id} style={{
+                                        <h3 style={{ margin: 0, fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                            {getColIcon(col.id)} {col.title}
+                                        </h3>
+                                        <span style={{
                                             background: 'var(--surface-2)',
-                                            padding: '16px',
-                                            borderRadius: '8px',
-                                            border: '1px solid var(--border-color)',
-                                            cursor: 'pointer',
-                                            transition: 'transform 0.2s',
-                                        }}
-                                            onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-2px)'}
-                                            onMouseLeave={e => e.currentTarget.style.transform = 'translateY(0)'}
-                                        >
-                                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                                                <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 600 }}>{ticket.id}</span>
-                                                <span className={`badge ${getTypeColor(ticket.type)}`}>
-                                                    {ticket.type === 'warranty' ? 'Засвар' : ticket.type === 'return' ? 'Буцаалт' : 'Гомдол'}
-                                                </span>
+                                            padding: '2px 8px',
+                                            borderRadius: '12px',
+                                            fontSize: '0.8rem',
+                                            fontWeight: 600
+                                        }}>
+                                            {colTickets.length}
+                                        </span>
+                                    </div>
+
+                                    {/* List */}
+                                    <div style={{ padding: '12px', overflowY: 'auto', flex: 1, display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                                        {colTickets.map(ticket => (
+                                            <div key={ticket.id} style={{
+                                                background: 'var(--surface-2)',
+                                                padding: '16px',
+                                                borderRadius: '8px',
+                                                border: '1px solid var(--border-color)',
+                                                cursor: 'pointer',
+                                                transition: 'transform 0.2s',
+                                            }}
+                                                onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-2px)'}
+                                                onMouseLeave={e => e.currentTarget.style.transform = 'translateY(0)'}
+                                            >
+                                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                                                    <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 600 }}>{ticket.id}</span>
+                                                    <span className={`badge ${getTypeColor(ticket.type)}`}>
+                                                        {ticket.type === 'warranty' ? 'Засвар' : ticket.type === 'return' ? 'Буцаалт' : 'Гомдол'}
+                                                    </span>
+                                                </div>
+                                                <div style={{ fontWeight: 500, marginBottom: '4px' }}>{ticket.issue}</div>
+                                                <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Үйлчлүүлэгч: {ticket.customer}</div>
+                                                <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '8px', textAlign: 'right' }}>{ticket.date}</div>
                                             </div>
-                                            <div style={{ fontWeight: 500, marginBottom: '4px' }}>{ticket.issue}</div>
-                                            <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Үйлчлүүлэгч: {ticket.customer}</div>
-                                            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '8px', textAlign: 'right' }}>{ticket.date}</div>
-                                        </div>
-                                    ))}
-                                    {colTickets.length === 0 && (
-                                        <div style={{ padding: '24px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.9rem' }}>
-                                            Хоосон байна
-                                        </div>
-                                    )}
+                                        ))}
+                                        {colTickets.length === 0 && (
+                                            <div style={{ padding: '24px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.9rem' }}>
+                                                Хоосон байна
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
-                            </div>
-                        )
-                    })}
+                            )
+                        })}
+                    </div>
                 </div>
             </div>
-        </div>
+        </HubLayout>
     );
 }

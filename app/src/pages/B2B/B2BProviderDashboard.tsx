@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
-import { Header } from '../../components/layout/Header';
 import { PackageSearch, Clock, CheckCircle2, Truck, TrendingUp } from 'lucide-react';
 import { useBusinessStore } from '../../store';
 import { b2bService } from '../../services/b2bService';
+import { HubLayout } from '../../components/common/HubLayout';
 import { toast } from 'react-hot-toast';
 import type { ServiceRequest } from '../../types';
 import './B2BProvider.css';
@@ -52,11 +52,11 @@ export function B2BProviderDashboard() {
     ];
 
     return (
-        <>
-            <Header title="Нийлүүлэгчийн Самбар (B2B)" />
-            <div className="page b2b-provider-page">
+        <HubLayout hubId="b2b-hub">
+            <div className="page b2b-provider-page animate-fade-in" style={{ padding: '0 20px' }}>
 
                 <div className="b2b-stats-row">
+                    {/* ... stats ... */}
                     <div className="stat-card">
                         <div className="stat-icon" style={{ background: 'var(--primary-light)', color: 'var(--primary)' }}>
                             <PackageSearch size={24} />
@@ -168,6 +168,6 @@ export function B2BProviderDashboard() {
                 )}
 
             </div>
-        </>
+        </HubLayout>
     );
 }

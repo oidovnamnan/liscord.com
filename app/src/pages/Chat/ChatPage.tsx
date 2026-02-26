@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { Send, Smile, Paperclip, Search, Hash, Users, Bell, Pin, Loader2 } from 'lucide-react';
 import { useBusinessStore, useAuthStore } from '../../store';
 import { chatService } from '../../services/db';
+import { HubLayout } from '../../components/common/HubLayout';
 import './ChatPage.css';
 
 interface Channel {
@@ -101,8 +102,8 @@ export function ChatPage() {
     }
 
     return (
-        <>
-            <div className="chat-layout">
+        <HubLayout hubId="crm-hub">
+            <div className="chat-layout" style={{ height: 'calc(100vh - 120px)' }}>
                 {/* Channel sidebar */}
                 <div className="chat-sidebar">
                     <div className="chat-sidebar-header">
@@ -195,6 +196,6 @@ export function ChatPage() {
                     )}
                 </div>
             </div>
-        </>
+        </HubLayout>
     );
 }

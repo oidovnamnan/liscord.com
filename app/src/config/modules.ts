@@ -1,7 +1,7 @@
 import type { AppModule } from '../types';
 
 export const LISCORD_MODULES: AppModule[] = [
-    // --- Operations HUB: Orders ---
+    // --- Operations & Inventory HUB ---
     {
         id: 'orders',
         name: 'Захиалга',
@@ -10,14 +10,27 @@ export const LISCORD_MODULES: AppModule[] = [
         route: '/app/orders',
         isCore: true,
         category: 'operations',
+        hubId: 'inventory-hub',
         isFree: true,
         price: 0,
         durationDays: 0
     },
-    // --- Operations HUB: Inventory ---
+    {
+        id: 'products',
+        name: 'Бараа Материал',
+        description: 'Бараа бүтээгдэхүүний нэр төрөл, үнэ болон ангилал.',
+        icon: 'Box',
+        route: '/app/products',
+        isCore: true,
+        category: 'operations',
+        hubId: 'inventory-hub',
+        isFree: true,
+        price: 0,
+        durationDays: 0
+    },
     {
         id: 'inventory',
-        name: 'Агуулах',
+        name: 'Агуулах / Нөөц',
         description: 'Барааны үлдэгдэл болон нөөцийн менежмент.',
         icon: 'Boxes',
         route: '/app/inventory',
@@ -41,7 +54,49 @@ export const LISCORD_MODULES: AppModule[] = [
         price: 35000,
         durationDays: 30
     },
-    // --- Finance HUB ---
+
+    // --- CRM & Support HUB ---
+    {
+        id: 'customers',
+        name: 'Хэрэглэгчид (CRM)',
+        description: 'Харилцагчийн түүх, сегментчлэл, CRM систем.',
+        icon: 'Contact',
+        route: '/app/customers',
+        isCore: false,
+        category: 'sales',
+        hubId: 'crm-hub',
+        isFree: true,
+        price: 0,
+        durationDays: 0
+    },
+    {
+        id: 'messenger',
+        name: 'Чаат & Харилцаа',
+        description: 'Сошиал сувгуудын зурвасуудыг нэг цонхноос хариулах.',
+        icon: 'MessageCircle',
+        route: '/app/chat',
+        isCore: false,
+        category: 'sales',
+        hubId: 'crm-hub',
+        isFree: false,
+        price: 25000,
+        durationDays: 30
+    },
+    {
+        id: 'support',
+        name: 'Гомдол & Буцаалт',
+        description: 'Хэрэглэгчийн санал гомдол, баталгаат засвар, буцаалт.',
+        icon: 'LifeBuoy',
+        route: '/app/support',
+        isCore: false,
+        category: 'services',
+        hubId: 'crm-hub',
+        isFree: false,
+        price: 15000,
+        durationDays: 30
+    },
+
+    // --- Finance & Payments HUB ---
     {
         id: 'finance',
         name: 'Санхүү',
@@ -57,7 +112,7 @@ export const LISCORD_MODULES: AppModule[] = [
     },
     {
         id: 'payments',
-        name: 'Төлбөр',
+        name: 'Төлбөр Тооцоо',
         description: 'Харилцагчдын төлбөрийн түүх болон бүртгэл.',
         icon: 'CreditCard',
         route: '/app/payments',
@@ -81,7 +136,8 @@ export const LISCORD_MODULES: AppModule[] = [
         price: 45000,
         durationDays: 30
     },
-    // --- Staff HUB (HRM) ---
+
+    // --- Staff & HR HUB ---
     {
         id: 'employees',
         name: 'Ажилтан',
@@ -97,7 +153,7 @@ export const LISCORD_MODULES: AppModule[] = [
     },
     {
         id: 'attendance',
-        name: 'Ирц',
+        name: 'Ирц бүртгэл',
         description: 'Цаг бүртгэл, хоцролт болон ирцийн статистик.',
         icon: 'Clock',
         route: '/app/attendance',
@@ -110,7 +166,7 @@ export const LISCORD_MODULES: AppModule[] = [
     },
     {
         id: 'payroll',
-        name: 'Цалин',
+        name: 'Цалин Бодолт',
         description: 'Цалин бодолт, урьдчилгаа болон шимтгэлийн тооцоо.',
         icon: 'Coins',
         route: '/app/payroll',
@@ -121,7 +177,49 @@ export const LISCORD_MODULES: AppModule[] = [
         price: 25000,
         durationDays: 30
     },
-    // --- Services HUB ---
+
+    // --- Logistics & Cargo HUB ---
+    {
+        id: 'cargo',
+        name: 'Карго Тээвэр',
+        description: 'Илгээмж бүртгэл, AI текст унших каргоны систем.',
+        icon: 'Truck',
+        route: '/app/packages',
+        isCore: false,
+        category: 'services',
+        hubId: 'logistics-hub',
+        isFree: false,
+        price: 50000,
+        durationDays: 30
+    },
+    {
+        id: 'delivery',
+        name: 'Хүргэлт',
+        description: 'Түгээлт, жолооч болон хүргэлтийн төлөв хянах.',
+        icon: 'MapPin',
+        route: '/app/delivery',
+        isCore: false,
+        category: 'services',
+        hubId: 'logistics-hub',
+        isFree: false,
+        price: 25000,
+        durationDays: 30
+    },
+    {
+        id: 'vehicles',
+        name: 'Авто Парк',
+        description: 'Тээврийн хэрэгсэл, техник түрээс болон бүртгэл.',
+        icon: 'Car',
+        route: '/app/vehicles',
+        isCore: false,
+        category: 'services',
+        hubId: 'logistics-hub',
+        isFree: false,
+        price: 35000,
+        durationDays: 30
+    },
+
+    // --- Services & Booking HUB ---
     {
         id: 'appointments',
         name: 'Цаг захиалга',
@@ -174,34 +272,8 @@ export const LISCORD_MODULES: AppModule[] = [
         price: 20000,
         durationDays: 30
     },
-    // --- Logistics HUB ---
-    {
-        id: 'delivery',
-        name: 'Хүргэлт',
-        description: 'Түгээлт, жолооч болон хүргэлтийн төлөв хянах.',
-        icon: 'MapPin',
-        route: '/app/delivery',
-        isCore: false,
-        category: 'services',
-        hubId: 'logistics-hub',
-        isFree: false,
-        price: 25000,
-        durationDays: 30
-    },
-    {
-        id: 'vehicles',
-        name: 'Тээвэр / Машин',
-        description: 'Тээврийн хэрэгсэл, техник түрээс болон бүртгэл.',
-        icon: 'Car',
-        route: '/app/vehicles',
-        isCore: false,
-        category: 'services',
-        hubId: 'logistics-hub',
-        isFree: false,
-        price: 35000,
-        durationDays: 30
-    },
-    // --- Project HUB ---
+
+    // --- Projects & Tasks HUB ---
     {
         id: 'projects',
         name: 'Төсөл',
@@ -217,7 +289,7 @@ export const LISCORD_MODULES: AppModule[] = [
     },
     {
         id: 'tickets',
-        name: 'Тасалбар',
+        name: 'Тасалбар / Tickets',
         description: 'Дэмжлэгийн тасалбар, ивент тасалбар бүртгэл.',
         icon: 'Ticket',
         route: '/app/tickets',
@@ -228,31 +300,36 @@ export const LISCORD_MODULES: AppModule[] = [
         price: 15000,
         durationDays: 30
     },
-    // --- Independent Modules ---
+
+    // --- B2B Platform HUB ---
     {
-        id: 'cargo',
-        name: 'Карго Тээвэр',
-        description: 'Илгээмж бүртгэл, AI текст унших каргоны систем.',
-        icon: 'Truck',
-        route: '/app/packages',
-        isCore: false,
-        category: 'services',
-        isFree: false,
-        price: 50000,
-        durationDays: 30
-    },
-    {
-        id: 'customers',
-        name: 'Хэрэглэгчид (CRM)',
-        description: 'Харилцагчийн түүх, сегментчлэл, CRM систем.',
-        icon: 'Contact',
-        route: '/app/customers',
+        id: 'b2b',
+        name: 'B2B Marketplace',
+        description: 'Бусад бизнесүүдтэй холбогдох, бараа нийлүүлэлт.',
+        icon: 'Globe',
+        route: '/app/b2b',
         isCore: false,
         category: 'sales',
+        hubId: 'b2b-hub',
         isFree: true,
         price: 0,
         durationDays: 0
     },
+    {
+        id: 'b2b-provider',
+        name: 'Нийлүүлэгч самбар',
+        description: 'Нийлүүлэгчийн удирдлагын хянах самбар.',
+        icon: 'Building2',
+        route: '/app/b2b-provider',
+        isCore: false,
+        category: 'sales',
+        hubId: 'b2b-hub',
+        isFree: false,
+        price: 45000,
+        durationDays: 30
+    },
+
+    // --- Independent / Core Features ---
     {
         id: 'analytics',
         name: 'Анализ & Тайлан',
@@ -261,30 +338,6 @@ export const LISCORD_MODULES: AppModule[] = [
         route: '/app/reports',
         isCore: true,
         category: 'operations',
-        isFree: true,
-        price: 0,
-        durationDays: 0
-    },
-    {
-        id: 'messenger',
-        name: 'Чаат & Харилцаа',
-        description: 'Сошиал сувгуудын зурвасуудыг нэг цонхноос хариулах.',
-        icon: 'MessageCircle',
-        route: '/app/chat',
-        isCore: false,
-        category: 'sales',
-        isFree: false,
-        price: 25000,
-        durationDays: 30
-    },
-    {
-        id: 'b2b',
-        name: 'B2B Платформ',
-        description: 'Бусад бизнесүүдтэй холбогдох, ханган нийлүүлэлт.',
-        icon: 'Building2',
-        route: '/app/b2b',
-        isCore: false,
-        category: 'sales',
         isFree: true,
         price: 0,
         durationDays: 0

@@ -6,6 +6,7 @@ import { useBusinessStore, useAuthStore } from '../../store';
 import { customerService } from '../../services/db';
 import type { Customer } from '../../types';
 import { toast } from 'react-hot-toast';
+import { HubLayout } from '../../components/common/HubLayout';
 import './CustomersPage.css';
 
 function fmt(n: number) { return '₮' + n.toLocaleString('mn-MN'); }
@@ -36,7 +37,7 @@ export function CustomersPage() {
     });
 
     return (
-        <>
+        <HubLayout hubId="crm-hub">
             <Header
                 title="Харилцагч"
                 subtitle={loading ? 'Уншиж байна...' : `Нийт ${customers.length} харилцагч`}
@@ -129,7 +130,7 @@ export function CustomersPage() {
             </div>
 
             {showCreate && <CreateCustomerModal onClose={() => setShowCreate(false)} />}
-        </>
+        </HubLayout>
     );
 }
 

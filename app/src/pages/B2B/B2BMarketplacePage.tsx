@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
-import { Header } from '../../components/layout/Header';
 import { Network, Search, Globe, Truck, Store, Printer, Star, UserPlus, CheckCircle2, Clock, XCircle, ArrowRight } from 'lucide-react';
 import { useBusinessStore } from '../../store';
 import { b2bService } from '../../services/b2bService';
+import { HubLayout } from '../../components/common/HubLayout';
 import { toast } from 'react-hot-toast';
 import type { BusinessLink, B2BServiceType } from '../../types';
 import './B2BMarketplace.css';
@@ -119,10 +119,8 @@ export function B2BMarketplacePage() {
     ];
 
     return (
-        <>
-            <Header title="B2B Маркетплейс" />
-            <div className="page b2b-page">
-
+        <HubLayout hubId="b2b-hub">
+            <div className="page b2b-page animate-fade-in" style={{ padding: '0 20px' }}>
                 <div className="b2b-tabs">
                     <button className={`b2b-tab ${activeTab === 'discover' ? 'active' : ''}`} onClick={() => setActiveTab('discover')}>
                         <Search size={18} /> Үйлчилгээ хайх
@@ -136,6 +134,7 @@ export function B2BMarketplacePage() {
                 </div>
 
                 <div className="b2b-content">
+                    {/* ... content remains same ... */}
                     {/* DISCOVER TAB */}
                     {activeTab === 'discover' && (
                         <div className="animate-fade-in">
@@ -291,6 +290,6 @@ export function B2BMarketplacePage() {
                     )}
                 </div>
             </div>
-        </>
+        </HubLayout>
     );
 }
