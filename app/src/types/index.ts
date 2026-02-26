@@ -170,6 +170,7 @@ export interface BusinessSettings {
         enabled: boolean;
         theme?: string; // e.g., 'minimal', 'fashion', 'commerce', etc.
         name?: string;
+        installedThemes?: string[]; // IDs of installed/purchased themes
     };
     ebarimt?: {
         enabled: boolean;

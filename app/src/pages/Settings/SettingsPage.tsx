@@ -12,6 +12,7 @@ import { ModulesTab } from './components/ModulesTab';
 import { PaymentTab } from './components/PaymentTab';
 import { B2BTab } from './components/B2BTab';
 import { ALL_PERMISSIONS, type Position, type Employee, type CargoType, type OrderSource, type SocialAccount, type OrderStatusConfig, type BusinessRequest } from '../../types';
+import { STOREFRONT_THEMES } from '../../config/themes';
 import './SettingsPage.css';
 
 export function SettingsPage() {
@@ -51,11 +52,14 @@ export function SettingsPage() {
         }
     }, [activeTab, business?.slug, business?.id]);
 
+    const isStorefrontEnabled = business?.settings?.storefront?.enabled || business?.category === 'online_shop';
+
     const tabs = [
         { id: 'general', label: 'Ерөнхий', icon: Building2 },
         { id: 'modules', label: 'Бизнес Модуль', icon: Layers },
         { id: 'team', label: 'Баг', icon: Users },
         { id: 'storefront', label: 'Дэлгүүр', icon: ShoppingBag },
+        ...(isStorefrontEnabled ? [{ id: 'themes', label: 'Загварууд', icon: Palette }] : []),
         { id: 'payment', label: 'Төлбөр & НӨАТ', icon: CreditCard },
         { id: 'statuses', label: 'Захиалгын төлөв', icon: CheckSquare },
         { id: 'cargo', label: 'Карго', icon: Globe },
@@ -339,63 +343,6 @@ export function SettingsPage() {
                                             </label>
                                         </div>
 
-                                        {/* --- Theme Selection UI --- */}
-                                        <div className="input-group" style={{ marginTop: '24px', paddingTop: '24px', borderTop: '1px solid var(--border-color)' }}>
-                                            <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginBottom: 16 }}>
-                                                <label className="input-label" style={{ margin: 0, fontSize: '1rem' }}>Дэлгүүрийн Загвар (Theme)</label>
-                                                <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Таны бизнест хамгийн сайн тохирох 100% өвөрмөц бүтэцтэй загваруудаас сонгоно уу.</div>
-                                            </div>
-                                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
-                                                {[
-                                                    { id: 'minimal', name: 'Minimalist Grid', desc: 'Цэмцгэр, Apple хэв маяг', color: '#f3f4f6' },
-                                                    { id: 'editorial', name: 'Editorial', desc: 'Vogue/Zara хувцас загвар', color: '#fdf6e3' },
-                                                    { id: 'commerce', name: 'Dynamic Commerce', desc: 'Amazon/Shopee хэв маяг', color: '#e0f2fe' },
-                                                    { id: 'appetite', name: 'Appetite', desc: 'Wolt шиг хурдан сагслах', color: '#ffedd5' },
-                                                    { id: 'finedining', name: 'Fine Dining', desc: 'Классик ресторан', color: '#0f1115' },
-                                                    { id: 'cafe', name: 'Cafe & Bakery', desc: 'Дулаахан, органик', color: '#fdfaf6' },
-                                                    { id: 'grocery', name: 'Supermarket', desc: 'Хүнсний дэлгүүр', color: '#16a34a' },
-                                                    { id: 'service', name: 'Service Booking', desc: 'Цаг захиалга', color: '#4f46e5' },
-                                                    { id: 'agency', name: 'Agency Portfolio', desc: 'Минимал танилцуулга', color: '#ffffff' },
-                                                    { id: 'saas', name: 'Digital & SaaS', desc: 'Програм хангамж', color: '#0b0f19' },
-                                                    { id: 'b2b', name: 'B2B Wholesale', desc: 'Бөөнөөр захиалах', color: '#f8f9fa' },
-                                                    { id: 'autoparts', name: 'Auto Parts', desc: 'Сэлбэгийн каталог', color: '#1a1f2b' },
-                                                    { id: 'furniture', name: 'Furniture & Decor', desc: 'Интерьер дизайн', color: '#faf9f8' },
-                                                    { id: 'artisan', name: 'Handcraft / Eco', desc: 'Байгалийн, эко', color: '#fdfaf6' },
-                                                    { id: 'oneproduct', name: 'Single Product', desc: 'Лэндинг хуудас', color: '#ffffff' },
-                                                    { id: 'gamer', name: 'Gamer Gear', desc: 'Тоног төхөөрөмж', color: '#09090b' },
-                                                    { id: 'lookbook', name: 'Lookbook Masonry', desc: 'Pinterest хэв маяг', color: '#ffffff' },
-                                                    { id: 'streetwear', name: 'Street Drop', desc: 'Бараан, орчин үеийн', color: '#000000' },
-                                                    { id: 'cosmetics', name: 'Cosmetics', desc: 'Зөөлөн, гоо сайхан', color: '#faf4f0' },
-                                                    { id: 'tech', name: 'Tech Specs', desc: 'Электроникийн дээд', color: '#2b6cb0' }
-                                                ].map(t => {
-                                                    const isSelected = (business?.settings?.storefront?.theme || 'minimal') === t.id;
-                                                    return (
-                                                        <label key={t.id} style={{
-                                                            position: 'relative',
-                                                            border: isSelected ? '2px solid var(--primary)' : '1px solid var(--border-color)',
-                                                            borderRadius: '16px',
-                                                            padding: '20px',
-                                                            cursor: 'pointer',
-                                                            background: isSelected ? 'var(--bg-soft)' : '#fff',
-                                                            transition: 'all 0.2s',
-                                                            display: 'block'
-                                                        }}>
-                                                            <input
-                                                                type="radio"
-                                                                name="storefrontTheme"
-                                                                value={t.id}
-                                                                defaultChecked={isSelected}
-                                                                style={{ position: 'absolute', opacity: 0 }}
-                                                            />
-                                                            <div style={{ width: 40, height: 40, borderRadius: 12, background: t.color, marginBottom: 12, border: '1px solid rgba(0,0,0,0.05)' }} />
-                                                            <div style={{ fontWeight: 700, fontSize: '0.95rem', marginBottom: 4 }}>{t.name}</div>
-                                                            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{t.desc}</div>
-                                                        </label>
-                                                    );
-                                                })}
-                                            </div>
-                                        </div>
-
                                         <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 24 }}>
                                             <button className="btn btn-primary gradient-btn" type="submit" disabled={loading || !isDirty} style={{ minWidth: 120 }}>
                                                 {loading ? <Loader2 size={16} className="animate-spin" /> : 'Хадгалах'}
@@ -416,6 +363,83 @@ export function SettingsPage() {
                                             </a>
                                         </div>
                                     )}
+                                </div>
+                            </div>
+                        )}
+                        {activeTab === 'themes' && isStorefrontEnabled && (
+                            <div className="settings-section animate-fade-in">
+                                <h2>Дэлгүүрийн Загварууд</h2>
+                                <div className="settings-card">
+                                    <div className="settings-card-header" style={{ marginBottom: 12 }}>
+                                        <div className="settings-card-icon"><Palette size={20} /></div>
+                                        <h3>Вэбсайтын өнгө төрх сонгох</h3>
+                                    </div>
+                                    <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginBottom: 24 }}>
+                                        Таны бизнест хамгийн сайн тохирох 100% өвөрмөц бүтэцтэй загваруудаас сонгоно уу.
+                                    </p>
+
+                                    <form className="settings-form" onSubmit={handleUpdateStorefront} onChange={() => setIsDirty(true)}>
+                                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px' }}>
+                                            {STOREFRONT_THEMES.map(t => {
+                                                const installedThemes = business?.settings?.storefront?.installedThemes || ['minimal'];
+                                                const isInstalled = installedThemes.includes(t.id);
+                                                const isSelected = (business?.settings?.storefront?.theme || 'minimal') === t.id;
+
+                                                if (!isInstalled) return null;
+
+                                                return (
+                                                    <label key={t.id} style={{
+                                                        position: 'relative',
+                                                        border: isSelected ? '2px solid var(--primary)' : '1px solid var(--border-color)',
+                                                        borderRadius: '16px',
+                                                        padding: '20px',
+                                                        cursor: 'pointer',
+                                                        background: isSelected ? 'var(--bg-soft)' : '#fff',
+                                                        transition: 'all 0.2s',
+                                                        display: 'block'
+                                                    }}>
+                                                        <input
+                                                            type="radio"
+                                                            name="storefrontTheme"
+                                                            value={t.id}
+                                                            defaultChecked={isSelected}
+                                                            style={{ position: 'absolute', opacity: 0 }}
+                                                        />
+                                                        <div style={{ width: 40, height: 40, borderRadius: 12, background: t.color, marginBottom: 12, border: '1px solid rgba(0,0,0,0.05)' }} />
+                                                        <div style={{ fontWeight: 700, fontSize: '0.95rem', marginBottom: 4 }}>{t.name}</div>
+                                                        <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{t.description}</div>
+                                                    </label>
+                                                );
+                                            })}
+
+                                            <div
+                                                onClick={() => setSearchParams({ tab: 'modules' })}
+                                                style={{
+                                                    border: '1px dashed var(--primary)',
+                                                    borderRadius: '16px',
+                                                    padding: '20px',
+                                                    cursor: 'pointer',
+                                                    background: 'rgba(74, 107, 255, 0.05)',
+                                                    display: 'flex',
+                                                    flexDirection: 'column',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                    textAlign: 'center',
+                                                    gap: '8px'
+                                                }}
+                                            >
+                                                <ShoppingBag size={24} color="var(--primary)" />
+                                                <div style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--primary)' }}>Шинэ загвар авах</div>
+                                                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Liscord App Store-оос илүү олон загвар үзэх</div>
+                                            </div>
+                                        </div>
+
+                                        <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 24 }}>
+                                            <button className="btn btn-primary gradient-btn" type="submit" disabled={loading || !isDirty} style={{ minWidth: 120 }}>
+                                                {loading ? <Loader2 size={16} className="animate-spin" /> : 'Хадгалах'}
+                                            </button>
+                                        </div>
+                                    </form>
                                 </div>
                             </div>
                         )}
@@ -575,59 +599,61 @@ export function SettingsPage() {
                         {activeTab === 'activity' && <ActivityTab />}
 
                     </div>
-                </div>
-            </div>
+                </div >
+            </div >
 
             {/* Request Modal */}
-            {showRequestModal && createPortal(
-                <div className="modal-overlay">
-                    <div className="modal-content animate-scale" style={{ maxWidth: '400px' }}>
-                        <div className="modal-header">
-                            <h3><Shield size={18} style={{ color: 'var(--warning)', marginRight: 8, display: 'inline' }} /> Өөрчлөх хүсэлт илгээх</h3>
-                            <button className="icon-btn" onClick={() => setShowRequestModal(false)}><X size={20} /></button>
-                        </div>
-                        <form onSubmit={handleSubmitRequest} className="modal-body">
-                            <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', marginBottom: 16 }}>
-                                Дэлгүүрийн нэр болон холбоосыг <strong style={{ color: 'var(--danger)' }}>жилд нэг л удаа</strong> өөрчилдөг тул Супер Админы зөвшөөрөл шаардлагатай.
-                            </p>
+            {
+                showRequestModal && createPortal(
+                    <div className="modal-overlay">
+                        <div className="modal-content animate-scale" style={{ maxWidth: '400px' }}>
+                            <div className="modal-header">
+                                <h3><Shield size={18} style={{ color: 'var(--warning)', marginRight: 8, display: 'inline' }} /> Өөрчлөх хүсэлт илгээх</h3>
+                                <button className="icon-btn" onClick={() => setShowRequestModal(false)}><X size={20} /></button>
+                            </div>
+                            <form onSubmit={handleSubmitRequest} className="modal-body">
+                                <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', marginBottom: 16 }}>
+                                    Дэлгүүрийн нэр болон холбоосыг <strong style={{ color: 'var(--danger)' }}>жилд нэг л удаа</strong> өөрчилдөг тул Супер Админы зөвшөөрөл шаардлагатай.
+                                </p>
 
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: 16, marginBottom: 16 }}>
-                                <div className="input-group">
-                                    <label className="input-label" style={{ marginBottom: 4 }}>Шинэ дэлгүүрийн нэр</label>
-                                    <input className="input" value={requestedChanges?.name || ''} onChange={e => setRequestedChanges(p => ({ ...p, name: e.target.value }))} placeholder="NamShop" required />
-                                </div>
-                                <div className="input-group">
-                                    <label className="input-label" style={{ marginBottom: 4 }}>Шинэ холбоос (уншихад амархан)</label>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                        <span style={{ color: 'var(--text-muted)' }}>{window.location.origin}/s/</span>
-                                        <input className="input" style={{ flex: 1 }} value={requestedChanges?.slug || ''} onChange={e => setRequestedChanges(p => ({ ...p, slug: e.target.value.toLowerCase() }))} placeholder="zara-mongolia" required pattern="[a-z0-9-]+" title="Зөвхөн жижиг англи үсэг, тоо болон зураас ашиглана уу" />
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: 16, marginBottom: 16 }}>
+                                    <div className="input-group">
+                                        <label className="input-label" style={{ marginBottom: 4 }}>Шинэ дэлгүүрийн нэр</label>
+                                        <input className="input" value={requestedChanges?.name || ''} onChange={e => setRequestedChanges(p => ({ ...p, name: e.target.value }))} placeholder="NamShop" required />
+                                    </div>
+                                    <div className="input-group">
+                                        <label className="input-label" style={{ marginBottom: 4 }}>Шинэ холбоос (уншихад амархан)</label>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                            <span style={{ color: 'var(--text-muted)' }}>{window.location.origin}/s/</span>
+                                            <input className="input" style={{ flex: 1 }} value={requestedChanges?.slug || ''} onChange={e => setRequestedChanges(p => ({ ...p, slug: e.target.value.toLowerCase() }))} placeholder="zara-mongolia" required pattern="[a-z0-9-]+" title="Зөвхөн жижиг англи үсэг, тоо болон зураас ашиглана уу" />
+                                        </div>
+                                    </div>
+                                    <div className="input-group">
+                                        <label className="input-label" style={{ marginBottom: 4 }}>Өөрчлөх шалтгаан</label>
+                                        <textarea
+                                            className="input"
+                                            style={{ height: '80px', resize: 'vertical' }}
+                                            placeholder="Шалтгаанаа тодорхой бичнэ үү..."
+                                            value={requestReason}
+                                            onChange={e => setRequestReason(e.target.value)}
+                                            required
+                                            minLength={10}
+                                        />
                                     </div>
                                 </div>
-                                <div className="input-group">
-                                    <label className="input-label" style={{ marginBottom: 4 }}>Өөрчлөх шалтгаан</label>
-                                    <textarea
-                                        className="input"
-                                        style={{ height: '80px', resize: 'vertical' }}
-                                        placeholder="Шалтгаанаа тодорхой бичнэ үү..."
-                                        value={requestReason}
-                                        onChange={e => setRequestReason(e.target.value)}
-                                        required
-                                        minLength={10}
-                                    />
-                                </div>
-                            </div>
 
-                            <div className="modal-footer" style={{ marginTop: 24 }}>
-                                <button type="button" className="btn btn-ghost" onClick={() => setShowRequestModal(false)}>Цуцлах</button>
-                                <button type="submit" className="btn btn-primary" disabled={loading}>
-                                    {loading ? <Loader2 className="animate-spin" size={16} /> : 'Хүсэлт илгээх'}
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                </div>,
-                document.body
-            )}
+                                <div className="modal-footer" style={{ marginTop: 24 }}>
+                                    <button type="button" className="btn btn-ghost" onClick={() => setShowRequestModal(false)}>Цуцлах</button>
+                                    <button type="submit" className="btn btn-primary" disabled={loading}>
+                                        {loading ? <Loader2 className="animate-spin" size={16} /> : 'Хүсэлт илгээх'}
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>,
+                    document.body
+                )
+            }
         </>
     );
 }
