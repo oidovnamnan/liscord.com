@@ -26,6 +26,8 @@ import { ReportsPage } from './pages/Reports/ReportsPage';
 import { PaymentsPage } from './pages/Payments/PaymentsPage';
 import { DeliveryPage } from './pages/Delivery/DeliveryPage';
 import { PackagesPage } from './pages/Cargo/Packages/PackagesPage';
+import { InventoryPage } from './pages/Inventory/InventoryPage';
+import { ContractsPage } from './pages/Contracts/ContractsPage';
 // --- New Generic Modules ---
 import { AppointmentsPage } from './pages/Appointments/AppointmentsPage';
 import { ProjectsPage } from './pages/Projects/ProjectsPage';
@@ -241,6 +243,7 @@ export default function App() {
           <Route path="products" element={<ProductsPage />} />
           <Route path="delivery" element={<DeliveryPage />} />
           <Route path="packages" element={<PackagesPage />} />
+          <Route path="inventory" element={<InventoryPage />} />
           {/* --- New Modules --- */}
           <Route path="appointments" element={<AppointmentsPage />} />
           <Route path="projects" element={<ProjectsPage />} />
@@ -248,6 +251,7 @@ export default function App() {
           <Route path="vehicles" element={<VehiclesPage />} />
           <Route path="tickets" element={<TicketsPage />} />
           <Route path="loans" element={<LoansPage />} />
+          <Route path="contracts" element={<ContractsPage />} />
           <Route path="queue" element={<QueuePage />} />
           <Route path="attendance" element={<AttendancePage />} />
           <Route path="payroll" element={<PayrollPage />} />

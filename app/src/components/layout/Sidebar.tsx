@@ -49,8 +49,8 @@ type NavItem = {
 };
 
 const navItems: NavItem[] = [
-    { id: 'dashboard', label: 'Хянах самбар', icon: LayoutDashboard, path: '/app', permission: 'reports.view_dashboard' },
-    { id: 'orders', label: 'Борлуулалт', icon: ShoppingCart, path: '/app/orders', permission: 'orders.view_all', feature: 'hasOrders' },
+    { id: 'dashboard', label: 'Хянах самбар', icon: LayoutDashboard, path: '/app' },
+    { id: 'orders', label: 'Борлуулалт', icon: ShoppingCart, path: '/app/orders', feature: 'hasOrders' },
     { id: 'appointments', label: 'Цаг захиалга', icon: Calendar, path: '/app/appointments', feature: 'hasAppointments' },
     { id: 'projects', label: 'Төсөл / Ажил', icon: Warehouse, path: '/app/projects', feature: 'hasProjects' },
     { id: 'manufacturing', label: 'Үйлдвэрлэл', icon: Factory, path: '/app/manufacturing' },
@@ -58,24 +58,24 @@ const navItems: NavItem[] = [
     { id: 'rooms', label: 'Өрөө / Талбай', icon: LayoutDashboard, path: '/app/rooms', feature: 'hasRooms' },
     { id: 'vehicles', label: 'Машин / Техник', icon: Truck, path: '/app/vehicles', feature: 'hasVehicles' },
     { id: 'tickets', label: 'Тасалбар', icon: ScanLine, path: '/app/tickets', feature: 'hasTickets' },
-    { id: 'customers', label: 'Харилцагч', icon: Users, path: '/app/customers', permission: 'customers.view' },
+    { id: 'customers', label: 'Харилцагч', icon: Users, path: '/app/customers' },
     { id: 'b2b', label: 'B2B Маркет', icon: Building, path: '/app/b2b' },
     { id: 'b2b-provider', label: 'B2B Хүсэлтүүд', icon: Network, path: '/app/b2b-provider', feature: 'isB2BProvider' },
-    { id: 'products', label: 'Бараа', icon: Package, path: '/app/products', permission: 'products.view', feature: 'hasProducts' },
+    { id: 'products', label: 'Бараа', icon: Package, path: '/app/products', feature: 'hasProducts' },
     { id: 'delivery', label: 'Хүргэлт', icon: Truck, path: '/app/delivery', feature: 'hasDelivery' },
     { id: 'packages', label: 'Ачаа (AI)', icon: ScanLine, path: '/app/packages', feature: 'hasPackages' },
-    { id: 'inventory', label: 'Нөөц', icon: Warehouse, permission: 'products.manage_stock', path: '/app/inventory', feature: 'hasInventory' },
+    { id: 'inventory', label: 'Нөөц', icon: Warehouse, path: '/app/inventory', feature: 'hasInventory' },
     { id: 'loans', label: 'Ломбард / Зээл', icon: Landmark, path: '/app/loans' },
     { id: 'queue', label: 'Дараалал', icon: Layers, path: '/app/queue' },
     { id: 'attendance', label: 'Цаг бүртгэл', icon: Clock, path: '/app/attendance' },
     { id: 'payroll', label: 'Цалин', icon: DollarSign, path: '/app/payroll' },
     { id: 'finance', label: 'Санхүү', icon: PieChart, path: '/app/finance' },
-    { id: 'payments', label: 'Төлбөр', icon: Receipt, path: '/app/payments', permission: 'orders.manage_payments' },
-    { id: 'reports', label: 'Тайлан', icon: BarChart3, path: '/app/reports', permission: 'reports.view_sales' },
+    { id: 'payments', label: 'Төлбөр', icon: Receipt, path: '/app/payments' },
+    { id: 'reports', label: 'Тайлан', icon: BarChart3, path: '/app/reports' },
     { id: 'support', label: 'Гомдол / Буцаалт', icon: HeadphonesIcon, path: '/app/support' },
     { id: 'chat', label: 'Чат', icon: MessageSquare, path: '/app/chat' },
-    { id: 'employees', label: 'Ажилтан', icon: UserCog, path: '/app/employees', permission: 'team.view' },
-    { id: 'settings', label: 'Тохиргоо', icon: Settings, path: '/app/settings', permission: 'settings.view' },
+    { id: 'employees', label: 'Ажилтан', icon: UserCog, path: '/app/employees' },
+    { id: 'settings', label: 'Тохиргоо', icon: Settings, path: '/app/settings' },
 ];
 
 export function Sidebar() {
@@ -131,10 +131,6 @@ export function Sidebar() {
     const features = getFeatures(business?.category);
 
     const filteredNavItems = navItems.filter(item => {
-        // First check permissions
-        const hasPerm = !item.permission || hasPermission(item.permission);
-        if (!hasPerm) return false;
-
         // Settings is the ONLY core item always visible regardless of modules
         if (item.id === 'settings') return true;
 
