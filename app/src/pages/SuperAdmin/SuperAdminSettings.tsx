@@ -162,10 +162,16 @@ export function SuperAdminSettings() {
                                                     </div>
 
                                                     <div className="module-info">
-                                                        <span className="module-name">{module.name}</span>
-                                                        <span className="module-type">
-                                                            {status === 'core' ? 'Core' : status === 'addon' ? 'Add-on' : (module.id === 'orders' || module.id === 'products' ? 'Core' : 'Add-on')}
-                                                        </span>
+                                                        <span className={`module-name ${!status ? 'text-tertiary' : ''}`}>{module.name}</span>
+                                                        <div className="flex items-center gap-2 mt-1">
+                                                            {status === 'core' ? (
+                                                                <span className="badge badge-primary" style={{ fontSize: '9px', padding: '1px 6px' }}>CORE / ҮНДСЭН</span>
+                                                            ) : status === 'addon' ? (
+                                                                <span className="badge" style={{ fontSize: '9px', padding: '1px 6px', background: '#6366f1', color: 'white' }}>ADD-ON / НЭМЭЛТ</span>
+                                                            ) : (
+                                                                <span className="text-tertiary" style={{ fontSize: '9px', letterSpacing: '0.05em' }}>АШИГЛАХГҮЙ</span>
+                                                            )}
+                                                        </div>
                                                     </div>
                                                 </div>
                                             );
