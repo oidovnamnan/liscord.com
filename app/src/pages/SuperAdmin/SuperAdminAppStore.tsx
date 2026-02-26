@@ -182,7 +182,7 @@ export function SuperAdminAppStore() {
                             {modules.map((mod) => (
                                 <tr key={mod.id}>
                                     <td style={{ paddingLeft: '32px' }}>
-                                        <div className="flex items-center gap-4">
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
                                             <div className="w-12 h-12 bg-surface-2 flex items-center justify-center rounded-xl border border-primary-light/40 text-primary shadow-sm" style={{ flexShrink: 0 }}>
                                                 {(() => {
                                                     const Icon = (Icons as any)[mod.icon] || Icons.Box;
