@@ -76,6 +76,15 @@ export function SuperAdminAppStore() {
         }
     };
 
+    if (loading) {
+        return (
+            <div className="loading-screen" style={{ height: 'calc(100vh - 64px)' }}>
+                <Loader2 className="animate-spin" size={32} />
+                <p>Уншиж байна...</p>
+            </div>
+        );
+    }
+
     return (
         <div className="page-container animate-fade-in">
             <Header
