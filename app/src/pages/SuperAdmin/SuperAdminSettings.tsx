@@ -106,32 +106,32 @@ export function SuperAdminSettings() {
                     </button>
                 </div>
 
-                <div className="card">
-                    <div className="p-6 border-b border-primary-light mb-8">
+                <div className="card no-padding overflow-hidden">
+                    <div className="settings-description">
                         <p className="text-secondary leading-relaxed">
                             Энд сонгосон модулиуд нь тухайн салбараар шинэ бизнес бүртгүүлэх үед автоматаар асаалттай (enabled) үүсэх болно. <br />
                             <small className="text-tertiary">Жишээ нь: "Онлайн шоп" бизнес бүртгүүлэхэд таны энд сонгосон модулиуд автоматаар залгагдана.</small>
                         </p>
                     </div>
 
-                    <div className="flex flex-col gap-8">
+                    <div className="module-category-list" style={{ padding: '0 24px 24px 24px' }}>
                         {categories.map((category) => {
                             const key = category.id;
                             const activeMods = defaults[key] || [];
 
                             return (
-                                <div key={key} className="p-6 rounded-2xl bg-surface-2 border border-primary-light">
-                                    <div className="flex items-center gap-4 mb-6">
-                                        <div className="w-12 h-12 bg-primary-light rounded-xl flex items-center justify-center text-2xl">
+                                <div key={key} className="module-category-card">
+                                    <div className="category-header">
+                                        <div className="category-icon-box">
                                             {category.icon}
                                         </div>
                                         <div>
-                                            <h3 className="text-lg font-bold">{category.label}</h3>
+                                            <h3 className="module-name" style={{ fontSize: '1.1rem' }}>{category.label}</h3>
                                             <span className="text-secondary text-sm">{category.desc}</span>
                                         </div>
                                     </div>
 
-                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                    <div className="module-grid">
                                         {LISCORD_MODULES.map(module => {
                                             const isActive = activeMods.includes(module.id);
                                             const Icon = (Icons as any)[module.icon] || Icons.Box;
@@ -139,29 +139,21 @@ export function SuperAdminSettings() {
                                                 <div
                                                     key={module.id}
                                                     onClick={() => handleToggle(key, module.id)}
-                                                    className={`flex items-center gap-4 p-4 rounded-xl border cursor-pointer transition-all duration-200 ${isActive
-                                                        ? 'border-primary bg-primary-light shadow-sm'
-                                                        : 'border-transparent bg-bg-secondary hover:bg-surface-3'
-                                                        }`}
+                                                    className={`module-item-card ${isActive ? 'active' : ''}`}
                                                 >
-                                                    <div className={`w-6 h-6 rounded-md border-2 flex items-center justify-center transition-colors ${isActive ? 'border-primary bg-primary' : 'border-neutral-300'
-                                                        }`}>
-                                                        {isActive && <div className="w-2 h-2 rounded-full bg-white" />}
+                                                    <div className="module-check">
+                                                        {isActive && <div className="module-check-dot" />}
                                                     </div>
 
-                                                    <div className="flex items-center gap-3 flex-1">
-                                                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center transition-colors ${isActive ? 'bg-white text-primary' : 'bg-surface-1 text-secondary'
-                                                            }`}>
-                                                            <Icon size={20} />
-                                                        </div>
-                                                        <div className="flex flex-col">
-                                                            <span className={`font-bold text-sm ${isActive ? 'text-primary' : 'text-secondary'}`}>
-                                                                {module.name}
-                                                            </span>
-                                                            <span className="text-[10px] uppercase tracking-wider opacity-60">
-                                                                {module.id === 'orders' || module.id === 'products' ? 'Core' : 'Add-on'}
-                                                            </span>
-                                                        </div>
+                                                    <div className="module-icon-box">
+                                                        <Icon size={20} />
+                                                    </div>
+
+                                                    <div className="module-info">
+                                                        <span className="module-name">{module.name}</span>
+                                                        <span className="module-type">
+                                                            {module.id === 'orders' || module.id === 'products' ? 'Core' : 'Add-on'}
+                                                        </span>
                                                     </div>
                                                 </div>
                                             );
@@ -173,8 +165,8 @@ export function SuperAdminSettings() {
                     </div>
                 </div>
 
-                <div className="card mt-8 border-danger-light overflow-hidden">
-                    <div className="p-6 flex items-center justify-between gap-6 bg-red-50/10">
+                <div className="card migration-card no-padding">
+                    <div className="migration-content">
                         <div>
                             <h3 className="text-lg font-bold text-danger mb-2">🚨 Хуучин системийн шилжүүлэг (Migration)</h3>
                             <p className="text-secondary text-sm max-w-2xl">
@@ -182,7 +174,7 @@ export function SuperAdminSettings() {
                             </p>
                         </div>
                         <button
-                            className="btn btn-primary bg-danger border-none hover:bg-red-600"
+                            className="btn btn-danger"
                             onClick={handleMigrate}
                             disabled={migrating}
                         >
