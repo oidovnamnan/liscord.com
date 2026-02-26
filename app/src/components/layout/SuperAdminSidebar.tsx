@@ -56,13 +56,36 @@ export function SuperAdminSidebar() {
                     </button>
                 </div>
 
-                <div className="sidebar-business-container" style={{ padding: '16px', borderBottom: '1px solid var(--border-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <div className="super-admin-badge" style={{ display: 'flex', alignItems: 'center', gap: 12, width: '100%', background: 'var(--primary-light)', padding: '12px', borderRadius: '12px', border: '1px solid var(--border-primary)' }}>
-                        <div style={{ width: 36, height: 36, background: 'var(--primary)', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 800 }}>🦅</div>
+                <div className="sidebar-business-container" style={{ padding: '20px 16px', borderBottom: '1px solid var(--border-glass)' }}>
+                    <div className="super-admin-badge" style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '12px',
+                        width: '100%',
+                        background: 'var(--primary-tint)',
+                        padding: '12px',
+                        borderRadius: '16px',
+                        border: '1px solid var(--border-glass)',
+                        boxShadow: 'inset 0 0 12px rgba(var(--primary-rgb), 0.05)'
+                    }}>
+                        <div style={{
+                            width: 40,
+                            height: 40,
+                            background: 'linear-gradient(135deg, var(--primary), #8b5cf6)',
+                            borderRadius: '12px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            color: '#fff',
+                            fontSize: '1.2rem',
+                            boxShadow: '0 4px 12px rgba(var(--primary-rgb), 0.3)'
+                        }}>
+                            <Globe size={20} />
+                        </div>
                         {!sidebarCollapsed && (
-                            <div style={{ flex: 1 }}>
-                                <div style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--primary)' }}>Liscord Core</div>
-                                <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>Super Admin Portal</div>
+                            <div style={{ flex: 1, overflow: 'hidden' }}>
+                                <div style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--primary)', letterSpacing: '-0.02em', whiteSpace: 'nowrap' }}>Liscord Core</div>
+                                <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 600 }}>Super Admin</div>
                             </div>
                         )}
                     </div>
@@ -93,14 +116,36 @@ export function SuperAdminSidebar() {
                         );
                     })}
 
-                    <div style={{ borderTop: '1px solid var(--border-color)', margin: '16px 0', padding: '16px 12px' }}>
+                    <div style={{ borderTop: '1px solid var(--border-glass)', marginTop: 'auto', padding: '20px 16px' }}>
                         <button
                             className="sidebar-link"
                             onClick={() => navigate('/app')}
                             title={sidebarCollapsed ? 'Буцах' : undefined}
-                            style={{ width: '100%', border: '1px solid var(--border-color)', background: 'var(--surface-1)', color: 'var(--text-primary)' }}
+                            style={{
+                                width: '100%',
+                                border: '1px solid var(--border-glass)',
+                                background: 'var(--bg-secondary)',
+                                color: 'var(--text-primary)',
+                                borderRadius: '12px',
+                                padding: '12px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '12px',
+                                boxShadow: 'var(--shadow-sm)',
+                                transition: 'all 0.2s',
+                                fontWeight: 600,
+                                fontSize: '0.9rem'
+                            }}
+                            onMouseOver={(e) => {
+                                e.currentTarget.style.background = 'var(--bg-soft)';
+                                e.currentTarget.style.transform = 'translateX(-2px)';
+                            }}
+                            onMouseOut={(e) => {
+                                e.currentTarget.style.background = 'var(--bg-secondary)';
+                                e.currentTarget.style.transform = 'none';
+                            }}
                         >
-                            <ArrowLeft size={18} />
+                            <ArrowLeft size={18} className="text-primary" />
                             {!sidebarCollapsed && <span>Бусад бизнес рүү буцах</span>}
                         </button>
                     </div>

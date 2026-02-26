@@ -13,6 +13,7 @@ import { db } from '../../services/firebase';
 import { useAuthStore, useBusinessStore } from '../../store';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
+import { Header } from '../../components/layout/Header';
 import './SuperAdmin.css';
 
 export function SuperAdminBusinesses() {
@@ -66,15 +67,13 @@ export function SuperAdminBusinesses() {
     );
 
     return (
-        <div className="super-admin-page">
-            <header className="super-header">
-                <div>
-                    <h1 className="page-title">🏢 Бизнесийн удирдлага</h1>
-                    <p className="text-secondary">Нийт {businesses.length} бизнес бүртгэлтэй байна</p>
-                </div>
-            </header>
+        <div className="page-container animate-fade-in">
+            <Header
+                title="Бизнесийн удирдлага"
+                subtitle={`Нийт ${businesses.length} бизнес бүртгэлтэй байна`}
+            />
 
-            <div className="table-actions">
+            <div className="page-content">
                 <div className="search-box">
                     <Search size={18} />
                     <input
@@ -124,7 +123,7 @@ export function SuperAdminBusinesses() {
                                 </td>
                                 <td>{biz.ownerName || 'Тодорхойгүй'}</td>
                                 <td>
-                                    <span className={`plan-tag ${biz.subscription?.plan}`}>
+                                    <span className={`badge badge-${biz.subscription?.plan === 'pro' ? 'primary' : 'soft'}`}>
                                         {biz.subscription?.plan?.toUpperCase()}
                                     </span>
                                 </td>
@@ -136,7 +135,7 @@ export function SuperAdminBusinesses() {
                                     </div>
                                 </td>
                                 <td>
-                                    <span className="status-badge active">Идэвхтэй</span>
+                                    <span className="badge badge-delivered">Идэвхтэй</span>
                                 </td>
                                 <td>
                                     <div className="row-actions">
@@ -161,5 +160,6 @@ export function SuperAdminBusinesses() {
                 </table>
             </div>
         </div>
+        </div >
     );
 }
