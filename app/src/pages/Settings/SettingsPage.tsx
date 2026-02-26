@@ -111,59 +111,59 @@ export function SettingsPage() {
         e.preventDefault();
         if (!business) return;
         const fd = new FormData(e.currentTarget);
-        const slug = (fd.get('slug') as string)?.trim().toLowerCase();
-        const storefrontName = (fd.get('storefrontName') as string)?.trim() || '';
-        const enabled = fd.get('storefrontEnabled') === 'on';
+        const slug = fd.has('slug') ? (fd.get('slug') as string)?.trim().toLowerCase() : undefined;
+        const storefrontName = fd.has('storefrontName') ? (fd.get('storefrontName') as string)?.trim() : undefined;
+        const enabled = fd.has('storefrontEnabled') ? fd.get('storefrontEnabled') === 'on' : business.settings?.storefront?.enabled;
+        const newTheme = fd.get('storefrontTheme') as string;
+
         setLoading(true);
         try {
-            // Validate slug format
-            if (slug && !/^[a-z0-9-]+$/.test(slug)) {
-                toast.error('Холбоос зөвхөн жижиг англи үсэг, тоо болон дундуур зураас байж болно.');
-                setLoading(false);
-                return;
-            }
+            // Only validate slug if it's provided in the form
+            if (slug !== undefined) {
+                if (slug && !/^[a-z0-9-]+$/.test(slug)) {
+                    toast.error('Холбоос зөвхөн жижиг англи үсэг, тоо болон дундуур зураас байж болно.');
+                    setLoading(false);
+                    return;
+                }
 
-            // Check if slug or name actually changed
-            const slugChanged = slug !== business.slug;
-            const nameChanged = storefrontName !== (business.settings?.storefront?.name || '');
-
-            if (slugChanged || nameChanged) {
-                // If it's the very first setup (no previous slug), we allow it to be saved directly
-                if (!business.slug) {
-                    // Verify slug uniqueness first
-                    if (slug) {
+                const slugChanged = slug !== business.slug;
+                if (slugChanged) {
+                    if (!business.slug) {
                         const existing = await businessService.getBusinessBySlug(slug);
                         if (existing) {
                             toast.error('Энэ дэлгүүрийн холбоос давхардсан байна. Өөр үг сонгоно уу.');
                             setLoading(false);
                             return;
                         }
+                    } else {
+                        toast.error('Шууд өөрчлөх боломжгүй. Хүсэлт илгээж өөрчилнө үү.');
+                        setLoading(false);
+                        return;
                     }
-                } else {
-                    // Otherwise, user shouldn't be able to edit directly here. The inputs are disabled.
-                    // This block is just a fallback guard.
-                    toast.error('Шууд өөрчлөх боломжгүй. Хүсэлт илгээж өөрчилнө үү.');
-                    setLoading(false);
-                    return;
                 }
             }
 
-            // Only saving straightforward toggle (enabled/disabled) directly
-
+            // Update business
             await businessService.updateBusiness(business.id, {
-                slug: slug || business.slug || '',
+                slug: slug !== undefined ? (slug || business.slug || '') : (business.slug || ''),
                 settings: {
                     ...business.settings,
                     storefront: {
-                        enabled,
-                        theme: (fd.get('storefrontTheme') as string) || business.settings?.storefront?.theme || 'minimal',
-                        name: storefrontName,
+                        ...business.settings?.storefront,
+                        enabled: enabled ?? false,
+                        theme: newTheme || business.settings?.storefront?.theme || 'minimal',
+                        name: storefrontName !== undefined ? storefrontName : (business.settings?.storefront?.name || '')
                     }
                 }
             });
             setIsDirty(false);
             toast.success('Дэлгүүрийн тохиргоо хадгалагдлаа');
-        } catch (error) { toast.error('Алдаа гарлаа'); } finally { setLoading(false); }
+        } catch (error) {
+            console.error(error);
+            toast.error('Алдаа гарлаа');
+        } finally {
+            setLoading(false);
+        }
     };
 
     const handleSubmitRequest = async (e: React.FormEvent) => {
