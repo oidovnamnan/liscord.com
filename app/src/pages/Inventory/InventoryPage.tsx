@@ -5,6 +5,7 @@ import { Search, Plus, Package, AlertTriangle, ArrowDownRight, ArrowUpRight, His
 import { useBusinessStore } from '../../store';
 import { productService } from '../../services/db';
 import type { Product } from '../../types';
+import { HubLayout } from '../../components/common/HubLayout';
 import './InventoryPage.css';
 
 interface StockMovement {
@@ -57,7 +58,7 @@ export function InventoryPage() {
     console.log(setTypeFilter); // Avoid unused warning if needed or just use it
 
     return (
-        <>
+        <HubLayout hubId="inventory-hub">
             <Header title="Нөөц удирдлага" subtitle="Барааны орлого, зарлага, нөөцийн түүх" action={{ label: 'Нөөц нэмэх', onClick: () => setShowAdd(true) }} />
             <div className="page">
                 <div className="grid-4 stagger-children" style={{ marginBottom: 'var(--space-lg)' }}>
@@ -198,6 +199,6 @@ export function InventoryPage() {
                 </div>,
                 document.body
             )}
-        </>
+        </HubLayout>
     );
 }

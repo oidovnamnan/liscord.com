@@ -16,6 +16,7 @@ import type { OrderSource, SocialAccount, OrderStatusConfig, CargoType } from '.
 import { OrderDetailModal } from './OrderDetailModal';
 import { SendToProviderModal } from './SendToProviderModal';
 import type { Order } from '../../types';
+import { HubLayout } from '../../components/common/HubLayout';
 import './OrdersPage.css';
 
 
@@ -153,7 +154,7 @@ export function OrdersPage() {
     };
 
     return (
-        <>
+        <HubLayout hubId="inventory-hub">
             <Header
                 title="Захиалга"
                 subtitle={loading ? 'Уншиж байна...' : `Нийт ${orders.length} захиалга`}
@@ -520,7 +521,7 @@ export function OrdersPage() {
                     statuses={statuses}
                 />
             )}
-        </>
+        </HubLayout>
     );
 }
 

@@ -1,6 +1,7 @@
 import { useEffect, useState, useMemo } from 'react';
 import { Header } from '../../components/layout/Header';
 import { Search, Phone, MapPin, Clock, CheckCircle, Truck, Package, Navigation } from 'lucide-react';
+import { HubLayout } from '../../components/common/HubLayout';
 import { useBusinessStore } from '../../store';
 import { orderService } from '../../services/db';
 import type { Order } from '../../types';
@@ -86,7 +87,7 @@ export function DeliveryPage() {
     const totalCod = deliveries.filter(d => d.status !== 'delivered').reduce((s, d) => s + d.cod, 0);
 
     return (
-        <>
+        <HubLayout hubId="logistics-hub">
             <Header title="Хүргэлт" subtitle={`Өнөөдөр ${deliveries.length} хүргэлт`} />
             <div className="page">
                 <div className="grid-4 stagger-children" style={{ marginBottom: 'var(--space-lg)' }}>
@@ -162,6 +163,6 @@ export function DeliveryPage() {
                     })}
                 </div>
             </div>
-        </>
+        </HubLayout>
     );
 }

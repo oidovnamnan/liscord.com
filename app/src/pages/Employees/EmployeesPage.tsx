@@ -4,6 +4,7 @@ import { useBusinessStore } from '../../store';
 import { teamService } from '../../services/db';
 import type { Employee } from '../../types';
 import { Header } from '../../components/layout/Header';
+import { HubLayout } from '../../components/common/HubLayout';
 import './EmployeesPage.css';
 
 export function EmployeesPage() {
@@ -33,7 +34,7 @@ export function EmployeesPage() {
     };
 
     return (
-        <>
+        <HubLayout hubId="staff-hub">
             <Header title="Ажилтан" subtitle={`Нийт ${employees.length} ажилтан`} action={{ label: 'Урих', onClick: () => setShowInvite(true) }} />
             <div className="page">
                 <div className="orders-toolbar">
@@ -122,6 +123,6 @@ export function EmployeesPage() {
                     </div>
                 </div>
             )}
-        </>
+        </HubLayout>
     );
 }

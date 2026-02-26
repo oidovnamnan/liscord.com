@@ -1,6 +1,7 @@
 import { useEffect, useState, useMemo } from 'react';
 import { Header } from '../../components/layout/Header';
 import { Search, DollarSign, ArrowDownRight, ArrowUpRight } from 'lucide-react';
+import { HubLayout } from '../../components/common/HubLayout';
 import { useBusinessStore } from '../../store';
 import { orderService } from '../../services/db';
 import type { Order } from '../../types';
@@ -65,7 +66,7 @@ export function PaymentsPage() {
     const totalOut = allPayments.filter(p => p.type === 'outgoing').reduce((s, p) => s + p.amount, 0);
 
     return (
-        <>
+        <HubLayout hubId="finance-hub">
             <Header title="Төлбөр тооцоо" subtitle="Орлого, зарлага бүртгэл" />
             <div className="page">
                 <div className="grid-3" style={{ marginBottom: 'var(--space-lg)' }}>
@@ -128,6 +129,6 @@ export function PaymentsPage() {
                     ))}
                 </div>
             </div>
-        </>
+        </HubLayout>
     );
 }

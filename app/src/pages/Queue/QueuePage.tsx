@@ -7,6 +7,7 @@ import { Search, Filter, Clock, UserCheck, Play, Check } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { mn } from 'date-fns/locale';
 import { toast } from 'react-hot-toast';
+import { HubLayout } from '../../components/common/HubLayout';
 import './QueuePage.css';
 
 export function QueuePage() {
@@ -93,64 +94,66 @@ export function QueuePage() {
     );
 
     return (
-        <div className="page-container queue-page animate-fade-in">
-            <Header
-                title="Үйлчилгээний Дараалал"
-                subtitle="Угаалга, Засвар, Салон амьд хяналт"
-                action={{
-                    label: "Тасалбар нэмэх",
-                    onClick: () => toast('Тасалбар хэвлэх (Удахгүй)')
-                }}
-            />
+        <HubLayout hubId="services-hub">
+            <div className="page-container queue-page animate-fade-in">
+                <Header
+                    title="Үйлчилгээний Дараалал"
+                    subtitle="Угаалга, Засвар, Салон амьд хяналт"
+                    action={{
+                        label: "Тасалбар нэмэх",
+                        onClick: () => toast('Тасалбар хэвлэх (Удахгүй)')
+                    }}
+                />
 
-            <div className="queue-toolbar">
-                <div className="search-bar">
-                    <Search className="search-icon" size={20} />
-                    <input type="text" placeholder="Машины дугаар / Үйлчлүүлэгч..." className="search-input" />
+                <div className="queue-toolbar">
+                    <div className="search-bar">
+                        <Search className="search-icon" size={20} />
+                        <input type="text" placeholder="Машины дугаар / Үйлчлүүлэгч..." className="search-input" />
+                    </div>
+                    <div style={{ display: 'flex', gap: '12px' }}>
+                        <button className="btn btn-outline" title="Шүүлтүүр">
+                            <Filter size={16} />
+                        </button>
+                    </div>
                 </div>
-                <div style={{ display: 'flex', gap: '12px' }}>
-                    <button className="btn btn-outline" title="Шүүлтүүр">
-                        <Filter size={16} />
-                    </button>
+
+                <div className="queue-board">
+                    {/* Column 1: Waiting */}
+                    <div className="queue-column waiting">
+                        <div className="queue-column-header">
+                            Дүүжлээнтэй / Хүлээгдэж буй
+                            <span className="queue-column-count">{waitingTickets.length}</span>
+                        </div>
+                        <div className="queue-column-body">
+                            {waitingTickets.length === 0 && <div className="text-secondary" style={{ textAlign: 'center', padding: '20px' }}>Хүлээгдэж буй захиалга алга.</div>}
+                            {waitingTickets.map(renderTicket)}
+                        </div>
+                    </div>
+
+                    {/* Column 2: In Progress */}
+                    <div className="queue-column in-progress">
+                        <div className="queue-column-header">
+                            Үйлчилгээ хийгдэж байна
+                            <span className="queue-column-count">{inProgressTickets.length}</span>
+                        </div>
+                        <div className="queue-column-body">
+                            {inProgressTickets.length === 0 && <div className="text-secondary" style={{ textAlign: 'center', padding: '20px' }}>Одоогоор ажиллаж буй үйлчилгээ алга.</div>}
+                            {inProgressTickets.map(renderTicket)}
+                        </div>
+                    </div>
+
+                    {/* Visual Placeholder for TV Screen Expansion */}
+                    <div className="queue-column" style={{ opacity: 0.5, borderStyle: 'dashed', background: 'transparent' }}>
+                        <div className="queue-column-header" style={{ background: 'transparent', borderBottomStyle: 'dashed' }}>
+                            Бэлэн болсон (ТВ дэлгэц)
+                            <span className="queue-column-count">0</span>
+                        </div>
+                        <div className="queue-column-body flex-center text-secondary" style={{ textAlign: 'center' }}>
+                            Энэ баганад дууссан захиалгууд гарч 5 минутын дараа алга болно.
+                        </div>
+                    </div>
                 </div>
             </div>
-
-            <div className="queue-board">
-                {/* Column 1: Waiting */}
-                <div className="queue-column waiting">
-                    <div className="queue-column-header">
-                        Дүүжлээнтэй / Хүлээгдэж буй
-                        <span className="queue-column-count">{waitingTickets.length}</span>
-                    </div>
-                    <div className="queue-column-body">
-                        {waitingTickets.length === 0 && <div className="text-secondary" style={{ textAlign: 'center', padding: '20px' }}>Хүлээгдэж буй захиалга алга.</div>}
-                        {waitingTickets.map(renderTicket)}
-                    </div>
-                </div>
-
-                {/* Column 2: In Progress */}
-                <div className="queue-column in-progress">
-                    <div className="queue-column-header">
-                        Үйлчилгээ хийгдэж байна
-                        <span className="queue-column-count">{inProgressTickets.length}</span>
-                    </div>
-                    <div className="queue-column-body">
-                        {inProgressTickets.length === 0 && <div className="text-secondary" style={{ textAlign: 'center', padding: '20px' }}>Одоогоор ажиллаж буй үйлчилгээ алга.</div>}
-                        {inProgressTickets.map(renderTicket)}
-                    </div>
-                </div>
-
-                {/* Visual Placeholder for TV Screen Expansion */}
-                <div className="queue-column" style={{ opacity: 0.5, borderStyle: 'dashed', background: 'transparent' }}>
-                    <div className="queue-column-header" style={{ background: 'transparent', borderBottomStyle: 'dashed' }}>
-                        Бэлэн болсон (ТВ дэлгэц)
-                        <span className="queue-column-count">0</span>
-                    </div>
-                    <div className="queue-column-body flex-center text-secondary" style={{ textAlign: 'center' }}>
-                        Энэ баганад дууссан захиалгууд гарч 5 минутын дараа алга болно.
-                    </div>
-                </div>
-            </div>
-        </div>
+        </HubLayout>
     );
 }

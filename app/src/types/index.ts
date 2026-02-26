@@ -31,6 +31,10 @@ export interface AppModule {
     route: string;          // Sidebar active route prefix (e.g. '/app/inventory')
     isCore: boolean;        // If true, cannot be uninstalled (e.g. Settings, Dashboard)
     category: 'operations' | 'finance' | 'staff' | 'sales' | 'services'; // For grouping
+    hubId?: string;         // For tabbed navigation (e.g. 'inventory-hub')
+    isFree?: boolean;       // Phase 41: App Store pricing
+    price?: number;         // Price in local currency
+    durationDays?: number;  // Subscription period (e.g., 30, 365)
 }
 
 // ============ BUSINESS ============
@@ -114,6 +118,11 @@ export interface Business {
     settings: BusinessSettings;
     features: Record<string, boolean>;
     activeModules?: string[]; // E.g., ['pos', 'inventory', 'rooms', 'queue']
+    moduleSubscriptions?: Record<string, {
+        expiresAt: FSTimestamp;
+        subscribedAt: FSTimestamp;
+        status: 'active' | 'expired';
+    }>; // Phase 41: Module-specific subscriptions
     brandColor?: string; // Phase 40: Dynamic Theme Color
     stats: BusinessStats;
     subscription: {

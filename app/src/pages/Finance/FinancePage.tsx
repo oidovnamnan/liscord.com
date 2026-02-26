@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useBusinessStore } from '../../store';
 import { Header } from '../../components/layout/Header';
 import { TrendingUp, TrendingDown, Wallet, Download, Building, CreditCard } from 'lucide-react';
+import { HubLayout } from '../../components/common/HubLayout';
 import { orderService } from '../../services/db';
 import type { Order } from '../../types';
 
@@ -29,7 +30,7 @@ export function FinancePage() {
     }, [business]);
 
     return (
-        <>
+        <HubLayout hubId="finance-hub">
             <Header
                 title="Санхүү & Татвар"
                 subtitle="Компанийн орлого, зарлага болон авлага өглөгийн нэгдсэн самбар"
@@ -166,6 +167,6 @@ export function FinancePage() {
                 </div>
 
             </div>
-        </>
+        </HubLayout>
     );
 }

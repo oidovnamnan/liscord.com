@@ -7,6 +7,7 @@ import { ChevronLeft, ChevronRight, Clock } from 'lucide-react';
 import { format, addDays, subDays, startOfDay, endOfDay, addMinutes } from 'date-fns';
 import { toast } from 'react-hot-toast';
 import { NewAppointmentModal } from './components/NewAppointmentModal';
+import { HubLayout } from '../../components/common/HubLayout';
 import './AppointmentsPage.css';
 
 // Settings Helpers
@@ -104,148 +105,150 @@ export function AppointmentsPage() {
     const visibleStaff = selectedStaff === 'all' ? staff : staff.filter(s => s.id === selectedStaff);
 
     return (
-        <div className="page-container appointments-page animate-fade-in">
-            <Header
-                title="Цаг захиалга"
-                subtitle="Календарь болон цагийн хуваарь удирдах"
-                action={{
-                    label: "Цаг бүртгэх",
-                    onClick: () => handleOpenModal(viewDate, selectedStaff !== 'all' ? selectedStaff : '')
-                }}
-            />
+        <HubLayout hubId="services-hub">
+            <div className="page-container appointments-page animate-fade-in">
+                <Header
+                    title="Цаг захиалга"
+                    subtitle="Календарь болон цагийн хуваарь удирдах"
+                    action={{
+                        label: "Цаг бүртгэх",
+                        onClick: () => handleOpenModal(viewDate, selectedStaff !== 'all' ? selectedStaff : '')
+                    }}
+                />
 
-            <div className="page-content" style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-                <div className="calendar-container">
+                <div className="page-content" style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+                    <div className="calendar-container">
 
-                    {/* Header Controls */}
-                    <div className="calendar-header">
-                        <div className="calendar-navigation">
-                            <button className="btn btn-icon btn-secondary" onClick={handlePrevDay}>
-                                <ChevronLeft size={20} />
-                            </button>
-                            <button className="btn btn-secondary" onClick={handleToday}>Өнөөдөр</button>
-                            <button className="btn btn-icon btn-secondary" onClick={handleNextDay}>
-                                <ChevronRight size={20} />
-                            </button>
-                            <div className="calendar-title">
-                                {format(viewDate, 'yyyy оны MM-р сарын dd')}
-                            </div>
-                        </div>
-
-                        <div className="calendar-filters" style={{ display: 'flex', gap: '8px' }}>
-                            <select className="input input-sm" value={selectedService} onChange={e => setSelectedService(e.target.value)}>
-                                <option value="all">Бүх үйлчилгээ</option>
-                                {services.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-                            </select>
-                            <select className="input input-sm" value={selectedStaff} onChange={e => setSelectedStaff(e.target.value)}>
-                                <option value="all">Бүх ажилтан</option>
-                                {staff.map(s => <option key={s.id} value={s.id}>{s.name || s.email}</option>)}
-                            </select>
-                            <div className="calendar-view-toggles hide-mobile">
-                                <button className="calendar-view-btn active">Өдөр</button>
-                                <button className="calendar-view-btn">7 хоног</button>
-                                <button className="calendar-view-btn">Сар</button>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Main Grid View */}
-                    <div className="calendar-grid">
-
-                        {/* Time Axis (Y) */}
-                        <div className="calendar-time-axis">
-                            <div className="staff-header" style={{ borderBottom: 'none' }}>
-                                <Clock size={16} />
-                            </div>
-                            {timeLabels.slice(0, -1).map(time => (
-                                <div key={time} className="time-slot-label">
-                                    {time}
+                        {/* Header Controls */}
+                        <div className="calendar-header">
+                            <div className="calendar-navigation">
+                                <button className="btn btn-icon btn-secondary" onClick={handlePrevDay}>
+                                    <ChevronLeft size={20} />
+                                </button>
+                                <button className="btn btn-secondary" onClick={handleToday}>Өнөөдөр</button>
+                                <button className="btn btn-icon btn-secondary" onClick={handleNextDay}>
+                                    <ChevronRight size={20} />
+                                </button>
+                                <div className="calendar-title">
+                                    {format(viewDate, 'yyyy оны MM-р сарын dd')}
                                 </div>
-                            ))}
+                            </div>
+
+                            <div className="calendar-filters" style={{ display: 'flex', gap: '8px' }}>
+                                <select className="input input-sm" value={selectedService} onChange={e => setSelectedService(e.target.value)}>
+                                    <option value="all">Бүх үйлчилгээ</option>
+                                    {services.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                                </select>
+                                <select className="input input-sm" value={selectedStaff} onChange={e => setSelectedStaff(e.target.value)}>
+                                    <option value="all">Бүх ажилтан</option>
+                                    {staff.map(s => <option key={s.id} value={s.id}>{s.name || s.email}</option>)}
+                                </select>
+                                <div className="calendar-view-toggles hide-mobile">
+                                    <button className="calendar-view-btn active">Өдөр</button>
+                                    <button className="calendar-view-btn">7 хоног</button>
+                                    <button className="calendar-view-btn">Сар</button>
+                                </div>
+                            </div>
                         </div>
 
-                        {/* Staff Columns (X) */}
-                        <div className="calendar-staff-columns">
-                            {visibleStaff.length === 0 ? (
-                                <div style={{ padding: '24px', textAlign: 'center', width: '100%', color: 'var(--text-secondary)' }}>
-                                    Ажилтан одоогоор бүртгэгдээгүй байна. <br />Тохиргоо руу орж ажилтан нэмнэ үү.
+                        {/* Main Grid View */}
+                        <div className="calendar-grid">
+
+                            {/* Time Axis (Y) */}
+                            <div className="calendar-time-axis">
+                                <div className="staff-header" style={{ borderBottom: 'none' }}>
+                                    <Clock size={16} />
                                 </div>
-                            ) : (
-                                visibleStaff.map(emp => {
-                                    const empAppointments = appointments.filter(a => a.employeeId === emp.id && (selectedService === 'all' || a.serviceId === selectedService));
+                                {timeLabels.slice(0, -1).map(time => (
+                                    <div key={time} className="time-slot-label">
+                                        {time}
+                                    </div>
+                                ))}
+                            </div>
 
-                                    return (
-                                        <div key={emp.id} className="staff-column">
-                                            {/* Column Header */}
-                                            <div className="staff-header">
-                                                <div className="staff-avatar">{emp.name?.charAt(0) || '?'}</div>
-                                                <span className="text-truncate">{emp.name || emp.email}</span>
-                                            </div>
+                            {/* Staff Columns (X) */}
+                            <div className="calendar-staff-columns">
+                                {visibleStaff.length === 0 ? (
+                                    <div style={{ padding: '24px', textAlign: 'center', width: '100%', color: 'var(--text-secondary)' }}>
+                                        Ажилтан одоогоор бүртгэгдээгүй байна. <br />Тохиргоо руу орж ажилтан нэмнэ үү.
+                                    </div>
+                                ) : (
+                                    visibleStaff.map(emp => {
+                                        const empAppointments = appointments.filter(a => a.employeeId === emp.id && (selectedService === 'all' || a.serviceId === selectedService));
 
-                                            {/* Grid background lines */}
-                                            <div className="time-grid-lines">
-                                                {timeLabels.slice(0, -1).map(time => (
-                                                    <div key={time} className="grid-line" />
-                                                ))}
-                                            </div>
+                                        return (
+                                            <div key={emp.id} className="staff-column">
+                                                {/* Column Header */}
+                                                <div className="staff-header">
+                                                    <div className="staff-avatar">{emp.name?.charAt(0) || '?'}</div>
+                                                    <span className="text-truncate">{emp.name || emp.email}</span>
+                                                </div>
 
-                                            {/* Clickable slot layer */}
-                                            <div className="slot-interaction-layer">
-                                                {/* Calculate number of 30min slots */}
-                                                {Array.from({ length: TOTAL_HOURS * 2 }).map((_, idx) => {
-                                                    const slotTime = addMinutes(startOfDay(viewDate), START_HOUR * 60 + (idx * SLOT_INTERVAL_MINS));
+                                                {/* Grid background lines */}
+                                                <div className="time-grid-lines">
+                                                    {timeLabels.slice(0, -1).map(time => (
+                                                        <div key={time} className="grid-line" />
+                                                    ))}
+                                                </div>
+
+                                                {/* Clickable slot layer */}
+                                                <div className="slot-interaction-layer">
+                                                    {/* Calculate number of 30min slots */}
+                                                    {Array.from({ length: TOTAL_HOURS * 2 }).map((_, idx) => {
+                                                        const slotTime = addMinutes(startOfDay(viewDate), START_HOUR * 60 + (idx * SLOT_INTERVAL_MINS));
+                                                        return (
+                                                            <div
+                                                                key={idx}
+                                                                className="interactive-slot"
+                                                                onClick={() => handleOpenModal(slotTime, emp.id)}
+                                                                title={`${format(slotTime, 'HH:mm')} - Цаг нэмэх`}
+                                                            />
+                                                        );
+                                                    })}
+                                                </div>
+
+                                                {/* Render Appointments */}
+                                                {empAppointments.map(app => {
+                                                    const service = services.find(s => s.id === app.serviceId);
+                                                    const bg = service?.color || 'var(--primary)';
+
                                                     return (
                                                         <div
-                                                            key={idx}
-                                                            className="interactive-slot"
-                                                            onClick={() => handleOpenModal(slotTime, emp.id)}
-                                                            title={`${format(slotTime, 'HH:mm')} - Цаг нэмэх`}
-                                                        />
+                                                            key={app.id}
+                                                            className="appointment-block"
+                                                            style={{
+                                                                ...getBlockStyle(app.startTime, app.durationMinutes),
+                                                                backgroundColor: bg
+                                                            }}
+                                                            onClick={() => toast(`Үзэх: ${app.customerName}`)}
+                                                        >
+                                                            <div className="appointment-time">
+                                                                {format(app.startTime, 'HH:mm')} - {format(app.endTime, 'HH:mm')}
+                                                            </div>
+                                                            <div className="appointment-title">{app.serviceName}</div>
+                                                            <div className="appointment-subtitle">{app.customerName}</div>
+                                                        </div>
                                                     );
                                                 })}
                                             </div>
+                                        );
+                                    })
+                                )}
+                            </div>
 
-                                            {/* Render Appointments */}
-                                            {empAppointments.map(app => {
-                                                const service = services.find(s => s.id === app.serviceId);
-                                                const bg = service?.color || 'var(--primary)';
-
-                                                return (
-                                                    <div
-                                                        key={app.id}
-                                                        className="appointment-block"
-                                                        style={{
-                                                            ...getBlockStyle(app.startTime, app.durationMinutes),
-                                                            backgroundColor: bg
-                                                        }}
-                                                        onClick={() => toast(`Үзэх: ${app.customerName}`)}
-                                                    >
-                                                        <div className="appointment-time">
-                                                            {format(app.startTime, 'HH:mm')} - {format(app.endTime, 'HH:mm')}
-                                                        </div>
-                                                        <div className="appointment-title">{app.serviceName}</div>
-                                                        <div className="appointment-subtitle">{app.customerName}</div>
-                                                    </div>
-                                                );
-                                            })}
-                                        </div>
-                                    );
-                                })
-                            )}
                         </div>
-
                     </div>
                 </div>
-            </div>
 
-            <NewAppointmentModal
-                isOpen={isModalOpen}
-                onClose={() => setIsModalOpen(false)}
-                services={services}
-                staff={staff}
-                initialDate={modalInitialDate}
-                initialStaffId={modalInitialStaff}
-            />
-        </div>
+                <NewAppointmentModal
+                    isOpen={isModalOpen}
+                    onClose={() => setIsModalOpen(false)}
+                    services={services}
+                    staff={staff}
+                    initialDate={modalInitialDate}
+                    initialStaffId={modalInitialStaff}
+                />
+            </div>
+        </HubLayout>
     );
 }

@@ -456,3 +456,17 @@
     align-items: center;
     gap: 4px;
 }
+.badge-primary { background: var(--primary); color: white; }
+.badge-success { background: var(--success); color: white; }
+
+.input-with-icon {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.input-with-icon svg {
+    position: absolute;
+    left: 10px;
+    color: var(--text-muted);
+}

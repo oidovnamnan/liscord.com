@@ -10,7 +10,7 @@ import { toast } from 'react-hot-toast';
 import { ImageUpload } from '../../components/common/ImageUpload';
 import { PINModal } from '../../components/common/PINModal';
 import { ActivityTab } from './components/ActivityTab';
-import { ModulesTab } from './components/ModulesTab';
+import { AppStoreTab } from './components/AppStoreTab';
 import { PaymentTab } from './components/PaymentTab';
 import { B2BTab } from './components/B2BTab';
 import { ALL_PERMISSIONS, type Position, type Employee, type CargoType, type OrderSource, type SocialAccount, type OrderStatusConfig, type BusinessRequest } from '../../types';
@@ -69,7 +69,7 @@ export function SettingsPage() {
 
     const tabs = [
         { id: 'general', label: 'Ерөнхий', icon: Building2 },
-        { id: 'modules', label: 'Бизнес Модуль', icon: Layers },
+        { id: 'appstore', label: 'App Store', icon: Layers },
         { id: 'team', label: 'Баг', icon: Users },
         { id: 'storefront', label: 'Дэлгүүр', icon: ShoppingBag },
         ...(isStorefrontEnabled ? [{ id: 'themes', label: 'Загварууд', icon: Palette }] : []),
@@ -320,8 +320,8 @@ export function SettingsPage() {
                         {activeTab === 'payment' && (
                             <PaymentTab />
                         )}
-                        {activeTab === 'modules' && (
-                            <ModulesTab />
+                        {activeTab === 'appstore' && (
+                            <AppStoreTab />
                         )}
                         {activeTab === 'storefront' && (
                             <div className="settings-section animate-fade-in">

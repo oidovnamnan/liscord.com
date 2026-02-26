@@ -1,95 +1,269 @@
 import type { AppModule } from '../types';
 
 export const LISCORD_MODULES: AppModule[] = [
+    // --- Operations HUB: Orders ---
     {
         id: 'orders',
         name: 'Захиалга',
-        description: 'Захиалга удирдлага болон ПОС борлуулалтын систем.',
+        description: 'Захиалга удирдлага болон борлуулалтын систем.',
         icon: 'PackageSearch',
         route: '/app/orders',
         isCore: true,
-        category: 'operations'
+        category: 'operations',
+        isFree: true,
+        price: 0,
+        durationDays: 0
     },
+    // --- Operations HUB: Inventory ---
     {
         id: 'inventory',
-        name: 'Агуулах & Бараа',
-        description: 'Барааны үлдэгдэл, үнэ болон үйлдвэрлэлийн менежмент.',
+        name: 'Агуулах',
+        description: 'Барааны үлдэгдэл болон нөөцийн менежмент.',
         icon: 'Boxes',
         route: '/app/inventory',
         isCore: true,
-        category: 'operations'
+        category: 'operations',
+        hubId: 'inventory-hub',
+        isFree: true,
+        price: 0,
+        durationDays: 0
     },
     {
+        id: 'manufacturing',
+        name: 'Үйлдвэрлэл',
+        description: 'Бүтээгдэхүүн үйлдвэрлэлийн процесс, өртөг тооцоолол.',
+        icon: 'Factory',
+        route: '/app/manufacturing',
+        isCore: false,
+        category: 'operations',
+        hubId: 'inventory-hub',
+        isFree: false,
+        price: 35000,
+        durationDays: 30
+    },
+    // --- Finance HUB ---
+    {
         id: 'finance',
-        name: 'Санхүү & Төлбөр',
-        description: 'Орлого, зарлага, авлага болон зээлийн тооцоо.',
+        name: 'Санхүү',
+        description: 'Орлого, зарлага болон НӨАТ-ын тайлан.',
         icon: 'Wallet',
         route: '/app/finance',
         isCore: false,
-        category: 'finance'
+        category: 'finance',
+        hubId: 'finance-hub',
+        isFree: false,
+        price: 25000,
+        durationDays: 30
     },
     {
-        id: 'hrm',
-        name: 'Хүний Нөөц (HRM)',
-        description: 'Ажилчдын ирц, цалин бодолт болон гүйцэтгэлийн удирдлага.',
+        id: 'payments',
+        name: 'Төлбөр',
+        description: 'Харилцагчдын төлбөрийн түүх болон бүртгэл.',
+        icon: 'CreditCard',
+        route: '/app/payments',
+        isCore: false,
+        category: 'finance',
+        hubId: 'finance-hub',
+        isFree: false,
+        price: 15000,
+        durationDays: 30
+    },
+    {
+        id: 'loans',
+        name: 'Зээл / Ломбард',
+        description: 'Зээлийн тооцоо, барьцаа болон зээлийн гэрээ.',
+        icon: 'Banknote',
+        route: '/app/loans',
+        isCore: false,
+        category: 'finance',
+        hubId: 'finance-hub',
+        isFree: false,
+        price: 45000,
+        durationDays: 30
+    },
+    // --- Staff HUB (HRM) ---
+    {
+        id: 'employees',
+        name: 'Ажилтан',
+        description: 'Ажилчдын мэдээлэл, албан тушаал, эрхийн удирдлага.',
         icon: 'Users',
         route: '/app/employees',
         isCore: false,
-        category: 'staff'
+        category: 'staff',
+        hubId: 'staff-hub',
+        isFree: false,
+        price: 20000,
+        durationDays: 30
     },
     {
-        id: 'cargo',
-        name: 'Карго Тээвэр',
-        description: 'Олон улсын болон дотоод тээвэр, илгээмжийн бүртгэл.',
-        icon: 'Truck',
-        route: '/app/packages',
+        id: 'attendance',
+        name: 'Ирц',
+        description: 'Цаг бүртгэл, хоцролт болон ирцийн статистик.',
+        icon: 'Clock',
+        route: '/app/attendance',
         isCore: false,
-        category: 'services'
+        category: 'staff',
+        hubId: 'staff-hub',
+        isFree: false,
+        price: 15000,
+        durationDays: 30
     },
     {
-        id: 'delivery',
-        name: 'Хүргэлт & Логистик',
-        description: 'Хүргэлтийн тооцоо, жолооч болон тээврийн хэрэгслийн удирдлага.',
-        icon: 'MapPin',
-        route: '/app/delivery',
+        id: 'payroll',
+        name: 'Цалин',
+        description: 'Цалин бодолт, урьдчилгаа болон шимтгэлийн тооцоо.',
+        icon: 'Coins',
+        route: '/app/payroll',
         isCore: false,
-        category: 'services'
+        category: 'staff',
+        hubId: 'staff-hub',
+        isFree: false,
+        price: 25000,
+        durationDays: 30
     },
+    // --- Services HUB ---
     {
-        id: 'projects',
-        name: 'Төсөл & Даалгавар',
-        description: 'Төслийн төлөвлөлт, гүйцэтгэл болон тасалбарын систем.',
-        icon: 'Briefcase',
-        route: '/app/projects',
-        isCore: false,
-        category: 'operations'
-    },
-    {
-        id: 'booking',
-        name: 'Үйлчилгээ & Захиалга',
-        description: 'Цаг захиалга, өрөө түрээс болон очер дараалал.',
+        id: 'appointments',
+        name: 'Цаг захиалга',
+        description: 'Үйлчилгээний цаг захиалга болон календарь.',
         icon: 'CalendarClock',
         route: '/app/appointments',
         isCore: false,
-        category: 'services'
+        category: 'services',
+        hubId: 'services-hub',
+        isFree: false,
+        price: 30000,
+        durationDays: 30
+    },
+    {
+        id: 'rooms',
+        name: 'Өрөө / Талбай',
+        description: 'Зочид буудал, дундын оффис, өрөө түрээсийн удирдлага.',
+        icon: 'DoorOpen',
+        route: '/app/rooms',
+        isCore: false,
+        category: 'services',
+        hubId: 'services-hub',
+        isFree: false,
+        price: 40000,
+        durationDays: 30
+    },
+    {
+        id: 'queue',
+        name: 'Очер дараалал',
+        description: 'Дараалал үүсгэх, дугаар олгох үйлчилгээний систем.',
+        icon: 'ListOrdered',
+        route: '/app/queue',
+        isCore: false,
+        category: 'services',
+        hubId: 'services-hub',
+        isFree: false,
+        price: 15000,
+        durationDays: 30
+    },
+    {
+        id: 'contracts',
+        name: 'Гэрээ',
+        description: 'Түрээс, хамтын ажиллагааны гэрээний менежмент.',
+        icon: 'FileText',
+        route: '/app/contracts',
+        isCore: false,
+        category: 'services',
+        hubId: 'services-hub',
+        isFree: false,
+        price: 20000,
+        durationDays: 30
+    },
+    // --- Logistics HUB ---
+    {
+        id: 'delivery',
+        name: 'Хүргэлт',
+        description: 'Түгээлт, жолооч болон хүргэлтийн төлөв хянах.',
+        icon: 'MapPin',
+        route: '/app/delivery',
+        isCore: false,
+        category: 'services',
+        hubId: 'logistics-hub',
+        isFree: false,
+        price: 25000,
+        durationDays: 30
+    },
+    {
+        id: 'vehicles',
+        name: 'Тээвэр / Машин',
+        description: 'Тээврийн хэрэгсэл, техник түрээс болон бүртгэл.',
+        icon: 'Car',
+        route: '/app/vehicles',
+        isCore: false,
+        category: 'services',
+        hubId: 'logistics-hub',
+        isFree: false,
+        price: 35000,
+        durationDays: 30
+    },
+    // --- Project HUB ---
+    {
+        id: 'projects',
+        name: 'Төсөл',
+        description: 'Төслийн төлөвлөлт, гүйцэтгэл, канбан самбар.',
+        icon: 'Briefcase',
+        route: '/app/projects',
+        isCore: false,
+        category: 'operations',
+        hubId: 'projects-hub',
+        isFree: false,
+        price: 30000,
+        durationDays: 30
+    },
+    {
+        id: 'tickets',
+        name: 'Тасалбар',
+        description: 'Дэмжлэгийн тасалбар, ивент тасалбар бүртгэл.',
+        icon: 'Ticket',
+        route: '/app/tickets',
+        isCore: false,
+        category: 'operations',
+        hubId: 'projects-hub',
+        isFree: false,
+        price: 15000,
+        durationDays: 30
+    },
+    // --- Independent Modules ---
+    {
+        id: 'cargo',
+        name: 'Карго Тээвэр',
+        description: 'Илгээмж бүртгэл, AI текст унших каргоны систем.',
+        icon: 'Truck',
+        route: '/app/packages',
+        isCore: false,
+        category: 'services',
+        isFree: false,
+        price: 50000,
+        durationDays: 30
     },
     {
         id: 'customers',
         name: 'Хэрэглэгчид (CRM)',
-        description: 'Харилцагчийн түүх, сегментчлэл болон харилцааны удирдлага.',
+        description: 'Харилцагчийн түүх, сегментчлэл, CRM систем.',
         icon: 'Contact',
         route: '/app/customers',
         isCore: false,
-        category: 'sales'
+        category: 'sales',
+        isFree: true,
+        price: 0,
+        durationDays: 0
     },
     {
         id: 'analytics',
         name: 'Анализ & Тайлан',
-        description: 'Бизнесийн өсөлт болон ашигт ажиллагааны нарийвчилсан тайлан.',
+        description: 'Бизнесийн өсөлтийн нарийвчилсан статистик графикууд.',
         icon: 'BarChart3',
         route: '/app/reports',
         isCore: true,
-        category: 'operations'
+        category: 'operations',
+        isFree: true,
+        price: 0,
+        durationDays: 0
     },
     {
         id: 'messenger',
@@ -98,16 +272,22 @@ export const LISCORD_MODULES: AppModule[] = [
         icon: 'MessageCircle',
         route: '/app/chat',
         isCore: false,
-        category: 'sales'
+        category: 'sales',
+        isFree: false,
+        price: 25000,
+        durationDays: 30
     },
     {
         id: 'b2b',
         name: 'B2B Платформ',
-        description: 'Бусад бизнесүүдтэй холбогдох, ханган нийлүүлэлтийн сүлжээ.',
+        description: 'Бусад бизнесүүдтэй холбогдох, ханган нийлүүлэлт.',
         icon: 'Building2',
         route: '/app/b2b',
         isCore: false,
-        category: 'sales'
+        category: 'sales',
+        isFree: true,
+        price: 0,
+        durationDays: 0
     }
 ];
 

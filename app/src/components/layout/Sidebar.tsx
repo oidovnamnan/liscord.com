@@ -68,12 +68,32 @@ export function Sidebar() {
         window.location.reload(); // App.tsx will show BusinessWizard
     };
 
-    const filteredNavItems = LISCORD_MODULES.filter(mod => {
+    const filteredNavItems = LISCORD_MODULES.filter((mod, index, self) => {
         // Core modules (like Dashboard, Reports, Settings) are always visible
-        if (mod.isCore) return true;
+        if (mod.isCore) {
+            // If it has a hubId, only show the first one to avoid duplicates in sidebar
+            if (mod.hubId) {
+                return self.findIndex(m => m.hubId === mod.hubId) === index;
+            }
+            return true;
+        }
 
-        // Otherwise show only if explicitly enabled in the business's activeModules array
-        return business?.activeModules?.includes(mod.id);
+        // Show only if enabled in business AND not expired
+        const isEnabled = business?.activeModules?.includes(mod.id);
+        if (!isEnabled) return false;
+
+        const subscription = business?.moduleSubscriptions?.[mod.id];
+        if (subscription) {
+            const expiryDate = subscription.expiresAt ? (typeof (subscription.expiresAt as any).toDate === 'function' ? (subscription.expiresAt as any).toDate() : new Date(subscription.expiresAt as any)) : null;
+            if (expiryDate && expiryDate < new Date()) return false;
+        }
+
+        // If it belongs to a hub, only show the FIRST enabled module of that hub in the sidebar
+        if (mod.hubId) {
+            return self.findIndex(m => m.hubId === mod.hubId && business?.activeModules?.includes(m.id)) === index;
+        }
+
+        return true;
     });
 
 

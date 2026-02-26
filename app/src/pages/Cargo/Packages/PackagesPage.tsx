@@ -2,13 +2,14 @@ import { useState } from 'react';
 import { Header } from '../../../components/layout/Header';
 import { ScanLine } from 'lucide-react';
 import { NewPackageBatch } from './NewPackageBatch';
+import { HubLayout } from '../../../components/common/HubLayout';
 import './Packages.css';
 
 export function PackagesPage() {
     const [view, setView] = useState<'list' | 'new'>('list');
 
     return (
-        <>
+        <HubLayout hubId="logistics-hub">
             <Header
                 title="Ирсэн Ачаа (AI)"
                 action={
@@ -36,6 +37,6 @@ export function PackagesPage() {
                     <NewPackageBatch onCancel={() => setView('list')} />
                 )}
             </div>
-        </>
+        </HubLayout>
     );
 }

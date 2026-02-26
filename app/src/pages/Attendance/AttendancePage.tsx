@@ -4,6 +4,7 @@ import { useBusinessStore } from '../../store';
 import { attendanceService } from '../../services/db';
 import type { Attendance } from '../../types';
 import { Play, LogIn, LogOut, Coffee, Calendar, Search } from 'lucide-react';
+import { HubLayout } from '../../components/common/HubLayout';
 import { format, differenceInMinutes } from 'date-fns';
 import { mn } from 'date-fns/locale';
 import { toast } from 'react-hot-toast';
@@ -90,121 +91,123 @@ export function AttendancePage() {
     if (loading) return <div className="page-container flex-center">Цаг бүртгэл уншиж байна...</div>;
 
     return (
-        <div className="page-container attendance-page animate-fade-in">
-            <Header
-                title="Цаг бүртгэл & Хүний нөөц"
-                subtitle="Ажилчдын ирц, цагийн хуваарь"
-                action={{
-                    label: "Тайлан татах",
-                    onClick: () => toast('Тайлан Excel үүсгэх (Удахгүй)')
-                }}
-            />
+        <HubLayout hubId="staff-hub">
+            <div className="page-container attendance-page animate-fade-in">
+                <Header
+                    title="Цаг бүртгэл & Хүний нөөц"
+                    subtitle="Ажилчдын ирц, цагийн хуваарь"
+                    action={{
+                        label: "Тайлан татах",
+                        onClick: () => toast('Тайлан Excel үүсгэх (Удахгүй)')
+                    }}
+                />
 
-            <div className="attendance-toolbar">
-                <div style={{ display: 'flex', gap: '12px', alignItems: 'center', fontWeight: 600, color: 'var(--text-secondary)' }}>
-                    <Calendar size={18} /> Өнөөдөр: {format(currentTime, 'yyyy оны MM сарын dd', { locale: mn })}
-                </div>
+                <div className="attendance-toolbar">
+                    <div style={{ display: 'flex', gap: '12px', alignItems: 'center', fontWeight: 600, color: 'var(--text-secondary)' }}>
+                        <Calendar size={18} /> Өнөөдөр: {format(currentTime, 'yyyy оны MM сарын dd', { locale: mn })}
+                    </div>
 
-                <div className="search-bar">
-                    <Search className="search-icon" size={20} />
-                    <input type="text" placeholder="Ажилтан хайх..." className="search-input" />
-                </div>
-            </div>
-
-            <div className="attendance-board">
-                <div className="clock-panel">
-                    <div className="live-clock-date">{format(currentTime, 'EEEE', { locale: mn }).toUpperCase()}</div>
-                    <div className="live-clock-time">{format(currentTime, 'HH:mm:ss')}</div>
-
-                    <div className="clock-actions">
-                        {!myRecord && (
-                            <button className="clock-btn in" onClick={handleClockIn}>
-                                <LogIn size={20} /> Ажилд ирэх
-                            </button>
-                        )}
-
-                        {isClockedIn && (
-                            <>
-                                <button className={`clock-btn ${isOnBreak ? 'in' : 'break'}`} onClick={handleBreakToggle}>
-                                    {isOnBreak ? <Play size={20} /> : <Coffee size={20} />}
-                                    {isOnBreak ? 'Ажилдаа Орох' : 'Завсарлах'}
-                                </button>
-                                {!isOnBreak && (
-                                    <button className="clock-btn out" onClick={handleClockOut}>
-                                        <LogOut size={20} /> Буух
-                                    </button>
-                                )}
-                            </>
-                        )}
-
-                        {myRecord?.clockOutTime && (
-                            <div style={{ color: 'var(--success)', fontWeight: 700, padding: '16px' }}>
-                                Өнөөдрийн цаг бүртгэгдсэн байна. ({Math.floor(myRecord.totalWorkedMinutes / 60)}ц {myRecord.totalWorkedMinutes % 60}м)
-                            </div>
-                        )}
+                    <div className="search-bar">
+                        <Search className="search-icon" size={20} />
+                        <input type="text" placeholder="Ажилтан хайх..." className="search-input" />
                     </div>
                 </div>
 
-                <div className="attendance-table-container">
-                    <table className="attendance-table">
-                        <thead>
-                            <tr>
-                                <th>Ажилтан</th>
-                                <th>Ирсэн цаг</th>
-                                <th>Завсарлага</th>
-                                <th>Буусан цаг</th>
-                                <th>Нийт ажилласан</th>
-                                <th>Төлөв</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {todayRecords.length === 0 && (
-                                <tr>
-                                    <td colSpan={6} style={{ textAlign: 'center', padding: '40px', color: 'var(--text-secondary)' }}>
-                                        Өнөөдөр ажилд ирсэн хүн бүртгэгдээгүй байна.
-                                    </td>
-                                </tr>
-                            )}
-                            {todayRecords.map(record => {
-                                const active = !!record.clockInTime && !record.clockOutTime;
-                                const onBreak = !!record.breakStartTime && !record.breakEndTime;
+                <div className="attendance-board">
+                    <div className="clock-panel">
+                        <div className="live-clock-date">{format(currentTime, 'EEEE', { locale: mn }).toUpperCase()}</div>
+                        <div className="live-clock-time">{format(currentTime, 'HH:mm:ss')}</div>
 
-                                return (
-                                    <tr key={record.id}>
-                                        <td style={{ fontWeight: 600 }}>
-                                            {record.employeeName}
-                                            {record.employeeId === EMP_ID && <span style={{ marginLeft: '8px', fontSize: '11px', background: 'var(--surface-2)', padding: '2px 6px', borderRadius: '4px' }}>ТАНЫ БҮРТГЭЛ</span>}
-                                        </td>
-                                        <td><span className="time-badge active">{formatTimeObj(record.clockInTime)}</span></td>
-                                        <td>
-                                            <span className="time-badge" style={{ color: onBreak ? 'var(--warning)' : 'inherit' }}>
-                                                {formatTimeObj(record.breakStartTime)} {record.breakEndTime && `- ${formatTimeObj(record.breakEndTime)}`}
-                                            </span>
-                                        </td>
-                                        <td><span className="time-badge">{formatTimeObj(record.clockOutTime)}</span></td>
-                                        <td>
-                                            {record.clockOutTime
-                                                ? `${Math.floor(record.totalWorkedMinutes / 60)}ц ${record.totalWorkedMinutes % 60}м`
-                                                : '--'}
-                                        </td>
-                                        <td>
-                                            {active ? (
-                                                <span style={{ color: onBreak ? 'var(--warning)' : 'var(--success)', fontWeight: 600, fontSize: '13px' }}>
-                                                    {onBreak ? 'Завсарласан' : 'Ажиллаж байна'}
-                                                </span>
-                                            ) : (
-                                                <span style={{ color: 'var(--text-secondary)', fontWeight: 600, fontSize: '13px' }}>
-                                                    Буусан
-                                                </span>
-                                            )}
+                        <div className="clock-actions">
+                            {!myRecord && (
+                                <button className="clock-btn in" onClick={handleClockIn}>
+                                    <LogIn size={20} /> Ажилд ирэх
+                                </button>
+                            )}
+
+                            {isClockedIn && (
+                                <>
+                                    <button className={`clock-btn ${isOnBreak ? 'in' : 'break'}`} onClick={handleBreakToggle}>
+                                        {isOnBreak ? <Play size={20} /> : <Coffee size={20} />}
+                                        {isOnBreak ? 'Ажилдаа Орох' : 'Завсарлах'}
+                                    </button>
+                                    {!isOnBreak && (
+                                        <button className="clock-btn out" onClick={handleClockOut}>
+                                            <LogOut size={20} /> Буух
+                                        </button>
+                                    )}
+                                </>
+                            )}
+
+                            {myRecord?.clockOutTime && (
+                                <div style={{ color: 'var(--success)', fontWeight: 700, padding: '16px' }}>
+                                    Өнөөдрийн цаг бүртгэгдсэн байна. ({Math.floor(myRecord.totalWorkedMinutes / 60)}ц {myRecord.totalWorkedMinutes % 60}м)
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                    <div className="attendance-table-container">
+                        <table className="attendance-table">
+                            <thead>
+                                <tr>
+                                    <th>Ажилтан</th>
+                                    <th>Ирсэн цаг</th>
+                                    <th>Завсарлага</th>
+                                    <th>Буусан цаг</th>
+                                    <th>Нийт ажилласан</th>
+                                    <th>Төлөв</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {todayRecords.length === 0 && (
+                                    <tr>
+                                        <td colSpan={6} style={{ textAlign: 'center', padding: '40px', color: 'var(--text-secondary)' }}>
+                                            Өнөөдөр ажилд ирсэн хүн бүртгэгдээгүй байна.
                                         </td>
                                     </tr>
-                                );
-                            })}
-                        </tbody>
-                    </table>
+                                )}
+                                {todayRecords.map(record => {
+                                    const active = !!record.clockInTime && !record.clockOutTime;
+                                    const onBreak = !!record.breakStartTime && !record.breakEndTime;
+
+                                    return (
+                                        <tr key={record.id}>
+                                            <td style={{ fontWeight: 600 }}>
+                                                {record.employeeName}
+                                                {record.employeeId === EMP_ID && <span style={{ marginLeft: '8px', fontSize: '11px', background: 'var(--surface-2)', padding: '2px 6px', borderRadius: '4px' }}>ТАНЫ БҮРТГЭЛ</span>}
+                                            </td>
+                                            <td><span className="time-badge active">{formatTimeObj(record.clockInTime)}</span></td>
+                                            <td>
+                                                <span className="time-badge" style={{ color: onBreak ? 'var(--warning)' : 'inherit' }}>
+                                                    {formatTimeObj(record.breakStartTime)} {record.breakEndTime && `- ${formatTimeObj(record.breakEndTime)}`}
+                                                </span>
+                                            </td>
+                                            <td><span className="time-badge">{formatTimeObj(record.clockOutTime)}</span></td>
+                                            <td>
+                                                {record.clockOutTime
+                                                    ? `${Math.floor(record.totalWorkedMinutes / 60)}ц ${record.totalWorkedMinutes % 60}м`
+                                                    : '--'}
+                                            </td>
+                                            <td>
+                                                {active ? (
+                                                    <span style={{ color: onBreak ? 'var(--warning)' : 'var(--success)', fontWeight: 600, fontSize: '13px' }}>
+                                                        {onBreak ? 'Завсарласан' : 'Ажиллаж байна'}
+                                                    </span>
+                                                ) : (
+                                                    <span style={{ color: 'var(--text-secondary)', fontWeight: 600, fontSize: '13px' }}>
+                                                        Буусан
+                                                    </span>
+                                                )}
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
-        </div>
+        </HubLayout>
     );
 }
