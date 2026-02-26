@@ -108,10 +108,18 @@ export function SuperAdminAppStore() {
                 </div>
 
                 <div className="card no-padding overflow-hidden">
+                    <style>{`
+                        .no-spin::-webkit-inner-spin-button, 
+                        .no-spin::-webkit-outer-spin-button { 
+                            -webkit-appearance: none; 
+                            margin: 0; 
+                        }
+                        .no-spin { -moz-appearance: textfield; }
+                    `}</style>
                     <table className="super-table">
                         <thead>
                             <tr>
-                                <th>Модуль</th>
+                                <th style={{ paddingLeft: '24px' }}>Модуль</th>
                                 <th>Төрөл</th>
                                 <th>Үнэгүй эсэх</th>
                                 <th>Үнэ (₮)</th>
@@ -121,23 +129,23 @@ export function SuperAdminAppStore() {
                         </thead>
                         <tbody>
                             {modules.map((mod) => (
-                                <tr key={mod.id}>
-                                    <td>
+                                <tr key={mod.id} style={mod.isCore ? { opacity: 0.7, background: 'var(--bg-soft)' } : {}}>
+                                    <td style={{ paddingLeft: '24px' }}>
                                         <div className="flex items-center gap-3">
-                                            <div className="w-10 h-10 bg-surface-2 flex items-center justify-center rounded-lg border border-primary-light/50 text-primary">
+                                            <div className="w-10 h-10 bg-surface-2 flex items-center justify-center rounded-xl border border-primary-light/30 text-primary shadow-sm">
                                                 {(() => {
                                                     const Icon = (Icons as any)[mod.icon] || Icons.Box;
-                                                    return <Icon size={20} />;
+                                                    return <Icon size={22} strokeWidth={1.5} />;
                                                 })()}
                                             </div>
-                                            <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                                <div className="font-bold text-sm" style={{ lineHeight: 1.2 }}>{mod.name}</div>
-                                                <div className="text-[0.7rem] text-tertiary font-mono" style={{ opacity: 0.7 }}>{mod.id}</div>
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                                                <div className="font-bold text-sm" style={{ color: 'var(--text-primary)' }}>{mod.name}</div>
+                                                <div className="text-[0.65rem] text-tertiary font-mono" style={{ letterSpacing: '0.02em' }}>{mod.id}</div>
                                             </div>
                                         </div>
                                     </td>
                                     <td>
-                                        <span className={`badge ${mod.isCore ? 'badge-primary' : 'badge-neutral'}`}>
+                                        <span className={`badge ${mod.isCore ? 'badge-primary' : 'badge-neutral'}`} style={{ fontSize: '0.7rem' }}>
                                             {mod.isCore ? 'Core' : 'Optional'}
                                         </span>
                                     </td>
@@ -146,39 +154,79 @@ export function SuperAdminAppStore() {
                                             className={`btn btn-sm ${mod.isFree ? 'btn-success' : 'btn-outline'} min-w-[110px]`}
                                             onClick={() => handleToggleFree(mod.id)}
                                             disabled={mod.isCore}
+                                            style={{ height: '32px', borderRadius: '10px' }}
                                         >
                                             {mod.isFree ? <CheckCircle2 size={14} /> : <XCircle size={14} />}
                                             {mod.isFree ? 'Үнэгүй' : 'Төлбөртэй'}
                                         </button>
                                     </td>
                                     <td>
-                                        <div className="input-with-icon" style={{ maxWidth: '140px' }}>
-                                            <span style={{ position: 'absolute', left: '12px', color: 'var(--text-tertiary)', fontWeight: 600 }}>₮</span>
+                                        <div className="input-with-icon" style={{ maxWidth: '160px', position: 'relative' }}>
+                                            <span style={{
+                                                position: 'absolute',
+                                                left: '12px',
+                                                top: '50%',
+                                                transform: 'translateY(-50%)',
+                                                color: 'var(--text-tertiary)',
+                                                fontWeight: 800,
+                                                fontSize: '0.9rem',
+                                                pointerEvents: 'none'
+                                            }}>₮</span>
                                             <input
                                                 type="number"
-                                                className="input"
+                                                className="input no-spin"
                                                 value={mod.price}
                                                 disabled={mod.isFree || mod.isCore}
                                                 onChange={(e) => handleUpdatePrice(mod.id, parseInt(e.target.value) || 0)}
-                                                style={{ paddingLeft: '28px' }}
+                                                style={{
+                                                    paddingLeft: '32px',
+                                                    height: '40px',
+                                                    borderRadius: '12px',
+                                                    textAlign: 'right',
+                                                    paddingRight: '12px',
+                                                    fontWeight: 600
+                                                }}
                                             />
                                         </div>
                                     </td>
                                     <td>
-                                        <div className="input-with-icon" style={{ maxWidth: '120px' }}>
-                                            <Clock size={16} className="text-tertiary" />
+                                        <div className="input-with-icon" style={{ maxWidth: '140px', position: 'relative' }}>
+                                            <Clock size={16} style={{
+                                                position: 'absolute',
+                                                left: '12px',
+                                                top: '50%',
+                                                transform: 'translateY(-50%)',
+                                                color: 'var(--text-tertiary)',
+                                                pointerEvents: 'none'
+                                            }} />
                                             <input
                                                 type="number"
-                                                className="input"
+                                                className="input no-spin"
                                                 value={mod.durationDays}
                                                 disabled={mod.isFree || mod.isCore}
                                                 onChange={(e) => handleUpdateDuration(mod.id, parseInt(e.target.value) || 0)}
-                                                style={{ paddingLeft: '32px' }}
+                                                style={{
+                                                    paddingLeft: '36px',
+                                                    height: '40px',
+                                                    borderRadius: '12px',
+                                                    textAlign: 'right',
+                                                    paddingRight: '45px',
+                                                    fontWeight: 600
+                                                }}
                                             />
-                                            <span style={{ position: 'absolute', right: '12px', fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>өдөр</span>
+                                            <span style={{
+                                                position: 'absolute',
+                                                right: '12px',
+                                                top: '50%',
+                                                transform: 'translateY(-50%)',
+                                                fontSize: '0.75rem',
+                                                color: 'var(--text-tertiary)',
+                                                fontWeight: 500,
+                                                pointerEvents: 'none'
+                                            }}>өдөр</span>
                                         </div>
                                     </td>
-                                    <td className="text-tertiary text-xs font-mono">
+                                    <td className="text-tertiary text-xs font-mono" style={{ opacity: 0.6 }}>
                                         {mod.hubId || '-'}
                                     </td>
                                 </tr>
