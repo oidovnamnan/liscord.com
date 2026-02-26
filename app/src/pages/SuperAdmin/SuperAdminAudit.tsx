@@ -70,89 +70,89 @@ export function SuperAdminAudit() {
             />
 
             <div className="page-content">
-                <div className="card" style={{ padding: '0', overflow: 'hidden' }}>
-                    <div style={{ padding: '20px', borderBottom: '1px solid var(--border-color)', display: 'flex', gap: '16px', flexWrap: 'wrap', justifyContent: 'space-between' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                            <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: 'var(--danger-light)', color: 'var(--danger)', display: 'flex', alignItems: 'center', justifyItems: 'center', justifyContent: 'center' }}>
-                                <ShieldAlert size={20} />
-                            </div>
-                            <div>
-                                <h2 style={{ fontSize: '1.1rem', margin: 0 }}>Глобал Өөрчлөлтүүд</h2>
-                                <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', margin: 0 }}>Сүүлийн 200 үйлдэл</p>
-                            </div>
+                <div className="table-actions">
+                    <div className="section-header">
+                        <div className="stats-icon-wrapper danger-tint">
+                            <ShieldAlert size={20} />
                         </div>
-
-                        <div style={{ display: 'flex', gap: '12px', flex: '1 1 auto', justifyContent: 'flex-end', maxWidth: '700px' }}>
-                            <div className="search-bar" style={{ flex: 1 }}>
-                                <Search size={18} />
-                                <input
-                                    type="text"
-                                    placeholder="Хэрэглэгч, Бизнес ID, Үйлдлээр хайх..."
-                                    value={searchTerm}
-                                    onChange={e => setSearchTerm(e.target.value)}
-                                />
-                            </div>
-                            <div className="filter-group">
-                                <button className={`filter-btn ${filterLevel === 'all' ? 'active' : ''}`} onClick={() => setFilterLevel('all')}>Бүгд</button>
-                                <button className={`filter-btn ${filterLevel === 'critical' ? 'active' : ''}`} onClick={() => setFilterLevel('critical')}>Critical</button>
-                                <button className={`filter-btn ${filterLevel === 'warning' ? 'active' : ''}`} onClick={() => setFilterLevel('warning')}>Warning</button>
-                            </div>
-                            <button className="btn btn-outline" onClick={fetchLogs} disabled={loading}>
-                                <RefreshCw size={18} className={loading ? "animate-spin" : ""} />
-                            </button>
+                        <div>
+                            <h2 className="text-lg font-bold">Глобал Өөрчлөлтүүд</h2>
+                            <p className="text-secondary text-xs">Сүүлийн 200 үйлдэл</p>
                         </div>
                     </div>
 
+                    <div className="flex gap-3 flex-1 justify-end items-center max-w-4xl">
+                        <div className="search-box">
+                            <Search size={18} />
+                            <input
+                                type="text"
+                                placeholder="Хэрэглэгч, Бизнес ID, Үйлдлээр хайх..."
+                                value={searchTerm}
+                                onChange={e => setSearchTerm(e.target.value)}
+                            />
+                        </div>
+                        <div className="filter-group">
+                            <button className={`filter-btn ${filterLevel === 'all' ? 'active' : ''}`} onClick={() => setFilterLevel('all')}>Бүгд</button>
+                            <button className={`filter-btn ${filterLevel === 'critical' ? 'active' : ''}`} onClick={() => setFilterLevel('critical')}>Critical</button>
+                            <button className={`filter-btn ${filterLevel === 'warning' ? 'active' : ''}`} onClick={() => setFilterLevel('warning')}>Warning</button>
+                        </div>
+                        <button className="btn btn-icon" onClick={fetchLogs} disabled={loading} title="Шинэчлэх">
+                            <RefreshCw size={18} className={loading ? "animate-spin" : ""} />
+                        </button>
+                    </div>
+                </div>
+
+                <div className="card no-padding overflow-hidden">
                     {loading && logs.length === 0 ? (
-                        <div style={{ padding: '64px', textAlign: 'center', color: 'var(--text-secondary)' }}>
-                            <Loader2 className="animate-spin" size={32} style={{ margin: '0 auto 16px' }} />
+                        <div className="py-16 text-center text-secondary">
+                            <Loader2 className="animate-spin mb-4" size={32} style={{ marginInline: 'auto' }} />
                             <p>Өгөгдөл уншиж байна...</p>
                         </div>
                     ) : (
-                        <div style={{ overflowX: 'auto' }}>
-                            <table className="table" style={{ width: '100%', borderCollapse: 'collapse', minWidth: '900px' }}>
+                        <div className="overflow-x-auto">
+                            <table className="super-table min-w-[900px]">
                                 <thead>
-                                    <tr style={{ background: 'var(--surface-2)', borderBottom: '1px solid var(--border-color)', textAlign: 'left' }}>
-                                        <th style={{ padding: '16px', width: '140px' }}>Огноо</th>
-                                        <th style={{ padding: '16px', width: '120px' }}>Бизнес ID</th>
-                                        <th style={{ padding: '16px', width: '160px' }}>Хэрэглэгч</th>
-                                        <th style={{ padding: '16px', width: '120px' }}>Түвшин</th>
-                                        <th style={{ padding: '16px', width: '140px' }}>Үйлдэл</th>
-                                        <th style={{ padding: '16px' }}>Дэлгэрэнгүй</th>
+                                    <tr>
+                                        <th style={{ width: '150px' }}>Огноо</th>
+                                        <th style={{ width: '120px' }}>Бизнес ID</th>
+                                        <th style={{ width: '180px' }}>Хэрэглэгч</th>
+                                        <th style={{ width: '120px' }}>Түвшин</th>
+                                        <th style={{ width: '160px' }}>Үйлдэл</th>
+                                        <th>Дэлгэрэнгүй</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {filteredLogs.map(log => (
-                                        <tr key={log.id} style={{ borderBottom: '1px solid var(--border-color)', verticalAlign: 'top' }}>
-                                            <td style={{ padding: '16px', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
+                                        <tr key={log.id} className="align-top">
+                                            <td className="text-secondary text-[0.8rem]">
                                                 {log.createdAt instanceof Date ? log.createdAt.toLocaleString('mn-MN') : '...'}
                                             </td>
-                                            <td style={{ padding: '16px', fontFamily: 'monospace', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                                            <td className="font-mono text-[0.75rem] text-secondary">
                                                 {log.businessId}
                                             </td>
-                                            <td style={{ padding: '16px' }}>
-                                                <div style={{ fontWeight: 500, fontSize: '0.9rem' }}>{log.userName}</div>
-                                                <div style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>{log.userPosition}</div>
+                                            <td>
+                                                <div className="font-bold text-sm">{log.userName}</div>
+                                                <div className="text-tertiary text-[0.7rem]">{log.userPosition}</div>
                                             </td>
-                                            <td style={{ padding: '16px' }}>
+                                            <td>
                                                 {getSeverityBadge(log.severity || 'normal')}
                                             </td>
-                                            <td style={{ padding: '16px', fontWeight: 500, fontSize: '0.9rem' }}>
-                                                {formatAction(log.action)} <br />
-                                                <span style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', fontWeight: 400 }}>{log.module}</span>
+                                            <td>
+                                                <div className="font-bold text-sm">{formatAction(log.action)}</div>
+                                                <div className="text-tertiary text-[0.75rem]">{log.module}</div>
                                             </td>
-                                            <td style={{ padding: '16px' }}>
-                                                <div style={{ fontWeight: 500, marginBottom: '4px', fontSize: '0.9rem' }}>{log.targetLabel}</div>
+                                            <td>
+                                                <div className="font-bold text-sm mb-2">{log.targetLabel}</div>
                                                 {log.changes && log.changes.length > 0 && (
-                                                    <div style={{ background: 'var(--surface-2)', padding: '8px', borderRadius: '6px', fontSize: '0.8rem', fontFamily: 'monospace' }}>
+                                                    <div className="bg-surface-2 p-2 rounded-lg text-[0.75rem] font-mono border border-primary-light">
                                                         {log.changes.map((c: any, i: number) => (
-                                                            <div key={i} style={{ display: 'grid', gridTemplateColumns: 'minmax(80px, auto) 1fr', gap: '8px', borderBottom: i !== log.changes.length - 1 ? '1px solid var(--border-color)' : 'none', paddingBottom: i !== log.changes.length - 1 ? '4px' : '0', marginBottom: i !== log.changes.length - 1 ? '4px' : '0' }}>
-                                                                <span style={{ color: 'var(--text-secondary)' }}>{c.field}:</span>
-                                                                <span style={{ wordBreak: 'break-all' }}>
-                                                                    <span style={{ color: 'var(--danger)', textDecoration: 'line-through', marginRight: '4px' }}>
+                                                            <div key={i} className={`grid grid-cols-[100px_1fr] gap-2 ${i !== log.changes.length - 1 ? 'border-b border-white/10 pb-1 mb-1' : ''}`}>
+                                                                <span className="text-tertiary">{c.field}:</span>
+                                                                <span className="break-all">
+                                                                    <span className="text-danger line-through mr-2">
                                                                         {JSON.stringify(c.oldValue)}
                                                                     </span>
-                                                                    <span style={{ color: 'var(--success)' }}>
+                                                                    <span className="text-success">
                                                                         {JSON.stringify(c.newValue)}
                                                                     </span>
                                                                 </span>
@@ -161,7 +161,7 @@ export function SuperAdminAudit() {
                                                     </div>
                                                 )}
                                                 {!log.changes && log.metadata && Object.keys(log.metadata).length > 0 && (
-                                                    <div style={{ background: 'var(--surface-2)', padding: '8px', borderRadius: '6px', fontSize: '0.8rem', color: 'var(--text-secondary)', whiteSpace: 'pre-wrap' }}>
+                                                    <div className="bg-surface-2 p-2 rounded-lg text-[0.75rem] text-secondary font-mono whitespace-pre-wrap border border-primary-light">
                                                         {JSON.stringify(log.metadata, null, 2)}
                                                     </div>
                                                 )}
@@ -170,8 +170,8 @@ export function SuperAdminAudit() {
                                     ))}
                                     {filteredLogs.length === 0 && (
                                         <tr>
-                                            <td colSpan={6} style={{ padding: '32px', textAlign: 'center', color: 'var(--text-secondary)' }}>
-                                                <Activity size={32} style={{ margin: '0 auto 16px', opacity: 0.2 }} />
+                                            <td colSpan={6} className="py-16 text-center text-secondary">
+                                                <Activity size={32} className="mx-auto mb-4 opacity-20" />
                                                 Илэрц олдсонгүй
                                             </td>
                                         </tr>

@@ -89,66 +89,49 @@ export function SuperAdminSettings() {
             />
 
             <div className="page-content">
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '32px', alignItems: 'center', background: 'var(--bg-secondary)', padding: '20px 24px', borderRadius: '16px', border: '1px solid var(--border-glass)', boxShadow: 'var(--shadow-sm)' }}>
-                    <h2 style={{ fontSize: '1.25rem', display: 'flex', alignItems: 'center', gap: '12px', margin: 0, color: 'var(--text-primary)' }}>
-                        <div style={{ width: '40px', height: '40px', background: 'var(--primary-tint)', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                            <Settings size={22} className="text-primary" />
+                <div className="table-actions">
+                    <div className="section-header">
+                        <div className="stats-icon-wrapper active-tint">
+                            <Settings size={20} />
                         </div>
-                        Динамик Модуль Тохиргоо
-                    </h2>
+                        <h2 className="text-xl font-bold">Динамик Модуль Тохиргоо</h2>
+                    </div>
                     <button
                         className="btn btn-primary gradient-btn"
                         onClick={handleSave}
                         disabled={saving}
-                        style={{ height: '44px', padding: '0 24px' }}
                     >
                         {saving ? <Loader2 className="animate-spin" size={18} /> : <Save size={18} />}
                         Хадгалах
                     </button>
                 </div>
 
-                <div style={{ background: 'var(--surface-1)', borderRadius: '24px', padding: '32px', border: '1px solid var(--border-primary)', boxShadow: 'var(--shadow-md)' }}>
-                    <p style={{ color: 'var(--text-secondary)', marginBottom: '32px', lineHeight: 1.6, fontSize: '1rem', borderLeft: '3px solid var(--primary)', paddingLeft: '16px' }}>
-                        Энд сонгосон модулиуд нь тухайн салбараар шинэ бизнес бүртгүүлэх үед автоматаар асаалттай (enabled) үүсэх болно. <br />
-                        <span style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>Жишээ нь: "Онлайн шоп" бизнес бүртгүүлэхэд таны энд сонгосон модулиуд автоматаар залгагдана.</span>
-                    </p>
+                <div className="card">
+                    <div className="p-6 border-b border-primary-light mb-8">
+                        <p className="text-secondary leading-relaxed">
+                            Энд сонгосон модулиуд нь тухайн салбараар шинэ бизнес бүртгүүлэх үед автоматаар асаалттай (enabled) үүсэх болно. <br />
+                            <small className="text-tertiary">Жишээ нь: "Онлайн шоп" бизнес бүртгүүлэхэд таны энд сонгосон модулиуд автоматаар залгагдана.</small>
+                        </p>
+                    </div>
 
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
+                    <div className="flex flex-col gap-8">
                         {categories.map((category) => {
                             const key = category.id;
                             const activeMods = defaults[key] || [];
 
-                            // Filter modules for this specific category (if applicable) OR show relevant ones
-                            // For simplicity in Super Admin, we show all, but let's group them by their own category now
-
                             return (
-                                <div key={key} style={{
-                                    background: 'var(--surface-2)',
-                                    borderRadius: '16px',
-                                    padding: '24px',
-                                    border: '1px solid var(--border-color)',
-                                    boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
-                                }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
-                                        <div style={{
-                                            width: '48px',
-                                            height: '48px',
-                                            background: 'var(--primary-light)',
-                                            borderRadius: '12px',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'center',
-                                            fontSize: '1.5rem'
-                                        }}>
+                                <div key={key} className="p-6 rounded-2xl bg-surface-2 border border-primary-light">
+                                    <div className="flex items-center gap-4 mb-6">
+                                        <div className="w-12 h-12 bg-primary-light rounded-xl flex items-center justify-center text-2xl">
                                             {category.icon}
                                         </div>
                                         <div>
-                                            <h3 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 600 }}>{category.label}</h3>
-                                            <span style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>{category.desc}</span>
+                                            <h3 className="text-lg font-bold">{category.label}</h3>
+                                            <span className="text-secondary text-sm">{category.desc}</span>
                                         </div>
                                     </div>
 
-                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '20px' }}>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                                         {LISCORD_MODULES.map(module => {
                                             const isActive = activeMods.includes(module.id);
                                             const Icon = (Icons as any)[module.icon] || Icons.Box;
@@ -156,59 +139,31 @@ export function SuperAdminSettings() {
                                                 <div
                                                     key={module.id}
                                                     onClick={() => handleToggle(key, module.id)}
-                                                    style={{
-                                                        display: 'flex',
-                                                        alignItems: 'center',
-                                                        gap: '16px',
-                                                        padding: '18px',
-                                                        borderRadius: '16px',
-                                                        border: `1px solid ${isActive ? 'var(--primary)' : 'var(--border-primary)'}`,
-                                                        background: isActive ? 'var(--primary-light)' : 'var(--bg-secondary)',
-                                                        cursor: 'pointer',
-                                                        transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-                                                        transform: isActive ? 'translateY(-2px)' : 'none',
-                                                        boxShadow: isActive ? 'var(--shadow-md)' : 'var(--shadow-sm)'
-                                                    }}
+                                                    className={`flex items-center gap-4 p-4 rounded-xl border cursor-pointer transition-all duration-200 ${isActive
+                                                            ? 'border-primary bg-primary-light shadow-sm'
+                                                            : 'border-transparent bg-bg-secondary hover:bg-surface-3'
+                                                        }`}
                                                 >
-                                                    <div style={{
-                                                        width: '24px',
-                                                        height: '24px',
-                                                        borderRadius: '8px',
-                                                        border: `2px solid ${isActive ? 'var(--primary)' : 'var(--text-muted)'}`,
-                                                        display: 'flex',
-                                                        alignItems: 'center',
-                                                        justifyContent: 'center',
-                                                        background: isActive ? 'var(--primary)' : 'transparent',
-                                                        transition: 'all 0.2s',
-                                                        flexShrink: 0
-                                                    }}>
-                                                        {isActive && <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'white' }} />}
+                                                    <div className={`w-6 h-6 rounded-md border-2 flex items-center justify-center transition-colors ${isActive ? 'border-primary bg-primary' : 'border-neutral-300'
+                                                        }`}>
+                                                        {isActive && <div className="w-2 h-2 rounded-full bg-white" />}
                                                     </div>
-                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flex: 1 }}>
-                                                        <div style={{
-                                                            width: '44px',
-                                                            height: '44px',
-                                                            borderRadius: '12px',
-                                                            background: isActive ? 'white' : 'var(--bg-soft)',
-                                                            color: isActive ? 'var(--primary)' : 'var(--text-secondary)',
-                                                            display: 'flex',
-                                                            alignItems: 'center',
-                                                            justifyContent: 'center',
-                                                            flexShrink: 0,
-                                                            boxShadow: isActive ? '0 2px 8px rgba(0,0,0,0.05)' : 'none'
-                                                        }}>
-                                                            <Icon size={22} />
+
+                                                    <div className="flex items-center gap-3 flex-1">
+                                                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center transition-colors ${isActive ? 'bg-white text-primary' : 'bg-surface-1 text-secondary'
+                                                            }`}>
+                                                            <Icon size={20} />
                                                         </div>
-                                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                                                            <span style={{ fontWeight: 700, fontSize: '0.95rem', color: isActive ? 'var(--text-primary)' : 'var(--text-secondary)' }}>
+                                                        <div className="flex flex-col">
+                                                            <span className={`font-bold text-sm ${isActive ? 'text-primary' : 'text-secondary'}`}>
                                                                 {module.name}
                                                             </span>
-                                                            <span style={{ fontSize: '0.75rem', fontWeight: 600, color: isActive ? 'var(--primary)' : 'var(--text-muted)' }}>
-                                                                {module.id === 'orders' || module.id === 'products' ? 'Үндсэн модуль' : 'Нэмэлт модуль'}
+                                                            <span className="text-[10px] uppercase tracking-wider opacity-60">
+                                                                {module.id === 'orders' || module.id === 'products' ? 'Core' : 'Add-on'}
                                                             </span>
                                                         </div>
                                                     </div>
-                                                </div>
+                                                </tr>
                                             );
                                         })}
                                     </div>
@@ -218,17 +173,16 @@ export function SuperAdminSettings() {
                     </div>
                 </div>
 
-                <div style={{ background: 'var(--surface-1)', borderRadius: 'var(--radius-lg)', padding: '24px', border: '1px solid var(--border-color)', marginTop: '24px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div className="card mt-8 border-danger-light overflow-hidden">
+                    <div className="p-6 flex items-center justify-between gap-6 bg-red-50/10">
                         <div>
-                            <h3 style={{ margin: '0 0 8px 0', fontSize: '1.1rem', color: 'var(--danger)' }}>🚨 Хуучин системийн шилжүүлэг (Migration)</h3>
-                            <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: '0.95rem' }}>
+                            <h3 className="text-lg font-bold text-danger mb-2">🚨 Хуучин системийн шилжүүлэг (Migration)</h3>
+                            <p className="text-secondary text-sm max-w-2xl">
                                 Өмнө нь бүртгүүлсэн бизнесүүдийн тохиргоог шинэ App Store (activeModules) бүтэц рүү хөрвүүлэх скрипт. Зөвхөн 1 удаа дарахад хангалттай.
                             </p>
                         </div>
                         <button
-                            className="btn btn-primary"
-                            style={{ background: 'var(--danger)', color: 'white', border: 'none' }}
+                            className="btn btn-primary bg-danger border-none hover:bg-red-600"
                             onClick={handleMigrate}
                             disabled={migrating}
                         >
@@ -236,7 +190,6 @@ export function SuperAdminSettings() {
                         </button>
                     </div>
                 </div>
-
             </div>
         </div>
     );
