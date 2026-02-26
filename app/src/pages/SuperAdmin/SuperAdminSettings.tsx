@@ -13,6 +13,7 @@ export function SuperAdminSettings() {
     const [saving, setSaving] = useState(false);
     const [migrating, setMigrating] = useState(false);
     const [selectedCategoryId, setSelectedCategoryId] = useState<string>('all');
+    const [defaults, setDefaults] = useState<Record<string, Record<string, 'core' | 'addon'>>>({});
 
     useEffect(() => {
         const fetchDefaults = async () => {
