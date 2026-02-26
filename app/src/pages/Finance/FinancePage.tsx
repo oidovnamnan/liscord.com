@@ -29,14 +29,14 @@ export function FinancePage() {
     }, [business]);
 
     return (
-        <div className="page-container animate-fade-in">
+        <>
             <Header
                 title="Санхүү & Татвар"
                 subtitle="Компанийн орлого, зарлага болон авлага өглөгийн нэгдсэн самбар"
             />
 
-            <div className="page-content">
-                <div style={{ display: 'flex', gap: '12px', marginBottom: '24px', flexWrap: 'wrap' }}>
+            <div className="page animate-fade-in">
+                <div style={{ display: 'flex', gap: '16px', marginBottom: '32px', flexWrap: 'wrap' }}>
                     <button className="btn btn-primary gradient-btn" style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 20px' }}>
                         <TrendingUp size={18} /> Орлого бүртгэх
                     </button>
@@ -166,6 +166,6 @@ export function FinancePage() {
                 </div>
 
             </div>
-        </div>
+        </>
     );
 }
