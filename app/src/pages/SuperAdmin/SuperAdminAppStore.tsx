@@ -4,6 +4,7 @@ import { Loader2, Save, CheckCircle2, XCircle, DollarSign, Clock } from 'lucide-
 import { toast } from 'react-hot-toast';
 import { LISCORD_MODULES } from '../../config/modules';
 import { systemSettingsService } from '../../services/db';
+import * as Icons from 'lucide-react';
 import type { AppModule } from '../../types';
 
 export function SuperAdminAppStore() {
@@ -123,12 +124,15 @@ export function SuperAdminAppStore() {
                                 <tr key={mod.id}>
                                     <td>
                                         <div className="flex items-center gap-3">
-                                            <div className="w-10 h-10 bg-surface-2 flex items-center justify-center rounded-lg text-xl border border-primary-light/50">
-                                                {mod.icon}
+                                            <div className="w-10 h-10 bg-surface-2 flex items-center justify-center rounded-lg border border-primary-light/50 text-primary">
+                                                {(() => {
+                                                    const Icon = (Icons as any)[mod.icon] || Icons.Box;
+                                                    return <Icon size={20} />;
+                                                })()}
                                             </div>
-                                            <div>
-                                                <div className="font-bold text-sm">{mod.name}</div>
-                                                <div className="text-[0.7rem] text-tertiary font-mono">{mod.id}</div>
+                                            <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                                <div className="font-bold text-sm" style={{ lineHeight: 1.2 }}>{mod.name}</div>
+                                                <div className="text-[0.7rem] text-tertiary font-mono" style={{ opacity: 0.7 }}>{mod.id}</div>
                                             </div>
                                         </div>
                                     </td>
@@ -148,27 +152,30 @@ export function SuperAdminAppStore() {
                                         </button>
                                     </td>
                                     <td>
-                                        <div className="input-with-icon max-w-[150px]">
-                                            <DollarSign size={14} className="text-tertiary" />
+                                        <div className="input-with-icon" style={{ maxWidth: '140px' }}>
+                                            <span style={{ position: 'absolute', left: '12px', color: 'var(--text-tertiary)', fontWeight: 600 }}>₮</span>
                                             <input
                                                 type="number"
                                                 className="input"
                                                 value={mod.price}
                                                 disabled={mod.isFree || mod.isCore}
                                                 onChange={(e) => handleUpdatePrice(mod.id, parseInt(e.target.value) || 0)}
+                                                style={{ paddingLeft: '28px' }}
                                             />
                                         </div>
                                     </td>
                                     <td>
-                                        <div className="input-with-icon max-w-[120px]">
-                                            <Clock size={14} className="text-tertiary" />
+                                        <div className="input-with-icon" style={{ maxWidth: '120px' }}>
+                                            <Clock size={16} className="text-tertiary" />
                                             <input
                                                 type="number"
                                                 className="input"
                                                 value={mod.durationDays}
                                                 disabled={mod.isFree || mod.isCore}
                                                 onChange={(e) => handleUpdateDuration(mod.id, parseInt(e.target.value) || 0)}
+                                                style={{ paddingLeft: '32px' }}
                                             />
+                                            <span style={{ position: 'absolute', right: '12px', fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>өдөр</span>
                                         </div>
                                     </td>
                                     <td className="text-tertiary text-xs font-mono">
