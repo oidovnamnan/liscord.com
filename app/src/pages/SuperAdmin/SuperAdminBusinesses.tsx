@@ -74,92 +74,93 @@ export function SuperAdminBusinesses() {
             />
 
             <div className="page-content">
-                <div className="search-box">
-                    <Search size={18} />
-                    <input
-                        type="text"
-                        placeholder="Бизнес эсвэл эзэмшигч хайх..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                    />
+                <div className="table-actions">
+                    <div className="search-box">
+                        <Search size={18} />
+                        <input
+                            type="text"
+                            placeholder="Бизнес эсвэл эзэмшигч хайх..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                        />
+                    </div>
+                    <button className="btn btn-secondary">
+                        <Filter size={18} /> Шүүлтүүр
+                    </button>
                 </div>
-                <button className="btn btn-secondary">
-                    <Filter size={18} /> Шүүлтүүр
-                </button>
-            </div>
 
-            <div className="card no-padding overflow-hidden">
-                <table className="super-table">
-                    <thead>
-                        <tr>
-                            <th>Бизнес</th>
-                            <th>Ангилал</th>
-                            <th>Эзэмшигч</th>
-                            <th>Төлөвлөгөө</th>
-                            <th>Захиалга</th>
-                            <th>Үүссэн</th>
-                            <th>Төлөв</th>
-                            <th>Хийх</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {loading ? (
-                            <tr><td colSpan={8} className="text-center py-8">Уншиж байна...</td></tr>
-                        ) : filtered.map(biz => (
-                            <tr key={biz.id}>
-                                <td>
-                                    <div className="biz-cell">
-                                        <div className="biz-avatar">{biz.name?.charAt(0)}</div>
-                                        <div className="biz-info">
-                                            <div className="biz-name">{biz.name}</div>
-                                            <div className="biz-id">{biz.id}</div>
-                                        </div>
-                                    </div>
-                                </td>
-                                <td>
-                                    <span className="category-tag">
-                                        {biz.category}
-                                    </span>
-                                </td>
-                                <td>{biz.ownerName || 'Тодорхойгүй'}</td>
-                                <td>
-                                    <span className={`badge badge-${biz.subscription?.plan === 'pro' ? 'primary' : 'soft'}`}>
-                                        {biz.subscription?.plan?.toUpperCase()}
-                                    </span>
-                                </td>
-                                <td>{biz.stats?.totalOrders || 0}</td>
-                                <td>
-                                    <div className="date-cell">
-                                        <Clock size={14} />
-                                        {biz.createdAt?.toDate ? biz.createdAt.toDate().toLocaleDateString() : '—'}
-                                    </div>
-                                </td>
-                                <td>
-                                    <span className="badge badge-delivered">Идэвхтэй</span>
-                                </td>
-                                <td>
-                                    <div className="row-actions">
-                                        <button
-                                            className="btn-icon"
-                                            title="Нэвтэрч орох"
-                                            onClick={() => handleImpersonate(biz)}
-                                        >
-                                            <Lock size={16} />
-                                        </button>
-                                        <button className="btn-icon" title="Засах">
-                                            <ExternalLink size={16} />
-                                        </button>
-                                        <button className="btn-icon">
-                                            <MoreVertical size={16} />
-                                        </button>
-                                    </div>
-                                </td>
+                <div className="card no-padding overflow-hidden">
+                    <table className="super-table">
+                        <thead>
+                            <tr>
+                                <th>Бизнес</th>
+                                <th>Ангилал</th>
+                                <th>Эзэмшигч</th>
+                                <th>Төлөвлөгөө</th>
+                                <th>Захиалга</th>
+                                <th>Үүссэн</th>
+                                <th>Төлөв</th>
+                                <th>Хийх</th>
                             </tr>
-                        ))}
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody>
+                            {loading ? (
+                                <tr><td colSpan={8} className="text-center py-8">Уншиж байна...</td></tr>
+                            ) : filtered.map(biz => (
+                                <tr key={biz.id}>
+                                    <td>
+                                        <div className="biz-cell">
+                                            <div className="biz-avatar">{biz.name?.charAt(0)}</div>
+                                            <div className="biz-info">
+                                                <div className="biz-name">{biz.name}</div>
+                                                <div className="biz-id">{biz.id}</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span className="category-tag">
+                                            {biz.category}
+                                        </span>
+                                    </td>
+                                    <td>{biz.ownerName || 'Тодорхойгүй'}</td>
+                                    <td>
+                                        <span className={`badge badge-${biz.subscription?.plan === 'pro' ? 'primary' : 'soft'}`}>
+                                            {biz.subscription?.plan?.toUpperCase()}
+                                        </span>
+                                    </td>
+                                    <td>{biz.stats?.totalOrders || 0}</td>
+                                    <td>
+                                        <div className="date-cell">
+                                            <Clock size={14} />
+                                            {biz.createdAt?.toDate ? biz.createdAt.toDate().toLocaleDateString() : '—'}
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span className="badge badge-delivered">Идэвхтэй</span>
+                                    </td>
+                                    <td>
+                                        <div className="row-actions">
+                                            <button
+                                                className="btn-icon"
+                                                title="Нэвтэрч орох"
+                                                onClick={() => handleImpersonate(biz)}
+                                            >
+                                                <Lock size={16} />
+                                            </button>
+                                            <button className="btn-icon" title="Засах">
+                                                <ExternalLink size={16} />
+                                            </button>
+                                            <button className="btn-icon">
+                                                <MoreVertical size={16} />
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
-        </div >
     );
 }
