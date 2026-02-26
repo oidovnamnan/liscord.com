@@ -84,6 +84,19 @@ export const systemSettingsService = {
         await setDoc(doc(db, 'system_settings', 'modules'), defaults);
     },
 
+    async getAppStoreConfig(): Promise<Record<string, { price: number; durationDays: number; isFree: boolean }>> {
+        const docRef = doc(db, 'system_settings', 'app_store');
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+            return docSnap.data() as Record<string, { price: number; durationDays: number; isFree: boolean }>;
+        }
+        return {};
+    },
+
+    async updateAppStoreConfig(config: Record<string, { price: number; durationDays: number; isFree: boolean }>): Promise<void> {
+        await setDoc(doc(db, 'system_settings', 'app_store'), config);
+    },
+
     /**
      * One-time migration script. Looks for businesses without `activeModules` and populates
      * the array based on their old hardcoded `category` feature flags.

@@ -1,16 +1,38 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Header } from '../../components/layout/Header';
 import { Loader2, Save, CheckCircle2, XCircle, DollarSign, Clock } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { LISCORD_MODULES } from '../../config/modules';
+import { systemSettingsService } from '../../services/db';
 import type { AppModule } from '../../types';
 
 export function SuperAdminAppStore() {
     const [modules, setModules] = useState<AppModule[]>(LISCORD_MODULES);
+    const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
 
-    // In a real app, we would fetch these overrides from Firestore
-    // For now, we use the hardcoded defaults and allow "saving" (mocked)
+    useEffect(() => {
+        const fetchConfig = async () => {
+            try {
+                const config = await systemSettingsService.getAppStoreConfig();
+                // Merge static modules with dynamic config
+                const merged = LISCORD_MODULES.map(mod => {
+                    const dynamic = config[mod.id];
+                    if (dynamic) {
+                        return { ...mod, ...dynamic };
+                    }
+                    return mod;
+                });
+                setModules(merged);
+            } catch (error) {
+                console.error('Fetch config error:', error);
+                toast.error('Тохиргоо татахад алдаа гарлаа');
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchConfig();
+    }, []);
 
     const handleToggleFree = (id: string) => {
         setModules(prev => prev.map(mod =>
@@ -33,8 +55,19 @@ export function SuperAdminAppStore() {
     const handleSave = async () => {
         setSaving(true);
         try {
-            // Mocking Firestore save of system config
-            await new Promise(resolve => setTimeout(resolve, 1000));
+            // Build config object from modules state
+            const config: Record<string, { price: number; durationDays: number; isFree: boolean }> = {};
+            modules.forEach(mod => {
+                if (!mod.isCore) {
+                    config[mod.id] = {
+                        price: mod.price,
+                        durationDays: mod.durationDays,
+                        isFree: mod.isFree
+                    };
+                }
+            });
+
+            await systemSettingsService.updateAppStoreConfig(config);
             toast.success('App Store-ын тохиргоо хадгалагдлаа');
         } catch (error) {
             toast.error('Хадгалахад алдаа гарлаа');

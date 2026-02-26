@@ -137,18 +137,76 @@ export function AppStoreTab() {
     };
 
     const [moduleDefaults, setModuleDefaults] = useState<Record<string, Record<string, string>>>({});
+    const [appStoreConfig, setAppStoreConfig] = useState<Record<string, { price: number; durationDays: number; isFree: boolean }>>({});
 
     useEffect(() => {
-        const fetchDefaults = async () => {
+        const fetchData = async () => {
             try {
-                const data = await systemSettingsService.getModuleDefaults();
-                setModuleDefaults(data);
+                const [defaults, config] = await Promise.all([
+                    systemSettingsService.getModuleDefaults(),
+                    systemSettingsService.getAppStoreConfig()
+                ]);
+                setModuleDefaults(defaults);
+                setAppStoreConfig(config);
             } catch (e) {
-                console.error('Fetch defaults error:', e);
+                console.error('Fetch data error:', e);
             }
         };
-        fetchDefaults();
+        fetchData();
     }, []);
+
+    const handleInstallModule = async (moduleId: string) => {
+        if (!business || loading || installingId) return;
+
+        setInstallingId(moduleId);
+        setInstallProgress(0);
+
+        for (let i = 0; i <= 100; i += 10) {
+            await new Promise(resolve => setTimeout(resolve, 150));
+            setInstallProgress(Math.min(i + Math.random() * 15, 95));
+        }
+
+        try {
+            const dynamicConfig = appStoreConfig[moduleId];
+            const mod = LISCORD_MODULES.find(m => m.id === moduleId);
+
+            // Priority: Dynamic Config > Static Config > Default 30
+            const durationDays = dynamicConfig?.durationDays ?? mod?.durationDays ?? 30;
+
+            const expiresAt = new Date();
+            expiresAt.setDate(expiresAt.getDate() + durationDays);
+
+            const newModules = Array.from(new Set([...activeMods, moduleId]));
+            const newSubscriptions = {
+                ...(business.moduleSubscriptions || {}),
+                [moduleId]: {
+                    subscribedAt: new Date(),
+                    expiresAt: expiresAt,
+                    status: 'active' as const
+                }
+            };
+
+            await businessService.updateBusiness(business.id, {
+                activeModules: newModules,
+                moduleSubscriptions: newSubscriptions
+            });
+
+            setBusiness({
+                ...business,
+                activeModules: newModules,
+                moduleSubscriptions: newSubscriptions
+            });
+
+            setInstallProgress(100);
+            await new Promise(resolve => setTimeout(resolve, 300));
+            toast.success('Модуль амжилттай суулаа');
+        } catch (error) {
+            toast.error('Суулгах үед алдаа гарлаа');
+        } finally {
+            setInstallingId(null);
+            setInstallProgress(0);
+        }
+    };
 
     return (
         <div className="settings-section animate-fade-in">
@@ -193,18 +251,21 @@ export function AppStoreTab() {
                         }
                         return true;
                     }).map(mod => {
-                        const Icon = (Icons as any)[mod.icon] || Icons.Box;
-                        const isInstalled = activeMods.includes(mod.id);
-                        const isInstalling = installingId === mod.id;
+                        const dynamic = appStoreConfig[mod.id];
+                        const finalMod = dynamic ? { ...mod, ...dynamic } : mod;
 
-                        const subscription = business?.moduleSubscriptions?.[mod.id];
+                        const Icon = (Icons as any)[finalMod.icon] || Icons.Box;
+                        const isInstalled = activeMods.includes(finalMod.id);
+                        const isInstalling = installingId === finalMod.id;
+
+                        const subscription = business?.moduleSubscriptions?.[finalMod.id];
                         const expiryDate = subscription?.expiresAt ? (typeof (subscription.expiresAt as any).toDate === 'function' ? (subscription.expiresAt as any).toDate() : new Date(subscription.expiresAt as any)) : null;
                         const isExpired = expiryDate ? expiryDate < new Date() : false;
                         const isActive = isInstalled && !isExpired;
 
                         return (
                             <div
-                                key={mod.id}
+                                key={finalMod.id}
                                 className={`module-card-premium ${isActive ? 'active' : ''} ${isExpired ? 'expired' : ''}`}
                             >
                                 <div className="module-card-header">
@@ -213,18 +274,18 @@ export function AppStoreTab() {
                                     </div>
                                     <div className="module-info">
                                         <div className="module-title-row">
-                                            <h3 className="module-name">{mod.name}</h3>
-                                            {mod.isFree && <span style={{ fontSize: '0.65rem', background: 'var(--success-light)', color: 'var(--success-dark)', padding: '2px 8px', borderRadius: '6px', fontWeight: 800 }}>ҮНЭГҮЙ</span>}
+                                            <h3 className="module-name">{finalMod.name}</h3>
+                                            {finalMod.isFree && <span style={{ fontSize: '0.65rem', background: 'var(--success-light)', color: 'var(--success-dark)', padding: '2px 8px', borderRadius: '6px', fontWeight: 800 }}>ҮНЭГҮЙ</span>}
                                         </div>
-                                        <p className="module-description">{mod.description}</p>
+                                        <p className="module-description">{finalMod.description}</p>
                                     </div>
                                 </div>
 
                                 <div className="module-meta">
-                                    {!mod.isFree ? (
+                                    {!finalMod.isFree ? (
                                         <div className="price-badge">
-                                            <div className="price-amount">{mod.price?.toLocaleString()}₮</div>
-                                            <div className="price-duration">/ {mod.durationDays} хоног</div>
+                                            <div className="price-amount">{finalMod.price?.toLocaleString()}₮</div>
+                                            <div className="price-duration">/ {finalMod.durationDays} хоног</div>
                                         </div>
                                     ) : (
                                         <div className="price-badge">
@@ -251,20 +312,20 @@ export function AppStoreTab() {
                                         </button>
                                     ) : isActive ? (
                                         <>
-                                            <button className="btn btn-primary gradient-btn" onClick={() => navigate(mod.route)}>
+                                            <button className="btn btn-primary gradient-btn" onClick={() => navigate(finalMod.route)}>
                                                 Нээх
                                             </button>
-                                            <button className="btn-uninstall-mini" onClick={() => handleUninstallModule(mod.id)} title="Устгах">
+                                            <button className="btn-uninstall-mini" onClick={() => handleUninstallModule(finalMod.id)} title="Устгах">
                                                 <Trash2 size={18} />
                                             </button>
                                         </>
                                     ) : isExpired ? (
-                                        <button className="btn btn-danger gradient-btn" onClick={() => handleInstallModule(mod.id)}>
+                                        <button className="btn btn-danger gradient-btn" onClick={() => handleInstallModule(finalMod.id)}>
                                             <Clock size={16} /> Сунгах
                                         </button>
                                     ) : (
-                                        <button className={`btn ${mod.isFree ? 'btn-outline' : 'btn-primary gradient-btn'}`} onClick={() => handleInstallModule(mod.id)}>
-                                            <Download size={16} /> {mod.isFree ? 'Суулгах' : 'Худалдаж авах'}
+                                        <button className={`btn ${finalMod.isFree ? 'btn-outline' : 'btn-primary gradient-btn'}`} onClick={() => handleInstallModule(finalMod.id)}>
+                                            <Download size={16} /> {finalMod.isFree ? 'Суулгах' : 'Худалдаж авах'}
                                         </button>
                                     )}
                                 </div>
