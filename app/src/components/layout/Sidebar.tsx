@@ -180,7 +180,17 @@ export function Sidebar() {
 
                     {filteredNavItems.map((mod) => {
                         const Icon = (Icons as any)[mod.icon] || Icons.Box;
-                        const isActive = location.pathname.startsWith(mod.route);
+
+                        // Check if any module in the same hub is active
+                        const hubModules = LISCORD_MODULES.filter(m => m.hubId && m.hubId === mod.hubId);
+                        const isAnyHubModuleActive = hubModules.some(m => location.pathname.startsWith(m.route));
+                        const isActive = isAnyHubModuleActive || location.pathname.startsWith(mod.route);
+
+                        // Better labels for hubs to satisfy user (especially for inventory-hub)
+                        let displayName = mod.name;
+                        if (mod.hubId === 'inventory-hub') displayName = 'Бараа & Борлуулалт';
+                        if (mod.hubId === 'crm-hub') displayName = 'Харилцагч & CRM';
+                        if (mod.hubId === 'logistics-hub') displayName = 'Логистик & Карго';
 
                         return (
                             <NavLink
@@ -188,10 +198,10 @@ export function Sidebar() {
                                 to={mod.route}
                                 className={`sidebar-link ${isActive ? 'active' : ''}`}
                                 onClick={() => sidebarOpen && toggleSidebar()}
-                                title={sidebarCollapsed ? mod.name : undefined}
+                                title={sidebarCollapsed ? displayName : undefined}
                             >
                                 <Icon size={20} />
-                                {!sidebarCollapsed && <span>{mod.name}</span>}
+                                {!sidebarCollapsed && <span>{displayName}</span>}
                                 {isActive && <div className="sidebar-link-indicator" />}
                             </NavLink>
                         );
