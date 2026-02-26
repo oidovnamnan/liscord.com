@@ -4,6 +4,7 @@ import { platformFinanceService, businessService } from '../../services/db';
 import { TrendingUp, DollarSign, Calendar, Loader2, Search, Activity } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import type { PlatformPayment, Business } from '../../types';
+import { SecurityModal } from '../../components/common/SecurityModal';
 
 export function SuperAdminFinance() {
     const [payments, setPayments] = useState<PlatformPayment[]>([]);
@@ -18,6 +19,7 @@ export function SuperAdminFinance() {
     const [extendMonths, setExtendMonths] = useState(1);
     const [extendPlan, setExtendPlan] = useState<'free' | 'pro' | 'business'>('pro');
     const [saving, setSaving] = useState(false);
+    const [showSecurityModal, setShowSecurityModal] = useState(false);
 
     useEffect(() => {
         fetchData();
@@ -47,10 +49,19 @@ export function SuperAdminFinance() {
         setIsExtendModalOpen(true);
     };
 
-    const handleExtendSubmit = async (e: React.FormEvent) => {
+    const handleExtendSubmitClick = (e: React.FormEvent) => {
         e.preventDefault();
         if (!selectedBusiness) return;
+        setShowSecurityModal(true);
+    };
 
+    const handleExtendSubmit = async () => {
+        if (!selectedBusiness) return;
+        setShowSecurityModal(true); // Keep it open for password check
+
+        // This function will be passed to SecurityModal.onSuccess
+        // which means the password was correct.
+        setShowSecurityModal(false);
         setSaving(true);
         try {
             await platformFinanceService.extendBusinessSubscription(
@@ -319,7 +330,7 @@ export function SuperAdminFinance() {
                             <h2 className="modal-title">Эрх сунгах</h2>
                             <button className="btn-icon" onClick={() => setIsExtendModalOpen(false)}>✕</button>
                         </div>
-                        <form onSubmit={handleExtendSubmit}>
+                        <form onSubmit={handleExtendSubmitClick}>
                             <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                                 <div style={{ background: 'var(--surface-2)', padding: '16px', borderRadius: '8px' }}>
                                     <strong>{selectedBusiness.name}</strong>
@@ -369,6 +380,13 @@ export function SuperAdminFinance() {
                         </form>
                     </div>
                 </div>
+            )}
+
+            {showSecurityModal && (
+                <SecurityModal
+                    onSuccess={handleExtendSubmit}
+                    onClose={() => setShowSecurityModal(false)}
+                />
             )}
         </div>
     );

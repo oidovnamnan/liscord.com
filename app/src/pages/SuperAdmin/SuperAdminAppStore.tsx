@@ -1,18 +1,18 @@
 import { useState, useEffect } from 'react';
 import { Header } from '../../components/layout/Header';
-import { Loader2, Save, CheckCircle2, XCircle, DollarSign, Clock, Shield, Lock } from 'lucide-react';
+import { Loader2, Save, CheckCircle2, XCircle, DollarSign, Clock } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { LISCORD_MODULES } from '../../config/modules';
 import { systemSettingsService } from '../../services/db';
 import * as Icons from 'lucide-react';
 import type { AppModule } from '../../types';
+import { SecurityModal } from '../../components/common/SecurityModal';
 
 export function SuperAdminAppStore() {
     const [modules, setModules] = useState<AppModule[]>(LISCORD_MODULES);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [showSecurityModal, setShowSecurityModal] = useState(false);
-    const [securityPassword, setSecurityPassword] = useState('');
 
     useEffect(() => {
         const fetchConfig = async () => {
@@ -65,15 +65,9 @@ export function SuperAdminAppStore() {
 
     const handleSaveClick = () => {
         setShowSecurityModal(true);
-        setSecurityPassword('');
     };
 
     const handleSave = async () => {
-        if (securityPassword !== '102311') {
-            toast.error('Аюулгүй байдлын нууц үг буруу байна!');
-            return;
-        }
-
         setShowSecurityModal(false);
         setSaving(true);
         try {
@@ -180,31 +174,6 @@ export function SuperAdminAppStore() {
                             margin-bottom: 4px;
                             display: block;
                         }
-
-                        /* Security Modal Styles */
-                        .security-overlay {
-                            position: fixed;
-                            inset: 0;
-                            background: rgba(0, 0, 0, 0.6);
-                            backdrop-filter: blur(8px);
-                            display: flex;
-                            align-items: center;
-                            justify-content: center;
-                            z-index: 1000;
-                            animation: fadeIn 0.3s ease;
-                        }
-                        .security-modal {
-                            background: var(--surface-1);
-                            width: 100%;
-                            max-width: 400px;
-                            border-radius: 24px;
-                            padding: 32px;
-                            border: 1px solid var(--border-primary);
-                            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-                            animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-                        }
-                        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-                        @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
                     `}</style>
                     <table className="super-table app-store-table">
                         <thead>
@@ -304,47 +273,15 @@ export function SuperAdminAppStore() {
                     </table>
                 </div>
 
-                {/* Security Modal */}
                 {showSecurityModal && (
-                    <div className="security-overlay">
-                        <div className="security-modal">
-                            <div className="flex flex-col items-center text-center gap-4">
-                                <div className="w-16 h-16 bg-primary/10 text-primary flex items-center justify-center rounded-2xl">
-                                    <Shield size={32} />
-                                </div>
-                                <div>
-                                    <h3 className="text-xl font-bold">Аюулгүй байдлын нууц үг</h3>
-                                    <p className="text-sm text-tertiary mt-1">Системийн өөрчлөлтийг баталгаажуулахын тулд нууц үгээ оруулна уу.</p>
-                                </div>
-
-                                <div className="w-full mt-4">
-                                    <div className="relative">
-                                        <Lock size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-tertiary" />
-                                        <input
-                                            type="password"
-                                            className="w-full bg-tertiary border border-primary-light/40 rounded-xl h-12 pl-12 pr-4 font-bold text-lg"
-                                            placeholder="••••••"
-                                            autoFocus
-                                            value={securityPassword}
-                                            onChange={(e) => setSecurityPassword(e.target.value)}
-                                            onKeyDown={(e) => e.key === 'Enter' && handleSave()}
-                                        />
-                                    </div>
-                                </div>
-
-                                <div className="flex gap-3 w-full mt-6">
-                                    <button className="btn btn-outline flex-1 h-12" onClick={() => setShowSecurityModal(false)}>
-                                        Цуцлах
-                                    </button>
-                                    <button className="btn btn-primary gradient-btn flex-1 h-12" onClick={handleSave}>
-                                        Баталгаажуулах
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                    <SecurityModal
+                        onSuccess={handleSave}
+                        onClose={() => setShowSecurityModal(false)}
+                    />
                 )}
             </div>
         </div>
     );
 }
+
+export default SuperAdminAppStore;

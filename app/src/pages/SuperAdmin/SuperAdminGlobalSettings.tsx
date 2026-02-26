@@ -5,12 +5,14 @@ import type { GlobalSettings } from '../../services/db';
 import { Loader2, Save, MessageSquare, Shield, AlertTriangle, Sun, Moon, Monitor } from 'lucide-react';
 import { useUIStore } from '../../store';
 import { toast } from 'react-hot-toast';
+import { SecurityModal } from '../../components/common/SecurityModal';
 
 export function SuperAdminGlobalSettings() {
     const [settings, setSettings] = useState<GlobalSettings | null>(null);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const { theme, setTheme } = useUIStore();
+    const [showSecurityModal, setShowSecurityModal] = useState(false);
 
     useEffect(() => {
         const fetchSettings = async () => {
@@ -27,8 +29,14 @@ export function SuperAdminGlobalSettings() {
         fetchSettings();
     }, []);
 
-    const handleSave = async (e: React.FormEvent) => {
+    const handleSaveClick = (e: React.FormEvent) => {
         e.preventDefault();
+        if (!settings) return;
+        setShowSecurityModal(true);
+    };
+
+    const handleSave = async () => {
+        setShowSecurityModal(false);
         if (!settings) return;
 
         setSaving(true);
@@ -60,7 +68,7 @@ export function SuperAdminGlobalSettings() {
             />
 
             <div className="page-content" style={{ maxWidth: '800px' }}>
-                <form onSubmit={handleSave} style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                <form onSubmit={handleSaveClick} style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
                     <div className="card">
                         <h2 style={{ fontSize: '1.2rem', margin: '0 0 24px 0', display: 'flex', alignItems: 'center', gap: '10px', color: 'var(--text-primary)' }}>
                             <Sun size={22} color="#f59e0b" fill="#f59e0b20" />
@@ -350,6 +358,13 @@ export function SuperAdminGlobalSettings() {
                         </button>
                     </div>
                 </form >
+
+                {showSecurityModal && (
+                    <SecurityModal
+                        onSuccess={handleSave}
+                        onClose={() => setShowSecurityModal(false)}
+                    />
+                )}
             </div >
         </div >
     );

@@ -14,6 +14,7 @@ import { useAuthStore, useBusinessStore } from '../../store';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import { Header } from '../../components/layout/Header';
+import { SecurityModal } from '../../components/common/SecurityModal';
 import './SuperAdmin.css';
 
 export function SuperAdminBusinesses() {
@@ -23,6 +24,8 @@ export function SuperAdminBusinesses() {
     const { user, setImpersonatedBusinessId } = useAuthStore();
     const { setBusiness, setEmployee } = useBusinessStore();
     const navigate = useNavigate();
+    const [showSecurityModal, setShowSecurityModal] = useState(false);
+    const [selectedBiz, setSelectedBiz] = useState<any>(null);
 
     useEffect(() => {
         loadBusinesses();
@@ -40,8 +43,16 @@ export function SuperAdminBusinesses() {
         }
     };
 
-    const handleImpersonate = async (biz: any) => {
-        if (!user) return;
+    const handleImpersonateClick = (biz: any) => {
+        setSelectedBiz(biz);
+        setShowSecurityModal(true);
+    };
+
+    const handleImpersonate = async () => {
+        if (!user || !selectedBiz) return;
+        setShowSecurityModal(false);
+        const biz = selectedBiz;
+
         try {
             toast.loading(`${biz.name} рүү нэвтэрч байна...`);
             const [bizData, empData] = await Promise.all([
@@ -57,7 +68,10 @@ export function SuperAdminBusinesses() {
             navigate('/app');
             toast.success(`Та ${biz.name} бизнесийг хянаж байна`);
         } catch (error) {
+            toast.dismiss();
             toast.error('Нэвтрэхэд алдаа гарлаа');
+        } finally {
+            setSelectedBiz(null);
         }
     };
 
@@ -143,7 +157,7 @@ export function SuperAdminBusinesses() {
                                             <button
                                                 className="btn-icon"
                                                 title="Нэвтэрч орох"
-                                                onClick={() => handleImpersonate(biz)}
+                                                onClick={() => handleImpersonateClick(biz)}
                                             >
                                                 <Lock size={16} />
                                             </button>
@@ -161,6 +175,18 @@ export function SuperAdminBusinesses() {
                     </table>
                 </div>
             </div>
+
+            {showSecurityModal && (
+                <SecurityModal
+                    onSuccess={handleImpersonate}
+                    onClose={() => {
+                        setShowSecurityModal(false);
+                        setSelectedBiz(null);
+                    }}
+                    title="Бизнес рүү нэвтрэх"
+                    description={`${selectedBiz?.name} бизнес рүү нэвтрэхийн тулд нууц үгээ оруулна уу.`}
+                />
+            )}
         </div>
     );
 }

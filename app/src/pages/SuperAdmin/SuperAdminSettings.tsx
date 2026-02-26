@@ -6,6 +6,7 @@ import { systemSettingsService } from '../../services/db';
 import { useSystemCategoriesStore } from '../../store';
 import { LISCORD_MODULES } from '../../config/modules';
 import * as Icons from 'lucide-react';
+import { SecurityModal } from '../../components/common/SecurityModal';
 
 export function SuperAdminSettings() {
     const { categories, fetchCategories } = useSystemCategoriesStore();
@@ -14,6 +15,8 @@ export function SuperAdminSettings() {
     const [migrating, setMigrating] = useState(false);
     const [selectedCategoryId, setSelectedCategoryId] = useState<string>('all');
     const [defaults, setDefaults] = useState<Record<string, Record<string, 'core' | 'addon'>>>({});
+    const [showSecurityModal, setShowSecurityModal] = useState(false);
+    const [pendingAction, setPendingAction] = useState<(() => Promise<void>) | null>(null);
 
     useEffect(() => {
         const fetchDefaults = async () => {
@@ -60,7 +63,13 @@ export function SuperAdminSettings() {
         });
     };
 
+    const handleSaveClick = () => {
+        setPendingAction(() => handleSave);
+        setShowSecurityModal(true);
+    };
+
     const handleSave = async () => {
+        setShowSecurityModal(false);
         setSaving(true);
         try {
             await systemSettingsService.updateModuleDefaults(defaults);
@@ -73,9 +82,14 @@ export function SuperAdminSettings() {
         }
     };
 
-    const handleMigrate = async () => {
+    const handleMigrateClick = () => {
         if (!confirm('ХУУЧИН БИЗНЕСҮҮДИЙН СОНГОЛТЫГ ШИНЭЧЛЭХ\n\nЭнэ үйлдэл нь хуучин бүртгэгдсэн бүх бизнесүүдийг шалгаад, тэдний өмнө нь ашиглаж байсан функцүүдийг шинэ App Store (activeModules) систем рүүөрвүүлэх болно. Шууд дарж ажиллуулна уу?')) return;
+        setPendingAction(() => handleMigrate);
+        setShowSecurityModal(true);
+    };
 
+    const handleMigrate = async () => {
+        setShowSecurityModal(false);
         setMigrating(true);
         try {
             const result = await systemSettingsService.migrateLegacyBusinesses();
@@ -138,7 +152,7 @@ export function SuperAdminSettings() {
 
                         <button
                             className="btn btn-primary gradient-btn"
-                            onClick={handleSave}
+                            onClick={handleSaveClick}
                             disabled={saving}
                             style={{ height: '42px', padding: '0 20px' }}
                         >
@@ -225,7 +239,7 @@ export function SuperAdminSettings() {
                         </div>
                         <button
                             className="btn btn-danger"
-                            onClick={handleMigrate}
+                            onClick={handleMigrateClick}
                             disabled={migrating}
                         >
                             {migrating ? <Loader2 className="animate-spin" size={18} /> : 'Шилжүүлэг эхлүүлэх'}
@@ -233,6 +247,16 @@ export function SuperAdminSettings() {
                     </div>
                 </div>
             </div>
+
+            {showSecurityModal && (
+                <SecurityModal
+                    onSuccess={() => pendingAction && pendingAction()}
+                    onClose={() => {
+                        setShowSecurityModal(false);
+                        setPendingAction(null);
+                    }}
+                />
+            )}
         </div>
     );
 }

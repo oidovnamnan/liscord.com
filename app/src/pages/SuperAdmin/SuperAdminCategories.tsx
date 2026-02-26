@@ -5,12 +5,14 @@ import { businessCategoryService } from '../../services/db';
 import { Loader2, Plus, Edit2, Trash2, PowerOff, Power } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import type { BusinessCategoryConfig } from '../../types';
+import { SecurityModal } from '../../components/common/SecurityModal';
 
 export function SuperAdminCategories() {
     const { categories, loading, fetchCategories, refresh } = useSystemCategoriesStore();
     const [editingCategory, setEditingCategory] = useState<BusinessCategoryConfig | null>(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [saving, setSaving] = useState(false);
+    const [showSecurityModal, setShowSecurityModal] = useState(false);
 
     useEffect(() => {
         fetchCategories();
@@ -32,12 +34,18 @@ export function SuperAdminCategories() {
         setIsModalOpen(true);
     };
 
-    const handleSave = async (e: React.FormEvent) => {
+    const handleSaveClick = (e: React.FormEvent) => {
         e.preventDefault();
         if (!editingCategory || !editingCategory.id || !editingCategory.label) {
             toast.error('Мэдээллийг гүйцэд оруулна уу');
             return;
         }
+        setShowSecurityModal(true);
+    };
+
+    const handleSave = async () => {
+        if (!editingCategory || !editingCategory.id || !editingCategory.label) return;
+        setShowSecurityModal(false);
 
         setSaving(true);
         try {
@@ -185,7 +193,7 @@ export function SuperAdminCategories() {
                             <h2 className="modal-title">{editingCategory.id ? 'Ангилал засах' : 'Шинэ ангилал'}</h2>
                             <button className="btn-icon" onClick={() => setIsModalOpen(false)}>✕</button>
                         </div>
-                        <form onSubmit={handleSave}>
+                        <form onSubmit={handleSaveClick}>
                             <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                                 <div className="input-group">
                                     <label className="input-label">ID (Англиар, зайгүй)</label>
@@ -248,6 +256,13 @@ export function SuperAdminCategories() {
                         </form>
                     </div>
                 </div>
+            )}
+
+            {showSecurityModal && (
+                <SecurityModal
+                    onSuccess={handleSave}
+                    onClose={() => setShowSecurityModal(false)}
+                />
             )}
         </div>
     );
