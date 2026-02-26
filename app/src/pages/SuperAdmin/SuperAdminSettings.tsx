@@ -4,7 +4,8 @@ import { Header } from '../../components/layout/Header';
 import { toast } from 'react-hot-toast';
 import { systemSettingsService } from '../../services/db';
 import { useSystemCategoriesStore } from '../../store';
-import { APP_MODULES } from '../../config/modules';
+import { LISCORD_MODULES } from '../../config/modules';
+import * as Icons from 'lucide-react';
 
 export function SuperAdminSettings() {
     const { categories } = useSystemCategoriesStore();
@@ -118,9 +119,9 @@ export function SuperAdminSettings() {
                                     </div>
 
                                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '12px' }}>
-                                        {APP_MODULES.map(module => {
+                                        {LISCORD_MODULES.map(module => {
                                             const isActive = activeMods.includes(module.id);
-                                            const Icon = module.icon;
+                                            const Icon = (Icons as any)[module.icon] || Icons.Box;
                                             return (
                                                 <label
                                                     key={module.id}

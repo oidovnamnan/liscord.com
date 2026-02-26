@@ -152,7 +152,7 @@ export function SettingsPage() {
                     ...business.settings,
                     storefront: {
                         enabled,
-                        theme: business.settings.storefront?.theme || 'light',
+                        theme: (fd.get('storefrontTheme') as string) || business.settings?.storefront?.theme || 'minimal',
                         name: storefrontName,
                     }
                 }
@@ -338,7 +338,65 @@ export function SettingsPage() {
                                                 <span className="toggle-slider" />
                                             </label>
                                         </div>
-                                        <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 16 }}>
+
+                                        {/* --- Theme Selection UI --- */}
+                                        <div className="input-group" style={{ marginTop: '24px', paddingTop: '24px', borderTop: '1px solid var(--border-color)' }}>
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginBottom: 16 }}>
+                                                <label className="input-label" style={{ margin: 0, fontSize: '1rem' }}>Дэлгүүрийн Загвар (Theme)</label>
+                                                <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Таны бизнест хамгийн сайн тохирох 100% өвөрмөц бүтэцтэй загваруудаас сонгоно уу.</div>
+                                            </div>
+                                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
+                                                {[
+                                                    { id: 'minimal', name: 'Minimalist Grid', desc: 'Цэмцгэр, Apple хэв маяг', color: '#f3f4f6' },
+                                                    { id: 'editorial', name: 'Editorial', desc: 'Vogue/Zara хувцас загвар', color: '#fdf6e3' },
+                                                    { id: 'commerce', name: 'Dynamic Commerce', desc: 'Amazon/Shopee хэв маяг', color: '#e0f2fe' },
+                                                    { id: 'appetite', name: 'Appetite', desc: 'Wolt шиг хурдан сагслах', color: '#ffedd5' },
+                                                    { id: 'finedining', name: 'Fine Dining', desc: 'Классик ресторан', color: '#0f1115' },
+                                                    { id: 'cafe', name: 'Cafe & Bakery', desc: 'Дулаахан, органик', color: '#fdfaf6' },
+                                                    { id: 'grocery', name: 'Supermarket', desc: 'Хүнсний дэлгүүр', color: '#16a34a' },
+                                                    { id: 'service', name: 'Service Booking', desc: 'Цаг захиалга', color: '#4f46e5' },
+                                                    { id: 'agency', name: 'Agency Portfolio', desc: 'Минимал танилцуулга', color: '#ffffff' },
+                                                    { id: 'saas', name: 'Digital & SaaS', desc: 'Програм хангамж', color: '#0b0f19' },
+                                                    { id: 'b2b', name: 'B2B Wholesale', desc: 'Бөөнөөр захиалах', color: '#f8f9fa' },
+                                                    { id: 'autoparts', name: 'Auto Parts', desc: 'Сэлбэгийн каталог', color: '#1a1f2b' },
+                                                    { id: 'furniture', name: 'Furniture & Decor', desc: 'Интерьер дизайн', color: '#faf9f8' },
+                                                    { id: 'artisan', name: 'Handcraft / Eco', desc: 'Байгалийн, эко', color: '#fdfaf6' },
+                                                    { id: 'oneproduct', name: 'Single Product', desc: 'Лэндинг хуудас', color: '#ffffff' },
+                                                    { id: 'gamer', name: 'Gamer Gear', desc: 'Тоног төхөөрөмж', color: '#09090b' },
+                                                    { id: 'lookbook', name: 'Lookbook Masonry', desc: 'Pinterest хэв маяг', color: '#ffffff' },
+                                                    { id: 'streetwear', name: 'Street Drop', desc: 'Бараан, орчин үеийн', color: '#000000' },
+                                                    { id: 'cosmetics', name: 'Cosmetics', desc: 'Зөөлөн, гоо сайхан', color: '#faf4f0' },
+                                                    { id: 'tech', name: 'Tech Specs', desc: 'Электроникийн дээд', color: '#2b6cb0' }
+                                                ].map(t => {
+                                                    const isSelected = (business?.settings?.storefront?.theme || 'minimal') === t.id;
+                                                    return (
+                                                        <label key={t.id} style={{
+                                                            position: 'relative',
+                                                            border: isSelected ? '2px solid var(--primary)' : '1px solid var(--border-color)',
+                                                            borderRadius: '16px',
+                                                            padding: '20px',
+                                                            cursor: 'pointer',
+                                                            background: isSelected ? 'var(--bg-soft)' : '#fff',
+                                                            transition: 'all 0.2s',
+                                                            display: 'block'
+                                                        }}>
+                                                            <input
+                                                                type="radio"
+                                                                name="storefrontTheme"
+                                                                value={t.id}
+                                                                defaultChecked={isSelected}
+                                                                style={{ position: 'absolute', opacity: 0 }}
+                                                            />
+                                                            <div style={{ width: 40, height: 40, borderRadius: 12, background: t.color, marginBottom: 12, border: '1px solid rgba(0,0,0,0.05)' }} />
+                                                            <div style={{ fontWeight: 700, fontSize: '0.95rem', marginBottom: 4 }}>{t.name}</div>
+                                                            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{t.desc}</div>
+                                                        </label>
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
+
+                                        <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 24 }}>
                                             <button className="btn btn-primary gradient-btn" type="submit" disabled={loading || !isDirty} style={{ minWidth: 120 }}>
                                                 {loading ? <Loader2 size={16} className="animate-spin" /> : 'Хадгалах'}
                                             </button>

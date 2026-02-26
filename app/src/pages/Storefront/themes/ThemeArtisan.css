@@ -1,0 +1,239 @@
+/* Theme 18: Artisan / Handcraft / Eco Style */
+
+.theme-artisan {
+    min-height: 100vh;
+    background: #fdfaf6;
+    /* Warm, unbleached paper color */
+    color: #4a5441;
+    /* Earthy olive green / dark brown mix */
+    font-family: 'Lora', 'Playfair Display', serif;
+    /* Soft storytelling serif */
+    padding-bottom: 100px;
+}
+
+.artisan-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 30px 8%;
+    position: sticky;
+    top: 0;
+    background: rgba(253, 250, 246, 0.95);
+    backdrop-filter: blur(8px);
+    z-index: 100;
+    border-bottom: 1px solid rgba(74, 84, 65, 0.1);
+}
+
+.artisan-logo {
+    font-size: 1.6rem;
+    font-weight: 500;
+    font-style: italic;
+    letter-spacing: 0.05em;
+    color: #4a5441;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.artisan-logo img {
+    height: 48px;
+    width: auto;
+    border-radius: 50%;
+}
+
+.artisan-cart-btn {
+    background: transparent;
+    border: 1px solid #4a5441;
+    color: #4a5441;
+    padding: 10px 24px;
+    border-radius: 40px;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.artisan-cart-btn:hover {
+    background: #4a5441;
+    color: #fdfaf6;
+}
+
+.artisan-hero {
+    text-align: center;
+    padding: 80px 5% 60px;
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.artisan-hero h1 {
+    font-size: clamp(2.5rem, 4vw, 3.5rem);
+    font-weight: 400;
+    margin: 0 0 20px 0;
+    line-height: 1.2;
+}
+
+.artisan-hero p {
+    font-family: 'Inter', sans-serif;
+    font-size: 1.1rem;
+    color: #727a6c;
+    line-height: 1.8;
+}
+
+.artisan-nav {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    padding: 0 5% 60px;
+    overflow-x: auto;
+    scrollbar-width: none;
+}
+
+.artisan-nav::-webkit-scrollbar {
+    display: none;
+}
+
+.art-cat-btn {
+    background: #f4eee6;
+    border: none;
+    color: #727a6c;
+    padding: 10px 24px;
+    border-radius: 100px;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.95rem;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.3s;
+}
+
+.art-cat-btn:hover {
+    background: #e9e1d6;
+    color: #4a5441;
+}
+
+.art-cat-btn.active {
+    background: #4a5441;
+    color: #fdfaf6;
+}
+
+.artisan-grid {
+    padding: 0 8%;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 60px 40px;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+.art-card {
+    display: flex;
+    flex-direction: column;
+    cursor: pointer;
+}
+
+.art-img-wrap {
+    aspect-ratio: 1/1.2;
+    background: #f4eee6;
+    border-radius: 12px 12px 0 0;
+    overflow: hidden;
+    position: relative;
+    border: 1px solid rgba(74, 84, 65, 0.05);
+    border-bottom: none;
+}
+
+.art-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.6s ease;
+}
+
+.art-card:hover .art-img {
+    transform: scale(1.05);
+}
+
+.art-info {
+    padding: 24px;
+    background: #fff;
+    border: 1px solid rgba(74, 84, 65, 0.1);
+    border-radius: 0 0 12px 12px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+}
+
+.art-title {
+    font-size: 1.4rem;
+    font-weight: 500;
+    margin: 0 0 12px 0;
+    color: #4a5441;
+}
+
+.art-desc {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.95rem;
+    color: #727a6c;
+    margin: 0 0 20px 0;
+    line-height: 1.6;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.art-bottom {
+    margin-top: auto;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+}
+
+.art-price {
+    font-family: 'Inter', sans-serif;
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: #4a5441;
+}
+
+.art-add-btn {
+    background: transparent;
+    color: #4a5441;
+    border: 1px solid #4a5441;
+    padding: 10px 24px;
+    border-radius: 40px;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    cursor: pointer;
+    transition: all 0.3s;
+    width: 100%;
+}
+
+.art-card:hover .art-add-btn {
+    background: #4a5441;
+    color: #fff;
+}
+
+@media (max-width: 768px) {
+    .artisan-header {
+        padding: 20px 5%;
+    }
+
+    .artisan-grid {
+        padding: 0 5%;
+        gap: 40px;
+    }
+}

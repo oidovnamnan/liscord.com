@@ -1,0 +1,284 @@
+/* Theme 11: Grocery / Supermarket Style */
+
+.theme-grocery {
+    min-height: 100vh;
+    background: #f8fafc;
+    /* Very light slate */
+    color: #0f172a;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    padding-bottom: 80px;
+}
+
+.grocery-header {
+    background: #ffffff;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    padding: 15px 4%;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+.grocery-header-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.grocery-logo {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: #16a34a;
+    /* Supermarket Green */
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    letter-spacing: -0.03em;
+}
+
+.grocery-logo img {
+    height: 36px;
+    width: auto;
+}
+
+.grocery-search-form {
+    flex: 1;
+    max-width: 700px;
+    margin: 0 40px;
+    position: relative;
+    display: flex;
+}
+
+.grocery-search-input {
+    width: 100%;
+    background: #f1f5f9;
+    border: 1px solid transparent;
+    padding: 12px 20px 12px 48px;
+    border-radius: 12px;
+    font-size: 1rem;
+    transition: all 0.2s;
+    outline: none;
+}
+
+.grocery-search-input:focus {
+    background: #fff;
+    border-color: #16a34a;
+    box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.1);
+}
+
+.grocery-search-icon {
+    position: absolute;
+    left: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #94a3b8;
+}
+
+.grocery-cart-btn {
+    background: #16a34a;
+    color: #fff;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 12px;
+    font-weight: 700;
+    font-size: 1rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    transition: background 0.2s;
+}
+
+.grocery-cart-btn:hover {
+    background: #15803d;
+}
+
+.grocery-cart-total {
+    background: rgba(0, 0, 0, 0.15);
+    padding: 2px 8px;
+    border-radius: 6px;
+    font-size: 0.9rem;
+}
+
+.grocery-nav {
+    display: flex;
+    gap: 12px;
+    overflow-x: auto;
+    scrollbar-width: none;
+}
+
+.grocery-nav::-webkit-scrollbar {
+    display: none;
+}
+
+.gro-cat-btn {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    color: #64748b;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.2s;
+}
+
+.gro-cat-btn:hover {
+    border-color: #cbd5e0;
+    color: #334155;
+}
+
+.gro-cat-btn.active {
+    background: #f0fdf4;
+    border-color: #16a34a;
+    color: #16a34a;
+}
+
+.grocery-main {
+    padding: 30px 4%;
+    max-width: 1600px;
+    margin: 0 auto;
+}
+
+.grocery-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 20px;
+}
+
+.gro-card {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    transition: all 0.2s;
+}
+
+.gro-card:hover {
+    border-color: #16a34a;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+}
+
+.gro-img-wrap {
+    aspect-ratio: 1/1;
+    margin-bottom: 16px;
+    position: relative;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.gro-img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.gro-price-row {
+    margin-bottom: 8px;
+}
+
+.gro-price {
+    font-size: 1.2rem;
+    font-weight: 800;
+    color: #0f172a;
+}
+
+.gro-title {
+    font-size: 0.95rem;
+    color: #334155;
+    margin: 0 0 16px 0;
+    line-height: 1.4;
+    height: 2.8em;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+/* Quantity Adjuster replacing standard button */
+.gro-qty-controls {
+    margin-top: auto;
+    display: flex;
+    align-items: center;
+    background: #f1f5f9;
+    border-radius: 8px;
+    overflow: hidden;
+    height: 40px;
+}
+
+.gro-qty-btn {
+    width: 40px;
+    height: 100%;
+    background: transparent;
+    border: none;
+    color: #64748b;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s, color 0.2s;
+}
+
+.gro-qty-btn:hover {
+    background: #e2e8f0;
+    color: #0f172a;
+}
+
+.gro-qty-val {
+    flex: 1;
+    text-align: center;
+    font-weight: 700;
+    font-size: 1rem;
+    color: #0f172a;
+}
+
+.gro-add-initial {
+    margin-top: auto;
+    width: 100%;
+    background: #f0fdf4;
+    color: #16a34a;
+    border: 1px solid #bbf7d0;
+    padding: 10px;
+    border-radius: 8px;
+    font-weight: 700;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+}
+
+.gro-add-initial:hover {
+    background: #16a34a;
+    color: #fff;
+    border-color: #16a34a;
+}
+
+@media (max-width: 600px) {
+    .grocery-header-top {
+        flex-wrap: wrap;
+        gap: 16px;
+    }
+
+    .grocery-search-form {
+        order: 3;
+        margin: 0;
+        min-width: 100%;
+    }
+
+    .grocery-grid {
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        gap: 12px;
+    }
+
+    .gro-card {
+        padding: 12px;
+    }
+}

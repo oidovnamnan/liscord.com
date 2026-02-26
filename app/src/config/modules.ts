@@ -1,57 +1,114 @@
-import {
-    ShoppingCart, Package, Truck, Network, Briefcase, Factory,
-    Calendar, Landmark, Layers, Clock, DollarSign, PieChart,
-    Building2, FileText, BarChart3, Receipt, Warehouse, Ticket, LayoutDashboard
-} from 'lucide-react';
-import type { LucideIcon } from 'lucide-react';
+import type { AppModule } from '../types';
 
-export interface AppModule {
-    id: string;
-    name: string;
-    description: string;
-    icon: LucideIcon;
-    path?: string;          // Optional path for the "Open" button
-    isCore?: boolean;       // Core modules cannot be uninstalled
-}
-
-export const APP_MODULES: AppModule[] = [
-    // --- Core Systems (Always visible, cannot be uninstalled via App Store) ---
-    // NOTE: Settings and App Store Manager itself is implicitly core, no need to list it as a toggleable module.
-
-    // --- Installable Apps ---
-    { id: 'dashboard', name: 'Хянах самбар', description: 'Үндсэн үзүүлэлтүүд', icon: LayoutDashboard, path: '/app' },
-    { id: 'reports', name: 'Тайлан', description: 'Борлуулалт, ашгийн тайлан', icon: BarChart3, path: '/app/reports' },
-
-    { id: 'orders', name: 'Борлуулалт & POS', description: 'Дэлгүүр, кассын борлуулалт', icon: ShoppingCart, path: '/app/orders' },
-    { id: 'products', name: 'Бараа бүртгэл', description: 'Төрөл, үнэ, үлдэгдэл удирдах', icon: Package, path: '/app/products' },
-    { id: 'inventory', name: 'Агуулах & Нөөц', description: 'Олон агуулах хооронд шилжүүлэх', icon: Warehouse, path: '/app/inventory' },
-
-    { id: 'customers', name: 'Харилцагч (CRM)', description: 'Үйлчлүүлэгчдийн түүх, өр авлага', icon: Building2, path: '/app/customers' },
-    { id: 'chat', name: 'Чат & Message', description: 'Сошиал чат нэгтгэл', icon: FileText, path: '/app/chat' },
-
-    { id: 'delivery', name: 'Хүргэлт (Жолооч)', description: 'Дотоод хүргэлтийн зохицуулалт', icon: Truck, path: '/app/delivery' },
-    { id: 'packages', name: 'Ачаа (AI)', description: 'Хил дамнасан ачаа тээвэрлэх', icon: Package, path: '/app/packages' },
-    { id: 'cargo', name: 'Ухаалаг Карго', description: 'Кг, м3, ширхгээр үнэ бодох (Zamex загвар)', icon: Truck, path: '/app/settings?tab=cargo' },
-
-    { id: 'b2b', name: 'B2B Маркетплейс', description: 'Байгууллага хоорондын худалдаа', icon: Network, path: '/app/b2b' },
-    { id: 'b2b-provider', name: 'B2B Хүсэлтүүд', description: 'Нийлүүлэгчийн удирдлагын самбар', icon: Briefcase, path: '/app/b2b-provider' },
-
-    { id: 'finance', name: 'Санхүү & Орлого зарлага', description: 'Өдөр тутмын гүйлгээ', icon: PieChart, path: '/app/finance' },
-    { id: 'payments', name: 'Төлбөр тооцоо', description: 'Шилжүүлэг, QPay, НӨАТ', icon: DollarSign, path: '/app/payments' },
-
-    { id: 'manufacturing', name: 'Үйлдвэрлэл', description: 'Орц найрлага, гарц тооцох', icon: Factory, path: '/app/manufacturing' },
-    { id: 'projects', name: 'Төсөл & Үйлчилгээ', description: 'Урт хугацааны төслийн явц', icon: Briefcase, path: '/app/projects' },
-
-    { id: 'appointments', name: 'Цаг захиалга', description: 'Гоо сайхан, эмнэлэг, уулзалт', icon: Calendar, path: '/app/appointments' },
-    { id: 'rooms', name: 'Өрөө & Талбай', description: 'Зочид буудал, түрээсийн талбай', icon: LayoutDashboard, path: '/app/rooms' },
-
-    { id: 'vehicles', name: 'Машин & Техник', description: 'Машин түрээс, техник үйлчилгээ', icon: Truck, path: '/app/vehicles' },
-    { id: 'tickets', name: 'Тасалбар', description: 'Тоглолт, арга хэмжээний тасалбар', icon: Ticket, path: '/app/tickets' },
-
-    { id: 'loans', name: 'Зээл & Ломбард', description: 'Хүүний бодолт, барьцаа хөрөнгө', icon: Landmark, path: '/app/loans' },
-    { id: 'queue', name: 'Дараалал (Queue)', description: 'Угаалга, салон, эмнэлгийн дараалал', icon: Layers, path: '/app/queue' },
-
-    { id: 'attendance', name: 'Цаг бүртгэл', description: 'Ажилчдын ирсэн/явсан цаг', icon: Clock, path: '/app/attendance' },
-    { id: 'payroll', name: 'Цалин бодолт', description: 'Үндсэн цалин, урамшуулал', icon: DollarSign, path: '/app/payroll' },
-    { id: 'contracts', name: 'Гэрээ удирдлага', description: 'Гэрээ үүсгэх, хянах', icon: Receipt, path: '/app/contracts' },
+export const LISCORD_MODULES: AppModule[] = [
+    {
+        id: 'orders',
+        name: 'Захиалга',
+        description: 'Бүх сувгаар орж ирсэн захиалгуудыг нэг цонхноос удирдах, төлөв өөрчлөх, нэхэмжлэх илгээх систем.',
+        icon: 'PackageSearch',
+        route: '/dashboard/orders',
+        isCore: false,
+        category: 'operations'
+    },
+    {
+        id: 'inventory',
+        name: 'Агуулах & Бараа',
+        description: 'Бүтээгдэхүүний жагсаалт, үлдэгдэл хянах, үнэ тохируулах менежмент.',
+        icon: 'Boxes',
+        route: '/dashboard/inventory',
+        isCore: false,
+        category: 'operations'
+    },
+    {
+        id: 'pos',
+        name: 'ПОС / Борлуулалт',
+        description: 'Дэлгүүр дээрх биет борлуулалт, E-barimt уншуулах кассын систем.',
+        icon: 'MonitorSmartphone',
+        route: '/dashboard/pos',
+        isCore: false,
+        category: 'sales'
+    },
+    {
+        id: 'finance',
+        name: 'Санхүү & Татвар',
+        description: 'Орлого, зарлага, авлага болон НӨАТ-ын тайлан, E-barimt уншуулах удирдлага.',
+        icon: 'Wallet',
+        route: '/dashboard/finance',
+        isCore: false,
+        category: 'finance'
+    },
+    {
+        id: 'hrm',
+        name: 'Хүний Нөөц',
+        description: 'Ажилчдын ирц, цалин бодолт, урьдчилгаа болон багийн гүйцэтгэлийн удирдлага.',
+        icon: 'Users',
+        route: '/dashboard/hrm',
+        isCore: false,
+        category: 'staff'
+    },
+    {
+        id: 'cargo',
+        name: 'Карго Тээвэр',
+        description: 'Хятадаас карго тээвэрлэдэг болон хот хооронд илгээмж хүргэдэг компаниудад зориулсан бүртгэл.',
+        icon: 'Truck',
+        route: '/dashboard/cargo',
+        isCore: false,
+        category: 'services'
+    },
+    {
+        id: 'delivery',
+        name: 'Хүргэлт & Логистик',
+        description: 'Хот доторх хүргэлтийн тооцоо, жолоочийн удирдлага, газрын зурагтай интеграц.',
+        icon: 'MapPin',
+        route: '/dashboard/delivery',
+        isCore: false,
+        category: 'services'
+    },
+    {
+        id: 'b2b',
+        name: 'B2B Платформ',
+        description: 'Бусад бизнесүүдтэй холбогдох, ханган нийлүүлэлт авах, бөөний сүлжээ үүсгэх.',
+        icon: 'Building2',
+        route: '/dashboard/b2b',
+        isCore: false,
+        category: 'sales'
+    },
+    {
+        id: 'customers',
+        name: 'Хэрэглэгчид (CRM)',
+        description: 'Худалдан авагчдын түүх, оноо цуглуулах, сегментчлэл хийх харилцагчийн удирдлага.',
+        icon: 'Contact',
+        route: '/dashboard/customers',
+        isCore: false,
+        category: 'sales'
+    },
+    {
+        id: 'booking',
+        name: 'Цаг Захиалга',
+        description: 'Гоо сайхан, эмнэлэг зэрэг үйлчилгээний байгууллагуудад зориулсан календарь, цаг захиалга.',
+        icon: 'CalendarClock',
+        route: '/dashboard/booking',
+        isCore: false,
+        category: 'services'
+    },
+    {
+        id: 'analytics',
+        name: 'Анализ & Тайлан',
+        description: 'Бизнесийн өсөлтийн графикууд, ашигт ажиллагааны нарийвчилсан тайлан.',
+        icon: 'BarChart3',
+        route: '/dashboard/reports',
+        isCore: true, // Always visible for now, or maybe make it togglable later
+        category: 'operations'
+    },
+    {
+        id: 'messenger',
+        name: 'Чаат & Харилцаа',
+        description: 'Facebook, Instagram болон вэбсайтын зурвасуудыг нэг дор хүлээн авч хариулах.',
+        icon: 'MessageCircle',
+        route: '/dashboard/chat',
+        isCore: false,
+        category: 'sales'
+    }
 ];
+
+export const CORE_MODULES = LISCORD_MODULES.filter(m => m.isCore).map(m => m.id);

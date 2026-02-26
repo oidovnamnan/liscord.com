@@ -1,0 +1,282 @@
+/* Theme 17: Furniture / Interior Room Scenes Style */
+
+.theme-furniture {
+    min-height: 100vh;
+    background: #faf9f8;
+    /* Soft warm gray/white */
+    color: #333333;
+    font-family: 'Playfair Display', 'Lora', serif;
+    /* Elegant serif for headings */
+    font-family: 'Inter', sans-serif;
+    /* Clean sans for body text */
+    padding-bottom: 100px;
+}
+
+/* Base resets inside theme */
+.theme-furniture h1,
+.theme-furniture h2,
+.theme-furniture h3,
+.theme-furniture .furn-logo {
+    font-family: 'Playfair Display', serif;
+}
+
+.furn-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 24px 6%;
+    position: absolute;
+    /* overlay on hero initially */
+    top: 0;
+    left: 0;
+    width: 100%;
+    z-index: 100;
+    color: #fff;
+}
+
+.furn-logo {
+    font-size: 1.8rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    color: inherit;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.furn-logo img {
+    height: 40px;
+    width: auto;
+    filter: brightness(0) invert(1);
+}
+
+.furn-controls {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+}
+
+.furn-cart-btn {
+    background: transparent;
+    border: none;
+    color: inherit;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 500;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: opacity 0.2s;
+}
+
+.furn-cart-btn:hover {
+    opacity: 0.8;
+}
+
+.furn-hero {
+    height: 80vh;
+    min-height: 600px;
+    background: #e9e5e1 url('https://images.unsplash.com/photo-1600210492486-724fe5c67e1a?auto=format&fit=crop&w=1920&q=80') center/cover no-repeat;
+    position: relative;
+    display: flex;
+    align-items: flex-end;
+    padding: 60px 6%;
+}
+
+.furn-hero::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to top, rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.1) 50%, rgba(0, 0, 0, 0.3));
+    z-index: 1;
+}
+
+.furn-hero-content {
+    position: relative;
+    z-index: 2;
+    color: #fff;
+    max-width: 600px;
+}
+
+.furn-hero h1 {
+    font-size: clamp(3rem, 5vw, 4.5rem);
+    line-height: 1.1;
+    margin: 0 0 16px 0;
+    font-weight: 500;
+}
+
+.furn-hero p {
+    font-family: 'Inter', sans-serif;
+    font-size: 1.1rem;
+    opacity: 0.9;
+    margin: 0;
+    line-height: 1.6;
+}
+
+.furn-nav-wrap {
+    background: #ffffff;
+    border-bottom: 1px solid #f0f0f0;
+    position: sticky;
+    top: 0;
+    z-index: 99;
+}
+
+.furn-nav {
+    display: flex;
+    gap: 30px;
+    padding: 0 6%;
+    overflow-x: auto;
+    scrollbar-width: none;
+}
+
+.furn-nav::-webkit-scrollbar {
+    display: none;
+}
+
+.furn-cat-btn {
+    background: transparent;
+    border: none;
+    font-family: 'Inter', sans-serif;
+    color: #888;
+    padding: 24px 0;
+    font-size: 0.95rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    cursor: pointer;
+    position: relative;
+    white-space: nowrap;
+    transition: color 0.3s;
+}
+
+.furn-cat-btn.active {
+    color: #222;
+}
+
+.furn-cat-btn::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 0%;
+    height: 2px;
+    background: #222;
+    transition: width 0.3s ease;
+}
+
+.furn-cat-btn.active::after,
+.furn-cat-btn:hover::after {
+    width: 100%;
+}
+
+.furn-main {
+    padding: 80px 6%;
+    max-width: 1600px;
+    margin: 0 auto;
+}
+
+.furn-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 60px 40px;
+}
+
+.furn-card {
+    display: flex;
+    flex-direction: column;
+    cursor: pointer;
+}
+
+.furn-img-wrap {
+    aspect-ratio: 4/5;
+    background: #f0f0f0;
+    margin-bottom: 20px;
+    position: relative;
+    overflow: hidden;
+}
+
+.furn-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.furn-card:hover .furn-img {
+    transform: scale(1.05);
+}
+
+.furn-card-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+
+.furn-title {
+    font-size: 1.25rem;
+    font-weight: 500;
+    margin: 0 0 8px 0;
+    color: #222;
+}
+
+.furn-desc {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.9rem;
+    color: #888;
+    margin: 0;
+}
+
+.furn-action {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+}
+
+.furn-price {
+    font-family: 'Inter', sans-serif;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #222;
+    margin-bottom: 12px;
+}
+
+.furn-add-btn {
+    background: transparent;
+    color: #222;
+    border: 1px solid #222;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s;
+    opacity: 0;
+    transform: translateY(10px);
+}
+
+.furn-card:hover .furn-add-btn {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.furn-add-btn:hover {
+    background: #222;
+    color: #fff;
+}
+
+@media (max-width: 768px) {
+    .furn-hero {
+        padding: 40px 6%;
+        min-height: 400px;
+        height: 60vh;
+    }
+
+    .furn-add-btn {
+        opacity: 1;
+        transform: none;
+    }
+}

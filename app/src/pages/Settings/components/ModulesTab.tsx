@@ -5,7 +5,8 @@ import { toast } from 'react-hot-toast';
 import { Layers, Trash2, Download } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
-import { APP_MODULES } from '../../../config/modules';
+import * as Icons from 'lucide-react';
+import { LISCORD_MODULES } from '../../../config/modules';
 
 export function ModulesTab() {
     const { business, setBusiness } = useBusinessStore();
@@ -76,8 +77,8 @@ export function ModulesTab() {
             </p>
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '20px' }}>
-                {APP_MODULES.filter(mod => !mod.isCore).map(mod => {
-                    const Icon = mod.icon;
+                {LISCORD_MODULES.filter(mod => !mod.isCore).map(mod => {
+                    const Icon = (Icons as any)[mod.icon] || Icons.Box;
                     const isInstalled = activeMods.includes(mod.id);
                     const isInstalling = installingId === mod.id;
 
@@ -147,7 +148,7 @@ export function ModulesTab() {
                                         <button
                                             className="btn btn-primary btn-sm"
                                             style={{ width: '100%', borderRadius: '20px', padding: '6px 12px', fontSize: '0.85rem', fontWeight: 600 }}
-                                            onClick={() => navigate(mod.path || `/app/${mod.id}`)}
+                                            onClick={() => navigate(mod.route || `/dashboard/${mod.id}`)}
                                         >
                                             Нээх
                                         </button>

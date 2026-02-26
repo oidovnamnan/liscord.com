@@ -1,0 +1,234 @@
+/* Theme 13: Agency / Minimal Portfolio Style */
+
+.theme-agency {
+    min-height: 100vh;
+    background: #ffffff;
+    color: #111111;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    padding-bottom: 100px;
+}
+
+.agency-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 30px 5%;
+    background: #ffffff;
+}
+
+.agency-logo {
+    font-size: 1.5rem;
+    font-weight: 800;
+    letter-spacing: -0.04em;
+    color: #111;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.agency-logo img {
+    height: 32px;
+    width: auto;
+}
+
+.agency-controls {
+    display: flex;
+    align-items: center;
+    gap: 30px;
+}
+
+.agency-cart-btn {
+    background: transparent;
+    border: none;
+    color: #111;
+    font-family: inherit;
+    font-weight: 600;
+    font-size: 0.95rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    border-radius: 100px;
+    transition: background 0.2s;
+}
+
+.agency-cart-btn:hover {
+    background: #f5f5f5;
+}
+
+.agency-cart-count {
+    background: #111;
+    color: #fff;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 0.8rem;
+}
+
+.agency-hero {
+    padding: 60px 5% 100px;
+    max-width: 1200px;
+}
+
+.agency-hero h1 {
+    font-size: clamp(3rem, 6vw, 5rem);
+    font-weight: 800;
+    line-height: 1.1;
+    letter-spacing: -0.04em;
+    margin: 0 0 24px 0;
+}
+
+.agency-hero p {
+    font-size: 1.25rem;
+    color: #666;
+    max-width: 600px;
+    margin: 0;
+    line-height: 1.6;
+}
+
+.agency-filters {
+    padding: 0 5% 40px;
+    display: flex;
+    gap: 20px;
+    border-bottom: 1px solid #eaeaea;
+    margin-bottom: 60px;
+    overflow-x: auto;
+    scrollbar-width: none;
+}
+
+.agency-filters::-webkit-scrollbar {
+    display: none;
+}
+
+.agc-filter-btn {
+    background: transparent;
+    border: none;
+    color: #888;
+    font-size: 1.1rem;
+    font-weight: 500;
+    cursor: pointer;
+    padding: 0 0 16px 0;
+    position: relative;
+    white-space: nowrap;
+    transition: color 0.2s;
+}
+
+.agc-filter-btn:hover {
+    color: #111;
+}
+
+.agc-filter-btn.active {
+    color: #111;
+}
+
+.agc-filter-btn.active::after {
+    content: '';
+    position: absolute;
+    bottom: -1px;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    background: #111;
+}
+
+.agency-grid {
+    padding: 0 5%;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 60px 40px;
+    max-width: 1800px;
+    margin: 0 auto;
+}
+
+.agc-card {
+    display: flex;
+    flex-direction: column;
+    group: hover;
+    cursor: pointer;
+}
+
+.agc-img-wrap {
+    aspect-ratio: 16/10;
+    background: #f5f5f5;
+    overflow: hidden;
+    margin-bottom: 24px;
+    position: relative;
+}
+
+.agc-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.agc-card:hover .agc-img {
+    transform: scale(1.03);
+}
+
+.agc-info-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+
+.agc-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin: 0 0 8px 0;
+    letter-spacing: -0.02em;
+}
+
+.agc-cat {
+    font-size: 0.95rem;
+    color: #888;
+}
+
+.agc-action {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+}
+
+.agc-price {
+    font-size: 1.2rem;
+    font-weight: 500;
+    margin-bottom: 12px;
+}
+
+.agc-add-btn {
+    opacity: 0;
+    transform: translateY(10px);
+    background: #111;
+    color: #fff;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 100px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.agc-card:hover .agc-add-btn {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+@media (max-width: 900px) {
+    .agency-grid {
+        grid-template-columns: 1fr;
+        gap: 40px;
+    }
+
+    .agc-add-btn {
+        opacity: 1;
+        transform: none;
+        background: #f5f5f5;
+        color: #111;
+    }
+
+    .agency-hero {
+        padding: 40px 5% 60px;
+    }
+}

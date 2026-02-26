@@ -1,0 +1,345 @@
+/* Theme 20: Gamer Gear / Hardware / Tech Dark Style */
+
+.theme-gamer {
+    min-height: 100vh;
+    background: #09090b;
+    /* Very dark zinc */
+    color: #e4e4e7;
+    font-family: 'Rajdhani', 'Jura', 'Inter', sans-serif;
+    /* Tech/Squarish font */
+    padding-bottom: 100px;
+    position: relative;
+    overflow-x: hidden;
+}
+
+/* Optional background glow effect */
+.theme-gamer::before {
+    content: '';
+    position: fixed;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle at 50% 50%, rgba(139, 92, 246, 0.05) 0%, transparent 50%),
+        radial-gradient(circle at 80% 20%, rgba(16, 185, 129, 0.03) 0%, transparent 40%);
+    z-index: 0;
+    pointer-events: none;
+}
+
+.gamer-header {
+    background: rgba(9, 9, 11, 0.8);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(139, 92, 246, 0.2);
+    padding: 16px 5%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+.gamer-logo {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: #fff;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    text-shadow: 0 0 10px rgba(139, 92, 246, 0.5);
+}
+
+.gamer-logo img {
+    height: 40px;
+    width: auto;
+}
+
+.gamer-controls {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+}
+
+.gamer-search {
+    display: flex;
+    align-items: center;
+    background: #18181b;
+    border: 1px solid #27272a;
+    border-radius: 4px;
+    padding: 8px 16px;
+    width: 250px;
+    position: relative;
+    transition: border-color 0.2s;
+}
+
+.gamer-search:focus-within {
+    border-color: #8b5cf6;
+    box-shadow: 0 0 8px rgba(139, 92, 246, 0.3);
+}
+
+.gamer-search input {
+    background: transparent;
+    border: none;
+    color: #fff;
+    outline: none;
+    font-family: inherit;
+    font-size: 0.95rem;
+    width: 100%;
+    margin-left: 10px;
+}
+
+.gamer-cart-btn {
+    background: transparent;
+    color: #a78bfa;
+    border: 1px solid #a78bfa;
+    padding: 8px 20px;
+    border-radius: 4px;
+    font-family: inherit;
+    font-weight: 700;
+    font-size: 1rem;
+    text-transform: uppercase;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    transition: all 0.2s;
+}
+
+.gamer-cart-btn:hover {
+    background: rgba(139, 92, 246, 0.1);
+    box-shadow: inset 0 0 10px rgba(139, 92, 246, 0.2);
+}
+
+.gamer-cart-badge {
+    background: #8b5cf6;
+    color: #fff;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 0.8rem;
+}
+
+.gamer-hero {
+    text-align: center;
+    padding: 80px 5% 60px;
+    position: relative;
+    z-index: 10;
+}
+
+.gamer-hero h1 {
+    font-size: clamp(3rem, 6vw, 4.5rem);
+    font-weight: 700;
+    color: #fff;
+    margin: 0 0 16px 0;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    background: linear-gradient(90deg, #fff, #a78bfa);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.gamer-hero p {
+    font-family: 'Inter', sans-serif;
+    font-size: 1.1rem;
+    color: #a1a1aa;
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.gamer-nav {
+    display: flex;
+    justify-content: center;
+    gap: 16px;
+    padding: 0 5% 40px;
+    position: relative;
+    z-index: 10;
+    overflow-x: auto;
+    scrollbar-width: none;
+}
+
+.gamer-nav::-webkit-scrollbar {
+    display: none;
+}
+
+.gmr-cat-btn {
+    background: #18181b;
+    border: 1px solid #27272a;
+    color: #a1a1aa;
+    padding: 10px 24px;
+    border-radius: 4px;
+    font-family: inherit;
+    font-size: 1rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.2s;
+    position: relative;
+    overflow: hidden;
+}
+
+.gmr-cat-btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 0;
+    height: 100%;
+    background: rgba(139, 92, 246, 0.1);
+    transition: width 0.3s ease;
+    z-index: 0;
+}
+
+.gmr-cat-btn:hover::before {
+    width: 100%;
+}
+
+.gmr-cat-btn:hover {
+    border-color: #52525b;
+    color: #e4e4e7;
+}
+
+.gmr-cat-btn.active {
+    border-color: #8b5cf6;
+    color: #fff;
+    box-shadow: 0 0 15px rgba(139, 92, 246, 0.2);
+}
+
+.gamer-grid {
+    padding: 0 5%;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 30px;
+    max-width: 1400px;
+    margin: 0 auto;
+    position: relative;
+    z-index: 10;
+}
+
+.gmr-card {
+    background: #18181b;
+    border: 1px solid #27272a;
+    border-radius: 8px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
+    position: relative;
+}
+
+.gmr-card:hover {
+    transform: translateY(-4px);
+    border-color: #8b5cf6;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), 0 0 20px rgba(139, 92, 246, 0.15);
+}
+
+.gmr-img-wrap {
+    aspect-ratio: 1/1;
+    background: #09090b;
+    position: relative;
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-bottom: 1px solid #27272a;
+}
+
+.gmr-img-wrap::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at center, rgba(139, 92, 246, 0.1) 0%, transparent 70%);
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+.gmr-card:hover .gmr-img-wrap::after {
+    opacity: 1;
+}
+
+.gmr-img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    position: relative;
+    z-index: 2;
+    filter: drop-shadow(0 10px 15px rgba(0, 0, 0, 0.5));
+    transition: transform 0.3s;
+}
+
+.gmr-card:hover .gmr-img {
+    transform: scale(1.05);
+}
+
+.gmr-info {
+    padding: 20px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.gmr-cat {
+    font-size: 0.85rem;
+    color: #a78bfa;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 8px;
+    font-weight: 700;
+}
+
+.gmr-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #fff;
+    margin: 0 0 16px 0;
+    line-height: 1.3;
+}
+
+.gmr-bottom {
+    margin-top: auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.gmr-price {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: #fff;
+}
+
+.gmr-add-btn {
+    background: #8b5cf6;
+    color: #fff;
+    border: none;
+    width: 40px;
+    height: 40px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.1s;
+}
+
+.gmr-add-btn:hover {
+    background: #7c3aed;
+}
+
+.gmr-add-btn:active {
+    transform: scale(0.95);
+}
+
+@media (max-width: 768px) {
+    .gamer-search {
+        display: none;
+    }
+
+    .gamer-hero {
+        padding: 40px 5%;
+    }
+}

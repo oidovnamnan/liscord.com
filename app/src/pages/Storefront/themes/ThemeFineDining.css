@@ -1,0 +1,259 @@
+/* Theme 9: Fine Dining / Premium Restaurant Style */
+
+.theme-finedining {
+    min-height: 100vh;
+    background: #0f1115;
+    /* Very dark slate/black */
+    color: #e2e4e9;
+    font-family: 'Cinzel', 'Playfair Display', serif;
+    /* Classic, elegant serif */
+    padding-bottom: 80px;
+}
+
+.fd-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 30px 6%;
+    position: absolute;
+    /* Float over hero */
+    top: 0;
+    left: 0;
+    width: 100%;
+    z-index: 100;
+}
+
+.fd-logo {
+    font-size: 1.8rem;
+    font-weight: 500;
+    letter-spacing: 0.15em;
+    color: #d4af37;
+    /* Gold */
+    text-transform: uppercase;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.fd-logo img {
+    height: 48px;
+    width: auto;
+    filter: drop-shadow(0 0 8px rgba(212, 175, 55, 0.4));
+}
+
+.fd-controls {
+    display: flex;
+    align-items: center;
+    gap: 30px;
+}
+
+.fd-cart-btn {
+    background: transparent;
+    border: none;
+    color: #d4af37;
+    cursor: pointer;
+    font-family: 'Lora', serif;
+    font-size: 1rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.fd-home-hero {
+    height: 70vh;
+    min-height: 500px;
+    background: linear-gradient(to bottom, rgba(15, 17, 21, 0.4), #0f1115),
+        url('https://images.unsplash.com/photo-1414235077428-338989a2e8c0?auto=format&fit=crop&w=1920&q=80') center/cover no-repeat;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    align-items: center;
+    padding-bottom: 100px;
+    text-align: center;
+}
+
+.fd-home-hero h1 {
+    font-size: 3.5rem;
+    color: #fff;
+    font-weight: 400;
+    letter-spacing: 0.1em;
+    margin: 0 0 20px 0;
+}
+
+.fd-home-hero p {
+    font-family: 'Lato', sans-serif;
+    color: #a0a5b1;
+    font-size: 1.1rem;
+    letter-spacing: 0.05em;
+}
+
+.fd-menu-nav {
+    display: flex;
+    justify-content: center;
+    gap: 40px;
+    padding: 40px 5%;
+    border-bottom: 1px solid rgba(212, 175, 55, 0.2);
+    margin-bottom: 60px;
+    overflow-x: auto;
+    scrollbar-width: none;
+}
+
+.fd-menu-nav::-webkit-scrollbar {
+    display: none;
+}
+
+.fd-cat-btn {
+    background: transparent;
+    border: none;
+    color: #7b808c;
+    font-family: 'Cinzel', serif;
+    font-size: 1.1rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    cursor: pointer;
+    padding: 10px 0;
+    transition: color 0.4s;
+    position: relative;
+    white-space: nowrap;
+}
+
+.fd-cat-btn::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0;
+    height: 1px;
+    background: #d4af37;
+    transition: width 0.4s ease;
+}
+
+.fd-cat-btn.active {
+    color: #d4af37;
+}
+
+.fd-cat-btn.active::after,
+.fd-cat-btn:hover::after {
+    width: 100%;
+}
+
+.fd-menu-section {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 0 5%;
+}
+
+.fd-menu-title {
+    text-align: center;
+    font-size: 2rem;
+    color: #fff;
+    margin-bottom: 40px;
+    letter-spacing: 0.1em;
+}
+
+.fd-menu-list {
+    display: flex;
+    flex-direction: column;
+    gap: 40px;
+}
+
+.fd-menu-item {
+    display: flex;
+    align-items: center;
+    gap: 30px;
+    cursor: pointer;
+    transition: opacity 0.3s;
+}
+
+.fd-menu-item:hover {
+    opacity: 0.8;
+}
+
+.fd-img-wrap {
+    width: 140px;
+    height: 140px;
+    flex-shrink: 0;
+    border-radius: 50%;
+    overflow: hidden;
+    background: #1a1d24;
+    border: 2px solid rgba(212, 175, 55, 0.1);
+}
+
+.fd-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.fd-item-info {
+    flex: 1;
+}
+
+.fd-item-header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 12px;
+}
+
+.fd-item-name {
+    font-size: 1.4rem;
+    color: #fff;
+    margin: 0;
+    letter-spacing: 0.05em;
+}
+
+.fd-item-dots {
+    flex: 1;
+    border-bottom: 1px dotted rgba(255, 255, 255, 0.2);
+    margin: 0 16px;
+    position: relative;
+    top: -6px;
+}
+
+.fd-item-price {
+    font-size: 1.2rem;
+    color: #d4af37;
+}
+
+.fd-item-desc {
+    font-family: 'Lato', sans-serif;
+    color: #a0a5b1;
+    font-size: 0.95rem;
+    line-height: 1.6;
+    margin: 0;
+}
+
+@media (max-width: 768px) {
+    .fd-home-hero h1 {
+        font-size: 2.5rem;
+    }
+
+    .fd-menu-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 20px;
+        text-align: center;
+    }
+
+    .fd-img-wrap {
+        width: 200px;
+        height: 200px;
+        margin: 0 auto;
+    }
+
+    .fd-item-header {
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
+        width: 100%;
+    }
+
+    .fd-item-dots {
+        display: none;
+    }
+}

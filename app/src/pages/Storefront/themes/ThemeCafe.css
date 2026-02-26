@@ -1,0 +1,265 @@
+/* Theme 10: Cafe / Warm Organic Style */
+
+.theme-cafe {
+    min-height: 100vh;
+    background: #fdfaf6;
+    /* Warm off-white, paper-like */
+    color: #4a3b32;
+    /* Deep espresso brown */
+    font-family: 'Outfit', 'Nunito', sans-serif;
+    /* Soft, rounded, friendly font */
+    padding-bottom: 80px;
+}
+
+.cafe-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.5rem 5%;
+    position: sticky;
+    top: 0;
+    min-height: 80px;
+    background: rgba(253, 250, 246, 0.95);
+    backdrop-filter: blur(8px);
+    z-index: 100;
+    border-bottom: 2px dashed rgba(74, 59, 50, 0.1);
+}
+
+.cafe-logo {
+    font-size: 1.6rem;
+    font-weight: 800;
+    color: #d35400;
+    /* Warm terracotta/orange */
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.cafe-logo img {
+    height: 40px;
+    width: auto;
+    border-radius: 12px;
+}
+
+.cafe-controls {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.cafe-search-wrap {
+    background: #f4ece4;
+    border-radius: 20px;
+    padding: 8px 16px;
+    display: flex;
+    align-items: center;
+}
+
+.cafe-search-input {
+    background: transparent;
+    border: none;
+    outline: none;
+    font-family: inherit;
+    font-size: 0.95rem;
+    color: #4a3b32;
+    margin-left: 8px;
+    width: 200px;
+}
+
+.cafe-search-input::placeholder {
+    color: #9c8b7e;
+}
+
+.cafe-cart-btn {
+    background: #d35400;
+    color: #fff;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 24px;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: transform 0.2s, background 0.2s;
+    box-shadow: 0 4px 12px rgba(211, 84, 0, 0.2);
+}
+
+.cafe-cart-btn:hover {
+    transform: translateY(-2px);
+    background: #e67e22;
+}
+
+.cafe-nav {
+    padding: 30px 5% 0;
+    display: flex;
+    gap: 16px;
+    overflow-x: auto;
+    scrollbar-width: none;
+}
+
+.cafe-nav::-webkit-scrollbar {
+    display: none;
+}
+
+.cafe-cat-btn {
+    background: #f4ece4;
+    color: #7a6a5d;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 30px;
+    font-weight: 600;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+}
+
+.cafe-cat-btn:hover {
+    background: #e9dec9;
+}
+
+.cafe-cat-btn.active {
+    background: #4a3b32;
+    color: #fdfaf6;
+    box-shadow: 0 4px 12px rgba(74, 59, 50, 0.2);
+}
+
+.cafe-main {
+    padding: 40px 5%;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+.cafe-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 30px;
+}
+
+.cafe-card {
+    background: #fff;
+    border-radius: 24px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.03);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    cursor: pointer;
+}
+
+.cafe-card:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 16px 40px rgba(74, 59, 50, 0.08);
+}
+
+.cafe-img-wrap {
+    aspect-ratio: 1/1;
+    border-radius: 16px;
+    overflow: hidden;
+    margin-bottom: 16px;
+    background: #f4ece4;
+    position: relative;
+}
+
+.cafe-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.5s ease;
+}
+
+.cafe-card:hover .cafe-img {
+    transform: scale(1.05);
+}
+
+.cafe-card-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 0 8px 8px;
+}
+
+.cafe-card-title {
+    font-size: 1.2rem;
+    font-weight: 700;
+    margin: 0 0 8px 0;
+    color: #4a3b32;
+    line-height: 1.3;
+}
+
+.cafe-card-desc {
+    font-size: 0.85rem;
+    color: #9c8b7e;
+    margin: 0 0 16px 0;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.cafe-card-bottom {
+    margin-top: auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.cafe-price {
+    font-size: 1.25rem;
+    font-weight: 800;
+    color: #d35400;
+}
+
+.cafe-add {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: #f4ece4;
+    color: #4a3b32;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.cafe-card:hover .cafe-add {
+    background: #d35400;
+    color: #fff;
+    transform: rotate(90deg);
+}
+
+@media (max-width: 600px) {
+    .cafe-search-wrap {
+        display: none;
+    }
+
+    .cafe-card {
+        flex-direction: row;
+        align-items: center;
+        padding: 12px;
+        gap: 16px;
+        border-radius: 20px;
+    }
+
+    .cafe-img-wrap {
+        width: 100px;
+        height: 100px;
+        margin-bottom: 0;
+        border-radius: 12px;
+        flex-shrink: 0;
+    }
+
+    .cafe-card-info {
+        padding: 0;
+    }
+
+    .cafe-add {
+        width: 36px;
+        height: 36px;
+    }
+}

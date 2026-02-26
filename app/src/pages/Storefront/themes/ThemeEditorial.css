@@ -1,0 +1,280 @@
+/* Theme 2: Editorial / Vogue Style */
+
+.theme-editorial {
+    min-height: 100vh;
+    background: #fdfaf6;
+    /* Warm off-white / bone color */
+    color: #2c2925;
+    font-family: "Didot", "Playfair Display", "Times New Roman", serif;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Minimal Navbar for editorial */
+.editorial-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1.5rem 3%;
+    position: sticky;
+    top: 0;
+    background: rgba(253, 250, 246, 0.95);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    z-index: 100;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.editorial-logo {
+    font-size: 1.5rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    color: #000;
+    text-decoration: none;
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.editorial-logo img {
+    height: 36px;
+    width: auto;
+    object-fit: contain;
+}
+
+/* Layout Split: Sidebar + Main Content */
+.editorial-layout {
+    display: flex;
+    flex: 1;
+    max-width: 1600px;
+    margin: 0 auto;
+    width: 100%;
+}
+
+.editorial-sidebar {
+    width: 280px;
+    padding: 3rem 2rem;
+    position: sticky;
+    top: 80px;
+    /* Offset below nav */
+    height: calc(100vh - 80px);
+    overflow-y: auto;
+    border-right: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.editorial-sidebar-title {
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 1.5rem;
+    color: #8c8a85;
+    font-family: 'Inter', sans-serif;
+    /* Keep sans for UI elements */
+}
+
+.editorial-categories {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.editorial-category-btn {
+    background: none;
+    border: none;
+    text-align: left;
+    padding: 8px 0;
+    font-family: 'Inter', sans-serif;
+    font-size: 1.05rem;
+    color: #5c5a55;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+    width: fit-content;
+}
+
+.editorial-category-btn:hover {
+    color: #000;
+}
+
+.editorial-category-btn.active {
+    color: #000;
+    font-weight: 500;
+}
+
+.editorial-category-btn.active::after {
+    content: '';
+    position: absolute;
+    bottom: 4px;
+    left: 0;
+    width: 100%;
+    height: 1px;
+    background: #000;
+}
+
+.editorial-main {
+    flex: 1;
+    padding: 3rem;
+}
+
+/* Search Bar */
+.editorial-search-wrap {
+    margin-bottom: 3rem;
+    max-width: 400px;
+}
+
+.editorial-search-input {
+    width: 100%;
+    padding: 12px 16px;
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid #dcd9d2;
+    font-family: 'Inter', sans-serif;
+    font-size: 1rem;
+    color: #000;
+    outline: none;
+    transition: border-color 0.3s;
+}
+
+.editorial-search-input:focus {
+    border-bottom-color: #000;
+}
+
+.editorial-search-input::placeholder {
+    color: #a3a19b;
+}
+
+/* Product Grid */
+.editorial-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 2rem 1.5rem;
+}
+
+/* Product Card */
+.editorial-card {
+    display: flex;
+    flex-direction: column;
+    cursor: pointer;
+}
+
+.editorial-image-wrap {
+    position: relative;
+    width: 100%;
+    padding-top: 133%;
+    /* 3:4 Aspect Ratio! Key for fashion */
+    background: #eee;
+    overflow: hidden;
+    margin-bottom: 16px;
+}
+
+.editorial-image {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.editorial-card:hover .editorial-image {
+    transform: scale(1.05);
+}
+
+/* Sliding Add To Cart Overlay */
+.editorial-add-btn {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    background: rgba(255, 255, 255, 0.95);
+    color: #000;
+    border: none;
+    padding: 16px;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    cursor: pointer;
+    transform: translateY(100%);
+    transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.editorial-card:hover .editorial-add-btn {
+    transform: translateY(0);
+}
+
+.editorial-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+
+.editorial-name {
+    margin: 0;
+    font-weight: 400;
+    font-size: 1.1rem;
+    line-height: 1.4;
+    color: #000;
+    font-family: 'Inter', sans-serif;
+}
+
+.editorial-price {
+    font-weight: 600;
+    font-size: 1.1rem;
+    color: #000;
+    font-family: 'Inter', sans-serif;
+    margin-left: 12px;
+}
+
+/* Responsive */
+@media (max-width: 900px) {
+    .editorial-layout {
+        flex-direction: column;
+    }
+
+    .editorial-sidebar {
+        width: 100%;
+        height: auto;
+        position: static;
+        padding: 1.5rem 5%;
+        border-right: none;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    }
+
+    .editorial-categories {
+        flex-direction: row;
+        overflow-x: auto;
+        gap: 24px;
+        padding-bottom: 8px;
+    }
+
+    .editorial-category-btn {
+        white-space: nowrap;
+    }
+
+    .editorial-main {
+        padding: 2rem 5%;
+    }
+
+    .editorial-grid {
+        grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+        /* 2 columns on mobile */
+        gap: 1.5rem 1rem;
+    }
+
+    .editorial-add-btn {
+        transform: translateY(0);
+        /* Always show on mobile since no hover */
+        background: rgba(255, 255, 255, 0.85);
+        backdrop-filter: blur(4px);
+        padding: 12px;
+        font-size: 0.8rem;
+    }
+}

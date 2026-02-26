@@ -22,6 +22,17 @@ export interface User {
     createdAt: Date;
 }
 
+// ============ APP STORE MODULE ============
+export interface AppModule {
+    id: string;             // unique identifier, e.g. 'inventory', 'hrm'
+    name: string;           // Display name in App Store
+    description: string;    // Short description
+    icon: string;           // Lucide icon name or emoji
+    route: string;          // Sidebar active route prefix (e.g. '/dashboard/inventory')
+    isCore: boolean;        // If true, cannot be uninstalled (e.g. Settings, Dashboard)
+    category: 'operations' | 'finance' | 'staff' | 'sales' | 'services'; // For grouping
+}
+
 // ============ BUSINESS ============
 export type BusinessCategory = string;
 
@@ -157,7 +168,7 @@ export interface BusinessSettings {
     defaultSourceId?: string;
     storefront?: {
         enabled: boolean;
-        theme?: 'light' | 'dark';
+        theme?: string; // e.g., 'minimal', 'fashion', 'commerce', etc.
         name?: string;
     };
     ebarimt?: {

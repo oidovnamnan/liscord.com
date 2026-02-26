@@ -2,80 +2,22 @@ import { useState, useEffect } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import {
     LayoutDashboard,
-    ShoppingCart,
-    Users,
-    Package,
-    BarChart3,
     Settings,
-    MessageSquare,
-    Receipt,
     ChevronLeft,
     ChevronRight,
-    Truck,
-    Warehouse,
     UserCog,
     X,
     ChevronDown,
     Plus,
-    ScanLine,
-    Clock,
-    DollarSign,
-    Landmark,
-    Layers,
-    Calendar,
-    PieChart,
-    HeadphonesIcon,
-    Building,
-    Factory,
-    Network
 } from 'lucide-react';
 import { useUIStore, useBusinessStore, useAuthStore } from '../../store';
 import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '../../services/firebase';
 import { businessService } from '../../services/db';
 import { toast } from 'react-hot-toast';
-import { getFeatures } from '../../config/features';
-import type { BusinessFeatures } from '../../config/features';
+import * as Icons from 'lucide-react';
+import { LISCORD_MODULES } from '../../config/modules';
 import './Sidebar.css';
-
-type NavItem = {
-    id: string;
-    label: string;
-    icon: React.ElementType;
-    path: string;
-    permission?: string;
-    feature?: string;
-};
-
-const navItems: NavItem[] = [
-    { id: 'dashboard', label: 'Хянах самбар', icon: LayoutDashboard, path: '/app' },
-    { id: 'orders', label: 'Борлуулалт', icon: ShoppingCart, path: '/app/orders', feature: 'hasOrders' },
-    { id: 'appointments', label: 'Цаг захиалга', icon: Calendar, path: '/app/appointments', feature: 'hasAppointments' },
-    { id: 'projects', label: 'Төсөл / Ажил', icon: Warehouse, path: '/app/projects', feature: 'hasProjects' },
-    { id: 'manufacturing', label: 'Үйлдвэрлэл', icon: Factory, path: '/app/manufacturing' },
-    { id: 'contracts', label: 'Гэрээ / Зээл', icon: Receipt, path: '/app/contracts', feature: 'hasContracts' },
-    { id: 'rooms', label: 'Өрөө / Талбай', icon: LayoutDashboard, path: '/app/rooms', feature: 'hasRooms' },
-    { id: 'vehicles', label: 'Машин / Техник', icon: Truck, path: '/app/vehicles', feature: 'hasVehicles' },
-    { id: 'tickets', label: 'Тасалбар', icon: ScanLine, path: '/app/tickets', feature: 'hasTickets' },
-    { id: 'customers', label: 'Харилцагч', icon: Users, path: '/app/customers' },
-    { id: 'b2b', label: 'B2B Маркет', icon: Building, path: '/app/b2b' },
-    { id: 'b2b-provider', label: 'B2B Хүсэлтүүд', icon: Network, path: '/app/b2b-provider', feature: 'isB2BProvider' },
-    { id: 'products', label: 'Бараа', icon: Package, path: '/app/products', feature: 'hasProducts' },
-    { id: 'delivery', label: 'Хүргэлт', icon: Truck, path: '/app/delivery', feature: 'hasDelivery' },
-    { id: 'packages', label: 'Ачаа (AI)', icon: ScanLine, path: '/app/packages', feature: 'hasPackages' },
-    { id: 'inventory', label: 'Нөөц', icon: Warehouse, path: '/app/inventory', feature: 'hasInventory' },
-    { id: 'loans', label: 'Ломбард / Зээл', icon: Landmark, path: '/app/loans' },
-    { id: 'queue', label: 'Дараалал', icon: Layers, path: '/app/queue' },
-    { id: 'attendance', label: 'Цаг бүртгэл', icon: Clock, path: '/app/attendance' },
-    { id: 'payroll', label: 'Цалин', icon: DollarSign, path: '/app/payroll' },
-    { id: 'finance', label: 'Санхүү', icon: PieChart, path: '/app/finance' },
-    { id: 'payments', label: 'Төлбөр', icon: Receipt, path: '/app/payments' },
-    { id: 'reports', label: 'Тайлан', icon: BarChart3, path: '/app/reports' },
-    { id: 'support', label: 'Гомдол / Буцаалт', icon: HeadphonesIcon, path: '/app/support' },
-    { id: 'chat', label: 'Чат', icon: MessageSquare, path: '/app/chat' },
-    { id: 'employees', label: 'Ажилтан', icon: UserCog, path: '/app/employees' },
-    { id: 'settings', label: 'Тохиргоо', icon: Settings, path: '/app/settings' },
-];
 
 export function Sidebar() {
     const location = useLocation();
@@ -126,33 +68,12 @@ export function Sidebar() {
         window.location.reload(); // App.tsx will show BusinessWizard
     };
 
-    const features = getFeatures(business?.category);
+    const filteredNavItems = LISCORD_MODULES.filter(mod => {
+        // Core modules (like Dashboard, Reports, Settings) are always visible
+        if (mod.isCore) return true;
 
-    const filteredNavItems = navItems.filter(item => {
-        // Settings is the ONLY core item always visible regardless of modules
-        if (item.id === 'settings') return true;
-
-        // For all other items, they MUST be explicitly in the activeModules array
-        // If activeModules is undefined (legacy account not migrated yet), we might 
-        // temporarily show a default set, or just rely on the migration script. 
-        // Since we are forcing the App Store model, we will trust activeModules.
-        if (business?.activeModules) {
-            return business.activeModules.includes(item.id);
-        }
-
-        // --- LEGACY FALLBACK (Will be removed after DB is fully migrated) ---
-        // If the business doesn't even have the activeModules field yet, 
-        // fallback to old feature logic just to prevent a completely blank screen today.
-        if (item.feature) {
-            if (item.feature === 'isB2BProvider') return business?.serviceProfile?.isProvider === true;
-            return features[item.feature as keyof BusinessFeatures];
-        }
-
-        // Show core legacy items if no activeModules array exists at all
-        const LEGACY_VISIBLE = ['dashboard', 'reports', 'chat', 'employees', 'b2b'];
-        if (LEGACY_VISIBLE.includes(item.id)) return true;
-
-        return false;
+        // Otherwise show only if explicitly enabled in the business's activeModules array
+        return business?.activeModules?.includes(mod.id);
     });
 
 
@@ -213,26 +134,48 @@ export function Sidebar() {
 
                 {/* Navigation */}
                 <nav className="sidebar-nav">
-                    {filteredNavItems.map((item) => {
-                        const Icon = item.icon;
-                        const isActive = item.path === '/app'
-                            ? location.pathname === '/app'
-                            : location.pathname.startsWith(item.path);
+                    {/* Dashboard Header Link */}
+                    <NavLink
+                        to="/app"
+                        className={`sidebar-link ${location.pathname === '/app' ? 'active' : ''}`}
+                        onClick={() => sidebarOpen && toggleSidebar()}
+                        title={sidebarCollapsed ? 'Хянах самбар' : undefined}
+                    >
+                        <LayoutDashboard size={20} />
+                        {!sidebarCollapsed && <span>Хянах самбар</span>}
+                        {location.pathname === '/app' && <div className="sidebar-link-indicator" />}
+                    </NavLink>
+
+                    {filteredNavItems.map((mod) => {
+                        const Icon = (Icons as any)[mod.icon] || Icons.Box;
+                        const isActive = location.pathname.startsWith(mod.route);
 
                         return (
                             <NavLink
-                                key={item.id}
-                                to={item.path}
+                                key={mod.id}
+                                to={mod.route}
                                 className={`sidebar-link ${isActive ? 'active' : ''}`}
                                 onClick={() => sidebarOpen && toggleSidebar()}
-                                title={sidebarCollapsed ? item.label : undefined}
+                                title={sidebarCollapsed ? mod.name : undefined}
                             >
                                 <Icon size={20} />
-                                {!sidebarCollapsed && <span>{item.label}</span>}
+                                {!sidebarCollapsed && <span>{mod.name}</span>}
                                 {isActive && <div className="sidebar-link-indicator" />}
                             </NavLink>
                         );
                     })}
+
+                    {/* Settings Always at Bottom */}
+                    <NavLink
+                        to="/app/settings"
+                        className={`sidebar-link ${location.pathname.startsWith('/app/settings') ? 'active' : ''}`}
+                        onClick={() => sidebarOpen && toggleSidebar()}
+                        title={sidebarCollapsed ? 'Тохиргоо' : undefined}
+                    >
+                        <Settings size={20} />
+                        {!sidebarCollapsed && <span>Тохиргоо</span>}
+                        {location.pathname.startsWith('/app/settings') && <div className="sidebar-link-indicator" />}
+                    </NavLink>
 
                     {user?.isSuperAdmin && (
                         <NavLink
