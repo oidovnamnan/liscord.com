@@ -8,7 +8,7 @@ import { LISCORD_MODULES } from '../../config/modules';
 import * as Icons from 'lucide-react';
 
 export function SuperAdminSettings() {
-    const { categories } = useSystemCategoriesStore();
+    const { categories, fetchCategories } = useSystemCategoriesStore();
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [migrating, setMigrating] = useState(false);
@@ -17,17 +17,21 @@ export function SuperAdminSettings() {
     useEffect(() => {
         const fetchDefaults = async () => {
             try {
-                const data = await systemSettingsService.getModuleDefaults();
+                // Fetch both module defaults and categories
+                const [data] = await Promise.all([
+                    systemSettingsService.getModuleDefaults(),
+                    fetchCategories()
+                ]);
                 setDefaults(data);
             } catch (error) {
-                console.error('Failed to fetch module defaults:', error);
+                console.error('Failed to fetch module settings:', error);
                 toast.error('Тохиргоо татахад алдаа гарлаа');
             } finally {
                 setLoading(false);
             }
         };
         fetchDefaults();
-    }, []);
+    }, [fetchCategories]);
 
     const handleToggle = (categoryKey: string, moduleId: string) => {
         setDefaults(prev => {

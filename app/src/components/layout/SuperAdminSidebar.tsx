@@ -48,7 +48,7 @@ export function SuperAdminSidebar() {
                 <div className="sidebar-overlay" onClick={toggleSidebar} />
             )}
 
-            <aside className={`sidebar ${sidebarOpen ? 'open' : ''} ${sidebarCollapsed ? 'collapsed' : ''}`} style={{ borderRight: '1px solid var(--accent-blue)', background: 'var(--bg-secondary)' }}>
+            <aside className={`sidebar ${sidebarOpen ? 'open' : ''} ${sidebarCollapsed ? 'collapsed' : ''}`} style={{ borderRight: '1px solid var(--border-primary)', background: 'var(--bg-secondary)' }}>
                 {/* Header / Mobile Close Button */}
                 <div className="hide-desktop" style={{ padding: 'var(--space-md)', display: 'flex', justifyContent: 'flex-end', borderBottom: '1px solid var(--border-primary)' }}>
                     <button className="btn-icon sidebar-close" onClick={toggleSidebar}>
@@ -57,7 +57,7 @@ export function SuperAdminSidebar() {
                 </div>
 
                 <div className="sidebar-business-container" style={{ padding: '16px', borderBottom: '1px solid var(--border-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <div className="super-admin-badge" style={{ display: 'flex', alignItems: 'center', gap: 12, width: '100%', background: 'linear-gradient(135deg, rgba(82,113,255,0.1) 0%, rgba(47,82,246,0.1) 100%)', padding: '12px', borderRadius: '12px', border: '1px solid rgba(82,113,255,0.2)' }}>
+                    <div className="super-admin-badge" style={{ display: 'flex', alignItems: 'center', gap: 12, width: '100%', background: 'var(--primary-light)', padding: '12px', borderRadius: '12px', border: '1px solid var(--border-primary)' }}>
                         <div style={{ width: 36, height: 36, background: 'var(--primary)', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 800 }}>🦅</div>
                         {!sidebarCollapsed && (
                             <div style={{ flex: 1 }}>
@@ -84,7 +84,7 @@ export function SuperAdminSidebar() {
                                 className={`sidebar-link ${isActive ? 'active' : ''}`}
                                 onClick={() => sidebarOpen && toggleSidebar()}
                                 title={sidebarCollapsed ? item.label : undefined}
-                                style={isActive ? { background: 'rgba(82,113,255,0.1)', color: 'var(--primary)' } : {}}
+                                style={isActive ? { background: 'var(--primary-light)', color: 'var(--primary)' } : {}}
                             >
                                 <Icon size={20} color={isActive ? 'var(--primary)' : 'var(--text-secondary)'} />
                                 {!sidebarCollapsed && <span style={{ fontWeight: isActive ? 600 : 400 }}>{item.label}</span>}
@@ -98,7 +98,7 @@ export function SuperAdminSidebar() {
                             className="sidebar-link"
                             onClick={() => navigate('/app')}
                             title={sidebarCollapsed ? 'Буцах' : undefined}
-                            style={{ width: '100%', border: '1px solid var(--border-color)', background: 'var(--bg-primary)' }}
+                            style={{ width: '100%', border: '1px solid var(--border-color)', background: 'var(--surface-1)', color: 'var(--text-primary)' }}
                         >
                             <ArrowLeft size={18} />
                             {!sidebarCollapsed && <span>Бусад бизнес рүү буцах</span>}

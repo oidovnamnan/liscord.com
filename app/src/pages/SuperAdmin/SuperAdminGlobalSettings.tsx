@@ -2,13 +2,15 @@ import { useState, useEffect } from 'react';
 import { Header } from '../../components/layout/Header';
 import { globalSettingsService } from '../../services/db';
 import type { GlobalSettings } from '../../services/db';
-import { Loader2, Save, MessageSquare, Shield, AlertTriangle } from 'lucide-react';
+import { Loader2, Save, MessageSquare, Shield, AlertTriangle, Sun, Moon, Monitor } from 'lucide-react';
+import { useUIStore } from '../../store';
 import { toast } from 'react-hot-toast';
 
 export function SuperAdminGlobalSettings() {
     const [settings, setSettings] = useState<GlobalSettings | null>(null);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
+    const { theme, setTheme } = useUIStore();
 
     useEffect(() => {
         const fetchSettings = async () => {
@@ -61,6 +63,47 @@ export function SuperAdminGlobalSettings() {
                 <form onSubmit={handleSave} style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
                     <div className="card">
                         <h2 style={{ fontSize: '1.2rem', margin: '0 0 24px 0', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <Sun size={20} className="text-primary" />
+                            Системийн Ерөнхий Загвар (Theme Template)
+                        </h2>
+                        <p style={{ color: 'var(--text-secondary)', marginBottom: '24px' }}>
+                            Супер Админ порталын харагдах байдлыг эндээс тохируулна уу.
+                        </p>
+
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px' }}>
+                            {[
+                                { id: 'light', label: 'Цайвар (Light)', icon: Sun },
+                                { id: 'dark', label: 'Бараан (Dark)', icon: Moon },
+                                { id: 'system', label: 'Систем (System)', icon: Monitor },
+                            ].map((t) => (
+                                <button
+                                    key={t.id}
+                                    type="button"
+                                    onClick={() => setTheme(t.id as any)}
+                                    style={{
+                                        display: 'flex',
+                                        flexDirection: 'column',
+                                        alignItems: 'center',
+                                        gap: '12px',
+                                        padding: '24px',
+                                        background: theme === t.id ? 'var(--primary-light)' : 'var(--surface-2)',
+                                        border: `2px solid ${theme === t.id ? 'var(--primary)' : 'var(--border-color)'}`,
+                                        borderRadius: '16px',
+                                        cursor: 'pointer',
+                                        transition: 'all 0.2s'
+                                    }}
+                                >
+                                    <t.icon size={24} color={theme === t.id ? 'var(--primary)' : 'var(--text-secondary)'} />
+                                    <span style={{ fontWeight: 600, color: theme === t.id ? 'var(--text-primary)' : 'var(--text-secondary)' }}>
+                                        {t.label}
+                                    </span>
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    <div className="card">
+                        <h2 style={{ fontSize: '1.2rem', margin: '0 0 24px 0', display: 'flex', alignItems: 'center', gap: '8px' }}>
                             <MessageSquare size={20} className="text-primary" />
                             Глобал Анхааруулга (System Banner)
                         </h2>
@@ -77,13 +120,16 @@ export function SuperAdminGlobalSettings() {
                                         ...settings,
                                         banner: { ...settings.banner, isActive: e.target.checked }
                                     })}
+                                    style={{ marginRight: '12px' }}
                                 />
-                                <span className="slider"></span>
-                                <span className="label" style={{ fontWeight: 600 }}>Мэдэгдэл харуулах эсэх</span>
+                                <div>
+                                    <div style={{ fontWeight: 600 }}>Мэдэгдлийг идэвхжүүлэх</div>
+                                    <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Асаавал бүх хэрэглэгчийн дэлгэцийн дээд хэсэгт харагдана.</div>
+                                </div>
                             </label>
 
                             {settings.banner.isActive && (
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', padding: '16px', background: 'var(--surface-2)', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', padding: '16px', background: 'var(--bg-soft)', borderRadius: '8px' }}>
                                     <div className="input-group">
                                         <label className="input-label">Мэдэгдлийн Төрөл (Өнгө)</label>
                                         <select
@@ -252,8 +298,8 @@ export function SuperAdminGlobalSettings() {
                             Тохиргоог Хадгалах
                         </button>
                     </div>
-                </form>
-            </div>
-        </div>
+                </form >
+            </div >
+        </div >
     );
 }
