@@ -34,6 +34,7 @@ export function SettingsPage() {
     const [showRequestModal, setShowRequestModal] = useState(false);
     const [requestReason, setRequestReason] = useState('');
     const [requestedChanges, setRequestedChanges] = useState<{ name?: string, slug?: string }>({});
+    const [selectedThemeId, setSelectedThemeId] = useState(business?.settings?.storefront?.theme || 'minimal');
 
     const isStorefrontLocked = useMemo(() => {
         if (!business?.lastStorefrontChangeAt) return false;
@@ -50,7 +51,11 @@ export function SettingsPage() {
                 .then(setPendingRequest)
                 .catch(console.error);
         }
-    }, [activeTab, business?.slug, business?.id]);
+
+        if (business?.settings?.storefront?.theme) {
+            setSelectedThemeId(business.settings.storefront.theme);
+        }
+    }, [activeTab, business?.slug, business?.id, business?.settings?.storefront?.theme]);
 
     const isStorefrontEnabled = business?.settings?.storefront?.enabled || business?.category === 'online_shop';
 
@@ -383,7 +388,7 @@ export function SettingsPage() {
                                             {STOREFRONT_THEMES.map(t => {
                                                 const installedThemes = business?.settings?.storefront?.installedThemes || ['minimal'];
                                                 const isInstalled = installedThemes.includes(t.id);
-                                                const isSelected = (business?.settings?.storefront?.theme || 'minimal') === t.id;
+                                                const isSelected = selectedThemeId === t.id;
 
                                                 if (!isInstalled) return null;
 
@@ -399,12 +404,16 @@ export function SettingsPage() {
                                                         display: 'block',
                                                         boxShadow: isSelected ? '0 8px 20px rgba(74, 107, 255, 0.15)' : 'none',
                                                         transform: isSelected ? 'translateY(-2px)' : 'none'
+                                                    }} onClick={() => {
+                                                        setSelectedThemeId(t.id);
+                                                        setIsDirty(true);
                                                     }}>
                                                         <input
                                                             type="radio"
                                                             name="storefrontTheme"
                                                             value={t.id}
-                                                            defaultChecked={isSelected}
+                                                            checked={isSelected}
+                                                            onChange={() => { }}
                                                             style={{ position: 'absolute', opacity: 0 }}
                                                         />
                                                         {isSelected && (
