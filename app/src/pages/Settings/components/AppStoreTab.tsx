@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useBusinessStore } from '../../../store';
 import { businessService, systemSettingsService } from '../../../services/db';
 import { toast } from 'react-hot-toast';
-import { Trash2, Download, ShoppingBag, CheckCircle2, Palette, Clock } from 'lucide-react';
+import { Trash2, Download, ShoppingBag, CheckCircle2, Palette } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 import * as Icons from 'lucide-react';
@@ -89,7 +89,7 @@ export function AppStoreTab() {
     };
 
     const [moduleDefaults, setModuleDefaults] = useState<Record<string, Record<string, string>>>({});
-    const [appStoreConfig, setAppStoreConfig] = useState<Record<string, { price: number; durationDays: number; isFree: boolean }>>({});
+    const [appStoreConfig, setAppStoreConfig] = useState<Record<string, { isFree: boolean; plans: any[] }>>({});
 
     useEffect(() => {
         const fetchData = async () => {
@@ -107,7 +107,7 @@ export function AppStoreTab() {
         fetchData();
     }, []);
 
-    const handleInstallModule = async (moduleId: string) => {
+    const handleInstallModule = async (moduleId: string, planId?: string) => {
         if (!business || loading || installingId) return;
 
         setInstallingId(moduleId);
@@ -122,11 +122,22 @@ export function AppStoreTab() {
             const dynamicConfig = appStoreConfig[moduleId];
             const mod = LISCORD_MODULES.find(m => m.id === moduleId);
 
-            // Priority: Dynamic Config > Static Config > Default 30
-            const durationDays = dynamicConfig?.durationDays ?? mod?.durationDays ?? 30;
+            // Check if it's core for THIS business category
+            const isCoreForBusiness = business?.category && moduleDefaults[business.category]?.[moduleId] === 'core';
+            const isFree = isCoreForBusiness || dynamicConfig?.isFree || mod?.isFree;
+
+            let durationDays = 30;
+            if (isFree) {
+                durationDays = 365; // Extended for free/core
+            } else if (planId && dynamicConfig?.plans) {
+                const selectedPlan = dynamicConfig.plans.find((p: any) => p.id === planId);
+                durationDays = selectedPlan?.durationDays ?? 30;
+            } else if (mod?.plans) {
+                durationDays = mod.plans[0].durationDays || 30;
+            }
 
             const expiresAt = new Date();
-            expiresAt.setDate(expiresAt.getDate() + durationDays);
+            expiresAt.setDate(expiresAt.getDate() + (isFree ? 36500 : durationDays)); // Free/Core lasts forever practically
 
             const newModules = Array.from(new Set([...activeMods, moduleId]));
             const newSubscriptions = {
@@ -196,8 +207,8 @@ export function AppStoreTab() {
             {activeStoreTab === 'modules' ? (
                 <div className="app-store-grid">
                     {LISCORD_MODULES.filter(mod => {
-                        if (mod.isCore) return false;
-                        // Filter based on Super Admin dynamic config
+                        // Everyone sees Core/Default modules or those specifically assigned to category
+                        if (mod.isCore) return true;
                         if (business?.category && moduleDefaults[business.category]) {
                             return !!moduleDefaults[business.category][mod.id];
                         }
@@ -205,6 +216,10 @@ export function AppStoreTab() {
                     }).map(mod => {
                         const dynamic = appStoreConfig[mod.id];
                         const finalMod = dynamic ? { ...mod, ...dynamic } : mod;
+
+                        // Check if it's core for THIS business category
+                        const isCoreForBusiness = business?.category && moduleDefaults[business.category]?.[finalMod.id] === 'core';
+                        const isFree = isCoreForBusiness || finalMod.isFree;
 
                         const Icon = (Icons as any)[finalMod.icon] || Icons.Box;
                         const isInstalled = activeMods.includes(finalMod.id);
@@ -227,26 +242,30 @@ export function AppStoreTab() {
                                     <div className="module-info">
                                         <div className="module-title-row">
                                             <h3 className="module-name">{finalMod.name}</h3>
-                                            {finalMod.isFree && <span style={{ fontSize: '0.65rem', background: 'var(--success-light)', color: 'var(--success-dark)', padding: '2px 8px', borderRadius: '6px', fontWeight: 800 }}>ҮНЭГҮЙ</span>}
+                                            {isFree && <span style={{ fontSize: '0.65rem', background: 'var(--success-light)', color: 'var(--success-dark)', padding: '2px 8px', borderRadius: '6px', fontWeight: 800 }}>{isCoreForBusiness ? 'CORE (ҮНЭГҮЙ)' : 'ҮНЭГҮЙ'}</span>}
                                         </div>
                                         <p className="module-description">{finalMod.description}</p>
                                     </div>
                                 </div>
 
                                 <div className="module-meta">
-                                    {!finalMod.isFree ? (
-                                        <div className="price-badge">
-                                            <div className="price-amount">{finalMod.price?.toLocaleString()}₮</div>
-                                            <div className="price-duration">/ {finalMod.durationDays} хоног</div>
-                                        </div>
-                                    ) : (
+                                    {isFree ? (
                                         <div className="price-badge">
                                             <div className="price-amount">Нээлттэй</div>
                                             <div className="price-duration">Хязгааргүй</div>
                                         </div>
+                                    ) : (
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                            {(finalMod.plans || []).map((p: any) => (
+                                                <div key={p.id} className="price-badge-mini">
+                                                    <span className="price-amount">{p.price?.toLocaleString()}₮</span>
+                                                    <span className="price-duration">/ {p.name}</span>
+                                                </div>
+                                            ))}
+                                        </div>
                                     )}
 
-                                    {expiryDate && (
+                                    {expiryDate && !isCoreForBusiness && (
                                         <div className="status-info">
                                             <div className="status-label" style={{ color: isExpired ? 'var(--danger)' : 'var(--success)' }}>
                                                 {isExpired ? 'Хугацаа дууссан' : 'Дараах хүртэл'}
@@ -271,15 +290,26 @@ export function AppStoreTab() {
                                                 <Trash2 size={18} />
                                             </button>
                                         </>
-                                    ) : isExpired ? (
-                                        <button className="btn btn-danger gradient-btn" onClick={() => handleInstallModule(finalMod.id)}>
-                                            <Clock size={16} /> Сунгах
-                                        </button>
-                                    ) : (
-                                        <button className={`btn ${finalMod.isFree ? 'btn-outline' : 'btn-primary gradient-btn'}`} onClick={() => handleInstallModule(finalMod.id)}>
-                                            <Download size={16} /> {finalMod.isFree ? 'Суулгах' : 'Худалдаж авах'}
-                                        </button>
-                                    )}
+                                    ) : isExpired || !isInstalled ? (
+                                        <div style={{ display: 'flex', gap: '8px', width: '100%' }}>
+                                            {isFree ? (
+                                                <button className="btn btn-outline w-full" onClick={() => handleInstallModule(finalMod.id)}>
+                                                    <Download size={16} /> Суулгах
+                                                </button>
+                                            ) : (
+                                                (finalMod.plans || []).map((p: any) => (
+                                                    <button
+                                                        key={p.id}
+                                                        className="btn btn-primary gradient-btn btn-sm text-xs"
+                                                        style={{ height: '36px', flex: 1 }}
+                                                        onClick={() => handleInstallModule(finalMod.id, p.id)}
+                                                    >
+                                                        {p.name} авах
+                                                    </button>
+                                                ))
+                                            )}
+                                        </div>
+                                    ) : null}
                                 </div>
                             </div>
                         );

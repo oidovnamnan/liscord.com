@@ -36,36 +36,41 @@ export function SuperAdminAppStore() {
     }, []);
 
     const handleToggleFree = (id: string) => {
-        setModules(prev => prev.map(mod =>
-            mod.id === id ? { ...mod, isFree: !mod.isFree, price: !mod.isFree ? 0 : mod.price } : mod
-        ));
+        setModules(prev => prev.map(mod => {
+            if (mod.id === id) {
+                const isFree = !mod.isFree;
+                const updatedPlans = (mod.plans || []).map(p => ({
+                    ...p,
+                    price: isFree ? 0 : p.price
+                }));
+                return { ...mod, isFree, plans: updatedPlans };
+            }
+            return mod;
+        }));
     };
 
-    const handleUpdatePrice = (id: string, price: number) => {
-        setModules(prev => prev.map(mod =>
-            mod.id === id ? { ...mod, price } : mod
-        ));
-    };
-
-    const handleUpdateDuration = (id: string, durationDays: number) => {
-        setModules(prev => prev.map(mod =>
-            mod.id === id ? { ...mod, durationDays } : mod
-        ));
+    const handleUpdatePlan = (modId: string, planId: string, field: 'price' | 'durationDays', value: number) => {
+        setModules(prev => prev.map(mod => {
+            if (mod.id === modId) {
+                const updatedPlans = (mod.plans || []).map(p =>
+                    p.id === planId ? { ...p, [field]: value } : p
+                );
+                return { ...mod, plans: updatedPlans };
+            }
+            return mod;
+        }));
     };
 
     const handleSave = async () => {
         setSaving(true);
         try {
             // Build config object from modules state
-            const config: Record<string, { price: number; durationDays: number; isFree: boolean }> = {};
+            const config: Record<string, { isFree: boolean; plans: any[] }> = {};
             modules.forEach(mod => {
-                if (!mod.isCore) {
-                    config[mod.id] = {
-                        price: mod.price ?? 0,
-                        durationDays: mod.durationDays ?? 0,
-                        isFree: mod.isFree ?? false
-                    };
-                }
+                config[mod.id] = {
+                    isFree: mod.isFree ?? false,
+                    plans: mod.plans || []
+                };
             });
 
             await systemSettingsService.updateAppStoreConfig(config);
@@ -117,7 +122,7 @@ export function SuperAdminAppStore() {
                             border-radius: 12px;
                             padding: 0 12px;
                             transition: all 0.2s ease;
-                            height: 40px;
+                            height: 36px;
                         }
                         .custom-input-group:focus-within {
                             border-color: var(--primary);
@@ -129,10 +134,10 @@ export function SuperAdminAppStore() {
                             border: none;
                             outline: none;
                             color: var(--text-primary);
-                            font-size: 0.95rem;
+                            font-size: 0.85rem;
                             font-weight: 600;
                             width: 100%;
-                            padding: 0 8px;
+                            padding: 0 4px;
                             text-align: right;
                         }
                         .custom-input:disabled {
@@ -152,7 +157,15 @@ export function SuperAdminAppStore() {
                             color: var(--text-tertiary);
                         }
                         .app-store-table td {
-                            padding: 16px 20px;
+                            padding: 12px 20px;
+                        }
+                        .plan-label {
+                            font-size: 0.65rem;
+                            color: var(--text-tertiary);
+                            font-weight: 600;
+                            text-transform: uppercase;
+                            margin-bottom: 4px;
+                            display: block;
                         }
                     `}</style>
                     <table className="super-table app-store-table">
@@ -161,14 +174,14 @@ export function SuperAdminAppStore() {
                                 <th style={{ paddingLeft: '32px' }}>Модуль</th>
                                 <th>Төрөл</th>
                                 <th>Үнэгүй эсэх</th>
-                                <th>Үнэ (₮)</th>
-                                <th>Хугацаа (Хоног)</th>
+                                <th>Сонголт 1 (Сар)</th>
+                                <th>Сонголт 2 (Жил)</th>
                                 <th>Hub ID</th>
                             </tr>
                         </thead>
                         <tbody>
                             {modules.map((mod) => (
-                                <tr key={mod.id} style={mod.isCore ? { opacity: 0.6 } : {}}>
+                                <tr key={mod.id}>
                                     <td style={{ paddingLeft: '32px' }}>
                                         <div className="flex items-center gap-4">
                                             <div className="w-12 h-12 bg-surface-2 flex items-center justify-center rounded-xl border border-primary-light/40 text-primary shadow-sm" style={{ flexShrink: 0 }}>
@@ -192,36 +205,62 @@ export function SuperAdminAppStore() {
                                         <button
                                             className={`btn btn-sm ${mod.isFree ? 'btn-success' : 'btn-outline'} min-w-[115px]`}
                                             onClick={() => handleToggleFree(mod.id)}
-                                            disabled={mod.isCore}
                                             style={{ height: '34px', borderRadius: '10px', fontSize: '0.8rem' }}
                                         >
                                             {mod.isFree ? <CheckCircle2 size={14} /> : <XCircle size={14} />}
                                             {mod.isFree ? 'Үнэгүй' : 'Төлбөртэй'}
                                         </button>
                                     </td>
+                                    {/* Plan 1 */}
                                     <td>
-                                        <div className="custom-input-group" style={{ maxWidth: '160px', opacity: mod.isFree || mod.isCore ? 0.5 : 1 }}>
-                                            <span style={{ color: 'var(--text-tertiary)', fontWeight: 700, fontSize: '0.9rem' }}>₮</span>
-                                            <input
-                                                type="number"
-                                                className="custom-input"
-                                                value={mod.price}
-                                                disabled={mod.isFree || mod.isCore}
-                                                onChange={(e) => handleUpdatePrice(mod.id, parseInt(e.target.value) || 0)}
-                                            />
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxWidth: '140px' }}>
+                                            <div className="custom-input-group" style={{ opacity: mod.isFree ? 0.5 : 1 }}>
+                                                <span style={{ color: 'var(--text-tertiary)', fontWeight: 700, fontSize: '0.8rem' }}>₮</span>
+                                                <input
+                                                    type="number"
+                                                    className="custom-input"
+                                                    value={mod.plans?.[0]?.price ?? 0}
+                                                    disabled={mod.isFree}
+                                                    onChange={(e) => handleUpdatePlan(mod.id, mod.plans?.[0]?.id || 'monthly', 'price', parseInt(e.target.value) || 0)}
+                                                />
+                                            </div>
+                                            <div className="custom-input-group" style={{ opacity: mod.isFree ? 0.5 : 1 }}>
+                                                <Clock size={14} className="text-tertiary" />
+                                                <input
+                                                    type="number"
+                                                    className="custom-input"
+                                                    value={mod.plans?.[0]?.durationDays ?? 30}
+                                                    disabled={mod.isFree}
+                                                    onChange={(e) => handleUpdatePlan(mod.id, mod.plans?.[0]?.id || 'monthly', 'durationDays', parseInt(e.target.value) || 0)}
+                                                />
+                                                <span style={{ fontSize: '0.65rem', color: 'var(--text-tertiary)', fontWeight: 500, paddingLeft: '4px' }}>өдөр</span>
+                                            </div>
                                         </div>
                                     </td>
+                                    {/* Plan 2 */}
                                     <td>
-                                        <div className="custom-input-group" style={{ maxWidth: '140px', opacity: mod.isFree || mod.isCore ? 0.5 : 1 }}>
-                                            <Clock size={16} className="text-tertiary" />
-                                            <input
-                                                type="number"
-                                                className="custom-input"
-                                                value={mod.durationDays}
-                                                disabled={mod.isFree || mod.isCore}
-                                                onChange={(e) => handleUpdateDuration(mod.id, parseInt(e.target.value) || 0)}
-                                            />
-                                            <span style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)', fontWeight: 500, paddingLeft: '8px' }}>өдөр</span>
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxWidth: '140px' }}>
+                                            <div className="custom-input-group" style={{ opacity: mod.isFree ? 0.5 : 1 }}>
+                                                <span style={{ color: 'var(--text-tertiary)', fontWeight: 700, fontSize: '0.8rem' }}>₮</span>
+                                                <input
+                                                    type="number"
+                                                    className="custom-input"
+                                                    value={mod.plans?.[1]?.price ?? 0}
+                                                    disabled={mod.isFree}
+                                                    onChange={(e) => handleUpdatePlan(mod.id, mod.plans?.[1]?.id || 'yearly', 'price', parseInt(e.target.value) || 0)}
+                                                />
+                                            </div>
+                                            <div className="custom-input-group" style={{ opacity: mod.isFree ? 0.5 : 1 }}>
+                                                <Clock size={14} className="text-tertiary" />
+                                                <input
+                                                    type="number"
+                                                    className="custom-input"
+                                                    value={mod.plans?.[1]?.durationDays ?? 365}
+                                                    disabled={mod.isFree}
+                                                    onChange={(e) => handleUpdatePlan(mod.id, mod.plans?.[1]?.id || 'yearly', 'durationDays', parseInt(e.target.value) || 0)}
+                                                />
+                                                <span style={{ fontSize: '0.65rem', color: 'var(--text-tertiary)', fontWeight: 500, paddingLeft: '4px' }}>өдөр</span>
+                                            </div>
                                         </div>
                                     </td>
                                     <td className="text-tertiary text-xs font-mono" style={{ opacity: 0.6 }}>

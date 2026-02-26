@@ -23,6 +23,13 @@ export interface User {
 }
 
 // ============ APP STORE MODULE ============
+export interface AppModulePricingPlan {
+    id: string;             // e.g. '30-days', '365-days'
+    name: string;           // e.g. '30 хоног', '1 жил'
+    price: number;
+    durationDays: number;
+}
+
 export interface AppModule {
     id: string;             // unique identifier, e.g. 'inventory', 'hrm'
     name: string;           // Display name in App Store
@@ -33,8 +40,9 @@ export interface AppModule {
     category: 'operations' | 'finance' | 'staff' | 'sales' | 'services'; // For grouping
     hubId?: string;         // For tabbed navigation (e.g. 'inventory-hub')
     isFree?: boolean;       // Phase 41: App Store pricing
-    price?: number;         // Price in local currency
-    durationDays?: number;  // Subscription period (e.g., 30, 365)
+    price?: number;         // Price in local currency (legacy)
+    durationDays?: number;  // Subscription period (legacy)
+    plans?: AppModulePricingPlan[]; // Multi-pricing support
 }
 
 // ============ BUSINESS ============

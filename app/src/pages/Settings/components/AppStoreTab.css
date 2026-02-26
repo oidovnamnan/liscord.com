@@ -112,22 +112,35 @@
     gap: 12px;
 }
 
-.price-badge {
-    display: inline-flex;
-    flex-direction: column;
+.price-badge-mini {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    background: var(--surface-2);
+    padding: 6px 12px;
+    border-radius: 10px;
+    border: 1px solid var(--border-primary);
+    transition: all 0.2s ease;
 }
 
-.price-amount {
-    font-size: 1rem;
+.price-badge-mini:hover {
+    border-color: var(--primary-light);
+    background: var(--surface-3);
+}
+
+.price-badge-mini .price-amount {
+    font-size: 0.85rem;
     font-weight: 800;
     color: var(--text-primary);
 }
 
-.price-duration {
-    font-size: 0.7rem;
-    font-weight: 600;
+.price-badge-mini .price-duration {
+    font-size: 0.65rem;
+    font-weight: 700;
     color: var(--text-tertiary);
     text-transform: uppercase;
+    letter-spacing: 0.02em;
 }
 
 .status-info {

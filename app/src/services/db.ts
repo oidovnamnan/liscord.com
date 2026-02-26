@@ -21,7 +21,7 @@ import { db } from './firebase';
 import { auditService } from './audit';
 import type {
     Business, User, Employee, Order, Customer, Product, Position, Category, CargoType, OrderSource, SocialAccount, OrderStatusConfig, BusinessStats,
-    PayrollEntry, BusinessCategoryConfig, PlatformPayment, BusinessRequest
+    PayrollEntry, BusinessCategoryConfig, PlatformPayment, BusinessRequest, AppModulePricingPlan
 } from '../types';
 import { getFeatures } from '../config/features';
 
@@ -84,16 +84,34 @@ export const systemSettingsService = {
         await setDoc(doc(db, 'system_settings', 'modules'), defaults);
     },
 
-    async getAppStoreConfig(): Promise<Record<string, { price: number; durationDays: number; isFree: boolean }>> {
+    async getAppStoreConfig(): Promise<Record<string, { isFree: boolean; plans: AppModulePricingPlan[] }>> {
         const docRef = doc(db, 'system_settings', 'app_store');
         const docSnap = await getDoc(docRef);
         if (docSnap.exists()) {
-            return docSnap.data() as Record<string, { price: number; durationDays: number; isFree: boolean }>;
+            const data = docSnap.data();
+            const config: Record<string, { isFree: boolean; plans: AppModulePricingPlan[] }> = {};
+
+            Object.keys(data).forEach(key => {
+                const item = data[key];
+                if (item.plans) {
+                    config[key] = item;
+                } else {
+                    // Migration fallback: Convert old structure to plans
+                    config[key] = {
+                        isFree: item.isFree ?? false,
+                        plans: [
+                            { id: 'monthly', name: '30 хоног', price: item.price || 0, durationDays: item.durationDays || 30 },
+                            { id: 'yearly', name: '1 жил', price: (item.price || 0) * 10, durationDays: 365 }
+                        ]
+                    };
+                }
+            });
+            return config;
         }
         return {};
     },
 
-    async updateAppStoreConfig(config: Record<string, { price: number; durationDays: number; isFree: boolean }>): Promise<void> {
+    async updateAppStoreConfig(config: Record<string, { isFree: boolean; plans: AppModulePricingPlan[] }>): Promise<void> {
         await setDoc(doc(db, 'system_settings', 'app_store'), config);
     },
 
