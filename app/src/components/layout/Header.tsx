@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
-import { Menu, Bell, Search, Plus, Zap } from 'lucide-react';
+import { Menu, Bell, Search, Plus, Zap, ShoppingBag } from 'lucide-react';
 import { useUIStore, useAuthStore, useBusinessStore } from '../../store';
+import { useNavigate } from 'react-router-dom';
 import { V2UpgradeModal } from '../common/V2UpgradeModal';
 import { userService } from '../../services/db';
 import './Header.css';
@@ -19,6 +20,7 @@ export function Header({ title, subtitle, action, extra }: HeaderProps) {
     const { toggleSidebar } = useUIStore();
     const { user, setUser } = useAuthStore();
     const { business } = useBusinessStore();
+    const navigate = useNavigate();
 
     const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(false);
     const [isNotifOpen, setIsNotifOpen] = useState(false);
@@ -125,6 +127,15 @@ export function Header({ title, subtitle, action, extra }: HeaderProps) {
                         </div>
                     )}
                 </div>
+
+                <button
+                    className="header-icon-btn header-appstore-btn"
+                    title="App Store"
+                    onClick={() => navigate('/app/app-store')}
+                >
+                    <ShoppingBag size={20} />
+                    <span className="hide-mobile" style={{ fontSize: '0.85rem', fontWeight: 600, marginLeft: '4px' }}>Апп Стор</span>
+                </button>
 
                 {action && (
                     <button className="btn btn-primary btn-sm" onClick={action.onClick}>
