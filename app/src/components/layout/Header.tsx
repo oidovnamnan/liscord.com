@@ -7,8 +7,8 @@ import { userService } from '../../services/db';
 import './Header.css';
 
 interface HeaderProps {
-    title?: string;
-    subtitle?: string;
+    title?: React.ReactNode;
+    subtitle?: React.ReactNode;
     action?: {
         label: string;
         onClick: () => void;
@@ -66,8 +66,8 @@ export function Header({ title, subtitle, action, extra }: HeaderProps) {
                 </button>
                 <div className="header-title-section">
                     <div className="header-title-container">
-                        {title && <h1 className="header-title">{title}</h1>}
-                        {subtitle && <p className="header-subtitle">{subtitle}</p>}
+                        {title && <div className="header-title">{title}</div>}
+                        {subtitle && <div className="header-subtitle">{subtitle}</div>}
                     </div>
                     {extra && <div className="header-extra hide-mobile">{extra}</div>}
                 </div>
