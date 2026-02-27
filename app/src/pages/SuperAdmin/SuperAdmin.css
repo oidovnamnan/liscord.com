@@ -700,7 +700,7 @@
 
 .page-content-pro {
     display: grid;
-    grid-template-columns: 200px 1fr;
+    grid-template-columns: 260px 1fr;
     gap: 0;
     background: var(--surface-1);
     flex: 1;
