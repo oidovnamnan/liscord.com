@@ -1,13 +1,11 @@
 .super-admin-page {
-    position: absolute;
-    inset: 0;
-    margin: 0;
-    padding: 0;
     display: flex;
     flex-direction: column;
-    overflow: hidden;
+    width: 100%;
+    height: 100%;
     background: var(--bg-primary);
-    animation: superFadeIn 0.3s ease-out;
+    overflow: hidden;
+    position: relative;
 }
 
 @keyframes superFadeIn {

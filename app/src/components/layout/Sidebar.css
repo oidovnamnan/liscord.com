@@ -1,8 +1,5 @@
 .sidebar {
-    position: fixed;
-    left: 0;
-    top: 0;
-    bottom: 0;
+    height: 100%;
     width: var(--sidebar-width);
     background: var(--bg-secondary);
     border-right: 1px solid var(--border-primary);
@@ -11,15 +8,20 @@
     z-index: var(--z-sticky);
     transition: width var(--transition-base), transform var(--transition-base);
     overflow-x: hidden;
+    flex-shrink: 0;
+    /* Prevent sidebar from shrinking in flex container */
 }
 
 .sidebar.collapsed {
     width: var(--sidebar-collapsed);
 }
 
-/* Mobile */
 @media (max-width: 768px) {
     .sidebar {
+        position: fixed;
+        left: 0;
+        top: 0;
+        bottom: 0;
         transform: translateX(-100%);
         width: 280px;
         z-index: calc(var(--z-modal) + 1);

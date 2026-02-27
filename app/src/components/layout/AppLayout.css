@@ -14,13 +14,22 @@
 
 .app-main {
     flex: 1;
+    min-width: 0;
+    /* Critical for flex layout with text content */
     min-height: 0;
-    /* CRITICAL */
     background: var(--bg-primary);
-    transition: margin-left var(--transition-base);
+    transition: all var(--transition-base);
     position: relative;
+    display: flex;
+    flex-direction: column;
     overflow: hidden;
-    /* Each page will handle its own scrolling content */
+    /* Children handle their own scroll or use auto-scroll wrapper */
+}
+
+/* Default scroll wrapper for normal pages that use standard layout */
+.app-main>*:not(.super-admin-page) {
+    overflow-y: auto;
+    flex: 1;
 }
 
 .sidebar-is-collapsed .app-container {
