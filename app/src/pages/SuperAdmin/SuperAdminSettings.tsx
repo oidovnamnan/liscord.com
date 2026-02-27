@@ -131,195 +131,189 @@ export function SuperAdminSettings() {
         <div className="page-container animate-fade-in">
             <Header
                 title={
-                    <div className="flex items-center gap-2">
-                        <span>Супер Админ: Тохиргоо</span>
-                        <div className="info-tooltip-container">
-                            <Icons.Info size={16} className="text-tertiary cursor-help opacity-60 hover:opacity-100 transition-opacity" />
-                            <div className="info-tooltip-content focus-ring text-left font-normal" style={{ textTransform: 'none' }}>
-                                <p className="mb-2">Бизнесийн ангилал тус бүрээр шинэ бизнес бүртгүүлэх үед автоматаар асаалттай (enabled) үүсэх модулиудыг энд тохируулна.</p>
-                                <div className="p-2 bg-black/5 rounded-lg text-xs font-semibold text-tertiary">
-                                    Жишээ нь: "Карго" бизнес бүртгүүлэхэд таны энд сонгосон модулиуд автоматаар залгагдана.
-                                </div>
-                            </div>
+                    <div className="flex items-center gap-3">
+                        <div className="stats-icon-wrapper active-tint" style={{ width: '36px', height: '36px', borderRadius: '10px' }}>
+                            <Icons.Package size={18} />
+                        </div>
+                        <div>
+                            <h1 className="text-xl font-bold tracking-tight">Модуль Мастер Тохиргоо</h1>
+                            <p className="text-xs text-secondary opacity-70">Салбар бүрийн анхдагч модулиудыг удирдах</p>
                         </div>
                     </div>
                 }
-                subtitle="Бизнесийн төрлүүдэд харгалзах модулиудын хуваарилалт"
                 extra={
-                    <div className="flex items-center gap-3">
-                        <select
-                            className="premium-select"
-                            style={{ width: '220px' }}
-                            value={selectedCategoryId}
-                            onChange={(e) => setSelectedCategoryId(e.target.value)}
-                        >
-                            <option value="all">Бүх салбар / ангилал</option>
-                            {categories.map(cat => (
-                                <option key={cat.id} value={cat.id}>{cat.label}</option>
-                            ))}
-                        </select>
-
+                    <div className="flex items-center gap-2">
                         <button
-                            className="btn btn-primary premium-btn shadow-glow"
+                            className="btn-pro btn-pro-primary"
                             onClick={handleSaveClick}
                             disabled={saving}
                         >
-                            {saving ? <Loader2 className="animate-spin" size={18} /> : <Icons.Save size={18} />}
-                            {saving ? '...' : 'Хадгалах'}
+                            {saving ? <Loader2 className="animate-spin" size={16} /> : <Icons.Save size={16} />}
+                            <span>{saving ? '...' : 'Өөрчлөлтийг Хадгалах'}</span>
                         </button>
                     </div>
                 }
             />
 
-            <div className="page-content" style={{ marginTop: '0', paddingTop: '16px' }}>
-                {selectedCategoryId === 'all' ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="page-content-pro">
+                {/* Master Navigation Sidebar */}
+                <aside className="pro-sidebar">
+                    <div className="pro-sidebar-header">
+                        <Icons.Filter size={14} className="opacity-50" />
+                        <span>САЛБАРУУД</span>
+                    </div>
+                    <nav className="pro-nav">
+                        <button
+                            className={`pro-nav-item ${selectedCategoryId === 'all' ? 'active' : ''}`}
+                            onClick={() => setSelectedCategoryId('all')}
+                        >
+                            <Icons.LayoutGrid size={16} />
+                            <span>Ерөнхий дүр зураг</span>
+                        </button>
+                        <div className="pro-nav-divider" />
                         {categories.map((category) => (
-                            <div
+                            <button
                                 key={category.id}
-                                className="module-category-card-v2 cursor-pointer hover:border-primary transition-all shadow-sm hover:shadow-md"
+                                className={`pro-nav-item ${selectedCategoryId === category.id ? 'active' : ''}`}
                                 onClick={() => setSelectedCategoryId(category.id)}
                             >
-                                <div className="category-header-compact" style={{ borderBottom: 'none', marginBottom: 0 }}>
-                                    <div className="category-icon-box-sm">
-                                        <span role="img" aria-label="icon">{category.icon}</span>
+                                <span className="category-emoji">{category.icon}</span>
+                                <span className="truncate">{category.label}</span>
+                            </button>
+                        ))}
+                    </nav>
+                </aside>
+
+                {/* Detail Content Area */}
+                <main className="pro-main-content">
+                    {selectedCategoryId === 'all' ? (
+                        <div className="pro-summary-grid">
+                            {categories.map((category) => {
+                                const activeCount = Object.keys(defaults[category.id] || {}).length;
+                                return (
+                                    <div
+                                        key={category.id}
+                                        className="pro-summary-card"
+                                        onClick={() => setSelectedCategoryId(category.id)}
+                                    >
+                                        <div className="flex items-center gap-3 mb-3">
+                                            <div className="pro-icon-sm">{category.icon}</div>
+                                            <div className="flex-1 min-w-0">
+                                                <h3 className="text-sm font-bold truncate">{category.label}</h3>
+                                                <p className="text-[10px] text-secondary opacity-60 truncate">{category.desc}</p>
+                                            </div>
+                                        </div>
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-[10px] uppercase font-bold text-tertiary">Тохируулсан</span>
+                                            <span className="badge-mini">{activeCount} модуль</span>
+                                        </div>
                                     </div>
-                                    <div className="flex flex-col">
-                                        <h3 className="category-title-sm">{category.label}</h3>
-                                        <span className="category-desc-sm">{category.desc}</span>
+                                );
+                            })}
+                        </div>
+                    ) : (
+                        <div className="pro-detail-wrapper">
+                            {filteredCategories.map((category) => {
+                                const key = category.id;
+                                const activeMods = defaults[key] || {};
+
+                                return (
+                                    <div key={key} className="animate-slide-up">
+                                        <div className="pro-detail-header">
+                                            <div className="flex items-center gap-3">
+                                                <div className="pro-icon-md">{category.icon}</div>
+                                                <div>
+                                                    <h2 className="text-lg font-bold">{category.label}</h2>
+                                                    <p className="text-xs text-secondary">{category.desc}</p>
+                                                </div>
+                                            </div>
+                                            <div className="pro-search-box">
+                                                <Icons.Search size={14} className="opacity-40" />
+                                                <input
+                                                    type="text"
+                                                    placeholder="Модуль хайх..."
+                                                    value={moduleSearch}
+                                                    onChange={(e) => setModuleSearch(e.target.value)}
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <div className="pro-module-grid">
+                                            {LISCORD_MODULES.filter(m =>
+                                                m.name.toLowerCase().includes(moduleSearch.toLowerCase()) ||
+                                                m.id.toLowerCase().includes(moduleSearch.toLowerCase())
+                                            ).map(module => {
+                                                const status = activeMods[module.id];
+                                                const isActive = !!status;
+                                                const Icon = (Icons as any)[module.icon] || Icons.Box;
+
+                                                return (
+                                                    <div
+                                                        key={module.id}
+                                                        onClick={() => handleToggle(key, module.id)}
+                                                        className={`pro-module-card ${isActive ? 'active' : ''} ${status || ''}`}
+                                                    >
+                                                        <div className="pro-module-icon">
+                                                            <Icon size={18} strokeWidth={2} />
+                                                        </div>
+                                                        <div className="flex-1 min-w-0">
+                                                            <div className="flex items-center justify-between gap-2">
+                                                                <span className="pro-module-name">{module.name}</span>
+                                                                {isActive && (
+                                                                    <div className="pro-check-dot">
+                                                                        <Icons.Check size={10} strokeWidth={4} />
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                            <div className="pro-module-type">
+                                                                {status === 'core' ? 'ҮНДСЭН' : status === 'addon' ? 'НЭМЭЛТ' : 'Идэвхгүй'}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
                                     </div>
-                                    <div className="ml-auto opacity-30">
-                                        <Icons.ChevronRight size={20} />
+                                );
+                            })}
+
+                            <div className="card migration-card no-padding" style={{ marginTop: '32px', borderStyle: 'dashed', background: 'transparent' }}>
+                                <div className="migration-content" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', padding: '24px' }}>
+                                    <div style={{ paddingRight: '24px', borderRight: '1px solid var(--border-primary)' }}>
+                                        <h3 className="text-sm font-bold text-danger mb-2">🚨 V1-V4: App Store Migration</h3>
+                                        <p className="text-secondary text-[11px] mb-4">
+                                            Хуучин бизнесүүдийг шинэ App Store (activeModules) бүтэц рүү хөрвүүлэх.
+                                        </p>
+                                        <button
+                                            className="btn btn-outline btn-xs"
+                                            onClick={handleMigrateClick}
+                                            disabled={migrating}
+                                        >
+                                            {migrating ? <Loader2 className="animate-spin" size={12} /> : 'Шилжүүлэг (V4)'}
+                                        </button>
+                                    </div>
+                                    <div>
+                                        <h3 className="text-sm font-bold text-primary mb-2">🚀 V5: Subcollection Migration</h3>
+                                        <p className="text-secondary text-[11px] mb-4">
+                                            200 модулийн даацтай болгохын тулд тохиргоог Subcollection руу шилжүүлэх.
+                                        </p>
+                                        <button
+                                            className="btn btn-primary btn-xs"
+                                            onClick={() => {
+                                                if (!confirm('V5: MODULE SETTINGS MIGRATION\n\nБүх бизнесийн тохиргоог sub-collection руу шилжүүлэх үү?')) return;
+                                                setPendingAction(() => handleMigrateV5);
+                                                setShowSecurityModal(true);
+                                            }}
+                                            disabled={migrating}
+                                        >
+                                            {migrating ? <Loader2 className="animate-spin" size={12} /> : 'Шилжүүлэг (V5)'}
+                                        </button>
                                     </div>
                                 </div>
                             </div>
-                        ))}
-                    </div>
-                ) : (
-                    <div className="module-category-list">
-                        {filteredCategories.map((category) => {
-                            const key = category.id;
-                            const activeMods = defaults[key] || {};
-
-                            return (
-                                <div key={key} className="module-category-card-v2">
-                                    <div className="category-header-compact">
-                                        <div className="category-icon-box-sm">
-                                            <span role="img" aria-label="icon">{category.icon}</span>
-                                        </div>
-                                        <div className="flex flex-col">
-                                            <h3 className="category-title-sm">{category.label}</h3>
-                                            <span className="category-desc-sm">{category.desc}</span>
-                                        </div>
-                                        <button
-                                            className="ml-auto btn btn-sm btn-ghost gap-2"
-                                            onClick={() => setSelectedCategoryId('all')}
-                                        >
-                                            <Icons.ArrowLeft size={16} />
-                                            Буцах
-                                        </button>
-                                    </div>
-
-                                    <div className="module-grid-header">
-                                        <div className="flex items-center gap-2">
-                                            <h4 className="text-base font-bold text-primary">Боломжит модулиуд</h4>
-                                            <span className="badge badge-soft" style={{ fontSize: '10px', height: '18px' }}>{LISCORD_MODULES.length}</span>
-                                        </div>
-
-                                        <div className="search-bar-premium">
-                                            <Icons.Search size={16} className="search-icon-fixed" />
-                                            <input
-                                                type="text"
-                                                placeholder="Нэрээр хайх..."
-                                                value={moduleSearch}
-                                                onChange={(e) => setModuleSearch(e.target.value)}
-                                            />
-                                            {moduleSearch && (
-                                                <button className="search-clear-btn" onClick={() => setModuleSearch('')}>
-                                                    <Icons.X size={14} />
-                                                </button>
-                                            )}
-                                        </div>
-                                    </div>
-
-                                    <div className="module-grid">
-                                        {LISCORD_MODULES.filter(m =>
-                                            m.name.toLowerCase().includes(moduleSearch.toLowerCase()) ||
-                                            m.id.toLowerCase().includes(moduleSearch.toLowerCase())
-                                        ).map(module => {
-                                            const status = activeMods[module.id];
-                                            const isActive = !!status;
-                                            const Icon = (Icons as any)[module.icon] || Icons.Box;
-                                            return (
-                                                <div
-                                                    key={module.id}
-                                                    onClick={() => handleToggle(key, module.id)}
-                                                    className={`module-item-card-v2 ${status || ''}`}
-                                                >
-                                                    <div className="module-icon-box">
-                                                        <Icon size={22} strokeWidth={2} />
-                                                    </div>
-
-                                                    <div className="module-content">
-                                                        <span className="module-v2-name">{module.name}</span>
-                                                        <div className="module-status-tags">
-                                                            {status === 'core' ? (
-                                                                <span className="status-tag core">ҮНДСЭН</span>
-                                                            ) : status === 'addon' ? (
-                                                                <span className="status-tag addon">НЭМЭЛТ</span>
-                                                            ) : (
-                                                                <span className="status-tag inactive">ТАТГАЛЗСАН</span>
-                                                            )}
-                                                        </div>
-                                                    </div>
-
-                                                    <div className={`module-selection-indicator ${isActive ? 'active' : ''}`}>
-                                                        {isActive && <Icons.Check size={14} strokeWidth={3} />}
-                                                    </div>
-                                                </div>
-                                            );
-                                        })}
-                                    </div>
-                                </div>
-                            );
-                        })}
-                    </div>
-                )}
-
-                <div className="card migration-card no-padding" style={{ marginTop: '24px' }}>
-                    <div className="migration-content" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', padding: '24px' }}>
-                        <div style={{ paddingRight: '24px', borderRight: '1px solid var(--border-primary)' }}>
-                            <h3 className="text-lg font-bold text-danger mb-2">🚨 V1-V4: App Store Migration</h3>
-                            <p className="text-secondary text-sm mb-4">
-                                Хуучин бизнесүүдийг шинэ App Store (activeModules) бүтэц рүү хөрвүүлэх.
-                            </p>
-                            <button
-                                className="btn btn-outline btn-sm"
-                                onClick={handleMigrateClick}
-                                disabled={migrating}
-                            >
-                                {migrating ? <Loader2 className="animate-spin" size={16} /> : 'Шилжүүлэг (V4)'}
-                            </button>
                         </div>
-                        <div>
-                            <h3 className="text-lg font-bold text-primary mb-2">🚀 V5: Subcollection Migration</h3>
-                            <p className="text-secondary text-sm mb-4">
-                                200 модулийн даацтай болгохын тулд тохиргоог Subcollection руу шилжүүлэх (Алхам 6).
-                            </p>
-                            <button
-                                className="btn btn-primary btn-sm"
-                                onClick={() => {
-                                    if (!confirm('V5: MODULE SETTINGS MIGRATION\n\nБүх бизнесийн тохиргоог sub-collection руу шилжүүлэх үү?')) return;
-                                    setPendingAction(() => handleMigrateV5);
-                                    setShowSecurityModal(true);
-                                }}
-                                disabled={migrating}
-                            >
-                                {migrating ? <Loader2 className="animate-spin" size={16} /> : 'Шилжүүлэг (V5)'}
-                            </button>
-                        </div>
-                    </div>
-                </div>
+                    )}
+                </main>
             </div>
 
             {showSecurityModal && (
