@@ -19,11 +19,15 @@ export function SuperAdminLayout() {
             className={`app-layout ${sidebarCollapsed ? 'sidebar-is-collapsed' : ''}`}
             data-theme={resolvedTheme}
         >
-            <GlobalBanner />
-            <SuperAdminSidebar />
-            <main className="app-main">
-                <Outlet />
-            </main>
+            <div className="app-banners">
+                <GlobalBanner />
+            </div>
+            <div className="app-container">
+                <SuperAdminSidebar />
+                <main className="app-main">
+                    <Outlet />
+                </main>
+            </div>
         </div>
     );
 }

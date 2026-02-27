@@ -1,29 +1,34 @@
 .app-layout {
     display: flex;
-    min-height: 100vh;
+    flex-direction: column;
+    height: 100vh;
+    overflow: hidden;
+}
+
+.app-container {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+    position: relative;
 }
 
 .app-main {
     flex: 1;
-    margin-left: var(--sidebar-width);
-    height: 100vh;
-    /* Fixed height to enable children to fill/scroll */
-    max-height: 100vh;
+    min-height: 0;
+    /* CRITICAL */
     background: var(--bg-primary);
     transition: margin-left var(--transition-base);
     position: relative;
     overflow: hidden;
-    /* Contain all page scrolls here */
+    /* Each page will handle its own scrolling content */
 }
 
-.sidebar-is-collapsed .app-main {
-    margin-left: var(--sidebar-collapsed);
+.sidebar-is-collapsed .app-container {
+    /* No margin needed here as Sidebar is a child of app-container */
 }
 
 @media (max-width: 768px) {
-    .app-main {
-        margin-left: 0;
-    }
+    /* Responsive tweaks for the main container if needed */
 }
 
 /* Page container */

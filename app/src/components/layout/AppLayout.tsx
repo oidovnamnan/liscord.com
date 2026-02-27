@@ -12,12 +12,16 @@ export function AppLayout() {
 
     return (
         <div className={`app-layout ${sidebarCollapsed ? 'sidebar-is-collapsed' : ''}`}>
-            <GlobalBanner />
-            <ImpersonationBanner />
-            <Sidebar />
-            <main className="app-main">
-                <Outlet />
-            </main>
+            <div className="app-banners">
+                <GlobalBanner />
+                <ImpersonationBanner />
+            </div>
+            <div className="app-container">
+                <Sidebar />
+                <main className="app-main">
+                    <Outlet />
+                </main>
+            </div>
         </div>
     );
 }

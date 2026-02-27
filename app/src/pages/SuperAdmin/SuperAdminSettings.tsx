@@ -128,7 +128,7 @@ export function SuperAdminSettings() {
     }
 
     return (
-        <div className="page-container animate-fade-in">
+        <div className="super-admin-page animate-fade-in">
             <Header
                 title={
                     <div className="flex items-center gap-3">
