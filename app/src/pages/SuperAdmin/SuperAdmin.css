@@ -703,7 +703,12 @@
     border: 1px solid var(--border-primary);
     border-radius: 8px;
     margin-top: 12px;
-    height: calc(100vh - 140px);
+    height: calc(100vh - 120px);
+    /* Slightly more room */
+    max-height: 800px;
+    /* Safety cap for large monitors */
+    min-height: 500px;
+    /* Safety floor */
     overflow: hidden;
 }
 
@@ -714,6 +719,8 @@
     display: flex;
     flex-direction: column;
     padding: 8px 0;
+    overflow-y: auto;
+    /* Enable vertical scroll for categories */
 }
 
 .pro-sidebar-header {
