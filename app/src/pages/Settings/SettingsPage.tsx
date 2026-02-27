@@ -4,7 +4,7 @@ import { useSearchParams } from 'react-router-dom';
 import { Header } from '../../components/layout/Header';
 import { Building2, Palette, Bell, Shield, Users, Globe, Loader2, Share2, X, CheckSquare, ListOrdered, ShoppingBag, CreditCard, Sun, Moon, Monitor, CheckCircle2 } from 'lucide-react';
 import { useBusinessStore, useUIStore } from '../../store';
-import { businessService, businessRequestService, systemSettingsService, moduleSettingsService } from '../../services/db';
+import { businessService, businessRequestService, moduleSettingsService } from '../../services/db';
 import { eventBus, EVENTS } from '../../services/eventBus';
 import { storageService as storage } from '../../services/storage';
 import { toast } from 'react-hot-toast';
@@ -76,19 +76,6 @@ export function SettingsPage() {
 
     const isStorefrontEnabled = business?.settings?.storefront?.enabled || business?.category === 'online_shop';
 
-    const [moduleDefaults, setModuleDefaults] = useState<Record<string, Record<string, string>>>({});
-
-    useEffect(() => {
-        const fetchDefaults = async () => {
-            try {
-                const data = await systemSettingsService.getModuleDefaults();
-                setModuleDefaults(data);
-            } catch (e) {
-                console.error('Fetch defaults error:', e);
-            }
-        };
-        fetchDefaults();
-    }, []);
 
     const tabs = useMemo(() => {
         const coreTabs = [

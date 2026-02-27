@@ -1,5 +1,5 @@
 import React from 'react';
-import { Bot, Sparkles, Brain, Zap, MessageSquare, BarChart3, Settings } from 'lucide-react';
+import { Sparkles, Brain, Zap, MessageSquare, BarChart3 } from 'lucide-react';
 import './AIAgentPage.css';
 
 export const AIAgentPage: React.FC = () => {
