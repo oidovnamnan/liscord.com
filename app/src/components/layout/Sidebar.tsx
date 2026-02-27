@@ -226,6 +226,18 @@ export function Sidebar() {
                         );
                     })}
 
+                    {/* App Store */}
+                    <NavLink
+                        to="/app/app-store"
+                        className={`sidebar-link ${location.pathname.startsWith('/app/app-store') ? 'active' : ''}`}
+                        onClick={() => sidebarOpen && toggleSidebar()}
+                        title={sidebarCollapsed ? 'App Store' : undefined}
+                    >
+                        <Icons.ShoppingBag size={20} />
+                        {!sidebarCollapsed && <span>App Store</span>}
+                        {location.pathname.startsWith('/app/app-store') && <div className="sidebar-link-indicator" />}
+                    </NavLink>
+
                     {/* Settings Always at Bottom */}
                     <NavLink
                         to="/app/settings"

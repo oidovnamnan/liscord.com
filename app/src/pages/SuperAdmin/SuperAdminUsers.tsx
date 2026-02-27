@@ -11,13 +11,18 @@ import {
 } from 'lucide-react';
 import { collection, getDocs, query, orderBy } from 'firebase/firestore';
 import { db } from '../../services/firebase';
+import { userService } from '../../services/db';
 import { Header } from '../../components/layout/Header';
+import { SecurityModal } from '../../components/common/SecurityModal';
+import { toast } from 'react-hot-toast';
 import './SuperAdmin.css';
 
 export function SuperAdminUsers() {
     const [users, setUsers] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
+    const [showSecurityModal, setShowSecurityModal] = useState(false);
+    const [pendingAction, setPendingAction] = useState<{ type: 'ban' | 'admin', userId: string, value: boolean } | null>(null);
 
     useEffect(() => {
         loadUsers();
@@ -32,6 +37,25 @@ export function SuperAdminUsers() {
             console.error('Error loading users:', error);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleActionSuccess = async () => {
+        if (!pendingAction) return;
+
+        try {
+            if (pendingAction.type === 'admin') {
+                await userService.toggleSuperAdmin(pendingAction.userId, pendingAction.value);
+                toast.success('Эрх шинэчлэгдлээ');
+            } else {
+                await userService.toggleUserStatus(pendingAction.userId, pendingAction.value);
+                toast.success(pendingAction.value ? 'Хэрэглэгчийг блоклов' : 'Хэрэглэгчийг нээв');
+            }
+            await loadUsers();
+            setShowSecurityModal(false);
+            setPendingAction(null);
+        } catch (error) {
+            toast.error('Алдаа гарлаа');
         }
     };
 
@@ -118,16 +142,36 @@ export function SuperAdminUsers() {
                                         )}
                                     </td>
                                     <td>
-                                        <span className="badge badge-delivered">
-                                            <CheckCircle2 size={12} /> Active
-                                        </span>
+                                        {u.isDisabled ? (
+                                            <span className="badge badge-danger">
+                                                <Ban size={12} /> Blocked
+                                            </span>
+                                        ) : (
+                                            <span className="badge badge-delivered">
+                                                <CheckCircle2 size={12} /> Active
+                                            </span>
+                                        )}
                                     </td>
                                     <td>
                                         <div className="row-actions">
-                                            <button className="btn-icon" title="Эрх засах">
+                                            <button
+                                                className={`btn-icon ${u.isSuperAdmin ? 'text-primary' : ''}`}
+                                                title={u.isSuperAdmin ? "Эрх хасах" : "Super Admin эрх олгох"}
+                                                onClick={() => {
+                                                    setPendingAction({ type: 'admin', userId: u.id, value: !u.isSuperAdmin });
+                                                    setShowSecurityModal(true);
+                                                }}
+                                            >
                                                 <Shield size={16} />
                                             </button>
-                                            <button className="btn-icon text-danger" title="Блок хийх">
+                                            <button
+                                                className={`btn-icon ${u.isDisabled ? '' : 'text-danger'}`}
+                                                title={u.isDisabled ? "Блок гаргах" : "Блок хийх"}
+                                                onClick={() => {
+                                                    setPendingAction({ type: 'ban', userId: u.id, value: !u.isDisabled });
+                                                    setShowSecurityModal(true);
+                                                }}
+                                            >
                                                 <Ban size={16} />
                                             </button>
                                             <button className="btn-icon">
@@ -141,6 +185,16 @@ export function SuperAdminUsers() {
                     </table>
                 </div>
             </div>
+
+            {showSecurityModal && (
+                <SecurityModal
+                    onSuccess={handleActionSuccess}
+                    onClose={() => {
+                        setShowSecurityModal(false);
+                        setPendingAction(null);
+                    }}
+                />
+            )}
         </div>
     );
 }

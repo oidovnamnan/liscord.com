@@ -18,6 +18,7 @@ import {
     increment
 } from 'firebase/firestore';
 import { db } from './firebase';
+import { eventBus, EVENTS } from './eventBus';
 import { auditService } from './audit';
 import type {
     Business, User, Employee, Order, Customer, Product, Position, Category, CargoType, OrderSource, SocialAccount, OrderStatusConfig, BusinessStats,
@@ -65,6 +66,20 @@ export const userService = {
 
     async updateActiveBusiness(uid: string, businessId: string): Promise<void> {
         await updateDoc(doc(db, 'users', uid), { activeBusiness: businessId });
+    },
+
+    async toggleSuperAdmin(uid: string, isSuperAdmin: boolean): Promise<void> {
+        await updateDoc(doc(db, 'users', uid), {
+            isSuperAdmin,
+            updatedAt: serverTimestamp()
+        });
+    },
+
+    async toggleUserStatus(uid: string, isDisabled: boolean): Promise<void> {
+        await updateDoc(doc(db, 'users', uid), {
+            isDisabled,
+            updatedAt: serverTimestamp()
+        });
     }
 };
 
@@ -176,6 +191,45 @@ export const systemSettingsService = {
         }
 
         return { migratedCount };
+    },
+
+    /**
+     * Migration for V5: Moves settings from business document to module_settings subcollection
+     */
+    async migrateToSubcollections(): Promise<{ migratedCount: number }> {
+        const q = query(collection(db, 'businesses'));
+        const snap = await getDocs(q);
+        let migratedCount = 0;
+
+        for (const docSnap of snap.docs) {
+            const bizId = docSnap.id;
+            const data = docSnap.data();
+            const settings = data.settings || {};
+
+            // 1. Migrate Storefront settings
+            if (settings.storefront) {
+                const storefrontRef = doc(db, 'businesses', bizId, 'module_settings', 'storefront');
+                await setDoc(storefrontRef, {
+                    ...settings.storefront,
+                    updatedAt: serverTimestamp()
+                }, { merge: true });
+                migratedCount++;
+            }
+
+            // 2. Migrate Notifications (if they were there)
+            if (settings.notifications) {
+                const notifyRef = doc(db, 'businesses', bizId, 'module_settings', 'notifications');
+                await setDoc(notifyRef, {
+                    ...settings.notifications,
+                    updatedAt: serverTimestamp()
+                }, { merge: true });
+            }
+
+            // Clean up the business document (optional - for now we just mark as migrated)
+            // await updateDoc(docSnap.ref, { 'settings.migratedToV5': true });
+        }
+
+        return { migratedCount };
     }
 };
 
@@ -263,6 +317,39 @@ export const businessService = {
         await updateDoc(doc(db, 'businesses', bizId), {
             ...data,
             updatedAt: serverTimestamp()
+        });
+    }
+};
+
+// ============ MODULE SETTINGS SERVICES ============
+
+export const moduleSettingsService = {
+    getSettingsRef(bizId: string, moduleId: string) {
+        return doc(db, 'businesses', bizId, 'module_settings', moduleId);
+    },
+
+    async getSettings(bizId: string, moduleId: string): Promise<any | null> {
+        const docRef = this.getSettingsRef(bizId, moduleId);
+        const docSnap = await getDoc(docRef);
+        return docSnap.exists() ? convertTimestamps(docSnap.data()) : null;
+    },
+
+    async updateSettings(bizId: string, moduleId: string, settings: any): Promise<void> {
+        const docRef = this.getSettingsRef(bizId, moduleId);
+        await setDoc(docRef, {
+            ...settings,
+            updatedAt: serverTimestamp()
+        }, { merge: true });
+    },
+
+    subscribeSettings(bizId: string, moduleId: string, callback: (settings: any) => void) {
+        const docRef = this.getSettingsRef(bizId, moduleId);
+        return onSnapshot(docRef, (snapshot) => {
+            if (snapshot.exists()) {
+                callback(convertTimestamps(snapshot.data()));
+            } else {
+                callback(null);
+            }
         });
     }
 };
@@ -455,6 +542,8 @@ export const orderService = {
             severity: 'normal'
         }, employeeProfile);
 
+        eventBus.emit(EVENTS.ORDER_CREATED, { bizId, orderId: docRef.id, order });
+
         return docRef.id;
     },
 
@@ -488,6 +577,8 @@ export const orderService = {
             severity: 'normal',
             changes: [{ field: 'status', oldValue: '?', newValue: status }]
         }, employeeProfile);
+
+        eventBus.emit(EVENTS.ORDER_STATUS_CHANGED, { bizId, orderId, status });
     },
 
     async updateOrderRaw(bizId: string, orderId: string, updates: Partial<Order>): Promise<void> {

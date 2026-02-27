@@ -102,6 +102,20 @@ export function SuperAdminSettings() {
         }
     };
 
+    const handleMigrateV5 = async () => {
+        setShowSecurityModal(false);
+        setMigrating(true);
+        try {
+            const result = await systemSettingsService.migrateToSubcollections();
+            toast.success(`Нийт ${result.migratedCount} бизнесийн тохиргоог Subcollection руу шилжүүллээ!`);
+        } catch (error) {
+            console.error('V5 Migration failed:', error);
+            toast.error('Алхам 6 шилжүүлэг хийх үед алдаа гарлаа');
+        } finally {
+            setMigrating(false);
+        }
+    };
+
     if (loading) {
         return (
             <div className="loading-screen" style={{ height: 'calc(100vh - 64px)' }}>
@@ -229,21 +243,38 @@ export function SuperAdminSettings() {
                 </div>
 
 
-                <div className="card migration-card no-padding">
-                    <div className="migration-content">
-                        <div>
-                            <h3 className="text-lg font-bold text-danger mb-2">🚨 Хуучин системийн шилжүүлэг (Migration)</h3>
-                            <p className="text-secondary text-sm max-w-2xl">
-                                Өмнө нь бүртгүүлсэн бизнесүүдийн тохиргоог шинэ App Store (activeModules) бүтэц рүү хөрвүүлэх скрипт. Зөвхөн 1 удаа дарахад хангалттай.
+                <div className="card migration-card no-padding" style={{ marginTop: '24px' }}>
+                    <div className="migration-content" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', padding: '24px' }}>
+                        <div style={{ paddingRight: '24px', borderRight: '1px solid var(--border-primary)' }}>
+                            <h3 className="text-lg font-bold text-danger mb-2">🚨 V1-V4: App Store Migration</h3>
+                            <p className="text-secondary text-sm mb-4">
+                                Хуучин бизнесүүдийг шинэ App Store (activeModules) бүтэц рүү хөрвүүлэх.
                             </p>
+                            <button
+                                className="btn btn-outline btn-sm"
+                                onClick={handleMigrateClick}
+                                disabled={migrating}
+                            >
+                                {migrating ? <Loader2 className="animate-spin" size={16} /> : 'Шилжүүлэг (V4)'}
+                            </button>
                         </div>
-                        <button
-                            className="btn btn-danger"
-                            onClick={handleMigrateClick}
-                            disabled={migrating}
-                        >
-                            {migrating ? <Loader2 className="animate-spin" size={18} /> : 'Шилжүүлэг эхлүүлэх'}
-                        </button>
+                        <div>
+                            <h3 className="text-lg font-bold text-primary mb-2">🚀 V5: Subcollection Migration</h3>
+                            <p className="text-secondary text-sm mb-4">
+                                200 модулийн даацтай болгохын тулд тохиргоог Subcollection руу шилжүүлэх (Алхам 6).
+                            </p>
+                            <button
+                                className="btn btn-primary gradient-btn btn-sm"
+                                onClick={() => {
+                                    if (!confirm('V5: MODULE SETTINGS MIGRATION\n\nБүх бизнесийн тохиргоог sub-collection руу шилжүүлэх үү?')) return;
+                                    setPendingAction(() => handleMigrateV5);
+                                    setShowSecurityModal(true);
+                                }}
+                                disabled={migrating}
+                            >
+                                {migrating ? <Loader2 className="animate-spin" size={16} /> : 'Шилжүүлэг (V5)'}
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>

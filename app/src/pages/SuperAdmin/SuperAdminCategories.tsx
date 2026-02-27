@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
-import { Header } from '../../components/layout/Header';
 import { useSystemCategoriesStore } from '../../store';
 import { businessCategoryService } from '../../services/db';
-import { Loader2, Plus, Edit2, Trash2, PowerOff, Power } from 'lucide-react';
+import { Plus, Edit2, Trash2, PowerOff, Power, Loader2 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import type { BusinessCategoryConfig } from '../../types';
 import { SecurityModal } from '../../components/common/SecurityModal';
+import { Header } from '../../components/layout/Header';
 
 export function SuperAdminCategories() {
     const { categories, loading, fetchCategories, refresh } = useSystemCategoriesStore();
@@ -13,6 +13,7 @@ export function SuperAdminCategories() {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [saving, setSaving] = useState(false);
     const [showSecurityModal, setShowSecurityModal] = useState(false);
+    const [pendingAction, setPendingAction] = useState<(() => Promise<void>) | null>(null);
 
     useEffect(() => {
         fetchCategories();
@@ -34,19 +35,8 @@ export function SuperAdminCategories() {
         setIsModalOpen(true);
     };
 
-    const handleSaveClick = (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!editingCategory || !editingCategory.id || !editingCategory.label) {
-            toast.error('Мэдээллийг гүйцэд оруулна уу');
-            return;
-        }
-        setShowSecurityModal(true);
-    };
-
     const handleSave = async () => {
         if (!editingCategory || !editingCategory.id || !editingCategory.label) return;
-        setShowSecurityModal(false);
-
         setSaving(true);
         try {
             const isNew = !categories.find(c => c.id === editingCategory.id);
@@ -67,6 +57,16 @@ export function SuperAdminCategories() {
         }
     };
 
+    const handleSaveClick = (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!editingCategory || !editingCategory.id || !editingCategory.label) {
+            toast.error('Мэдээллийг гүйцэд оруулна уу');
+            return;
+        }
+        setPendingAction(() => handleSave);
+        setShowSecurityModal(true);
+    };
+
     const handleToggleActive = async (category: BusinessCategoryConfig) => {
         try {
             await businessCategoryService.updateCategory(category.id, { isActive: !category.isActive });
@@ -78,34 +78,37 @@ export function SuperAdminCategories() {
     };
 
     const handleDelete = async (id: string) => {
-        if (!window.confirm('Энэ ангиллыг устгах уу? (Буцаах боломжгүй)')) return;
-        try {
-            await businessCategoryService.deleteCategory(id);
-            toast.success('Устгагдлаа');
-            refresh();
-        } catch (error) {
-            toast.error('Устгахад алдаа гарлаа');
-        }
+        setPendingAction(() => async () => {
+            try {
+                await businessCategoryService.deleteCategory(id);
+                toast.success('Устгагдлаа');
+                refresh();
+            } catch (error) {
+                toast.error('Устгахад алдаа гарлаа');
+            }
+        });
+        setShowSecurityModal(true);
     };
 
     const handleSeedCategories = async () => {
-        if (!window.confirm('Анхны 30+ ангиллуудыг өгөгдлийн сан руу хуулах уу? (Хуучин дата байхгүй бол ашиглана)')) return;
-
-        setSaving(true);
-        try {
-            let count = 0;
-            for (const cat of categories) {
-                await businessCategoryService.createCategory(cat);
-                count++;
+        setPendingAction(() => async () => {
+            setSaving(true);
+            try {
+                let count = 0;
+                for (const cat of categories) {
+                    await businessCategoryService.createCategory(cat);
+                    count++;
+                }
+                toast.success(`Амжилттай ${count} ангилал нэмэгдлээ!`);
+                refresh();
+            } catch (error) {
+                console.error('Seeding error:', error);
+                toast.error('Анхны өгөгдөл хуулахад алдаа гарлаа');
+            } finally {
+                setSaving(false);
             }
-            toast.success(`Амжилттай ${count} ангилал нэмэгдлээ!`);
-            refresh();
-        } catch (error) {
-            console.error('Seeding error:', error);
-            toast.error('Анхны өгөгдөл хуулахад алдаа гарлаа');
-        } finally {
-            setSaving(false);
-        }
+        });
+        setShowSecurityModal(true);
     };
 
     if (loading && categories.length === 0) {
@@ -260,8 +263,15 @@ export function SuperAdminCategories() {
 
             {showSecurityModal && (
                 <SecurityModal
-                    onSuccess={handleSave}
-                    onClose={() => setShowSecurityModal(false)}
+                    onSuccess={() => {
+                        setShowSecurityModal(false);
+                        if (pendingAction) pendingAction();
+                        setPendingAction(null);
+                    }}
+                    onClose={() => {
+                        setShowSecurityModal(false);
+                        setPendingAction(null);
+                    }}
                 />
             )}
         </div>

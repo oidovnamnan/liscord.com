@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useParams, Outlet, Navigate } from 'react-router-dom';
 import { businessService } from '../../services/db';
+import { db } from '../../services/firebase';
+import { doc, getDoc } from 'firebase/firestore';
 import type { Business } from '../../types';
 import { CartDrawer } from '../../components/Storefront/CartDrawer';
 import { StorefrontFooter } from '../../components/Storefront/StorefrontFooter';
@@ -19,6 +21,15 @@ export function StorefrontWrapper() {
         const loadBusiness = async () => {
             try {
                 const biz = await businessService.getBusinessBySlug(slug.toLowerCase());
+                if (biz) {
+                    // Load module-specific settings (V5)
+                    const storefrontRef = doc(db, 'businesses', biz.id, 'module_settings', 'storefront');
+                    const storefrontSnap = await getDoc(storefrontRef);
+                    if (storefrontSnap.exists()) {
+                        const sfSettings = storefrontSnap.data() as any;
+                        biz.settings = { ...biz.settings, storefront: sfSettings };
+                    }
+                }
                 setBusiness(biz);
             } catch (err) {
                 console.error("Error loading storefront:", err);

@@ -42,6 +42,8 @@ export interface AppModule {
     isFree?: boolean;       // Phase 41: App Store pricing
     price?: number;         // Price in local currency (legacy)
     durationDays?: number;  // Subscription period (legacy)
+    hasSettings?: boolean;  // Системийн Тохиргоо руу тусгай цэс нэмэх эсэх
+    settingsRoute?: string; // Тохиргоо цэсний зам (e.g. '/app/settings/orders')
     plans?: AppModulePricingPlan[]; // Multi-pricing support
 }
 
