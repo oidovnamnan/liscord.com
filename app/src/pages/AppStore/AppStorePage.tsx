@@ -10,7 +10,7 @@ import * as Icons from 'lucide-react';
 import { LISCORD_MODULES } from '../../config/modules';
 import { STOREFRONT_THEMES } from '../../config/themes';
 
-import '../Settings/components/AppStoreTab.css'; // Reusing styles for now
+import './AppStorePage.css';
 
 export function AppStorePage() {
     const { business, setBusiness } = useBusinessStore();
