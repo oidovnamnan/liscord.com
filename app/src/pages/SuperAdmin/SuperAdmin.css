@@ -2,11 +2,12 @@
     position: absolute;
     inset: 0;
     margin: 0;
+    padding: 0;
     display: flex;
     flex-direction: column;
     overflow: hidden;
     background: var(--bg-primary);
-    animation: superFadeIn 0.4s ease-out;
+    animation: superFadeIn 0.3s ease-out;
 }
 
 @keyframes superFadeIn {
@@ -787,7 +788,8 @@
 .pro-main-content {
     background: var(--surface-1);
     overflow-y: auto;
-    padding: 16px;
+    overflow-x: hidden;
+    padding: 20px;
     height: 100%;
 }
 
@@ -881,88 +883,94 @@
 }
 
 /* Dense Module Grid */
-/* Dense Module Grid - App Store Style */
+/* App Store Style Module Grid */
 .pro-module-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
     gap: 12px;
+    padding-bottom: 24px;
 }
 
 .pro-module-card {
     background: var(--surface-2);
     border: 1px solid var(--border-primary);
-    border-radius: 14px;
+    border-radius: 18px;
     padding: 12px;
     display: flex;
     align-items: center;
     gap: 12px;
     cursor: pointer;
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
     position: relative;
     user-select: none;
-    border-bottom: 2px solid var(--border-primary);
 }
 
 .pro-module-card:hover {
     background: var(--bg-hover);
-    transform: translateY(-1px);
-    border-bottom-color: var(--primary-light);
+    transform: scale(1.02);
+    border-color: var(--primary-light);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
 }
 
 .pro-module-card.active {
     background: var(--surface-1);
-    border-color: var(--primary-light);
-    border-bottom-color: var(--primary);
+    border-color: var(--primary);
+    box-shadow: 0 4px 15px rgba(var(--primary-rgb), 0.1);
 }
 
 .pro-module-icon {
-    width: 44px;
-    height: 44px;
-    background: var(--bg-secondary);
-    border-radius: 10px;
+    width: 64px;
+    height: 64px;
+    background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%);
+    border-radius: 14px;
     /* Squircle Style */
     display: flex;
     align-items: center;
     justify-content: center;
     color: var(--text-secondary);
-    font-size: 20px;
+    font-size: 24px;
     flex-shrink: 0;
     border: 1px solid var(--border-primary);
-    transition: all 0.25s ease;
+    transition: all 0.3s ease;
 }
 
 .pro-module-card.active .pro-module-icon {
-    background: var(--primary);
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%);
     color: white;
     border-color: transparent;
-    box-shadow: 0 4px 10px rgba(var(--primary-rgb), 0.2);
+    box-shadow: 0 10px 20px -5px rgba(var(--primary-rgb), 0.3);
 }
 
 .pro-module-name {
-    font-size: 13px;
+    font-size: 15px;
     font-weight: 700;
     color: var(--text-primary);
-    margin-bottom: 1px;
+    margin-bottom: 2px;
     line-height: 1.2;
 }
 
 .pro-module-type {
-    font-size: 9px;
-    font-weight: 800;
+    font-size: 10px;
+    font-weight: 700;
+    max-width: fit-content;
     color: var(--text-tertiary);
     text-transform: uppercase;
-    letter-spacing: 0.04em;
-    background: transparent;
-    padding: 0;
+    background: var(--bg-tertiary);
+    padding: 1px 6px;
+    border-radius: 4px;
 }
 
 .pro-status-btn {
     margin-left: auto;
-    padding: 4px 10px;
-    border-radius: 12px;
-    font-size: 9.5px;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 12px;
     font-weight: 800;
     text-transform: uppercase;
+    letter-spacing: 0.02em;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
 }
 
 .pro-status-btn.inactive {
@@ -970,12 +978,11 @@
     color: var(--primary);
 }
 
-.pro-status-btn.active {
+.pro-status-btn:hover.inactive {
     background: var(--primary-light);
-    color: var(--primary);
 }
 
-.pro-module-card.active .pro-status-btn.active {
+.pro-status-btn.active {
     background: var(--primary);
     color: white;
 }

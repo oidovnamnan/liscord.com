@@ -6,9 +6,14 @@
 .app-main {
     flex: 1;
     margin-left: var(--sidebar-width);
-    min-height: 100vh;
+    height: 100vh;
+    /* Fixed height to enable children to fill/scroll */
+    max-height: 100vh;
     background: var(--bg-primary);
     transition: margin-left var(--transition-base);
+    position: relative;
+    overflow: hidden;
+    /* Contain all page scrolls here */
 }
 
 .sidebar-is-collapsed .app-main {
