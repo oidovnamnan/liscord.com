@@ -22,12 +22,12 @@ export function SuperAdminSettings() {
     const [showSecurityModal, setShowSecurityModal] = useState(false);
     const [pendingAction, setPendingAction] = useState<(() => Promise<void>) | null>(null);
     const [selectedIds, setSelectedIds] = useState<string[]>([]);
-    const [bulkSaving, setBulkSaving] = useState(false);
+    const [localCategories, setLocalCategories] = useState<any[]>([]);
+    const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
     useEffect(() => {
         const fetchDefaults = async () => {
             try {
-                // Fetch both module defaults and categories
                 const [data] = await Promise.all([
                     systemSettingsService.getModuleDefaults(),
                     fetchCategories()
@@ -43,29 +43,32 @@ export function SuperAdminSettings() {
         fetchDefaults();
     }, [fetchCategories]);
 
-    const handleBulkStatusChange = async (isActive: boolean) => {
-        if (selectedIds.length === 0) return;
-        setBulkSaving(true);
-        try {
-            const batch = writeBatch(db);
-            selectedIds.forEach(id => {
-                const docRef = doc(db, 'system_categories', id);
-                batch.update(docRef, { isActive, updatedAt: serverTimestamp() });
-            });
-            await batch.commit();
-            toast.success(`${selectedIds.length} ангиллын төлөв хадгалагдлаа`);
-            setSelectedIds([]);
-            refresh(); // Force refresh the list from DB
-        } catch (error) {
-            toast.error('Үйлдэл амжилтгүй');
-        } finally {
-            setBulkSaving(false);
+    useEffect(() => {
+        if (categories.length > 0 && !hasUnsavedChanges) {
+            setLocalCategories(categories);
         }
+    }, [categories, hasUnsavedChanges]);
+
+    const handleBulkStatusChange = (isActive: boolean) => {
+        if (selectedIds.length === 0) return;
+        setLocalCategories(prev => prev.map(cat =>
+            selectedIds.includes(cat.id) ? { ...cat, isActive } : cat
+        ));
+        setHasUnsavedChanges(true);
     };
 
+    const handleSingleStatusToggle = (id: string) => {
+        setLocalCategories(prev => prev.map(cat =>
+            cat.id === id ? { ...cat, isActive: !cat.isActive } : cat
+        ));
+        setHasUnsavedChanges(true);
+    };
+
+    const categoriesToDisplay = localCategories.length > 0 ? localCategories : categories;
+
     const filteredCategories = selectedCategoryId === 'all'
-        ? categories
-        : categories.filter(c => c.id === selectedCategoryId);
+        ? categoriesToDisplay
+        : categoriesToDisplay.filter(c => c.id === selectedCategoryId);
 
     const handleToggle = (categoryKey: string, moduleId: string) => {
         setDefaults(prev => {
@@ -98,10 +101,27 @@ export function SuperAdminSettings() {
         setShowSecurityModal(false);
         setSaving(true);
         try {
-            await systemSettingsService.updateModuleDefaults(defaults);
-            toast.success('Модулийн тохиргоо амжилттай хадгалагдлаа');
+            const batch = writeBatch(db);
+
+            // 1. Update module defaults
+            const defaultsRef = doc(db, 'system_settings', 'modules');
+            batch.set(defaultsRef, defaults);
+
+            // 2. Update category statuses
+            localCategories.forEach(cat => {
+                const original = categories.find(c => c.id === cat.id);
+                if (original && original.isActive !== cat.isActive) {
+                    const catRef = doc(db, 'system_categories', cat.id);
+                    batch.update(catRef, { isActive: cat.isActive, updatedAt: serverTimestamp() });
+                }
+            });
+
+            await batch.commit();
+            setHasUnsavedChanges(false);
+            toast.success('Бүх тохиргоо амжилттай хадгалагдлаа');
+            refresh(); // Refresh store to sync everything
         } catch (error) {
-            console.error('Failed to save module defaults:', error);
+            console.error('Failed to save settings:', error);
             toast.error('Хадгалахад алдаа гарлаа');
         } finally {
             setSaving(false);
@@ -167,7 +187,8 @@ export function SuperAdminSettings() {
                             disabled={saving}
                         >
                             {saving ? <Loader2 className="animate-spin" size={14} /> : <Icons.Save size={14} />}
-                            <span>{saving ? '...' : 'Хадгалах'}</span>
+                            <span>{saving ? '...' : (hasUnsavedChanges ? 'Тохиргоог Хадгалах' : 'Хадгалах')}</span>
+                            {hasUnsavedChanges && <div className="unsaved-dot" />}
                         </button>
                     </div>
                 }
@@ -194,20 +215,21 @@ export function SuperAdminSettings() {
                                 <input
                                     type="checkbox"
                                     className="custom-checkbox"
-                                    checked={selectedIds.length === categories.length && categories.length > 0}
+                                    checked={selectedIds.length === categoriesToDisplay.length && categoriesToDisplay.length > 0}
                                     onChange={(e) => {
-                                        if (e.target.checked) setSelectedIds(categories.map(c => c.id));
+                                        if (e.target.checked) setSelectedIds(categoriesToDisplay.map(c => c.id));
                                         else setSelectedIds([]);
                                     }}
                                 />
                                 <span className="text-[10px] font-heavy opacity-40 uppercase">Бүгдийг</span>
                             </div>
                             <div className="flex items-center gap-2">
-                                <span className="text-[9px] font-bold opacity-30 uppercase">Toggle All</span>
+                                <span className="text-[9px] font-bold opacity-30 uppercase">Toggle Selected</span>
                                 <label className="ios-switch">
                                     <input
                                         type="checkbox"
-                                        disabled={selectedIds.length === 0 || bulkSaving}
+                                        disabled={selectedIds.length === 0}
+                                        checked={selectedIds.length > 0 && selectedIds.every(id => categoriesToDisplay.find(c => c.id === id)?.isActive)}
                                         onChange={(e) => handleBulkStatusChange(e.target.checked)}
                                     />
                                     <span className="ios-slider"></span>
@@ -215,7 +237,7 @@ export function SuperAdminSettings() {
                             </div>
                         </div>
 
-                        {categories.map((category) => (
+                        {categoriesToDisplay.map((category) => (
                             <div key={category.id} className="flex items-center group pr-2">
                                 <div className="pl-4 pr-1">
                                     <input
@@ -248,7 +270,7 @@ export function SuperAdminSettings() {
                 <main className="pro-main-content">
                     {selectedCategoryId === 'all' ? (
                         <div className="pro-summary-grid">
-                            {categories.map((category) => {
+                            {categoriesToDisplay.map((category) => {
                                 const activeCount = Object.keys(defaults[category.id] || {}).length;
                                 return (
                                     <div
@@ -256,6 +278,15 @@ export function SuperAdminSettings() {
                                         className={`pro-summary-card ${!category.isActive ? 'opacity-50 grayscale' : ''}`}
                                         onClick={() => setSelectedCategoryId(category.id)}
                                     >
+                                        <div className="pro-switch" onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleSingleStatusToggle(category.id);
+                                        }}>
+                                            <label className="ios-switch ios-switch-sm">
+                                                <input type="checkbox" checked={category.isActive} readOnly />
+                                                <span className="ios-slider"></span>
+                                            </label>
+                                        </div>
                                         <div className="pro-icon-md mb-4" style={{ position: 'relative', fontSize: '32px', width: '64px', height: '64px', borderRadius: '16px' }}>
                                             {category.icon}
                                             {!category.isActive && (

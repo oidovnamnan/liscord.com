@@ -1426,3 +1426,36 @@ input:checked+.ios-slider:before {
 .custom-checkbox:hover {
     transform: scale(1.1);
 }
+
+/* Unsaved Changes Indicator */
+.unsaved-dot {
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    width: 10px;
+    height: 10px;
+    background: #ff3b30;
+    border: 2px solid white;
+    border-radius: 50%;
+    box-shadow: 0 0 10px rgba(255, 59, 48, 0.5);
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.2); opacity: 0.8; }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+/* Category Switch in Card */
+.pro-switch {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    z-index: 10;
+}
+
+.ios-switch-sm {
+    transform: scale(0.8);
+    transform-origin: top right;
+}
