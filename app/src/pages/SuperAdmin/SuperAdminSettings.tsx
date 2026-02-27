@@ -132,7 +132,7 @@ export function SuperAdminSettings() {
             <Header
                 title={
                     <div className="flex items-center gap-2">
-                        <span>Супер Админ: Модуль Тохиргоо</span>
+                        <span>Супер Админ: Тохиргоо</span>
                         <div className="info-tooltip-container">
                             <Icons.Info size={16} className="text-tertiary cursor-help opacity-60 hover:opacity-100 transition-opacity" />
                             <div className="info-tooltip-content focus-ring text-left font-normal" style={{ textTransform: 'none' }}>
@@ -144,47 +144,43 @@ export function SuperAdminSettings() {
                         </div>
                     </div>
                 }
-                subtitle="Бизнесийн төрлүүдэд харгалзах үндсэн болон нэмэлт модулиудын хуваарилалт"
+                subtitle="Бизнесийн төрлүүдэд харгалзах модулиудын хуваарилалт"
                 extra={
                     <div className="flex items-center gap-3">
-                        <div className="input-group-premium" style={{ width: '240px' }}>
-                            <select
-                                className="premium-select"
-                                value={selectedCategoryId}
-                                onChange={(e) => setSelectedCategoryId(e.target.value)}
-                            >
-                                <option value="all">Бүх салбар / ангилал</option>
-                                {categories.map(cat => (
-                                    <option key={cat.id} value={cat.id}>{cat.label}</option>
-                                ))}
-                            </select>
-                        </div>
+                        <select
+                            className="premium-select"
+                            style={{ width: '220px' }}
+                            value={selectedCategoryId}
+                            onChange={(e) => setSelectedCategoryId(e.target.value)}
+                        >
+                            <option value="all">Бүх салбар / ангилал</option>
+                            {categories.map(cat => (
+                                <option key={cat.id} value={cat.id}>{cat.label}</option>
+                            ))}
+                        </select>
 
                         <button
                             className="btn btn-primary premium-btn shadow-glow"
                             onClick={handleSaveClick}
                             disabled={saving}
                         >
-                            {saving ? (
-                                <Loader2 className="animate-spin" size={18} />
-                            ) : (
-                                <Icons.Save size={18} />
-                            )}
-                            {saving ? 'Хадгалж байна...' : 'Тохиргоо Хадгалах'}
+                            {saving ? <Loader2 className="animate-spin" size={18} /> : <Icons.Save size={18} />}
+                            {saving ? '...' : 'Хадгалах'}
                         </button>
                     </div>
                 }
             />
 
             <div className="page-content" style={{ marginTop: '0', paddingTop: '16px' }}>
-                <div className="module-category-list">
-                    {filteredCategories.map((category) => {
-                        const key = category.id;
-                        const activeMods = defaults[key] || {};
-
-                        return (
-                            <div key={key} className="module-category-card-v2">
-                                <div className="category-header-compact">
+                {selectedCategoryId === 'all' ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {categories.map((category) => (
+                            <div
+                                key={category.id}
+                                className="module-category-card-v2 cursor-pointer hover:border-primary transition-all shadow-sm hover:shadow-md"
+                                onClick={() => setSelectedCategoryId(category.id)}
+                            >
+                                <div className="category-header-compact" style={{ borderBottom: 'none', marginBottom: 0 }}>
                                     <div className="category-icon-box-sm">
                                         <span role="img" aria-label="icon">{category.icon}</span>
                                     </div>
@@ -192,72 +188,103 @@ export function SuperAdminSettings() {
                                         <h3 className="category-title-sm">{category.label}</h3>
                                         <span className="category-desc-sm">{category.desc}</span>
                                     </div>
-                                </div>
-
-                                <div className="module-grid-header">
-                                    <div className="flex items-center gap-2">
-                                        <h4 className="text-base font-bold text-primary">Боломжит модулиуд</h4>
-                                        <span className="badge badge-soft" style={{ fontSize: '10px', height: '18px' }}>{LISCORD_MODULES.length}</span>
+                                    <div className="ml-auto opacity-30">
+                                        <Icons.ChevronRight size={20} />
                                     </div>
-
-                                    <div className="search-bar-premium">
-                                        <Icons.Search size={16} className="search-icon-fixed" />
-                                        <input
-                                            type="text"
-                                            placeholder="Нэрээр хайх..."
-                                            value={moduleSearch}
-                                            onChange={(e) => setModuleSearch(e.target.value)}
-                                        />
-                                        {moduleSearch && (
-                                            <button className="search-clear-btn" onClick={() => setModuleSearch('')}>
-                                                <Icons.X size={14} />
-                                            </button>
-                                        )}
-                                    </div>
-                                </div>
-
-                                <div className="module-grid">
-                                    {LISCORD_MODULES.filter(m =>
-                                        m.name.toLowerCase().includes(moduleSearch.toLowerCase()) ||
-                                        m.id.toLowerCase().includes(moduleSearch.toLowerCase())
-                                    ).map(module => {
-                                        const status = activeMods[module.id];
-                                        const isActive = !!status;
-                                        const Icon = (Icons as any)[module.icon] || Icons.Box;
-                                        return (
-                                            <div
-                                                key={module.id}
-                                                onClick={() => handleToggle(key, module.id)}
-                                                className={`module-item-card-v2 ${status || ''}`}
-                                            >
-                                                <div className="module-icon-box">
-                                                    <Icon size={22} strokeWidth={2} />
-                                                </div>
-
-                                                <div className="module-content">
-                                                    <span className="module-v2-name">{module.name}</span>
-                                                    <div className="module-status-tags">
-                                                        {status === 'core' ? (
-                                                            <span className="status-tag core">ҮНДСЭН</span>
-                                                        ) : status === 'addon' ? (
-                                                            <span className="status-tag addon">НЭМЭЛТ</span>
-                                                        ) : (
-                                                            <span className="status-tag inactive">ТАТГАЛЗСАН</span>
-                                                        )}
-                                                    </div>
-                                                </div>
-
-                                                <div className={`module-selection-indicator ${isActive ? 'active' : ''}`}>
-                                                    {isActive && <Icons.Check size={14} strokeWidth={3} />}
-                                                </div>
-                                            </div>
-                                        );
-                                    })}
                                 </div>
                             </div>
-                        );
-                    })}
-                </div>
+                        ))}
+                    </div>
+                ) : (
+                    <div className="module-category-list">
+                        {filteredCategories.map((category) => {
+                            const key = category.id;
+                            const activeMods = defaults[key] || {};
+
+                            return (
+                                <div key={key} className="module-category-card-v2">
+                                    <div className="category-header-compact">
+                                        <div className="category-icon-box-sm">
+                                            <span role="img" aria-label="icon">{category.icon}</span>
+                                        </div>
+                                        <div className="flex flex-col">
+                                            <h3 className="category-title-sm">{category.label}</h3>
+                                            <span className="category-desc-sm">{category.desc}</span>
+                                        </div>
+                                        <button
+                                            className="ml-auto btn btn-sm btn-ghost gap-2"
+                                            onClick={() => setSelectedCategoryId('all')}
+                                        >
+                                            <Icons.ArrowLeft size={16} />
+                                            Буцах
+                                        </button>
+                                    </div>
+
+                                    <div className="module-grid-header">
+                                        <div className="flex items-center gap-2">
+                                            <h4 className="text-base font-bold text-primary">Боломжит модулиуд</h4>
+                                            <span className="badge badge-soft" style={{ fontSize: '10px', height: '18px' }}>{LISCORD_MODULES.length}</span>
+                                        </div>
+
+                                        <div className="search-bar-premium">
+                                            <Icons.Search size={16} className="search-icon-fixed" />
+                                            <input
+                                                type="text"
+                                                placeholder="Нэрээр хайх..."
+                                                value={moduleSearch}
+                                                onChange={(e) => setModuleSearch(e.target.value)}
+                                            />
+                                            {moduleSearch && (
+                                                <button className="search-clear-btn" onClick={() => setModuleSearch('')}>
+                                                    <Icons.X size={14} />
+                                                </button>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    <div className="module-grid">
+                                        {LISCORD_MODULES.filter(m =>
+                                            m.name.toLowerCase().includes(moduleSearch.toLowerCase()) ||
+                                            m.id.toLowerCase().includes(moduleSearch.toLowerCase())
+                                        ).map(module => {
+                                            const status = activeMods[module.id];
+                                            const isActive = !!status;
+                                            const Icon = (Icons as any)[module.icon] || Icons.Box;
+                                            return (
+                                                <div
+                                                    key={module.id}
+                                                    onClick={() => handleToggle(key, module.id)}
+                                                    className={`module-item-card-v2 ${status || ''}`}
+                                                >
+                                                    <div className="module-icon-box">
+                                                        <Icon size={22} strokeWidth={2} />
+                                                    </div>
+
+                                                    <div className="module-content">
+                                                        <span className="module-v2-name">{module.name}</span>
+                                                        <div className="module-status-tags">
+                                                            {status === 'core' ? (
+                                                                <span className="status-tag core">ҮНДСЭН</span>
+                                                            ) : status === 'addon' ? (
+                                                                <span className="status-tag addon">НЭМЭЛТ</span>
+                                                            ) : (
+                                                                <span className="status-tag inactive">ТАТГАЛЗСАН</span>
+                                                            )}
+                                                        </div>
+                                                    </div>
+
+                                                    <div className={`module-selection-indicator ${isActive ? 'active' : ''}`}>
+                                                        {isActive && <Icons.Check size={14} strokeWidth={3} />}
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                )}
 
                 <div className="card migration-card no-padding" style={{ marginTop: '24px' }}>
                     <div className="migration-content" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', padding: '24px' }}>
