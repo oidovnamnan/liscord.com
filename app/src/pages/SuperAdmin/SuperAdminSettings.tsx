@@ -116,7 +116,10 @@ export function SuperAdminSettings() {
 
             await batch.commit();
             setHasUnsavedChanges(false);
-            await refresh(); // Force refresh store to sync everything
+
+            // Critical: Reset store fetch state before calling refresh
+            await refresh();
+
             toast.success('Бүх тохиргоо амжилттай хадгалагдлаа');
         } catch (error) {
             console.error('Failed to save settings:', error);
