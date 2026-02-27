@@ -7,6 +7,8 @@ import { useSystemCategoriesStore } from '../../store';
 import { LISCORD_MODULES } from '../../config/modules';
 import * as Icons from 'lucide-react';
 import { SecurityModal } from '../../components/common/SecurityModal';
+import { db } from '../../services/firebase';
+import { doc, writeBatch, serverTimestamp } from 'firebase/firestore';
 import './SuperAdmin.css';
 
 export function SuperAdminSettings() {
@@ -19,7 +21,8 @@ export function SuperAdminSettings() {
     const [defaults, setDefaults] = useState<Record<string, Record<string, 'core' | 'addon'>>>({});
     const [showSecurityModal, setShowSecurityModal] = useState(false);
     const [pendingAction, setPendingAction] = useState<(() => Promise<void>) | null>(null);
-    const [showHidden, setShowHidden] = useState(false);
+    const [selectedIds, setSelectedIds] = useState<string[]>([]);
+    const [bulkSaving, setBulkSaving] = useState(false);
 
     useEffect(() => {
         const fetchDefaults = async () => {
@@ -40,11 +43,29 @@ export function SuperAdminSettings() {
         fetchDefaults();
     }, [fetchCategories]);
 
-    const visibleCategories = showHidden ? categories : categories.filter(c => c.isActive);
+    const handleBulkStatusChange = async (isActive: boolean) => {
+        if (selectedIds.length === 0) return;
+        setBulkSaving(true);
+        try {
+            const batch = writeBatch(db);
+            selectedIds.forEach(id => {
+                const docRef = doc(db, 'system_categories', id);
+                batch.update(docRef, { isActive, updatedAt: serverTimestamp() });
+            });
+            await batch.commit();
+            toast.success(`${selectedIds.length} ангиллын төлөв хадгалагдлаа`);
+            setSelectedIds([]);
+            fetchCategories(); // Refresh the list
+        } catch (error) {
+            toast.error('Үйлдэл амжилтгүй');
+        } finally {
+            setBulkSaving(false);
+        }
+    };
 
     const filteredCategories = selectedCategoryId === 'all'
-        ? visibleCategories
-        : visibleCategories.filter(c => c.id === selectedCategoryId);
+        ? categories
+        : categories.filter(c => c.id === selectedCategoryId);
 
     const handleToggle = (categoryKey: string, moduleId: string) => {
         setDefaults(prev => {
@@ -168,26 +189,57 @@ export function SuperAdminSettings() {
                             <span>Ерөнхий дүр зураг</span>
                         </button>
                         <div className="pro-nav-divider" />
-                        <div className="px-3 py-2 flex items-center justify-between">
-                            <span className="text-[10px] font-bold opacity-30 uppercase">Toggle View</span>
-                            <label className="ios-switch">
+                        <div className="px-3 py-2 flex items-center justify-between bg-surface-2 mb-2 mx-2 rounded-xl border border-primary/5">
+                            <div className="flex items-center gap-2">
                                 <input
                                     type="checkbox"
-                                    checked={showHidden}
-                                    onChange={() => setShowHidden(!showHidden)}
+                                    className="custom-checkbox"
+                                    checked={selectedIds.length === categories.length && categories.length > 0}
+                                    onChange={(e) => {
+                                        if (e.target.checked) setSelectedIds(categories.map(c => c.id));
+                                        else setSelectedIds([]);
+                                    }}
                                 />
-                                <span className="ios-slider"></span>
-                            </label>
+                                <span className="text-[10px] font-heavy opacity-40 uppercase">Бүгдийг</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <span className="text-[9px] font-bold opacity-30 uppercase">Toggle All</span>
+                                <label className="ios-switch">
+                                    <input
+                                        type="checkbox"
+                                        disabled={selectedIds.length === 0 || bulkSaving}
+                                        onChange={(e) => handleBulkStatusChange(e.target.checked)}
+                                    />
+                                    <span className="ios-slider"></span>
+                                </label>
+                            </div>
                         </div>
-                        {visibleCategories.map((category) => (
-                            <button
-                                key={category.id}
-                                className={`pro-nav-item ${selectedCategoryId === category.id ? 'active' : ''}`}
-                                onClick={() => setSelectedCategoryId(category.id)}
-                            >
-                                <span className="category-emoji">{category.icon}</span>
-                                <span className="truncate">{category.label}</span>
-                            </button>
+
+                        {categories.map((category) => (
+                            <div key={category.id} className="flex items-center group pr-2">
+                                <div className="pl-4 pr-1">
+                                    <input
+                                        type="checkbox"
+                                        className="custom-checkbox"
+                                        checked={selectedIds.includes(category.id)}
+                                        onChange={(e) => {
+                                            if (e.target.checked) setSelectedIds([...selectedIds, category.id]);
+                                            else setSelectedIds(selectedIds.filter(id => id !== category.id));
+                                        }}
+                                    />
+                                </div>
+                                <button
+                                    className={`pro-nav-item flex-1 ${selectedCategoryId === category.id ? 'active' : ''} ${!category.isActive ? 'opacity-40 grayscale' : ''}`}
+                                    onClick={() => setSelectedCategoryId(category.id)}
+                                    style={{ marginLeft: 0, marginRight: 0 }}
+                                >
+                                    <span className="category-emoji">{category.icon}</span>
+                                    <span className="truncate">{category.label}</span>
+                                </button>
+                                {!category.isActive && (
+                                    <span className="text-[8px] bg-danger/10 text-danger px-1 rounded font-bold ml-auto opacity-0 group-hover:opacity-100 transition-opacity">OFF</span>
+                                )}
+                            </div>
                         ))}
                     </nav>
                 </aside>
@@ -196,7 +248,7 @@ export function SuperAdminSettings() {
                 <main className="pro-main-content">
                     {selectedCategoryId === 'all' ? (
                         <div className="pro-summary-grid">
-                            {visibleCategories.map((category) => {
+                            {categories.map((category) => {
                                 const activeCount = Object.keys(defaults[category.id] || {}).length;
                                 return (
                                     <div

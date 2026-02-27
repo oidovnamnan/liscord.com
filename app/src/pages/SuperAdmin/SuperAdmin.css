@@ -1412,3 +1412,17 @@ input:focus+.ios-slider {
 input:checked+.ios-slider:before {
     transform: translateX(16px);
 }
+/* Custom Checkbox */
+.custom-checkbox {
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+    accent-color: var(--primary);
+    border-radius: 4px;
+    border: 1px solid var(--border-primary);
+    transition: all 0.2s ease;
+}
+
+.custom-checkbox:hover {
+    transform: scale(1.1);
+}
