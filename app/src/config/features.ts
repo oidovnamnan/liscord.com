@@ -30,6 +30,7 @@ const DEFAULT_FEATURES: BusinessFeatures = {
 
 // Map each of the 44 categories to their specific UI needs
 export const CATEGORY_FEATURES: Record<BusinessCategory, BusinessFeatures> = {
+    custom: { ...DEFAULT_FEATURES, hasInventory: true, hasDelivery: true },
     // --- Original 11 ---
     cargo: { ...DEFAULT_FEATURES, hasProducts: false, hasDelivery: true, hasPackages: true },
     wholesale: { ...DEFAULT_FEATURES, hasInventory: true, hasDelivery: true },

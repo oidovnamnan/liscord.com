@@ -10,7 +10,7 @@ export interface StorefrontTheme {
 }
 
 export const STOREFRONT_THEMES: StorefrontTheme[] = [
-    { id: 'minimal', name: 'Minimalist Grid', description: 'Цэмцгэр, Apple хэв маяг. Үндсэн загвар.', color: '#f3f4f6', price: 0, isPremium: false, categories: ['general', 'online_shop'] },
+    { id: 'minimal', name: 'Minimalist Grid', description: 'Цэмцгэр, Apple хэв маяг. Үндсэн загвар.', color: '#f3f4f6', price: 0, isPremium: false, categories: ['general', 'online_shop', 'custom'] },
     { id: 'editorial', name: 'Editorial', description: 'Vogue/Zara хувцас загварын сэтгүүл шиг харагдац.', color: '#fdf6e3', price: 49000, isPremium: true, categories: ['online_shop', 'tailoring', 'photo_studio'] },
     { id: 'commerce', name: 'Dynamic Commerce', description: 'Amazon/Shopee хэв маяг, олон бараанд тохиромжтой.', color: '#e0f2fe', price: 59000, isPremium: true, categories: ['online_shop', 'wholesale', 'thrift_store'] },
     { id: 'appetite', name: 'Appetite', description: 'Wolt шиг хурдан сагслах, хоолны салбарт тохиромжтой.', color: '#ffedd5', price: 49000, isPremium: true, categories: ['food_delivery', 'bakery', 'bar_pub'] },
@@ -24,7 +24,7 @@ export const STOREFRONT_THEMES: StorefrontTheme[] = [
     { id: 'autoparts', name: 'Auto Parts', description: 'Сэлбэгийн каталог, хайлт давамгайлсан.', color: '#1a1f2b', price: 59000, isPremium: true, categories: ['auto_parts', 'repair', 'car_wash'] },
     { id: 'furniture', name: 'Furniture & Decor', description: 'Интерьер дизайн, том зурагтай харагдац.', color: '#faf9f8', price: 69000, isPremium: true, categories: ['furniture', 'real_estate', 'construction'] },
     { id: 'artisan', name: 'Handcraft / Eco', description: 'Байгалийн, эко, гар урлалын дэлгүүр.', color: '#fdfaf6', price: 49000, isPremium: true, categories: ['flowers', 'artisan', 'thrift_store'] },
-    { id: 'oneproduct', name: 'Single Product', description: 'Нэг бараанд зориулсан лэндинг хуудас.', color: '#ffffff', price: 29000, isPremium: true, categories: ['general'] },
+    { id: 'oneproduct', name: 'Single Product', description: 'Нэг бараанд зориулсан лэндинг хуудас.', color: '#ffffff', price: 29000, isPremium: true, categories: ['general', 'custom'] },
     { id: 'gamer', name: 'Gamer Gear', description: 'Тоног төхөөрөмж, неон болон бараан стиль.', color: '#09090b', price: 59000, isPremium: true, categories: ['entertainment'] },
     { id: 'lookbook', name: 'Lookbook Masonry', description: 'Pinterest хэв маяг бүхий галерей.', color: '#ffffff', price: 39000, isPremium: true, categories: ['photo_studio', 'artisan'] },
     { id: 'streetwear', name: 'Street Drop', description: 'Бараан, орчин үеийн, залуусын стиль.', color: '#000000', price: 49000, isPremium: true, categories: ['online_shop', 'streetwear'] },
