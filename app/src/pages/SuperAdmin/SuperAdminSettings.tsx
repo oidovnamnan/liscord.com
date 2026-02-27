@@ -255,9 +255,16 @@ export function SuperAdminSettings() {
                                     <span className="category-emoji">{category.icon}</span>
                                     <span className="truncate">{category.label}</span>
                                 </button>
-                                {!category.isActive && (
-                                    <span className="text-[8px] bg-danger/10 text-danger px-1 rounded font-bold ml-auto opacity-0 group-hover:opacity-100 transition-opacity">OFF</span>
-                                )}
+                                <div className="category-item-toggle">
+                                    <label className="ios-switch">
+                                        <input
+                                            type="checkbox"
+                                            checked={category.isActive}
+                                            onChange={() => handleSingleStatusToggle(category.id)}
+                                        />
+                                        <span className="ios-slider"></span>
+                                    </label>
+                                </div>
                             </div>
                         ))}
                     </nav>
@@ -271,18 +278,9 @@ export function SuperAdminSettings() {
                                 return (
                                     <div
                                         key={category.id}
-                                        className={`pro-summary-card ${!category.isActive ? 'opacity-50 grayscale' : ''}`}
+                                        className={`pro-summary-card ${!category.isActive ? 'is-disabled' : ''}`}
                                         onClick={() => setSelectedCategoryId(category.id)}
                                     >
-                                        <div className="pro-switch" onClick={(e) => {
-                                            e.stopPropagation();
-                                            handleSingleStatusToggle(category.id);
-                                        }}>
-                                            <label className="ios-switch ios-switch-sm">
-                                                <input type="checkbox" checked={category.isActive} readOnly />
-                                                <span className="ios-slider"></span>
-                                            </label>
-                                        </div>
                                         <div className="pro-icon-md mb-4" style={{ position: 'relative', fontSize: '32px', width: '64px', height: '64px', borderRadius: '16px' }}>
                                             {category.icon}
                                             {!category.isActive && (

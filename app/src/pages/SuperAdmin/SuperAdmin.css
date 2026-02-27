@@ -1459,3 +1459,46 @@ input:checked+.ios-slider:before {
     transform: scale(0.8);
     transform-origin: top right;
 }
+
+/* Disabled Category Card Style */
+.pro-summary-card.is-disabled {
+    opacity: 0.6;
+    background: var(--surface-1);
+    border-color: transparent;
+    filter: grayscale(0.8);
+    box-shadow: none;
+}
+
+.pro-summary-card.is-disabled:hover {
+    opacity: 0.8;
+    filter: grayscale(0.4);
+    border-color: var(--primary-10);
+    transform: translateY(-2px);
+}
+
+.pro-summary-card.is-disabled .pro-icon-md {
+    opacity: 0.5;
+}
+
+.pro-summary-card.is-disabled h3 {
+    opacity: 0.4;
+}
+
+.pro-summary-card.is-disabled .mt-auto {
+    opacity: 0.3;
+}
+
+/* Sidebar Toggle for Individual Categories */
+.category-item-toggle {
+    opacity: 0;
+    transition: all 0.2s ease;
+    margin-right: 8px;
+}
+
+.group:hover .category-item-toggle {
+    opacity: 1;
+}
+
+.category-item-toggle .ios-switch {
+    transform: scale(0.65);
+}
