@@ -132,7 +132,7 @@ export function SuperAdminSettings() {
             <Header
                 title={
                     <div className="flex items-center gap-3">
-                        <h1 className="text-lg font-bold tracking-tight text-primary">Модуль Тохиргоо</h1>
+                        <h1 className="text-base font-bold tracking-tight text-primary">Модуль Тохиргоо</h1>
                     </div>
                 }
                 extra={
@@ -190,15 +190,14 @@ export function SuperAdminSettings() {
                                         className="pro-summary-card"
                                         onClick={() => setSelectedCategoryId(category.id)}
                                     >
-                                        <div className="flex items-center gap-3 mb-3">
+                                        <div className="flex items-center gap-2 mb-2">
                                             <div className="pro-icon-sm">{category.icon}</div>
                                             <div className="flex-1 min-w-0">
-                                                <h3 className="text-sm font-bold truncate">{category.label}</h3>
-                                                <p className="text-[10px] text-secondary opacity-60 truncate">{category.desc}</p>
+                                                <h3 className="text-[12px] font-bold truncate">{category.label}</h3>
                                             </div>
                                         </div>
-                                        <div className="flex items-center justify-between">
-                                            <span className="text-[10px] uppercase font-bold text-tertiary">Тохируулсан</span>
+                                        <div className="flex items-center justify-between mt-1">
+                                            <span className="text-[9px] uppercase font-bold text-tertiary opacity-50">Тохируулсан</span>
                                             <span className="badge-mini">{activeCount} модуль</span>
                                         </div>
                                     </div>
@@ -217,8 +216,8 @@ export function SuperAdminSettings() {
                                             <div className="flex items-center gap-3">
                                                 <div className="pro-icon-md">{category.icon}</div>
                                                 <div>
-                                                    <h2 className="text-lg font-bold">{category.label}</h2>
-                                                    <p className="text-xs text-secondary">{category.desc}</p>
+                                                    <h2 className="text-sm font-bold">{category.label}</h2>
+                                                    <p className="text-[10px] text-secondary opacity-70">{category.desc}</p>
                                                 </div>
                                             </div>
                                             <div className="pro-search-box">
