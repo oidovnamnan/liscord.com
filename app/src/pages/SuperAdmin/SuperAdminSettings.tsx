@@ -7,6 +7,7 @@ import { useSystemCategoriesStore } from '../../store';
 import { LISCORD_MODULES } from '../../config/modules';
 import * as Icons from 'lucide-react';
 import { SecurityModal } from '../../components/common/SecurityModal';
+import './SuperAdmin.css';
 
 export function SuperAdminSettings() {
     const { categories, fetchCategories } = useSystemCategoriesStore();
@@ -194,25 +195,37 @@ export function SuperAdminSettings() {
                                 <div key={key} className="module-category-card">
                                     <div className="category-header">
                                         <div className="category-icon-box">
-                                            {category.icon}
+                                            <span role="img" aria-label="icon">{category.icon}</span>
                                         </div>
-                                        <div>
-                                            <h3 className="module-name" style={{ fontSize: '1.1rem' }}>{category.label}</h3>
-                                            <span className="text-secondary text-sm">{category.desc}</span>
+                                        <div className="flex flex-col">
+                                            <h3 className="category-title">{category.label}</h3>
+                                            <span className="category-desc">{category.desc}</span>
                                         </div>
                                     </div>
 
-                                    <div className="module-grid-wrapper" style={{ marginTop: '32px' }}>
-                                        <div className="flex items-center justify-between mb-6">
-                                            <h4 className="text-lg font-bold">Модулийн жагсаалт</h4>
-                                            <div className="search-box" style={{ width: '300px', margin: 0 }}>
-                                                <Icons.Search size={18} />
+                                    <div className="module-grid-wrapper">
+                                        <div className="module-grid-header">
+                                            <div className="flex items-center gap-3">
+                                                <div className="stats-icon-wrapper active-tint" style={{ width: '32px', height: '32px' }}>
+                                                    <Icons.Grid size={16} />
+                                                </div>
+                                                <h4 className="text-lg font-bold">Боломжит модулиуд</h4>
+                                                <span className="badge badge-soft" style={{ fontSize: '11px' }}>{LISCORD_MODULES.length} модуль</span>
+                                            </div>
+
+                                            <div className="search-bar-premium">
+                                                <Icons.Search size={16} className="search-icon-fixed" />
                                                 <input
                                                     type="text"
-                                                    placeholder="Модуль хайх..."
+                                                    placeholder="Нэрээр хайх..."
                                                     value={moduleSearch}
                                                     onChange={(e) => setModuleSearch(e.target.value)}
                                                 />
+                                                {moduleSearch && (
+                                                    <button className="search-clear-btn" onClick={() => setModuleSearch('')}>
+                                                        <Icons.X size={14} />
+                                                    </button>
+                                                )}
                                             </div>
                                         </div>
 
@@ -228,27 +241,27 @@ export function SuperAdminSettings() {
                                                     <div
                                                         key={module.id}
                                                         onClick={() => handleToggle(key, module.id)}
-                                                        className={`module-item-card ${status || ''}`}
+                                                        className={`module-item-card-v2 ${status || ''}`}
                                                     >
                                                         <div className="module-icon-box">
                                                             <Icon size={22} strokeWidth={2} />
                                                         </div>
 
-                                                        <div className="module-info" style={{ flex: 1 }}>
-                                                            <span className="module-name">{module.name}</span>
-                                                            <div className="flex items-center gap-2 mt-1">
+                                                        <div className="module-content">
+                                                            <span className="module-v2-name">{module.name}</span>
+                                                            <div className="module-status-tags">
                                                                 {status === 'core' ? (
-                                                                    <span className="badge badge-primary" style={{ fontSize: '9px', fontWeight: 700 }}>CORE</span>
+                                                                    <span className="status-tag core">ҮНДСЭН</span>
                                                                 ) : status === 'addon' ? (
-                                                                    <span className="badge" style={{ fontSize: '9px', fontWeight: 700, background: 'var(--primary)', color: 'white' }}>ADD-ON</span>
+                                                                    <span className="status-tag addon">НЭМЭЛТ</span>
                                                                 ) : (
-                                                                    <span className="text-tertiary" style={{ fontSize: '9px', fontWeight: 600, opacity: 0.6 }}>АШИГЛАХГҮЙ</span>
+                                                                    <span className="status-tag inactive">ТАТГАЛЗСАН</span>
                                                                 )}
                                                             </div>
                                                         </div>
 
-                                                        <div className="module-check">
-                                                            {isActive && <div className="module-check-dot" />}
+                                                        <div className={`module-selection-indicator ${isActive ? 'active' : ''}`}>
+                                                            {isActive && <Icons.Check size={14} strokeWidth={3} />}
                                                         </div>
                                                     </div>
                                                 );
