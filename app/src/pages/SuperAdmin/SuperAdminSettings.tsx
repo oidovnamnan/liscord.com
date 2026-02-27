@@ -132,13 +132,7 @@ export function SuperAdminSettings() {
             <Header
                 title={
                     <div className="flex items-center gap-3">
-                        <div className="stats-icon-wrapper active-tint" style={{ width: '36px', height: '36px', borderRadius: '10px' }}>
-                            <Icons.Package size={18} />
-                        </div>
-                        <div>
-                            <h1 className="text-xl font-bold tracking-tight">Модуль Мастер Тохиргоо</h1>
-                            <p className="text-xs text-secondary opacity-70">Салбар бүрийн анхдагч модулиудыг удирдах</p>
-                        </div>
+                        <h1 className="text-lg font-bold tracking-tight text-primary">Модуль Тохиргоо</h1>
                     </div>
                 }
                 extra={
@@ -148,8 +142,8 @@ export function SuperAdminSettings() {
                             onClick={handleSaveClick}
                             disabled={saving}
                         >
-                            {saving ? <Loader2 className="animate-spin" size={16} /> : <Icons.Save size={16} />}
-                            <span>{saving ? '...' : 'Өөрчлөлтийг Хадгалах'}</span>
+                            {saving ? <Loader2 className="animate-spin" size={14} /> : <Icons.Save size={14} />}
+                            <span>{saving ? '...' : 'Хадгалах'}</span>
                         </button>
                     </div>
                 }
