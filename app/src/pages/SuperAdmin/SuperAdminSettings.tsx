@@ -190,15 +190,13 @@ export function SuperAdminSettings() {
                                         className="pro-summary-card"
                                         onClick={() => setSelectedCategoryId(category.id)}
                                     >
-                                        <div className="flex items-center gap-2 mb-2">
-                                            <div className="pro-icon-sm">{category.icon}</div>
-                                            <div className="flex-1 min-w-0">
-                                                <h3 className="text-[12px] font-bold truncate">{category.label}</h3>
-                                            </div>
+                                        <div className="pro-icon-md mb-4" style={{ fontSize: '32px', width: '64px', height: '64px', borderRadius: '16px' }}>
+                                            {category.icon}
                                         </div>
-                                        <div className="flex items-center justify-between mt-1">
-                                            <span className="text-[9px] uppercase font-bold text-tertiary opacity-50">Тохируулсан</span>
-                                            <span className="badge-mini">{activeCount} модуль</span>
+                                        <h3 className="text-base font-bold text-primary mb-1">{category.label}</h3>
+                                        <div className="mt-auto flex items-center justify-between pt-4 border-top border-primary opacity-80">
+                                            <span className="text-[11px] font-bold text-secondary uppercase tracking-wider">{activeCount} modules</span>
+                                            <Icons.ArrowRight size={14} className="text-secondary" />
                                         </div>
                                     </div>
                                 );
@@ -244,24 +242,22 @@ export function SuperAdminSettings() {
                                                     <div
                                                         key={module.id}
                                                         onClick={() => handleToggle(key, module.id)}
-                                                        className={`pro-module-card ${isActive ? 'active' : ''} ${status || ''}`}
+                                                        className={`pro-module-card ${isActive ? 'active' : ''}`}
                                                     >
                                                         <div className="pro-module-icon">
-                                                            <Icon size={18} strokeWidth={2} />
+                                                            <Icon size={28} strokeWidth={1.5} />
                                                         </div>
                                                         <div className="flex-1 min-w-0">
-                                                            <div className="flex items-center justify-between gap-2">
-                                                                <span className="pro-module-name">{module.name}</span>
-                                                                {isActive && (
-                                                                    <div className="pro-check-dot">
-                                                                        <Icons.Check size={10} strokeWidth={4} />
-                                                                    </div>
-                                                                )}
-                                                            </div>
+                                                            <span className="pro-module-name">{module.name}</span>
                                                             <div className="pro-module-type">
-                                                                {status === 'core' ? 'ҮНДСЭН' : status === 'addon' ? 'НЭМЭЛТ' : 'Идэвхгүй'}
+                                                                {status === 'core' ? 'Үндсэн' : status === 'addon' ? 'Нэмэлт' : 'Module'}
                                                             </div>
                                                         </div>
+                                                        <button
+                                                            className={`pro-status-btn ${isActive ? 'active' : 'inactive'}`}
+                                                        >
+                                                            {isActive ? 'Active' : 'Get'}
+                                                        </button>
                                                     </div>
                                                 );
                                             })}

@@ -1,8 +1,12 @@
 .super-admin-page {
-    padding: 32px;
-    max-width: 1400px;
-    margin: 0 auto;
-    animation: superFadeIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    padding: 0;
+    /* Remove padding to fill screen */
+    margin: 0;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    background: var(--bg-primary);
 }
 
 @keyframes superFadeIn {
@@ -697,15 +701,13 @@
 
 .page-content-pro {
     display: grid;
-    grid-template-columns: 180px 1fr;
+    grid-template-columns: 220px 1fr;
     gap: 0;
     background: var(--surface-1);
-    border: 1px solid var(--border-primary);
-    border-radius: 6px;
-    margin-top: 8px;
-    height: calc(100vh - 100px);
+    flex: 1;
+    /* Fill remaining height */
     overflow: hidden;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    border-top: 1px solid var(--border-primary);
 }
 
 /* Sidebar Navigation */
@@ -741,18 +743,17 @@
 .pro-nav-item {
     display: flex;
     align-items: center;
-    gap: 6px;
-    padding: 5px 10px;
-    border-radius: 4px;
+    gap: 10px;
+    padding: 8px 16px;
+    margin: 2px 8px;
+    border-radius: 10px;
     color: var(--text-secondary);
-    font-size: 11.5px;
-    /* Smaller font */
-    font-weight: 500;
-    transition: all 0.1s ease;
+    font-size: 13px;
+    font-weight: 600;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     border: none;
     background: transparent;
     cursor: pointer;
-    width: 100%;
     text-align: left;
 }
 
@@ -762,9 +763,8 @@
 }
 
 .pro-nav-item.active {
-    background: var(--primary-light-alpha);
-    color: var(--primary);
-    font-weight: 600;
+    background: var(--primary);
+    color: white;
 }
 
 .pro-nav-divider {
@@ -792,27 +792,26 @@
 /* Summary Grid (The Dashboard View) */
 .pro-summary-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-    gap: 12px;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 16px;
 }
 
 .pro-summary-card {
-    background: var(--surface-1);
+    background: var(--surface-2);
     border: 1px solid var(--border-primary);
-    border-radius: 6px;
-    padding: 10px;
-    /* More compact */
+    border-radius: 16px;
+    padding: 20px;
     cursor: pointer;
-    transition: all 0.15s ease;
-    border-left: 2px solid transparent;
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    display: flex;
+    flex-direction: column;
 }
 
 .pro-summary-card:hover {
+    transform: scale(1.02);
+    box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.1);
+    background: var(--surface-3);
     border-color: var(--primary-light);
-    border-left-color: var(--primary);
-    background: var(--bg-hover);
-    transform: none;
-    /* No jumping cards */
 }
 
 .pro-icon-sm {
@@ -882,20 +881,20 @@
 /* Dense Module Grid */
 .pro-module-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-    gap: 8px;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 12px;
 }
 
 .pro-module-card {
+    background: var(--surface-2);
+    border: 1px solid var(--border-primary);
+    border-radius: 18px;
+    padding: 14px;
     display: flex;
     align-items: center;
-    gap: 8px;
-    padding: 6px 8px;
-    border-radius: 4px;
-    border: 1px solid var(--border-primary);
-    background: var(--surface-1);
+    gap: 14px;
     cursor: pointer;
-    transition: all 0.1s ease;
+    transition: all 0.25s ease;
     position: relative;
     user-select: none;
 }
@@ -903,57 +902,76 @@
 .pro-module-card:hover {
     border-color: var(--primary-light);
     background: var(--bg-hover);
+    transform: translateY(-2px);
 }
 
 .pro-module-card.active {
+    background: var(--surface-1);
     border-color: var(--primary);
-    background: var(--primary-light-alpha);
+    box-shadow: 0 4px 12px rgba(var(--primary-rgb), 0.1);
 }
-
-.pro-module-card.core {
-    border-left: 4px solid #3b82f6;
-    border-left-width: 3px;
-}
-
-/* Blue */
-.pro-module-card.addon {
-    border-left: 4px solid #a855f7;
-    border-left-width: 3px;
-}
-
-/* Purple */
 
 .pro-module-icon {
-    width: 28px;
-    height: 28px;
+    width: 60px;
+    height: 60px;
+    background: linear-gradient(135deg, var(--bg-elevated) 0%, var(--bg-secondary) 100%);
+    border-radius: 14px;
+    /* Squircle style */
     display: flex;
     align-items: center;
     justify-content: center;
-    border-radius: 4px;
-    background: var(--bg-secondary);
     color: var(--text-secondary);
+    font-size: 24px;
     flex-shrink: 0;
+    border: 1px solid var(--border-secondary);
+    transition: all 0.3s ease;
 }
 
 .pro-module-card.active .pro-module-icon {
-    background: var(--primary-light);
-    color: var(--primary);
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%);
+    color: white;
+    border-color: transparent;
+    box-shadow: 0 10px 20px -5px rgba(var(--primary-rgb), 0.3);
 }
 
 .pro-module-name {
-    font-size: 11px;
-    font-weight: 500;
+    font-size: 15px;
+    font-weight: 700;
     color: var(--text-primary);
-    display: block;
-    line-height: 1.1;
+    margin-bottom: 2px;
 }
 
 .pro-module-type {
-    font-size: 8px;
-    font-weight: 600;
+    font-size: 10px;
+    font-weight: 700;
     color: var(--text-tertiary);
     text-transform: uppercase;
-    margin-top: 2px;
+    letter-spacing: 0.05em;
+    background: var(--bg-tertiary);
+    padding: 2px 6px;
+    border-radius: 4px;
+    display: inline-block;
+}
+
+.pro-status-btn {
+    margin-left: auto;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    transition: all 0.2s ease;
+}
+
+.pro-status-btn.inactive {
+    background: var(--bg-tertiary);
+    color: var(--text-secondary);
+}
+
+.pro-status-btn.active {
+    background: var(--primary);
+    color: white;
 }
 
 .pro-check-dot {
@@ -1308,6 +1326,7 @@
     border-color: var(--surface-1) transparent transparent transparent;
     z-index: 1;
 }
+
 /* Custom Sleek Scrollbar */
 .pro-sidebar::-webkit-scrollbar,
 .pro-main-content::-webkit-scrollbar {
