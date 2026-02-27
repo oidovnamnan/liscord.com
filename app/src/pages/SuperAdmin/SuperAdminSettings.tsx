@@ -14,6 +14,7 @@ export function SuperAdminSettings() {
     const [saving, setSaving] = useState(false);
     const [migrating, setMigrating] = useState(false);
     const [selectedCategoryId, setSelectedCategoryId] = useState<string>('all');
+    const [moduleSearch, setModuleSearch] = useState('');
     const [defaults, setDefaults] = useState<Record<string, Record<string, 'core' | 'addon'>>>({});
     const [showSecurityModal, setShowSecurityModal] = useState(false);
     const [pendingAction, setPendingAction] = useState<(() => Promise<void>) | null>(null);
@@ -201,40 +202,58 @@ export function SuperAdminSettings() {
                                         </div>
                                     </div>
 
-                                    <div className="module-grid">
-                                        {LISCORD_MODULES.map(module => {
-                                            const status = activeMods[module.id]; // 'core' | 'addon' | undefined
-                                            const isActive = !!status;
-                                            const Icon = (Icons as any)[module.icon] || Icons.Box;
-                                            return (
-                                                <div
-                                                    key={module.id}
-                                                    onClick={() => handleToggle(key, module.id)}
-                                                    className={`module-item-card ${status || ''}`}
-                                                >
-                                                    <div className="module-check">
-                                                        {isActive && <div className="module-check-dot" />}
-                                                    </div>
+                                    <div className="module-grid-wrapper" style={{ marginTop: '32px' }}>
+                                        <div className="flex items-center justify-between mb-6">
+                                            <h4 className="text-lg font-bold">Модулийн жагсаалт</h4>
+                                            <div className="search-box" style={{ width: '300px', margin: 0 }}>
+                                                <Icons.Search size={18} />
+                                                <input
+                                                    type="text"
+                                                    placeholder="Модуль хайх..."
+                                                    value={moduleSearch}
+                                                    onChange={(e) => setModuleSearch(e.target.value)}
+                                                />
+                                            </div>
+                                        </div>
 
-                                                    <div className="module-icon-box">
-                                                        <Icon size={20} />
-                                                    </div>
+                                        <div className="module-grid">
+                                            {LISCORD_MODULES.filter(m =>
+                                                m.name.toLowerCase().includes(moduleSearch.toLowerCase()) ||
+                                                m.id.toLowerCase().includes(moduleSearch.toLowerCase())
+                                            ).map(module => {
+                                                const status = activeMods[module.id];
+                                                const isActive = !!status;
+                                                const Icon = (Icons as any)[module.icon] || Icons.Box;
+                                                return (
+                                                    <div
+                                                        key={module.id}
+                                                        onClick={() => handleToggle(key, module.id)}
+                                                        className={`module-item-card ${status || ''}`}
+                                                    >
+                                                        <div className="module-icon-box">
+                                                            <Icon size={22} strokeWidth={2} />
+                                                        </div>
 
-                                                    <div className="module-info">
-                                                        <span className={`module-name ${!status ? 'text-tertiary' : ''}`}>{module.name}</span>
-                                                        <div className="flex items-center gap-2 mt-1">
-                                                            {status === 'core' ? (
-                                                                <span className="badge badge-primary" style={{ fontSize: '9px', padding: '1px 6px' }}>CORE / ҮНДСЭН</span>
-                                                            ) : status === 'addon' ? (
-                                                                <span className="badge" style={{ fontSize: '9px', padding: '1px 6px', background: '#6366f1', color: 'white' }}>ADD-ON / НЭМЭЛТ</span>
-                                                            ) : (
-                                                                <span className="text-tertiary" style={{ fontSize: '9px', letterSpacing: '0.05em' }}>АШИГЛАХГҮЙ</span>
-                                                            )}
+                                                        <div className="module-info" style={{ flex: 1 }}>
+                                                            <span className="module-name">{module.name}</span>
+                                                            <div className="flex items-center gap-2 mt-1">
+                                                                {status === 'core' ? (
+                                                                    <span className="badge badge-primary" style={{ fontSize: '9px', fontWeight: 700 }}>CORE</span>
+                                                                ) : status === 'addon' ? (
+                                                                    <span className="badge" style={{ fontSize: '9px', fontWeight: 700, background: 'var(--primary)', color: 'white' }}>ADD-ON</span>
+                                                                ) : (
+                                                                    <span className="text-tertiary" style={{ fontSize: '9px', fontWeight: 600, opacity: 0.6 }}>АШИГЛАХГҮЙ</span>
+                                                                )}
+                                                            </div>
+                                                        </div>
+
+                                                        <div className="module-check">
+                                                            {isActive && <div className="module-check-dot" />}
                                                         </div>
                                                     </div>
-                                                </div>
-                                            );
-                                        })}
+                                                );
+                                            })}
+                                        </div>
                                     </div>
                                 </div>
                             );
