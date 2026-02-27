@@ -14,6 +14,7 @@ export function SuperAdminCategories() {
     const [saving, setSaving] = useState(false);
     const [showSecurityModal, setShowSecurityModal] = useState(false);
     const [pendingAction, setPendingAction] = useState<(() => Promise<void>) | null>(null);
+    const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
     useEffect(() => {
         fetchCategories();
@@ -77,6 +78,24 @@ export function SuperAdminCategories() {
         }
     };
 
+    const handleBulkToggleActive = async (isActive: boolean) => {
+        if (selectedIds.length === 0) return;
+        setPendingAction(() => async () => {
+            setSaving(true);
+            try {
+                await businessCategoryService.bulkUpdateCategories(selectedIds, { isActive });
+                toast.success(`${selectedIds.length} ангиллыг ${isActive ? 'идэвхжүүллээ' : 'идэвхгүй болголоо'}`);
+                setSelectedIds([]);
+                refresh();
+            } catch (error) {
+                toast.error('Үйлдэл амжилтгүй');
+            } finally {
+                setSaving(false);
+            }
+        });
+        setShowSecurityModal(true);
+    };
+
     const handleDelete = async (id: string) => {
         setPendingAction(() => async () => {
             try {
@@ -134,6 +153,17 @@ export function SuperAdminCategories() {
                             {saving ? <Loader2 size={16} className="animate-spin" /> : <Plus size={16} />}
                             Анхны өгөгдөл (Seed)
                         </button>
+                        {selectedIds.length > 0 && (
+                            <div className="flex items-center gap-2 animate-fade-in" style={{ marginLeft: '12px', paddingLeft: '12px', borderLeft: '1px solid var(--border-primary)' }}>
+                                <span className="text-secondary text-xs font-bold">{selectedIds.length} сонгосон:</span>
+                                <button className="btn btn-outline btn-xs text-success" onClick={() => handleBulkToggleActive(true)}>
+                                    <Power size={14} /> Идэвхжүүлэх
+                                </button>
+                                <button className="btn btn-outline btn-xs text-danger" onClick={() => handleBulkToggleActive(false)}>
+                                    <PowerOff size={14} /> Идэвхгүй болгох
+                                </button>
+                            </div>
+                        )}
                     </div>
                     <button className="btn btn-primary gradient-btn" onClick={() => handleOpenModal()}>
                         <Plus size={18} /> Шинэ ангилал нэмэх
@@ -144,6 +174,16 @@ export function SuperAdminCategories() {
                     <table className="super-table">
                         <thead>
                             <tr>
+                                <th style={{ width: '40px' }}>
+                                    <input
+                                        type="checkbox"
+                                        checked={selectedIds.length === categories.length && categories.length > 0}
+                                        onChange={(e) => {
+                                            if (e.target.checked) setSelectedIds(categories.map(c => c.id));
+                                            else setSelectedIds([]);
+                                        }}
+                                    />
+                                </th>
                                 <th style={{ width: '80px' }}>Icon</th>
                                 <th>ID Code</th>
                                 <th>Нэр</th>
@@ -155,6 +195,16 @@ export function SuperAdminCategories() {
                         <tbody>
                             {categories.map((cat) => (
                                 <tr key={cat.id} className={cat.isActive ? '' : 'text-tertiary'}>
+                                    <td>
+                                        <input
+                                            type="checkbox"
+                                            checked={selectedIds.includes(cat.id)}
+                                            onChange={(e) => {
+                                                if (e.target.checked) setSelectedIds([...selectedIds, cat.id]);
+                                                else setSelectedIds(selectedIds.filter(id => id !== cat.id));
+                                            }}
+                                        />
+                                    </td>
                                     <td style={{ fontSize: '1.5rem' }}>{cat.icon}</td>
                                     <td className="font-mono text-xs">{cat.id}</td>
                                     <td className="font-bold">{cat.label}</td>

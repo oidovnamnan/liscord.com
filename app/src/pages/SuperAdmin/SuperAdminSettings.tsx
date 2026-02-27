@@ -19,6 +19,7 @@ export function SuperAdminSettings() {
     const [defaults, setDefaults] = useState<Record<string, Record<string, 'core' | 'addon'>>>({});
     const [showSecurityModal, setShowSecurityModal] = useState(false);
     const [pendingAction, setPendingAction] = useState<(() => Promise<void>) | null>(null);
+    const [showHidden, setShowHidden] = useState(false);
 
     useEffect(() => {
         const fetchDefaults = async () => {
@@ -39,9 +40,11 @@ export function SuperAdminSettings() {
         fetchDefaults();
     }, [fetchCategories]);
 
+    const visibleCategories = showHidden ? categories : categories.filter(c => c.isActive);
+
     const filteredCategories = selectedCategoryId === 'all'
-        ? categories
-        : categories.filter(c => c.id === selectedCategoryId);
+        ? visibleCategories
+        : visibleCategories.filter(c => c.id === selectedCategoryId);
 
     const handleToggle = (categoryKey: string, moduleId: string) => {
         setDefaults(prev => {
@@ -165,7 +168,16 @@ export function SuperAdminSettings() {
                             <span>Ерөнхий дүр зураг</span>
                         </button>
                         <div className="pro-nav-divider" />
-                        {categories.map((category) => (
+                        <div className="px-3 py-2 flex items-center justify-between">
+                            <span className="text-[10px] font-bold opacity-30 uppercase">Идэвхтэй</span>
+                            <button
+                                onClick={() => setShowHidden(!showHidden)}
+                                className={`text-[10px] font-bold px-2 py-0.5 rounded cursor-pointer transition-colors ${showHidden ? 'bg-primary text-white' : 'bg-surface-3 text-secondary'}`}
+                            >
+                                {showHidden ? 'Бүгд' : 'Нуугдсан'}
+                            </button>
+                        </div>
+                        {visibleCategories.map((category) => (
                             <button
                                 key={category.id}
                                 className={`pro-nav-item ${selectedCategoryId === category.id ? 'active' : ''}`}
@@ -182,16 +194,19 @@ export function SuperAdminSettings() {
                 <main className="pro-main-content">
                     {selectedCategoryId === 'all' ? (
                         <div className="pro-summary-grid">
-                            {categories.map((category) => {
+                            {visibleCategories.map((category) => {
                                 const activeCount = Object.keys(defaults[category.id] || {}).length;
                                 return (
                                     <div
                                         key={category.id}
-                                        className="pro-summary-card"
+                                        className={`pro-summary-card ${!category.isActive ? 'opacity-50 grayscale' : ''}`}
                                         onClick={() => setSelectedCategoryId(category.id)}
                                     >
-                                        <div className="pro-icon-md mb-4" style={{ fontSize: '32px', width: '64px', height: '64px', borderRadius: '16px' }}>
+                                        <div className="pro-icon-md mb-4" style={{ position: 'relative', fontSize: '32px', width: '64px', height: '64px', borderRadius: '16px' }}>
                                             {category.icon}
+                                            {!category.isActive && (
+                                                <div style={{ position: 'absolute', top: -4, right: -4, background: 'var(--danger)', color: 'white', fontSize: '10px', padding: '2px 6px', borderRadius: '8px', fontWeight: 800 }}>HIDDEN</div>
+                                            )}
                                         </div>
                                         <h3 className="text-base font-bold text-primary mb-1">{category.label}</h3>
                                         <div className="mt-auto flex items-center justify-between pt-4 border-top border-primary opacity-80">

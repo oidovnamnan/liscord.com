@@ -1886,6 +1886,15 @@ export const businessCategoryService = {
         await updateDoc(doc(db, 'system_categories', id), updates);
     },
 
+    async bulkUpdateCategories(ids: string[], updates: Partial<BusinessCategoryConfig>): Promise<void> {
+        const batch = writeBatch(db);
+        ids.forEach(id => {
+            const docRef = doc(db, 'system_categories', id);
+            batch.update(docRef, updates);
+        });
+        await batch.commit();
+    },
+
     async deleteCategory(id: string): Promise<void> {
         await deleteDoc(doc(db, 'system_categories', id));
     }
