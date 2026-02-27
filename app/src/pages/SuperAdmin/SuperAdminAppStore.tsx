@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Header } from '../../components/layout/Header';
-import { Loader2, Save, CheckCircle2, XCircle, DollarSign, Clock } from 'lucide-react';
+import { Loader2, Save, DollarSign, Clock } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { LISCORD_MODULES } from '../../config/modules';
 import { systemSettingsService } from '../../services/db';
@@ -38,10 +38,10 @@ export function SuperAdminAppStore() {
     }, []);
 
     const handleToggleFree = (id: string) => {
-        setModules(prev => prev.map(mod => {
+        setModules((prev: AppModule[]) => prev.map((mod: AppModule) => {
             if (mod.id === id) {
                 const isFree = !mod.isFree;
-                const updatedPlans = (mod.plans || []).map(p => ({
+                const updatedPlans = (mod.plans || []).map((p: any) => ({
                     ...p,
                     price: isFree ? 0 : p.price
                 }));
@@ -52,9 +52,9 @@ export function SuperAdminAppStore() {
     };
 
     const handleUpdatePlan = (modId: string, planId: string, field: 'price' | 'durationDays', value: number) => {
-        setModules(prev => prev.map(mod => {
+        setModules((prev: AppModule[]) => prev.map((mod: AppModule) => {
             if (mod.id === modId) {
-                const updatedPlans = (mod.plans || []).map(p =>
+                const updatedPlans = (mod.plans || []).map((p: any) =>
                     p.id === planId ? { ...p, [field]: value } : p
                 );
                 return { ...mod, plans: updatedPlans };
@@ -73,7 +73,7 @@ export function SuperAdminAppStore() {
         try {
             // Build config object from modules state (now only containing non-core modules)
             const config: Record<string, { isFree: boolean; plans: any[] }> = {};
-            modules.forEach(mod => {
+            modules.forEach((mod: AppModule) => {
                 config[mod.id] = {
                     isFree: mod.isFree ?? false,
                     plans: mod.plans || []
@@ -203,14 +203,17 @@ export function SuperAdminAppStore() {
                                         </div>
                                     </td>
                                     <td>
-                                        <button
-                                            className={`btn btn-sm ${mod.isFree ? 'btn-success' : 'btn-outline'} min-w-[115px]`}
-                                            onClick={() => handleToggleFree(mod.id)}
-                                            style={{ height: '34px', borderRadius: '10px', fontSize: '0.8rem' }}
-                                        >
-                                            {mod.isFree ? <CheckCircle2 size={14} /> : <XCircle size={14} />}
-                                            {mod.isFree ? 'Үнэгүй' : 'Төлбөртэй'}
-                                        </button>
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-[10px] font-bold opacity-50 uppercase">{mod.isFree ? 'Үнэгүй' : 'Төлбөртэй'}</span>
+                                            <label className="ios-switch">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={mod.isFree}
+                                                    onChange={() => handleToggleFree(mod.id)}
+                                                />
+                                                <span className="ios-slider"></span>
+                                            </label>
+                                        </div>
                                     </td>
                                     {/* Plan 1 */}
                                     <td>

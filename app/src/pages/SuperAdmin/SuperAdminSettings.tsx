@@ -169,13 +169,15 @@ export function SuperAdminSettings() {
                         </button>
                         <div className="pro-nav-divider" />
                         <div className="px-3 py-2 flex items-center justify-between">
-                            <span className="text-[10px] font-bold opacity-30 uppercase">Идэвхтэй</span>
-                            <button
-                                onClick={() => setShowHidden(!showHidden)}
-                                className={`text-[10px] font-bold px-2 py-0.5 rounded cursor-pointer transition-colors ${showHidden ? 'bg-primary text-white' : 'bg-surface-3 text-secondary'}`}
-                            >
-                                {showHidden ? 'Бүгд' : 'Нуугдсан'}
-                            </button>
+                            <span className="text-[10px] font-bold opacity-30 uppercase">Toggle View</span>
+                            <label className="ios-switch">
+                                <input
+                                    type="checkbox"
+                                    checked={showHidden}
+                                    onChange={() => setShowHidden(!showHidden)}
+                                />
+                                <span className="ios-slider"></span>
+                            </label>
                         </div>
                         {visibleCategories.map((category) => (
                             <button

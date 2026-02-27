@@ -4,8 +4,7 @@ import {
     Filter,
     MoreVertical,
     Clock,
-    Lock,
-    ExternalLink
+    Lock
 } from 'lucide-react';
 import { businessService } from '../../services/db';
 import { collection, getDocs, query, orderBy } from 'firebase/firestore';
@@ -26,6 +25,9 @@ export function SuperAdminBusinesses() {
     const navigate = useNavigate();
     const [showSecurityModal, setShowSecurityModal] = useState(false);
     const [selectedBiz, setSelectedBiz] = useState<any>(null);
+    const [selectedIds, setSelectedIds] = useState<string[]>([]);
+    const [showDisabled, setShowDisabled] = useState(true);
+    const [bulkSaving, setBulkSaving] = useState(false);
 
     useEffect(() => {
         loadBusinesses();
@@ -40,6 +42,31 @@ export function SuperAdminBusinesses() {
             console.error('Error loading businesses:', error);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleToggleStatus = async (biz: any) => {
+        try {
+            await businessService.toggleBusinessStatus(biz.id, !biz.isDisabled);
+            toast.success(biz.isDisabled ? 'Бизнесийг идэвхжүүллээ' : 'Бизнесийг зогсоолоо');
+            loadBusinesses();
+        } catch (error) {
+            toast.error('Алдаа гарлаа');
+        }
+    };
+
+    const handleBulkToggle = async (isDisabled: boolean) => {
+        if (selectedIds.length === 0) return;
+        setBulkSaving(true);
+        try {
+            await businessService.bulkToggleBusinesses(selectedIds, isDisabled);
+            toast.success(`${selectedIds.length} бизнесийн төлөв шинэчлэгдлээ`);
+            setSelectedIds([]);
+            loadBusinesses();
+        } catch (error) {
+            toast.error('Үйлдэл амжилтгүй');
+        } finally {
+            setBulkSaving(false);
         }
     };
 
@@ -75,10 +102,12 @@ export function SuperAdminBusinesses() {
         }
     };
 
-    const filtered = businesses.filter(b =>
-        b.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        b.ownerName?.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    const filtered = businesses.filter(b => {
+        const matchesSearch = b.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            b.ownerName?.toLowerCase().includes(searchTerm.toLowerCase());
+        const matchesStatus = showDisabled ? true : !b.isDisabled;
+        return matchesSearch && matchesStatus;
+    });
 
     return (
         <div className="page-container animate-fade-in">
@@ -98,15 +127,45 @@ export function SuperAdminBusinesses() {
                             onChange={(e) => setSearchTerm(e.target.value)}
                         />
                     </div>
-                    <button className="btn btn-secondary">
-                        <Filter size={18} /> Шүүлтүүр
-                    </button>
+                    <div className="flex items-center gap-6">
+                        <div className="flex items-center gap-2">
+                            <span className="text-[10px] font-bold opacity-30 uppercase">Бүх бизнес</span>
+                            <label className="ios-switch">
+                                <input
+                                    type="checkbox"
+                                    checked={showDisabled}
+                                    onChange={() => setShowDisabled(!showDisabled)}
+                                />
+                                <span className="ios-slider"></span>
+                            </label>
+                        </div>
+                        {selectedIds.length > 0 && (
+                            <div className="flex items-center gap-2 animate-fade-in px-3 py-1.5 rounded-xl bg-surface-2 border border-primary/10">
+                                <span className="text-secondary text-xs font-bold">{selectedIds.length} сонгосон:</span>
+                                <button className="btn btn-outline btn-xs text-success" onClick={() => handleBulkToggle(false)} disabled={bulkSaving}>Нээх</button>
+                                <button className="btn btn-outline btn-xs text-danger" onClick={() => handleBulkToggle(true)} disabled={bulkSaving}>Хаах</button>
+                            </div>
+                        )}
+                        <button className="btn btn-secondary">
+                            <Filter size={18} /> Шүүлтүүр
+                        </button>
+                    </div>
                 </div>
 
                 <div className="card no-padding overflow-hidden">
                     <table className="super-table">
                         <thead>
                             <tr>
+                                <th style={{ width: '40px' }}>
+                                    <input
+                                        type="checkbox"
+                                        checked={selectedIds.length === filtered.length && filtered.length > 0}
+                                        onChange={(e) => {
+                                            if (e.target.checked) setSelectedIds(filtered.map(b => b.id));
+                                            else setSelectedIds([]);
+                                        }}
+                                    />
+                                </th>
                                 <th>Бизнес</th>
                                 <th>Ангилал</th>
                                 <th>Эзэмшигч</th>
@@ -114,14 +173,24 @@ export function SuperAdminBusinesses() {
                                 <th>Захиалга</th>
                                 <th>Үүссэн</th>
                                 <th>Төлөв</th>
-                                <th>Хийх</th>
+                                <th className="text-right">Үйлдэл</th>
                             </tr>
                         </thead>
                         <tbody>
                             {loading ? (
                                 <tr><td colSpan={8} className="text-center py-8">Уншиж байна...</td></tr>
                             ) : filtered.map(biz => (
-                                <tr key={biz.id}>
+                                <tr key={biz.id} className={biz.isDisabled ? 'opacity-50' : ''}>
+                                    <td>
+                                        <input
+                                            type="checkbox"
+                                            checked={selectedIds.includes(biz.id)}
+                                            onChange={(e) => {
+                                                if (e.target.checked) setSelectedIds([...selectedIds, biz.id]);
+                                                else setSelectedIds(selectedIds.filter(id => id !== biz.id));
+                                            }}
+                                        />
+                                    </td>
                                     <td>
                                         <div className="biz-cell">
                                             <div className="biz-avatar">{biz.name?.charAt(0)}</div>
@@ -150,19 +219,28 @@ export function SuperAdminBusinesses() {
                                         </div>
                                     </td>
                                     <td>
-                                        <span className="badge badge-delivered">Идэвхтэй</span>
+                                        <div className="flex items-center gap-2">
+                                            <label className="ios-switch" title={biz.isDisabled ? 'Нээх' : 'Хаах'}>
+                                                <input
+                                                    type="checkbox"
+                                                    checked={!biz.isDisabled}
+                                                    onChange={() => handleToggleStatus(biz)}
+                                                />
+                                                <span className="ios-slider"></span>
+                                            </label>
+                                            <span className={`text-[10px] font-heavy uppercase ${biz.isDisabled ? 'text-danger' : 'text-success'}`}>
+                                                {biz.isDisabled ? 'Disabled' : 'Active'}
+                                            </span>
+                                        </div>
                                     </td>
                                     <td>
-                                        <div className="row-actions">
+                                        <div className="row-actions justify-end">
                                             <button
                                                 className="btn-icon"
                                                 title="Нэвтэрч орох"
                                                 onClick={() => handleImpersonateClick(biz)}
                                             >
                                                 <Lock size={16} />
-                                            </button>
-                                            <button className="btn-icon" title="Засах">
-                                                <ExternalLink size={16} />
                                             </button>
                                             <button className="btn-icon">
                                                 <MoreVertical size={16} />

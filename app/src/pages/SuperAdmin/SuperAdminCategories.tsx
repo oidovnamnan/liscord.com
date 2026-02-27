@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useSystemCategoriesStore } from '../../store';
 import { businessCategoryService } from '../../services/db';
-import { Plus, Edit2, Trash2, PowerOff, Power, Loader2 } from 'lucide-react';
+import { Plus, Edit2, Trash2, Loader2 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import type { BusinessCategoryConfig } from '../../types';
 import { SecurityModal } from '../../components/common/SecurityModal';
@@ -156,12 +156,18 @@ export function SuperAdminCategories() {
                         {selectedIds.length > 0 && (
                             <div className="flex items-center gap-2 animate-fade-in" style={{ marginLeft: '12px', paddingLeft: '12px', borderLeft: '1px solid var(--border-primary)' }}>
                                 <span className="text-secondary text-xs font-bold">{selectedIds.length} сонгосон:</span>
-                                <button className="btn btn-outline btn-xs text-success" onClick={() => handleBulkToggleActive(true)}>
-                                    <Power size={14} /> Идэвхжүүлэх
-                                </button>
-                                <button className="btn btn-outline btn-xs text-danger" onClick={() => handleBulkToggleActive(false)}>
-                                    <PowerOff size={14} /> Идэвхгүй болгох
-                                </button>
+                                <div className="flex items-center gap-4 bg-surface-2 px-3 py-1.5 rounded-xl border border-primary/10">
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-[10px] uppercase font-heavy opacity-50">Bulk Toggle</span>
+                                        <label className="ios-switch">
+                                            <input
+                                                type="checkbox"
+                                                onChange={(e) => handleBulkToggleActive(e.target.checked)}
+                                            />
+                                            <span className="ios-slider"></span>
+                                        </label>
+                                    </div>
+                                </div>
                             </div>
                         )}
                     </div>
@@ -216,13 +222,14 @@ export function SuperAdminCategories() {
                                     </td>
                                     <td>
                                         <div className="row-actions justify-end">
-                                            <button
-                                                className="btn-icon"
-                                                title={cat.isActive ? "Идэвхгүй болгох" : "Идэвхжүүлэх"}
-                                                onClick={() => handleToggleActive(cat)}
-                                            >
-                                                {cat.isActive ? <PowerOff size={16} /> : <Power size={16} className="text-success" />}
-                                            </button>
+                                            <label className="ios-switch" title={cat.isActive ? "Идэвхгүй болгох" : "Идэвхжүүлэх"}>
+                                                <input
+                                                    type="checkbox"
+                                                    checked={cat.isActive}
+                                                    onChange={() => handleToggleActive(cat)}
+                                                />
+                                                <span className="ios-slider"></span>
+                                            </label>
                                             <button className="btn-icon" onClick={() => handleOpenModal(cat)}>
                                                 <Edit2 size={16} />
                                             </button>

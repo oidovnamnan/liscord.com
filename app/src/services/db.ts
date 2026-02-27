@@ -256,6 +256,24 @@ export const businessService = {
         return convertTimestamps({ id: doc.id, ...doc.data() }) as Business;
     },
 
+    async toggleBusinessStatus(bizId: string, isDisabled: boolean): Promise<void> {
+        await updateDoc(doc(db, 'businesses', bizId), {
+            isDisabled,
+            updatedAt: serverTimestamp()
+        });
+    },
+
+    async bulkToggleBusinesses(ids: string[], isDisabled: boolean): Promise<void> {
+        const batch = writeBatch(db);
+        ids.forEach(id => {
+            batch.update(doc(db, 'businesses', id), {
+                isDisabled,
+                updatedAt: serverTimestamp()
+            });
+        });
+        await batch.commit();
+    },
+
     async createBusiness(business: Partial<Business>, ownerUid: string): Promise<string> {
         const bizRef = doc(collection(db, 'businesses'));
         const bizId = bizRef.id;

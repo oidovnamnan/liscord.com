@@ -144,6 +144,7 @@ export interface Business {
     createdAt: Date;
     updatedAt: Date;
     lastStorefrontChangeAt?: Date;
+    isDisabled?: boolean;
 }
 
 export interface BusinessRequest {
