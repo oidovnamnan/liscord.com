@@ -9,6 +9,7 @@ import * as Icons from 'lucide-react';
 import { SecurityModal } from '../../components/common/SecurityModal';
 import { db } from '../../services/firebase';
 import { doc, writeBatch, serverTimestamp } from 'firebase/firestore';
+import type { BusinessCategoryConfig } from '../../types';
 import './SuperAdmin.css';
 
 export function SuperAdminSettings() {
@@ -22,7 +23,7 @@ export function SuperAdminSettings() {
     const [showSecurityModal, setShowSecurityModal] = useState(false);
     const [pendingAction, setPendingAction] = useState<(() => Promise<void>) | null>(null);
     const [selectedIds, setSelectedIds] = useState<string[]>([]);
-    const [localCategories, setLocalCategories] = useState<any[]>([]);
+    const [localCategories, setLocalCategories] = useState<BusinessCategoryConfig[]>([]);
     const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
     useEffect(() => {
@@ -74,20 +75,17 @@ export function SuperAdminSettings() {
         setDefaults(prev => {
             const categoryDefaults = prev[categoryKey] || {};
             const currentStatus = categoryDefaults[moduleId];
-
             const newCategoryDefaults = { ...categoryDefaults };
 
             if (!currentStatus) {
-                // Off -> Core
                 newCategoryDefaults[moduleId] = 'core';
             } else if (currentStatus === 'core') {
-                // Core -> Addon
                 newCategoryDefaults[moduleId] = 'addon';
             } else {
-                // Addon -> Off
                 delete newCategoryDefaults[moduleId];
             }
 
+            setHasUnsavedChanges(true);
             return { ...prev, [categoryKey]: newCategoryDefaults };
         });
     };
@@ -107,19 +105,19 @@ export function SuperAdminSettings() {
             const defaultsRef = doc(db, 'system_settings', 'modules');
             batch.set(defaultsRef, defaults);
 
-            // 2. Update category statuses
+            // 2. Update all category configurations to ensure they exist and persist in DB
             localCategories.forEach(cat => {
-                const original = categories.find(c => c.id === cat.id);
-                if (original && original.isActive !== cat.isActive) {
-                    const catRef = doc(db, 'system_categories', cat.id);
-                    batch.update(catRef, { isActive: cat.isActive, updatedAt: serverTimestamp() });
-                }
+                const catRef = doc(db, 'system_categories', cat.id);
+                batch.set(catRef, {
+                    ...cat,
+                    updatedAt: serverTimestamp()
+                }, { merge: true });
             });
 
             await batch.commit();
             setHasUnsavedChanges(false);
+            await refresh(); // Force refresh store to sync everything
             toast.success('Бүх тохиргоо амжилттай хадгалагдлаа');
-            refresh(); // Refresh store to sync everything
         } catch (error) {
             console.error('Failed to save settings:', error);
             toast.error('Хадгалахад алдаа гарлаа');
@@ -195,7 +193,6 @@ export function SuperAdminSettings() {
             />
 
             <div className="page-content-pro">
-                {/* Master Navigation Sidebar */}
                 <aside className="pro-sidebar">
                     <div className="pro-sidebar-header">
                         <Icons.Filter size={14} className="opacity-50" />
@@ -266,7 +263,6 @@ export function SuperAdminSettings() {
                     </nav>
                 </aside>
 
-                {/* Detail Content Area */}
                 <main className="pro-main-content">
                     {selectedCategoryId === 'all' ? (
                         <div className="pro-summary-grid">

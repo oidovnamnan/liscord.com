@@ -112,8 +112,8 @@ export const useSystemCategoriesStore = create<SystemCategoriesState>((set, get)
         }
     },
     // Optional: method to force refresh after mutation
-    refresh: () => {
-        set({ fetched: false });
-        get().fetchCategories();
+    refresh: async () => {
+        set({ fetched: false, loading: false });
+        await get().fetchCategories();
     }
-} as SystemCategoriesState & { refresh: () => void }));
+} as SystemCategoriesState));
