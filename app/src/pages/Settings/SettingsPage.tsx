@@ -2,13 +2,15 @@ import { useState, useEffect, useMemo, Suspense } from 'react';
 import { createPortal } from 'react-dom';
 import { useSearchParams } from 'react-router-dom';
 import { Header } from '../../components/layout/Header';
-import { Building2, Palette, Bell, Shield, Users, Globe, Loader2, Share2, X, CheckSquare, ListOrdered, ShoppingBag, CreditCard, Sun, Moon, Monitor, CheckCircle2, Network } from 'lucide-react';
+import { Building2, Palette, Bell, Shield, Users, Globe, Loader2, Share2, X, CheckSquare, ListOrdered, ShoppingBag, CreditCard, Sun, Moon, Monitor, CheckCircle2 } from 'lucide-react';
 import { useBusinessStore, useUIStore } from '../../store';
 import { businessService, businessRequestService, systemSettingsService, moduleSettingsService } from '../../services/db';
 import { eventBus, EVENTS } from '../../services/eventBus';
 import { storageService as storage } from '../../services/storage';
 import { toast } from 'react-hot-toast';
 import { ImageUpload } from '../../components/common/ImageUpload';
+import * as Icons from 'lucide-react';
+import { LISCORD_MODULES } from '../../config/modules';
 
 import { ActivityTab } from './components/ActivityTab';
 import { PaymentTab } from './components/PaymentTab';
@@ -102,24 +104,23 @@ export function SettingsPage() {
             { id: 'language', label: 'Хэл', icon: Globe },
         ];
 
-        let pluginTabs = [
-            { id: 'statuses', label: 'Захиалгын төлөв', icon: CheckSquare, moduleId: 'orders' },
-            { id: 'cargo', label: 'Карго', icon: Globe, moduleId: 'cargo' },
+        // Dynamic Plugin Tabs from modules.ts
+        const pluginTabs = LISCORD_MODULES
+            .filter(mod => mod.hasSettings && business?.activeModules?.includes(mod.id))
+            .map(mod => ({
+                id: mod.id === 'orders' ? 'statuses' : mod.id, // Legacy compatibility for 'statuses' tab
+                label: mod.id === 'orders' ? 'Захиалгын төлөв' : mod.name,
+                icon: (Icons as any)[mod.icon] || CheckSquare,
+                moduleId: mod.id
+            }));
+
+        // Additional legacy tabs if needed
+        const extraTabs = [
             { id: 'sources', label: 'Эх сурвалж', icon: Share2, moduleId: 'orders' },
-            { id: 'b2b', label: 'B2B Платформ', icon: Network, moduleId: 'b2b-provider' },
-        ];
+        ].filter(t => business?.activeModules?.includes(t.moduleId));
 
-        // Filter based on Super Admin settings if available
-        if (business?.category && moduleDefaults[business.category]) {
-            const catSettings = moduleDefaults[business.category];
-            pluginTabs = pluginTabs.filter(tab => !!catSettings[tab.moduleId]);
-        }
-
-        // Only show plugin tabs for active modules
-        pluginTabs = pluginTabs.filter(tab => business?.activeModules?.includes(tab.moduleId));
-
-        return { core: coreTabs, plugins: pluginTabs };
-    }, [business?.category, business?.activeModules, moduleDefaults, isStorefrontEnabled]);
+        return { core: coreTabs, plugins: [...pluginTabs, ...extraTabs] };
+    }, [business?.activeModules, isStorefrontEnabled]);
 
     const handleUpdateBusiness = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();

@@ -5,12 +5,13 @@ export const LISCORD_MODULES: AppModule[] = [
     {
         id: 'orders',
         name: 'Захиалга',
-        description: 'Захиалга удирдлага болон борлуулалтын систем.',
-        icon: 'PackageSearch',
+        description: 'Бүх сувгийн захиалга удирдах',
+        icon: 'ShoppingCart',
         route: '/app/orders',
         isCore: true,
+        category: 'sales',
         hasSettings: true,
-        category: 'operations',
+        settingsRoute: '/app/settings?tab=statuses',
         isFree: false,
         plans: [
             { id: 'monthly', name: '30 хоног', price: 20000, durationDays: 30 },
@@ -48,12 +49,13 @@ export const LISCORD_MODULES: AppModule[] = [
     },
     {
         id: 'analytics',
-        name: 'Анализ & Тайлан',
-        description: 'Бизнесийн өсөлтийн нарийвчилсан статистик графикууд.',
+        name: 'Тайлан & Аналитик',
+        description: 'Бизнесийн борлуулалт, өсөлтийн тайлан',
         icon: 'BarChart3',
         route: '/app/analytics',
         isCore: true,
-        category: 'operations',
+        category: 'finance',
+        hasSettings: false,
         isFree: false,
         plans: [
             { id: 'monthly', name: '30 хоног', price: 15000, durationDays: 30 },

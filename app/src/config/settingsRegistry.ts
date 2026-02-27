@@ -6,4 +6,6 @@ export const SettingsRegistry: Record<string, React.LazyExoticComponent<any>> = 
     'sources': lazy(() => import('../pages/Settings/components/SourceSettings').then(m => ({ default: m.SourceSettings }))),
     'b2b': lazy(() => import('../pages/Settings/components/B2BTab').then(m => ({ default: m.B2BTab }))),
     'team': lazy(() => import('../pages/Settings/components/TeamSettings').then(m => ({ default: m.TeamSettings }))),
+    'general': lazy(() => import('../pages/Settings/components/GeneralSettings').then(m => ({ default: m.GeneralSettings }))), // If you extract general
+    'notifications': lazy(() => import('../pages/Settings/components/NotificationSettings').then(m => ({ default: m.NotificationSettings }))), // Future proof
 };

@@ -163,7 +163,7 @@ export const systemSettingsService = {
             if (features.hasProducts) modules.add('products');
             if (features.hasInventory) modules.add('inventory');
             if (features.hasDelivery) modules.add('delivery');
-            if (features.hasPackages) modules.add('packages');
+            if (features.hasPackages) modules.add('cargo');
             if (features.hasAppointments) modules.add('appointments');
             if (features.hasContracts) modules.add('contracts');
             if (features.hasVehicles) modules.add('vehicles');
