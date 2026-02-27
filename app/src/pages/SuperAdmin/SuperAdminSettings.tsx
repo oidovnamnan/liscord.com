@@ -12,7 +12,7 @@ import { doc, writeBatch, serverTimestamp } from 'firebase/firestore';
 import './SuperAdmin.css';
 
 export function SuperAdminSettings() {
-    const { categories, fetchCategories } = useSystemCategoriesStore();
+    const { categories, fetchCategories, refresh } = useSystemCategoriesStore();
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [migrating, setMigrating] = useState(false);
@@ -55,7 +55,7 @@ export function SuperAdminSettings() {
             await batch.commit();
             toast.success(`${selectedIds.length} ангиллын төлөв хадгалагдлаа`);
             setSelectedIds([]);
-            fetchCategories(); // Refresh the list
+            refresh(); // Force refresh the list from DB
         } catch (error) {
             toast.error('Үйлдэл амжилтгүй');
         } finally {
