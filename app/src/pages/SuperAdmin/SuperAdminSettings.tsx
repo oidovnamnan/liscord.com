@@ -140,7 +140,16 @@ export function SuperAdminSettings() {
                         <div className="stats-icon-wrapper active-tint">
                             <Settings size={20} />
                         </div>
-                        <h2 className="text-xl font-bold">Динамик Модуль Тохиргоо</h2>
+                        <div className="flex items-center gap-2">
+                            <h2 className="text-xl font-bold">Динамик Модуль Тохиргоо</h2>
+                            <div className="info-tooltip-container">
+                                <Icons.Info size={16} className="text-tertiary cursor-help" />
+                                <div className="info-tooltip-content focus-ring">
+                                    <p>Энд сонгосон модулиуд нь тухайн салбараар шинэ бизнес бүртгүүлэх үед автоматаар асаалттай (enabled) үүсэх болно.</p>
+                                    <div className="mt-2 text-xs opacity-70">Жишээ нь: "Онлайн шоп" бизнес бүртгүүлэхэд таны энд сонгосон модулиуд автоматаар залгагдана.</div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -179,12 +188,6 @@ export function SuperAdminSettings() {
                 </div>
 
                 <div className="card no-padding overflow-hidden">
-                    <div className="settings-description">
-                        <p className="text-secondary leading-relaxed">
-                            Энд сонгосон модулиуд нь тухайн салбараар шинэ бизнес бүртгүүлэх үед автоматаар асаалттай (enabled) үүсэх болно. <br />
-                            <small className="text-tertiary">Жишээ нь: "Онлайн шоп" бизнес бүртгүүлэхэд таны энд сонгосон модулиуд автоматаар залгагдана.</small>
-                        </p>
-                    </div>
 
                     <div className="module-category-list" style={{ padding: '0 24px 24px 24px' }}>
                         {filteredCategories.map((category) => {
