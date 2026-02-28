@@ -641,42 +641,8 @@ export function SettingsPage() {
                         )}
                         {activeTab === 'team' && <TeamSettings bizId={business?.id || ''} />}
 
-                        {activeTab === 'notifications' && (
-                            <div className="settings-section animate-fade-in">
-                                <h2>Мэдэгдэл</h2>
-                                <div className="settings-card">
-                                    <div className="settings-card-header">
-                                        <div className="settings-card-icon"><Bell size={20} /></div>
-                                        <h3>Мэдэгдлийн тохиргоо</h3>
-                                    </div>
-                                    <div className="notification-toggles" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                                        {[
-                                            { id: 'newOrders', label: 'Шинэ захиалга', desc: 'Шинэ захиалга бүртгэгдэх үед мэдэгдэх' },
-                                            { id: 'lowStock', label: 'Нөөц багассан', desc: 'Барааны үлдэгдэл доод хэмжээнд хүрэхэд мэдэгдэх' },
-                                            { id: 'cargoUpdates', label: 'Карго шинэчлэл', desc: 'Каргоны төлөв өөрчлөгдөх үед мэдэгдэх' },
-                                            { id: 'teamActivity', label: 'Багийн ажиллагаа', desc: 'Багийн гишүүд өөрчлөлт хийхэд мэдэгдэх' }
-                                        ].map(item => (
-                                            <div key={item.id} className="notification-item" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 0', borderBottom: '1px solid var(--border-color)' }}>
-                                                <div>
-                                                    <div style={{ fontWeight: 600, fontSize: '1rem' }}>{item.label}</div>
-                                                    <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>{item.desc}</div>
-                                                </div>
-                                                <label className="toggle">
-                                                    <input
-                                                        type="checkbox"
-                                                        checked={(notifications as any)[item.id]}
-                                                        onChange={() => setNotifications(prev => ({ ...prev, [item.id]: !(prev as any)[item.id] }))}
-                                                    />
-                                                    <span className="toggle-slider" />
-                                                </label>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-
                         {activeTab === 'language' && (
+
                             <div className="settings-section animate-fade-in">
                                 <h2>Хэлний тохиргоо</h2>
                                 <div className="settings-card">
