@@ -26,18 +26,24 @@
     /* Children handle their own scroll or use auto-scroll wrapper */
 }
 
-/* Default scroll wrapper for normal pages that use standard layout */
-.app-main>*:not(.super-admin-page) {
-    overflow-y: auto;
+.app-main-scrolled {
     flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    position: relative;
 }
 
-.sidebar-is-collapsed .app-container {
-    /* No margin needed here as Sidebar is a child of app-container */
+/* Ensure header doesn't shrink */
+.app-main-scrolled>.header {
+    flex-shrink: 0;
 }
 
-@media (max-width: 768px) {
-    /* Responsive tweaks for the main container if needed */
+/* Special Case: Super Admin already handles its own layout */
+.app-main-scrolled:has(.super-admin-page) {
+    overflow: hidden;
 }
 
 /* Page container */

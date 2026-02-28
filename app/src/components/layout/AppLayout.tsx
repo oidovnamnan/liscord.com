@@ -19,7 +19,9 @@ export function AppLayout() {
             <div className="app-container">
                 <Sidebar />
                 <main className="app-main">
-                    <Outlet />
+                    <div className="app-main-scrolled">
+                        <Outlet />
+                    </div>
                 </main>
             </div>
         </div>
