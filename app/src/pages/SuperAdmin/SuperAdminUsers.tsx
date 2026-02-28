@@ -18,6 +18,7 @@ import { toast } from 'react-hot-toast';
 import './SuperAdmin.css';
 
 export function SuperAdminUsers() {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const [users, setUsers] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
@@ -54,7 +55,8 @@ export function SuperAdminUsers() {
             await loadUsers();
             setShowSecurityModal(false);
             setPendingAction(null);
-        } catch (error) {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        } catch (_error) {
             toast.error('Алдаа гарлаа');
         }
     };

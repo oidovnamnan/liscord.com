@@ -17,6 +17,7 @@ import { SecurityModal } from '../../components/common/SecurityModal';
 import './SuperAdmin.css';
 
 export function SuperAdminBusinesses() {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const [businesses, setBusinesses] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
@@ -24,6 +25,7 @@ export function SuperAdminBusinesses() {
     const { setBusiness, setEmployee } = useBusinessStore();
     const navigate = useNavigate();
     const [showSecurityModal, setShowSecurityModal] = useState(false);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const [selectedBiz, setSelectedBiz] = useState<any>(null);
     const [selectedIds, setSelectedIds] = useState<string[]>([]);
     const [showDisabled, setShowDisabled] = useState(true);
@@ -45,12 +47,14 @@ export function SuperAdminBusinesses() {
         }
     };
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const handleToggleStatus = async (biz: any) => {
         try {
             await businessService.toggleBusinessStatus(biz.id, !biz.isDisabled);
             toast.success(biz.isDisabled ? 'Бизнесийг идэвхжүүллээ' : 'Бизнесийг зогсоолоо');
             loadBusinesses();
-        } catch (error) {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        } catch (_error) {
             toast.error('Алдаа гарлаа');
         }
     };
@@ -63,13 +67,15 @@ export function SuperAdminBusinesses() {
             toast.success(`${selectedIds.length} бизнесийн төлөв шинэчлэгдлээ`);
             setSelectedIds([]);
             loadBusinesses();
-        } catch (error) {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        } catch (_error) {
             toast.error('Үйлдэл амжилтгүй');
         } finally {
             setBulkSaving(false);
         }
     };
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const handleImpersonateClick = (biz: any) => {
         setSelectedBiz(biz);
         setShowSecurityModal(true);
@@ -94,7 +100,8 @@ export function SuperAdminBusinesses() {
             toast.dismiss();
             navigate('/app');
             toast.success(`Та ${biz.name} бизнесийг хянаж байна`);
-        } catch (error) {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        } catch (_error) {
             toast.dismiss();
             toast.error('Нэвтрэхэд алдаа гарлаа');
         } finally {

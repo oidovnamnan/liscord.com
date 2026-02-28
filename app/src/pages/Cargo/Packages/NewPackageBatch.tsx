@@ -88,6 +88,7 @@ export function NewPackageBatch({ onCancel }: { onCancel: () => void }) {
                     rawResponse: result.rawResponse
                 } : p));
 
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             } catch (error: any) {
                 // Update item status to error
                 setScannedItems(prev => prev.map(p => p.id === item.id ? {
@@ -117,7 +118,8 @@ export function NewPackageBatch({ onCancel }: { onCancel: () => void }) {
                 createdBy: 'system' // Should be specific user ID in real app
             });
             toast.success(`Тавиур ${locationCode} үүсгэлээ`);
-        } catch (error) {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        } catch (_error) {
             toast.error('Тавиур үүсгэхэд алдаа гарлаа');
         } finally {
             setIsCreatingShelf(false);

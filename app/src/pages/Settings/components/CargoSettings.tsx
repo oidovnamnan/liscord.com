@@ -21,7 +21,8 @@ export function CargoSettings({ bizId }: { bizId: string }) {
         try {
             await cargoService.updateCargoType(bizId, id, { isDeleted: true });
             toast.success('Устгагдлаа');
-        } catch (e) { toast.error('Алдаа гарлаа'); }
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        } catch (_e) { toast.error('Алдаа гарлаа'); }
     };
 
     return (
@@ -99,7 +100,8 @@ function CargoTypeModal({ bizId, onClose, editingType }: { bizId: string; onClos
             }
             toast.success('Амжилттай');
             onClose();
-        } catch (e) { toast.error('Алдаа гарлаа'); } finally { setLoading(false); }
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        } catch (_e) { toast.error('Алдаа гарлаа'); } finally { setLoading(false); }
     };
 
     return createPortal(

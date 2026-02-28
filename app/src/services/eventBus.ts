@@ -1,3 +1,4 @@
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 type EventCallback = (data: any) => void;
 
 class EventBus {
@@ -20,6 +21,7 @@ class EventBus {
         }
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     emit(event: string, data?: any) {
         const callbacks = this.events.get(event);
         if (callbacks) {

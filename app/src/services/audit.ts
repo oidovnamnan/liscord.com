@@ -9,12 +9,15 @@ export interface AuditLogData {
     targetType: string;
     targetId: string;
     targetLabel: string;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     changes?: { field: string; oldValue: any; newValue: any }[];
     severity?: AuditSeverity;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     metadata?: Record<string, any>;
 }
 
 export const auditService = {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     async writeLog(bizId: string, data: AuditLogData, employeeProfile?: any) {
         if (!auth.currentUser) return;
 
@@ -38,6 +41,7 @@ export const auditService = {
         }
     },
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     subscribeAuditLogs(bizId: string, limitCount: number, callback: (logs: any[]) => void) {
         const q = query(
             collection(db, 'businesses', bizId, 'auditLog'),
@@ -58,6 +62,7 @@ export const auditService = {
         });
     },
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     async getPlatformAuditLogs(limitCount: number = 200): Promise<any[]> {
         const q = query(
             collectionGroup(db, 'auditLog'),

@@ -17,6 +17,7 @@ export function usePermissions() {
         // Check if permissions exists on employee or its position
         // In a real system, you might fetch permissions via positionId
         // For now, we assume permissions are flattened into the employee profile or checked via roles
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const userPermissions = (employee as any).permissions || [];
 
         return userPermissions.includes(permission);

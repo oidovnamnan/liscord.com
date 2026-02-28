@@ -85,6 +85,7 @@ export function KPICards({ stats, category }: KPICardsProps) {
                     <div
                         key={i}
                         className="stat-card card animate-fade-in"
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
                         style={{ '--index': i } as any}
                     >
                         <div className="stat-card-header">

@@ -19,11 +19,13 @@ export function OrderDetailModal({ bizId, order, onClose, statuses }: OrderDetai
     const { user } = useAuthStore();
     const { business } = useBusinessStore();
     const [updating, setUpdating] = useState(false);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const [ebarimtData, setEbarimtData] = useState<any>(null);
     const [generatingBarimt, setGeneratingBarimt] = useState(false);
     const [currentStatusId, setCurrentStatusId] = useState(order.status);
     const fmt = (n: number) => '₮' + n.toLocaleString('mn-MN');
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const formatTime = (date?: Date | any) => {
         if (!date) return 'Саяхан';
         try {
@@ -63,7 +65,8 @@ export function OrderDetailModal({ bizId, order, onClose, statuses }: OrderDetai
             });
             setCurrentStatusId(newStatusId);
             toast.success('Төлөв шинэчлэгдлээ');
-        } catch (error) {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        } catch (_error) {
             toast.error('Алдаа гарлаа');
         } finally {
             setUpdating(false);
@@ -85,7 +88,8 @@ export function OrderDetailModal({ bizId, order, onClose, statuses }: OrderDetai
             // Note: In a real app we would save this to the order doc immediately
             // orderService.updateOrder(business.id, order.id, { ebarimt: response });
 
-        } catch (error) {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        } catch (_error) {
             toast.error('Баримт үүсгэхэд алдаа гарлаа');
         } finally {
             setGeneratingBarimt(false);

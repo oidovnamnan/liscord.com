@@ -53,8 +53,8 @@
     margin-bottom: var(--space-xs);
     background: var(--gradient-primary);
     -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
     background-clip: text;
+    -webkit-text-fill-color: transparent;
 }
 
 /* Chart Styles */
@@ -317,4 +317,123 @@
 .activity-time {
     font-size: 0.8rem;
     color: var(--text-muted);
+}
+
+/* =============================================
+   PREMIUM GLASSMORPHISM UPGRADES (Liscord Super)
+   ============================================= */
+
+.premium-glass-panel {
+    background: linear-gradient(135deg, var(--surface-1) 0%, var(--surface-2) 100%);
+    border: 1px solid var(--border-color);
+    box-shadow: 0 8px 32px var(--shadow-sm);
+    position: relative;
+    overflow: hidden;
+}
+
+.premium-glass-panel::after {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, var(--primary-light) 0%, transparent 60%);
+    opacity: 0.1;
+    pointer-events: none;
+    z-index: 0;
+}
+
+[data-theme="dark"] .premium-glass-panel::after {
+    opacity: 0.15;
+}
+
+.hero-badge {
+    display: inline-flex;
+    padding: 6px 14px;
+    background: var(--primary-light);
+    color: var(--primary);
+    border-radius: 99px;
+    font-size: 12px;
+    font-weight: 700;
+    margin-bottom: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border: 1px solid var(--border-secondary);
+}
+
+.text-gradient {
+    background: linear-gradient(135deg, var(--primary) 0%, var(--success) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.shine-effect {
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+.shine-effect::after {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -100%;
+    width: 50%;
+    height: 200%;
+    background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.3), transparent);
+    transform: skewX(-25deg);
+    transition: all 0.7s ease;
+}
+
+.shine-effect:hover::after {
+    animation: shine 1s;
+}
+
+@keyframes shine {
+    100% {
+        left: 200%;
+    }
+}
+
+.glass-section {
+    background: var(--surface-1);
+    border-radius: var(--radius-xl);
+    border: 1px solid var(--border-secondary);
+    padding: var(--space-lg);
+    box-shadow: 0 4px 6px -1px var(--shadow-color);
+}
+
+.inline-mr {
+    margin-right: 8px;
+    vertical-align: middle;
+}
+
+.hover-underline:hover {
+    text-decoration: underline;
+}
+
+.premium-hover {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    border: 1px solid transparent;
+}
+
+.premium-hover:hover {
+    transform: translateY(-2px);
+    background: var(--surface-2);
+    border-color: var(--border-primary);
+    box-shadow: 0 6px 12px -2px var(--shadow-sm);
+}
+
+.premium-empty {
+    border: 1px dashed var(--border-muted);
+    background: var(--bg-main);
+    border-radius: var(--radius-lg);
+    padding: var(--space-xl);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
 }

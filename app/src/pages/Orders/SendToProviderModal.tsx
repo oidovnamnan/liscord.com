@@ -33,6 +33,7 @@ export function SendToProviderModal({ orders, onClose, onSuccess }: SendToProvid
             })
             .catch(() => toast.error('Холбогдсон байгууллагууд татахад алдаа гарлаа'))
             .finally(() => setLoading(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [business?.id]);
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -70,6 +71,7 @@ export function SendToProviderModal({ orders, onClose, onSuccess }: SendToProvid
                         estimatedFee: 0, // In reality, calculate from provider pricing
                         finalFee: 0,
                         paidByConsumer: false, // E.g., cash on delivery by default
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
                         paymentMethod: selectedLink.terms.paymentTerms as any
                     },
                     status: 'pending'

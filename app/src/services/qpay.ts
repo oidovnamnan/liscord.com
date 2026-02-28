@@ -30,6 +30,7 @@ export const qpayService = {
     /**
      * Mocks generating a QPay invoice. Returns a fake base64 QR and deep links.
      */
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars
     async mockCreateInvoice(request: QPayInvoiceRequest, _settings?: any): Promise<QPayInvoiceResponse> {
         // Simulate network
         await new Promise(resolve => setTimeout(resolve, 600));
@@ -54,6 +55,7 @@ export const qpayService = {
     /**
      * Mocks checking the payment status of an invoice
      */
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     async mockCheckPayment(_invoiceId: string): Promise<{ paid_amount: number; status: 'PAID' | 'NEW' }> {
         await new Promise(resolve => setTimeout(resolve, 500));
 

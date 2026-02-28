@@ -42,7 +42,8 @@ export function AppointmentsPage() {
     useEffect(() => {
         if (!business?.id) return;
 
-        let unsnaps: any[] = [];
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const unsnaps: any[] = [];
 
         const loadInitialData = async () => {
             setLoading(true);
@@ -63,7 +64,8 @@ export function AppointmentsPage() {
                 unsnaps.push(appointmentService.subscribeAppointments(business.id, sd, ed, (data) => {
                     setAppointments(data as Appointment[]);
                 }));
-            } catch (err) {
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            } catch (_err) {
                 toast.error('Мэдээлэл татахад алдаа гарлаа');
             } finally {
                 setLoading(false);
@@ -105,7 +107,7 @@ export function AppointmentsPage() {
     const visibleStaff = selectedStaff === 'all' ? staff : staff.filter(s => s.id === selectedStaff);
 
     return (
-        <HubLayout hubId="services-hub">
+        <HubLayout hubId="industry-hub">
             <div className="page-container appointments-page animate-fade-in">
                 <Header
                     title="Цаг захиалга"

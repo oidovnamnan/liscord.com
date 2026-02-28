@@ -20,6 +20,7 @@ interface Message {
     senderName: string;
     avatar: string;
     text: string;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     createdAt: any;
 }
 
@@ -49,6 +50,7 @@ export function ChatPage() {
         });
 
         return () => unsubscribe();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [business?.id]);
 
     // Fetch messages for active channel

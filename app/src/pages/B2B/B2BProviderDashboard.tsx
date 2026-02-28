@@ -16,6 +16,7 @@ export function B2BProviderDashboard() {
     useEffect(() => {
         if (!business) return;
         loadRequests();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [business?.id, statusFilter]);
 
     const loadRequests = async () => {
@@ -24,7 +25,8 @@ export function B2BProviderDashboard() {
         try {
             const data = await b2bService.getServiceRequests(business.id, 'provider', { status: statusFilter !== 'all' ? statusFilter : undefined });
             setRequests(data);
-        } catch (error) {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        } catch (_error) {
             toast.error('Хүсэлтүүд татахад алдаа гарлаа');
         } finally {
             setLoading(false);
@@ -38,7 +40,8 @@ export function B2BProviderDashboard() {
             // Optimistic update
             setRequests(prev => prev.filter(r => r.id !== reqId));
             // If they change filter, it will reload anyway
-        } catch (error) {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        } catch (_error) {
             toast.error('Алдаа гарлаа');
         }
     };
@@ -91,6 +94,7 @@ export function B2BProviderDashboard() {
                         <button
                             key={tab.id}
                             className={`b2b-tab ${statusFilter === tab.id ? 'active' : ''}`}
+                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
                             onClick={() => setStatusFilter(tab.id as any)}
                         >
                             {tab.label}

@@ -23,6 +23,7 @@ const MOCK_ORDERS: ProductionOrder[] = [
 export function ManufacturingPage() {
     const [orders] = useState<ProductionOrder[]>(MOCK_ORDERS);
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const columns: { id: OrderStatus; title: string; icon: any; color: string }[] = [
         { id: 'pending', title: 'Хүлээгдэж буй', icon: Timer, color: 'var(--border-secondary)' },
         { id: 'cutting', title: 'Эсгүүр / Бэлтгэл', icon: Cog, color: 'var(--warning-color)' },

@@ -84,22 +84,22 @@
 
 /* The Ticket Card */
 .service-ticket {
-    background: white;
-    border: 1px solid var(--border-primary);
-    border-radius: var(--radius-md);
+    background: var(--surface-1);
+    border: 1px solid var(--border-secondary);
+    border-radius: var(--radius-xl);
     padding: var(--space-md);
-    box-shadow: var(--shadow-sm);
+    box-shadow: 0 4px 12px -4px var(--shadow-sm);
     display: flex;
     flex-direction: column;
     gap: 8px;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    transition: all 0.3s cubic-bezier(0.165, 0.84, 0.44, 1);
     cursor: pointer;
 }
 
 .service-ticket:hover {
     transform: translateY(-2px);
-    box-shadow: var(--shadow-md);
-    border-color: var(--primary-light, #93c5fd);
+    box-shadow: 0 12px 24px -6px var(--shadow-color);
+    border-color: var(--primary);
 }
 
 .ticket-header {

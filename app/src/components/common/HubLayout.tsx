@@ -23,6 +23,7 @@ export function HubLayout({ hubId, children }: HubLayoutProps) {
             <div className="hub-tabs-wrapper">
                 <nav className="hub-tabs">
                     {hubModules.map(mod => {
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
                         const Icon = (Icons as any)[mod.icon] || Icons.Circle;
                         const isActive = location.pathname === mod.route;
 

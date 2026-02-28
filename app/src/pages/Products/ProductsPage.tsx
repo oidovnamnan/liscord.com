@@ -26,7 +26,7 @@ export function ProductsPage() {
     useEffect(() => {
         if (!business?.id) return;
 
-        setLoading(true);
+        setTimeout(() => setLoading(true), 0);
         const unsubscribe = productService.subscribeProducts(business.id, (data) => {
             setProducts(data);
             setLoading(false);
@@ -49,7 +49,8 @@ export function ProductsPage() {
         try {
             await productService.updateProduct(business.id, id, { isDeleted: true });
             toast.success('Бараа устгагдлаа');
-        } catch (e) {
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        } catch (_e) {
             toast.error('Алдаа гарлаа');
         }
     };
@@ -399,6 +400,8 @@ function CreateProductModal({ onClose }: { onClose: () => void }) {
             });
             onClose();
             toast.success('Бараа амжилттай нэмэгдлээ');
+
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (error: any) {
             console.error(error);
             toast.error('Алдаа гарлаа');
@@ -507,7 +510,7 @@ function CreateProductModal({ onClose }: { onClose: () => void }) {
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                             <div className="input-group">
                                 <label className="input-label">Төрөл</label>
-                                <select className="input select" value={productType} onChange={e => setProductType(e.target.value as any)}>
+                                <select className="input select" value={productType} onChange={e => setProductType(e.target.value as 'ready' | 'preorder')}>
                                     <option value="ready">Бэлэн байгаа</option>
                                     <option value="preorder">Захиалгаар</option>
                                 </select>
@@ -741,8 +744,8 @@ function EditProductModal({ product, onClose }: { product: Product; onClose: () 
                 imageUrls = [...imageUrls, ...uploadedUrls];
             }
 
-            let categoryId = selectedCategory?.id || product.categoryId || 'general';
-            let categoryName = selectedCategory?.name || categoryInput || 'Бусад';
+            const categoryId = selectedCategory?.id || product.categoryId || 'general';
+            const categoryName = selectedCategory?.name || categoryInput || 'Бусад';
 
             let finalCargoTypeId = selectedCargoTypeId;
             if (productType === 'preorder' && !selectedCargoTypeId && cargoInput) {
@@ -893,7 +896,7 @@ function EditProductModal({ product, onClose }: { product: Product; onClose: () 
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                             <div className="input-group">
                                 <label className="input-label">Төрөл</label>
-                                <select className="input select" value={productType} onChange={e => setProductType(e.target.value as any)}>
+                                <select className="input select" value={productType} onChange={e => setProductType(e.target.value as 'ready' | 'preorder')}>
                                     <option value="ready">Бэлэн байгаа</option>
                                     <option value="preorder">Захиалгаар</option>
                                 </select>
@@ -1025,7 +1028,8 @@ function CreateCargoTypeModal({ initialName, onClose, onSuccess }: { initialName
             });
             toast.success('Каргоны төрөл амжилттай үүсгэлээ');
             onSuccess(id, name, numFee);
-        } catch (error) {
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        } catch (_error) {
             toast.error('Алдаа гарлаа');
         } finally {
             setLoading(false);

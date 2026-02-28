@@ -5,6 +5,7 @@ import { auditService } from '../../../services/audit';
 
 export function ActivityTab() {
     const { business } = useBusinessStore();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const [logs, setLogs] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
 
@@ -53,7 +54,7 @@ export function ActivityTab() {
                         if (log.module === 'Auth' || log.module === 'Team') icon = '👥';
 
                         return (
-                            <div key={log.id} className="activity-item animate-fade-in" style={{ '--index': i } as any}>
+                            <div key={log.id} className="activity-item animate-fade-in" style={{ '--index': i } as React.CSSProperties}>
                                 <div className="activity-icon">{icon}</div>
                                 <div className="activity-content" style={{ flex: 1 }}>
                                     <div className="activity-text">
@@ -69,6 +70,7 @@ export function ActivityTab() {
 
                                     {log.changes && log.changes.length > 0 && (
                                         <div style={{ marginTop: '8px', padding: '8px', background: 'var(--background)', borderRadius: '4px', fontSize: '0.8rem' }}>
+                                            {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                                             {log.changes.map((change: any, idx: number) => (
                                                 <div key={idx} style={{ display: 'flex', gap: '8px', marginBottom: '2px' }}>
                                                     <span className="text-muted">{change.field}:</span>

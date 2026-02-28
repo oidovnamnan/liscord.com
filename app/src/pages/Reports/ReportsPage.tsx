@@ -20,29 +20,46 @@ export function ReportsPage() {
         });
     }, [business]);
 
-    // Active orders are those not cancelled/deleted
-    const activeOrders = useMemo(() => orders.filter(o => !o.isDeleted && o.status !== 'cancelled'), [orders]);
+    // Period-based date range
+    const periodDays = period === '7d' ? 7 : period === '30d' ? 30 : period === '90d' ? 90 : 365;
+    const startDate = useMemo(() => {
+        const d = new Date();
+        d.setDate(d.getDate() - periodDays);
+        d.setHours(0, 0, 0, 0);
+        return d;
+    }, [periodDays]);
+
+    // Active orders filtered by period
+    const activeOrders = useMemo(() => orders.filter(o => {
+        if (o.isDeleted || o.status === 'cancelled') return false;
+        if (!o.createdAt) return false;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const d = o.createdAt instanceof Date ? o.createdAt : new Date(o.createdAt as any);
+        return d >= startDate;
+    }), [orders, startDate]);
 
     // Calculate Summary Stats
     const totalRevenue = useMemo(() => activeOrders.reduce((sum, o) => sum + (o.financials?.totalAmount || 0), 0), [activeOrders]);
     const totalOrders = activeOrders.length;
     const avgOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
 
-    // Calculate Daily Data (Simple grouping by date string)
+    // Calculate Daily Data (grouped by date)
     const dailyData = useMemo(() => {
         const grouped: Record<string, { orders: number, revenue: number }> = {};
 
-        // Setup last 7 days
-        for (let i = 6; i >= 0; i--) {
+        // Setup days based on period (max 14 bars for readability)
+        const numBars = Math.min(periodDays, 14);
+        const step = Math.max(1, Math.floor(periodDays / numBars));
+        for (let i = numBars - 1; i >= 0; i--) {
             const d = new Date();
-            d.setDate(d.getDate() - i);
+            d.setDate(d.getDate() - i * step);
             const key = `${(d.getMonth() + 1).toString().padStart(2, '0')}.${d.getDate().toString().padStart(2, '0')}`;
             grouped[key] = { orders: 0, revenue: 0 };
         }
 
         activeOrders.forEach(o => {
             if (!o.createdAt) return;
-            // Assuming createdAt is a JS Date from our convertTimestamps wrapper
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const d = o.createdAt instanceof Date ? o.createdAt : new Date(o.createdAt as any);
             const key = `${(d.getMonth() + 1).toString().padStart(2, '0')}.${d.getDate().toString().padStart(2, '0')}`;
             if (grouped[key]) {
@@ -52,7 +69,7 @@ export function ReportsPage() {
         });
 
         return Object.entries(grouped).map(([date, data]) => ({ date, ...data }));
-    }, [activeOrders]);
+    }, [activeOrders, periodDays]);
 
     // Calculate Top Products
     const topProducts = useMemo(() => {

@@ -36,7 +36,8 @@ export function PaymentTab() {
             });
             setIsDirty(false);
             toast.success('Төлбөр болон НӨАТ-ын тохиргоо хадгалагдлаа');
-        } catch (error) {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        } catch (_error) {
             toast.error('Алдаа гарлаа');
         } finally {
             setLoading(false);

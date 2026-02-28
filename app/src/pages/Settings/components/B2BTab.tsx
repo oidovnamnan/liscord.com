@@ -37,6 +37,7 @@ export function B2BTab() {
             const newTypes = { ...activeTypes };
             const newPrices = { ...prices };
 
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             business.serviceProfile.services.forEach((svc: any) => {
                 newTypes[svc.type as B2BServiceType] = svc.isActive;
                 newPrices[svc.type as B2BServiceType] = svc.pricing.basePrice;
@@ -45,6 +46,7 @@ export function B2BTab() {
             setActiveTypes(newTypes);
             setPrices(newPrices);
         }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [business?.serviceProfile]);
 
     const handleSave = async () => {
@@ -99,6 +101,7 @@ export function B2BTab() {
         }
     };
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const SERVICE_OPTIONS: { type: B2BServiceType; label: string; icon: any; placeholder: string }[] = [
         { type: 'cargo', label: 'Карго (Олон улсын тээвэр)', icon: Globe, placeholder: '1 кг-ийн үнэ (₮)' },
         { type: 'delivery', label: 'Хүргэлт (Орон нутаг, хот дотор)', icon: Truck, placeholder: 'Хүргэлтийн суурь үнэ (₮)' },

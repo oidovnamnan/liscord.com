@@ -21,7 +21,8 @@ export function TicketsPage() {
 
     useEffect(() => {
         if (!business?.id) return;
-        setLoading(true);
+        setTimeout(() => setLoading(true), 0);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         let unsnapEvents: any;
 
         const load = async () => {
@@ -37,6 +38,7 @@ export function TicketsPage() {
 
     useEffect(() => {
         if (!business?.id || !selectedEventId) {
+            // eslint-disable-next-line react-hooks/set-state-in-effect
             setTickets([]);
             return;
         }

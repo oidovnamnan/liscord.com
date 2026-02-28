@@ -97,6 +97,7 @@ export function SettingsPage() {
             .map(mod => ({
                 id: mod.id === 'orders' ? 'statuses' : mod.id, // Legacy compatibility for 'statuses' tab
                 label: mod.id === 'orders' ? 'Захиалгын төлөв' : mod.name,
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 icon: (Icons as any)[mod.icon] || CheckSquare,
                 moduleId: mod.id
             }));
@@ -157,7 +158,8 @@ export function SettingsPage() {
             await businessService.updateBusiness(business.id, { settings: { ...business.settings, pin } });
             setIsDirty(false);
             toast.success('PIN код шинэчлэгдлээ');
-        } catch (error) { toast.error('Алдаа гарлаа'); } finally { setLoading(false); }
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        } catch (_error) { toast.error('Алдаа гарлаа'); } finally { setLoading(false); }
     };
 
     const handleUpdateStorefront = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -238,7 +240,8 @@ export function SettingsPage() {
             setRequestReason('');
             const pending = await businessRequestService.getPendingRequest(business.id);
             setPendingRequest(pending);
-        } catch (error) {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        } catch (_error) {
             toast.error('Алдаа гарлаа');
         } finally {
             setLoading(false);
@@ -585,6 +588,7 @@ export function SettingsPage() {
                                             <div
                                                 key={t.id}
                                                 className={`theme-preview-card ${t.class} ${theme === t.id ? 'active' : ''}`}
+                                                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                                 onClick={() => setTheme(t.id as any)}
                                             >
                                                 <div className="theme-mockup">
@@ -705,6 +709,7 @@ export function SettingsPage() {
                                                 <label className="toggle">
                                                     <input
                                                         type="checkbox"
+                                                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                                         checked={(notifications as any)[item.id]}
                                                         onChange={async (e) => {
                                                             const newValue = e.target.checked;
@@ -730,6 +735,7 @@ export function SettingsPage() {
 
                         {/* --- Dynamic Module Settings (Lazy Loaded) --- */}
                         {(() => {
+                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
                             const LazyComp = SettingsRegistry[activeTab] as any;
                             if (LazyComp && business) {
                                 return (

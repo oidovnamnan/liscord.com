@@ -25,7 +25,8 @@ export function SourceSettings({ bizId }: { bizId: string }) {
         try {
             await sourceService.updateSource(bizId, id, { isDeleted: true });
             toast.success('Устгагдлаа');
-        } catch (e) { toast.error('Алдаа гарлаа'); }
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        } catch (_e) { toast.error('Алдаа гарлаа'); }
     };
 
     const handleDeleteAccount = async (id: string) => {
@@ -33,7 +34,8 @@ export function SourceSettings({ bizId }: { bizId: string }) {
         try {
             await sourceService.updateAccount(bizId, id, { isDeleted: true });
             toast.success('Устгагдлаа');
-        } catch (e) { toast.error('Алдаа гарлаа'); }
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        } catch (_e) { toast.error('Алдаа гарлаа'); }
     };
 
     const currentSource = sources.find(s => s.id === selectedSourceId);
@@ -151,7 +153,8 @@ function OrderSourceModal({ bizId, onClose, editingSource }: { bizId: string; on
             else await sourceService.createSource(bizId, data);
             toast.success('Амжилттай');
             onClose();
-        } catch (e) { toast.error('Алдаа гарлаа'); } finally { setLoading(false); }
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        } catch (_e) { toast.error('Алдаа гарлаа'); } finally { setLoading(false); }
     };
     return createPortal(
         <div className="modal-backdrop" onClick={onClose}>
@@ -190,7 +193,8 @@ function SocialAccountModal({ bizId, sourceId, sourceName, onClose }: { bizId: s
             await sourceService.createAccount(bizId, { name: fd.get('name') as string, sourceId });
             toast.success('Амжилттай');
             onClose();
-        } catch (e) { toast.error('Алдаа гарлаа'); } finally { setLoading(false); }
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        } catch (_e) { toast.error('Алдаа гарлаа'); } finally { setLoading(false); }
     };
     return createPortal(
         <div className="modal-backdrop" onClick={onClose}>

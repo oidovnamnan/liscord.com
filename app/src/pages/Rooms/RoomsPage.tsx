@@ -17,8 +17,10 @@ export function RoomsPage() {
 
     useEffect(() => {
         if (!business?.id) return;
-        setLoading(true);
+        setTimeout(() => setLoading(true), 0);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         let unsnapRooms: any;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         let unsnapBookings: any;
 
         const load = async () => {

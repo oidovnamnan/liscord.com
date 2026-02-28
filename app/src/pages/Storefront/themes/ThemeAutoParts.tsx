@@ -104,7 +104,7 @@ export function ThemeAutoParts({ business }: { business: Business }) {
 
                                         <ul className="auto-specs">
                                             <li><span>Үйлдвэрлэгч</span> <span>OEM / Aftermarket</span></li>
-                                            <li><span>Жин</span> <span>{Math.round(Math.random() * 10)}.{Math.round(Math.random() * 9)} kg</span></li>
+                                            <li><span>Жин</span> <span>4.2 kg</span></li>
                                             <li><span>Төрөл</span> <span>{p.categoryId || 'General'}</span></li>
                                         </ul>
 

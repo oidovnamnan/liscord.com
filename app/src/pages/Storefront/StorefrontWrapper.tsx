@@ -26,6 +26,7 @@ export function StorefrontWrapper() {
                     const storefrontRef = doc(db, 'businesses', biz.id, 'module_settings', 'storefront');
                     const storefrontSnap = await getDoc(storefrontRef);
                     if (storefrontSnap.exists()) {
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
                         const sfSettings = storefrontSnap.data() as any;
                         biz.settings = { ...biz.settings, storefront: sfSettings };
                     }
@@ -99,7 +100,7 @@ export function StorefrontWrapper() {
         <div
             className="storefront-layout"
             style={{
-                // @ts-ignore - CSS variable injection
+                // @ts-expect-error - CSS variable injection
                 '--sf-brand-color': brandColor,
                 '--sf-brand-color-soft': `${brandColor}15`
             }}

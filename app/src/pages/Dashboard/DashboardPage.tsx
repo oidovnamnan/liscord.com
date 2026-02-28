@@ -27,14 +27,16 @@ export function DashboardPage() {
     const { business } = useBusinessStore();
     const { user } = useAuthStore();
     const [recentOrders, setRecentOrders] = useState<Order[]>([]);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const [stats, setStats] = useState<any>(null);
     const [loading, setLoading] = useState(true);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const [recentLogs, setRecentLogs] = useState<any[]>([]);
 
     useEffect(() => {
         if (!business?.id) return;
 
-        setLoading(true);
+        setTimeout(() => setLoading(true), 0);
 
         async function loadDashboard() {
             if (!business?.id) return;
@@ -86,18 +88,19 @@ export function DashboardPage() {
             <Header title="Хянах самбар" />
             <div className="page animate-fade-in">
                 {/* Dashboard Hero */}
-                <div className="dashboard-hero stagger-item" style={{ '--index': 0 } as any}>
+                <div className="dashboard-hero stagger-item premium-glass-panel" style={{ '--index': 0 } as React.CSSProperties}>
                     <div className="dashboard-hero-content">
-                        <h1>Сайн байна уу, {user?.displayName || 'Эзэн'}! 👋</h1>
-                        <p className="text-secondary">{business?.name} бизнесийн өнөөдрийн тойм.</p>
+                        <div className="hero-badge">Эхлэх Цэг</div>
+                        <h1>Сайн байна уу, <span className="text-gradient">{user?.displayName || 'Эзэн'}</span>! 👋</h1>
+                        <p className="text-secondary">{business?.name} бизнесийн өнөөдрийн тойм болон шуурхай үйлдлүүд.</p>
                     </div>
                     <div className="dashboard-hero-action hide-mobile">
                         {business?.category === 'cargo' ? (
-                            <a href="/app/packages" className="btn btn-primary">
+                            <a href="/app/packages" className="btn btn-primary btn-lg shine-effect">
                                 <ScanLine size={18} /> Ачаа бүртгэх
                             </a>
                         ) : (
-                            <a href="/app/orders" className="btn btn-primary">
+                            <a href="/app/orders" className="btn btn-primary btn-lg shine-effect">
                                 <ShoppingCart size={18} /> Шинэ захиалга
                             </a>
                         )}
@@ -114,7 +117,7 @@ export function DashboardPage() {
 
                         {/* Getting Started for New Businesses */}
                         {isNewBusiness && (
-                            <div className="getting-started-card stagger-item" style={{ '--index': 5 } as any}>
+                            <div className="getting-started-card stagger-item" style={{ '--index': 5 } as React.CSSProperties}>
                                 <h3>🚀 Эхлэх гарын авлага</h3>
                                 <p className="text-muted">Бизнесээ бүрэн тохируулахын тулд дараах алхмуудыг хийнэ үү:</p>
                                 <div className="checklist-items">
@@ -156,29 +159,30 @@ export function DashboardPage() {
 
                     {/* Recent Orders List */}
                     <div className="dashboard-side-col">
-                        <div className="dashboard-section stagger-item" style={{ '--index': 6 } as any}>
+                        <div className="dashboard-section stagger-item glass-section" style={{ '--index': 6 } as React.CSSProperties}>
                             <div className="dashboard-section-header">
-                                <h3>Сүүлийн захиалгууд</h3>
-                                <a href="/app/orders" className="text-primary text-sm">Бүгд →</a>
+                                <h3><ShoppingCart size={18} className="text-primary inline-mr" /> Сүүлийн захиалгууд</h3>
+                                <a href="/app/orders" className="text-primary text-sm hover-underline">Бүгд →</a>
                             </div>
                             <div className="dashboard-orders-list mb-6">
                                 {recentOrders.length === 0 ? (
-                                    <div className="empty-state-compact">
+                                    <div className="empty-state-compact premium-empty">
+                                        <ShoppingCart size={24} className="text-muted mb-2" />
                                         <p className="text-muted">Захиалга байхгүй</p>
                                     </div>
                                 ) : (
                                     recentOrders.map((order, i) => (
                                         <div
                                             key={order.id}
-                                            className="dashboard-order-item card card-clickable animate-fade-in"
-                                            style={{ '--index': i } as any}
+                                            className="dashboard-order-item card card-clickable animate-fade-in premium-hover"
+                                            style={{ '--index': i } as React.CSSProperties}
                                         >
                                             <div className="dashboard-order-left">
                                                 <span className="dashboard-order-number">#{order.orderNumber}</span>
-                                                <span className="dashboard-order-customer">{order.customer?.name}</span>
+                                                <span className="dashboard-order-customer font-semibold">{order.customer?.name}</span>
                                             </div>
                                             <div className="dashboard-order-right">
-                                                <span className="dashboard-order-amount">{fmt(order.financials?.totalAmount)}</span>
+                                                <span className="dashboard-order-amount font-bold">{fmt(order.financials?.totalAmount)}</span>
                                                 <span className={`badge ${statusLabels[order.status]?.class || ''}`}>
                                                     {statusLabels[order.status]?.label || order.status}
                                                 </span>
@@ -190,7 +194,7 @@ export function DashboardPage() {
                         </div>
 
                         {/* Recent Activity Log Stream */}
-                        <div className="dashboard-section stagger-item" style={{ '--index': 7 } as any}>
+                        <div className="dashboard-section stagger-item" style={{ '--index': 7 } as React.CSSProperties}>
                             <div className="dashboard-section-header">
                                 <h3>Сүүлийн үйлдлүүд</h3>
                                 <a href="/app/settings?tab=activity" className="text-primary text-sm">Бүгд →</a>
@@ -212,7 +216,7 @@ export function DashboardPage() {
                                         if (log.action.includes('settings')) icon = '⚙️';
 
                                         return (
-                                            <div key={log.id} className="activity-item animate-fade-in" style={{ '--index': i } as any}>
+                                            <div key={log.id} className="activity-item animate-fade-in" style={{ '--index': i } as React.CSSProperties}>
                                                 <div className="activity-icon">{icon}</div>
                                                 <div className="activity-content">
                                                     <div className="activity-text">

@@ -24,21 +24,22 @@
 }
 
 .event-card {
-    background: white;
-    border: 1px solid var(--border-primary);
-    border-radius: var(--radius-lg);
+    background: var(--surface-1);
+    border: 1px solid var(--border-secondary);
+    border-radius: var(--radius-xl);
     overflow: hidden;
     position: relative;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    transition: all 0.3s cubic-bezier(0.165, 0.84, 0.44, 1);
     display: flex;
     flex-direction: column;
     cursor: pointer;
+    box-shadow: 0 4px 12px -4px var(--shadow-sm);
 }
 
 .event-card:hover {
     transform: translateY(-4px);
-    box-shadow: var(--shadow-lg);
-    border-color: var(--border-secondary);
+    box-shadow: 0 12px 24px -6px var(--shadow-color);
+    border-color: var(--primary);
 }
 
 .event-hero {
@@ -64,7 +65,7 @@
 }
 
 .event-date-block {
-    background: white;
+    background: var(--surface-1);
     border-radius: var(--radius-sm);
     padding: 6px 12px;
     text-align: center;
@@ -152,9 +153,9 @@
 }
 
 .checkin-scanner {
-    background: white;
+    background: var(--surface-1);
     width: 400px;
-    border-radius: var(--radius-lg);
+    border-radius: var(--radius-xl);
     padding: var(--space-xl);
     text-align: center;
     box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);

@@ -16,6 +16,7 @@ export function OrderChart() {
     const maxValue = Math.max(...data.map(d => d.value));
 
     return (
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         <div className="dashboard-chart-container card animate-fade-in" style={{ '--index': 4 } as any}>
             <div className="chart-header">
                 <div>

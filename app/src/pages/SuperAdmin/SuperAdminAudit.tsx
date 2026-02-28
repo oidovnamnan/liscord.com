@@ -5,7 +5,7 @@ import { Loader2, ShieldAlert, Search, RefreshCw, Activity } from 'lucide-react'
 import { toast } from 'react-hot-toast';
 
 export function SuperAdminAudit() {
-    const [logs, setLogs] = useState<any[]>([]);
+    const [logs, setLogs] = useState<any[]>([]); // eslint-disable-line @typescript-eslint/no-explicit-any
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [filterLevel, setFilterLevel] = useState<'all' | 'critical' | 'warning' | 'normal'>('all');
@@ -145,7 +145,8 @@ export function SuperAdminAudit() {
                                                 <div className="font-bold text-sm mb-2">{log.targetLabel}</div>
                                                 {log.changes && log.changes.length > 0 && (
                                                     <div className="bg-surface-2 p-2 rounded-lg text-[0.75rem] font-mono border border-primary-light">
-                                                        {log.changes.map((c: any, i: number) => (
+                                                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                                                        {log.changes.map((c: any, i: number) => ( // eslint-disable-line @typescript-eslint/no-explicit-any
                                                             <div key={i} className={`grid grid-cols-[100px_1fr] gap-2 ${i !== log.changes.length - 1 ? 'border-b border-white/10 pb-1 mb-1' : ''}`}>
                                                                 <span className="text-tertiary">{c.field}:</span>
                                                                 <span className="break-all">

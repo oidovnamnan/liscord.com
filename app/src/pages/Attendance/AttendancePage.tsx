@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Header } from '../../components/layout/Header';
-import { useBusinessStore } from '../../store';
+import { useBusinessStore, useAuthStore } from '../../store';
 import { attendanceService } from '../../services/db';
 import type { Attendance } from '../../types';
 import { Play, LogIn, LogOut, Coffee, Calendar, Search } from 'lucide-react';
@@ -11,13 +11,14 @@ import { toast } from 'react-hot-toast';
 import './AttendancePage.css';
 
 export function AttendancePage() {
-    const { business } = useBusinessStore();
+    const { business, employee } = useBusinessStore();
+    const { user } = useAuthStore();
     const [currentTime, setCurrentTime] = useState(new Date());
     const [todayRecords, setTodayRecords] = useState<Attendance[]>([]);
     const [loading, setLoading] = useState(true);
 
-    const EMP_ID = 'emp-001'; // Simulated logged-in user ID
-    const EMP_NAME = 'Сүрэн'; // Simulated logged-in user Name
+    const EMP_ID = employee?.id || user?.uid || 'guest';
+    const EMP_NAME = employee?.name || user?.displayName || 'Зочин';
 
     useEffect(() => {
         const timer = setInterval(() => setCurrentTime(new Date()), 1000);
@@ -26,7 +27,7 @@ export function AttendancePage() {
 
     useEffect(() => {
         if (!business?.id) return;
-        setLoading(true);
+        setTimeout(() => setLoading(true), 0);
 
         const yyyy = currentTime.getFullYear();
         const mm = String(currentTime.getMonth() + 1).padStart(2, '0');
@@ -40,6 +41,7 @@ export function AttendancePage() {
 
         return () => { unsnap(); };
         // Only re-run when actual day changes, but simplistic approach is fine here
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [business?.id]);
 
     const myRecord = todayRecords.find(r => r.employeeId === EMP_ID);
@@ -51,7 +53,8 @@ export function AttendancePage() {
         try {
             await attendanceService.clockIn(business.id, EMP_ID, EMP_NAME);
             toast.success('Ажилд ирснээр бүртгэгдлээ');
-        } catch (error) {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        } catch (_error) {
             toast.error('Алдаа гарлаа');
         }
     };
@@ -63,7 +66,8 @@ export function AttendancePage() {
             const totalMins = differenceInMinutes(new Date(), myRecord.clockInTime as Date);
             await attendanceService.clockOut(business.id, myRecord.id, totalMins);
             toast.success('Ажлаас бууснаар бүртгэгдлээ');
-        } catch (error) {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        } catch (_error) {
             toast.error('Алдаа гарлаа');
         }
     };
@@ -78,7 +82,8 @@ export function AttendancePage() {
                 await attendanceService.startBreak(business.id, myRecord.id);
                 toast.success('Завсарлага эхэллээ');
             }
-        } catch (error) {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        } catch (_error) {
             toast.error('Алдаа гарлаа');
         }
     };

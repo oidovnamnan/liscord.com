@@ -48,6 +48,7 @@ export function PaymentsPage() {
                         amount: p.amount,
                         method: p.method,
                         note: p.note || 'Төлбөр',
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
                         date: p.paidAt instanceof Date ? p.paidAt : new Date(p.paidAt as any),
                     });
                 });

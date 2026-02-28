@@ -32,7 +32,8 @@ export function SuperAdminRequests() {
             await businessRequestService.approveRequest(req.id, req.businessId, req.requestedData);
             toast.success('Хүсэлтийг зөвшөөрлөө');
             fetchRequests();
-        } catch (error) {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        } catch (_error) {
             toast.error('Алдаа гарлаа');
         }
     };
@@ -43,7 +44,8 @@ export function SuperAdminRequests() {
             await businessRequestService.rejectRequest(req.id);
             toast.success('Хүсэлтийг цуцаллаа');
             fetchRequests();
-        } catch (error) {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        } catch (_error) {
             toast.error('Алдаа гарлаа');
         }
     };

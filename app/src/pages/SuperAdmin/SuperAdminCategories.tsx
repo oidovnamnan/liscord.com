@@ -73,7 +73,8 @@ export function SuperAdminCategories() {
             await businessCategoryService.updateCategory(category.id, { isActive: !category.isActive });
             toast.success(category.isActive ? 'Идэвхгүй болголоо' : 'Идэвхжүүллээ');
             refresh();
-        } catch (error) {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        } catch (_error) {
             toast.error('Үйлдэл амжилтгүй');
         }
     };
@@ -87,7 +88,8 @@ export function SuperAdminCategories() {
                 toast.success(`${selectedIds.length} ангиллыг ${isActive ? 'идэвхжүүллээ' : 'идэвхгүй болголоо'}`);
                 setSelectedIds([]);
                 refresh();
-            } catch (error) {
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            } catch (_error) {
                 toast.error('Үйлдэл амжилтгүй');
             } finally {
                 setSaving(false);
@@ -102,7 +104,8 @@ export function SuperAdminCategories() {
                 await businessCategoryService.deleteCategory(id);
                 toast.success('Устгагдлаа');
                 refresh();
-            } catch (error) {
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            } catch (_error) {
                 toast.error('Устгахад алдаа гарлаа');
             }
         });

@@ -87,6 +87,7 @@ export function SuperAdminGlobalSettings() {
                                 <button
                                     key={t.id}
                                     type="button"
+                                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                     onClick={() => setTheme(t.id as any)}
                                     style={{
                                         display: 'flex',
@@ -195,6 +196,7 @@ export function SuperAdminGlobalSettings() {
                                             value={settings.banner.type}
                                             onChange={e => setSettings({
                                                 ...settings,
+                                                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                                 banner: { ...settings.banner, type: e.target.value as any }
                                             })}
                                         >

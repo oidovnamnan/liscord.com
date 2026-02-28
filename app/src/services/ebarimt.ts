@@ -37,6 +37,7 @@ export const ebarimtService = {
     /**
      * Prepares the exact JSON needed by the E-Barimt POS API.
      */
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     buildPayload(settings: any, orderData: any): EbarimtPayload {
         // Simplified mapping for the audit/demo
         return {
@@ -52,6 +53,7 @@ export const ebarimtService = {
             customerNo: '',
             billType: '3',
             billIdSuffix: orderData.id,
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             goods: orderData.items?.map((item: any) => ({
                 code: item.productId,
                 name: item.name,

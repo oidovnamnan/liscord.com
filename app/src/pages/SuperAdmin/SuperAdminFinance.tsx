@@ -346,6 +346,7 @@ export function SuperAdminFinance() {
                                     <select
                                         className="input"
                                         value={extendPlan}
+                                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                         onChange={e => setExtendPlan(e.target.value as any)}
                                     >
                                         <option value="free">Free (Үнэгүй)</option>

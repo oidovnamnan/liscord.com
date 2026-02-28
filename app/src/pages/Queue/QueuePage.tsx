@@ -3,7 +3,7 @@ import { Header } from '../../components/layout/Header';
 import { useBusinessStore } from '../../store';
 import { serviceQueueService } from '../../services/db';
 import type { ServiceTicket } from '../../types';
-import { Search, Filter, Clock, UserCheck, Play, Check } from 'lucide-react';
+import { Search, Filter, Clock, Play, Check, UserCheck, Loader2, Plus } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { mn } from 'date-fns/locale';
 import { toast } from 'react-hot-toast';
@@ -14,10 +14,11 @@ export function QueuePage() {
     const { business } = useBusinessStore();
     const [tickets, setTickets] = useState<ServiceTicket[]>([]);
     const [loading, setLoading] = useState(true);
+    const [showAdd, setShowAdd] = useState(false);
 
     useEffect(() => {
         if (!business?.id) return;
-        setLoading(true);
+        setTimeout(() => setLoading(true), 0);
 
         const unsnap = serviceQueueService.subscribeQueue(business.id, (data) => {
             setTickets(data as ServiceTicket[]);
@@ -50,12 +51,6 @@ export function QueuePage() {
 
     const waitingTickets = tickets.filter(t => t.status === 'waiting');
     const inProgressTickets = tickets.filter(t => t.status === 'in_progress');
-
-    // Auto-refresh timer to update "time ago" texts (every minute)
-    // useEffect(() => {
-    //     const interval = setInterval(() => setTickets([...tickets]), 60000);
-    //     return () => clearInterval(interval);
-    // }, [tickets]);
 
     const renderTicket = (ticket: ServiceTicket) => (
         <div key={ticket.id} className="service-ticket">
@@ -101,7 +96,7 @@ export function QueuePage() {
                     subtitle="Угаалга, Засвар, Салон амьд хяналт"
                     action={{
                         label: "Тасалбар нэмэх",
-                        onClick: () => toast('Тасалбар хэвлэх (Удахгүй)')
+                        onClick: () => setShowAdd(true)
                     }}
                 />
 
@@ -154,6 +149,87 @@ export function QueuePage() {
                     </div>
                 </div>
             </div>
+
+            {showAdd && <AddTicketModal onClose={() => setShowAdd(false)} />}
         </HubLayout>
+    );
+}
+
+function AddTicketModal({ onClose }: { onClose: () => void }) {
+    const { business } = useBusinessStore();
+    const [loading, setLoading] = useState(false);
+    const [data, setData] = useState({
+        customerName: '',
+        customerPhone: '',
+        vehicleInfo: '',
+        serviceName: '',
+        price: ''
+    });
+
+    async function handleSubmit(e: React.FormEvent) {
+        e.preventDefault();
+        if (!business) return;
+        setLoading(true);
+        try {
+            await serviceQueueService.createTicket(business.id, {
+                customerId: null,
+                customerName: data.customerName || 'Зочин',
+                customerPhone: data.customerPhone,
+                vehicleOrItemInfo: data.vehicleInfo,
+                serviceName: data.serviceName,
+                price: Number(data.price),
+                status: 'waiting',
+                createdAt: new Date(),
+            });
+            toast.success('Тасалбар нэмэгдлээ');
+            onClose();
+        } catch {
+            toast.error('Алдаа гарлаа');
+        } finally {
+            setLoading(false);
+        }
+    }
+
+    return (
+        <div className="modal-backdrop" onClick={onClose}>
+            <div className="modal" onClick={e => e.stopPropagation()} style={{ maxWidth: '400px' }}>
+                <form onSubmit={handleSubmit}>
+                    <div className="modal-header">
+                        <h2>Шинэ тасалбар</h2>
+                        <button type="button" className="btn btn-ghost btn-icon" onClick={onClose}>✕</button>
+                    </div>
+                    <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                        <div className="input-group">
+                            <label className="input-label">Үйлчилгээний нэр</label>
+                            <input className="input" placeholder="Жишээ: Бүтэн угаалга" value={data.serviceName} onChange={e => setData({ ...data, serviceName: e.target.value })} required autoFocus />
+                        </div>
+                        <div className="input-group">
+                            <label className="input-label">Үнэ (₮)</label>
+                            <input className="input" type="number" placeholder="25,000" value={data.price} onChange={e => setData({ ...data, price: e.target.value })} required />
+                        </div>
+                        <div className="input-group">
+                            <label className="input-label">Машины дугаар / Мэдээлэл</label>
+                            <input className="input" placeholder="0001 УБН" value={data.vehicleInfo} onChange={e => setData({ ...data, vehicleInfo: e.target.value })} required />
+                        </div>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                            <div className="input-group">
+                                <label className="input-label">Үйлчлүүлэгч</label>
+                                <input className="input" placeholder="Нэр" value={data.customerName} onChange={e => setData({ ...data, customerName: e.target.value })} />
+                            </div>
+                            <div className="input-group">
+                                <label className="input-label">Утас</label>
+                                <input className="input" placeholder="Сүүлийн 4 орон" value={data.customerPhone} onChange={e => setData({ ...data, customerPhone: e.target.value })} />
+                            </div>
+                        </div>
+                    </div>
+                    <div className="modal-footer">
+                        <button type="button" className="btn btn-secondary" onClick={onClose}>Болих</button>
+                        <button type="submit" className="btn btn-primary" disabled={loading}>
+                            {loading ? <Loader2 className="spin" size={16} /> : <Plus size={16} />} Нэмэх
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
     );
 }

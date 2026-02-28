@@ -31,9 +31,10 @@ export function TeamSettings({ bizId }: { bizId: string }) {
     const confirmDelete = async () => {
         if (!selectedPosId) return;
         try {
-            await teamService.updatePosition(bizId, selectedPosId, { isDeleted: true } as any);
+            await teamService.updatePosition(bizId, selectedPosId, { isDeleted: true } as any); // eslint-disable-line @typescript-eslint/no-explicit-any
             toast.success('Устгагдлаа');
-        } catch (e) { toast.error('Алдаа гарлаа'); } finally { setShowPIN(false); }
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        } catch (_e) { toast.error('Алдаа гарлаа'); } finally { setShowPIN(false); }
     };
 
     return (
@@ -92,7 +93,7 @@ export function TeamSettings({ bizId }: { bizId: string }) {
                             </button>
                         </div>
                         <div className="positions-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 16 }}>
-                            {positions.filter(p => !(p as any).isDeleted).map(pos => (
+                            {positions.filter(p => !(p as any).isDeleted).map(pos => ( // eslint-disable-line @typescript-eslint/no-explicit-any
                                 <div key={pos.id} className="settings-card position-card">
                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
                                         <div className="position-info">
@@ -164,7 +165,8 @@ function CreatePositionModal({ bizId, editingPosition, onClose }: { bizId: strin
                 toast.success('Амжилттай үүсгэлээ');
             }
             onClose();
-        } catch (e) { toast.error('Алдаа гарлаа'); } finally { setLoading(false); }
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        } catch (_e) { toast.error('Алдаа гарлаа'); } finally { setLoading(false); }
     };
 
     // Group permissions by category

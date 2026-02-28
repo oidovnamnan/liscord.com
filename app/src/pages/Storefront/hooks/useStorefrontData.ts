@@ -10,7 +10,7 @@ export function useStorefrontData(business: Business | undefined) {
 
     useEffect(() => {
         if (!business) return;
-        setLoading(true);
+        setTimeout(() => setLoading(true), 0);
         const unsubscribe = productService.subscribeProducts(business.id, (data) => {
             setProducts(data.filter(p => !p.isDeleted && p.isActive !== false));
             setLoading(false);

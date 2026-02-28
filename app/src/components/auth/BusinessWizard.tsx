@@ -57,6 +57,7 @@ export function BusinessWizard() {
 
             toast.success('Бизнес амжилттай үүслээ!');
             window.location.reload();
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (error: any) {
             toast.error('Алдаа гарлаа: ' + error.message);
         } finally {

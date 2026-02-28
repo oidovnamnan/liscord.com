@@ -18,6 +18,7 @@ export function LoginPage() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [step, setStep] = useState<'input' | 'otp'>('input');
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const [confirmationResult, setConfirmationResult] = useState<any>(null);
     const [loading, setLoading] = useState(false);
 
@@ -43,6 +44,7 @@ export function LoginPage() {
             setConfirmationResult(result);
             setStep('otp');
             toast.success('Баталгаажуулах код илгээлээ');
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (error: any) {
             console.error(error);
             toast.error('Алдаа гарлаа. Дугаараа шалгана уу.');
@@ -67,6 +69,7 @@ export function LoginPage() {
         try {
             await confirmationResult.confirm(otp);
             navigate('/app');
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars
         } catch (error: any) {
             toast.error('Код буруу байна');
         } finally {
@@ -82,6 +85,7 @@ export function LoginPage() {
         try {
             await signInWithEmailAndPassword(auth, email, password);
             navigate('/app');
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (error: any) {
             let message = 'И-мэйл эсвэл нууц үг буруу байна';
             if (error.code === 'auth/user-not-found') {
@@ -205,6 +209,7 @@ export function LoginPage() {
 
 declare global {
     interface Window {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         recaptchaVerifier: any;
     }
 }

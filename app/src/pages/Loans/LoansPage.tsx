@@ -2,186 +2,279 @@ import { useState, useEffect } from 'react';
 import { Header } from '../../components/layout/Header';
 import { useBusinessStore } from '../../store';
 import { loanService, pawnItemService } from '../../services/db';
-import type { Loan } from '../../types';
-import { Search, FileText, AlertCircle, TrendingUp, Filter } from 'lucide-react';
+import type { Loan, PawnItem } from '../../types';
+import { TrendingUp, Loader2, Plus } from 'lucide-react';
 import { HubLayout } from '../../components/common/HubLayout';
-import { format, differenceInDays, startOfDay } from 'date-fns';
 import { toast } from 'react-hot-toast';
 import './LoansPage.css';
 
 export function LoansPage() {
     const { business } = useBusinessStore();
     const [loans, setLoans] = useState<Loan[]>([]);
+    const [pawnItems, setPawnItems] = useState<PawnItem[]>([]);
     const [loading, setLoading] = useState(true);
+    const [showCreate, setShowCreate] = useState(false);
 
     useEffect(() => {
         if (!business?.id) return;
-        setLoading(true);
-        let unsnapLoans: any;
-        let unsnapPawns: any;
+        setTimeout(() => setLoading(true), 0);
 
-        const load = async () => {
-            unsnapLoans = loanService.subscribeLoans(business.id, (data) => {
-                setLoans(data as Loan[]);
-            });
+        const unsubLoans = loanService.subscribeLoans(business.id, (data) => {
+            setLoans(data);
+            setLoading(false);
+        });
 
-            unsnapPawns = pawnItemService.subscribePawnItems(business.id, () => {
-                // Pre-warm cache for pawn items if needed, or just stop loading
-                setLoading(false);
-            });
-        };
-
-        load();
+        const unsubPawn = pawnItemService.subscribePawnItems(business.id, (data) => {
+            setPawnItems(data);
+        });
 
         return () => {
-            if (unsnapLoans) unsnapLoans();
-            if (unsnapPawns) unsnapPawns();
+            unsubLoans();
+            unsubPawn();
         };
     }, [business?.id]);
 
-    // Derived Logic for Compound Interest (Visual only for now)
-    const calculateLiveBalance = (loan: Loan) => {
-        if (loan.status === 'closed' || loan.status === 'foreclosed') return loan.currentBalance;
-
-        const daysSinceStart = differenceInDays(startOfDay(new Date()), startOfDay(loan.startDate));
-        if (daysSinceStart <= 0) return loan.principalAmount - loan.totalPaid;
-
-        if (loan.interestType === 'daily') {
-            const dailyRate = loan.interestRatePercent / 100;
-            // Simple interest for demonstration: Principal + (Principal * Rate * Days)
-            // Advanced would be compound: Principal * Math.pow((1 + dailyRate), days)
-            const projectedInterest = loan.principalAmount * dailyRate * daysSinceStart;
-            return (loan.principalAmount + projectedInterest) - loan.totalPaid;
-        }
-
-        return loan.currentBalance; // Fallback to snapshot
+    const stats = {
+        totalActivePrincipal: loans.filter(l => l.status === 'active').reduce((sum, l) => sum + (l.principalAmount || 0), 0),
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        totalItemsInVault: pawnItems.filter(p => (p as any).status === 'vault').length,
+        avgInterestRate: loans.length > 0 ? loans.reduce((sum, l) => sum + (l.interestRatePercent || 0), 0) / loans.length : 0
     };
 
-    if (loading) return <div className="page-container flex-center">Зээлийн мэдээлэл уншиж байна...</div>;
-
-    const activeLoans = loans.filter(l => l.status === 'active' || l.status === 'overdue');
-    const totalPrincipalOut = activeLoans.reduce((sum, l) => sum + l.principalAmount, 0);
-    const expectedReturn = activeLoans.reduce((sum, l) => sum + calculateLiveBalance(l), 0);
+    if (loading) return (
+        <HubLayout hubId="finance-hub">
+            <div className="page-container flex-center" style={{ height: '60vh' }}>
+                <Loader2 className="spin" size={32} />
+                <p style={{ marginLeft: 12 }}>Зээлийн мэдээлэл уншиж байна...</p>
+            </div>
+        </HubLayout>
+    );
 
     return (
-        <HubLayout hubId="loans-hub">
+        <HubLayout hubId="finance-hub">
             <div className="page-container loans-page animate-fade-in">
                 <Header
-                    title="Зээл & Ломбард"
-                    subtitle="Бялчилсан болон барьцаат зээлийн удирдлага"
+                    title="Зээл & Барьцаа"
+                    subtitle="Хоршоо, Ломбард, Микро зээлийн удирдлага"
                     action={{
                         label: "Зээл олгох",
-                        onClick: () => toast('Шинэ зээл үүсгэх (Удахгүй)')
+                        onClick: () => setShowCreate(true)
                     }}
                 />
 
-                <div className="loans-stats-grid">
-                    <div className="loan-stat-card">
-                        <span className="loan-stat-label">Идэвхтэй Зээл</span>
-                        <span className="loan-stat-value">{activeLoans.length}</span>
+                <div className="grid-3" style={{ marginBottom: 'var(--space-lg)' }}>
+                    <div className="stat-card">
+                        <div className="stat-card-label">Нийт идэвхтэй зээл</div>
+                        <div className="stat-card-value">{stats.totalActivePrincipal.toLocaleString()} ₮</div>
                     </div>
-                    <div className="loan-stat-card">
-                        <span className="loan-stat-label">Гаргасан Үндсэн Зээл</span>
-                        <span className="loan-stat-value">₮{totalPrincipalOut.toLocaleString()}</span>
+                    <div className="stat-card">
+                        <div className="stat-card-label">Барьцаанд буй бараа</div>
+                        <div className="stat-card-value">{stats.totalItemsInVault} ш</div>
                     </div>
-                    <div className="loan-stat-card">
-                        <span className="loan-stat-label">Хүлээгдэж буй Авлага (Хүү)</span>
-                        <span className="loan-stat-value success">₮{expectedReturn.toLocaleString()}</span>
-                    </div>
-                    <div className="loan-stat-card">
-                        <span className="loan-stat-label">Хугацаа хэтэрсэн / Зөрчилтэй</span>
-                        <span className="loan-stat-value danger">{loans.filter(l => l.status === 'overdue').length}</span>
+                    <div className="stat-card">
+                        <div className="stat-card-label">Дундаж хүү</div>
+                        <div className="stat-card-value">{stats.avgInterestRate.toFixed(1)}%</div>
                     </div>
                 </div>
 
-                <div className="loans-toolbar">
-                    <div className="search-bar">
-                        <Search className="search-icon" size={20} />
-                        <input type="text" placeholder="Харилцагч эсвэл утасны дугаар..." className="search-input" />
-                    </div>
-                    <div style={{ display: 'flex', gap: '12px' }}>
-                        <button className="btn btn-outline" title="Шүүлтүүр">
-                            <Filter size={16} />
-                        </button>
-                        <button className="btn btn-outline" onClick={() => toast('Агуулахын бүртгэл')}>
-                            <FileText size={16} className="mr-sm" /> Барьцаа хөрөнгө
-                        </button>
-                    </div>
-                </div>
-
-                <div className="loans-table-container">
-                    <table className="loans-table">
+                <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+                    <table className="data-table" style={{ width: '100%' }}>
                         <thead>
                             <tr>
                                 <th>Зээлдэгч</th>
-                                <th>Гэрээний хугацаа</th>
                                 <th>Барьцаа</th>
-                                <th>Үндсэн зээл</th>
-                                <th>Хүүний нөхцөл</th>
-                                <th>Одоогийн үлдэгдэл</th>
+                                <th>Үндсэн дүн</th>
+                                <th>Хүү</th>
+                                <th>Хугацаа</th>
+                                <th>Үлдэгдэл</th>
                                 <th>Төлөв</th>
                             </tr>
                         </thead>
                         <tbody>
+                            {loans.map(loan => (
+                                <tr key={loan.id}>
+                                    <td>
+                                        <div style={{ fontWeight: 600 }}>{loan.customerName}</div>
+                                        <div style={{ fontSize: '12px', opacity: 0.7 }}>{loan.customerPhone}</div>
+                                    </td>
+                                    <td>
+                                        {loan.pawnItemDescription ? (
+                                            <span className="badge badge-info">{loan.pawnItemDescription}</span>
+                                        ) : (
+                                            <span style={{ fontStyle: 'italic', opacity: 0.5 }}>Барьцаагүй</span>
+                                        )}
+                                    </td>
+                                    <td>{loan.principalAmount.toLocaleString()} ₮</td>
+                                    <td>
+                                        <span style={{ color: 'var(--warning)', display: 'flex', alignItems: 'center', gap: 4 }}>
+                                            <TrendingUp size={12} /> {loan.interestRatePercent}%
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <div style={{ fontSize: '13px' }}>
+                                            {loan.startDate instanceof Date ? loan.startDate.toLocaleDateString() : '-'}
+                                        </div>
+                                        <div style={{ fontSize: '11px', color: 'var(--danger)' }}>
+                                            {loan.dueDate instanceof Date ? loan.dueDate.toLocaleDateString() : '-'} хүртэл
+                                        </div>
+                                    </td>
+                                    <td style={{ fontWeight: 700, color: 'var(--primary)' }}>
+                                        {loan.currentBalance.toLocaleString()} ₮
+                                    </td>
+                                    <td>
+                                        <span className={`badge badge-${loan.status === 'active' ? 'confirmed' : loan.status === 'overdue' ? 'cancelled' : 'new'}`}>
+                                            {loan.status === 'active' ? 'Идэвхтэй' :
+                                                loan.status === 'overdue' ? 'Хугацаа хэтэрсэн' :
+                                                    loan.status === 'closed' ? 'Хаагдсан' : loan.status}
+                                        </span>
+                                    </td>
+                                </tr>
+                            ))}
                             {loans.length === 0 && (
                                 <tr>
-                                    <td colSpan={7} style={{ textAlign: 'center', padding: '40px', color: 'var(--text-secondary)' }}>
-                                        Бүртгэлтэй зээл байхгүй байна.
+                                    <td colSpan={7} style={{ textAlign: 'center', padding: '60px', color: 'var(--text-muted)' }}>
+                                        Бүртгэлтэй зээл алга байна.
                                     </td>
                                 </tr>
                             )}
-                            {loans.map(loan => {
-                                const isOverdue = new Date() > new Date(loan.dueDate) && loan.status !== 'closed' && loan.status !== 'foreclosed';
-                                const liveBal = calculateLiveBalance(loan);
-
-                                return (
-                                    <tr key={loan.id} style={{ cursor: 'pointer' }} onClick={() => toast(`Зээлдэгч: ${loan.customerName}`)}>
-                                        <td>
-                                            <div className="loan-customer-block">
-                                                <span className="loan-customer-name">{loan.customerName}</span>
-                                                <span className="loan-customer-phone">{loan.customerPhone}</span>
-                                            </div>
-                                        </td>
-                                        <td>
-                                            <div style={{ fontSize: '13px' }}>
-                                                <div>Олгосон: {format(loan.startDate, 'yyyy.MM.dd')}</div>
-                                                <div style={{ color: isOverdue ? 'var(--danger)' : 'inherit' }}>
-                                                    Дуусах: {format(loan.dueDate, 'yyyy.MM.dd')}
-                                                    {isOverdue && <AlertCircle size={12} style={{ display: 'inline', marginLeft: '4px', marginBottom: '-2px' }} />}
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td>
-                                            {loan.pawnItemDescription ? (
-                                                <div className="pawn-item-tag">
-                                                    {loan.pawnItemDescription}
-                                                </div>
-                                            ) : (
-                                                <span style={{ color: 'var(--text-secondary)', fontSize: '13px' }}>- Итгэлцэл -</span>
-                                            )}
-                                        </td>
-                                        <td style={{ fontWeight: 600 }}>₮{loan.principalAmount.toLocaleString()}</td>
-                                        <td>
-                                            <span style={{ color: 'var(--warning)' }}>
-                                                <TrendingUp size={12} style={{ display: 'inline', marginRight: '4px' }} />
-                                                {loan.interestRatePercent}% / {loan.interestType === 'daily' ? 'өдөр' : 'сар'}
-                                            </span>
-                                        </td>
-                                        <td style={{ fontWeight: 700, color: liveBal > loan.principalAmount ? 'var(--danger)' : 'inherit' }}>
-                                            ₮{Math.round(liveBal).toLocaleString()}
-                                        </td>
-                                        <td>
-                                            <span className={`loan-badge ${isOverdue ? 'overdue' : loan.status}`}>
-                                                {isOverdue ? 'Хэтэрсэн' : loan.status}
-                                            </span>
-                                        </td>
-                                    </tr>
-                                );
-                            })}
                         </tbody>
                     </table>
                 </div>
             </div>
+
+            {showCreate && <CreateLoanModal onClose={() => setShowCreate(false)} />}
         </HubLayout>
+    );
+}
+
+function CreateLoanModal({ onClose }: { onClose: () => void }) {
+    const { business } = useBusinessStore();
+    const [loading, setLoading] = useState(false);
+    const [step, setStep] = useState(1);
+    const [pawnItem, setPawnItem] = useState({ description: '', estimatedValue: '' });
+    const [loan, setLoan] = useState({
+        customerName: '',
+        customerPhone: '',
+        principal: '',
+        interest: '5',
+        type: 'monthly' as 'daily' | 'monthly',
+        days: '30'
+    });
+
+    async function handleSubmit(e: React.FormEvent) {
+        e.preventDefault();
+        if (!business) return;
+
+        setLoading(true);
+        try {
+            let pawnItemId = null;
+            if (pawnItem.description) {
+                pawnItemId = await pawnItemService.createPawnItem(business.id, {
+                    description: pawnItem.description,
+                    estimatedValue: Number(pawnItem.estimatedValue) || 0,
+                    status: 'vault',
+                    isDeleted: false
+                });
+            }
+
+            const startDate = new Date();
+            const dueDate = new Date();
+            dueDate.setDate(dueDate.getDate() + Number(loan.days));
+
+            await loanService.createLoan(business.id, {
+                customerId: '',
+                customerName: loan.customerName,
+                customerPhone: loan.customerPhone,
+                pawnItemId,
+                pawnItemDescription: pawnItem.description || null,
+                principalAmount: Number(loan.principal),
+                interestRatePercent: Number(loan.interest),
+                interestType: loan.type,
+                startDate,
+                dueDate,
+                totalPaid: 0,
+                currentBalance: Number(loan.principal),
+                status: 'active',
+                isDeleted: false
+            });
+
+            toast.success('Зээл амжилттай бүртгэгдлээ');
+            onClose();
+        } catch (err) {
+            console.error(err);
+            toast.error('Алдаа гарлаа');
+        } finally {
+            setLoading(false);
+        }
+    }
+
+    return (
+        <div className="modal-backdrop" onClick={onClose}>
+            <div className="modal" onClick={e => e.stopPropagation()}>
+                <form onSubmit={handleSubmit}>
+                    <div className="modal-header">
+                        <h2>{step === 1 ? '1/2 Зээлийн мэдээлэл' : '2/2 Барьцаа хөрөнгө'}</h2>
+                        <button type="button" className="btn btn-ghost btn-icon" onClick={onClose}>✕</button>
+                    </div>
+
+                    <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                        {step === 1 ? (
+                            <>
+                                <div className="input-group">
+                                    <label className="input-label">Зээлдэгчийн нэр</label>
+                                    <input className="input" placeholder="Нэр оруулна уу" value={loan.customerName} onChange={e => setLoan({ ...loan, customerName: e.target.value })} required />
+                                </div>
+                                <div className="input-group">
+                                    <label className="input-label">Утасны дугаар</label>
+                                    <input className="input" placeholder="Утас оруулна уу" value={loan.customerPhone} onChange={e => setLoan({ ...loan, customerPhone: e.target.value })} required />
+                                </div>
+                                <div className="input-group">
+                                    <label className="input-label">Үндсэн зээлийн дүн (₮)</label>
+                                    <input className="input" type="number" placeholder="500,000" value={loan.principal} onChange={e => setLoan({ ...loan, principal: e.target.value })} required />
+                                </div>
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                                    <div className="input-group">
+                                        <label className="input-label">Хүү (%)</label>
+                                        <input className="input" type="number" step="0.1" value={loan.interest} onChange={e => setLoan({ ...loan, interest: e.target.value })} required />
+                                    </div>
+                                    <div className="input-group">
+                                        <label className="input-label">Хугацаа (өдрөөр)</label>
+                                        <input className="input" type="number" value={loan.days} onChange={e => setLoan({ ...loan, days: e.target.value })} required />
+                                    </div>
+                                </div>
+                            </>
+                        ) : (
+                            <>
+                                <div className="input-group">
+                                    <label className="input-label">Барьцаа барааны тайлбар</label>
+                                    <textarea className="input" rows={3} placeholder="iPhone 14 Pro Max..." value={pawnItem.description} onChange={e => setPawnItem({ ...pawnItem, description: e.target.value })} />
+                                </div>
+                                <div className="input-group">
+                                    <label className="input-label">Бодит үнэлгээ (₮)</label>
+                                    <input className="input" type="number" placeholder="1,200,000" value={pawnItem.estimatedValue} onChange={e => setPawnItem({ ...pawnItem, estimatedValue: e.target.value })} />
+                                </div>
+                                <p style={{ fontSize: '12px', color: 'var(--text-muted)' }}>* Барьцаагүй бичил зээл бол хоосон орхиж болно.</p>
+                            </>
+                        )}
+                    </div>
+
+                    <div className="modal-footer">
+                        {step === 1 ? (
+                            <>
+                                <button type="button" className="btn btn-secondary" onClick={onClose}>Болих</button>
+                                <button type="button" className="btn btn-primary" onClick={() => setStep(2)}>Үргэлжлүүлэх</button>
+                            </>
+                        ) : (
+                            <>
+                                <button type="button" className="btn btn-ghost" onClick={() => setStep(1)}>Буцах</button>
+                                <button type="submit" className="btn btn-primary" disabled={loading}>
+                                    {loading ? <Loader2 className="spin" size={16} /> : <Plus size={16} />} Бүртгэх
+                                </button>
+                            </>
+                        )}
+                    </div>
+                </form>
+            </div>
+        </div>
     );
 }

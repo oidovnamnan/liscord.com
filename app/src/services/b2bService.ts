@@ -27,9 +27,11 @@ export const b2bService = {
         );
 
         const snapshot = await getDocs(q);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const providers = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as any));
 
         if (serviceType) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             return providers.filter(p => p.serviceProfile?.services.some((s: any) => s.type === serviceType && s.isActive));
         }
         return providers;
@@ -110,7 +112,8 @@ export const b2bService = {
      * Get service requests
      */
     async getServiceRequests(businessId: string, role: 'consumer' | 'provider', filters?: { status?: string, limitCount?: number }) {
-        let qConstraints: any[] = [
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const qConstraints: any[] = [
             where(`${role}.businessId`, '==', businessId),
             orderBy('createdAt', 'desc')
         ];
@@ -130,6 +133,7 @@ export const b2bService = {
             // Convert timestamps back to dates to avoid React render issues
             createdAt: doc.data().createdAt?.toDate() || new Date(),
             updatedAt: doc.data().updatedAt?.toDate() || new Date(),
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             statusHistory: (doc.data().statusHistory || []).map((h: any) => ({
                 ...h,
                 at: h.at?.toDate() || new Date()
@@ -154,6 +158,7 @@ export const b2bService = {
             by: changedBy
         };
 
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const updates: any = {
             status,
             statusHistory: [...(reqData.statusHistory || []), newHistoryItem],

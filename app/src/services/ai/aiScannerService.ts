@@ -62,10 +62,12 @@ FORMAT YOUR RESPONSE EXACTLY LIKE THIS JSON:
         });
 
         const rawText = response.text || "{}";
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         let parsed: any;
         try {
             parsed = JSON.parse(rawText);
-        } catch (e) {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        } catch (_e) {
             // Fallback parsing if Gemini returns markdown block
             const cleaned = rawText.replace(/```json\n?|\n?```/g, '').trim();
             parsed = JSON.parse(cleaned);

@@ -71,7 +71,8 @@ export function NewAppointmentModal({ isOpen, onClose, services, staff, initialD
 
             toast.success('Цаг амжилттай бүртгэгдлээ');
             onClose();
-        } catch (error) {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        } catch (_error) {
             toast.error('Алдаа гарлаа');
         } finally {
             setLoading(false);

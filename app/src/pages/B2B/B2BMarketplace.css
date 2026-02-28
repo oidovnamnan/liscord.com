@@ -73,18 +73,20 @@
 }
 
 .b2b-card {
-    background: var(--bg-primary);
-    border-radius: 16px;
-    border: 1px solid var(--border);
+    background: var(--surface-1);
+    border-radius: var(--radius-xl);
+    border: 1px solid var(--border-secondary);
     padding: 20px;
-    transition: all 0.2s;
+    transition: all 0.3s cubic-bezier(0.165, 0.84, 0.44, 1);
     display: flex;
     flex-direction: column;
+    box-shadow: 0 4px 12px -4px var(--shadow-sm);
 }
 
 .b2b-card:hover {
     transform: translateY(-2px);
-    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.04);
+    box-shadow: 0 12px 24px -6px var(--shadow-color);
+    border-color: var(--primary);
 }
 
 .b2b-card-header {

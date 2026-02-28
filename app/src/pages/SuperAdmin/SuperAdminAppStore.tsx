@@ -41,6 +41,7 @@ export function SuperAdminAppStore() {
         setModules((prev: AppModule[]) => prev.map((mod: AppModule) => {
             if (mod.id === id) {
                 const isFree = !mod.isFree;
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 const updatedPlans = (mod.plans || []).map((p: any) => ({
                     ...p,
                     price: isFree ? 0 : p.price
@@ -54,6 +55,7 @@ export function SuperAdminAppStore() {
     const handleUpdatePlan = (modId: string, planId: string, field: 'price' | 'durationDays', value: number) => {
         setModules((prev: AppModule[]) => prev.map((mod: AppModule) => {
             if (mod.id === modId) {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 const updatedPlans = (mod.plans || []).map((p: any) =>
                     p.id === planId ? { ...p, [field]: value } : p
                 );
@@ -72,6 +74,7 @@ export function SuperAdminAppStore() {
         setSaving(true);
         try {
             // Build config object from modules state (now only containing non-core modules)
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const config: Record<string, { isFree: boolean; plans: any[] }> = {};
             modules.forEach((mod: AppModule) => {
                 config[mod.id] = {
@@ -82,7 +85,8 @@ export function SuperAdminAppStore() {
 
             await systemSettingsService.updateAppStoreConfig(config);
             toast.success('App Store-ын тохиргоо хадгалагдлаа');
-        } catch (error) {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        } catch (_error) {
             toast.error('Хадгалахад алдаа гарлаа');
         } finally {
             setSaving(false);
@@ -192,6 +196,7 @@ export function SuperAdminAppStore() {
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
                                             <div className="w-12 h-12 bg-surface-2 flex items-center justify-center rounded-xl border border-primary-light/40 text-primary shadow-sm" style={{ flexShrink: 0 }}>
                                                 {(() => {
+                                                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                                     const Icon = (Icons as any)[mod.icon] || Icons.Box;
                                                     return <Icon size={24} strokeWidth={1.5} />;
                                                 })()}

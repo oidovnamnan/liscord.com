@@ -22,7 +22,9 @@ import { eventBus, EVENTS } from './eventBus';
 import { auditService } from './audit';
 import type {
     Business, User, Employee, Order, Customer, Product, Position, Category, CargoType, OrderSource, SocialAccount, OrderStatusConfig, BusinessStats,
-    PayrollEntry, BusinessCategoryConfig, PlatformPayment, BusinessRequest, AppModulePricingPlan
+    PayrollEntry, BusinessCategoryConfig, PlatformPayment, BusinessRequest, AppModulePricingPlan,
+    Lead, Quote, Campaign, Invoice, Expense, BankAccount, PettyCashTransaction, LoyaltyConfig,
+    Trip, DeliveryRecord, FleetLog, VehicleMaintenanceLog, ImportCostCalculation, Vehicle
 } from '../types';
 import { getFeatures } from '../config/features';
 
@@ -31,6 +33,7 @@ import { getFeatures } from '../config/features';
 /**
  * Converts Firestore timestamps in an object to Dates
  */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function convertTimestamps(data: any): any {
     if (!data || typeof data !== 'object') return data;
     if (data instanceof Timestamp) return data.toDate();
@@ -346,12 +349,14 @@ export const moduleSettingsService = {
         return doc(db, 'businesses', bizId, 'module_settings', moduleId);
     },
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     async getSettings(bizId: string, moduleId: string): Promise<any | null> {
         const docRef = this.getSettingsRef(bizId, moduleId);
         const docSnap = await getDoc(docRef);
         return docSnap.exists() ? convertTimestamps(docSnap.data()) : null;
     },
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     async updateSettings(bizId: string, moduleId: string, settings: any): Promise<void> {
         const docRef = this.getSettingsRef(bizId, moduleId);
         await setDoc(docRef, {
@@ -360,6 +365,7 @@ export const moduleSettingsService = {
         }, { merge: true });
     },
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     subscribeSettings(bizId: string, moduleId: string, callback: (settings: any) => void) {
         const docRef = this.getSettingsRef(bizId, moduleId);
         return onSnapshot(docRef, (snapshot) => {
@@ -432,6 +438,7 @@ export const businessRequestService = {
 
         // Update the business document
         const bizRef = doc(db, 'businesses', businessId);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const businessUpdate: any = {
             lastStorefrontChangeAt: serverTimestamp(),
             updatedAt: serverTimestamp()
@@ -538,11 +545,13 @@ export const orderService = {
         return onSnapshot(q, (snapshot) => {
             const orders = snapshot.docs.map(d => ({ id: d.id, ...convertTimestamps(d.data()) } as Order));
             // Sort by createdAt desc in-memory
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             orders.sort((a: any, b: any) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
             callback(orders);
         });
     },
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     async createOrder(bizId: string, order: Partial<Order>, employeeProfile?: any): Promise<string> {
         const docRef = await addDoc(this.getOrdersRef(bizId), {
             ...order,
@@ -565,6 +574,7 @@ export const orderService = {
         return docRef.id;
     },
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     async updateOrderStatus(bizId: string, orderId: string, status: string, historyItem: any, employeeProfile?: any): Promise<void> {
         const docRef = doc(db, 'businesses', bizId, 'orders', orderId);
 
@@ -628,6 +638,7 @@ export const orderService = {
         });
     },
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     async deleteOrder(bizId: string, orderId: string, reason: string, employeeProfile?: any): Promise<void> {
         const docRef = doc(db, 'businesses', bizId, 'orders', orderId);
         await updateDoc(docRef, {
@@ -648,6 +659,7 @@ export const orderService = {
         }, employeeProfile);
     },
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     async batchUpdateOrdersStatus(bizId: string, orderIds: string[], status: string, historyItem: any, employeeProfile?: any): Promise<void> {
         if (!orderIds.length) return;
         const batch = writeBatch(db);
@@ -687,6 +699,7 @@ export const orderService = {
         }, employeeProfile);
     },
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     async batchDeleteOrders(bizId: string, orderIds: string[], reason: string, employeeProfile?: any): Promise<void> {
         if (!orderIds.length) return;
         const batch = writeBatch(db);
@@ -733,11 +746,13 @@ export const customerService = {
         return onSnapshot(q, (snapshot) => {
             const customers = snapshot.docs.map(d => ({ id: d.id, ...convertTimestamps(d.data()) } as Customer));
             // Sort by name in-memory
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             customers.sort((a: any, b: any) => (a.name || '').localeCompare(b.name || ''));
             callback(customers);
         });
     },
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     async createCustomer(bizId: string, customer: Partial<Customer>, employeeProfile?: any): Promise<string> {
         const docRef = await addDoc(this.getCustomersRef(bizId), {
             ...customer,
@@ -788,11 +803,13 @@ export const productService = {
         return onSnapshot(q, (snapshot) => {
             const products = snapshot.docs.map(d => ({ id: d.id, ...convertTimestamps(d.data()) } as Product));
             // Sort by name in-memory
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             products.sort((a: any, b: any) => (a.name || '').localeCompare(b.name || ''));
             callback(products);
         });
     },
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     async createProduct(bizId: string, product: Partial<Product>, employeeProfile?: any): Promise<string> {
         const docRef = await addDoc(this.getProductsRef(bizId), {
             ...product,
@@ -817,6 +834,97 @@ export const productService = {
         const docRef = doc(db, 'businesses', bizId, 'products', productId);
         await updateDoc(docRef, {
             ...updates,
+            updatedAt: serverTimestamp()
+        });
+    }
+};
+
+// ============ STOCK MOVEMENT SERVICES ============
+
+export const stockMovementService = {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    subscribeMovements(bizId: string, callback: (movements: any[]) => void) {
+        const q = query(
+            collection(db, 'businesses', bizId, 'stock_movements'),
+            orderBy('createdAt', 'desc'),
+            limit(100)
+        );
+        return onSnapshot(q, (snapshot) => {
+            callback(snapshot.docs.map(d => convertTimestamps({ id: d.id, ...d.data() })));
+        });
+    },
+
+    async createMovement(bizId: string, data: {
+        productId: string;
+        productName: string;
+        type: 'in' | 'out' | 'adjustment';
+        quantity: number;
+        reason: string;
+        createdBy: string;
+    }): Promise<void> {
+        // Get current product stock
+        const productRef = doc(db, 'businesses', bizId, 'products', data.productId);
+        const productSnap = await getDoc(productRef);
+        if (!productSnap.exists()) throw new Error('Product not found');
+
+        const productData = productSnap.data();
+        const currentStock = productData.stock?.quantity || 0;
+
+        let newStock = currentStock;
+        if (data.type === 'in') newStock = currentStock + data.quantity;
+        else if (data.type === 'out') newStock = Math.max(0, currentStock - data.quantity);
+        else newStock = data.quantity; // adjustment = set to exact value
+
+        const batch = writeBatch(db);
+
+        // Create movement record
+        const movRef = doc(collection(db, 'businesses', bizId, 'stock_movements'));
+        batch.set(movRef, {
+            ...data,
+            previousStock: currentStock,
+            newStock,
+            createdAt: serverTimestamp(),
+        });
+
+        // Update product stock
+        batch.update(productRef, {
+            'stock.quantity': newStock,
+            updatedAt: serverTimestamp(),
+        });
+
+        await batch.commit();
+    },
+};
+
+// ============ PROCUREMENT SERVICES ============
+
+export const procurementService = {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    subscribeOrders(bizId: string, callback: (orders: any[]) => void) {
+        const q = query(
+            collection(db, 'businesses', bizId, 'procurement_orders'),
+            orderBy('createdAt', 'desc')
+        );
+        return onSnapshot(q, (snapshot) => {
+            callback(snapshot.docs.map(d => convertTimestamps({ id: d.id, ...d.data() })));
+        });
+    },
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    async createOrder(bizId: string, data: any) {
+        const docRef = await addDoc(collection(db, 'businesses', bizId, 'procurement_orders'), {
+            ...data,
+            status: 'draft',
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp()
+        });
+        return docRef.id;
+    },
+
+    async updateStatus(bizId: string, orderId: string, status: string) {
+        const docRef = doc(db, 'businesses', bizId, 'procurement_orders', orderId);
+        await updateDoc(docRef, {
+            status,
             updatedAt: serverTimestamp()
         });
     }
@@ -882,6 +990,215 @@ export const cargoService = {
     }
 };
 
+// ============ LEAD / CRM SERVICES ============
+
+export const leadService = {
+    subscribeLeads(bizId: string, callback: (leads: Lead[]) => void) {
+        const q = query(
+            collection(db, 'businesses', bizId, 'leads'),
+            where('isDeleted', '==', false),
+            orderBy('updatedAt', 'desc')
+        );
+        return onSnapshot(q, (snapshot) => {
+            callback(snapshot.docs.map(d => convertTimestamps({ id: d.id, ...d.data() } as Lead)));
+        });
+    },
+
+    async createLead(bizId: string, data: Partial<Lead>) {
+        const docRef = await addDoc(collection(db, 'businesses', bizId, 'leads'), {
+            ...data,
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp(),
+            isDeleted: false,
+            status: data.status || 'new'
+        });
+        return docRef.id;
+    },
+
+    async updateLead(bizId: string, leadId: string, data: Partial<Lead>) {
+        await updateDoc(doc(db, 'businesses', bizId, 'leads', leadId), {
+            ...data,
+            updatedAt: serverTimestamp()
+        });
+    }
+};
+
+// ============ CRM / MARKETING SERVICES ============
+
+export const campaignService = {
+    subscribeCampaigns(bizId: string, callback: (campaigns: Campaign[]) => void) {
+        const q = query(
+            collection(db, 'businesses', bizId, 'campaigns'),
+            where('isDeleted', '==', false),
+            orderBy('createdAt', 'desc')
+        );
+        return onSnapshot(q, (snapshot) => {
+            callback(snapshot.docs.map(d => convertTimestamps({ id: d.id, ...d.data() } as Campaign)));
+        });
+    },
+
+    async createCampaign(bizId: string, data: Partial<Campaign>) {
+        const docRef = await addDoc(collection(db, 'businesses', bizId, 'campaigns'), {
+            ...data,
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp(),
+            isDeleted: false,
+            status: data.status || 'draft',
+            stats: { reach: 0, clicks: 0, conversions: 0, revenue: 0 }
+        });
+        return docRef.id;
+    }
+};
+
+export const loyaltyService = {
+    subscribeCustomers(bizId: string, callback: (customers: Customer[]) => void) {
+        const q = query(collection(db, 'businesses', bizId, 'customers'), orderBy('updatedAt', 'desc'));
+        return onSnapshot(q, snapshot => {
+            callback(snapshot.docs.map(d => convertTimestamps({ id: d.id, ...d.data() } as Customer)));
+        });
+    },
+
+    subscribeConfig(bizId: string, callback: (config: LoyaltyConfig | null) => void) {
+        return onSnapshot(doc(db, 'businesses', bizId, 'settings', 'loyalty'), (snap) => {
+            if (snap.exists()) callback(snap.data() as LoyaltyConfig);
+            else callback(null);
+        });
+    },
+
+    async updateConfig(bizId: string, config: Partial<LoyaltyConfig>) {
+        await setDoc(doc(db, 'businesses', bizId, 'settings', 'loyalty'), {
+            ...config,
+            updatedAt: serverTimestamp()
+        }, { merge: true });
+    },
+
+    async getLoyaltyConfig(bizId: string): Promise<LoyaltyConfig | null> {
+        const snap = await getDoc(doc(db, 'businesses', bizId, 'settings', 'loyalty'));
+        return snap.exists() ? (snap.data() as LoyaltyConfig) : null;
+    }
+};
+
+export const quoteService = {
+    subscribeQuotes(bizId: string, callback: (quotes: Quote[]) => void) {
+        const q = query(
+            collection(db, 'businesses', bizId, 'quotes'),
+            where('isDeleted', '==', false),
+            orderBy('updatedAt', 'desc')
+        );
+        return onSnapshot(q, (snapshot) => {
+            callback(snapshot.docs.map(d => convertTimestamps({ id: d.id, ...d.data() } as Quote)));
+        });
+    },
+
+    async createQuote(bizId: string, data: Partial<Quote>) {
+        const docRef = await addDoc(collection(db, 'businesses', bizId, 'quotes'), {
+            ...data,
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp(),
+            isDeleted: false,
+            status: data.status || 'draft'
+        });
+        return docRef.id;
+    }
+};
+
+// ============ FINANCE / INVOICE SERVICES ============
+
+export const invoiceService = {
+    subscribeInvoices(bizId: string, callback: (invoices: Invoice[]) => void) {
+        const q = query(
+            collection(db, 'businesses', bizId, 'invoices'),
+            orderBy('updatedAt', 'desc')
+        );
+        return onSnapshot(q, (snapshot) => {
+            callback(snapshot.docs.map(d => convertTimestamps({ id: d.id, ...d.data() } as Invoice)));
+        });
+    },
+
+    async createInvoice(bizId: string, data: Partial<Invoice>) {
+        const docRef = await addDoc(collection(db, 'businesses', bizId, 'invoices'), {
+            ...data,
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp(),
+            status: data.status || 'unpaid'
+        });
+        return docRef.id;
+    },
+
+    async updateInvoiceStatus(bizId: string, invoiceId: string, status: Invoice['status']) {
+        await updateDoc(doc(db, 'businesses', bizId, 'invoices', invoiceId), {
+            status,
+            updatedAt: serverTimestamp()
+        });
+    }
+};
+
+export const expenseService = {
+    subscribeExpenses(bizId: string, callback: (expenses: Expense[]) => void) {
+        const q = query(
+            collection(db, 'businesses', bizId, 'expenses'),
+            orderBy('createdAt', 'desc')
+        );
+        return onSnapshot(q, (snapshot) => {
+            callback(snapshot.docs.map(d => convertTimestamps({ id: d.id, ...d.data() } as Expense)));
+        });
+    },
+
+    async createExpense(bizId: string, data: Partial<Expense>) {
+        const docRef = await addDoc(collection(db, 'businesses', bizId, 'expenses'), {
+            ...data,
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp(),
+            isApproved: data.isApproved || false
+        });
+        return docRef.id;
+    }
+};
+
+export const bankService = {
+    subscribeAccounts(bizId: string, callback: (accounts: BankAccount[]) => void) {
+        const q = query(
+            collection(db, 'businesses', bizId, 'bankAccounts'),
+            orderBy('accountName', 'asc')
+        );
+        return onSnapshot(q, (snapshot) => {
+            callback(snapshot.docs.map(d => convertTimestamps({ id: d.id, ...d.data() } as BankAccount)));
+        });
+    },
+
+    async createAccount(bizId: string, data: Partial<BankAccount>) {
+        const docRef = await addDoc(collection(db, 'businesses', bizId, 'bankAccounts'), {
+            ...data,
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp(),
+            balance: data.balance || 0,
+            isSyncEnabled: data.isSyncEnabled || false
+        });
+        return docRef.id;
+    }
+};
+
+export const pettyCashService = {
+    subscribeTransactions(bizId: string, callback: (tx: PettyCashTransaction[]) => void) {
+        const q = query(
+            collection(db, 'businesses', bizId, 'pettyCash'),
+            orderBy('createdAt', 'desc'),
+            limit(50)
+        );
+        return onSnapshot(q, (snapshot) => {
+            callback(snapshot.docs.map(d => convertTimestamps({ id: d.id, ...d.data() } as PettyCashTransaction)));
+        });
+    },
+
+    async addTransaction(bizId: string, data: Partial<PettyCashTransaction>) {
+        const docRef = await addDoc(collection(db, 'businesses', bizId, 'pettyCash'), {
+            ...data,
+            createdAt: serverTimestamp()
+        });
+        return docRef.id;
+    }
+};
+
 // ============ DASHBOARD SERVICES ============
 
 export const dashboardService = {
@@ -894,6 +1211,7 @@ export const dashboardService = {
         return onSnapshot(q, (snapshot) => {
             const orders = snapshot.docs.map(d => ({ id: d.id, ...convertTimestamps(d.data()) } as Order));
             // Sort desc
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             orders.sort((a: any, b: any) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
             callback(orders.slice(0, 5));
         });
@@ -923,6 +1241,7 @@ export const dashboardService = {
                 stats.packagesArrived = batches.filter(b => b.status === 'received' || b.status === 'arrived').length;
 
                 // For total packages, we sum up the items array in each batch
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 stats.totalPackages = batches.reduce((sum: number, b: any) => sum + (b.items?.length || 0), 0);
             } catch (error) {
                 console.error('Error fetching cargo stats:', error);
@@ -940,6 +1259,7 @@ export const chatService = {
         return collection(db, 'businesses', bizId, 'channels');
     },
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     subscribeChannels(bizId: string, callback: (channels: any[]) => void) {
         const q = query(this.getChannelsRef(bizId), orderBy('name'));
         return onSnapshot(q, (snapshot) => {
@@ -947,6 +1267,7 @@ export const chatService = {
         });
     },
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     subscribeMessages(bizId: string, channelId: string, callback: (messages: any[]) => void) {
         const q = query(
             collection(db, 'businesses', bizId, 'channels', channelId, 'messages'),
@@ -1008,6 +1329,21 @@ export const teamService = {
             status: 'pending_invite',
             joinedAt: serverTimestamp(),
             stats: { totalOrdersCreated: 0, totalOrdersHandled: 0 }
+        });
+    },
+
+    async updateEmployee(bizId: string, empId: string, data: Partial<Employee>) {
+        await updateDoc(doc(db, 'businesses', bizId, 'employees', empId), {
+            ...data,
+            updatedAt: serverTimestamp()
+        });
+    },
+
+    async deleteEmployee(bizId: string, empId: string) {
+        await updateDoc(doc(db, 'businesses', bizId, 'employees', empId), {
+            isDeleted: true,
+            status: 'inactive',
+            updatedAt: serverTimestamp()
         });
     }
 };
@@ -1083,6 +1419,7 @@ export const sourceService = {
 // ============ SHELF & PACKAGE SERVICES ============
 
 export const shelfService = {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     subscribeShelves(bizId: string, callback: (shelves: any[]) => void) {
         const q = query(collection(db, 'businesses', bizId, 'shelves'), orderBy('locationCode'));
         return onSnapshot(q, (snapshot) => {
@@ -1100,6 +1437,7 @@ export const shelfService = {
         return newRef.id;
     },
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     async updateShelf(bizId: string, shelfId: string, data: any) {
         await updateDoc(doc(db, 'businesses', bizId, 'shelves', shelfId), data);
     },
@@ -1118,6 +1456,7 @@ export const shelfService = {
 };
 
 export const packageService = {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     subscribeBatches(bizId: string, callback: (batches: any[]) => void) {
         const q = query(collection(db, 'businesses', bizId, 'packages'), orderBy('createdAt', 'desc'));
         return onSnapshot(q, (snapshot) => {
@@ -1125,6 +1464,7 @@ export const packageService = {
         });
     },
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     async createBatch(bizId: string, data: any) {
         const newRef = doc(collection(db, 'businesses', bizId, 'packages'));
         await setDoc(newRef, {
@@ -1140,6 +1480,7 @@ export const packageService = {
 // ============ APPOINTMENT SERVICES ============
 
 export const serviceCatalogService = {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     subscribeServices(bizId: string, callback: (services: any[]) => void) {
         const q = query(collection(db, 'businesses', bizId, 'services'), where('isDeleted', '==', false));
         return onSnapshot(q, (snapshot) => {
@@ -1147,6 +1488,7 @@ export const serviceCatalogService = {
         });
     },
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     async createService(bizId: string, data: any) {
         const newRef = doc(collection(db, 'businesses', bizId, 'services'));
         await setDoc(newRef, {
@@ -1160,6 +1502,7 @@ export const serviceCatalogService = {
         return newRef.id;
     },
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     async updateService(bizId: string, serviceId: string, data: any) {
         await updateDoc(doc(db, 'businesses', bizId, 'services', serviceId), data);
     },
@@ -1173,6 +1516,7 @@ export const serviceCatalogService = {
 };
 
 export const appointmentService = {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     subscribeAppointments(bizId: string, startDate: Date, endDate: Date, callback: (appointments: any[]) => void) {
         const q = query(
             collection(db, 'businesses', bizId, 'appointments'),
@@ -1186,6 +1530,7 @@ export const appointmentService = {
         });
     },
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     async createAppointment(bizId: string, data: any) {
         const newRef = doc(collection(db, 'businesses', bizId, 'appointments'));
         await setDoc(newRef, {
@@ -1200,6 +1545,7 @@ export const appointmentService = {
         return newRef.id;
     },
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     async updateAppointment(bizId: string, appId: string, data: any) {
         await updateDoc(doc(db, 'businesses', bizId, 'appointments', appId), {
             ...data,
@@ -1219,6 +1565,7 @@ export const appointmentService = {
 // ============ PROJECT SERVICES ============
 
 export const projectService = {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     subscribeProjects(bizId: string, callback: (projects: any[]) => void) {
         const q = query(
             collection(db, 'businesses', bizId, 'projects'),
@@ -1230,6 +1577,7 @@ export const projectService = {
         });
     },
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     async createProject(bizId: string, data: any) {
         const newRef = doc(collection(db, 'businesses', bizId, 'projects'));
         await setDoc(newRef, {
@@ -1244,6 +1592,7 @@ export const projectService = {
         return newRef.id;
     },
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     async updateProject(bizId: string, projectId: string, data: any) {
         await updateDoc(doc(db, 'businesses', bizId, 'projects', projectId), {
             ...data,
@@ -1261,6 +1610,7 @@ export const projectService = {
 };
 
 export const taskService = {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     subscribeTasks(bizId: string, projectId: string, callback: (tasks: any[]) => void) {
         const q = query(
             collection(db, 'businesses', bizId, 'tasks'),
@@ -1273,6 +1623,7 @@ export const taskService = {
         });
     },
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     async createTask(bizId: string, data: any) {
         const newRef = doc(collection(db, 'businesses', bizId, 'tasks'));
         await setDoc(newRef, {
@@ -1286,6 +1637,7 @@ export const taskService = {
         return newRef.id;
     },
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     async updateTask(bizId: string, taskId: string, data: any) {
         await updateDoc(doc(db, 'businesses', bizId, 'tasks', taskId), {
             ...data,
@@ -1313,6 +1665,7 @@ export const taskService = {
 // ============ ROOMS & BOOKINGS SERVICES ============
 
 export const roomService = {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     subscribeRooms(bizId: string, callback: (rooms: any[]) => void) {
         const q = query(
             collection(db, 'businesses', bizId, 'rooms'),
@@ -1324,6 +1677,7 @@ export const roomService = {
         });
     },
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     async createRoom(bizId: string, data: any) {
         const newRef = doc(collection(db, 'businesses', bizId, 'rooms'));
         await setDoc(newRef, {
@@ -1336,6 +1690,7 @@ export const roomService = {
         return newRef.id;
     },
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     async updateRoom(bizId: string, roomId: string, data: any) {
         await updateDoc(doc(db, 'businesses', bizId, 'rooms', roomId), data);
     },
@@ -1348,6 +1703,7 @@ export const roomService = {
 };
 
 export const bookingService = {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     subscribeBookings(bizId: string, startDate: Date, endDate: Date, callback: (bookings: any[]) => void) {
         const q = query(
             collection(db, 'businesses', bizId, 'bookings'),
@@ -1361,6 +1717,7 @@ export const bookingService = {
         });
     },
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     async createBooking(bizId: string, data: any) {
         const newRef = doc(collection(db, 'businesses', bizId, 'bookings'));
         await setDoc(newRef, {
@@ -1381,6 +1738,7 @@ export const bookingService = {
         return newRef.id;
     },
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     async updateBooking(bizId: string, bookingId: string, data: any) {
         await updateDoc(doc(db, 'businesses', bizId, 'bookings', bookingId), {
             ...data,
@@ -1400,18 +1758,18 @@ export const bookingService = {
 // ============ VEHICLES & TRIPS SERVICES ============
 
 export const vehicleService = {
-    subscribeVehicles(bizId: string, callback: (vehicles: any[]) => void) {
+    subscribeVehicles(bizId: string, callback: (vehicles: Vehicle[]) => void) {
         const q = query(
             collection(db, 'businesses', bizId, 'vehicles'),
             where('isDeleted', '==', false),
             orderBy('make', 'asc')
         );
         return onSnapshot(q, (snapshot) => {
-            callback(snapshot.docs.map(d => convertTimestamps({ id: d.id, ...d.data() })));
+            callback(snapshot.docs.map(d => convertTimestamps({ id: d.id, ...d.data() } as Vehicle)));
         });
     },
 
-    async createVehicle(bizId: string, data: any) {
+    async createVehicle(bizId: string, data: Partial<Vehicle>) {
         const newRef = doc(collection(db, 'businesses', bizId, 'vehicles'));
         await setDoc(newRef, {
             ...data,
@@ -1425,7 +1783,7 @@ export const vehicleService = {
         return newRef.id;
     },
 
-    async updateVehicle(bizId: string, vehicleId: string, data: any) {
+    async updateVehicle(bizId: string, vehicleId: string, data: Partial<Vehicle>) {
         await updateDoc(doc(db, 'businesses', bizId, 'vehicles', vehicleId), {
             ...data,
             updatedAt: serverTimestamp()
@@ -1441,7 +1799,7 @@ export const vehicleService = {
 };
 
 export const tripService = {
-    subscribeTrips(bizId: string, startDate: Date, endDate: Date, callback: (trips: any[]) => void) {
+    subscribeTrips(bizId: string, startDate: Date, endDate: Date, callback: (trips: Trip[]) => void) {
         const q = query(
             collection(db, 'businesses', bizId, 'trips'),
             where('isDeleted', '==', false),
@@ -1450,30 +1808,30 @@ export const tripService = {
             orderBy('startDate', 'asc')
         );
         return onSnapshot(q, (snapshot) => {
-            callback(snapshot.docs.map(d => convertTimestamps({ id: d.id, ...d.data() })));
+            callback(snapshot.docs.map(d => convertTimestamps({ id: d.id, ...d.data() } as Trip)));
         });
     },
 
-    async createTrip(bizId: string, data: any) {
+    async createTrip(bizId: string, data: Partial<Trip>) {
         const newRef = doc(collection(db, 'businesses', bizId, 'trips'));
         await setDoc(newRef, {
             ...data,
             id: newRef.id,
             businessId: bizId,
-            status: 'reserved',
+            status: data.status || 'reserved',
             isDeleted: false,
             createdAt: serverTimestamp(),
             updatedAt: serverTimestamp()
         });
 
-        if (data.status === 'active') {
+        if (data.status === 'active' && data.vehicleId) {
             await updateDoc(doc(db, 'businesses', bizId, 'vehicles', data.vehicleId), { status: 'rented' });
         }
 
         return newRef.id;
     },
 
-    async updateTrip(bizId: string, tripId: string, data: any) {
+    async updateTrip(bizId: string, tripId: string, data: Partial<Trip>) {
         await updateDoc(doc(db, 'businesses', bizId, 'trips', tripId), {
             ...data,
             updatedAt: serverTimestamp()
@@ -1489,9 +1847,139 @@ export const tripService = {
     }
 };
 
+// ============ LOGISTICS HUB SERVICES (51-60) ============
+
+export const deliveryService = {
+    subscribeDeliveries(bizId: string, callback: (deliveries: DeliveryRecord[]) => void) {
+        const q = query(
+            collection(db, 'businesses', bizId, 'deliveries'),
+            where('isDeleted', '==', false),
+            orderBy('createdAt', 'desc')
+        );
+        return onSnapshot(q, (snapshot) => {
+            callback(snapshot.docs.map(d => convertTimestamps({ id: d.id, ...d.data() } as DeliveryRecord)));
+        });
+    },
+
+    async createDelivery(bizId: string, data: Partial<DeliveryRecord>) {
+        const newRef = doc(collection(db, 'businesses', bizId, 'deliveries'));
+        await setDoc(newRef, {
+            ...data,
+            id: newRef.id,
+            businessId: bizId,
+            status: data.status || 'pending',
+            history: [{ status: data.status || 'pending', at: new Date(), note: 'Үүсгэсэн' }],
+            isDeleted: false,
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp()
+        });
+        return newRef.id;
+    },
+
+    async updateStatus(bizId: string, deliveryId: string, status: DeliveryRecord['status'], note?: string) {
+        const docRef = doc(db, 'businesses', bizId, 'deliveries', deliveryId);
+        const snap = await getDoc(docRef);
+        if (!snap.exists()) return;
+
+        const current = snap.data() as DeliveryRecord;
+        const history = [...(current.history || []), { status, at: new Date(), note }];
+
+        await updateDoc(docRef, {
+            status,
+            history,
+            updatedAt: serverTimestamp()
+        });
+    },
+
+    async assignDriver(bizId: string, deliveryId: string, driverId: string, driverName: string) {
+        await updateDoc(doc(db, 'businesses', bizId, 'deliveries', deliveryId), {
+            driverId,
+            driverName,
+            status: 'picked_up', // Auto-move to transit if assigned? Maybe not. Let's keep it flexible.
+            updatedAt: serverTimestamp()
+        });
+    }
+};
+
+export const fleetService = {
+    subscribeLogs(bizId: string, vehicleId: string, callback: (logs: FleetLog[]) => void) {
+        const q = query(
+            collection(db, 'businesses', bizId, 'fleetLogs'),
+            where('vehicleId', '==', vehicleId),
+            orderBy('date', 'desc'),
+            limit(50)
+        );
+        return onSnapshot(q, (snapshot) => {
+            callback(snapshot.docs.map(d => convertTimestamps({ id: d.id, ...d.data() } as FleetLog)));
+        });
+    },
+
+    async addLog(bizId: string, data: Partial<FleetLog>) {
+        await addDoc(collection(db, 'businesses', bizId, 'fleetLogs'), {
+            ...data,
+            createdAt: serverTimestamp()
+        });
+    }
+};
+
+export const maintenanceService = {
+    subscribeLogs(bizId: string, vehicleId: string, callback: (logs: VehicleMaintenanceLog[]) => void) {
+        const q = query(
+            collection(db, 'businesses', bizId, 'maintenanceLogs'),
+            where('vehicleId', '==', vehicleId),
+            orderBy('date', 'desc')
+        );
+        return onSnapshot(q, (snapshot) => {
+            callback(snapshot.docs.map(d => convertTimestamps({ id: d.id, ...d.data() } as VehicleMaintenanceLog)));
+        });
+    },
+
+    async addLog(bizId: string, data: Partial<VehicleMaintenanceLog>) {
+        await addDoc(collection(db, 'businesses', bizId, 'maintenanceLogs'), {
+            ...data,
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp()
+        });
+
+        // Update vehicle status to maintenance if needed
+        if (data.status === 'scheduled') {
+            await updateDoc(doc(db, 'businesses', bizId, 'vehicles', data.vehicleId!), { status: 'maintenance' });
+        }
+    }
+};
+
+export const importCostService = {
+    subscribeCalculations(bizId: string, callback: (calcs: ImportCostCalculation[]) => void) {
+        const q = query(
+            collection(db, 'businesses', bizId, 'importCosts'),
+            orderBy('createdAt', 'desc')
+        );
+        return onSnapshot(q, (snapshot) => {
+            callback(snapshot.docs.map(d => convertTimestamps({ id: d.id, ...d.data() } as ImportCostCalculation)));
+        });
+    },
+
+    async saveCalculation(bizId: string, data: Partial<ImportCostCalculation>) {
+        const ref = data.id
+            ? doc(db, 'businesses', bizId, 'importCosts', data.id)
+            : doc(collection(db, 'businesses', bizId, 'importCosts'));
+
+        await setDoc(ref, {
+            ...data,
+            id: ref.id,
+            businessId: bizId,
+            updatedAt: serverTimestamp(),
+            createdAt: data.id ? data.createdAt : serverTimestamp()
+        }, { merge: true });
+
+        return ref.id;
+    }
+};
+
 // ============ EVENTS & TICKETS SERVICES ============
 
 export const eventService = {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     subscribeEvents(bizId: string, callback: (events: any[]) => void) {
         const q = query(
             collection(db, 'businesses', bizId, 'events'),
@@ -1503,6 +1991,7 @@ export const eventService = {
         });
     },
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     async createEvent(bizId: string, data: any) {
         const newRef = doc(collection(db, 'businesses', bizId, 'events'));
         await setDoc(newRef, {
@@ -1518,6 +2007,7 @@ export const eventService = {
         return newRef.id;
     },
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     async updateEvent(bizId: string, eventId: string, data: any) {
         await updateDoc(doc(db, 'businesses', bizId, 'events', eventId), {
             ...data,
@@ -1534,6 +2024,7 @@ export const eventService = {
 };
 
 export const ticketService = {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     subscribeTickets(bizId: string, eventId: string, callback: (tickets: any[]) => void) {
         const q = query(
             collection(db, 'businesses', bizId, 'tickets'),
@@ -1545,6 +2036,7 @@ export const ticketService = {
         });
     },
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     async createTicket(bizId: string, eventId: string, data: any) {
         const batch = writeBatch(db);
 
@@ -1582,6 +2074,7 @@ export const ticketService = {
 // ============ FINANCE & PAWNSHOP SERVICES ============
 
 export const pawnItemService = {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     subscribePawnItems(bizId: string, callback: (items: any[]) => void) {
         const q = query(
             collection(db, 'businesses', bizId, 'pawnItems'),
@@ -1592,6 +2085,7 @@ export const pawnItemService = {
         });
     },
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     async createPawnItem(bizId: string, data: any) {
         const newRef = doc(collection(db, 'businesses', bizId, 'pawnItems'));
         await setDoc(newRef, {
@@ -1604,12 +2098,14 @@ export const pawnItemService = {
         return newRef.id;
     },
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     async updatePawnItem(bizId: string, itemId: string, data: any) {
         await updateDoc(doc(db, 'businesses', bizId, 'pawnItems', itemId), data);
     }
 };
 
 export const loanService = {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     subscribeLoans(bizId: string, callback: (loans: any[]) => void) {
         const q = query(
             collection(db, 'businesses', bizId, 'loans'),
@@ -1621,6 +2117,7 @@ export const loanService = {
         });
     },
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     async createLoan(bizId: string, data: any) {
         const batch = writeBatch(db);
 
@@ -1649,7 +2146,9 @@ export const loanService = {
         return loanRef.id;
     },
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     async updateLoan(bizId: string, loanId: string, data: any) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const updateData: any = {
             ...data,
             updatedAt: serverTimestamp()
@@ -1681,6 +2180,7 @@ export const loanService = {
 // ============ SERVICE QUEUE SERVICES ============
 
 export const serviceQueueService = {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     subscribeQueue(bizId: string, callback: (tickets: any[]) => void) {
         // Fetch only active queue items (not done/cancelled for today)
         // For a full app, you'd filter by today's date, but this is a broad active subscription
@@ -1698,6 +2198,7 @@ export const serviceQueueService = {
         });
     },
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     async createTicket(bizId: string, data: any) {
         const newRef = doc(collection(db, 'businesses', bizId, 'serviceQueue'));
         await setDoc(newRef, {
@@ -1717,7 +2218,8 @@ export const serviceQueueService = {
     },
 
     async nextStatus(bizId: string, ticketId: string, currentStatus: string, workerName?: string) {
-        let updates: any = { updatedAt: serverTimestamp() };
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const updates: any = { updatedAt: serverTimestamp() };
 
         if (currentStatus === 'waiting') {
             updates.status = 'in_progress';
@@ -1731,6 +2233,7 @@ export const serviceQueueService = {
         await updateDoc(doc(db, 'businesses', bizId, 'serviceQueue', ticketId), updates);
     },
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     async updateTicket(bizId: string, ticketId: string, data: any) {
         await updateDoc(doc(db, 'businesses', bizId, 'serviceQueue', ticketId), {
             ...data,
@@ -1742,6 +2245,7 @@ export const serviceQueueService = {
 // ============ ATTENDANCE & HR SERVICES ============
 
 export const attendanceService = {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     subscribeDailyAttendance(bizId: string, dateString: string, callback: (records: any[]) => void) {
         const q = query(
             collection(db, 'businesses', bizId, 'attendance'),
@@ -1839,6 +2343,7 @@ export const payrollService = {
         }
     },
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     subscribePayrollRules(bizId: string, callback: (rules: any[]) => void) {
         const q = query(
             collection(db, 'businesses', bizId, 'payrollRules'),
@@ -1849,6 +2354,7 @@ export const payrollService = {
         });
     },
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     async savePayrollRule(bizId: string, ruleId: string, data: any) {
         const docRef = doc(db, 'businesses', bizId, 'payrollRules', ruleId);
         await setDoc(docRef, {
@@ -1860,6 +2366,7 @@ export const payrollService = {
         }, { merge: true });
     },
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     subscribePayrollRecords(bizId: string, periodStart: string, periodEnd: string, callback: (records: any[]) => void) {
         const q = query(
             collection(db, 'businesses', bizId, 'payrollRecords'),
@@ -1872,6 +2379,7 @@ export const payrollService = {
         });
     },
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     async savePayrollRecord(bizId: string, data: any) {
         const collectionRef = collection(db, 'businesses', bizId, 'payrollRecords');
         const docRef = data.id ? doc(collectionRef, data.id) : doc(collectionRef);

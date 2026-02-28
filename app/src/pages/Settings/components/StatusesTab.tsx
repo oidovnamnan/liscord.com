@@ -24,7 +24,8 @@ export function StatusesTab({ bizId }: { bizId: string }) {
         try {
             await orderStatusService.deleteStatus(bizId, id);
             toast.success('Устгагдлаа');
-        } catch (e) { toast.error('Алдаа гарлаа'); }
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        } catch (_e) { toast.error('Алдаа гарлаа'); }
     };
 
     const [moving, setMoving] = useState(false);
@@ -43,7 +44,8 @@ export function StatusesTab({ bizId }: { bizId: string }) {
             await Promise.all(newStatuses.map((s, idx) =>
                 orderStatusService.updateStatus(bizId, s.id, { order: idx })
             ));
-        } catch (e) {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        } catch (_e) {
             toast.error('Дараалал солиход алдаа гарлаа');
         } finally {
             setMoving(false);
@@ -153,7 +155,8 @@ function OrderStatusModal({ bizId, onClose, editingStatus, nextOrder }: { bizId:
             }
             toast.success('Амжилттай хадгалагдлаа');
             onClose();
-        } catch (e) { toast.error('Алдаа гарлаа'); } finally { setLoading(false); }
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        } catch (_e) { toast.error('Алдаа гарлаа'); } finally { setLoading(false); }
     };
 
     return createPortal(

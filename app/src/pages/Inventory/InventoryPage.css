@@ -1,5 +1,9 @@
 .inv-low-stock-panel {
     border-left: 3px solid #f59e0b;
+    background: var(--surface-1);
+    border-radius: var(--radius-xl);
+    border: 1px solid var(--border-color);
+    box-shadow: 0 4px 12px -4px var(--shadow-sm);
 }
 
 .inv-low-stock-list {
@@ -37,6 +41,17 @@
     align-items: center;
     gap: var(--space-md);
     padding: var(--space-md) var(--space-lg);
+    background: var(--surface-1);
+    border: 1px solid var(--border-secondary);
+    border-radius: var(--radius-xl);
+    box-shadow: 0 2px 8px -2px var(--shadow-sm);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.inv-movement-card:hover {
+    transform: translateY(-2px);
+    border-color: var(--primary);
+    box-shadow: 0 6px 16px -4px var(--shadow-color);
 }
 
 .inv-movement-icon {

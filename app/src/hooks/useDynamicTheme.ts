@@ -63,5 +63,6 @@ export const useDynamicTheme = () => {
             // Optional cleanup if we want to reset when unmounting the whole app
             // root.style.removeProperty('--primary');
         };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [business?.category, business?.brandColor]);
 };

@@ -37,7 +37,7 @@ export interface AppModule {
     icon: string;           // Lucide icon name or emoji
     route: string;          // Sidebar active route prefix (e.g. '/app/inventory')
     isCore: boolean;        // If true, cannot be uninstalled (e.g. Settings, Dashboard)
-    category: 'operations' | 'finance' | 'staff' | 'sales' | 'services'; // For grouping
+    category: 'operations' | 'finance' | 'staff' | 'sales' | 'services' | 'industry' | 'logistics' | 'education' | 'manufacturing' | 'professional' | 'service' | 'ecommerce' | 'marketing' | 'tools' | 'ai' | 'facility' | 'entertainment' | 'nonprofit' | 'b2b'; // Expanded categories
     hubId?: string;         // For tabbed navigation (e.g. 'inventory-hub')
     isFree?: boolean;       // Phase 41: App Store pricing
     price?: number;         // Price in local currency (legacy)
@@ -327,6 +327,7 @@ export interface ServiceRequest {
         orderId: string;
         orderNumber: string;
     };
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     details: any; // Dynamic based on serviceType (delivery details, cargo details, wholesale items)
     pricing: {
         estimatedFee: number;
@@ -370,6 +371,7 @@ export interface Employee {
     positionName: string;
     role: 'owner' | 'employee';
     status: EmployeeStatus;
+    isDeleted?: boolean;
     joinedAt: Date;
     lastActiveAt: Date | null;
     baseSalary?: number;
@@ -1074,4 +1076,451 @@ export interface PayrollRecord {
     isDeleted: boolean;
     createdAt: Date;
     updatedAt: Date;
+}
+
+// ============ PROCUREMENT (Нийлүүлэлт) ============
+
+export interface Supplier {
+    id: string;
+    businessId: string;
+    name: string;
+    contactName?: string;
+    phone: string;
+    email?: string;
+    address?: string;
+    category?: string;
+    rating?: number;
+    isDeleted: boolean;
+    createdAt: Date;
+}
+
+export interface PurchaseOrder {
+    id: string;
+    businessId: string;
+    orderNumber: string;
+    supplierId: string;
+    supplierName: string;
+    items: {
+        productId: string;
+        productName: string;
+        quantity: number;
+        unitPrice: number;
+        totalPrice: number;
+    }[];
+    totalAmount: number;
+    status: 'draft' | 'ordered' | 'received' | 'cancelled';
+    expectedDate?: Date;
+    notes?: string;
+    isDeleted: boolean;
+    createdAt: Date;
+    updatedAt: Date;
+}
+
+// ============ CRM & LEADS (Борлуулалт) ============
+
+export type LeadStatus = 'new' | 'contacted' | 'qualified' | 'proposal' | 'negotiation' | 'won' | 'lost';
+
+export interface Lead {
+    id: string;
+    businessId: string;
+    customerName: string;
+    phone: string;
+    email?: string;
+    source?: string;
+    status: LeadStatus;
+    value?: number;
+    assignedTo?: string;
+    assignedToName?: string;
+    notes?: string;
+    lastContactedAt?: Date;
+    isDeleted: boolean;
+    createdAt: Date;
+    updatedAt: Date;
+}
+
+export interface Quote {
+    id: string;
+    businessId: string;
+    quoteNumber: string;
+    customerId: string | null;
+    customerName: string;
+    customerPhone?: string;
+    items: {
+        productId: string | null;
+        name: string;
+        quantity: number;
+        unitPrice: number;
+        totalPrice: number;
+    }[];
+    totalAmount: number;
+    status: 'draft' | 'sent' | 'accepted' | 'rejected' | 'expired';
+    validUntil?: Date;
+    notes?: string;
+    isDeleted: boolean;
+    createdAt: Date;
+    updatedAt: Date;
+}
+
+export interface LoyaltyConfig {
+    pointsPerUnit: number;
+    minRedeemPoints: number;
+    referralBonus: number;
+    tiers: {
+        id: string;
+        name: string;
+        minPoints: number;
+        multiplier: number;
+    }[];
+}
+
+// ============ MARKETING (Маркетинг) ============
+
+export interface Campaign {
+    id: string;
+    businessId: string;
+    name: string;
+    type: 'email' | 'social' | 'sms' | 'event';
+    status: 'draft' | 'active' | 'completed' | 'paused';
+    budget?: number;
+    startDate?: Date;
+    endDate?: Date;
+    stats: {
+        reach: number;
+        clicks: number;
+        conversions: number;
+        revenue: number;
+    };
+    isDeleted: boolean;
+    createdAt: Date;
+    updatedAt: Date;
+}
+
+// ============ FINANCE (Санхүү & Нэхэмжлэх) ============
+
+export interface Invoice {
+    id: string;
+    businessId: string;
+    invoiceNumber: string;
+    orderId?: string;
+    customerId: string | null;
+    customerName: string;
+    items: {
+        name: string;
+        quantity: number;
+        unitPrice: number;
+        totalPrice: number;
+    }[];
+    subtotal: number;
+    taxAmount: number;
+    totalAmount: number;
+    status: 'unpaid' | 'paid' | 'overdue' | 'void';
+    dueDate?: Date;
+    notes?: string;
+    createdAt: Date;
+    updatedAt: Date;
+}
+
+export interface Expense {
+    id: string;
+    businessId: string;
+    description: string;
+    amount: number;
+    category: string;
+    paymentMethod: string;
+    receiptUrl?: string;
+    isApproved: boolean;
+    createdAt: Date;
+    updatedAt: Date;
+}
+
+export interface BankAccount {
+    id: string;
+    businessId: string;
+    bankName: string;
+    accountName: string;
+    accountNumber: string;
+    currency: string;
+    balance: number;
+    isSyncEnabled: boolean;
+    createdAt: Date;
+    updatedAt: Date;
+}
+
+export interface PettyCashTransaction {
+    id: string;
+    businessId: string;
+    type: 'income' | 'expense';
+    amount: number;
+    title: string;
+    note?: string;
+    recordedBy: string;
+    createdAt: Date;
+}
+
+// ============ LOGISTICS & FLEET (BATCH 51-60) ============
+
+export interface VehicleMaintenanceLog {
+    id: string;
+    vehicleId: string;
+    date: Date;
+    type: 'repair' | 'service' | 'inspection' | 'oil_change' | 'tire_change' | 'other';
+    description: string;
+    cost: number;
+    mileageAtService: number;
+    nextServiceMileage?: number;
+    nextServiceDate?: Date;
+    receiptUrl?: string;
+    performedBy?: string;
+    status: 'scheduled' | 'completed' | 'cancelled';
+    createdAt: Date;
+    updatedAt: Date;
+}
+
+export interface FleetLog {
+    id: string;
+    vehicleId: string;
+    date: Date;
+    type: 'fuel' | 'gps_stat' | 'incident';
+    value: number; // liters for fuel, km for gps_stat
+    cost?: number; // for fuel
+    location?: { lat: number; lng: number; address?: string };
+    notes?: string;
+    recordedBy: string;
+    createdAt: Date;
+}
+
+export interface DeliveryRecord {
+    id: string;
+    businessId: string;
+    orderId: string;
+    orderNumber: string;
+
+    driverId: string | null;
+    driverName: string | null;
+
+    status: 'pending' | 'picked_up' | 'in_transit' | 'delivered' | 'failed' | 'returned';
+    priority: 'low' | 'normal' | 'high' | 'urgent';
+
+    pickupTime?: Date;
+    deliveryTime?: Date;
+    estimatedDelivery?: Date;
+
+    proofOfDelivery?: {
+        recipientName?: string;
+        signatureUrl?: string;
+        photoUrls?: string[];
+        notes?: string;
+    };
+
+    failureReason?: string;
+    fare: number; // Delivery fee
+    codAmount: number; // Balance to collect
+
+    history: {
+        status: string;
+        at: Date;
+        note?: string;
+        location?: { lat: number; lng: number };
+    }[];
+
+    createdAt: Date;
+    updatedAt: Date;
+    isDeleted: boolean;
+}
+
+export interface ImportCostCalculation {
+    id: string;
+    businessId: string;
+    batchId?: string; // Cargo batch ID
+
+    items: {
+        productId: string;
+        name: string;
+        quantity: number;
+        purchasePrice: number; // FOB/EXW price
+        weight: number;
+        volume: number;
+
+        allocatedCosts: {
+            freight: number;
+            customs: number;
+            insurance: number;
+            handling: number;
+            other: number;
+        };
+
+        finalLandedCost: number; // Per unit
+        totalLandedCost: number; // For all units
+    }[];
+
+    totals: {
+        purchaseAmount: number;
+        freightAmount: number;
+        customsAmount: number;
+        insuranceAmount: number;
+        handlingAmount: number;
+        otherAmount: number;
+        grandTotal: number;
+    };
+
+    currency: string;
+    exchangeRate: number;
+    status: 'draft' | 'finalized';
+
+    createdAt: Date;
+    updatedAt: Date;
+}
+
+// ============ SALES COMMISSIONS (61) ============
+export interface SalesCommission {
+    id: string;
+    businessId: string;
+    repId: string; // Employee ID
+    repName: string;
+    orderId: string;
+    orderNumber: string;
+    saleAmount: number;
+    commissionRate: number; // e.g., 0.05 for 5%
+    commissionAmount: number;
+    status: 'pending' | 'calculated' | 'paid' | 'cancelled';
+    paidAt?: Date;
+    createdAt: Date;
+    updatedAt: Date;
+}
+
+// ============ EMAIL BUILDER (62) ============
+export interface EmailTemplate {
+    id: string;
+    businessId: string;
+    name: string;
+    subject: string;
+    content: string; // JSON or HTML
+    category: 'marketing' | 'transactional' | 'internal';
+    isDefault: boolean;
+    lastUsedAt?: Date;
+    createdAt: Date;
+    updatedAt: Date;
+}
+
+// ============ SOCIAL LISTENING (63) ============
+export interface SocialMention {
+    id: string;
+    businessId: string;
+    platform: 'facebook' | 'instagram' | 'twitter' | 'google' | 'other';
+    authorName: string;
+    authorImage?: string;
+    content: string;
+    sentiment: 'positive' | 'neutral' | 'negative' | 'mixed';
+    link: string;
+    status: 'new' | 'replied' | 'ignored';
+    createdAt: Date;
+}
+
+// ============ VOUCHERS & COUPONS (69) ============
+export interface Voucher {
+    id: string;
+    businessId: string;
+    code: string; // e.g., 'SAVE20'
+    type: 'fixed' | 'percentage';
+    value: number;
+    minOrderAmount: number;
+    maxDiscountAmount?: number;
+    startDate: Date;
+    endDate: Date;
+    usageLimit: number;
+    usageCount: number;
+    isActive: boolean;
+    applicableProducts?: string[]; // IDs
+    applicableCategories?: string[]; // IDs
+    createdAt: Date;
+    updatedAt: Date;
+}
+
+// ============ FRANCHISE (70) ============
+export interface FranchiseReport {
+    id: string;
+    businessId: string;
+    branchId: string;
+    branchName: string;
+    period: string; // e.g., '2024-03'
+    netSales: number;
+    royaltyRate: number; // e.g., 0.03 for 3%
+    royaltyAmount: number;
+    adFeeAmount?: number;
+    status: 'pending' | 'billed' | 'paid';
+    createdAt: Date;
+    updatedAt: Date;
+}
+
+// ============ INDUSTRY HUB (71-80) ============
+
+export interface RestaurantTable {
+    id: string;
+    name: string;
+    section: string;
+    status: 'empty' | 'occupied' | 'reserved' | 'dirty';
+    guestCount: number;
+    currentOrderId?: string;
+    capacity: number;
+    x: number; // For floor plan positioning
+    y: number;
+}
+
+export interface MenuItem extends Product {
+    category: string;
+    isSpicy?: boolean;
+    isVegetarian?: boolean;
+    prepTimeMinutes?: number;
+    ingredients: string[];
+}
+
+export interface RecipeBOM {
+    id: string;
+    productId: string;
+    ingredients: {
+        materialId: string;
+        materialName: string;
+        quantity: number;
+        unit: string;
+        costPerUnit: number;
+    }[];
+    laborCost: number;
+    overheadCost: number;
+    totalCost: number;
+    lastUpdated: Date;
+}
+
+export interface KDSOrder {
+    id: string;
+    orderId: string;
+    tableId?: string;
+    tableName?: string;
+    items: {
+        id: string;
+        name: string;
+        quantity: number;
+        status: 'pending' | 'preparing' | 'ready' | 'served';
+        notes?: string;
+    }[];
+    priority: 'low' | 'normal' | 'high' | 'urgent';
+    startedAt?: Date;
+    completedAt?: Date;
+    status: 'queue' | 'preparing' | 'ready' | 'completed';
+}
+
+export interface VendingMachine {
+    id: string;
+    name: string;
+    location: string;
+    status: 'online' | 'offline' | 'maintenance';
+    slots: {
+        id: string;
+        productId: string;
+        productName: string;
+        currentStock: number;
+        maxStock: number;
+        price: number;
+    }[];
+    lastPing: Date;
+    totalSales: number;
 }

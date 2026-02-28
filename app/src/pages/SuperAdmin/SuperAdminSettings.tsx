@@ -346,6 +346,7 @@ export function SuperAdminSettings() {
                                             }).map(module => {
                                                 const status = activeMods[module.id];
                                                 const isActive = !!status;
+                                                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                                 const Icon = (Icons as any)[module.icon] || Icons.Box;
 
                                                 return (
