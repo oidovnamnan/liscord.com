@@ -211,7 +211,7 @@ export function SuperAdminSettings() {
                         </button>
                         <div className="pro-nav-divider" />
                         <div className="px-3 py-2 flex items-center justify-between bg-surface-2 mb-2 mx-2 rounded-xl border border-primary/5">
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-3">
                                 <input
                                     type="checkbox"
                                     className="custom-checkbox"
@@ -221,10 +221,10 @@ export function SuperAdminSettings() {
                                         else setSelectedIds([]);
                                     }}
                                 />
-                                <span className="text-[10px] font-heavy opacity-40 uppercase">Бүгдийг</span>
+                                <span className="text-[10px] font-heavy opacity-40 uppercase tracking-wider">Бүгдийг</span>
                             </div>
-                            <div className="flex items-center gap-2">
-                                <span className="text-[9px] font-bold opacity-30 uppercase">Toggle Selected</span>
+                            <div className="flex items-center gap-3">
+                                <span className="text-[9px] font-bold opacity-30 uppercase">Toggle</span>
                                 <label className="ios-switch">
                                     <input
                                         type="checkbox"
