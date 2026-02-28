@@ -986,18 +986,20 @@
 /* Core (Үндсэн) Module Style */
 .pro-module-card.core.active {
     border-color: var(--primary);
-    background: rgba(var(--primary-rgb), 0.02);
+    background: rgba(var(--primary-rgb), 0.05);
+    /* Slightly more visible background */
+    box-shadow: 0 4px 15px rgba(var(--primary-rgb), 0.08);
 }
 
 .pro-module-card.core.active .pro-module-icon {
     background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%);
-    box-shadow: 0 8px 16px -4px rgba(var(--primary-rgb), 0.25);
+    box-shadow: 0 8px 20px -4px rgba(var(--primary-rgb), 0.3);
 }
 
 /* Addon (Нэмэлт) Module Style */
 .pro-module-card.addon.active {
     border-color: #10b981;
-    background: rgba(16, 185, 129, 0.02);
+    background: rgba(16, 185, 129, 0.05);
 }
 
 .pro-module-card.addon.active .pro-module-icon {

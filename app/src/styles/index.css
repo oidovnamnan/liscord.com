@@ -61,6 +61,7 @@ body {
 
   /* Brand — Primary (Electric Purple) */
   --primary: #6c5ce7;
+  --primary-rgb: 108, 92, 231;
   --primary-hover: #7c6cf7;
   --primary-active: #5c4cd7;
   --primary-light: rgba(108, 92, 231, 0.15);
@@ -101,7 +102,7 @@ body {
   --payment-paid: #10b981;
 
   /* Gradients */
-  --gradient-primary: linear-gradient(135deg, #6c5ce7, #a78bfa);
+  --gradient-primary: linear-gradient(135deg, var(--primary), #a78bfa);
   --gradient-secondary: linear-gradient(135deg, #0dbff0, #6c5ce7);
   --gradient-accent: linear-gradient(135deg, #ff6b9d, #ff9f43);
   --gradient-success: linear-gradient(135deg, #0be881, #06b6d4);

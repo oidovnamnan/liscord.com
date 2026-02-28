@@ -246,8 +246,8 @@ export function Sidebar() {
                             onClick={() => sidebarOpen && toggleSidebar()}
                             title={sidebarCollapsed ? 'Платформ Админ' : undefined}
                         >
-                            <UserCog size={20} color="var(--primary-color)" />
-                            {!sidebarCollapsed && <span style={{ color: 'var(--primary-color)', fontWeight: 600 }}>Платформ Админ</span>}
+                            <UserCog size={20} color="var(--primary)" />
+                            {!sidebarCollapsed && <span style={{ color: 'var(--primary)', fontWeight: 600 }}>Платформ Админ</span>}
                             {location.pathname.startsWith('/super') && <div className="sidebar-link-indicator" />}
                         </NavLink>
                     )}

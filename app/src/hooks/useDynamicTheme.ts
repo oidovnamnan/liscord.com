@@ -40,13 +40,24 @@ export const useDynamicTheme = () => {
         // Main primary color
         root.style.setProperty('--primary', themeColor);
 
-        // We can also generate hover/active states dynamically if needed
-        // For now we'll mostly rely on --primary, but let's add an opacity variant for backgrounds
+        // Helper to convert hex to rgb for opacity-based backgrounds
+        const hexToRgb = (hex: string) => {
+            const r = parseInt(hex.slice(1, 3), 16);
+            const g = parseInt(hex.slice(3, 5), 16);
+            const b = parseInt(hex.slice(5, 7), 16);
+            return `${r}, ${g}, ${b}`;
+        };
 
-        // Calculate a slightly darker version for hover (very basic estimation)
-        // Or we can just let CSS handle opacity
-
-        // This makes --primary accessible anywhere in the app
+        if (themeColor.startsWith('#')) {
+            try {
+                const rgb = hexToRgb(themeColor);
+                root.style.setProperty('--primary-rgb', rgb);
+                root.style.setProperty('--primary-light', `rgba(${rgb}, 0.15)`);
+                root.style.setProperty('--primary-tint', `rgba(${rgb}, 0.08)`);
+            } catch (e) {
+                console.warn('Failed to parse brand color for RGB extraction', e);
+            }
+        }
 
         return () => {
             // Optional cleanup if we want to reset when unmounting the whole app
