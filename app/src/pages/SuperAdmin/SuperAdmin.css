@@ -911,9 +911,7 @@
 }
 
 .pro-module-card.active {
-    background: var(--surface-1);
-    border-color: var(--primary);
-    box-shadow: 0 4px 15px rgba(var(--primary-rgb), 0.1);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
 }
 
 .pro-module-icon {
@@ -933,10 +931,8 @@
 }
 
 .pro-module-card.active .pro-module-icon {
-    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%);
     color: white;
     border-color: transparent;
-    box-shadow: 0 10px 20px -5px rgba(var(--primary-rgb), 0.3);
 }
 
 .pro-module-name {
@@ -985,6 +981,44 @@
 
 .pro-status-btn:hover.inactive {
     background: var(--primary-light);
+}
+
+/* Core (Үндсэн) Module Style */
+.pro-module-card.core.active {
+    border-color: var(--primary);
+    background: rgba(var(--primary-rgb), 0.02);
+}
+
+.pro-module-card.core.active .pro-module-icon {
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%);
+    box-shadow: 0 8px 16px -4px rgba(var(--primary-rgb), 0.25);
+}
+
+/* Addon (Нэмэлт) Module Style */
+.pro-module-card.addon.active {
+    border-color: #10b981;
+    background: rgba(16, 185, 129, 0.02);
+}
+
+.pro-module-card.addon.active .pro-module-icon {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: white;
+    border-color: transparent;
+    box-shadow: 0 8px 16px -4px rgba(16, 185, 129, 0.25);
+}
+
+.pro-module-card.addon.active .pro-status-btn.active {
+    background: #10b981;
+}
+
+.pro-module-card.addon .pro-module-type {
+    background: rgba(16, 185, 129, 0.1);
+    color: #059669;
+}
+
+.pro-module-card.core .pro-module-type {
+    background: var(--primary-tint);
+    color: var(--primary);
 }
 
 .pro-status-btn.active {

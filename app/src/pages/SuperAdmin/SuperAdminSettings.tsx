@@ -345,7 +345,7 @@ export function SuperAdminSettings() {
                                                     <div
                                                         key={module.id}
                                                         onClick={() => handleToggle(key, module.id)}
-                                                        className={`pro-module-card ${isActive ? 'active' : ''}`}
+                                                        className={`pro-module-card ${isActive ? 'active' : ''} ${status || ''}`}
                                                     >
                                                         <div className="pro-module-icon">
                                                             <Icon size={28} strokeWidth={1.5} />
