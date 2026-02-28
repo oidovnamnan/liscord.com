@@ -331,7 +331,12 @@ export function SuperAdminSettings() {
                                             {LISCORD_MODULES.filter(m =>
                                                 m.name.toLowerCase().includes(moduleSearch.toLowerCase()) ||
                                                 m.id.toLowerCase().includes(moduleSearch.toLowerCase())
-                                            ).map(module => {
+                                            ).sort((a, b) => {
+                                                const aActive = !!activeMods[a.id];
+                                                const bActive = !!activeMods[b.id];
+                                                if (aActive === bActive) return 0;
+                                                return aActive ? -1 : 1;
+                                            }).map(module => {
                                                 const status = activeMods[module.id];
                                                 const isActive = !!status;
                                                 const Icon = (Icons as any)[module.icon] || Icons.Box;
