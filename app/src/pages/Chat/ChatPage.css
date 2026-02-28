@@ -2,12 +2,12 @@
     display: flex;
     height: calc(100% - var(--space-md));
     overflow: hidden;
-    background: var(--bg-primary);
+    background: var(--surface-1);
     position: relative;
     border-radius: var(--radius-xl);
     border: 1px solid var(--border-primary);
     margin: 0 var(--space-md) var(--space-md);
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    box-shadow: var(--shadow-sm);
 }
 
 /* Typing Indicator Animation */
@@ -103,9 +103,7 @@
 .chat-sidebar {
     width: 300px;
     flex-shrink: 0;
-    background: rgba(var(--primary-rgb), 0.02);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
+    background: var(--surface-2);
     border-right: 1px solid var(--border-primary);
     display: flex;
     flex-direction: column;
@@ -122,11 +120,15 @@
 .chat-sidebar-header h3 {
     font-size: 1.3rem;
     font-weight: 800;
-    background: var(--gradient-primary);
-    -webkit-background-clip: text;
-    background-clip: text;
-    -webkit-text-fill-color: transparent;
+    color: var(--text-primary);
     letter-spacing: -0.02em;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+html[data-theme="dark"] .chat-sidebar-header h3 {
+    color: #fff;
 }
 
 .chat-sidebar-search {
@@ -137,12 +139,13 @@
     display: flex;
     align-items: center;
     gap: 10px;
-    background: var(--surface-2);
-    border: 1px solid var(--border-primary);
+    background: var(--surface-1);
+    border: 1px solid var(--border-secondary);
     padding: 10px 16px;
     border-radius: var(--radius-lg);
     color: var(--text-muted);
     transition: all 0.2s ease;
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.02);
 }
 
 .search-input-wrapper:focus-within {
@@ -181,9 +184,9 @@
     font-weight: 800;
     text-transform: uppercase;
     letter-spacing: 0.08em;
-    color: var(--text-muted);
+    color: var(--primary);
     padding: var(--space-md) var(--space-md) var(--space-xs);
-    opacity: 0.8;
+    opacity: 0.9;
 }
 
 .chat-channel-btn {

@@ -109,7 +109,7 @@ export function ChatPage() {
                 {/* Channel sidebar */}
                 <div className={`chat-sidebar ${isSidebarOpen ? 'open' : ''}`}>
                     <div className="chat-sidebar-header">
-                        <h3>💬 Messenger</h3>
+                        <h3><span>💬</span> <span>Messenger</span></h3>
                         <button className="btn btn-ghost btn-icon btn-sm show-mobile" onClick={() => setIsSidebarOpen(false)}>
                             <X size={20} />
                         </button>
