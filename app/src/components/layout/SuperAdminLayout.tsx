@@ -25,7 +25,9 @@ export function SuperAdminLayout() {
             <div className="app-container">
                 <SuperAdminSidebar />
                 <main className="app-main">
-                    <Outlet />
+                    <div className="app-main-scrolled">
+                        <Outlet />
+                    </div>
                 </main>
             </div>
         </div>
