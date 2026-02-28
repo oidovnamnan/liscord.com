@@ -332,10 +332,17 @@ export function SuperAdminSettings() {
                                                 m.name.toLowerCase().includes(moduleSearch.toLowerCase()) ||
                                                 m.id.toLowerCase().includes(moduleSearch.toLowerCase())
                                             ).sort((a, b) => {
-                                                const aActive = !!activeMods[a.id];
-                                                const bActive = !!activeMods[b.id];
-                                                if (aActive === bActive) return 0;
-                                                return aActive ? -1 : 1;
+                                                const aStatus = activeMods[a.id];
+                                                const bStatus = activeMods[b.id];
+                                                const aActive = !!aStatus;
+                                                const bActive = !!bStatus;
+
+                                                if (aActive !== bActive) return aActive ? -1 : 1;
+                                                if (aActive && bActive) {
+                                                    if (aStatus === bStatus) return 0;
+                                                    return aStatus === 'core' ? -1 : 1;
+                                                }
+                                                return 0;
                                             }).map(module => {
                                                 const status = activeMods[module.id];
                                                 const isActive = !!status;
