@@ -65,7 +65,8 @@ export function SuperAdminSettings() {
         setHasUnsavedChanges(true);
     };
 
-    const categoriesToDisplay = localCategories.length > 0 ? localCategories : categories;
+    const categoriesToDisplay = [...(localCategories.length > 0 ? localCategories : categories)]
+        .sort((a, b) => (a.isActive === b.isActive ? 0 : a.isActive ? -1 : 1));
 
     const filteredCategories = selectedCategoryId === 'all'
         ? categoriesToDisplay
