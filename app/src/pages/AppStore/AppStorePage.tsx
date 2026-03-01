@@ -375,9 +375,10 @@ export function AppStorePage() {
                                             </div>
                                         ) : (
                                             <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                                                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                                                {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                                                 {(finalMod.plans || []).map((p: any) => ( // eslint-disable-line @typescript-eslint/no-explicit-any
                                                     <div key={p.id} className="price-badge-mini">
+
                                                         <span className="price-amount">{p.price?.toLocaleString()}₮</span>
                                                         <span className="price-duration">/ {p.name}</span>
                                                     </div>
