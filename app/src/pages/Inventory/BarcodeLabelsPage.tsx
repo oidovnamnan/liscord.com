@@ -1,11 +1,10 @@
 import { useState } from 'react';
 import { Header } from '../../components/layout/Header';
 import { HubLayout } from '../../components/common/HubLayout';
+import './BarcodeLabelsPage.css';
 import {
-    Barcode,
     Search,
     Printer,
-    QrCode,
     LayoutTemplate,
     Zap,
     Share2,
@@ -15,7 +14,10 @@ import {
     Tag,
     Smartphone,
     Download,
-    Clock
+    Clock,
+    CheckCircle2,
+    Settings,
+    MoreVertical
 } from 'lucide-react';
 
 interface LabelDesign {
@@ -24,6 +26,7 @@ interface LabelDesign {
     type: 'barcode' | 'qr' | 'address' | 'price';
     size: string;
     lastUsed: string;
+    status: 'Ready' | 'In Use';
 }
 
 const MOCK_LABELS: LabelDesign[] = [
@@ -32,21 +35,24 @@ const MOCK_LABELS: LabelDesign[] = [
         name: 'Standard Product Barcode (EAN-13)',
         type: 'barcode',
         size: '50x30mm',
-        lastUsed: '2026-02-28'
+        lastUsed: '2026-02-28',
+        status: 'Ready'
     },
     {
         id: 'LBL-02',
         name: 'Inventory QR (Dynamic)',
         type: 'qr',
         size: '25x25mm',
-        lastUsed: '2026-02-27'
+        lastUsed: '2026-02-27',
+        status: 'In Use'
     },
     {
         id: 'LBL-03',
         name: 'Shipping Label (A6)',
         type: 'address',
         size: '100x150mm',
-        lastUsed: '2026-02-20'
+        lastUsed: '2026-02-20',
+        status: 'Ready'
     }
 ];
 
@@ -55,7 +61,7 @@ export function BarcodeLabelsPage() {
 
     return (
         <HubLayout hubId="inventory-hub">
-            <div className="page-container animate-fade-in">
+            <div className="barcode-labels-page animate-fade-in">
                 <Header
                     title="Баркод & Шошго (Labels)"
                     subtitle="Барааны баркод, QR код үүсгэх, шошго хэвлэх загвар болон принтерийн тохиргоо"
@@ -65,100 +71,146 @@ export function BarcodeLabelsPage() {
                     }}
                 />
 
-                <div className="grid-12 gap-6 mt-6">
-                    {/* Insights Hub */}
-                    <div className="col-12 grid grid-cols-4 gap-6">
-                        <div className="card p-6 bg-surface-2 border-none shadow-sm flex items-center justify-between group cursor-pointer hover:bg-surface-3 transition-all">
-                            <div>
-                                <h4 className="text-[10px] text-muted font-black tracking-widest uppercase mb-1">Нийт загвар</h4>
-                                <div className="text-3xl font-black text-primary">12</div>
-                            </div>
-                            <div className="bg-primary/10 p-4 rounded-2xl text-primary group-hover:scale-110 transition-transform"><LayoutTemplate size={28} /></div>
+                <div className="stats-grid-premium">
+                    <div className="stat-card-v2">
+                        <div className="stat-content">
+                            <h4>Нийт загвар</h4>
+                            <div className="stat-value-large">12</div>
                         </div>
-                        <div className="card p-6 bg-surface-2 border-none shadow-sm flex items-center justify-between group cursor-pointer hover:bg-surface-3 transition-all">
-                            <div>
-                                <h4 className="text-[10px] text-muted font-black tracking-widest uppercase mb-1">Хэвлэсэн тоо</h4>
-                                <div className="text-3xl font-black text-secondary">4,250</div>
-                            </div>
-                            <div className="bg-secondary/10 p-4 rounded-2xl text-secondary group-hover:scale-110 transition-transform"><Printer size={28} /></div>
-                        </div>
-                        <div className="card p-6 bg-surface-2 border-none shadow-sm flex items-center justify-between group cursor-pointer hover:bg-surface-3 transition-all">
-                            <div>
-                                <h4 className="text-[10px] text-muted font-black tracking-widest uppercase mb-1">Төхөөрөмжүүд</h4>
-                                <div className="text-3xl font-black text-warning">3</div>
-                            </div>
-                            <div className="bg-warning/10 p-4 rounded-2xl text-warning group-hover:scale-110 transition-transform"><Scan size={28} /></div>
-                        </div>
-                        <div className="card p-6 bg-gradient-to-br from-primary to-primary-dark text-white border-none shadow-xl flex items-center justify-between group cursor-pointer hover:scale-[1.02] transition-transform overflow-hidden relative">
-                            <Zap size={64} className="absolute -bottom-4 -right-4 opacity-10" />
-                            <div className="relative z-10">
-                                <h4 className="text-[10px] font-black tracking-widest uppercase mb-1 opacity-80">Cloud Print</h4>
-                                <div className="text-xl font-black text-white">SYSTEM READY</div>
-                            </div>
-                            <div className="relative z-10 bg-white/20 p-4 rounded-2xl backdrop-blur-md group-hover:scale-110 transition-transform"><Smartphone size={28} /></div>
+                        <div className="stat-icon-box bg-primary/10 text-primary">
+                            <LayoutTemplate size={28} />
                         </div>
                     </div>
 
-                    <div className="col-12 flex gap-4 mt-2">
-                        <div className="flex-1 relative">
-                            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
-                            <input className="input pl-10 h-10 w-full" placeholder="Загвар хайх..." />
+                    <div className="stat-card-v2">
+                        <div className="stat-content">
+                            <h4>Хэвлэсэн тоо</h4>
+                            <div className="stat-value-large">4,250</div>
                         </div>
-                        <button className="btn btn-outline h-10 px-4">Сүүлийнх</button>
+                        <div className="stat-icon-box bg-secondary/10 text-secondary">
+                            <Printer size={28} />
+                        </div>
                     </div>
 
-                    {/* Template Cards */}
-                    <div className="col-12 grid grid-cols-3 gap-6">
-                        {labels.map(label => (
-                            <div key={label.id} className="card p-0 overflow-hidden hover-lift shadow-sm bg-surface-1 border-none group flex flex-col">
-                                <div className="p-10 bg-surface-2 flex items-center justify-center relative overflow-hidden group-hover:bg-surface-3 transition-colors">
-                                    <div className="absolute inset-0 opacity-[0.03] text-primary"><Database size={100} /></div>
-                                    <div className="h-24 w-40 bg-white rounded-lg shadow-xl flex flex-col items-center justify-center p-4 border-2 border-border-color/10 group-hover:scale-105 transition-transform">
-                                        {label.type === 'barcode' ? <Barcode size={48} className="text-black" /> :
-                                            label.type === 'qr' ? <QrCode size={48} className="text-black" /> : <Tag size={48} className="text-black" />}
-                                        <div className="mt-2 text-[6px] font-black text-black opacity-40 uppercase tracking-widest">Liscord OS Label System</div>
-                                    </div>
+                    <div className="stat-card-v2">
+                        <div className="stat-content">
+                            <h4>Төхөөрөмжүүд</h4>
+                            <div className="stat-value-large">3</div>
+                        </div>
+                        <div className="stat-icon-box bg-warning/10 text-warning">
+                            <Scan size={28} />
+                        </div>
+                    </div>
+
+                    <div className="stat-card-v2 cloud-print-active shadow-glow">
+                        <div className="stat-content">
+                            <h4>Cloud Print</h4>
+                            <div className="status-indicator">
+                                <div className="pulse-circle"></div>
+                                SYSTEM READY
+                            </div>
+                        </div>
+                        <div className="stat-icon-box">
+                            <Smartphone size={28} />
+                        </div>
+                    </div>
+                </div>
+
+                <div className="flex gap-4 mt-8 items-center">
+                    <div className="flex-1 relative">
+                        <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted" />
+                        <input className="input pl-12 h-12 w-full rounded-2xl bg-surface-2 border-transparent focus:bg-surface-3 transition-all" placeholder="Загвар хайх..." />
+                    </div>
+                    <button className="btn btn-secondary h-12 px-6 rounded-2xl font-bold flex items-center gap-2">
+                        <Clock size={18} /> Сүүлийнх
+                    </button>
+                    <button className="btn btn-secondary h-12 w-12 p-0 rounded-2xl">
+                        <MoreVertical size={20} />
+                    </button>
+                </div>
+
+                {/* Template Cards */}
+                <div className="template-grid-premium">
+                    {labels.map(label => (
+                        <div key={label.id} className="template-card-premium">
+                            <div className="template-preview-premium group">
+                                <div className="absolute inset-0 opacity-[0.05] pointer-events-none overflow-hidden">
+                                    <Database size={240} className="absolute -right-20 -bottom-20 rotate-12" />
                                 </div>
-                                <div className="p-6 flex flex-col gap-4">
-                                    <div className="flex justify-between items-start">
-                                        <div>
-                                            <h3 className="text-lg font-black group-hover:text-primary transition-colors">{label.name}</h3>
-                                            <div className="flex items-center gap-1 text-[10px] font-black text-muted uppercase tracking-widest mt-1">
-                                                <Maximize size={12} /> {label.size} • {label.id}
-                                            </div>
+
+                                <div className="label-mockup-floating">
+                                    {label.type === 'barcode' ? (
+                                        <div className="w-full h-full flex flex-col items-center">
+                                            <div className="barcode-placeholder" />
+                                            <div className="text-[10px] text-black font-black uppercase tracking-[3px] mt-1">Liscord OS Label</div>
                                         </div>
-                                    </div>
-
-                                    <div className="flex gap-4 text-xs font-bold text-muted uppercase tracking-widest border-t border-border-color/5 pt-4">
-                                        <span className="flex items-center gap-1"><Clock size={12} /> {label.lastUsed} СҮҮЛД ХЭВЛЭСЭН</span>
-                                    </div>
-
-                                    <div className="grid grid-cols-2 gap-3 mt-2">
-                                        <button className="btn btn-outline py-3 rounded-2xl font-black text-xs hover:bg-surface-2 transition-all flex items-center justify-center gap-2">
-                                            <Download size={16} /> ТАТАХ
-                                        </button>
-                                        <button className="btn btn-primary py-3 rounded-2xl font-black text-xs shadow-lg hover:scale-105 transition-transform flex items-center justify-center gap-2">
-                                            <Printer size={16} /> ХЭВЛЭХ
-                                        </button>
-                                    </div>
+                                    ) : label.type === 'qr' ? (
+                                        <div className="w-full h-full flex flex-col items-center justify-center">
+                                            <div className="qr-placeholder" />
+                                            <div className="text-[8px] text-black font-bold mt-2">Dynamic System QR</div>
+                                        </div>
+                                    ) : (
+                                        <div className="w-full h-full flex flex-col items-center justify-center p-2 text-black">
+                                            <Tag size={32} />
+                                            <div className="mt-2 text-[10px] font-black underline">SHIPPING TRACKING</div>
+                                            <div className="text-[8px] mt-1 opacity-60">ID: {label.id}</div>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
-                        ))}
-                    </div>
 
-                    {/* Printer Config / Automation Alert */}
-                    <div className="col-12 mt-6 card p-6 bg-surface-2 border-dashed border-2 flex flex-col md:flex-row items-center justify-between gap-6 shadow-md shadow-primary/5">
-                        <div className="flex items-center gap-6">
-                            <div className="bg-primary/5 p-4 rounded-2xl text-primary"><Zap size={32} /></div>
-                            <div>
-                                <h3 className="text-xl font-black leading-tight">Zebra & TSC Принтер Холболт</h3>
-                                <p className="text-sm text-muted">Шууд хэвлэгч төхөөрөмжүүдийг холбож, баркодыг автоматаар хэвлэх тохиргоо.</p>
+                            <div className="template-details-premium">
+                                <div className="flex justify-between items-start">
+                                    <h3 className="text-xl font-black">{label.name}</h3>
+                                    <div className="badge badge-info bg-cyan-tint text-[10px] py-1 border-none font-black">{label.status}</div>
+                                </div>
+
+                                <div className="template-badge-row">
+                                    <div className="badge bg-surface-2 text-muted border-none text-[10px] flex items-center gap-1 font-black">
+                                        <Maximize size={12} /> {label.size}
+                                    </div>
+                                    <div className="badge bg-surface-2 text-muted border-none text-[10px] flex items-center gap-1 font-black">
+                                        <Database size={12} /> {label.id}
+                                    </div>
+                                </div>
+
+                                <div className="flex items-center gap-2 mt-4 text-[11px] font-bold text-muted uppercase tracking-wider">
+                                    <Clock size={12} />
+                                    <span>Сүүлд: {label.lastUsed}</span>
+                                    <CheckCircle2 size={12} className="text-accent-green ml-auto" />
+                                </div>
+
+                                <div className="action-buttons-premium">
+                                    <button className="btn btn-secondary py-4 rounded-2xl font-black text-xs hover:bg-surface-3 border-transparent transition-all flex items-center justify-center gap-2 bg-surface-2">
+                                        <Download size={18} className="text-secondary" /> ТАТАХ
+                                    </button>
+                                    <button className="btn btn-primary py-4 rounded-2xl font-black text-xs shadow-lg hover:scale-105 transition-transform flex items-center justify-center gap-2">
+                                        <Printer size={18} /> ХЭВЛЭХ
+                                    </button>
+                                </div>
                             </div>
                         </div>
-                        <div className="flex gap-4">
-                            <button className="btn btn-outline border-primary text-primary font-black px-10 py-3 rounded-2xl hover:bg-primary hover:text-white transition-all shadow-sm">ТОХИРГОО</button>
-                            <button className="btn btn-ghost p-3 rounded-2xl bg-surface-3 border border-border-color/10"><Share2 size={24} /></button>
+                    ))}
+                </div>
+
+                {/* Zebra Section */}
+                <div className="zebra-integration-card">
+                    <div className="zebra-content">
+                        <div className="stat-icon-box bg-primary/10 text-primary">
+                            <Zap size={36} fill="currentColor" />
                         </div>
+                        <div>
+                            <h3 className="text-2xl font-black text-white">Zebra & TSC Принтер Холболт</h3>
+                            <p className="text-sm text-muted max-w-md">Төвлөрсөн Cloud Print системээр хэвлэгч төхөөрөмжүүдийг алсаас удирдаж, шууд хэвлэх модуль.</p>
+                        </div>
+                    </div>
+                    <div className="flex gap-4">
+                        <button className="btn btn-outline border-border-primary text-white font-black px-12 py-4 rounded-2xl hover:bg-white/10 transition-all flex items-center gap-2">
+                            <Settings size={20} /> ТОХИРГОО
+                        </button>
+                        <button className="btn btn-secondary p-4 rounded-2xl bg-surface-3 border-none shadow-xl">
+                            <Share2 size={24} />
+                        </button>
                     </div>
                 </div>
             </div>
