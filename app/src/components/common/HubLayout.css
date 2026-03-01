@@ -10,14 +10,8 @@
     border-bottom: 1px solid var(--border-primary);
     padding: 0 var(--space-lg);
     position: sticky;
-    top: 70px;
-    /* Below Header in V1 */
-    z-index: 10;
-}
-
-/* V2 layout has no separate header bar, so tabs snap to top */
-.app-v2 .hub-tabs-wrapper {
     top: 0;
+    z-index: 10;
 }
 
 .hub-tabs {
@@ -69,6 +63,7 @@
 .hub-content {
     flex: 1;
     overflow-y: auto;
+    padding: var(--space-lg);
 }
 
 /* Animations */
