@@ -545,8 +545,7 @@ export const orderService = {
         return onSnapshot(q, (snapshot) => {
             const orders = snapshot.docs.map(d => ({ id: d.id, ...convertTimestamps(d.data()) } as Order));
             // Sort by createdAt desc in-memory
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            orders.sort((a: any, b: any) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
+            orders.sort((a, b) => (b.createdAt?.getTime() || 0) - (a.createdAt?.getTime() || 0));
             callback(orders);
         });
     },

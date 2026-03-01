@@ -55,8 +55,29 @@ export function OrdersPage() {
     const [selectedOrderIds, setSelectedOrderIds] = useState<Set<string>>(new Set());
     const [showBulkStatusModal, setShowBulkStatusModal] = useState(false);
     const [showSendToProviderModal, setShowSendToProviderModal] = useState(false);
+    const [dateFilter, setDateFilter] = useState<'all' | 'today' | 'yesterday' | 'week' | 'month'>('all');
+    const [stats, setStats] = useState({ revenue: 0, new: 0, processing: 0, delivered: 0 });
     const { user } = useAuthStore();
     const menuRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        // Calculate stats whenever orders change
+        const now = new Date();
+        const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+        const todayOrders = orders.filter(o => {
+            const date = o.createdAt instanceof Date ? o.createdAt : new Date();
+            return date >= startOfToday && !o.isDeleted;
+        });
+
+        const newStats = {
+            revenue: todayOrders.reduce((sum, o) => sum + (o.financials?.totalAmount || 0), 0),
+            new: orders.filter(o => o.status === 'new' && !o.isDeleted).length,
+            processing: orders.filter(o => (o.status === 'confirmed' || o.status === 'preparing') && !o.isDeleted).length,
+            delivered: orders.filter(o => o.status === 'delivered' && !o.isDeleted).length
+        };
+        setStats(newStats);
+    }, [orders]);
 
     useEffect(() => {
         if (!business?.id) return;
@@ -91,6 +112,32 @@ export function OrdersPage() {
             o.customer.phone.includes(search);
 
         if (search) return matchSearch;
+
+        // Date Filter logic
+        if (dateFilter !== 'all') {
+            const date = o.createdAt instanceof Date ? o.createdAt : new Date();
+            const now = new Date();
+            const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+            if (dateFilter === 'today' && date < startOfToday) return false;
+
+            if (dateFilter === 'yesterday') {
+                const startOfYesterday = new Date(startOfToday);
+                startOfYesterday.setDate(startOfYesterday.getDate() - 1);
+                const endOfYesterday = new Date(startOfToday);
+                if (date < startOfYesterday || date >= endOfYesterday) return false;
+            }
+
+            if (dateFilter === 'week') {
+                const weekAgo = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 7);
+                if (date < weekAgo) return false;
+            }
+
+            if (dateFilter === 'month') {
+                const monthAgo = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate());
+                if (date < monthAgo) return false;
+            }
+        }
 
         // 'cancelled' tab shows both explicitly deleted orders and those with 'cancelled' status
         if (statusFilter === 'cancelled') {
@@ -146,7 +193,7 @@ export function OrdersPage() {
             setDeleteReason('');
             setShowDeleteModal(false);
             toast.success('Захиалга устгагдлаа');
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
         } catch (_error) {
             toast.error('Алдаа гарлаа');
         } finally {
@@ -162,6 +209,38 @@ export function OrdersPage() {
                 action={{ label: 'Шинэ захиалга', onClick: () => setShowCreate(true) }}
             />
             <div className="page">
+                {/* Stats Summary Section */}
+                <div className="orders-stats-summary animate-fade-in">
+                    <div className="stat-card">
+                        <div className="stat-icon green"><CreditCard size={24} /></div>
+                        <div className="stat-info">
+                            <span className="stat-label">Өнөөдрийн орлого</span>
+                            <span className="stat-value">{fmt(stats.revenue)}</span>
+                        </div>
+                    </div>
+                    <div className="stat-card">
+                        <div className="stat-icon blue"><Plus size={24} /></div>
+                        <div className="stat-info">
+                            <span className="stat-label">Шинэ захиалга</span>
+                            <span className="stat-value">{stats.new}</span>
+                        </div>
+                    </div>
+                    <div className="stat-card">
+                        <div className="stat-icon orange"><Loader2 size={24} /></div>
+                        <div className="stat-info">
+                            <span className="stat-label">Боловсруулагдаж буй</span>
+                            <span className="stat-value">{stats.processing}</span>
+                        </div>
+                    </div>
+                    <div className="stat-card">
+                        <div className="stat-icon purple"><CheckSquare size={24} /></div>
+                        <div className="stat-info">
+                            <span className="stat-label">Хүргэгдсэн</span>
+                            <span className="stat-value">{stats.delivered}</span>
+                        </div>
+                    </div>
+                </div>
+
                 <div className="orders-toolbar">
                     <div className="orders-search">
                         <Search size={18} className="orders-search-icon" />
@@ -173,18 +252,16 @@ export function OrdersPage() {
                         />
                     </div>
                     <div className="orders-filters" style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                        <button className="btn-secondary btn-sm" onClick={toggleAll}>
-                            {selectedOrderIds.size === filtered.length ? 'Сонголт арилгах' : 'Бүгдийг сонгох'}
+                        <div className="date-filter-group">
+                            <button className={`date-chip ${dateFilter === 'all' ? 'active' : ''}`} onClick={() => setDateFilter('all')}>Бүгд</button>
+                            <button className={`date-chip ${dateFilter === 'today' ? 'active' : ''}`} onClick={() => setDateFilter('today')}>Өнөөдөр</button>
+                            <button className={`date-chip ${dateFilter === 'yesterday' ? 'active' : ''}`} onClick={() => setDateFilter('yesterday')}>Өчигдөр</button>
+                            <button className={`date-chip ${dateFilter === 'week' ? 'active' : ''}`} onClick={() => setDateFilter('week')}>7 хоног</button>
+                        </div>
+                        <div className="pro-meta-divider" style={{ height: '24px' }}></div>
+                        <button className="btn-secondary btn-sm" onClick={toggleAll} style={{ borderRadius: '10px' }}>
+                            {selectedOrderIds.size === filtered.length && filtered.length > 0 ? 'Сонголт арилгах' : 'Бүгдийг сонгох'}
                         </button>
-                        <select
-                            className="input select orders-filter-select"
-                            value={statusFilter}
-                            onChange={(e) => setStatusFilter(e.target.value)}
-                        >
-                            {statuses.filter(s => s.isActive || s.id === 'cancelled' || s.id === 'all').map(s => (
-                                <option key={s.id} value={s.id}>{s.label}</option>
-                            ))}
-                        </select>
                     </div>
                 </div>
 
@@ -637,7 +714,7 @@ function CreateOrderModal({ onClose, nextNumber, statuses }: {
             unsubCustomers();
             unsubCargoTypes();
         };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [business?.id, sourceId, business?.category]); // Added sourceId to dependencies to re-evaluate auto-selection if sourceId changes
 
     const filteredProducts = searchQuery.length > 0
@@ -796,7 +873,7 @@ function CreateOrderModal({ onClose, nextNumber, statuses }: {
                 tags: []
             });
             onClose();
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (error: any) {
             console.error(error);
         } finally {
