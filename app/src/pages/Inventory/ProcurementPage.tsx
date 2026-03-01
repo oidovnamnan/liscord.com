@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
-import { Header } from '../../components/layout/Header';
-import { Search, Plus, Loader2, MoreVertical } from 'lucide-react';
+import { Search, Plus, Loader2, MoreVertical, ShoppingCart, Truck, CheckCircle2, AlertCircle } from 'lucide-react';
 import { useBusinessStore } from '../../store';
 import { procurementService } from '../../services/db';
 import { format } from 'date-fns';
 import { toast } from 'react-hot-toast';
+import { HubLayout } from '../../components/common/HubLayout';
+import './ProcurementPage.css';
 
 export function ProcurementPage() {
     const { business } = useBusinessStore();
@@ -30,13 +31,13 @@ export function ProcurementPage() {
         return matchesSearch && matchesFilter;
     });
 
-    const getStatusBadge = (status: string) => {
+    const getStatusInfo = (status: string) => {
         switch (status) {
-            case 'received': return <span className="badge badge-success">Хүлээж авсан</span>;
-            case 'pending': return <span className="badge badge-warning">Хүлээгдэж буй</span>;
-            case 'draft': return <span className="badge badge-info">Ноорог</span>;
-            case 'cancelled': return <span className="badge badge-danger">Цуцалсан</span>;
-            default: return <span className="badge">{status}</span>;
+            case 'received': return { label: 'Хүлээж авсан', className: 'status-received' };
+            case 'pending': return { label: 'Хүлээгдэж буй', className: 'status-pending' };
+            case 'draft': return { label: 'Ноорог', className: 'status-draft' };
+            case 'cancelled': return { label: 'Цуцалсан', className: 'status-cancelled' };
+            default: return { label: status, className: 'status-draft' };
         }
     };
 
@@ -44,45 +45,109 @@ export function ProcurementPage() {
         toast('Шинэ PO үүсгэх модал удахгүй нэмэгдэнэ. Одоогоор зөвхөн жагсаалт баталгаажсан.');
     };
 
+    const countPending = orders.filter(o => o.status === 'pending').length;
+    const countReceived = orders.filter(o => o.status === 'received').length;
+    const totalAmount = orders.reduce((sum, o) => sum + (o.totalAmount || 0), 0);
+
     return (
-        <>
-            <Header title="Худалдан Авалт" />
-            <div className="page">
-                <div className="page-header-actions">
-                    <div className="search-box">
-                        <Search size={18} />
+        <HubLayout hubId="inventory-hub">
+            <div className="procurement-page animate-fade-in">
+                {/* Page Section Header */}
+                <div className="page-section-header">
+                    <div>
+                        <h2 className="page-section-title">Худалдан Авалт (PO)</h2>
+                        <p className="page-section-subtitle">Нийлүүлэгчид рүү илгээх худалдан авалтын захиалга (Purchase Orders)</p>
+                    </div>
+                    <button className="btn btn-primary btn-sm" onClick={handleCreateOrder}>
+                        <Plus size={16} /> Шинэ PO
+                    </button>
+                </div>
+
+                {/* ====== Stats Grid ====== */}
+                <div className="proc-stats-grid">
+                    <div className="proc-stat-card">
+                        <div className="proc-stat-content">
+                            <h4>Нийт PO</h4>
+                            <div className="proc-stat-value">{orders.length}</div>
+                        </div>
+                        <div className="proc-stat-icon icon-primary">
+                            <ShoppingCart size={28} />
+                        </div>
+                    </div>
+
+                    <div className="proc-stat-card">
+                        <div className="proc-stat-content">
+                            <h4>Хүлээгдэж буй</h4>
+                            <div className="proc-stat-value">{countPending}</div>
+                        </div>
+                        <div className="proc-stat-icon icon-orange">
+                            <Truck size={28} />
+                        </div>
+                    </div>
+
+                    <div className="proc-stat-card">
+                        <div className="proc-stat-content">
+                            <h4>Хүлээн авсан</h4>
+                            <div className="proc-stat-value">{countReceived}</div>
+                        </div>
+                        <div className="proc-stat-icon icon-green">
+                            <CheckCircle2 size={28} />
+                        </div>
+                    </div>
+
+                    <div className="proc-stat-card">
+                        <div className="proc-stat-content">
+                            <h4>Нийт Дүн</h4>
+                            <div className="proc-stat-value" style={{ fontSize: '1.4rem' }}>
+                                {totalAmount > 0 ? (totalAmount / 1000000).toFixed(1) + 'M ₮' : '0 ₮'}
+                            </div>
+                        </div>
+                        <div className="proc-stat-icon icon-cyan">
+                            <AlertCircle size={28} />
+                        </div>
+                    </div>
+                </div>
+
+                {/* ====== Search & Filter Toolbar ====== */}
+                <div className="proc-toolbar">
+                    <div className="proc-search-wrap">
+                        <Search size={18} className="proc-search-icon" />
                         <input
-                            type="text"
+                            className="proc-search-input"
                             placeholder="Нийлүүлэгч эсвэл PO кодоор хайх..."
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                         />
                     </div>
-                    <div className="flex-gap">
-                        <select
-                            className="input"
-                            style={{ width: '150px' }}
-                            value={filterStatus}
-                            onChange={(e) => setFilterStatus(e.target.value)}
-                        >
-                            <option value="all">Бүх төлөв</option>
-                            <option value="draft">Ноорог</option>
-                            <option value="pending">Хүлээгдэж буй</option>
-                            <option value="received">Хүлээж авсан</option>
-                        </select>
-                        <button className="btn btn-primary gradient-btn" onClick={handleCreateOrder}>
-                            <Plus size={18} /> Шинэ PO
-                        </button>
-                    </div>
+                    <select
+                        className="proc-filter-select"
+                        value={filterStatus}
+                        onChange={(e) => setFilterStatus(e.target.value)}
+                    >
+                        <option value="all">Бүх төлөв</option>
+                        <option value="draft">Ноорог</option>
+                        <option value="pending">Хүлээгдэж буй</option>
+                        <option value="received">Хүлээж авсан</option>
+                    </select>
                 </div>
 
-                <div className="card" style={{ padding: 0 }}>
+                {/* ====== Premium Table ====== */}
+                <div className="proc-table-container">
                     {loading ? (
-                        <div className="flex-center" style={{ height: '300px' }}>
-                            <Loader2 className="animate-spin" size={32} />
+                        <div className="proc-loading">
+                            <Loader2 size={36} className="animate-spin" />
+                            <p className="proc-loading-text">Өгөгдөл ачаалж байна...</p>
+                        </div>
+                    ) : filteredOrders.length === 0 ? (
+                        <div className="proc-empty-state">
+                            <div className="proc-empty-icon">
+                                <ShoppingCart size={40} />
+                            </div>
+                            <div className="proc-empty-title">Захиалга олдсонгүй</div>
+                            <div className="proc-empty-desc">Хайлтын илэрцэд худалдан авалт олдсонгүй эсвэл бүртгэлгүй байна.</div>
                         </div>
                     ) : (
-                        <table className="table">
+                        <table className="proc-table">
                             <thead>
                                 <tr>
                                     <th>PO Код</th>
@@ -91,38 +156,43 @@ export function ProcurementPage() {
                                     <th>Дүн</th>
                                     <th>Барааны тоо</th>
                                     <th>Төлөв</th>
-                                    <th></th>
+                                    <th style={{ width: '50px' }}></th>
                                 </tr>
                             </thead>
                             <tbody>
-                                {filteredOrders.length === 0 ? (
-                                    <tr>
-                                        <td colSpan={7} style={{ textAlign: 'center', padding: '48px', color: 'var(--text-muted)' }}>
-                                            Захиалга олдсонгүй
-                                        </td>
-                                    </tr>
-                                ) : (
-                                    filteredOrders.map(order => (
+                                {filteredOrders.map(order => {
+                                    const statusInfo = getStatusInfo(order.status);
+                                    return (
                                         <tr key={order.id}>
-                                            <td style={{ fontWeight: 600 }}>#{order.id.slice(0, 6).toUpperCase()}</td>
-                                            <td>{order.createdAt ? format(order.createdAt, 'yyyy/MM/dd HH:mm') : '-'}</td>
-                                            <td>{order.supplierName || 'Тодорхойгүй'}</td>
-                                            <td style={{ fontWeight: 600 }}>{order.totalAmount?.toLocaleString() || 0} ₮</td>
-                                            <td>{order.items?.length || 0} нэр төрөл</td>
-                                            <td>{getStatusBadge(order.status)}</td>
                                             <td>
-                                                <button className="btn-icon">
+                                                <span className="proc-po-code">#{order.id.slice(0, 6).toUpperCase()}</span>
+                                            </td>
+                                            <td>{order.createdAt ? format(order.createdAt, 'yyyy.MM.dd HH:mm') : '-'}</td>
+                                            <td className="proc-supplier">{order.supplierName || 'Тодорхойгүй'}</td>
+                                            <td className="proc-amount">{order.totalAmount?.toLocaleString() || 0} ₮</td>
+                                            <td>
+                                                <span className="proc-items-count">
+                                                    {order.items?.length || 0} төрөл
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <span className={`proc-status ${statusInfo.className}`}>
+                                                    {statusInfo.label}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <button className="proc-action-btn">
                                                     <MoreVertical size={18} />
                                                 </button>
                                             </td>
                                         </tr>
-                                    ))
-                                )}
+                                    );
+                                })}
                             </tbody>
                         </table>
                     )}
                 </div>
             </div>
-        </>
+        </HubLayout>
     );
 }
