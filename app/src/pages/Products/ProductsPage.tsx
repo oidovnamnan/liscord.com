@@ -22,6 +22,13 @@ export function ProductsPage() {
 
     const [editingProduct, setEditingProduct] = useState<Product | null>(null);
     const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
+    const [categoryFilter, setCategoryFilter] = useState('all');
+    const [stats, setStats] = useState({
+        total: 0,
+        low: 0,
+        out: 0,
+        value: 0
+    });
 
     useEffect(() => {
         if (!business?.id) return;
@@ -35,14 +42,28 @@ export function ProductsPage() {
         return () => unsubscribe();
     }, [business?.id]);
 
+    useEffect(() => {
+        const total = products.length;
+        const low = products.filter(p => (p.stock?.quantity || 0) <= (p.stock?.lowStockThreshold || 0) && (p.stock?.quantity || 0) > 0).length;
+        const out = products.filter(p => (p.stock?.quantity || 0) === 0).length;
+        const value = products.reduce((sum, p) => sum + ((p.pricing?.costPrice || 0) * (p.stock?.quantity || 0)), 0);
+
+        setStats({ total, low, out, value });
+    }, [products]);
+
     const filtered = products.filter(p => {
-        if (!search) return true;
-        const s = search.toLowerCase();
-        return p.name.toLowerCase().includes(s) || (p.sku || '').toLowerCase().includes(s) || (p.categoryName || '').toLowerCase().includes(s);
+        const matchSearch = !search ||
+            p.name.toLowerCase().includes(search.toLowerCase()) ||
+            (p.sku || '').toLowerCase().includes(search.toLowerCase()) ||
+            (p.categoryName || '').toLowerCase().includes(search.toLowerCase());
+
+        const matchCategory = categoryFilter === 'all' || p.categoryId === categoryFilter;
+
+        return matchSearch && matchCategory;
     });
 
-    const lowStock = products.filter(p => (p.stock?.quantity || 0) <= (p.stock?.lowStockThreshold || 0) && (p.stock?.quantity || 0) > 0).length;
-    const outOfStock = products.filter(p => (p.stock?.quantity || 0) === 0).length;
+    const categories = Array.from(new Set(products.map(p => ({ id: p.categoryId || 'general', name: p.categoryName || 'АНГИЛАЛГҮЙ' }))))
+        .filter((v, i, a) => a.findIndex(t => t.id === v.id) === i);
 
     const handleDelete = async (id: string) => {
         if (!business || !confirm('Энэ барааг устгахдаа итгэлтэй байна уу?')) return;
@@ -66,10 +87,58 @@ export function ProductsPage() {
             <Header
                 title="Бараа Материал"
                 subtitle={loading ? 'Уншиж байна...' : `Нийт ${products.length} төрлийн бараа`}
-                action={{ label: 'Шинэ бараа', onClick: () => setShowCreate(true) }}
             />
             <div className="page">
-                <div className="orders-toolbar">
+                {/* Stats Summary Section */}
+                <div className="orders-stats-summary animate-fade-in">
+                    <div className="stat-card">
+                        <div className="stat-icon purple">
+                            <Grid3X3 size={24} />
+                        </div>
+                        <div className="stat-info">
+                            <span className="stat-label">Нийт бараа</span>
+                            <span className="stat-value">{stats.total} төрөл</span>
+                        </div>
+                    </div>
+                    <div className="stat-card" style={{ cursor: 'pointer' }} onClick={() => setSearch('нөөц бага')}>
+                        <div className="stat-icon orange">
+                            <AlertTriangle size={24} />
+                        </div>
+                        <div className="stat-info">
+                            <span className="stat-label">Нөөц бага</span>
+                            <span className="stat-value">{stats.low} ширхэг</span>
+                        </div>
+                    </div>
+                    <div className="stat-card" style={{ cursor: 'pointer' }} onClick={() => setSearch('дууссан')}>
+                        <div className="stat-icon red" style={{ background: '#fef2f2', color: '#ef4444' }}>
+                            <MoreVertical size={24} />
+                        </div>
+                        <div className="stat-info">
+                            <span className="stat-label">Дууссан</span>
+                            <span className="stat-value">{stats.out} ширхэг</span>
+                        </div>
+                    </div>
+                    <div className="stat-card">
+                        <div className="stat-icon green">
+                            <Plus size={24} />
+                        </div>
+                        <div className="stat-info">
+                            <span className="stat-label">Нөөцийн үнэ</span>
+                            <span className="stat-value">{fmt(stats.value)}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="orders-toolbar animate-fade-in">
+                    <button
+                        className="btn btn-primary gradient-btn"
+                        onClick={() => setShowCreate(true)}
+                        style={{ height: '42px', padding: '0 20px', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}
+                    >
+                        <Plus size={18} />
+                        <span style={{ fontWeight: 700 }}>Шинэ бараа</span>
+                    </button>
+
                     <div className="orders-search">
                         <Search size={18} className="orders-search-icon" />
                         <input className="input orders-search-input" placeholder="Бараа, SKU хайх..." value={search} onChange={e => setSearch(e.target.value)} />
@@ -80,6 +149,27 @@ export function ProductsPage() {
                     </div>
                 </div>
 
+                {/* Category Filter Chips */}
+                {categories.length > 0 && (
+                    <div className="category-chips-wrapper animate-fade-in" style={{ display: 'flex', gap: 8, overflowX: 'auto', padding: '4px 0 16px', scrollbarWidth: 'none' }}>
+                        <button
+                            className={`date-chip ${categoryFilter === 'all' ? 'active' : ''}`}
+                            onClick={() => setCategoryFilter('all')}
+                        >
+                            Бүгд
+                        </button>
+                        {categories.map(cat => (
+                            <button
+                                key={cat.id}
+                                className={`date-chip ${categoryFilter === cat.id ? 'active' : ''}`}
+                                onClick={() => setCategoryFilter(cat.id)}
+                            >
+                                {cat.name}
+                            </button>
+                        ))}
+                    </div>
+                )}
+
                 {loading ? (
                     <div className="loading-state">
                         <Loader2 size={32} className="animate-spin" />
@@ -87,21 +177,6 @@ export function ProductsPage() {
                     </div>
                 ) : (
                     <>
-                        {/* Alerts */}
-                        {(lowStock > 0 || outOfStock > 0) && (
-                            <div className="products-alerts">
-                                {lowStock > 0 && (
-                                    <div className="products-alert products-alert-warning">
-                                        <AlertTriangle size={16} /> {lowStock} бараа нөөц бага байна
-                                    </div>
-                                )}
-                                {outOfStock > 0 && (
-                                    <div className="products-alert products-alert-danger">
-                                        <AlertTriangle size={16} /> {outOfStock} бараа дууссан байна
-                                    </div>
-                                )}
-                            </div>
-                        )}
 
                         {/* Grid / List */}
                         {filtered.length === 0 ? (
