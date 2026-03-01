@@ -38,6 +38,8 @@ export interface AppModule {
     route: string;          // Sidebar active route prefix (e.g. '/app/inventory')
     isCore: boolean;        // If true, cannot be uninstalled (e.g. Settings, Dashboard)
     category: 'operations' | 'finance' | 'staff' | 'sales' | 'services' | 'industry' | 'logistics' | 'education' | 'manufacturing' | 'professional' | 'service' | 'ecommerce' | 'marketing' | 'tools' | 'ai' | 'facility' | 'entertainment' | 'nonprofit' | 'b2b'; // Expanded categories
+    categories?: string[];  // Multi-dimensional categorization
+    tags?: string[];        // Additional metadata
     hubId?: string;         // For tabbed navigation (e.g. 'inventory-hub')
     isFree?: boolean;       // Phase 41: App Store pricing
     price?: number;         // Price in local currency (legacy)

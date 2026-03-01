@@ -12,6 +12,37 @@ import { STOREFRONT_THEMES } from '../../config/themes';
 
 import './AppStorePage.css';
 
+const CATEGORY_MAP: Record<string, string> = {
+    'operations': 'Үйл ажиллагаа',
+    'finance': 'Санхүү',
+    'staff': 'Хүний нөөц',
+    'sales': 'Борлуулалт',
+    'services': 'Үйлчилгээ',
+    'industry': 'Тусгай салбар',
+    'logistics': 'Логистик',
+    'manufacturing': 'Үйлдвэрлэл',
+    'crm': 'Харилцагч',
+    'marketing': 'Маркетинг',
+    'ecommerce': 'Онлайн худалдаа',
+    'b2b': 'B2B/Бөөний',
+    'tools': 'Хэрэгслүүд',
+    'ai': 'AI / Дата',
+};
+
+const HUB_MAP: Record<string, string> = {
+    'inventory-hub': 'Агуулах Hub',
+    'finance-hub': 'Санхүү Hub',
+    'staff-hub': 'Хүний нөөц Hub',
+    'crm-hub': 'Харилцагчийн Hub',
+    'retail-hub': 'ПОС / Дэлгүүр Hub',
+    'industry-hub': 'Тусгай салбар Hub',
+    'manufacturing-hub': 'Үйлдвэрлэл Hub',
+    'logistics-hub': 'Логистик Hub',
+    'workspace-hub': 'Ажлын талбар Hub',
+    'ai-hub': 'AI Assistant Hub',
+    'compliance-hub': 'Тайлан & Хууль Hub'
+};
+
 export function AppStorePage() {
     const { business, setBusiness } = useBusinessStore();
     const navigate = useNavigate();
@@ -19,12 +50,18 @@ export function AppStorePage() {
     const [initialLoading, setInitialLoading] = useState(true);
     const [activeStoreTab, setActiveStoreTab] = useState<'modules' | 'themes'>('modules');
 
+    // Filter states
+    const [searchQuery, setSearchQuery] = useState('');
+    const [selectedCategory, setSelectedCategory] = useState<string>('all');
+    const [selectedHub, setSelectedHub] = useState<string>('all');
+    const [priceFilter, setPriceFilter] = useState<'all' | 'free' | 'premium'>('all');
+
     // Installation states
     const [installingId, setInstallingId] = useState<string | null>(null);
     const [installProgress, setInstallProgress] = useState(0);
 
     const [moduleDefaults, setModuleDefaults] = useState<Record<string, Record<string, string>>>({});
-     
+
     const [appStoreConfig, setAppStoreConfig] = useState<Record<string, { isFree: boolean; plans: any[] }>>({}); // eslint-disable-line @typescript-eslint/no-explicit-any
 
     useEffect(() => {
@@ -86,7 +123,7 @@ export function AppStorePage() {
             setInstallProgress(100);
             await new Promise(resolve => setTimeout(resolve, 200));
             toast.success('Загвар амжилттай суулаа');
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
         } catch (_error) {
             toast.error('Алдаа гарлаа');
         } finally {
@@ -105,7 +142,7 @@ export function AppStorePage() {
             await businessService.updateBusiness(business.id, { activeModules: newModules });
             setBusiness({ ...business, activeModules: newModules });
             toast.success('Модулийг устгалаа');
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
         } catch (_error) {
             toast.error('Устгах үед алдаа гарлаа');
         } finally {
@@ -135,7 +172,7 @@ export function AppStorePage() {
             if (isFree) {
                 durationDays = 365;
             } else if (planId && dynamicConfig?.plans) {
-                 
+
                 const selectedPlan = dynamicConfig.plans.find((p: any) => p.id === planId); // eslint-disable-line @typescript-eslint/no-explicit-any
                 durationDays = selectedPlan?.durationDays ?? 30;
             } else if (mod?.plans) {
@@ -169,7 +206,7 @@ export function AppStorePage() {
             setInstallProgress(100);
             await new Promise(resolve => setTimeout(resolve, 300));
             toast.success('Модуль амжилттай суулаа');
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
         } catch (_error) {
             toast.error('Суулгах үед алдаа гарлаа');
         } finally {
@@ -195,8 +232,8 @@ export function AppStorePage() {
             />
 
             <div className="page-content" style={{ paddingTop: '24px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
-                    <div style={{ display: 'flex', gap: '4px', background: 'var(--surface-2)', padding: '6px', borderRadius: '16px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', marginBottom: '32px' }}>
+                    <div style={{ display: 'flex', gap: '4px', background: 'var(--surface-2)', padding: '6px', borderRadius: '16px', alignSelf: 'flex-start' }}>
                         <button
                             className={`btn btn-sm ${activeStoreTab === 'modules' ? 'btn-primary gradient-btn' : 'btn-ghost'}`}
                             onClick={() => setActiveStoreTab('modules')}
@@ -212,23 +249,98 @@ export function AppStorePage() {
                             Загварууд
                         </button>
                     </div>
+
+                    {activeStoreTab === 'modules' && (
+                        <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap', background: 'var(--surface-1)', padding: '16px', borderRadius: '16px', border: '1px solid var(--border-primary)' }}>
+                            <div className="search-input-wrapper" style={{ position: 'relative', flex: 1, minWidth: '240px' }}>
+                                <Icons.Search size={18} style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-secondary)' }} />
+                                <input
+                                    type="text"
+                                    className="input"
+                                    placeholder="Модулийн нэр, тайлбараар хайх..."
+                                    style={{ paddingLeft: '44px', height: '44px', width: '100%', borderRadius: '12px', background: 'var(--surface-2)' }}
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                />
+                            </div>
+
+                            <select
+                                className="select"
+                                style={{ height: '44px', borderRadius: '12px', width: '200px', background: 'var(--surface-2)' }}
+                                value={selectedCategory}
+                                onChange={(e) => setSelectedCategory(e.target.value)}
+                            >
+                                <option value="all">Бүх чиглэл</option>
+                                {Object.entries(CATEGORY_MAP).map(([key, label]) => (
+                                    <option key={key} value={key}>{label}</option>
+                                ))}
+                            </select>
+
+                            <select
+                                className="select"
+                                style={{ height: '44px', borderRadius: '12px', width: '200px', background: 'var(--surface-2)' }}
+                                value={selectedHub}
+                                onChange={(e) => setSelectedHub(e.target.value)}
+                            >
+                                <option value="all">Бүх Hub</option>
+                                {Object.entries(HUB_MAP).map(([key, label]) => (
+                                    <option key={key} value={key}>{label}</option>
+                                ))}
+                            </select>
+
+                            <select
+                                className="select"
+                                style={{ height: '44px', borderRadius: '12px', width: '160px', background: 'var(--surface-2)' }}
+                                value={priceFilter}
+                                onChange={(e) => setPriceFilter(e.target.value as any)}
+                            >
+                                <option value="all">Бүх үнэ</option>
+                                <option value="free">Үнэгүй (Core)</option>
+                                <option value="premium">Төлбөртэй (Add-on)</option>
+                            </select>
+                        </div>
+                    )}
                 </div>
+
                 {activeStoreTab === 'modules' ? (
                     <div className="app-store-grid">
-                        {LISCORD_MODULES.filter(mod => {
-                            if (mod.isCore) return true;
-                            if (business?.category && moduleDefaults[business.category]) {
-                                return !!moduleDefaults[business.category][mod.id];
-                            }
-                            return true;
-                        }).map(mod => {
+                        {LISCORD_MODULES.map(mod => {
                             const dynamic = appStoreConfig[mod.id];
-                            const finalMod = dynamic ? { ...mod, ...dynamic } : mod;
-
+                            return dynamic ? { ...mod, ...dynamic } : mod;
+                        }).filter(finalMod => {
                             const isCoreForBusiness = business?.category && moduleDefaults[business.category]?.[finalMod.id] === 'core';
                             const isFree = isCoreForBusiness || finalMod.isFree;
 
-                            const Icon = (Icons as any)[finalMod.icon] || Icons.Box; // eslint-disable-line @typescript-eslint/no-explicit-any
+                            // 1. Search Match
+                            if (searchQuery) {
+                                const query = searchQuery.toLowerCase();
+                                const matchSearch = finalMod.name.toLowerCase().includes(query) ||
+                                    (finalMod.description || '').toLowerCase().includes(query);
+                                if (!matchSearch) return false;
+                            }
+
+                            // 2. Category Match
+                            if (selectedCategory !== 'all') {
+                                const modCats = [finalMod.category, ...(finalMod.categories || [])].filter(Boolean);
+                                if (!modCats.includes(selectedCategory)) return false;
+                            }
+
+                            // 3. Hub Match
+                            if (selectedHub !== 'all' && finalMod.hubId !== selectedHub) {
+                                return false;
+                            }
+
+                            // 4. Price Match
+                            if (priceFilter === 'free' && !isFree) return false;
+                            if (priceFilter === 'premium' && isFree) return false;
+
+                            return true;
+                        }).map(finalMod => {
+                            const isCoreForBusiness = business?.category && moduleDefaults[business.category]?.[finalMod.id] === 'core';
+                            const isFree = isCoreForBusiness || finalMod.isFree;
+
+                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                            const Icon = (Icons as any)[finalMod.icon || 'Box'] || Icons.Box;
                             const isInstalled = activeMods.includes(finalMod.id);
                             const isInstalling = installingId === finalMod.id;
 
@@ -305,7 +417,7 @@ export function AppStorePage() {
                                                         <Download size={16} /> Суулгах
                                                     </button>
                                                 ) : (
-                                                     
+
                                                     (finalMod.plans || []).map((p: any) => ( // eslint-disable-line @typescript-eslint/no-explicit-any
                                                         <button
                                                             key={p.id}
