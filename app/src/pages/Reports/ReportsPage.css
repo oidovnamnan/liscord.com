@@ -1,51 +1,180 @@
+/* Premium Segmented Control */
 .report-period-bar {
-    display: flex;
-    gap: var(--space-xs);
-    margin-bottom: var(--space-lg);
+    display: inline-flex;
+    background: var(--surface-2);
+    padding: 4px;
+    border-radius: var(--radius-xl);
+    border: 1px solid var(--border-primary);
+    gap: 4px;
+    margin-bottom: var(--space-xl);
+    box-shadow: var(--shadow-sm);
 }
 
+.report-period-btn {
+    padding: 8px 16px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    border: none;
+    background: transparent;
+    border-radius: var(--radius-lg);
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.report-period-btn:hover {
+    color: var(--text-primary);
+    background: var(--bg-hover);
+}
+
+.report-period-btn.active {
+    background: var(--surface-1);
+    color: var(--primary);
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--border-secondary);
+}
+
+/* Premium Stat Cards */
+.report-stat-card {
+    background: var(--surface-1);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-xl);
+    padding: var(--space-lg);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    box-shadow: var(--shadow-sm);
+}
+
+.report-stat-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-lg);
+    border-color: var(--primary-light);
+}
+
+.report-stat-card::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 60px;
+    height: 60px;
+    background: radial-gradient(circle at top right, var(--card-glow), transparent 70%);
+    opacity: 0.4;
+    pointer-events: none;
+}
+
+.report-stat-icon-wrap {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--icon-bg);
+    color: var(--icon-color);
+    box-shadow: 0 4px 12px var(--icon-shadow);
+}
+
+.report-stat-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.report-stat-label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.report-stat-value {
+    font-size: 1.5rem;
+    font-weight: 850;
+    color: var(--text-primary);
+    font-feature-settings: "tnum";
+}
+
+/* Redesigned Chart */
 .report-chart {
     display: flex;
     align-items: flex-end;
-    justify-content: space-around;
-    gap: var(--space-md);
-    height: 220px;
-    padding: var(--space-md) 0;
+    justify-content: space-between;
+    gap: 12px;
+    height: 240px;
+    padding: var(--space-xl) var(--space-md) var(--space-md);
+    background: linear-gradient(to top, var(--surface-2) 0%, transparent 100%);
+    border-radius: var(--radius-lg);
+    border-bottom: 2px solid var(--border-primary);
 }
 
 .report-chart-bar-wrap {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: var(--space-xs);
+    gap: 12px;
     flex: 1;
+    position: relative;
+    height: 100%;
+    justify-content: flex-end;
 }
 
 .report-chart-bar {
     width: 100%;
-    max-width: 60px;
+    max-width: 40px;
     background: var(--gradient-primary);
-    border-radius: var(--radius-sm) var(--radius-sm) 0 0;
-    transition: height 0.5s ease;
+    border-radius: 8px 8px 4px 4px;
+    transition: height 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
     min-height: 4px;
+    position: relative;
+}
+
+.report-chart-bar::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to top, rgba(255, 255, 255, 0.1), transparent);
+    border-radius: inherit;
 }
 
 .report-chart-bar-wrap:hover .report-chart-bar {
-    box-shadow: var(--primary-glow);
+    filter: brightness(1.1);
+    box-shadow: 0 0 20px rgba(var(--primary-rgb), 0.3);
 }
 
 .report-chart-value {
-    font-size: 0.7rem;
+    font-size: 0.65rem;
+    font-weight: 700;
     color: var(--text-muted);
-    white-space: nowrap;
+    position: absolute;
+    top: -20px;
+    opacity: 0;
+    transition: all 0.2s ease;
+    pointer-events: none;
+    background: var(--surface-1);
+    padding: 2px 6px;
+    border-radius: 4px;
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--border-primary);
+}
+
+.report-chart-bar-wrap:hover .report-chart-value {
+    opacity: 1;
+    transform: translateY(-5px);
 }
 
 .report-chart-label {
-    font-size: 0.75rem;
-    color: var(--text-secondary);
-    font-weight: 500;
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    font-weight: 600;
 }
 
+/* Rankings */
 .report-ranking {
     display: flex;
     flex-direction: column;
@@ -54,20 +183,46 @@
 .report-rank-item {
     display: flex;
     align-items: center;
-    gap: var(--space-sm);
-    padding: var(--space-sm) 0;
-    border-bottom: 1px solid var(--border-primary);
+    gap: var(--space-md);
+    padding: var(--space-md);
+    border-radius: var(--radius-lg);
+    transition: all 0.2s ease;
 }
 
 .report-rank-item:last-child {
     border-bottom: none;
 }
 
+.report-rank-item:hover {
+    background: var(--surface-2);
+}
+
 .report-rank-num {
-    font-weight: 700;
-    font-size: 0.85rem;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--surface-3);
+    border-radius: 10px;
+    font-weight: 800;
+    font-size: 0.75rem;
     color: var(--text-muted);
-    width: 28px;
+}
+
+.report-rank-num-1 {
+    background: rgba(255, 215, 0, 0.15);
+    color: #b8860b;
+}
+
+.report-rank-num-2 {
+    background: rgba(192, 192, 192, 0.15);
+    color: #708090;
+}
+
+.report-rank-num-3 {
+    background: rgba(205, 127, 50, 0.15);
+    color: #8b4513;
 }
 
 .report-rank-info {
@@ -76,9 +231,9 @@
 }
 
 .report-rank-name {
-    font-size: 0.9rem;
-    font-weight: 500;
-    display: block;
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--text-primary);
 }
 
 .report-rank-detail {
@@ -87,21 +242,18 @@
 }
 
 .report-rank-value {
-    font-weight: 600;
-    font-size: 0.85rem;
-    white-space: nowrap;
+    font-size: 1rem;
+    font-weight: 900;
+    color: var(--primary);
 }
 
-@media (max-width: 640px) {
+@media (max-width: 768px) {
     .report-chart {
-        gap: var(--space-xs);
+        height: 180px;
+        gap: 6px;
     }
 
     .report-chart-bar {
-        max-width: 36px;
-    }
-
-    .report-chart-value {
-        font-size: 0.6rem;
+        max-width: 24px;
     }
 }
