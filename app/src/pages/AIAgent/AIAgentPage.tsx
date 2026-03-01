@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Sparkles, Brain, Zap, BarChart3, Bot, ChevronDown, CheckCircle2, AlertTriangle, Send, Loader2, Target, ShieldCheck } from 'lucide-react';
+import { Sparkles, Brain, Zap, BarChart3, Bot, ChevronDown, AlertTriangle, Send, Loader2, Target, ShieldCheck } from 'lucide-react';
+import { useAuthStore } from '../../store';
 import toast from 'react-hot-toast';
 import './AIAgentPage.css';
 
@@ -11,6 +12,7 @@ interface Message {
 }
 
 export const AIAgentPage: React.FC = () => {
+    const { user } = useAuthStore();
     const [activeModel, setActiveModel] = useState('gpt-4');
     const [autoFallback, setAutoFallback] = useState(true);
     const [inputText, setInputText] = useState('');
