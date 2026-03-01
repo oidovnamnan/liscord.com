@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { Header } from '../../components/layout/Header';
-import { Search, Plus, Package, AlertTriangle, ArrowDownRight, ArrowUpRight, History, TrendingUp, TrendingDown, Loader2 } from 'lucide-react';
+import {
+    Search, Plus, Package, AlertTriangle, ArrowDownRight, ArrowUpRight,
+    History, TrendingUp, TrendingDown, Loader2, ArrowRight
+} from 'lucide-react';
 import { useBusinessStore, useAuthStore } from '../../store';
 import { productService, stockMovementService, warehouseService } from '../../services/db';
 import type { Product, Warehouse, Shelf } from '../../types';
@@ -23,10 +25,10 @@ interface StockMovement {
     createdAt: any;
 }
 
-const typeConfig: Record<string, { label: string; cls: string; icon: typeof ArrowDownRight }> = {
-    in: { label: 'Орлого', cls: 'inv-in', icon: ArrowDownRight },
-    out: { label: 'Зарлага', cls: 'inv-out', icon: ArrowUpRight },
-    adjustment: { label: 'Тохируулга', cls: 'inv-adj', icon: History },
+const typeConfig: Record<string, { label: string; moveCls: string; changeCls: string; icon: typeof ArrowDownRight }> = {
+    in: { label: 'Орлого', moveCls: 'move-in', changeCls: 'change-in', icon: ArrowDownRight },
+    out: { label: 'Зарлага', moveCls: 'move-out', changeCls: 'change-out', icon: ArrowUpRight },
+    adjustment: { label: 'Тохируулга', moveCls: 'move-adj', changeCls: 'change-adj', icon: History },
 };
 
 export function InventoryPage() {
@@ -71,51 +73,74 @@ export function InventoryPage() {
 
     return (
         <HubLayout hubId="inventory-hub">
-            <Header title="Агуулах / Логистик" subtitle="Барааны орлого, зарлага, нөөцийн түүх" action={{ label: 'Нөөц нэмэх', onClick: () => setShowAdd(true) }} />
-            <div className="page">
-                <div className="inv-stats-summary stagger-children">
-                    <div className="stat-card">
-                        <div className="stat-icon" style={{ background: 'rgba(11, 232, 129, 0.1)', color: '#0be881' }}><TrendingUp size={24} /></div>
-                        <div className="stat-info">
-                            <div className="stat-label">Нийт орлого</div>
-                            <div className="stat-value">{totalIn}</div>
+            <div className="inventory-page animate-fade-in">
+                {/* Page Section Header */}
+                <div className="page-section-header">
+                    <div>
+                        <h2 className="page-section-title">Агуулах / Логистик</h2>
+                        <p className="page-section-subtitle">Барааны орлого, зарлага, нөөцийн түүх</p>
+                    </div>
+                    <button className="btn btn-primary btn-sm" onClick={() => setShowAdd(true)}>
+                        <Plus size={16} /> Нөөц нэмэх
+                    </button>
+                </div>
+
+                {/* ====== Stats Grid ====== */}
+                <div className="inv-stats-grid">
+                    <div className="inv-stat-card">
+                        <div className="inv-stat-content">
+                            <h4>Нийт орлого</h4>
+                            <div className="inv-stat-value">{totalIn}</div>
+                        </div>
+                        <div className="inv-stat-icon icon-green">
+                            <TrendingUp size={28} />
                         </div>
                     </div>
-                    <div className="stat-card">
-                        <div className="stat-icon" style={{ background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444' }}><TrendingDown size={24} /></div>
-                        <div className="stat-info">
-                            <div className="stat-label">Нийт зарлага</div>
-                            <div className="stat-value">{totalOut}</div>
+
+                    <div className="inv-stat-card">
+                        <div className="inv-stat-content">
+                            <h4>Нийт зарлага</h4>
+                            <div className="inv-stat-value">{totalOut}</div>
+                        </div>
+                        <div className="inv-stat-icon icon-red">
+                            <TrendingDown size={28} />
                         </div>
                     </div>
-                    <div className="stat-card">
-                        <div className="stat-icon" style={{ background: 'rgba(108, 92, 231, 0.1)', color: '#6c5ce7' }}><Package size={24} /></div>
-                        <div className="stat-info">
-                            <div className="stat-label">Барааны нэр төрөл</div>
-                            <div className="stat-value">{products.length}</div>
+
+                    <div className="inv-stat-card">
+                        <div className="inv-stat-content">
+                            <h4>Барааны нэр төрөл</h4>
+                            <div className="inv-stat-value">{products.length}</div>
+                        </div>
+                        <div className="inv-stat-icon icon-primary">
+                            <Package size={28} />
                         </div>
                     </div>
-                    <div className="stat-card">
-                        <div className="stat-icon" style={{ background: 'rgba(245, 158, 11, 0.1)', color: '#f59e0b' }}><AlertTriangle size={24} /></div>
-                        <div className="stat-info">
-                            <div className="stat-label">Нөөц бага</div>
-                            <div className="stat-value">{lowStockItems.length}</div>
+
+                    <div className="inv-stat-card">
+                        <div className="inv-stat-content">
+                            <h4>Нөөц бага</h4>
+                            <div className="inv-stat-value">{lowStockItems.length}</div>
+                        </div>
+                        <div className="inv-stat-icon icon-orange">
+                            <AlertTriangle size={28} />
                         </div>
                     </div>
                 </div>
 
-                {/* Low stock alert */}
+                {/* ====== Low Stock Alert ====== */}
                 {!loading && lowStockItems.length > 0 && (
-                    <div className="inv-low-stock-panel" style={{ marginBottom: 'var(--space-lg)' }}>
-                        <h3 className="text-sm font-black mb-3 text-orange-600 flex items-center gap-2">
-                            <AlertTriangle size={18} /> Нөөц бага байгаа бараа
-                        </h3>
-                        <div className="inv-low-stock-list">
+                    <div className="inv-low-stock-premium">
+                        <div className="low-stock-header">
+                            <AlertTriangle size={18} />
+                            Нөөц бага байгаа бараа
+                        </div>
+                        <div className="low-stock-list">
                             {lowStockItems.map((item, i) => (
-                                <div key={i} className="inv-low-stock-item">
-                                    <span className="inv-low-stock-name">{item.name}</span>
+                                <div key={i} className="low-stock-item">
+                                    <span className="low-stock-item-name">{item.name}</span>
                                     {item.sku && <span className="badge badge-surface">{item.sku}</span>}
-                                    <span className={`badge ${(item.stock?.quantity || 0) === 0 ? 'badge-cancelled' : 'badge-preparing'}`}>
+                                    <span className={`low-stock-item-badge ${(item.stock?.quantity || 0) === 0 ? 'out-of-stock' : 'low'}`}>
                                         {(item.stock?.quantity || 0) === 0 ? 'Дууссан' : `${item.stock?.quantity} ш`}
                                     </span>
                                 </div>
@@ -124,40 +149,47 @@ export function InventoryPage() {
                     </div>
                 )}
 
-                <div className="orders-toolbar">
-                    <div className="orders-search">
-                        <Search size={18} className="orders-search-icon" />
-                        <input className="orders-search-input" placeholder="Бараа, шалтгаан хайх..." value={search} onChange={e => setSearch(e.target.value)} />
+                {/* ====== Search & Filter Toolbar ====== */}
+                <div className="inv-toolbar">
+                    <div className="inv-search-wrap">
+                        <Search size={18} className="inv-search-icon" />
+                        <input
+                            className="inv-search-input"
+                            placeholder="Бараа, шалтгаан хайх..."
+                            value={search}
+                            onChange={e => setSearch(e.target.value)}
+                        />
                     </div>
-                    <div className="orders-status-bar">
-                        <button className={`orders-status-chip ${typeFilter === 'all' ? 'active' : ''}`} onClick={() => setTypeFilter('all')}>
+                    <div className="inv-filter-chips">
+                        <button className={`inv-chip ${typeFilter === 'all' ? 'active' : ''}`} onClick={() => setTypeFilter('all')}>
                             Бүгд <span className="chip-count">{countAll}</span>
                         </button>
-                        <button className={`orders-status-chip ${typeFilter === 'in' ? 'active' : ''}`} onClick={() => setTypeFilter('in')}>
+                        <button className={`inv-chip ${typeFilter === 'in' ? 'active' : ''}`} onClick={() => setTypeFilter('in')}>
                             Орлого <span className="chip-count">{countIn}</span>
                         </button>
-                        <button className={`orders-status-chip ${typeFilter === 'out' ? 'active' : ''}`} onClick={() => setTypeFilter('out')}>
+                        <button className={`inv-chip ${typeFilter === 'out' ? 'active' : ''}`} onClick={() => setTypeFilter('out')}>
                             Зарлага <span className="chip-count">{countOut}</span>
                         </button>
-                        <button className={`orders-status-chip ${typeFilter === 'adjustment' ? 'active' : ''}`} onClick={() => setTypeFilter('adjustment')}>
+                        <button className={`inv-chip ${typeFilter === 'adjustment' ? 'active' : ''}`} onClick={() => setTypeFilter('adjustment')}>
                             Тохируулга <span className="chip-count">{countAdj}</span>
                         </button>
                     </div>
                 </div>
 
-                <div className="inv-movement-list stagger-children">
+                {/* ====== Movement List ====== */}
+                <div className="inv-movements-premium">
                     {loading ? (
-                        <div className="loading-state">
-                            <Loader2 size={32} className="animate-spin text-primary" />
-                            <p className="mt-4 font-bold text-muted">Өгөгдөл ачаалж байна...</p>
+                        <div className="inv-loading">
+                            <Loader2 size={36} className="animate-spin" />
+                            <p className="inv-loading-text">Өгөгдөл ачаалж байна...</p>
                         </div>
                     ) : filtered.length === 0 ? (
-                        <div className="empty-state">
-                            <div className="empty-state-icon">
-                                <History size={48} className="text-muted opacity-20" />
+                        <div className="inv-empty-state">
+                            <div className="inv-empty-icon">
+                                <History size={40} />
                             </div>
-                            <h3>Түүх олдсонгүй</h3>
-                            <p>Нөөцийн хөдөлгөөн бүртгэгдээгүй байна</p>
+                            <div className="inv-empty-title">Түүх олдсонгүй</div>
+                            <div className="inv-empty-desc">Нөөцийн хөдөлгөөн бүртгэгдээгүй байна</div>
                         </div>
                     ) : (
                         filtered.map(m => {
@@ -167,21 +199,23 @@ export function InventoryPage() {
                                 ? m.createdAt.toLocaleDateString('mn-MN') + ' ' + m.createdAt.toLocaleTimeString('mn-MN', { hour: '2-digit', minute: '2-digit' })
                                 : '';
                             return (
-                                <div key={m.id} className={`inv-movement-card ${cfg?.cls}`}>
-                                    <div className="inv-movement-icon"><Icon size={20} /></div>
-                                    <div className="inv-movement-info">
-                                        <div className="inv-movement-product">{m.productName}</div>
-                                        <div className="inv-movement-reason">{m.reason || cfg?.label}</div>
+                                <div key={m.id} className={`inv-move-card ${cfg?.moveCls || ''}`}>
+                                    <div className="inv-move-icon"><Icon size={22} /></div>
+                                    <div className="inv-move-info">
+                                        <div className="inv-move-product">{m.productName}</div>
+                                        <div className="inv-move-reason">{m.reason || cfg?.label}</div>
                                     </div>
-                                    <div className="inv-movement-qty">
-                                        <span className={`inv-movement-change ${cfg?.cls}`}>
+                                    <div className="inv-move-qty">
+                                        <span className={`inv-move-change ${cfg?.changeCls || ''}`}>
                                             {m.type === 'out' ? '-' : m.type === 'in' ? '+' : ''}{Math.abs(m.quantity)} ш
                                         </span>
-                                        <span className="inv-movement-stock">{m.previousStock} → {m.newStock}</span>
+                                        <div className="inv-move-stock">
+                                            {m.previousStock} <ArrowRight size={10} /> {m.newStock}
+                                        </div>
                                     </div>
-                                    <div className="inv-movement-meta">
-                                        <span>{m.createdBy}</span>
-                                        <span>{dateStr}</span>
+                                    <div className="inv-move-meta">
+                                        <div className="inv-move-user">{m.createdBy}</div>
+                                        <div className="inv-move-date">{dateStr}</div>
                                     </div>
                                 </div>
                             );
