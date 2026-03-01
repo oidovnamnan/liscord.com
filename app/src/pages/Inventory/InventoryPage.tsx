@@ -3,8 +3,8 @@ import { createPortal } from 'react-dom';
 import { Header } from '../../components/layout/Header';
 import { Search, Plus, Package, AlertTriangle, ArrowDownRight, ArrowUpRight, History, TrendingUp, TrendingDown, Loader2 } from 'lucide-react';
 import { useBusinessStore, useAuthStore } from '../../store';
-import { productService, stockMovementService } from '../../services/db';
-import type { Product } from '../../types';
+import { productService, stockMovementService, warehouseService } from '../../services/db';
+import type { Product, Warehouse, Shelf } from '../../types';
 import { HubLayout } from '../../components/common/HubLayout';
 import { toast } from 'react-hot-toast';
 import './InventoryPage.css';
@@ -187,7 +187,28 @@ function AddMovementModal({ products, onClose }: { products: Product[]; onClose:
     const [reason, setReason] = useState('');
     const [saving, setSaving] = useState(false);
 
+    const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
+    const [selectedWarehouseId, setSelectedWarehouseId] = useState('');
+    const [shelves, setShelves] = useState<Shelf[]>([]);
+    const [selectedShelfId, setSelectedShelfId] = useState('');
+
     const selectedProduct = products.find(p => p.id === productId);
+
+    useEffect(() => {
+        if (!business?.id) return;
+        return warehouseService.subscribeWarehouses(business.id, (data) => {
+            setWarehouses(data);
+            if (data.length > 0) setSelectedWarehouseId(data[0].id);
+        });
+    }, [business?.id]);
+
+    useEffect(() => {
+        if (!business?.id || !selectedWarehouseId) {
+            setShelves([]);
+            return;
+        }
+        return warehouseService.subscribeShelves(business.id, selectedWarehouseId, setShelves);
+    }, [business?.id, selectedWarehouseId]);
 
     async function handleSubmit(e: React.FormEvent) {
         e.preventDefault();
@@ -207,6 +228,8 @@ function AddMovementModal({ products, onClose }: { products: Product[]; onClose:
                 quantity: qty,
                 reason: reason.trim() || typeConfig[type]?.label || '',
                 createdBy: user.displayName || user.email || 'System',
+                warehouseId: selectedWarehouseId || undefined,
+                shelfId: selectedShelfId || undefined
             });
             toast.success('Нөөцийн хөдөлгөөн амжилттай бүртгэгдлээ!');
             onClose();
@@ -223,40 +246,65 @@ function AddMovementModal({ products, onClose }: { products: Product[]; onClose:
             <div className="modal" onClick={e => e.stopPropagation()}>
                 <form onSubmit={handleSubmit}>
                     <div className="modal-header">
-                        <h2>Нөөц нэмэх</h2>
+                        <h2>Нөөцийн хөдөлгөөн бүртгэх</h2>
                         <button type="button" className="btn btn-ghost btn-icon" onClick={onClose}>✕</button>
                     </div>
                     <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                        <div className="input-group">
-                            <label className="input-label">Бараа <span className="required">*</span></label>
-                            <select className="input select" value={productId} onChange={e => setProductId(e.target.value)} required>
-                                {products.map(p => (
-                                    <option key={p.id} value={p.id}>{p.name} (Үлдэгдэл: {p.stock?.quantity || 0})</option>
-                                ))}
-                                {products.length === 0 && <option disabled>Бараа байхгүй байна</option>}
-                            </select>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="input-group">
+                                <label className="input-label">Бараа <span className="required">*</span></label>
+                                <select className="input select" value={productId} onChange={e => setProductId(e.target.value)} required>
+                                    {products.map(p => (
+                                        <option key={p.id} value={p.id}>{p.name} (Нийт: {p.stock?.quantity || 0})</option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div className="input-group">
+                                <label className="input-label">Төрөл</label>
+                                <select className="input select" value={type} onChange={e => setType(e.target.value as 'in' | 'out' | 'adjustment')}>
+                                    <option value="in">Орлого (Татан авалт)</option>
+                                    <option value="out">Зарлага</option>
+                                    <option value="adjustment">Тохируулга</option>
+                                </select>
+                            </div>
                         </div>
-                        <div className="input-group">
-                            <label className="input-label">Төрөл</label>
-                            <select className="input select" value={type} onChange={e => setType(e.target.value as 'in' | 'out' | 'adjustment')}>
-                                <option value="in">Орлого (Татан авалт)</option>
-                                <option value="out">Зарлага</option>
-                                <option value="adjustment">Тохируулга (шууд тоо оруулах)</option>
-                            </select>
+
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="input-group">
+                                <label className="input-label">Агуулах</label>
+                                <select className="input select" value={selectedWarehouseId} onChange={e => setSelectedWarehouseId(e.target.value)}>
+                                    <option value="">Сонгох...</option>
+                                    {warehouses.map(w => (
+                                        <option key={w.id} value={w.id}>{w.name}</option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div className="input-group">
+                                <label className="input-label">Тавиур / Хаяг</label>
+                                <select className="input select" value={selectedShelfId} onChange={e => setSelectedShelfId(e.target.value)} disabled={!selectedWarehouseId}>
+                                    <option value="">Сонгох...</option>
+                                    {shelves.map(s => (
+                                        <option key={s.id} value={s.id}>{s.locationCode} (Level {s.level || '?'})</option>
+                                    ))}
+                                </select>
+                            </div>
                         </div>
-                        <div className="input-group">
-                            <label className="input-label">Тоо ширхэг <span className="required">*</span></label>
-                            <input className="input" type="number" min="1" placeholder="10" value={quantity} onChange={e => setQuantity(e.target.value)} required />
-                        </div>
-                        <div className="input-group">
-                            <label className="input-label">Шалтгаан</label>
-                            <input className="input" placeholder="Татан авалт — Нийлүүлэгч А" value={reason} onChange={e => setReason(e.target.value)} />
+
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="input-group">
+                                <label className="input-label">Тоо ширхэг <span className="required">*</span></label>
+                                <input className="input" type="number" min="1" placeholder="10" value={quantity} onChange={e => setQuantity(e.target.value)} required />
+                            </div>
+                            <div className="input-group">
+                                <label className="input-label">Шалтгаан</label>
+                                <input className="input" placeholder="Жишээ: Шинэ бараа ирсэн..." value={reason} onChange={e => setReason(e.target.value)} />
+                            </div>
                         </div>
                     </div>
                     <div className="modal-footer">
                         <button type="button" className="btn btn-secondary" onClick={onClose}>Болих</button>
                         <button type="submit" className="btn btn-primary" disabled={saving || products.length === 0}>
-                            {saving ? <Loader2 size={16} className="spin" /> : <Plus size={16} />} Бүртгэх
+                            {saving ? <Loader2 size={16} className="animate-spin" /> : <Plus size={16} />} Бүртгэх
                         </button>
                     </div>
                 </form>

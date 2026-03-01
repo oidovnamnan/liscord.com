@@ -24,7 +24,8 @@ import type {
     Business, User, Employee, Order, Customer, Product, Position, Category, CargoType, OrderSource, SocialAccount, OrderStatusConfig, BusinessStats,
     PayrollEntry, BusinessCategoryConfig, PlatformPayment, BusinessRequest, AppModulePricingPlan,
     Lead, Quote, Campaign, Invoice, Expense, BankAccount, PettyCashTransaction, LoyaltyConfig,
-    Trip, DeliveryRecord, FleetLog, VehicleMaintenanceLog, ImportCostCalculation, Vehicle
+    Trip, DeliveryRecord, FleetLog, VehicleMaintenanceLog, ImportCostCalculation, Vehicle,
+    Warehouse, WarehouseZone, Shelf
 } from '../types';
 import { getFeatures } from '../config/features';
 
@@ -860,6 +861,8 @@ export const stockMovementService = {
         quantity: number;
         reason: string;
         createdBy: string;
+        warehouseId?: string;
+        shelfId?: string;
     }): Promise<void> {
         // Get current product stock
         const productRef = doc(db, 'businesses', bizId, 'products', data.productId);
@@ -867,12 +870,33 @@ export const stockMovementService = {
         if (!productSnap.exists()) throw new Error('Product not found');
 
         const productData = productSnap.data();
-        const currentStock = productData.stock?.quantity || 0;
+        const currentTotalStock = productData.stock?.quantity || 0;
+        const currentBalances = productData.stockBalances || {};
 
-        let newStock = currentStock;
-        if (data.type === 'in') newStock = currentStock + data.quantity;
-        else if (data.type === 'out') newStock = Math.max(0, currentStock - data.quantity);
-        else newStock = data.quantity; // adjustment = set to exact value
+        let newTotalStock = currentTotalStock;
+        let newWarehouseBalance = 0;
+
+        if (data.warehouseId) {
+            const currentWHBalance = currentBalances[data.warehouseId] || 0;
+            if (data.type === 'in') {
+                newWarehouseBalance = currentWHBalance + data.quantity;
+                newTotalStock = currentTotalStock + data.quantity;
+            } else if (data.type === 'out') {
+                newWarehouseBalance = Math.max(0, currentWHBalance - data.quantity);
+                const actualShipment = currentWHBalance - newWarehouseBalance;
+                newTotalStock = Math.max(0, currentTotalStock - actualShipment);
+            } else {
+                // Adjustment
+                const diff = data.quantity - currentWHBalance;
+                newWarehouseBalance = data.quantity;
+                newTotalStock = currentTotalStock + diff;
+            }
+        } else {
+            // Legacy / Global mode
+            if (data.type === 'in') newTotalStock = currentTotalStock + data.quantity;
+            else if (data.type === 'out') newTotalStock = Math.max(0, currentTotalStock - data.quantity);
+            else newTotalStock = data.quantity;
+        }
 
         const batch = writeBatch(db);
 
@@ -880,16 +904,22 @@ export const stockMovementService = {
         const movRef = doc(collection(db, 'businesses', bizId, 'stock_movements'));
         batch.set(movRef, {
             ...data,
-            previousStock: currentStock,
-            newStock,
+            previousStock: currentTotalStock,
+            newStock: newTotalStock,
             createdAt: serverTimestamp(),
         });
 
-        // Update product stock
-        batch.update(productRef, {
-            'stock.quantity': newStock,
+        // Update product stock and balances
+        const updates: any = {
+            'stock.quantity': newTotalStock,
             updatedAt: serverTimestamp(),
-        });
+        };
+
+        if (data.warehouseId) {
+            updates[`stockBalances.${data.warehouseId}`] = newWarehouseBalance;
+        }
+
+        batch.update(productRef, updates);
 
         await batch.commit();
     },
@@ -2521,5 +2551,84 @@ export const globalSettingsService = {
                 callback(DEFAULT_GLOBAL_SETTINGS);
             }
         });
+    }
+};
+
+// ============ WAREHOUSE SERVICES ============
+export const warehouseService = {
+    getWarehousesRef(bizId: string) {
+        return collection(db, 'businesses', bizId, 'warehouses');
+    },
+
+    subscribeWarehouses(bizId: string, callback: (data: Warehouse[]) => void) {
+        const q = query(this.getWarehousesRef(bizId), where('isDeleted', '==', false));
+        return onSnapshot(q, (snap) => {
+            callback(snap.docs.map(d => ({ id: d.id, ...convertTimestamps(d.data()) } as Warehouse)));
+        });
+    },
+
+    async createWarehouse(bizId: string, data: Partial<Warehouse>) {
+        const docRef = await addDoc(this.getWarehousesRef(bizId), {
+            ...data,
+            isActive: true,
+            isDeleted: false,
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp(),
+        });
+        return docRef.id;
+    },
+
+    async updateWarehouse(bizId: string, id: string, data: Partial<Warehouse>) {
+        const docRef = doc(db, 'businesses', bizId, 'warehouses', id);
+        await updateDoc(docRef, { ...data, updatedAt: serverTimestamp() });
+    },
+
+    async deleteWarehouse(bizId: string, id: string) {
+        const docRef = doc(db, 'businesses', bizId, 'warehouses', id);
+        await updateDoc(docRef, { isDeleted: true, updatedAt: serverTimestamp() });
+    },
+
+    // Zones
+    getZonesRef(bizId: string, warehouseId: string) {
+        return collection(db, 'businesses', bizId, 'warehouses', warehouseId, 'zones');
+    },
+
+    subscribeZones(bizId: string, warehouseId: string, callback: (data: WarehouseZone[]) => void) {
+        const q = query(this.getZonesRef(bizId, warehouseId), where('isDeleted', '==', false));
+        return onSnapshot(q, (snap) => {
+            callback(snap.docs.map(d => ({ id: d.id, ...convertTimestamps(d.data()) } as WarehouseZone)));
+        });
+    },
+
+    async createZone(bizId: string, warehouseId: string, data: Partial<WarehouseZone>) {
+        const docRef = await addDoc(this.getZonesRef(bizId, warehouseId), {
+            ...data,
+            warehouseId,
+            isDeleted: false,
+            createdAt: serverTimestamp(),
+        });
+        return docRef.id;
+    },
+
+    // Shelves
+    getShelvesRef(bizId: string, warehouseId: string) {
+        return collection(db, 'businesses', bizId, 'warehouses', warehouseId, 'shelves');
+    },
+
+    subscribeShelves(bizId: string, warehouseId: string, callback: (data: Shelf[]) => void) {
+        const q = query(this.getShelvesRef(bizId, warehouseId), where('isDeleted', '==', false));
+        return onSnapshot(q, (snap) => {
+            callback(snap.docs.map(d => ({ id: d.id, ...convertTimestamps(d.data()) } as Shelf)));
+        });
+    },
+
+    async createShelf(bizId: string, warehouseId: string, data: Partial<Shelf>) {
+        const docRef = await addDoc(this.getShelvesRef(bizId, warehouseId), {
+            ...data,
+            warehouseId,
+            isDeleted: false,
+            createdAt: serverTimestamp(),
+        });
+        return docRef.id;
     }
 };

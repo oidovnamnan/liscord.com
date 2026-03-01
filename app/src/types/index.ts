@@ -606,6 +606,9 @@ export interface Product {
         lowStockThreshold: number;
         trackInventory: boolean;
     };
+    stockBalances?: {
+        [warehouseId: string]: number;
+    };
     cargoFee?: {
         amount: number;
         isIncluded: boolean;
@@ -676,11 +679,39 @@ export interface PackageBatch {
     updatedAt: Date;
 }
 
+// ============ WAREHOUSE & SHELVES ============
+export interface Warehouse {
+    id: string;
+    businessId: string;
+    name: string;
+    location?: string;
+    type: 'main' | 'secondary' | 'retail' | 'dark_store' | 'transit';
+    description?: string;
+    isActive: boolean;
+    isDeleted: boolean;
+    createdAt: Date;
+    updatedAt: Date;
+}
+
+export interface WarehouseZone {
+    id: string;
+    warehouseId: string;
+    name: string;
+    type: 'cold' | 'dry' | 'hazardous' | 'racking' | 'pallet' | 'bin';
+    capacity?: string;
+    description?: string;
+    isDeleted: boolean;
+    createdAt: Date;
+}
+
 export interface Shelf {
     id: string;
+    warehouseId: string;
+    zoneId?: string;
     locationCode: string; // e.g. B-04
-    level: 'top' | 'middle' | 'bottom';
+    level?: string;
     isFull: boolean;
+    isDeleted: boolean;
     createdBy: string;
     createdAt: Date;
 }
