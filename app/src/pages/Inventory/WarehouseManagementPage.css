@@ -1,0 +1,514 @@
+.wms-page {
+    padding: var(--space-xl);
+    max-width: 1400px;
+    margin: 0 auto;
+    width: 100%;
+    animation: fadeIn 0.4s ease-out;
+}
+
+/* Page Section Header (Shared style across premium pages) */
+.page-section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: var(--space-2xl);
+    gap: var(--space-lg);
+}
+
+.page-section-title {
+    font-size: 1.75rem;
+    font-weight: 800;
+    color: var(--text-primary);
+    margin: 0 0 0.25rem 0;
+    letter-spacing: -0.5px;
+}
+
+.page-section-subtitle {
+    font-size: 0.95rem;
+    color: var(--text-muted);
+    margin: 0;
+}
+
+/* Empty State */
+.wms-empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 6rem 2rem;
+    background: var(--surface-1);
+    border-radius: var(--radius-2xl);
+    border: 1px dashed var(--border-color);
+    margin-top: var(--space-xl);
+}
+
+.wms-empty-icon {
+    width: 80px;
+    height: 80px;
+    background: rgba(var(--primary-rgb), 0.1);
+    color: var(--primary);
+    border-radius: var(--radius-full);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: var(--space-lg);
+}
+
+.wms-empty-title {
+    font-size: 1.25rem;
+    font-weight: 800;
+    color: var(--text-primary);
+    margin-bottom: var(--space-xs);
+}
+
+.wms-empty-desc {
+    color: var(--text-muted);
+    font-size: 0.95rem;
+    max-width: 400px;
+    margin-bottom: var(--space-xl);
+    line-height: 1.5;
+}
+
+/* Grid for Warehouses */
+.wms-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: var(--space-xl);
+}
+
+.wms-card {
+    background: var(--surface-1);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-2xl);
+    padding: var(--space-xl);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-lg);
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+}
+
+.wms-card:hover {
+    transform: translateY(-4px);
+    border-color: rgba(var(--primary-rgb), 0.3);
+    box-shadow: 0 12px 24px -8px rgba(0, 0, 0, 0.4);
+    background: var(--surface-2);
+}
+
+.wms-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+
+.wms-card-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: var(--radius-xl);
+    background: rgba(var(--primary-rgb), 0.1);
+    color: var(--primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.3s ease;
+}
+
+.wms-card-icon.retail {
+    color: #8b5cf6;
+    background: rgba(139, 92, 246, 0.1);
+}
+
+.wms-card-icon.transit {
+    color: #f59e0b;
+    background: rgba(245, 158, 11, 0.1);
+}
+
+.wms-card:hover .wms-card-icon {
+    transform: scale(1.1);
+}
+
+.wms-card-title {
+    font-size: 1.25rem;
+    font-weight: 800;
+    color: var(--text-primary);
+    margin-bottom: 0.25rem;
+}
+
+.wms-card-location {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.wms-card-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    padding-top: var(--space-md);
+    margin-top: auto;
+}
+
+.wms-card-type-label {
+    font-size: 0.65rem;
+    font-weight: 800;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 0.25rem;
+}
+
+.wms-card-type-value {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.wms-card-action {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    transition: color 0.2s ease;
+}
+
+.wms-card:hover .wms-card-action {
+    color: var(--primary);
+}
+
+/* Detail View */
+.wms-detail-header {
+    display: flex;
+    align-items: center;
+    gap: var(--space-lg);
+    margin-bottom: var(--space-2xl);
+}
+
+.wms-back-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: var(--radius-xl);
+    background: var(--surface-2);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.wms-back-btn:hover {
+    background: var(--surface-3);
+    color: var(--primary);
+}
+
+.wms-detail-title {
+    font-size: 1.5rem;
+    font-weight: 800;
+    margin: 0 0 0.25rem 0;
+}
+
+.wms-detail-subtitle {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    font-weight: 700;
+    margin: 0;
+}
+
+.wms-detail-layout {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-xl);
+}
+
+@media (min-width: 1024px) {
+    .wms-detail-layout {
+        grid-template-columns: 350px 1fr;
+    }
+}
+
+.wms-sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-lg);
+}
+
+/* Summary Card */
+.wms-summary-card {
+    background: var(--surface-1);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-2xl);
+    padding: var(--space-xl);
+}
+
+.wms-summary-header {
+    font-size: 0.75rem;
+    font-weight: 800;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: var(--space-lg);
+}
+
+.wms-summary-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--space-md) 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.wms-summary-item:last-of-type {
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+.wms-summary-label {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--text-muted);
+}
+
+.wms-summary-value {
+    font-size: 0.95rem;
+    font-weight: 800;
+    color: var(--text-primary);
+}
+
+/* Quick Search Card */
+.wms-quicksearch-card {
+    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+    border-radius: var(--radius-2xl);
+    padding: var(--space-xl);
+    position: relative;
+    overflow: hidden;
+    color: white;
+}
+
+.wms-quicksearch-bg-icon {
+    position: absolute;
+    bottom: -1.5rem;
+    right: -1.5rem;
+    opacity: 0.1;
+    color: white;
+}
+
+.wms-quicksearch-title {
+    font-size: 1.1rem;
+    font-weight: 800;
+    margin-bottom: 0.5rem;
+    position: relative;
+    z-index: 10;
+}
+
+.wms-quicksearch-desc {
+    font-size: 0.8rem;
+    opacity: 0.9;
+    margin-bottom: var(--space-lg);
+    line-height: 1.4;
+    position: relative;
+    z-index: 10;
+}
+
+.wms-quicksearch-input-wrap {
+    position: relative;
+    z-index: 10;
+}
+
+.wms-quicksearch-icon {
+    position: absolute;
+    left: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--primary);
+}
+
+.wms-quicksearch-input {
+    width: 100%;
+    height: 44px;
+    background: rgba(255, 255, 255, 0.9);
+    border: none;
+    border-radius: var(--radius-xl);
+    padding-left: 2.75rem;
+    padding-right: 1rem;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--bg-primary);
+    transition: all 0.2s ease;
+}
+
+.wms-quicksearch-input:focus {
+    outline: none;
+    background: #ffffff;
+    box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.3);
+}
+
+.wms-quicksearch-input::placeholder {
+    color: rgba(var(--bg-primary-rgb), 0.6);
+}
+
+/* Zones Section */
+.wms-main-content {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-lg);
+}
+
+.wms-section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.wms-section-title {
+    font-size: 1.25rem;
+    font-weight: 800;
+    color: var(--text-primary);
+}
+
+.wms-zone-empty {
+    background: var(--surface-1);
+    border: 1px dashed var(--border-color);
+    border-radius: var(--radius-2xl);
+    padding: 4rem 2rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+}
+
+.wms-zone-empty-icon {
+    color: var(--text-muted);
+    opacity: 0.3;
+    margin-bottom: var(--space-md);
+}
+
+.wms-zones-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: var(--space-lg);
+}
+
+.wms-zone-card {
+    background: var(--surface-1);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-xl);
+    padding: var(--space-lg);
+    transition: all 0.2s ease;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+}
+
+.wms-zone-card:hover {
+    border-color: rgba(var(--primary-rgb), 0.3);
+    background: var(--surface-2);
+}
+
+.wms-zone-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+
+.wms-zone-info {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+}
+
+.wms-zone-icon {
+    width: 40px;
+    height: 40px;
+    background: var(--surface-2);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--primary);
+}
+
+.wms-zone-icon.cold {
+    color: #3b82f6;
+    background: rgba(59, 130, 246, 0.1);
+    border-color: rgba(59, 130, 246, 0.2);
+}
+
+.wms-zone-name {
+    font-size: 0.95rem;
+    font-weight: 800;
+    color: var(--text-primary);
+}
+
+.wms-zone-type {
+    font-size: 0.65rem;
+    font-weight: 800;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.wms-zone-count {
+    font-size: 0.75rem;
+    font-weight: 800;
+    color: var(--primary);
+    background: rgba(var(--primary-rgb), 0.1);
+    padding: 0.25rem 0.5rem;
+    border-radius: var(--radius-sm);
+}
+
+.wms-shelves-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.wms-shelf-badge {
+    font-size: 0.7rem;
+    font-weight: 800;
+    background: var(--surface-3);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    padding: 0.25rem 0.5rem;
+    border-radius: var(--radius-md);
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    cursor: default;
+    transition: all 0.2s ease;
+}
+
+.wms-shelf-badge:hover {
+    border-color: var(--primary);
+    color: var(--primary);
+}
+
+.wms-add-shelf-btn {
+    font-size: 0.7rem;
+    font-weight: 800;
+    color: var(--primary);
+    background: transparent;
+    border: 1px dashed rgba(var(--primary-rgb), 0.3);
+    padding: 0.25rem 0.5rem;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.wms-add-shelf-btn:hover {
+    background: rgba(var(--primary-rgb), 0.1);
+    border-style: solid;
+}
