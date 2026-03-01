@@ -232,6 +232,7 @@ export function AppStorePage() {
             />
 
             <div className="page-content" style={{ paddingTop: '24px' }}>
+                <div style={{ padding: '0 0 10px 0', fontSize: '0.7rem', color: 'var(--text-tertiary)', opacity: 0.5 }}>- ID: {activeStoreTab} -</div>
                 <div style={{
                     position: 'sticky',
                     top: '64px',
@@ -318,7 +319,7 @@ export function AppStorePage() {
                     )}
                 </div>
 
-                <div className="store-render-area" style={{ minHeight: '600px', width: '100%', paddingBottom: '60px' }}>
+                <div className="store-render-area" key={`render-${activeStoreTab}`} style={{ minHeight: '600px', width: '100%', paddingBottom: '60px' }}>
                     {activeStoreTab === 'modules' ? (
                         <div className="app-store-grid" id="grid-modules-dedicated">
                             {LISCORD_MODULES
