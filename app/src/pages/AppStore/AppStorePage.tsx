@@ -266,7 +266,7 @@ export function AppStorePage() {
 
                             <select
                                 className="select"
-                                style={{ height: '44px', borderRadius: '12px', width: '200px', background: 'var(--surface-2)' }}
+                                style={{ height: '44px', borderRadius: '12px', width: '200px', background: 'var(--surface-2)', paddingLeft: '16px' }}
                                 value={selectedCategory}
                                 onChange={(e) => setSelectedCategory(e.target.value)}
                             >
@@ -278,7 +278,7 @@ export function AppStorePage() {
 
                             <select
                                 className="select"
-                                style={{ height: '44px', borderRadius: '12px', width: '200px', background: 'var(--surface-2)' }}
+                                style={{ height: '44px', borderRadius: '12px', width: '200px', background: 'var(--surface-2)', paddingLeft: '16px' }}
                                 value={selectedHub}
                                 onChange={(e) => setSelectedHub(e.target.value)}
                             >
@@ -290,7 +290,7 @@ export function AppStorePage() {
 
                             <select
                                 className="select"
-                                style={{ height: '44px', borderRadius: '12px', width: '160px', background: 'var(--surface-2)' }}
+                                style={{ height: '44px', borderRadius: '12px', width: '160px', background: 'var(--surface-2)', paddingLeft: '16px' }}
                                 value={priceFilter}
                                 onChange={(e) => setPriceFilter(e.target.value as any)}
                             >
