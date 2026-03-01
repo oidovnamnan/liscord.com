@@ -576,6 +576,15 @@ export interface PayrollEntry {
     createdAt: Date;
 }
 
+export interface ProductVariation {
+    id: string;
+    sku: string;
+    name: string; // e.g. "Red / L"
+    salePrice?: number;
+    costPrice?: number;
+    quantity: number;
+}
+
 // ============ PRODUCT ============
 export interface Product {
     id: string;
@@ -605,6 +614,7 @@ export interface Product {
     };
     unitType: string;
     isActive: boolean;
+    variations?: ProductVariation[];
     stats: {
         totalSold: number;
         totalRevenue: number;
