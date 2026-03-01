@@ -33,7 +33,7 @@ export function Sidebar() {
         if (user?.businessIds?.length && showSwitcher) {
             loadBusinesses();
         }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [user?.businessIds, showSwitcher]);
 
     const loadBusinesses = async () => {
@@ -57,7 +57,7 @@ export function Sidebar() {
             setEmployee(emp);
             setShowSwitcher(false);
             toast.success(`${biz?.name} руу шилжлээ`);
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
         } catch (_error) {
             toast.error('Шилжихэд алдаа гарлаа');
         } finally {
@@ -215,6 +215,7 @@ export function Sidebar() {
                         let displayName = mod.name;
                         if (mod.hubId === 'crm-hub') displayName = 'Харилцагч & CRM';
                         if (mod.hubId === 'logistics-hub') displayName = 'Логистик & Карго';
+                        if (mod.hubId === 'inventory-hub') displayName = 'Агуулах / Логистик';
 
                         return (
                             <NavLink
