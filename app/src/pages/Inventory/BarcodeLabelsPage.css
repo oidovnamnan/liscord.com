@@ -7,6 +7,32 @@
 }
 
 /* ====================================
+   PAGE SECTION HEADER (inline, no sticky)
+   ==================================== */
+.page-section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding-bottom: 8px;
+}
+
+.page-section-title {
+    font-size: 1.4rem;
+    font-weight: 800;
+    color: var(--text-primary);
+    letter-spacing: -0.02em;
+    margin: 0;
+}
+
+.page-section-subtitle {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin: 4px 0 0 0;
+    line-height: 1.4;
+}
+
+/* ====================================
    STATS GRID — 4 Column Premium
    ==================================== */
 .stats-grid-premium {

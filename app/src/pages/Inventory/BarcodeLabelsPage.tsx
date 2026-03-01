@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { Header } from '../../components/layout/Header';
 import { HubLayout } from '../../components/common/HubLayout';
 import './BarcodeLabelsPage.css';
 import {
@@ -17,7 +16,8 @@ import {
     Clock,
     CheckCircle2,
     Settings,
-    MoreVertical
+    MoreVertical,
+    Plus
 } from 'lucide-react';
 
 interface LabelDesign {
@@ -62,14 +62,16 @@ export function BarcodeLabelsPage() {
     return (
         <HubLayout hubId="inventory-hub">
             <div className="barcode-labels-page animate-fade-in">
-                <Header
-                    title="Баркод & Шошго (Labels)"
-                    subtitle="Барааны баркод, QR код үүсгэх, шошго хэвлэх загвар болон принтерийн тохиргоо"
-                    action={{
-                        label: "Шинэ загвар",
-                        onClick: () => { }
-                    }}
-                />
+                {/* Page Section Header — no sticky bar */}
+                <div className="page-section-header">
+                    <div>
+                        <h2 className="page-section-title">Баркод & Шошго (Labels)</h2>
+                        <p className="page-section-subtitle">Барааны баркод, QR код үүсгэх, шошго хэвлэх загвар болон принтерийн тохиргоо</p>
+                    </div>
+                    <button className="btn btn-primary btn-sm">
+                        <Plus size={16} /> Шинэ загвар
+                    </button>
+                </div>
 
                 {/* ====== Stats Grid ====== */}
                 <div className="stats-grid-premium">
