@@ -373,27 +373,53 @@ function AddZoneModal({ warehouseId, onClose }: { warehouseId: string; onClose: 
 function AddShelfModal({ warehouseId, zones, onClose }: { warehouseId: string; zones: WarehouseZone[]; onClose: () => void }) {
     const { business } = useBusinessStore();
     const { user } = useAuthStore();
+
+    const [creationMode, setCreationMode] = useState<'single' | 'bulk'>('single');
     const [zoneId, setZoneId] = useState(zones[0]?.id || '');
-    const [code, setCode] = useState('');
     const [level, setLevel] = useState('1');
     const [saving, setSaving] = useState(false);
 
+    // Single mode
+    const [code, setCode] = useState('');
+
+    // Bulk mode
+    const [prefix, setPrefix] = useState('A');
+    const [startNum, setStartNum] = useState(1);
+    const [endNum, setEndNum] = useState(15);
+
     async function handleSubmit(e: React.FormEvent) {
         e.preventDefault();
-        if (!business?.id || !code) return;
+        if (!business?.id) return;
         setSaving(true);
         try {
-            await warehouseService.createShelf(business.id, warehouseId, {
-                zoneId,
-                locationCode: code,
-                level,
-                isFull: false,
-                createdBy: user?.displayName || 'System'
-            });
-            toast.success('Тавиур нэмэгдлээ');
+            if (creationMode === 'single') {
+                if (!code) throw new Error('Байршлын код оруулна уу');
+                await warehouseService.createShelf(business.id, warehouseId, {
+                    zoneId,
+                    locationCode: code,
+                    level,
+                    isFull: false,
+                    createdBy: user?.displayName || 'System'
+                });
+            } else {
+                if (startNum > endNum) throw new Error('Эхлэх дугаар дуусах дугаараас бага байх ёстой');
+                const batchPromises = [];
+                for (let i = startNum; i <= endNum; i++) {
+                    const shelfCode = `${prefix}${i}`;
+                    batchPromises.push(warehouseService.createShelf(business.id, warehouseId, {
+                        zoneId,
+                        locationCode: shelfCode,
+                        level,
+                        isFull: false,
+                        createdBy: user?.displayName || 'System'
+                    }));
+                }
+                await Promise.all(batchPromises);
+            }
+            toast.success(creationMode === 'single' ? 'Тавиур нэмэгдлээ' : 'Тавиурууд амжилттай нэмэгдлээ');
             onClose();
-        } catch (err) {
-            toast.error('Алдаа гарлаа');
+        } catch (err: any) {
+            toast.error(err.message || 'Алдаа гарлаа');
         } finally {
             setSaving(false);
         }
@@ -403,21 +429,63 @@ function AddShelfModal({ warehouseId, zones, onClose }: { warehouseId: string; z
         <div className="modal-backdrop" onClick={onClose}>
             <div className="modal modal-sm" onClick={e => e.stopPropagation()}>
                 <div className="modal-header">
-                    <h2 className="font-black">Тавиур / Хаяг нэмэх</h2>
+                    <h2 className="font-black">Тавиур нэмэх</h2>
                     <button className="btn btn-ghost btn-icon" onClick={onClose}>✕</button>
                 </div>
                 <form onSubmit={handleSubmit}>
                     <div className="modal-body space-y-4">
+                        <div className="flex p-1 mb-2 border rounded-xl" style={{ backgroundColor: 'var(--surface-1)', borderColor: 'var(--border-color)' }}>
+                            <button
+                                type="button"
+                                className={`flex-1 text-sm px-4 py-2 rounded-lg transition-all ${creationMode === 'single' ? 'bg-primary text-white font-bold shadow' : 'text-muted font-medium opacity-80'}`}
+                                onClick={() => setCreationMode('single')}
+                            >
+                                Нэгээр (Single)
+                            </button>
+                            <button
+                                type="button"
+                                className={`flex-1 text-sm px-4 py-2 rounded-lg transition-all ${creationMode === 'bulk' ? 'bg-primary text-white font-bold shadow' : 'text-muted font-medium opacity-80'}`}
+                                onClick={() => setCreationMode('bulk')}
+                            >
+                                Олноор (Bulk)
+                            </button>
+                        </div>
+
                         <div className="input-group">
                             <label className="input-label">Бүс</label>
                             <select className="input select" value={zoneId} onChange={e => setZoneId(e.target.value)} required>
                                 {zones.map(z => <option key={z.id} value={z.id}>{z.name}</option>)}
                             </select>
                         </div>
-                        <div className="input-group">
-                            <label className="input-label">Байршлын код</label>
-                            <input className="input" placeholder="Жишээ: A-101, B-04" value={code} onChange={e => setCode(e.target.value)} required />
-                        </div>
+
+                        {creationMode === 'single' ? (
+                            <div className="input-group">
+                                <label className="input-label">Байршлын код</label>
+                                <input className="input" placeholder="Жишээ: A-101, B-04" value={code} onChange={e => setCode(e.target.value)} required={creationMode === 'single'} />
+                            </div>
+                        ) : (
+                            <div className="grid grid-cols-3 gap-3">
+                                <div className="input-group col-span-3">
+                                    <label className="input-label">Угтвар үсэг (Prefix)</label>
+                                    <input className="input" placeholder="Жишээ: A эсвэл B-" value={prefix} onChange={e => setPrefix(e.target.value)} required={creationMode === 'bulk'} />
+                                </div>
+                                <div className="input-group col-span-1">
+                                    <label className="input-label">Эхлэхээс (From)</label>
+                                    <input type="number" className="input" value={startNum} onChange={e => setStartNum(parseInt(e.target.value))} required={creationMode === 'bulk'} min="1" />
+                                </div>
+                                <div className="input-group col-span-1 flex items-center justify-center pt-8">
+                                    <span className="text-muted font-bold">—</span>
+                                </div>
+                                <div className="input-group col-span-1">
+                                    <label className="input-label">Хүртэл (To)</label>
+                                    <input type="number" className="input" value={endNum} onChange={e => setEndNum(parseInt(e.target.value))} required={creationMode === 'bulk'} min="1" />
+                                </div>
+                                <div className="col-span-3 text-xs text-muted opacity-80 mt-1">
+                                    Нийт <strong>{Math.max(0, endNum - startNum + 1)}</strong> тавиур үүснэ. (Жишээ: {prefix}{startNum}, {prefix}{startNum + 1} ...)
+                                </div>
+                            </div>
+                        )}
+
                         <div className="input-group">
                             <label className="input-label">Түвшин (Level)</label>
                             <input className="input" placeholder="1, 2, 3..." value={level} onChange={e => setLevel(e.target.value)} />
