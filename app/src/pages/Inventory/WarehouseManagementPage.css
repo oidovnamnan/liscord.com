@@ -479,11 +479,11 @@
 .wms-shelf-badge {
     font-size: 0.7rem;
     font-weight: 800;
-    background: var(--surface-3);
-    border: 1px solid rgba(255, 255, 255, 0.05);
-    padding: 0.25rem 0.5rem;
+    background: rgba(var(--primary-rgb), 0.1);
+    border: 1px solid rgba(var(--primary-rgb), 0.2);
+    padding: 0.25rem 0.6rem;
     border-radius: var(--radius-md);
-    color: var(--text-secondary);
+    color: var(--primary);
     display: flex;
     align-items: center;
     gap: 0.25rem;
@@ -493,7 +493,7 @@
 
 .wms-shelf-badge:hover {
     border-color: var(--primary);
-    color: var(--primary);
+    background: rgba(var(--primary-rgb), 0.2);
 }
 
 .wms-add-shelf-btn {
