@@ -50,7 +50,7 @@ export function ChatPage() {
         });
 
         return () => unsubscribe();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [business?.id]);
 
     // Fetch messages for active channel
@@ -111,7 +111,12 @@ export function ChatPage() {
                 {/* Channel sidebar */}
                 <div className={`chat-sidebar ${isSidebarOpen ? 'open' : ''}`}>
                     <div className="chat-sidebar-header">
-                        <h3><span>💬</span> <span>Messenger</span></h3>
+                        <h3>
+                            <div className="chat-premium-icon-wrap">
+                                <span className="chat-premium-icon">💬</span>
+                            </div>
+                            <span className="text-gradient font-black">Messenger</span>
+                        </h3>
                         <button className="btn btn-ghost btn-icon btn-sm show-mobile" onClick={() => setIsSidebarOpen(false)}>
                             <X size={20} />
                         </button>
@@ -284,12 +289,15 @@ export function ChatPage() {
                             </div>
                         </>
                     ) : (
-                        <div className="chat-empty-state">
-                            <div className="stat-icon purple" style={{ width: 80, height: 80, fontSize: 40 }}>
-                                <Hash size={40} />
+                        <div className="chat-empty-state premium-empty-state">
+                            <div className="premium-empty-icon-wrapper">
+                                <div className="premium-empty-icon-glow"></div>
+                                <Hash size={40} className="premium-empty-icon" />
                             </div>
-                            <h3>Messenger-д тавтай морил</h3>
-                            <p>Зүүн талын цэснээс суваг эсвэл харилцагч сонгож чатлаарай.</p>
+                            <h3 className="text-gradient font-black" style={{ fontSize: '1.75rem', marginBottom: '0.5rem' }}>Messenger-д тавтай морил</h3>
+                            <p style={{ fontSize: '0.95rem', maxWidth: '400px', margin: '0 auto', lineHeight: '1.6' }}>
+                                Зүүн талын цэснээс суваг эсвэл харилцагч сонгоод харилцааг эхлүүлээрэй.
+                            </p>
                         </div>
                     )}
                 </div>
