@@ -761,7 +761,6 @@ export const LISCORD_MODULES: AppModule[] = [
         route: '/app/campaigns',
         isCore: false,
         category: 'sales',
-        hubId: 'crm-hub',
         isFree: false,
         plans: [
             { id: 'monthly', name: '30 хоног', price: 20000, durationDays: 30 },
@@ -776,7 +775,6 @@ export const LISCORD_MODULES: AppModule[] = [
         route: '/app/loyalty',
         isCore: false,
         category: 'sales',
-        hubId: 'crm-hub',
         isFree: false,
         plans: [
             { id: 'monthly', name: '30 хоног', price: 20000, durationDays: 30 },
@@ -791,7 +789,6 @@ export const LISCORD_MODULES: AppModule[] = [
         route: '/app/leads',
         isCore: false,
         category: 'sales',
-        hubId: 'crm-hub',
         hasSettings: true,
         isFree: false,
         plans: [
@@ -807,7 +804,6 @@ export const LISCORD_MODULES: AppModule[] = [
         route: '/app/quotes',
         isCore: false,
         category: 'sales',
-        hubId: 'crm-hub',
         isFree: false,
         plans: [
             { id: 'monthly', name: '30 хоног', price: 20000, durationDays: 30 },

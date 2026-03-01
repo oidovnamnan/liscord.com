@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Send, Smile, Paperclip, Search, Hash, Users, Bell, Pin, Loader2, X, Menu } from 'lucide-react';
+import { Send, Smile, Paperclip, Search, Hash, Users, Bell, Pin, Loader2, X, Menu, Plus } from 'lucide-react';
 import { useBusinessStore, useAuthStore } from '../../store';
 import { chatService } from '../../services/db';
 import { HubLayout } from '../../components/common/HubLayout';
@@ -41,7 +41,19 @@ export function ChatPage() {
     useEffect(() => {
         if (!business?.id) return;
 
-        const unsubscribe = chatService.subscribeChannels(business.id, (data) => {
+        const unsubscribe = chatService.subscribeChannels(business.id, async (data) => {
+            if (data.length === 0 && !loading) {
+                // Initializing default channel if none exist
+                try {
+                    await chatService.createChannel(business.id, {
+                        name: 'general',
+                        type: 'general',
+                        icon: 'Hash'
+                    });
+                } catch (e) {
+                    console.error('Failed to create default channel:', e);
+                }
+            }
             setChannels(data);
             if (data.length > 0 && !activeChannelId) {
                 setActiveChannelId(data[0].id);
@@ -51,7 +63,7 @@ export function ChatPage() {
 
         return () => unsubscribe();
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [business?.id]);
+    }, [business?.id, loading]);
 
     // Fetch messages for active channel
     useEffect(() => {
@@ -117,9 +129,27 @@ export function ChatPage() {
                             </div>
                             <span className="text-gradient font-black">Messenger</span>
                         </h3>
-                        <button className="btn btn-ghost btn-icon btn-sm show-mobile" onClick={() => setIsSidebarOpen(false)}>
-                            <X size={20} />
-                        </button>
+                        <div style={{ display: 'flex', gap: '4px' }}>
+                            <button
+                                className="btn btn-ghost btn-icon btn-sm"
+                                title="Суваг үүсгэх"
+                                onClick={async () => {
+                                    const name = prompt('Сувгийн нэр:');
+                                    if (name && business?.id) {
+                                        await chatService.createChannel(business.id, {
+                                            name: name.toLowerCase(),
+                                            type: 'team',
+                                            icon: 'Hash'
+                                        });
+                                    }
+                                }}
+                            >
+                                <Plus size={18} />
+                            </button>
+                            <button className="btn btn-ghost btn-icon btn-sm show-mobile" onClick={() => setIsSidebarOpen(false)}>
+                                <X size={20} />
+                            </button>
+                        </div>
                     </div>
                     <div className="chat-sidebar-search">
                         <div className="search-input-wrapper">

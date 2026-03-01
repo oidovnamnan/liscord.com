@@ -1308,6 +1308,16 @@ export const chatService = {
         });
     },
 
+    async createChannel(bizId: string, data: { name: string, type: 'general' | 'team' | 'dm', icon: string }) {
+        const docRef = await addDoc(this.getChannelsRef(bizId), {
+            ...data,
+            createdAt: serverTimestamp(),
+            lastMessage: 'Суваг үүсгэгдлээ',
+            lastMessageAt: serverTimestamp()
+        });
+        return docRef.id;
+    },
+
     async sendMessage(bizId: string, channelId: string, message: { text: string; senderId: string; senderName: string; avatar: string }) {
         await addDoc(collection(db, 'businesses', bizId, 'channels', channelId, 'messages'), {
             ...message,
