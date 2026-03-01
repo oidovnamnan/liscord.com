@@ -64,9 +64,14 @@ export function InventoryPage() {
         return matchType && matchSearch;
     });
 
+    const countAll = movements.length;
+    const countIn = movements.filter(m => m.type === 'in').length;
+    const countOut = movements.filter(m => m.type === 'out').length;
+    const countAdj = movements.filter(m => m.type === 'adjustment').length;
+
     return (
         <HubLayout hubId="inventory-hub">
-            <Header title="Нөөц удирдлага" subtitle="Барааны орлого, зарлага, нөөцийн түүх" action={{ label: 'Нөөц нэмэх', onClick: () => setShowAdd(true) }} />
+            <Header title="Агуулах / Логистик" subtitle="Барааны орлого, зарлага, нөөцийн түүх" action={{ label: 'Нөөц нэмэх', onClick: () => setShowAdd(true) }} />
             <div className="page">
                 <div className="inv-stats-summary stagger-children">
                     <div className="stat-card">
@@ -125,10 +130,18 @@ export function InventoryPage() {
                         <input className="orders-search-input" placeholder="Бараа, шалтгаан хайх..." value={search} onChange={e => setSearch(e.target.value)} />
                     </div>
                     <div className="orders-status-bar">
-                        <button className={`orders-status-chip ${typeFilter === 'all' ? 'active' : ''}`} onClick={() => setTypeFilter('all')}>Бүгд</button>
-                        <button className={`orders-status-chip ${typeFilter === 'in' ? 'active' : ''}`} onClick={() => setTypeFilter('in')}>Орлого</button>
-                        <button className={`orders-status-chip ${typeFilter === 'out' ? 'active' : ''}`} onClick={() => setTypeFilter('out')}>Зарлага</button>
-                        <button className={`orders-status-chip ${typeFilter === 'adjustment' ? 'active' : ''}`} onClick={() => setTypeFilter('adjustment')}>Тохируулга</button>
+                        <button className={`orders-status-chip ${typeFilter === 'all' ? 'active' : ''}`} onClick={() => setTypeFilter('all')}>
+                            Бүгд <span className="chip-count">{countAll}</span>
+                        </button>
+                        <button className={`orders-status-chip ${typeFilter === 'in' ? 'active' : ''}`} onClick={() => setTypeFilter('in')}>
+                            Орлого <span className="chip-count">{countIn}</span>
+                        </button>
+                        <button className={`orders-status-chip ${typeFilter === 'out' ? 'active' : ''}`} onClick={() => setTypeFilter('out')}>
+                            Зарлага <span className="chip-count">{countOut}</span>
+                        </button>
+                        <button className={`orders-status-chip ${typeFilter === 'adjustment' ? 'active' : ''}`} onClick={() => setTypeFilter('adjustment')}>
+                            Тохируулга <span className="chip-count">{countAdj}</span>
+                        </button>
                     </div>
                 </div>
 

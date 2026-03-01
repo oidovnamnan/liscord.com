@@ -88,10 +88,6 @@ export function Sidebar() {
     const filteredNavItems = LISCORD_MODULES.filter((mod, index, self) => {
         // Core modules (like Dashboard, Reports, Settings) are always visible
         if (mod.isCore) {
-            // If it has a hubId, only show the first one to avoid duplicates in sidebar
-            if (mod.hubId) {
-                return self.findIndex(m => m.hubId === mod.hubId) === index;
-            }
             return true;
         }
 
@@ -211,11 +207,11 @@ export function Sidebar() {
                         const isAnyHubModuleActive = hubModules.some(m => location.pathname.startsWith(m.route));
                         const isActive = isAnyHubModuleActive || location.pathname.startsWith(mod.route);
 
-                        // Better labels for hubs to satisfy user
+                        // Better label for main inventory hub module
                         let displayName = mod.name;
-                        if (mod.hubId === 'crm-hub') displayName = 'Харилцагч & CRM';
-                        if (mod.hubId === 'logistics-hub') displayName = 'Логистик & Карго';
-                        if (mod.hubId === 'inventory-hub') displayName = 'Агуулах / Логистик';
+                        if (mod.id === 'inventory') displayName = 'Агуулах / Логистик';
+                        if (mod.id === 'crm') displayName = 'Харилцагч & CRM';
+                        if (mod.id === 'logistics') displayName = 'Логистик & Карго';
 
                         return (
                             <NavLink
