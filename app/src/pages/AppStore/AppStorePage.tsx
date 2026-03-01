@@ -232,7 +232,20 @@ export function AppStorePage() {
             />
 
             <div className="page-content" style={{ paddingTop: '24px' }}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', marginBottom: '32px' }}>
+                <div style={{
+                    position: 'sticky',
+                    top: '64px',
+                    zIndex: 190,
+                    background: 'var(--bg-primary)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '20px',
+                    marginBottom: '32px',
+                    padding: '8px 0 16px 0',
+                    margin: '-8px 0 32px 0',
+                    borderBottom: '1px solid var(--border-glass)',
+                    backdropFilter: 'blur(8px)'
+                }}>
                     <div style={{ display: 'flex', gap: '4px', background: 'var(--surface-2)', padding: '6px', borderRadius: '16px', alignSelf: 'flex-start' }}>
                         <button
                             className={`btn btn-sm ${activeStoreTab === 'modules' ? 'btn-primary gradient-btn' : 'btn-ghost'}`}
