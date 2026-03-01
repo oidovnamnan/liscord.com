@@ -236,3 +236,63 @@
     justify-content: center;
     box-shadow: 0 4px 10px rgba(0, 168, 107, 0.4);
 }
+.badge-free {
+    font-size: 0.65rem;
+    background: var(--success-light);
+    color: var(--success-dark);
+    padding: 2px 8px;
+    border-radius: 6px;
+    font-weight: 800;
+}
+
+.price-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.premium-badge-mini {
+    font-size: 0.65rem;
+    background: #fef3c7;
+    color: #92400e;
+    padding: 2px 8px;
+    border-radius: 8px;
+    font-weight: 800;
+}
+
+.theme-description {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    margin: 0 0 20px 0;
+    height: 40px;
+    overflow: hidden;
+    line-height: 1.5;
+}
+
+.theme-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-top: 16px;
+    border-top: 1px solid var(--border-primary);
+}
+
+.theme-price {
+    font-weight: 800;
+    font-size: 1.05rem;
+}
+
+.install-progress {
+    font-size: 0.9rem;
+    font-weight: 800;
+    color: var(--primary);
+}
+
+.installed-status {
+    font-size: 0.9rem;
+    color: var(--success);
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}

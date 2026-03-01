@@ -318,186 +318,156 @@ export function AppStorePage() {
                     )}
                 </div>
 
-                {activeStoreTab === 'modules' ? (
-                    <div className="app-store-grid">
-                        {LISCORD_MODULES
-                            .filter(mod => {
-                                const dynamic = appStoreConfig[mod.id];
-                                const finalMod = dynamic ? { ...mod, ...dynamic } : mod;
-                                const isCoreForBusiness = business?.category && moduleDefaults[business.category]?.[finalMod.id] === 'core';
-                                const isFree = isCoreForBusiness || finalMod.isFree;
+                <div className="store-render-area" style={{ minHeight: '600px', width: '100%', paddingBottom: '60px' }}>
+                    {activeStoreTab === 'modules' ? (
+                        <div className="app-store-grid" id="grid-modules-dedicated">
+                            {LISCORD_MODULES
+                                .filter(mod => {
+                                    const dynamic = appStoreConfig[mod.id];
+                                    const finalMod = dynamic ? { ...mod, ...dynamic } : mod;
+                                    const isCoreForBusiness = business?.category && moduleDefaults[business.category]?.[finalMod.id] === 'core';
+                                    const isFree = isCoreForBusiness || finalMod.isFree;
 
-                                if (searchQuery) {
-                                    const query = searchQuery.toLowerCase();
-                                    const matchSearch = finalMod.name.toLowerCase().includes(query) ||
-                                        (finalMod.description || '').toLowerCase().includes(query);
-                                    if (!matchSearch) return false;
-                                }
+                                    if (searchQuery) {
+                                        const query = searchQuery.toLowerCase();
+                                        return finalMod.name.toLowerCase().includes(query) ||
+                                            (finalMod.description || '').toLowerCase().includes(query);
+                                    }
 
-                                if (selectedCategory !== 'all') {
-                                    const modCats = [finalMod.category, ...(finalMod.categories || [])].filter(Boolean);
-                                    if (!modCats.includes(selectedCategory)) return false;
-                                }
+                                    if (selectedCategory !== 'all') {
+                                        const modCats = [finalMod.category, ...(finalMod.categories || [])].filter(Boolean);
+                                        if (!modCats.includes(selectedCategory)) return false;
+                                    }
 
-                                if (selectedHub !== 'all' && finalMod.hubId !== selectedHub) return false;
-                                if (priceFilter === 'free' && !isFree) return false;
-                                if (priceFilter === 'premium' && isFree) return false;
+                                    if (selectedHub !== 'all' && finalMod.hubId !== selectedHub) return false;
+                                    if (priceFilter === 'free' && !isFree) return false;
+                                    if (priceFilter === 'premium' && isFree) return false;
 
-                                return true;
-                            })
-                            .map(mod => {
-                                const dynamic = appStoreConfig[mod.id];
-                                const finalMod = dynamic ? { ...mod, ...dynamic } : mod;
-                                const isCoreForBusiness = business?.category && moduleDefaults[business.category]?.[finalMod.id] === 'core';
-                                const isFree = isCoreForBusiness || finalMod.isFree;
-                                const Icon = (Icons as any)[finalMod.icon || 'Box'] || Icons.Box;
-                                const isInstalled = activeMods.includes(finalMod.id);
-                                const isInstalling = installingId === finalMod.id;
-                                const subscription = business?.moduleSubscriptions?.[finalMod.id];
-                                const expiryDate = subscription?.expiresAt ? (typeof (subscription.expiresAt as any).toDate === 'function' ? (subscription.expiresAt as any).toDate() : new Date(subscription.expiresAt as any)) : null;
-                                const isExpired = expiryDate ? expiryDate < new Date() : false;
-                                const isActive = isInstalled && !isExpired;
+                                    return true;
+                                })
+                                .map(mod => {
+                                    const dynamic = appStoreConfig[mod.id];
+                                    const finalMod = dynamic ? { ...mod, ...dynamic } : mod;
+                                    const isCoreForBusiness = business?.category && moduleDefaults[business.category]?.[finalMod.id] === 'core';
+                                    const isFree = isCoreForBusiness || finalMod.isFree;
+                                    const Icon = (Icons as any)[finalMod.icon || 'Box'] || Icons.Box;
+                                    const isInstalled = activeMods.includes(finalMod.id);
+                                    const isInstalling = installingId === finalMod.id;
+                                    const isActive = isInstalled;
+
+                                    return (
+                                        <div key={`mod-card-${finalMod.id}`} className={`module-card-premium ${isActive ? 'active' : ''}`}>
+                                            <div className="module-card-header">
+                                                <div className="module-icon-box">
+                                                    <Icon size={32} strokeWidth={2.5} />
+                                                </div>
+                                                <div className="module-info">
+                                                    <div className="module-title-row">
+                                                        <h3 className="module-name">{finalMod.name}</h3>
+                                                        {isFree && <span className="badge-free">{isCoreForBusiness ? 'CORE' : 'ҮНЭГҮЙ'}</span>}
+                                                    </div>
+                                                    <p className="module-description">{finalMod.description}</p>
+                                                </div>
+                                            </div>
+
+                                            <div className="module-meta">
+                                                {isFree ? (
+                                                    <div className="price-badge">
+                                                        <div className="price-amount">Нээлттэй</div>
+                                                        <div className="price-duration">Хязгааргүй</div>
+                                                    </div>
+                                                ) : (
+                                                    <div className="price-stack" style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                                        {(finalMod.plans || []).map((p: any) => (
+                                                            <div key={p.id} className="price-badge-mini">
+                                                                <span className="price-amount">{p.price?.toLocaleString()}₮</span>
+                                                                <span className="price-duration">/ {p.name}</span>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                )}
+                                            </div>
+
+                                            <div className="module-actions">
+                                                {isInstalling ? (
+                                                    <button className="btn btn-primary" disabled style={{ position: 'relative', overflow: 'hidden', width: '100%' }}>
+                                                        <div style={{ position: 'absolute', left: 0, top: 0, height: '100%', width: `${installProgress}%`, background: 'rgba(255,255,255,0.2)' }} />
+                                                        {Math.round(installProgress)}%
+                                                    </button>
+                                                ) : isActive ? (
+                                                    <div style={{ display: 'flex', gap: '8px', width: '100%' }}>
+                                                        <button className="btn btn-primary gradient-btn" style={{ flex: 1 }} onClick={() => navigate(finalMod.route)}>Нээх</button>
+                                                        <button className="btn-uninstall-mini" onClick={() => handleUninstallModule(finalMod.id)}>
+                                                            <Trash2 size={18} />
+                                                        </button>
+                                                    </div>
+                                                ) : (
+                                                    <div style={{ display: 'flex', gap: '8px', width: '100%' }}>
+                                                        {isFree ? (
+                                                            <button className="btn btn-outline w-full" onClick={() => handleInstallModule(finalMod.id)}>
+                                                                <Download size={16} /> Суулгах
+                                                            </button>
+                                                        ) : (
+                                                            (finalMod.plans || []).map((p: any) => (
+                                                                <button key={p.id} className="btn btn-primary gradient-btn btn-sm" style={{ flex: 1 }} onClick={() => handleInstallModule(finalMod.id, p.id)}>
+                                                                    {p.name} авах
+                                                                </button>
+                                                            ))
+                                                        )}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                        </div>
+                    ) : (
+                        <div className="app-store-grid" id="grid-themes-dedicated">
+                            {STOREFRONT_THEMES.map(theme => {
+                                const isInstalled = installedThemes.includes(theme.id);
+                                const isInstalling = installingId === theme.id;
 
                                 return (
-                                    <div key={finalMod.id} className={`module-card-premium ${isActive ? 'active' : ''} ${isExpired ? 'expired' : ''}`}>
-                                        <div className="module-card-header">
-                                            <div className="module-icon-box">
-                                                <Icon size={32} strokeWidth={2.5} />
-                                            </div>
-                                            <div className="module-info">
-                                                <div className="module-title-row">
-                                                    <h3 className="module-name">{finalMod.name}</h3>
-                                                    {isFree && <span style={{ fontSize: '0.65rem', background: 'var(--success-light)', color: 'var(--success-dark)', padding: '2px 8px', borderRadius: '6px', fontWeight: 800 }}>{isCoreForBusiness ? 'CORE (ҮНЭГҮЙ)' : 'ҮНЭГҮЙ'}</span>}
-                                                </div>
-                                                <p className="module-description">{finalMod.description}</p>
-                                            </div>
-                                        </div>
-
-                                        <div className="module-meta">
-                                            {isFree ? (
-                                                <div className="price-badge">
-                                                    <div className="price-amount">Нээлттэй</div>
-                                                    <div className="price-duration">Хязгааргүй</div>
-                                                </div>
-                                            ) : (
-                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                                                    {(finalMod.plans || []).map((p: any) => (
-                                                        <div key={p.id} className="price-badge-mini">
-                                                            <span className="price-amount">{p.price?.toLocaleString()}₮</span>
-                                                            <span className="price-duration">/ {p.name}</span>
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            )}
-
-                                            {expiryDate && !isCoreForBusiness && (
-                                                <div className="status-info">
-                                                    <div className="status-label" style={{ color: isExpired ? 'var(--danger)' : 'var(--success)' }}>
-                                                        {isExpired ? 'Хугацаа дууссан' : 'Дараах хүртэл'}
-                                                    </div>
-                                                    <div className="status-date">{expiryDate.toLocaleDateString()}</div>
+                                    <div key={`theme-card-${theme.id}`} className="theme-card-premium">
+                                        <div className="theme-preview-box" style={{ background: theme.color }}>
+                                            <Palette size={48} color="rgba(0,0,0,0.1)" />
+                                            {isInstalled && (
+                                                <div className="theme-status-icon">
+                                                    <CheckCircle2 size={18} />
                                                 </div>
                                             )}
                                         </div>
 
-                                        <div className="module-actions">
+                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                                            <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 800 }}>{theme.name}</h3>
+                                            {theme.isPremium && !isInstalled && <span className="premium-badge-mini">PREMIUM</span>}
+                                        </div>
+
+                                        <p className="theme-description" style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', margin: '0 0 20px 0', height: '40px', overflow: 'hidden', lineHeight: 1.5 }}>{theme.description}</p>
+
+                                        <div className="theme-footer" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: 16, borderTop: '1px solid var(--border-primary)' }}>
+                                            <div style={{ fontWeight: 800, fontSize: '1.05rem', color: theme.isPremium && !isInstalled ? 'var(--primary)' : 'var(--text-primary)' }}>
+                                                {theme.price === 0 ? 'Үнэгүй' : `${theme.price.toLocaleString()}₮`}
+                                            </div>
+
                                             {isInstalling ? (
-                                                <button className="btn btn-primary" disabled style={{ position: 'relative', overflow: 'hidden' }}>
-                                                    <div style={{ position: 'absolute', left: 0, top: 0, height: '100%', width: `${installProgress}%`, background: 'rgba(255,255,255,0.2)', transition: 'width 0.3s' }} />
-                                                    Суулгаж байна... {Math.round(installProgress)}%
+                                                <span style={{ fontSize: '0.9rem', fontWeight: 800, color: 'var(--primary)' }}>{Math.round(installProgress)}%</span>
+                                            ) : isInstalled ? (
+                                                <span style={{ fontSize: '0.9rem', color: 'var(--success)', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                                    <CheckCircle2 size={16} /> Суулгасан
+                                                </span>
+                                            ) : (
+                                                <button className={`btn btn-sm ${theme.isPremium ? 'btn-primary gradient-btn' : 'btn-outline'}`} onClick={() => handleInstallTheme(theme.id, theme.isPremium)}>
+                                                    {theme.isPremium ? 'Авах' : 'Суулгах'}
                                                 </button>
-                                            ) : isActive ? (
-                                                <>
-                                                    <button className="btn btn-primary gradient-btn" onClick={() => navigate(finalMod.route)}>Нээх</button>
-                                                    <button className="btn-uninstall-mini" onClick={() => handleUninstallModule(finalMod.id)} title="Устгах">
-                                                        <Trash2 size={18} />
-                                                    </button>
-                                                </>
-                                            ) : isExpired || !isInstalled ? (
-                                                <div style={{ display: 'flex', gap: '8px', width: '100%' }}>
-                                                    {isFree ? (
-                                                        <button className="btn btn-outline w-full" onClick={() => handleInstallModule(finalMod.id)}>
-                                                            <Download size={16} /> Суулгах
-                                                        </button>
-                                                    ) : (
-                                                        (finalMod.plans || []).map((p: any) => (
-                                                            <button
-                                                                key={p.id}
-                                                                className="btn btn-primary gradient-btn btn-sm text-xs"
-                                                                style={{ height: '36px', flex: 1 }}
-                                                                onClick={() => handleInstallModule(finalMod.id, p.id)}
-                                                            >
-                                                                {p.name} авах
-                                                            </button>
-                                                        ))
-                                                    )}
-                                                </div>
-                                            ) : null}
+                                            )}
                                         </div>
                                     </div>
                                 );
                             })}
-                    </div>
-                ) : (
-                    <div className="app-store-grid">
-                        {[...STOREFRONT_THEMES].sort((a, b) => {
-                            const aRec = a.categories?.includes(business?.category || '') ? 1 : 0;
-                            const bRec = b.categories?.includes(business?.category || '') ? 1 : 0;
-                            return bRec - aRec;
-                        }).map(theme => {
-                            const isInstalled = installedThemes.includes(theme.id);
-                            const isInstalling = installingId === theme.id;
-                            const isRecommended = theme.categories?.includes(business?.category || '');
-
-                            return (
-                                <div key={theme.id} className="theme-card-premium">
-                                    <div className="theme-preview-box" style={{ background: theme.color }}>
-                                        <Palette size={48} color="rgba(0,0,0,0.1)" />
-                                        {isInstalled && (
-                                            <div className="theme-status-icon">
-                                                <CheckCircle2 size={18} />
-                                            </div>
-                                        )}
-                                        {isRecommended && !isInstalled && (
-                                            <div style={{ position: 'absolute', bottom: 12, left: '50%', transform: 'translateX(-50%)', background: 'rgba(255,255,255,0.9)', color: 'var(--primary)', padding: '4px 12px', borderRadius: '12px', fontSize: '0.7rem', fontWeight: 800, backdropFilter: 'blur(4px)' }}>
-                                                САНАЛ БОЛГОХ
-                                            </div>
-                                        )}
-                                    </div>
-
-                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-                                        <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 800 }}>{theme.name}</h3>
-                                        {theme.isPremium && !isInstalled && <span style={{ fontSize: '0.65rem', background: '#fef3c7', color: '#92400e', padding: '2px 8px', borderRadius: '8px', fontWeight: 800 }}>PREMIUM</span>}
-                                    </div>
-
-                                    <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', margin: '0 0 20px 0', height: '40px', overflow: 'hidden', lineHeight: 1.5 }}>{theme.description}</p>
-
-                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: 16, borderTop: '1px solid var(--border-primary)' }}>
-                                        <div style={{ fontWeight: 800, fontSize: '1.05rem', color: theme.isPremium && !isInstalled ? 'var(--primary)' : 'var(--text-primary)' }}>
-                                            {theme.price === 0 ? 'Үнэгүй' : `${theme.price.toLocaleString()}₮`}
-                                        </div>
-
-                                        {isInstalling ? (
-                                            <span style={{ fontSize: '0.9rem', fontWeight: 800, color: 'var(--primary)' }}>{Math.round(installProgress)}%</span>
-                                        ) : isInstalled ? (
-                                            <span style={{ fontSize: '0.9rem', color: 'var(--success)', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                                <CheckCircle2 size={16} /> Суулгасан
-                                            </span>
-                                        ) : (
-                                            <button
-                                                className={`btn btn-sm ${theme.isPremium ? 'btn-primary gradient-btn' : 'btn-outline'}`}
-                                                style={{ borderRadius: '10px', height: '36px', padding: '0 20px' }}
-                                                onClick={() => handleInstallTheme(theme.id, theme.isPremium)}
-                                            >
-                                                {theme.isPremium ? 'Авах' : 'Суулгах'}
-                                            </button>
-                                        )}
-                                    </div>
-                                </div>
-                            );
-                        })}
-                    </div>
-                )}
+                        </div>
+                    )}
+                </div>
             </div>
         </div>
     );
