@@ -238,40 +238,43 @@ export function AppStorePage() {
                     zIndex: 190,
                     background: 'var(--bg-primary)',
                     display: 'flex',
-                    flexDirection: 'column',
-                    gap: '20px',
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    gap: '12px',
                     marginBottom: '32px',
-                    padding: '8px 0 16px 0',
-                    margin: '-8px 0 32px 0',
+                    padding: '12px 0',
+                    margin: '0 0 32px 0',
                     borderBottom: '1px solid var(--border-glass)',
-                    backdropFilter: 'blur(8px)'
+                    backdropFilter: 'blur(8px)',
+                    flexWrap: 'wrap'
                 }}>
-                    <div style={{ display: 'flex', gap: '4px', background: 'var(--surface-2)', padding: '6px', borderRadius: '16px', alignSelf: 'flex-start' }}>
+                    <div style={{ display: 'flex', gap: '4px', background: 'var(--surface-2)', padding: '4px', borderRadius: '14px', flexShrink: 0 }}>
                         <button
                             className={`btn btn-sm ${activeStoreTab === 'modules' ? 'btn-primary gradient-btn' : 'btn-ghost'}`}
                             onClick={() => setActiveStoreTab('modules')}
-                            style={{ borderRadius: '12px', minWidth: '120px', height: '40px' }}
+                            style={{ borderRadius: '10px', minWidth: '100px', height: '36px', fontSize: '0.85rem' }}
                         >
                             Модулиуд
                         </button>
                         <button
                             className={`btn btn-sm ${activeStoreTab === 'themes' ? 'btn-primary gradient-btn' : 'btn-ghost'}`}
                             onClick={() => setActiveStoreTab('themes')}
-                            style={{ borderRadius: '12px', minWidth: '120px', height: '40px' }}
+                            style={{ borderRadius: '10px', minWidth: '100px', height: '36px', fontSize: '0.85rem' }}
                         >
                             Загварууд
                         </button>
                     </div>
 
                     {activeStoreTab === 'modules' && (
-                        <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap', background: 'var(--surface-1)', padding: '16px', borderRadius: '16px', border: '1px solid var(--border-primary)' }}>
-                            <div className="search-input-wrapper" style={{ position: 'relative', flex: 1, minWidth: '240px' }}>
-                                <Icons.Search size={18} style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-secondary)' }} />
+                        <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap', flex: 1, justifyContent: 'flex-end' }}>
+                            <div className="search-input-wrapper" style={{ position: 'relative', flex: 1, minWidth: '200px', maxWidth: '400px' }}>
+                                <Icons.Search size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-secondary)' }} />
                                 <input
                                     type="text"
                                     className="input"
-                                    placeholder="Модулийн нэр, тайлбараар хайх..."
-                                    style={{ paddingLeft: '44px', height: '44px', width: '100%', borderRadius: '12px', background: 'var(--surface-2)' }}
+                                    placeholder="Хайх..."
+                                    style={{ paddingLeft: '36px', height: '38px', width: '100%', borderRadius: '10px', background: 'var(--surface-2)', fontSize: '0.9rem' }}
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
                                 />
@@ -279,7 +282,7 @@ export function AppStorePage() {
 
                             <select
                                 className="select"
-                                style={{ height: '44px', borderRadius: '12px', width: '200px', background: 'var(--surface-2)', paddingLeft: '16px' }}
+                                style={{ height: '38px', borderRadius: '10px', width: '150px', background: 'var(--surface-2)', paddingLeft: '12px', fontSize: '0.85rem' }}
                                 value={selectedCategory}
                                 onChange={(e) => setSelectedCategory(e.target.value)}
                             >
@@ -291,7 +294,7 @@ export function AppStorePage() {
 
                             <select
                                 className="select"
-                                style={{ height: '44px', borderRadius: '12px', width: '200px', background: 'var(--surface-2)', paddingLeft: '16px' }}
+                                style={{ height: '38px', borderRadius: '10px', width: '140px', background: 'var(--surface-2)', paddingLeft: '12px', fontSize: '0.85rem' }}
                                 value={selectedHub}
                                 onChange={(e) => setSelectedHub(e.target.value)}
                             >
@@ -303,13 +306,13 @@ export function AppStorePage() {
 
                             <select
                                 className="select"
-                                style={{ height: '44px', borderRadius: '12px', width: '160px', background: 'var(--surface-2)', paddingLeft: '16px' }}
+                                style={{ height: '38px', borderRadius: '10px', width: '130px', background: 'var(--surface-2)', paddingLeft: '12px', fontSize: '0.85rem' }}
                                 value={priceFilter}
                                 onChange={(e) => setPriceFilter(e.target.value as any)}
                             >
                                 <option value="all">Бүх үнэ</option>
-                                <option value="free">Үнэгүй (Core)</option>
-                                <option value="premium">Төлбөртэй (Add-on)</option>
+                                <option value="free">Үнэгүй</option>
+                                <option value="premium">Төлбөртэй</option>
                             </select>
                         </div>
                     )}
