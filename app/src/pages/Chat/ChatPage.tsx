@@ -121,7 +121,7 @@ export function ChatPage() {
         <HubLayout hubId="crm-hub">
             <div className="chat-layout">
                 {/* Channel sidebar */}
-                <div className={`chat-sidebar ${isSidebarOpen ? 'open' : ''}`}>
+                <aside className={`chat-sidebar ${isSidebarOpen ? 'open' : ''}`}>
                     <div className="chat-sidebar-header">
                         <h3>
                             <div className="chat-premium-icon-wrap">
@@ -163,7 +163,7 @@ export function ChatPage() {
                     </div>
 
                     <div className="chat-channel-list">
-                        <div className="chat-channel-group-label">Сувгууд</div>
+                        <div className="chat-channel-group-label">сувгууд</div>
                         {teamChannels.map(c => (
                             <button
                                 key={c.id}
@@ -181,7 +181,7 @@ export function ChatPage() {
                             </button>
                         ))}
 
-                        <div className="chat-channel-group-label" style={{ marginTop: 12 }}>Хувийн мессеж</div>
+                        <div className="chat-channel-group-label" style={{ marginTop: 12 }}>хувийн мессеж</div>
                         {dmChannels.map(c => (
                             <button
                                 key={c.id}
@@ -200,10 +200,10 @@ export function ChatPage() {
                             </button>
                         ))}
                     </div>
-                </div>
+                </aside>
 
                 {/* Chat main */}
-                <div className="chat-main" onClick={() => setIsSidebarOpen(false)}>
+                <div className="chat-main" onClick={() => isSidebarOpen && setIsSidebarOpen(false)}>
                     {currentChannel ? (
                         <>
                             <div className="chat-main-header">
@@ -302,7 +302,7 @@ export function ChatPage() {
                                     <button className="btn btn-ghost btn-icon btn-sm"><Paperclip size={20} style={{ opacity: 0.6 }} /></button>
                                     <input
                                         className="chat-input"
-                                        placeholder={`${currentChannel.name} руу бичих...`}
+                                        placeholder={`${currentChannel.name || 'канал'} руу бичих...`}
                                         value={newMessage}
                                         onChange={e => setNewMessage(e.target.value)}
                                         onKeyDown={e => e.key === 'Enter' && handleSend()}
@@ -334,7 +334,7 @@ export function ChatPage() {
 
                 {/* Right Sidebar (Info) */}
                 {showInfo && currentChannel && (
-                    <div className="chat-info-sidebar animate-slide-in">
+                    <aside className="chat-info-sidebar animate-slide-in">
                         <div className="chat-sidebar-header">
                             <h3 style={{ fontSize: '1.1rem' }}>Мэдээлэл</h3>
                             <button className="btn btn-ghost btn-icon btn-sm" onClick={() => setShowInfo(false)}>
@@ -367,7 +367,7 @@ export function ChatPage() {
                                 <span>Бүх гишүүд харах</span>
                             </div>
                         </div>
-                    </div>
+                    </aside>
                 )}
             </div>
         </HubLayout>
