@@ -158,7 +158,7 @@ export function SettingsPage() {
             await businessService.updateBusiness(business.id, { settings: { ...business.settings, pin } });
             setIsDirty(false);
             toast.success('PIN код шинэчлэгдлээ');
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
         } catch (_error) { toast.error('Алдаа гарлаа'); } finally { setLoading(false); }
     };
 
@@ -240,7 +240,7 @@ export function SettingsPage() {
             setRequestReason('');
             const pending = await businessRequestService.getPendingRequest(business.id);
             setPendingRequest(pending);
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
         } catch (_error) {
             toast.error('Алдаа гарлаа');
         } finally {
@@ -254,8 +254,8 @@ export function SettingsPage() {
             <div className="page">
                 <div className="settings-layout">
                     <div className="settings-sidebar">
-                        <div className="settings-sidebar-group" style={{ marginBottom: '1.5rem' }}>
-                            <div style={{ padding: '0 1rem', fontSize: '0.7rem', fontWeight: 600, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.5rem' }}>Үндсэн тохиргоо</div>
+                        <div className="settings-sidebar-group">
+                            <span className="settings-sidebar-group-title">Үндсэн систем</span>
                             {tabs.core.map((tab) => {
                                 const Icon = tab.icon;
                                 return (
@@ -272,7 +272,7 @@ export function SettingsPage() {
                         </div>
                         {tabs.plugins.length > 0 && (
                             <div className="settings-sidebar-group">
-                                <div style={{ padding: '0 1rem', fontSize: '0.7rem', fontWeight: 600, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.5rem' }}>Залгаас тохиргоо</div>
+                                <span className="settings-sidebar-group-title">Залгаасууд</span>
                                 {tabs.plugins.map((tab) => {
                                     const Icon = tab.icon;
                                     return (
@@ -295,55 +295,79 @@ export function SettingsPage() {
 
                                 <div className="settings-card">
                                     <div className="settings-card-header">
-                                        <div className="settings-card-icon"><Building2 size={20} /></div>
+                                        <div className="settings-card-icon"><Building2 size={22} /></div>
                                         <h3>Үндсэн мэдээлэл</h3>
                                     </div>
                                     <form className="settings-form" onSubmit={handleUpdateBusiness} onChange={() => setIsDirty(true)}>
-                                        <div style={{ marginBottom: 20 }}>
+                                        <div className="logo-upload-premium">
                                             <ImageUpload
                                                 images={existingLogo}
-                                                onImagesChange={(urls) => {
-                                                    setExistingLogo(urls);
-                                                    setIsDirty(true);
-                                                }}
-                                                onFilesChange={(files) => {
-                                                    setLogoFiles(files);
-                                                    setIsDirty(true);
-                                                }}
+                                                onImagesChange={(urls) => { setExistingLogo(urls); setIsDirty(true); }}
+                                                onFilesChange={(files) => { setLogoFiles(files); setIsDirty(true); }}
                                                 maxImages={1}
-                                                label="Бизнесийн лого"
+                                                label=""
                                             />
+                                            <div>
+                                                <h4 style={{ margin: '0 0 4px 0', fontSize: '1rem', fontWeight: 700 }}>Бизнесийн Лого</h4>
+                                                <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-muted)' }}>PNG эсвэл JPG форматтай, 2MB-аас бага хэмжээтэй файл оруулна уу.</p>
+                                            </div>
                                         </div>
+
                                         <div className="input-group">
-                                            <label className="input-label">Бизнесийн нэр</label>
+                                            <label className="settings-label">Бизнесийн нэр</label>
                                             <input className="input" name="name" defaultValue={business?.name} required placeholder="Танай бизнесийн нэр" />
                                         </div>
-                                        <div className="grid-2-gap">
+
+                                        <div className="settings-input-row">
                                             <div className="input-group">
-                                                <label className="input-label">Утас</label>
+                                                <label className="settings-label">Холбоо барих Утас</label>
                                                 <input className="input" name="phone" defaultValue={business?.phone} placeholder="Холбоо барих утас" />
                                             </div>
                                             <div className="input-group">
-                                                <label className="input-label">И-мэйл</label>
+                                                <label className="settings-label">И-мэйл хаяг</label>
                                                 <input className="input" name="email" defaultValue={business?.email} placeholder="Бизнес и-мэйл" />
                                             </div>
                                         </div>
-                                        <div className="grid-2-gap">
+
+                                        <div className="settings-input-row">
                                             <div className="input-group">
-                                                <label className="input-label">Хаяг</label>
+                                                <label className="settings-label">Байршил / Хаяг</label>
                                                 <input className="input" name="address" defaultValue={business?.address} placeholder="Бизнесийн байршил" />
                                             </div>
                                             <div className="input-group">
-                                                <label className="input-label">Захиалгын кодын эхлэл (Угтвар)</label>
+                                                <label className="settings-label">Захиалгын префикс</label>
                                                 <input className="input" name="orderPrefix" defaultValue={business?.settings?.orderPrefix || 'ORD-'} placeholder="Жнь: ORD-" />
                                             </div>
-                                            <div className="input-group">
-                                                <label className="input-label">Брэндийн үндсэн өнгө (Hex code)</label>
-                                                <div style={{ display: 'flex', gap: '8px' }}>
+                                        </div>
+
+                                        <div className="input-group">
+                                            <label className="settings-label">Брэндийн үндсэн өнгө</label>
+                                            <div className="premium-color-picker">
+                                                <div className="color-presets">
+                                                    {['#6c5ce7', '#0dbff0', '#0be881', '#ff6b9d', '#ffa801', '#ff5e57', '#485460'].map(c => (
+                                                        <button
+                                                            key={c}
+                                                            type="button"
+                                                            className={`color-preset-btn ${business?.brandColor === c ? 'active' : ''}`}
+                                                            style={{ backgroundColor: c }}
+                                                            onClick={(e) => {
+                                                                const parent = e.currentTarget.parentElement?.parentElement;
+                                                                const textInput = parent?.querySelector('input[name="brandColor"]') as HTMLInputElement;
+                                                                const nativeInput = parent?.querySelector('.color-input-native') as HTMLInputElement;
+                                                                if (textInput) textInput.value = c;
+                                                                if (nativeInput) nativeInput.value = c;
+                                                                setIsDirty(true);
+                                                                // Simple way to trigger visual update for active class
+                                                                e.currentTarget.parentElement?.querySelectorAll('.color-preset-btn').forEach(b => b.classList.remove('active'));
+                                                                e.currentTarget.classList.add('active');
+                                                            }}
+                                                        />
+                                                    ))}
+                                                </div>
+                                                <div className="custom-color-row">
                                                     <input
                                                         type="color"
-                                                        title="Өнгө сонгох"
-                                                        style={{ width: '40px', height: '40px', padding: '0', border: 'none', borderRadius: '8px', cursor: 'pointer', background: 'transparent' }}
+                                                        className="color-input-native"
                                                         defaultValue={business?.brandColor || '#6c5ce7'}
                                                         onChange={(e) => {
                                                             const textInput = e.currentTarget.nextElementSibling as HTMLInputElement;
@@ -351,13 +375,14 @@ export function SettingsPage() {
                                                             setIsDirty(true);
                                                         }}
                                                     />
-                                                    <input className="input" style={{ flex: 1 }} name="brandColor" defaultValue={business?.brandColor} placeholder="Жнь: #6c5ce7 (Хоосон бол автоматаар сонгогдоно)" />
+                                                    <input className="input" style={{ flex: 1 }} name="brandColor" defaultValue={business?.brandColor} placeholder="#6c5ce7" />
                                                 </div>
                                             </div>
                                         </div>
+
                                         <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 12 }}>
-                                            <button className="btn btn-primary gradient-btn" type="submit" disabled={loading || !isDirty} style={{ minWidth: 120 }}>
-                                                {loading ? <Loader2 size={16} className="animate-spin" /> : 'Хадгалах'}
+                                            <button className="btn btn-primary gradient-btn" type="submit" disabled={loading || !isDirty} style={{ minWidth: 160, height: 48, borderRadius: 12 }}>
+                                                {loading ? <Loader2 size={18} className="animate-spin" /> : 'Тохиргоо хадгалах'}
                                             </button>
                                         </div>
                                     </form>
@@ -392,21 +417,17 @@ export function SettingsPage() {
 
                                     <form className="settings-form" onSubmit={handleUpdateStorefront} onChange={() => setIsDirty(true)}>
                                         <div className="input-group">
-                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-                                                <label className="input-label" style={{ margin: 0 }}>Дэлгүүрийн нэр <span style={{ color: 'var(--danger)', fontSize: '0.8rem' }}>*жилд 1 удаа</span></label>
-                                            </div>
+                                            <label className="settings-label">Дэлгүүрийн нэр <span style={{ color: 'var(--danger)', fontSize: '0.7rem' }}>(жилд 1 удаа)</span></label>
                                             <input className="input" name="storefrontName" defaultValue={business?.settings?.storefront?.name || ''} placeholder="NamShop" disabled={!!business?.slug || !!pendingRequest} />
-                                            <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: '4px 0 0 0' }}>Дэлгүүрийн хуудсан дээр харагдах нэр. Хоосон орхивол бизнесийн нэр харагдана.</p>
+                                            <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: '8px 0 0 0' }}>Дэлгүүрийн хуудсан дээр харагдах нэр. Хоосон орхивол бизнесийн нэр харагдана.</p>
                                         </div>
                                         <div className="input-group">
-                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-                                                <label className="input-label" style={{ margin: 0 }}>Дэлгүүрийн холбоос (Slug) <span style={{ color: 'var(--danger)', fontSize: '0.8rem' }}>*жилд 1 удаа</span></label>
-                                            </div>
+                                            <label className="settings-label">Дэлгүүрийн холбоос (Slug) <span style={{ color: 'var(--danger)', fontSize: '0.7rem' }}>(жилд 1 удаа)</span></label>
                                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                                <span style={{ color: 'var(--text-muted)' }}>{window.location.origin}/s/</span>
+                                                <span style={{ color: 'var(--text-muted)', fontWeight: 600 }}>{window.location.origin}/s/</span>
                                                 <input className="input" name="slug" value={storefrontSlug} onChange={(e) => { setStorefrontSlug(e.target.value.toLowerCase()); setIsDirty(true); }} placeholder="zara-mongolia" required pattern="[a-z0-9-]+" title="Зөвхөн жижиг англи үсэг, тоо болон зураас ашиглана уу" style={{ flex: 1 }} disabled={!!business?.slug || !!pendingRequest} />
                                             </div>
-                                            <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: '4px 0 0 0' }}>Зөвхөн жижиг англи үсэг, тоо болон дундуур зураас орж болно.</p>
+                                            <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: '8px 0 0 0' }}>Зөвхөн жижиг англи үсэг, тоо болон дундуур зураас орж болно.</p>
                                         </div>
 
                                         {!!business?.slug && !pendingRequest && !isStorefrontLocked && (
@@ -419,10 +440,10 @@ export function SettingsPage() {
                                                 </button>
                                             </div>
                                         )}
-                                        <div className="notification-item" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 0', borderTop: '1px solid var(--border-color)', marginTop: '16px' }}>
-                                            <div>
-                                                <div style={{ fontWeight: 600, fontSize: '1rem' }}>Дэлгүүрийг нээх (Онлайн худалдаа)</div>
-                                                <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Хэрэв унтраасан бол хэрэглэгчид танай дэлгүүр рүү орж захиалга өгөх боломжгүйгээр түр хаагдана.</div>
+                                        <div className="modern-toggle-item" style={{ marginTop: '32px' }}>
+                                            <div className="toggle-info">
+                                                <h4>Дэлгүүрийг нээх (Онлайн худалдаа)</h4>
+                                                <p>Хэрэв унтраасан бол хэрэглэгчид танай дэлгүүр рүү орж захиалга өгөх боломжгүйгээр түр хаагдана.</p>
                                             </div>
                                             <label className="toggle">
                                                 <input
@@ -621,22 +642,23 @@ export function SettingsPage() {
                                     </p>
                                     <form className="settings-form" onSubmit={handleUpdatePIN} onChange={() => setIsDirty(true)}>
                                         <div className="input-group">
-                                            <label className="input-label">Шинэ PIN код</label>
+                                            <label className="settings-label">Шинэ PIN код</label>
                                             <input
-                                                className="input"
+                                                className="input text-center"
                                                 name="pin"
                                                 type="password"
                                                 maxLength={4}
                                                 pattern="[0-9]*"
                                                 inputMode="numeric"
                                                 defaultValue={business?.settings?.pin}
-                                                style={{ maxWidth: 160, fontSize: '1.2rem', letterSpacing: '0.4em' }}
+                                                style={{ maxWidth: 200, fontSize: '2rem', letterSpacing: '0.4em' }}
                                                 required
+                                                placeholder="****"
                                             />
                                         </div>
-                                        <div style={{ display: 'flex', marginTop: 8 }}>
-                                            <button className="btn btn-primary" type="submit" disabled={loading || !isDirty}>
-                                                {loading ? <Loader2 size={16} className="animate-spin" /> : 'PIN шинэчлэх'}
+                                        <div style={{ display: 'flex', marginTop: 12 }}>
+                                            <button className="btn btn-primary gradient-btn" type="submit" disabled={loading || !isDirty} style={{ height: 48, padding: '0 32px' }}>
+                                                {loading ? <Loader2 size={18} className="animate-spin" /> : 'PIN шинэчлэх'}
                                             </button>
                                         </div>
                                     </form>
@@ -694,17 +716,17 @@ export function SettingsPage() {
                                         Системээс ирэх мэдэгдлүүдийг өөрийн хүссэнээр тохируулна уу. (Subcollection ашиглан хадгалагдана)
                                     </p>
 
-                                    <div className="notification-settings" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                                    <div className="notification-settings" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                                         {[
                                             { id: 'newOrders', label: 'Шинэ захиалга', desc: 'Шинэ захиалга ирэх үед мэдэгдэх' },
                                             { id: 'lowStock', label: 'Барааны үлдэгдэл', desc: 'Бараа дуусах дөхөх үед мэдэгдэх' },
                                             { id: 'cargoUpdates', label: 'Каргоны төлөв', desc: 'Каргоны төлөв өөрчлөгдөх бүрт мэдэгдэх' },
                                             { id: 'teamActivity', label: 'Багийн ажиллагаа', desc: 'Багийн гишүүд чухал үйлдэл хийх үед мэдэгдэх' }
                                         ].map(item => (
-                                            <div key={item.id} className="notification-item" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px', background: 'var(--bg-soft)', borderRadius: 12 }}>
-                                                <div>
-                                                    <div style={{ fontWeight: 600 }}>{item.label}</div>
-                                                    <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{item.desc}</div>
+                                            <div key={item.id} className="modern-toggle-item">
+                                                <div className="toggle-info">
+                                                    <h4>{item.label}</h4>
+                                                    <p>{item.desc}</p>
                                                 </div>
                                                 <label className="toggle">
                                                     <input
@@ -717,7 +739,7 @@ export function SettingsPage() {
                                                             setNotifications(updated);
                                                             if (business) {
                                                                 await moduleSettingsService.updateSettings(business.id, 'notifications', updated);
-                                                                eventBus.emit(EVENTS.THEME_CHANGED, { source: 'notifications' }); // Generic trigger for UI refresh
+                                                                eventBus.emit(EVENTS.THEME_CHANGED, { source: 'notifications' });
                                                                 toast.success('Тохиргоо хадгалагдлаа');
                                                             }
                                                         }}
