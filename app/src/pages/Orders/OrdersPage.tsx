@@ -206,7 +206,6 @@ export function OrdersPage() {
             <Header
                 title="Захиалга"
                 subtitle={loading ? 'Уншиж байна...' : `Нийт ${orders.length} захиалга`}
-                action={{ label: 'Шинэ захиалга', onClick: () => setShowCreate(true) }}
             />
             <div className="page">
                 {/* Stats Summary Section */}
@@ -241,7 +240,16 @@ export function OrdersPage() {
                     </div>
                 </div>
 
-                <div className="orders-toolbar">
+                <div className="orders-toolbar animate-fade-in">
+                    <button
+                        className="btn btn-primary gradient-btn"
+                        onClick={() => setShowCreate(true)}
+                        style={{ height: '42px', padding: '0 20px', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}
+                    >
+                        <Plus size={18} />
+                        <span style={{ fontWeight: 700 }}>Шинэ захиалга</span>
+                    </button>
+
                     <div className="orders-search">
                         <Search size={18} className="orders-search-icon" />
                         <input
