@@ -68,48 +68,50 @@ export function InventoryPage() {
         <HubLayout hubId="inventory-hub">
             <Header title="Нөөц удирдлага" subtitle="Барааны орлого, зарлага, нөөцийн түүх" action={{ label: 'Нөөц нэмэх', onClick: () => setShowAdd(true) }} />
             <div className="page">
-                <div className="grid-4 stagger-children" style={{ marginBottom: 'var(--space-lg)' }}>
+                <div className="inv-stats-summary stagger-children">
                     <div className="stat-card">
-                        <div className="stat-card-header">
-                            <div className="stat-card-icon" style={{ background: 'rgba(11, 232, 129, 0.15)', color: '#0be881' }}><TrendingUp size={20} /></div>
+                        <div className="stat-icon" style={{ background: 'rgba(11, 232, 129, 0.1)', color: '#0be881' }}><TrendingUp size={24} /></div>
+                        <div className="stat-info">
+                            <div className="stat-label">Нийт орлого</div>
+                            <div className="stat-value">{totalIn}</div>
                         </div>
-                        <div className="stat-card-value">{totalIn}</div>
-                        <div className="stat-card-label">Нийт орж ирсэн</div>
                     </div>
                     <div className="stat-card">
-                        <div className="stat-card-header">
-                            <div className="stat-card-icon" style={{ background: 'rgba(239, 68, 68, 0.15)', color: '#ef4444' }}><TrendingDown size={20} /></div>
+                        <div className="stat-icon" style={{ background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444' }}><TrendingDown size={24} /></div>
+                        <div className="stat-info">
+                            <div className="stat-label">Нийт зарлага</div>
+                            <div className="stat-value">{totalOut}</div>
                         </div>
-                        <div className="stat-card-value">{totalOut}</div>
-                        <div className="stat-card-label">Нийт гарсан</div>
                     </div>
                     <div className="stat-card">
-                        <div className="stat-card-header">
-                            <div className="stat-card-icon" style={{ background: 'rgba(108, 92, 231, 0.15)', color: '#6c5ce7' }}><Package size={20} /></div>
+                        <div className="stat-icon" style={{ background: 'rgba(108, 92, 231, 0.1)', color: '#6c5ce7' }}><Package size={24} /></div>
+                        <div className="stat-info">
+                            <div className="stat-label">Барааны нэр төрөл</div>
+                            <div className="stat-value">{products.length}</div>
                         </div>
-                        <div className="stat-card-value">{products.length}</div>
-                        <div className="stat-card-label">Барааны нэр төрөл</div>
                     </div>
                     <div className="stat-card">
-                        <div className="stat-card-header">
-                            <div className="stat-card-icon" style={{ background: 'rgba(245, 158, 11, 0.15)', color: '#f59e0b' }}><AlertTriangle size={20} /></div>
+                        <div className="stat-icon" style={{ background: 'rgba(245, 158, 11, 0.1)', color: '#f59e0b' }}><AlertTriangle size={24} /></div>
+                        <div className="stat-info">
+                            <div className="stat-label">Нөөц бага</div>
+                            <div className="stat-value">{lowStockItems.length}</div>
                         </div>
-                        <div className="stat-card-value">{lowStockItems.length}</div>
-                        <div className="stat-card-label">Нөөц бага</div>
                     </div>
                 </div>
 
                 {/* Low stock alert */}
                 {!loading && lowStockItems.length > 0 && (
-                    <div className="inv-low-stock-panel card" style={{ marginBottom: 'var(--space-lg)' }}>
-                        <h3 style={{ marginBottom: 'var(--space-sm)' }}>⚠️ Нөөц бага байгаа бараа</h3>
+                    <div className="inv-low-stock-panel" style={{ marginBottom: 'var(--space-lg)' }}>
+                        <h3 className="text-sm font-black mb-3 text-orange-600 flex items-center gap-2">
+                            <AlertTriangle size={18} /> Нөөц бага байгаа бараа
+                        </h3>
                         <div className="inv-low-stock-list">
                             {lowStockItems.map((item, i) => (
                                 <div key={i} className="inv-low-stock-item">
                                     <span className="inv-low-stock-name">{item.name}</span>
-                                    <span className="inv-low-stock-sku">{item.sku || '-'}</span>
+                                    {item.sku && <span className="badge badge-surface">{item.sku}</span>}
                                     <span className={`badge ${(item.stock?.quantity || 0) === 0 ? 'badge-cancelled' : 'badge-preparing'}`}>
-                                        {(item.stock?.quantity || 0) === 0 ? 'Дууссан' : `${item.stock?.quantity} / ${item.stock?.lowStockThreshold} ш`}
+                                        {(item.stock?.quantity || 0) === 0 ? 'Дууссан' : `${item.stock?.quantity} ш`}
                                     </span>
                                 </div>
                             ))}
@@ -120,9 +122,9 @@ export function InventoryPage() {
                 <div className="orders-toolbar">
                     <div className="orders-search">
                         <Search size={18} className="orders-search-icon" />
-                        <input className="input orders-search-input" placeholder="Бараа, шалтгаан хайх..." value={search} onChange={e => setSearch(e.target.value)} />
+                        <input className="orders-search-input" placeholder="Бараа, шалтгаан хайх..." value={search} onChange={e => setSearch(e.target.value)} />
                     </div>
-                    <div className="orders-status-bar" style={{ marginBottom: 0 }}>
+                    <div className="orders-status-bar">
                         <button className={`orders-status-chip ${typeFilter === 'all' ? 'active' : ''}`} onClick={() => setTypeFilter('all')}>Бүгд</button>
                         <button className={`orders-status-chip ${typeFilter === 'in' ? 'active' : ''}`} onClick={() => setTypeFilter('in')}>Орлого</button>
                         <button className={`orders-status-chip ${typeFilter === 'out' ? 'active' : ''}`} onClick={() => setTypeFilter('out')}>Зарлага</button>
@@ -133,12 +135,14 @@ export function InventoryPage() {
                 <div className="inv-movement-list stagger-children">
                     {loading ? (
                         <div className="loading-state">
-                            <Loader2 size={32} className="animate-spin" />
-                            <p>Ачаалж байна...</p>
+                            <Loader2 size={32} className="animate-spin text-primary" />
+                            <p className="mt-4 font-bold text-muted">Өгөгдөл ачаалж байна...</p>
                         </div>
                     ) : filtered.length === 0 ? (
                         <div className="empty-state">
-                            <div className="empty-state-icon">🕒</div>
+                            <div className="empty-state-icon">
+                                <History size={48} className="text-muted opacity-20" />
+                            </div>
                             <h3>Түүх олдсонгүй</h3>
                             <p>Нөөцийн хөдөлгөөн бүртгэгдээгүй байна</p>
                         </div>
@@ -150,8 +154,8 @@ export function InventoryPage() {
                                 ? m.createdAt.toLocaleDateString('mn-MN') + ' ' + m.createdAt.toLocaleTimeString('mn-MN', { hour: '2-digit', minute: '2-digit' })
                                 : '';
                             return (
-                                <div key={m.id} className={`inv-movement-card card ${cfg?.cls}`}>
-                                    <div className="inv-movement-icon"><Icon size={18} /></div>
+                                <div key={m.id} className={`inv-movement-card ${cfg?.cls}`}>
+                                    <div className="inv-movement-icon"><Icon size={20} /></div>
                                     <div className="inv-movement-info">
                                         <div className="inv-movement-product">{m.productName}</div>
                                         <div className="inv-movement-reason">{m.reason || cfg?.label}</div>

@@ -142,6 +142,7 @@ export const LISCORD_MODULES: AppModule[] = [
         route: '/app/wms',
         isCore: false,
         category: 'operations',
+        hubId: 'inventory-hub',
         isFree: false,
         plans: [
             { id: 'monthly', name: '30 хоног', price: 20000, durationDays: 30 },
