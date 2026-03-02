@@ -2,7 +2,10 @@ import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { Header } from '../../components/layout/Header';
 import { ImageUpload } from '../../components/common/ImageUpload';
-import { Search, Plus, AlertTriangle, Grid3X3, List, Loader2, MoreVertical, Globe, EyeOff } from 'lucide-react';
+import {
+    Grid3X3, List, Plus, Search, MoreVertical, AlertTriangle, Loader2,
+    EyeOff, Bot, Target, ShieldCheck, Sparkles, CheckCircle2
+} from 'lucide-react';
 import { useBusinessStore, useAuthStore } from '../../store';
 import { productService, categoryService, cargoService } from '../../services/db';
 import { storageService as storage } from '../../services/storage';
@@ -13,6 +16,8 @@ import './ProductsPage.css';
 function fmt(n: number) { return '₮' + n.toLocaleString('mn-MN'); }
 
 export function ProductsPage() {
+
+
     const { business } = useBusinessStore();
     const [search, setSearch] = useState('');
     const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
@@ -100,7 +105,7 @@ export function ProductsPage() {
                             <span className="stat-value">{stats.total} төрөл</span>
                         </div>
                     </div>
-                    <div className="stat-card" style={{ cursor: 'pointer' }} onClick={() => setSearch('нөөц бага')}>
+                    <div className="stat-card clickable" onClick={() => setSearch('нөөц бага')}>
                         <div className="stat-icon orange">
                             <AlertTriangle size={24} />
                         </div>
@@ -109,8 +114,8 @@ export function ProductsPage() {
                             <span className="stat-value">{stats.low} ширхэг</span>
                         </div>
                     </div>
-                    <div className="stat-card" style={{ cursor: 'pointer' }} onClick={() => setSearch('дууссан')}>
-                        <div className="stat-icon red" style={{ background: '#fef2f2', color: '#ef4444' }}>
+                    <div className="stat-card clickable" onClick={() => setSearch('дууссан')}>
+                        <div className="stat-icon red">
                             <MoreVertical size={24} />
                         </div>
                         <div className="stat-info">
@@ -131,12 +136,12 @@ export function ProductsPage() {
 
                 <div className="orders-toolbar animate-fade-in">
                     <button
-                        className="btn btn-primary gradient-btn"
+                        className="btn btn-primary gradient-btn premium-btn"
                         onClick={() => setShowCreate(true)}
-                        style={{ height: '42px', padding: '0 20px', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}
+                        style={{ height: '46px', padding: '0 24px', borderRadius: '14px', display: 'flex', alignItems: 'center', gap: '10px' }}
                     >
-                        <Plus size={18} />
-                        <span style={{ fontWeight: 700 }}>Шинэ бараа</span>
+                        <Plus size={20} />
+                        <span style={{ fontWeight: 800, fontSize: '0.95rem' }}>Шинэ бараа</span>
                     </button>
 
                     <div className="orders-search">
@@ -144,8 +149,8 @@ export function ProductsPage() {
                         <input className="input orders-search-input" placeholder="Бараа, SKU хайх..." value={search} onChange={e => setSearch(e.target.value)} />
                     </div>
                     <div className="products-view-toggle">
-                        <button className={`btn btn-ghost ${viewMode === 'grid' ? 'active' : ''}`} onClick={() => setViewMode('grid')}><Grid3X3 size={18} /></button>
-                        <button className={`btn btn-ghost ${viewMode === 'list' ? 'active' : ''}`} onClick={() => setViewMode('list')}><List size={18} /></button>
+                        <button className={`btn btn - ghost ${viewMode === 'grid' ? 'active' : ''} `} onClick={() => setViewMode('grid')}><Grid3X3 size={18} /></button>
+                        <button className={`btn btn - ghost ${viewMode === 'list' ? 'active' : ''} `} onClick={() => setViewMode('list')}><List size={18} /></button>
                     </div>
                 </div>
 
@@ -153,7 +158,7 @@ export function ProductsPage() {
                 {categories.length > 0 && (
                     <div className="category-chips-wrapper animate-fade-in" style={{ display: 'flex', gap: 8, overflowX: 'auto', padding: '4px 0 16px', scrollbarWidth: 'none' }}>
                         <button
-                            className={`date-chip ${categoryFilter === 'all' ? 'active' : ''}`}
+                            className={`date - chip ${categoryFilter === 'all' ? 'active' : ''} `}
                             onClick={() => setCategoryFilter('all')}
                         >
                             Бүгд
@@ -161,7 +166,7 @@ export function ProductsPage() {
                         {categories.map(cat => (
                             <button
                                 key={cat.id}
-                                className={`date-chip ${categoryFilter === cat.id ? 'active' : ''}`}
+                                className={`date - chip ${categoryFilter === cat.id ? 'active' : ''} `}
                                 onClick={() => setCategoryFilter(cat.id)}
                             >
                                 {cat.name}
@@ -193,7 +198,7 @@ export function ProductsPage() {
                         ) : (
                             <div className={viewMode === 'grid' ? 'products-grid' : 'products-list'}>
                                 {filtered.map(p => (
-                                    <div key={p.id} className={`product-card card-clickable ${(p.stock?.quantity || 0) === 0 ? 'product-out' : ''}`}>
+                                    <div key={p.id} className={`product - card card - clickable ${(p.stock?.quantity || 0) === 0 ? 'product-out' : ''} `}>
                                         <div className="product-card-image-wrapper" onClick={() => setEditingProduct(p)}>
                                             {p.images?.[0] ? (
                                                 <img src={p.images[0]} alt={p.name} className="product-card-image" />
@@ -216,7 +221,7 @@ export function ProductsPage() {
 
                                         <div className="product-card-actions">
                                             <button
-                                                className={`product-action-btn ${openDropdownId === p.id ? 'active' : ''}`}
+                                                className={`product - action - btn ${openDropdownId === p.id ? 'active' : ''} `}
                                                 onClick={(e) => {
                                                     e.stopPropagation();
                                                     setOpenDropdownId(openDropdownId === p.id ? null : p.id);
@@ -330,7 +335,7 @@ function CreateProductModal({ onClose }: { onClose: () => void }) {
         // Simulate AI call
         setTimeout(() => {
             const mockDescriptions = [
-                `${productName} - Танд дээд зэргийн чанар, шинэлэг загварыг санал болгож байна. Өдөр тутамд ашиглахад маш тохиромжтой.`,
+                `${productName} - Танд дээд зэргийн чанар, шинэлэг загварыг санал болгож байна.Өдөр тутамд ашиглахад маш тохиромжтой.`,
                 `${productName} бол бидний хамгийн сүүлчийн загвар бөгөөд хэрэглэгчдийн дунд маш их эрэлттэй байгаа бүтээгдэхүүн юм.`,
                 `Дээд зэрэглэлийн материал, нарийн хийцтэй ${productName}. Таны хэрэгцээг бүрэн хангана.`
             ];
@@ -342,7 +347,7 @@ function CreateProductModal({ onClose }: { onClose: () => void }) {
 
     const addVariation = () => {
         const id = Math.random().toString(36).substring(2, 9);
-        setVariations([...variations, { id, name: '', sku: `${sku}-${variations.length + 1}`, quantity: 0 }]);
+        setVariations([...variations, { id, name: '', sku: `${sku} -${variations.length + 1} `, quantity: 0 }]);
     };
 
     const removeVariation = (id: string) => {
@@ -382,7 +387,7 @@ function CreateProductModal({ onClose }: { onClose: () => void }) {
 
     useEffect(() => {
         const rand = () => Math.random().toString(36).substring(2, 6).toUpperCase();
-        setSku(`LSC-${rand()}-${rand()}`);
+        setSku(`LSC - ${rand()} -${rand()} `);
     }, []);
 
     const calculateSaleFromCost = (cost: number, m: number) => {
@@ -534,155 +539,173 @@ function CreateProductModal({ onClose }: { onClose: () => void }) {
                 </div>
 
                 <div className="modal-tabs">
-                    <button type="button" className={`tab-item ${activeTab === 'basic' ? 'active' : ''}`} onClick={() => setActiveTab('basic')}>Үндсэн</button>
-                    <button type="button" className={`tab-item ${activeTab === 'price' ? 'active' : ''}`} onClick={() => setActiveTab('price')}>Үнэ & Нөөц</button>
-                    <button type="button" className={`tab-item ${activeTab === 'variations' ? 'active' : ''}`} onClick={() => setActiveTab('variations')}>
-                        Хувилбарууд {variations.length > 0 && <span className="tab-badge">{variations.length}</span>}
+                    <button type="button" className={`tab-item ${activeTab === 'basic' ? 'active' : ''} `} onClick={() => setActiveTab('basic')}>
+                        <Bot size={18} /> Үндсэн
                     </button>
-                    <button type="button" className={`tab-item ${activeTab === 'advanced' ? 'active' : ''}`} onClick={() => setActiveTab('advanced')}>Бусад</button>
+                    <button type="button" className={`tab-item ${activeTab === 'price' ? 'active' : ''} `} onClick={() => setActiveTab('price')}>
+                        <Target size={18} /> Үнэ & Нөөц
+                    </button>
+                    <button type="button" className={`tab-item ${activeTab === 'variations' ? 'active' : ''} `} onClick={() => setActiveTab('variations')}>
+                        <Grid3X3 size={18} /> Хувилбарууд {variations.length > 0 && <span className="tab-badge">{variations.length}</span>}
+                    </button>
+                    <button type="button" className={`tab-item ${activeTab === 'advanced' ? 'active' : ''} `} onClick={() => setActiveTab('advanced')}>
+                        <ShieldCheck size={18} /> Бусад
+                    </button>
                 </div>
 
                 <form onSubmit={handleSubmit}>
                     <div className="modal-body animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: 16, minHeight: 400 }}>
 
                         {activeTab === 'basic' && (
-                            <div className="animate-slide-up" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                                <div className="input-group">
-                                    <label className="input-label">Барааны нэр <span className="required">*</span></label>
-                                    <input
-                                        className="input"
-                                        name="name"
-                                        placeholder="iPhone 15 Pro"
-                                        value={productName}
-                                        onChange={e => setProductName(e.target.value)}
-                                        autoFocus
-                                        required
-                                    />
-                                </div>
-
-                                <ImageUpload
-                                    images={existingImages}
-                                    onImagesChange={setExistingImages}
-                                    onFilesChange={setImageFiles}
-                                />
-
-                                <div className="input-group">
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-                                        <label className="input-label" style={{ marginBottom: 0 }}>Тайлбар / Танилцуулга</label>
-                                        <button
-                                            type="button"
-                                            className="btn btn-sm btn-ghost"
-                                            onClick={generateAIDescription}
-                                            disabled={isGeneratingAI}
-                                            style={{ color: 'var(--primary)', fontWeight: 600, gap: 6 }}
-                                        >
-                                            {isGeneratingAI ? <Loader2 size={14} className="animate-spin" /> : '🪄 AI бичүүлэх'}
-                                        </button>
-                                    </div>
-                                    <textarea
-                                        className="input"
-                                        name="description"
-                                        value={description}
-                                        onChange={e => setDescription(e.target.value)}
-                                        placeholder="Барааны дэлгэрэнгүй мэдээлэл, хэмжээ, материал г.м"
-                                        style={{ minHeight: 120, padding: '10px 12px', resize: 'vertical' }}
-                                    />
-                                </div>
-
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                                    <div className="input-group" style={{ position: 'relative' }}>
-                                        <label className="input-label">Ангилал</label>
-                                        <div className="input-with" onClick={() => setShowCategoryDropdown(true)}>
-                                            <input
-                                                className="input"
-                                                placeholder="Ангилал сонгох..."
-                                                value={categoryInput}
-                                                onChange={e => {
-                                                    setCategoryInput(e.target.value);
-                                                    setSelectedCategory(null);
-                                                    setShowCategoryDropdown(true);
-                                                }}
-                                                onFocus={() => setShowCategoryDropdown(true)}
-                                            />
-                                        </div>
-                                        {showCategoryDropdown && (categoryInput || categories.length > 0) && (
-                                            <>
-                                                <div className="dropdown-backdrop" onClick={() => setShowCategoryDropdown(false)} />
-                                                <div className="dropdown-menu show shadow-lg" style={{
-                                                    width: '100%', top: '100%', left: 0, marginTop: 4,
-                                                    maxHeight: 240, overflowY: 'auto', borderRadius: 10,
-                                                    border: '1px solid var(--border-color)', padding: '4px',
-                                                    zIndex: 100, background: 'var(--bg-main)'
-                                                }}>
-                                                    {filteredCats.map(c => (
-                                                        <div key={c.id} className="dropdown-item" onClick={() => {
-                                                            setSelectedCategory(c);
-                                                            setCategoryInput(c.name);
-                                                            setShowCategoryDropdown(false);
-                                                        }}>
-                                                            {c.name}
-                                                        </div>
-                                                    ))}
-                                                    {categoryInput && !categories.some(c => c.name.toLowerCase() === categoryInput.toLowerCase()) && (
-                                                        <div className="dropdown-item" style={{ color: 'var(--primary)', fontWeight: 600 }} onClick={() => setShowCategoryDropdown(false)}>
-                                                            <Plus size={16} /> Шинээр: "{categoryInput}"
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            </>
-                                        )}
-                                    </div>
+                            <div className="animate-slide-up" style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+                                <div className="modal-section-card">
+                                    <div className="modal-section-title">Ерөнхий мэдээлэл</div>
                                     <div className="input-group">
-                                        <label className="input-label">SKU</label>
-                                        <input className="input" value={sku} onChange={e => setSku(e.target.value)} />
+                                        <label className="input-label">Барааны нэр <span className="required">*</span></label>
+                                        <input
+                                            className="input"
+                                            name="name"
+                                            placeholder="iPhone 15 Pro"
+                                            value={productName}
+                                            onChange={e => setProductName(e.target.value)}
+                                            autoFocus
+                                            required
+                                        />
+                                    </div>
+
+                                    <ImageUpload
+                                        images={existingImages}
+                                        onImagesChange={setExistingImages}
+                                        onFilesChange={setImageFiles}
+                                    />
+                                </div>
+
+                                <div className="modal-section-card">
+                                    <div className="modal-section-title">Дэлгэрэнгүй</div>
+                                    <div className="input-group">
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                                            <label className="input-label" style={{ marginBottom: 0 }}>Тайлбар / Танилцуулга</label>
+                                            <button
+                                                type="button"
+                                                className="btn btn-sm btn-ghost gradient-btn-alt"
+                                                onClick={generateAIDescription}
+                                                disabled={isGeneratingAI}
+                                                style={{ color: 'var(--primary)', fontWeight: 800, gap: 8, padding: '4px 12px', borderRadius: 8, background: 'rgba(var(--primary-rgb), 0.05)' }}
+                                            >
+                                                {isGeneratingAI ? <Loader2 size={16} className="animate-spin" /> : <><Sparkles size={16} /> AI бичүүлэх</>}
+                                            </button>
+                                        </div>
+                                        <textarea
+                                            className="input"
+                                            name="description"
+                                            value={description}
+                                            onChange={e => setDescription(e.target.value)}
+                                            placeholder="Барааны дэлгэрэнгүй мэдээлэл, хэмжээ, материал г.м"
+                                            style={{ minHeight: 140, padding: '14px', resize: 'vertical', fontSize: '0.9rem' }}
+                                        />
+                                    </div>
+
+                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+                                        <div className="input-group" style={{ position: 'relative' }}>
+                                            <label className="input-label">Ангилал</label>
+                                            <div className="input-with" onClick={() => setShowCategoryDropdown(true)}>
+                                                <input
+                                                    className="input"
+                                                    placeholder="Ангилал сонгох..."
+                                                    value={categoryInput}
+                                                    onChange={e => {
+                                                        setCategoryInput(e.target.value);
+                                                        setSelectedCategory(null);
+                                                        setShowCategoryDropdown(true);
+                                                    }}
+                                                    onFocus={() => setShowCategoryDropdown(true)}
+                                                />
+                                            </div>
+                                            {showCategoryDropdown && (categoryInput || categories.length > 0) && (
+                                                <>
+                                                    <div className="dropdown-backdrop" onClick={() => setShowCategoryDropdown(false)} />
+                                                    <div className="dropdown-menu show shadow-xl" style={{
+                                                        width: '100%', top: '100%', left: 0, marginTop: 8,
+                                                        maxHeight: 280, overflowY: 'auto', borderRadius: 14,
+                                                        border: '1px solid var(--border-secondary)', padding: '6px',
+                                                        zIndex: 100, background: 'var(--surface-1)', backdropFilter: 'blur(10px)'
+                                                    }}>
+                                                        {filteredCats.map(c => (
+                                                            <div key={c.id} className="dropdown-item" style={{ borderRadius: 10, padding: '10px 12px', fontWeight: 600 }} onClick={() => {
+                                                                setSelectedCategory(c);
+                                                                setCategoryInput(c.name);
+                                                                setShowCategoryDropdown(false);
+                                                            }}>
+                                                                {c.name}
+                                                            </div>
+                                                        ))}
+                                                        {categoryInput && !categories.some(c => c.name.toLowerCase() === categoryInput.toLowerCase()) && (
+                                                            <div className="dropdown-item" style={{ color: 'var(--primary)', fontWeight: 800, borderRadius: 10, padding: '10px 12px' }} onClick={() => setShowCategoryDropdown(false)}>
+                                                                <Plus size={16} /> Шинээр: "{categoryInput}"
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </>
+                                            )}
+                                        </div>
+                                        <div className="input-group">
+                                            <label className="input-label">SKU</label>
+                                            <input className="input" value={sku} onChange={e => setSku(e.target.value)} placeholder="Автоматаар..." />
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                         )}
 
                         {activeTab === 'price' && (
-                            <div className="animate-slide-up" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-                                    <div className="input-group">
-                                        <label className="input-label">Өртөг (₮)</label>
-                                        <input className="input" type="number" value={costPrice} onChange={e => handleCostChange(e.target.value)} placeholder="0" />
-                                    </div>
-                                    <div className="input-group">
-                                        <label className="input-label">Ашиг (%)</label>
-                                        <input className="input" type="number" value={margin} onChange={e => handleMarginChange(e.target.value)} />
-                                    </div>
-                                </div>
-
-                                <div className="price-preview-card" style={{ background: 'var(--surface-2)', padding: 20, borderRadius: 16, border: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                    <div>
-                                        <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', marginBottom: 4 }}>Зарах үнэ</div>
-                                        <div style={{ fontSize: '1.5rem', fontWeight: 800 }}>{fmt(Number(salePrice) || 0)}</div>
-                                    </div>
-                                    <div style={{ textAlign: 'right' }}>
-                                        <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', marginBottom: 4 }}>Бодит ашиг</div>
-                                        <div style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--accent-green)' }}>
-                                            +{fmt((Number(salePrice) || 0) - (Number(costPrice) || 0))}
+                            <div className="animate-slide-up" style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+                                <div className="modal-section-card">
+                                    <div className="modal-section-title">Үнэ тогтоох</div>
+                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+                                        <div className="input-group">
+                                            <label className="input-label">Өртөг (₮)</label>
+                                            <input className="input" type="number" value={costPrice} onChange={e => handleCostChange(e.target.value)} placeholder="0" />
+                                        </div>
+                                        <div className="input-group">
+                                            <label className="input-label">Ашиг (%)</label>
+                                            <input className="input" type="number" value={margin} onChange={e => handleMarginChange(e.target.value)} />
                                         </div>
                                     </div>
-                                </div>
 
-                                <div className="input-group">
-                                    <label className="input-label">Зарах үнэ <span className="required">*</span></label>
-                                    <input className="input" type="number" value={salePrice} onChange={e => handleSaleChange(e.target.value)} required />
-                                </div>
-
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                                    <div className="input-group">
-                                        <label className="input-label">Төрөл</label>
-                                        <select className="input select" value={productType} onChange={e => setProductType(e.target.value as 'ready' | 'preorder')}>
-                                            <option value="ready">Бэлэн байгаа</option>
-                                            <option value="preorder">Захиалгаар</option>
-                                        </select>
+                                    <div className="price-preview-card">
+                                        <div>
+                                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 6 }}>Зарах үнэ</div>
+                                            <div style={{ fontSize: '1.8rem', fontWeight: 900, color: 'var(--text-main)', letterSpacing: -1 }}>{fmt(Number(salePrice) || 0)}</div>
+                                        </div>
+                                        <div style={{ textAlign: 'right' }}>
+                                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 6 }}>Бодит ашиг</div>
+                                            <div style={{ fontSize: '1.4rem', fontWeight: 900, color: '#10b981' }}>
+                                                +{fmt((Number(salePrice) || 0) - (Number(costPrice) || 0))}
+                                            </div>
+                                        </div>
                                     </div>
+
                                     <div className="input-group">
-                                        <label className="input-label">{productType === 'ready' ? 'Үлдэгдэл' : 'Захиалга'}</label>
-                                        <input className="input" name="stock" type="number" disabled={productType === 'preorder' || variations.length > 0} placeholder={productType === 'preorder' ? '∞' : variations.length > 0 ? 'Хувилбараас..' : '0'} />
-                                        {variations.length > 0 && <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: 4 }}>Хувилбаруудын нийлбэрээр бодогдоно</p>}
+                                        <label className="input-label">Зарах үнэ <span className="required">*</span></label>
+                                        <input className="input" type="number" value={salePrice} onChange={e => handleSaleChange(e.target.value)} required style={{ fontSize: '1.1rem', fontWeight: 700 }} />
+                                    </div>
+                                </div>
+
+                                <div className="modal-section-card">
+                                    <div className="modal-section-title">Барааны нөөц</div>
+                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+                                        <div className="input-group">
+                                            <label className="input-label">Төрөл</label>
+                                            <select className="input select" value={productType} onChange={e => setProductType(e.target.value as 'ready' | 'preorder')}>
+                                                <option value="ready">Бэлэн байгаа</option>
+                                                <option value="preorder">Захиалгаар</option>
+                                            </select>
+                                        </div>
+                                        <div className="input-group">
+                                            <label className="input-label">{productType === 'ready' ? 'Үлдэгдэл' : 'Захиалга'}</label>
+                                            <input className="input" name="stock" type="number" disabled={productType === 'preorder' || variations.length > 0} placeholder={productType === 'preorder' ? '∞' : variations.length > 0 ? 'Хувилбараас..' : '0'} />
+                                            {variations.length > 0 && <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: 8, fontWeight: 600 }}>Хувилбаруудын нийлбэрээр бодогдоно</p>}
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -690,130 +713,144 @@ function CreateProductModal({ onClose }: { onClose: () => void }) {
 
                         {activeTab === 'variations' && (
                             <div className="animate-slide-up" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                    <div>
-                                        <div style={{ fontWeight: 700 }}>Барааны хувилбар</div>
-                                        <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Өнгө, хэмжээ зэрэг олон төрөл нэмэх</div>
+                                <div className="modal-section-card">
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                                        <div>
+                                            <div style={{ fontWeight: 700 }}>Барааны хувилбар</div>
+                                            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Өнгө, хэмжээ зэрэг олон төрөл нэмэх</div>
+                                        </div>
+                                        <button type="button" className="btn btn-secondary btn-sm" onClick={addVariation}>
+                                            <Plus size={14} /> Хувилбар нэмэх
+                                        </button>
                                     </div>
-                                    <button type="button" className="btn btn-secondary btn-sm" onClick={addVariation}>
-                                        <Plus size={14} /> Хувилбар нэмэх
-                                    </button>
-                                </div>
 
-                                {variations.length === 0 ? (
-                                    <div style={{ padding: '40px 20px', border: '2px dashed var(--border-color)', borderRadius: 16, textAlign: 'center', color: 'var(--text-muted)' }}>
-                                        Хувилбар нэмээгүй байна
-                                    </div>
-                                ) : (
-                                    <div className="variations-list" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                                        {variations.map((v) => (
-                                            <div key={v.id} className="variation-item" style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr 0.8fr 40px', gap: 10, alignItems: 'center', background: 'var(--bg-soft)', padding: 10, borderRadius: 12 }}>
-                                                <input
-                                                    className="input input-sm"
-                                                    placeholder="Улаан / XL"
-                                                    value={v.name}
-                                                    onChange={e => updateVariation(v.id, { name: e.target.value })}
-                                                />
-                                                <input
-                                                    className="input input-sm"
-                                                    placeholder="SKU"
-                                                    value={v.sku}
-                                                    onChange={e => updateVariation(v.id, { sku: e.target.value })}
-                                                />
-                                                <input
-                                                    className="input input-sm"
-                                                    type="number"
-                                                    placeholder="Тоо"
-                                                    value={v.quantity}
-                                                    onChange={e => updateVariation(v.id, { quantity: Number(e.target.value) })}
-                                                />
-                                                <button type="button" className="btn btn-ghost btn-sm btn-icon" style={{ color: 'var(--accent-red)' }} onClick={() => removeVariation(v.id)}>
-                                                    ✕
-                                                </button>
-                                            </div>
-                                        ))}
-                                    </div>
-                                )}
+                                    {variations.length === 0 ? (
+                                        <div style={{ padding: '40px 20px', border: '2px dashed var(--border-color)', borderRadius: 16, textAlign: 'center', color: 'var(--text-muted)' }}>
+                                            Хувилбар нэмээгүй байна
+                                        </div>
+                                    ) : (
+                                        <div className="variations-list" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                                            {variations.map((v) => (
+                                                <div key={v.id} className="variation-item" style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr 0.8fr 44px', gap: 12, alignItems: 'center', background: 'var(--bg-soft)', padding: 12, borderRadius: 14 }}>
+                                                    <input
+                                                        className="input input-sm"
+                                                        placeholder="Улаан / XL"
+                                                        value={v.name}
+                                                        onChange={e => updateVariation(v.id, { name: e.target.value })}
+                                                    />
+                                                    <input
+                                                        className="input input-sm"
+                                                        placeholder="SKU"
+                                                        value={v.sku}
+                                                        onChange={e => updateVariation(v.id, { sku: e.target.value })}
+                                                    />
+                                                    <input
+                                                        className="input input-sm"
+                                                        type="number"
+                                                        placeholder="Тоо"
+                                                        value={v.quantity}
+                                                        onChange={e => updateVariation(v.id, { quantity: Number(e.target.value) })}
+                                                    />
+                                                    <button type="button" className="btn btn-ghost btn-sm btn-icon" style={{ color: 'var(--accent-red)' }} onClick={() => removeVariation(v.id)}>
+                                                        ✕
+                                                    </button>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
                             </div>
                         )}
 
                         {activeTab === 'advanced' && (
-                            <div className="animate-slide-up" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                            <div className="animate-slide-up" style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
                                 {productType === 'preorder' && (
-                                    <div className="cargo-fee-section" style={{
-                                        background: 'var(--bg-soft)', padding: '16px', borderRadius: '12px', border: '1px solid var(--border-color)',
-                                        display: 'flex', flexDirection: 'column', gap: '12px'
-                                    }}>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--primary)', fontWeight: 600, fontSize: '0.9rem' }}>
-                                            <Globe size={16} /> Каргоны тохиргоо
-                                        </div>
-                                        <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.8fr 1fr', gap: 12 }}>
-                                            <div className="input-group" style={{ position: 'relative' }}>
-                                                <div className="input-with" onClick={() => setShowCargoDropdown(true)}>
-                                                    <input
-                                                        className="input"
-                                                        placeholder="Төрөл (жишээ: 1 кг)"
-                                                        value={cargoInput}
-                                                        onChange={e => {
-                                                            setCargoInput(e.target.value);
-                                                            setSelectedCargoTypeId('');
-                                                            setShowCargoDropdown(true);
-                                                        }}
-                                                        onFocus={() => setShowCargoDropdown(true)}
-                                                    />
+                                    <div className="modal-section-card">
+                                        <div className="modal-section-title">Карго тохиргоо</div>
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                                            <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.8fr 1fr', gap: 12 }}>
+                                                <div className="input-with" style={{ position: 'relative' }}>
+                                                    <label className="input-label">Каргоны төрөл</label>
+                                                    <div onClick={() => setShowCargoDropdown(true)}>
+                                                        <input
+                                                            className="input"
+                                                            placeholder="Жин/хэмжээ"
+                                                            value={cargoInput}
+                                                            onChange={e => {
+                                                                setCargoInput(e.target.value);
+                                                                setSelectedCargoTypeId('');
+                                                                setShowCargoDropdown(true);
+                                                            }}
+                                                            onFocus={() => setShowCargoDropdown(true)}
+                                                        />
+                                                    </div>
+                                                    {showCargoDropdown && (cargoInput || cargoTypes.length > 0) && (
+                                                        <>
+                                                            <div className="dropdown-backdrop" onClick={() => setShowCargoDropdown(false)} />
+                                                            <div className="dropdown-menu show shadow-xl" style={{
+                                                                width: '100%', top: '100%', left: 0, marginTop: 4,
+                                                                maxHeight: 240, overflowY: 'auto', borderRadius: 12,
+                                                                border: '1px solid var(--border-color)', padding: '6px',
+                                                                zIndex: 100, background: 'var(--bg-main)'
+                                                            }}>
+                                                                {filteredCargo.map(c => (
+                                                                    <div key={c.id} className="dropdown-item" onClick={() => handleCargoTypeChange(c.id, c.name)}>
+                                                                        {c.name} ({fmt(c.fee)}/нэгж)
+                                                                    </div>
+                                                                ))}
+                                                                {cargoInput && !cargoTypes.some(c => c.name.toLowerCase() === cargoInput.toLowerCase()) && (
+                                                                    <div className="dropdown-item" style={{ color: 'var(--primary)', fontWeight: 800, borderRadius: 10, padding: '10px 12px' }} onClick={() => {
+                                                                        setShowCargoDropdown(false);
+                                                                        setShowCreateCargoType(true);
+                                                                    }}>
+                                                                        <Plus size={16} /> Шинээр үүсгэх: "{cargoInput}"
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        </>
+                                                    )}
                                                 </div>
-                                                {showCargoDropdown && (cargoInput || cargoTypes.length > 0) && (
-                                                    <>
-                                                        <div className="dropdown-backdrop" onClick={() => setShowCargoDropdown(false)} />
-                                                        <div className="dropdown-menu show shadow-lg" style={{
-                                                            width: '100%', top: '100%', left: 0, marginTop: 4,
-                                                            maxHeight: 240, overflowY: 'auto', borderRadius: 10,
-                                                            border: '1px solid var(--border-color)', padding: '4px',
-                                                            zIndex: 100, background: 'var(--bg-main)'
-                                                        }}>
-                                                            {filteredCargo.map(c => (
-                                                                <div key={c.id} className="dropdown-item" onClick={() => handleCargoTypeChange(c.id, c.name)}>
-                                                                    {c.name} ({fmt(c.fee)}/нэгж)
-                                                                </div>
-                                                            ))}
-                                                            {cargoInput && !cargoTypes.some(c => c.name.toLowerCase() === cargoInput.toLowerCase()) && (
-                                                                <div className="dropdown-item" style={{ color: 'var(--primary)', fontWeight: 600 }} onClick={() => {
-                                                                    setShowCargoDropdown(false);
-                                                                    setShowCreateCargoType(true);
-                                                                }}>
-                                                                    <Plus size={16} /> Шинээр үүсгэх: "{cargoInput}"
-                                                                </div>
-                                                            )}
-                                                        </div>
-                                                    </>
-                                                )}
+                                                <div className="input-group">
+                                                    <label className="input-label">Тоо/Жин</label>
+                                                    <input className="input" type="number" value={cargoValue} onChange={e => handleCargoValueChange(e.target.value)} placeholder="1" />
+                                                </div>
+                                                <div className="input-group">
+                                                    <label className="input-label">Төлбөр (₮)</label>
+                                                    <input className="input" type="number" value={cargoFee} onChange={e => setCargoFee(e.target.value)} />
+                                                </div>
                                             </div>
-                                            <div className="input-group">
-                                                <input className="input" type="number" value={cargoValue} onChange={e => handleCargoValueChange(e.target.value)} placeholder="1" />
-                                            </div>
-                                            <div className="input-group">
-                                                <input className="input" type="number" value={cargoFee} onChange={e => setCargoFee(e.target.value)} />
-                                            </div>
-                                        </div>
-                                        <div className="input-group">
-                                            <div
-                                                className={`input select-custom ${isCargoIncluded ? 'active' : ''}`}
-                                                onClick={() => setIsCargoIncluded(!isCargoIncluded)}
-                                                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', height: 42, background: isCargoIncluded ? 'rgba(var(--primary-rgb), 0.1)' : 'var(--bg-input)', borderColor: isCargoIncluded ? 'var(--primary)' : 'var(--border-color)', borderRadius: 8, border: '1px solid' }}
-                                            >
-                                                {isCargoIncluded ? '✅ Үнэд багтсан' : '📦 Тусдаа бодогдоно'}
+
+                                            <div className="premium-toggle">
+                                                <div
+                                                    className={`toggle - item ${!isCargoIncluded ? 'active' : ''} `}
+                                                    onClick={() => setIsCargoIncluded(false)}
+                                                >
+                                                    Тусдаа бодогдоно
+                                                </div>
+                                                <div
+                                                    className={`toggle - item ${isCargoIncluded ? 'active' : ''} `}
+                                                    onClick={() => setIsCargoIncluded(true)}
+                                                >
+                                                    Үнэд багтсан
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
                                 )}
 
-                                <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px', background: isHidden ? 'var(--bg-hover)' : 'var(--bg-soft)', borderRadius: 8, border: '1px solid var(--border-color)' }}>
-                                    <div style={{ flex: 1 }}>
-                                        <div style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--text-primary)' }}>Онлайн дэлгүүрт харуулах эсэх?</div>
-                                        <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Энэ барааг хэрэглэгчийн веб хуудаснаас нуух</div>
-                                    </div>
-                                    <div className={`input select-custom ${isHidden ? 'active' : ''}`} onClick={() => setIsHidden(!isHidden)} style={{ padding: '6px 12px', borderRadius: 6, border: '1px solid', borderColor: isHidden ? 'var(--accent-orange)' : 'var(--border-color)', background: isHidden ? 'rgba(255,159,67,0.1)' : 'transparent', color: isHidden ? 'var(--accent-orange)' : 'var(--text-secondary)', cursor: 'pointer', fontWeight: 600, fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: 6 }}>
-                                        {isHidden ? <><EyeOff size={14} /> НУУГДСАН</> : <><Globe size={14} /> НЭЭЛТТЭЙ</>}
+                                <div className="modal-section-card">
+                                    <div className="modal-section-title">Харагдац</div>
+                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'var(--bg-soft)', padding: '16px', borderRadius: '12px' }}>
+                                        <div>
+                                            <div style={{ fontWeight: 600, fontSize: '0.95rem' }}>Веб дэлгүүрт нуух</div>
+                                            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{isHidden ? 'Одоогоор хэрэглэгчдэд харагдахгүй байна' : 'Хэрэглэгчдэд нээлттэй харагдаж байна'}</div>
+                                        </div>
+                                        <div
+                                            className={`modern-toggle-item ${isHidden ? 'active' : ''} `}
+                                            onClick={() => setIsHidden(!isHidden)}
+                                        >
+                                            <div className="toggle" />
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -959,7 +996,7 @@ function EditProductModal({ product, onClose }: { product: Product; onClose: () 
         if (!productName) return;
         setIsGeneratingAI(true);
         setTimeout(() => {
-            setDescription(`${productName} - Амжилтыг тань тодотгох шилдэг сонголт. Чанар ба үнэ цэнийг эрхэмлэгч танд зориулав.`);
+            setDescription(`${productName} - Амжилтыг тань тодотгох шилдэг сонголт.Чанар ба үнэ цэнийг эрхэмлэгч танд зориулав.`);
             setIsGeneratingAI(false);
             toast.success('Тайлбар бэлэн боллоо');
         }, 1200);
@@ -967,7 +1004,7 @@ function EditProductModal({ product, onClose }: { product: Product; onClose: () 
 
     const addVariation = () => {
         const id = Math.random().toString(36).substring(2, 9);
-        setVariations([...variations, { id, name: '', sku: `${sku}-${variations.length + 1}`, quantity: 0 }]);
+        setVariations([...variations, { id, name: '', sku: `${sku} -${variations.length + 1} `, quantity: 0 }]);
     };
 
     const removeVariation = (id: string) => {
@@ -1059,100 +1096,115 @@ function EditProductModal({ product, onClose }: { product: Product; onClose: () 
                 </div>
 
                 <div className="modal-tabs">
-                    <button type="button" className={`tab-item ${activeTab === 'basic' ? 'active' : ''}`} onClick={() => setActiveTab('basic')}>Үндсэн</button>
-                    <button type="button" className={`tab-item ${activeTab === 'price' ? 'active' : ''}`} onClick={() => setActiveTab('price')}>Үнэ & Нөөц</button>
-                    <button type="button" className={`tab-item ${activeTab === 'variations' ? 'active' : ''}`} onClick={() => setActiveTab('variations')}>
-                        Хувилбарууд {variations.length > 0 && <span className="tab-badge">{variations.length}</span>}
+                    <button type="button" className={`tab-item ${activeTab === 'basic' ? 'active' : ''} `} onClick={() => setActiveTab('basic')}>
+                        <Bot size={18} /> Үндсэн
                     </button>
-                    <button type="button" className={`tab-item ${activeTab === 'advanced' ? 'active' : ''}`} onClick={() => setActiveTab('advanced')}>Бусад</button>
+                    <button type="button" className={`tab-item ${activeTab === 'price' ? 'active' : ''} `} onClick={() => setActiveTab('price')}>
+                        <Target size={18} /> Үнэ & Нөөц
+                    </button>
+                    <button type="button" className={`tab-item ${activeTab === 'variations' ? 'active' : ''} `} onClick={() => setActiveTab('variations')}>
+                        <ShieldCheck size={18} /> Хувилбарууд {variations.length > 0 && <span className="tab-badge">{variations.length}</span>}
+                    </button>
+                    <button type="button" className={`tab-item ${activeTab === 'advanced' ? 'active' : ''} `} onClick={() => setActiveTab('advanced')}>
+                        <Sparkles size={18} /> Бусад
+                    </button>
                 </div>
 
                 <form onSubmit={handleSubmit}>
                     <div className="modal-body animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: 16, minHeight: 400 }}>
 
                         {activeTab === 'basic' && (
-                            <div className="animate-slide-up" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                                <div className="input-group">
-                                    <label className="input-label">Барааны нэр <span className="required">*</span></label>
-                                    <input
-                                        className="input"
-                                        name="name"
-                                        value={productName}
-                                        onChange={e => setProductName(e.target.value)}
-                                        required
-                                    />
-                                </div>
-
-                                <ImageUpload
-                                    images={existingImages}
-                                    onImagesChange={setExistingImages}
-                                    onFilesChange={setImageFiles}
-                                />
-
-                                <div className="input-group">
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-                                        <label className="input-label" style={{ marginBottom: 0 }}>Тайлбар / Танилцуулга</label>
-                                        <button
-                                            type="button"
-                                            className="btn btn-sm btn-ghost"
-                                            onClick={generateAIDescription}
-                                            disabled={isGeneratingAI}
-                                            style={{ color: 'var(--primary)', fontWeight: 600, gap: 6 }}
-                                        >
-                                            {isGeneratingAI ? <Loader2 size={14} className="animate-spin" /> : '🪄 AI бичүүлэх'}
-                                        </button>
-                                    </div>
-                                    <textarea
-                                        className="input"
-                                        name="description"
-                                        value={description}
-                                        onChange={e => setDescription(e.target.value)}
-                                        placeholder="Барааны дэлгэрэнгүй мэдээлэл..."
-                                        style={{ minHeight: 120, padding: '10px 12px', resize: 'vertical' }}
-                                    />
-                                </div>
-
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                                    <div className="input-group" style={{ position: 'relative' }}>
-                                        <label className="input-label">Ангилал</label>
-                                        <div className="input-with" onClick={() => setShowCategoryDropdown(true)}>
+                            <div className="animate-slide-up" style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+                                <div className="modal-section-card">
+                                    <div className="modal-section-title">Ерөнхий мэдээлэл</div>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                                        <div className="input-group">
+                                            <label className="input-label">Барааны нэр <span className="required">*</span></label>
                                             <input
                                                 className="input"
-                                                placeholder="Ангилал сонгох..."
-                                                value={categoryInput}
-                                                onChange={e => {
-                                                    setCategoryInput(e.target.value);
-                                                    setSelectedCategory(null);
-                                                    setShowCategoryDropdown(true);
-                                                }}
-                                                onFocus={() => setShowCategoryDropdown(true)}
+                                                name="name"
+                                                value={productName}
+                                                onChange={e => setProductName(e.target.value)}
+                                                required
                                             />
                                         </div>
-                                        {showCategoryDropdown && (categoryInput || categories.length > 0) && (
-                                            <>
-                                                <div className="dropdown-backdrop" onClick={() => setShowCategoryDropdown(false)} />
-                                                <div className="dropdown-menu show shadow-lg" style={{
-                                                    width: '100%', top: '100%', left: 0, marginTop: 4,
-                                                    maxHeight: 240, overflowY: 'auto', borderRadius: 10,
-                                                    border: '1px solid var(--border-color)', padding: '4px',
-                                                    zIndex: 100, background: 'var(--bg-main)'
-                                                }}>
-                                                    {filteredCats.map(c => (
-                                                        <div key={c.id} className="dropdown-item" onClick={() => {
-                                                            setSelectedCategory(c);
-                                                            setCategoryInput(c.name);
-                                                            setShowCategoryDropdown(false);
-                                                        }}>
-                                                            {c.name}
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            </>
-                                        )}
+
+                                        <ImageUpload
+                                            images={existingImages}
+                                            onImagesChange={setExistingImages}
+                                            onFilesChange={setImageFiles}
+                                        />
                                     </div>
-                                    <div className="input-group">
-                                        <label className="input-label">SKU</label>
-                                        <input className="input" value={sku} onChange={e => setSku(e.target.value)} />
+                                </div>
+
+                                <div className="modal-section-card">
+                                    <div className="modal-section-title">Тайлбар & Ангилал</div>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                                        <div className="input-group">
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                                                <label className="input-label" style={{ marginBottom: 0 }}>Дэлгэрэнгүй тайлбар</label>
+                                                <button
+                                                    type="button"
+                                                    className="gradient-btn-alt"
+                                                    onClick={generateAIDescription}
+                                                    disabled={isGeneratingAI}
+                                                >
+                                                    {isGeneratingAI ? <Loader2 size={16} className="animate-spin" /> : <Sparkles size={16} />}
+                                                    <span>AI Тайлбар</span>
+                                                </button>
+                                            </div>
+                                            <textarea
+                                                className="input h-32"
+                                                name="description"
+                                                value={description}
+                                                onChange={e => setDescription(e.target.value)}
+                                                placeholder="Барааны дэлгэрэнгүй мэдээлэл..."
+                                            />
+                                        </div>
+
+                                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                                            <div className="input-with" style={{ position: 'relative' }}>
+                                                <label className="input-label">Ангилал</label>
+                                                <div onClick={() => setShowCategoryDropdown(true)}>
+                                                    <input
+                                                        className="input"
+                                                        placeholder="Ангилал сонгох..."
+                                                        value={categoryInput}
+                                                        onChange={e => {
+                                                            setCategoryInput(e.target.value);
+                                                            setSelectedCategory(null);
+                                                            setShowCategoryDropdown(true);
+                                                        }}
+                                                        onFocus={() => setShowCategoryDropdown(true)}
+                                                    />
+                                                </div>
+                                                {showCategoryDropdown && (categoryInput || categories.length > 0) && (
+                                                    <>
+                                                        <div className="dropdown-backdrop" onClick={() => setShowCategoryDropdown(false)} />
+                                                        <div className="dropdown-menu show shadow-xl" style={{
+                                                            width: '100%', top: '100%', left: 0, marginTop: 4,
+                                                            maxHeight: 240, overflowY: 'auto', borderRadius: 12,
+                                                            border: '1px solid var(--border-color)', padding: '6px',
+                                                            zIndex: 100, background: 'var(--bg-main)'
+                                                        }}>
+                                                            {filteredCats.map(c => (
+                                                                <div key={c.id} className="dropdown-item" onClick={() => {
+                                                                    setSelectedCategory(c);
+                                                                    setCategoryInput(c.name);
+                                                                    setShowCategoryDropdown(false);
+                                                                }}>
+                                                                    {c.name}
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    </>
+                                                )}
+                                            </div>
+                                            <div className="input-group">
+                                                <label className="input-label">SKU (Код)</label>
+                                                <input className="input" value={sku} onChange={e => setSku(e.target.value)} placeholder="Жишээ: B-001" />
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -1160,47 +1212,66 @@ function EditProductModal({ product, onClose }: { product: Product; onClose: () 
 
                         {activeTab === 'price' && (
                             <div className="animate-slide-up" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-                                    <div className="input-group">
-                                        <label className="input-label">Өртөг (₮)</label>
-                                        <input className="input" type="number" value={costPrice} onChange={e => handleCostChange(e.target.value)} />
-                                    </div>
-                                    <div className="input-group">
-                                        <label className="input-label">Ашиг (%)</label>
-                                        <input className="input" type="number" value={margin} onChange={e => handleMarginChange(e.target.value)} />
-                                    </div>
-                                </div>
-
-                                <div className="price-preview-card" style={{ background: 'var(--surface-2)', padding: 20, borderRadius: 16, border: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                    <div>
-                                        <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', marginBottom: 4 }}>Зарах үнэ</div>
-                                        <div style={{ fontSize: '1.5rem', fontWeight: 800 }}>{fmt(Number(salePrice) || 0)}</div>
-                                    </div>
-                                    <div style={{ textAlign: 'right' }}>
-                                        <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', marginBottom: 4 }}>Бодит ашиг</div>
-                                        <div style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--accent-green)' }}>
-                                            +{fmt((Number(salePrice) || 0) - (Number(costPrice) || 0))}
+                                <div className="modal-section-card">
+                                    <div className="modal-section-title">Үнэ тохиргоо</div>
+                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
+                                        <div className="input-group">
+                                            <label className="input-label">Өртөг (₮)</label>
+                                            <input className="input" type="number" value={costPrice} onChange={e => handleCostChange(e.target.value)} placeholder="0" />
+                                        </div>
+                                        <div className="input-group">
+                                            <label className="input-label">Ашиг (%)</label>
+                                            <input className="input" type="number" value={margin} onChange={e => handleMarginChange(e.target.value)} placeholder="20" />
                                         </div>
                                     </div>
+
+                                    <div className="price-preview-card">
+                                        <div className="preview-item">
+                                            <div className="preview-label">Зарах үнэ</div>
+                                            <div className="preview-value">{fmt(Number(salePrice) || 0)}</div>
+                                        </div>
+                                        <div className="preview-divider" />
+                                        <div className="preview-item align-right">
+                                            <div className="preview-label">Цэвэр ашиг</div>
+                                            <div className="preview-value highlight">
+                                                +{fmt((Number(salePrice) || 0) - (Number(costPrice) || 0))}
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="input-group" style={{ marginTop: 20 }}>
+                                        <label className="input-label">Зарах үнэ <span className="required">*</span></label>
+                                        <input className="input primary" type="number" value={salePrice} onChange={e => handleSaleChange(e.target.value)} required />
+                                    </div>
                                 </div>
 
-                                <div className="input-group">
-                                    <label className="input-label">Зарах үнэ <span className="required">*</span></label>
-                                    <input className="input" type="number" value={salePrice} onChange={e => handleSaleChange(e.target.value)} required />
-                                </div>
-
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                                    <div className="input-group">
-                                        <label className="input-label">Төрөл</label>
-                                        <select className="input select" value={productType} onChange={e => setProductType(e.target.value as 'ready' | 'preorder')}>
-                                            <option value="ready">Бэлэн байгаа</option>
-                                            <option value="preorder">Захиалгаар</option>
-                                        </select>
+                                <div className="modal-section-card">
+                                    <div className="modal-section-title">Төрөл & Нөөц</div>
+                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                                        <div className="input-group">
+                                            <label className="input-label">Барааны төрөл</label>
+                                            <select className="input select" value={productType} onChange={e => setProductType(e.target.value as 'ready' | 'preorder')}>
+                                                <option value="ready">Бэлэн байгаа (Ready)</option>
+                                                <option value="preorder">Захиалгаар (Pre-order)</option>
+                                            </select>
+                                        </div>
+                                        <div className="input-group">
+                                            <label className="input-label">{productType === 'ready' ? 'Боломжит тоо' : 'Захиалга авах'}</label>
+                                            <input
+                                                className="input"
+                                                name="stock"
+                                                type="number"
+                                                defaultValue={product.stock?.quantity}
+                                                disabled={productType === 'preorder' || variations.length > 0}
+                                                placeholder={productType === 'preorder' ? '∞' : '0'}
+                                            />
+                                        </div>
                                     </div>
-                                    <div className="input-group">
-                                        <label className="input-label">{productType === 'ready' ? 'Үлдэгдэл' : 'Захиалга'}</label>
-                                        <input className="input" name="stock" type="number" defaultValue={product.stock?.quantity} disabled={productType === 'preorder' || variations.length > 0} placeholder={productType === 'preorder' ? '∞' : '0'} />
-                                    </div>
+                                    {variations.length > 0 && (
+                                        <div className="info-msg" style={{ marginTop: 12, fontSize: '0.75rem', color: 'var(--text-muted)', display: 'flex', gap: 4 }}>
+                                            <CheckCircle2 size={12} /> Тоо хэмжээ хувилбаруудын нийлбэрээр бодогдоно
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         )}
@@ -1255,74 +1326,86 @@ function EditProductModal({ product, onClose }: { product: Product; onClose: () 
                         )}
 
                         {activeTab === 'advanced' && (
-                            <div className="animate-slide-up" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                            <div className="animate-slide-up" style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
                                 {productType === 'preorder' && (
-                                    <div className="cargo-fee-section" style={{
-                                        background: 'var(--bg-soft)', padding: '16px', borderRadius: '12px', border: '1px solid var(--border-color)',
-                                        display: 'flex', flexDirection: 'column', gap: '12px'
-                                    }}>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--primary)', fontWeight: 600, fontSize: '0.9rem' }}>
-                                            <Globe size={16} /> Каргоны тохиргоо
-                                        </div>
-                                        <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.8fr 1fr', gap: 12 }}>
-                                            <div className="input-group" style={{ position: 'relative' }}>
-                                                <div className="input-with" onClick={() => setShowCargoDropdown(true)}>
-                                                    <input
-                                                        className="input"
-                                                        placeholder="Төрөл (жишээ: 1 кг)"
-                                                        value={cargoInput}
-                                                        onChange={e => {
-                                                            setCargoInput(e.target.value);
-                                                            setSelectedCargoTypeId('');
-                                                            setShowCargoDropdown(true);
-                                                        }}
-                                                        onFocus={() => setShowCargoDropdown(true)}
-                                                    />
+                                    <div className="modal-section-card">
+                                        <div className="modal-section-title">Карго тохиргоо</div>
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                                            <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.8fr 1fr', gap: 12 }}>
+                                                <div className="input-with" style={{ position: 'relative' }}>
+                                                    <label className="input-label">Каргоны төрөл</label>
+                                                    <div onClick={() => setShowCargoDropdown(true)}>
+                                                        <input
+                                                            className="input"
+                                                            placeholder="Жин/хэмжээ"
+                                                            value={cargoInput}
+                                                            onChange={e => {
+                                                                setCargoInput(e.target.value);
+                                                                setSelectedCargoTypeId('');
+                                                                setShowCargoDropdown(true);
+                                                            }}
+                                                            onFocus={() => setShowCargoDropdown(true)}
+                                                        />
+                                                    </div>
+                                                    {showCargoDropdown && (cargoInput || cargoTypes.length > 0) && (
+                                                        <>
+                                                            <div className="dropdown-backdrop" onClick={() => setShowCargoDropdown(false)} />
+                                                            <div className="dropdown-menu show shadow-xl" style={{
+                                                                width: '100%', top: '100%', left: 0, marginTop: 4,
+                                                                maxHeight: 240, overflowY: 'auto', borderRadius: 12,
+                                                                border: '1px solid var(--border-color)', padding: '6px',
+                                                                zIndex: 100, background: 'var(--bg-main)'
+                                                            }}>
+                                                                {filteredCargo.map(c => (
+                                                                    <div key={c.id} className="dropdown-item" onClick={() => handleCargoTypeChange(c.id, c.name)}>
+                                                                        {c.name} ({fmt(c.fee)}/нэгж)
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        </>
+                                                    )}
                                                 </div>
-                                                {showCargoDropdown && (cargoInput || cargoTypes.length > 0) && (
-                                                    <>
-                                                        <div className="dropdown-backdrop" onClick={() => setShowCargoDropdown(false)} />
-                                                        <div className="dropdown-menu show shadow-lg" style={{
-                                                            width: '100%', top: '100%', left: 0, marginTop: 4,
-                                                            maxHeight: 240, overflowY: 'auto', borderRadius: 10,
-                                                            border: '1px solid var(--border-color)', padding: '4px',
-                                                            zIndex: 100, background: 'var(--bg-main)'
-                                                        }}>
-                                                            {filteredCargo.map(c => (
-                                                                <div key={c.id} className="dropdown-item" onClick={() => handleCargoTypeChange(c.id, c.name)}>
-                                                                    {c.name} ({fmt(c.fee)}/нэгж)
-                                                                </div>
-                                                            ))}
-                                                        </div>
-                                                    </>
-                                                )}
+                                                <div className="input-group">
+                                                    <label className="input-label">Тоо/Жин</label>
+                                                    <input className="input" type="number" value={cargoValue} onChange={e => handleCargoValueChange(e.target.value)} placeholder="1" />
+                                                </div>
+                                                <div className="input-group">
+                                                    <label className="input-label">Төлбөр (₮)</label>
+                                                    <input className="input" type="number" value={cargoFee} onChange={e => setCargoFee(e.target.value)} />
+                                                </div>
                                             </div>
-                                            <div className="input-group">
-                                                <input className="input" type="number" value={cargoValue} onChange={e => handleCargoValueChange(e.target.value)} placeholder="1" />
-                                            </div>
-                                            <div className="input-group">
-                                                <input className="input" type="number" value={cargoFee} onChange={e => setCargoFee(e.target.value)} />
-                                            </div>
-                                        </div>
-                                        <div className="input-group">
-                                            <div
-                                                className={`input select-custom ${isCargoIncluded ? 'active' : ''}`}
-                                                onClick={() => setIsCargoIncluded(!isCargoIncluded)}
-                                                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', height: 42, background: isCargoIncluded ? 'rgba(var(--primary-rgb), 0.1)' : 'var(--bg-input)', borderColor: isCargoIncluded ? 'var(--primary)' : 'var(--border-color)', borderRadius: 8, border: '1px solid' }}
-                                            >
-                                                {isCargoIncluded ? '✅ Үнэд багтсан' : '📦 Тусдаа бодогдоно'}
+
+                                            <div className="premium-toggle">
+                                                <div
+                                                    className={`toggle - item ${!isCargoIncluded ? 'active' : ''} `}
+                                                    onClick={() => setIsCargoIncluded(false)}
+                                                >
+                                                    Тусдаа бодогдоно
+                                                </div>
+                                                <div
+                                                    className={`toggle - item ${isCargoIncluded ? 'active' : ''} `}
+                                                    onClick={() => setIsCargoIncluded(true)}
+                                                >
+                                                    Үнэд багтсан
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
                                 )}
 
-                                <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px', background: isHidden ? 'var(--bg-hover)' : 'var(--bg-soft)', borderRadius: 8, border: '1px solid var(--border-color)' }}>
-                                    <div style={{ flex: 1 }}>
-                                        <div style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--text-primary)' }}>Онлайн дэлгүүрт харуулах эсэх?</div>
-                                        <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Энэ барааг хэрэглэгчийн веб хуудаснаас нуух</div>
-                                    </div>
-                                    <div className={`input select-custom ${isHidden ? 'active' : ''}`} onClick={() => setIsHidden(!isHidden)} style={{ padding: '6px 12px', borderRadius: 6, border: '1px solid', borderColor: isHidden ? 'var(--accent-orange)' : 'var(--border-color)', background: isHidden ? 'rgba(255,159,67,0.1)' : 'transparent', color: isHidden ? 'var(--accent-orange)' : 'var(--text-secondary)', cursor: 'pointer', fontWeight: 600, fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: 6 }}>
-                                        {isHidden ? <><EyeOff size={14} /> НУУГДСАН</> : <><Globe size={14} /> НЭЭЛТТЭЙ</>}
+                                <div className="modal-section-card">
+                                    <div className="modal-section-title">Харагдац</div>
+                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'var(--bg-soft)', padding: '16px', borderRadius: '12px' }}>
+                                        <div>
+                                            <div style={{ fontWeight: 600, fontSize: '0.95rem' }}>Веб дэлгүүрт нуух</div>
+                                            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{isHidden ? 'Одоогоор хэрэглэгчдэд харагдахгүй байна' : 'Хэрэглэгчдэд нээлттэй харагдаж байна'}</div>
+                                        </div>
+                                        <div
+                                            className={`modern-toggle-item ${isHidden ? 'active' : ''} `}
+                                            onClick={() => setIsHidden(!isHidden)}
+                                        >
+                                            <div className="toggle" />
+                                        </div>
                                     </div>
                                 </div>
                             </div>
