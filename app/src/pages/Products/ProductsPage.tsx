@@ -319,7 +319,7 @@ function CreateProductModal({ onClose }: { onClose: () => void }) {
     const [cargoFee, setCargoFee] = useState<string>(business?.settings?.cargoConfig?.defaultFee?.toString() || '');
     const [isCargoIncluded, setIsCargoIncluded] = useState(business?.settings?.cargoConfig?.isIncludedByDefault || false);
 
-    const [isHidden, setIsHidden] = useState(false);
+    const [isHidden, setIsHidden] = useState(true);
     const [activeTab, setActiveTab] = useState<'basic' | 'price' | 'variations' | 'advanced'>('basic');
     const [variations, setVariations] = useState<ProductVariation[]>([]);
     const [isGeneratingAI, setIsGeneratingAI] = useState(false);
@@ -822,13 +822,13 @@ function CreateProductModal({ onClose }: { onClose: () => void }) {
 
                                             <div className="premium-toggle">
                                                 <div
-                                                    className={`toggle - item ${!isCargoIncluded ? 'active' : ''} `}
+                                                    className={`toggle-item ${!isCargoIncluded ? 'active' : ''} `}
                                                     onClick={() => setIsCargoIncluded(false)}
                                                 >
                                                     Тусдаа бодогдоно
                                                 </div>
                                                 <div
-                                                    className={`toggle - item ${isCargoIncluded ? 'active' : ''} `}
+                                                    className={`toggle-item ${isCargoIncluded ? 'active' : ''} `}
                                                     onClick={() => setIsCargoIncluded(true)}
                                                 >
                                                     Үнэд багтсан
@@ -839,14 +839,16 @@ function CreateProductModal({ onClose }: { onClose: () => void }) {
                                 )}
 
                                 <div className="modal-section-card">
-                                    <div className="modal-section-title">Харагдац</div>
+                                    <div className="modal-section-title">Харагдах байдал</div>
                                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'var(--bg-soft)', padding: '16px', borderRadius: '12px' }}>
                                         <div>
-                                            <div style={{ fontWeight: 600, fontSize: '0.95rem' }}>Веб дэлгүүрт нуух</div>
-                                            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{isHidden ? 'Одоогоор хэрэглэгчдэд харагдахгүй байна' : 'Хэрэглэгчдэд нээлттэй харагдаж байна'}</div>
+                                            <div style={{ fontWeight: 600, fontSize: '0.95rem' }}>Веб дэлгүүрт харуулах?</div>
+                                            <div style={{ fontSize: '0.8rem', color: isHidden ? 'var(--text-muted)' : 'var(--primary)', fontWeight: isHidden ? 500 : 700 }}>
+                                                {isHidden ? 'Одоогоор хэрэглэгчдэд харагдахгүй (Hide)' : 'Хэрэглэгчдэд нээлттэй харагдаж байна (Public)'}
+                                            </div>
                                         </div>
                                         <div
-                                            className={`modern-toggle-item ${isHidden ? 'active' : ''} `}
+                                            className={`modern-toggle-item ${!isHidden ? 'active' : ''}`}
                                             onClick={() => setIsHidden(!isHidden)}
                                         >
                                             <div className="toggle" />
@@ -1377,13 +1379,13 @@ function EditProductModal({ product, onClose }: { product: Product; onClose: () 
 
                                             <div className="premium-toggle">
                                                 <div
-                                                    className={`toggle - item ${!isCargoIncluded ? 'active' : ''} `}
+                                                    className={`toggle-item ${!isCargoIncluded ? 'active' : ''} `}
                                                     onClick={() => setIsCargoIncluded(false)}
                                                 >
                                                     Тусдаа бодогдоно
                                                 </div>
                                                 <div
-                                                    className={`toggle - item ${isCargoIncluded ? 'active' : ''} `}
+                                                    className={`toggle-item ${isCargoIncluded ? 'active' : ''} `}
                                                     onClick={() => setIsCargoIncluded(true)}
                                                 >
                                                     Үнэд багтсан
@@ -1394,14 +1396,16 @@ function EditProductModal({ product, onClose }: { product: Product; onClose: () 
                                 )}
 
                                 <div className="modal-section-card">
-                                    <div className="modal-section-title">Харагдац</div>
+                                    <div className="modal-section-title">Харагдах байдал</div>
                                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'var(--bg-soft)', padding: '16px', borderRadius: '12px' }}>
                                         <div>
-                                            <div style={{ fontWeight: 600, fontSize: '0.95rem' }}>Веб дэлгүүрт нуух</div>
-                                            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{isHidden ? 'Одоогоор хэрэглэгчдэд харагдахгүй байна' : 'Хэрэглэгчдэд нээлттэй харагдаж байна'}</div>
+                                            <div style={{ fontWeight: 600, fontSize: '0.95rem' }}>Веб дэлгүүрт харуулах?</div>
+                                            <div style={{ fontSize: '0.8rem', color: isHidden ? 'var(--text-muted)' : 'var(--primary)', fontWeight: isHidden ? 500 : 700 }}>
+                                                {isHidden ? 'Одоогоор хэрэглэгчдэд харагдахгүй (Hide)' : 'Хэрэглэгчдэд нээлттэй харагдаж байна (Public)'}
+                                            </div>
                                         </div>
                                         <div
-                                            className={`modern-toggle-item ${isHidden ? 'active' : ''} `}
+                                            className={`modern-toggle-item ${!isHidden ? 'active' : ''}`}
                                             onClick={() => setIsHidden(!isHidden)}
                                         >
                                             <div className="toggle" />
