@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { ArrowRight, Loader2, Check } from 'lucide-react';
 import { useAuthStore, useSystemCategoriesStore } from '../../store';
+import { useBusinessStore } from '../../store';
 import type { BusinessCategory } from '../../types';
 import { businessService } from '../../services/db';
 import { toast } from 'react-hot-toast';
@@ -9,7 +10,8 @@ import { db } from '../../services/firebase';
 import './BusinessWizard.css';
 
 export function BusinessWizard() {
-    const { user } = useAuthStore();
+    const { user, setUser } = useAuthStore();
+    const { setBusiness, setEmployee } = useBusinessStore();
     const { categories } = useSystemCategoriesStore();
     const [step, setStep] = useState<1 | 2>(1);
     const [loading, setLoading] = useState(false);
@@ -35,7 +37,7 @@ export function BusinessWizard() {
                 settings: {
                     orderPrefix: 'ORD',
                     orderCounter: 1,
-                    pin: '1234',
+                    pin: '',
                     timezone: 'Asia/Ulaanbaatar',
                     workDays: [1, 2, 3, 4, 5],
                     workHours: { start: '09:00', end: '18:00' },
@@ -55,9 +57,16 @@ export function BusinessWizard() {
                 businessIds: arrayUnion(bizId)
             }, { merge: true });
 
+            // Update local state instead of reloading the page
+            const [biz, emp] = await Promise.all([
+                businessService.getBusiness(bizId),
+                businessService.getEmployeeProfile(bizId, user.uid)
+            ]);
+            setUser({ ...user, activeBusiness: bizId, businessIds: [...(user.businessIds || []), bizId] });
+            setBusiness(biz);
+            setEmployee(emp);
             toast.success('Бизнес амжилттай үүслээ!');
-            window.location.reload();
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (error: any) {
             toast.error('Алдаа гарлаа: ' + error.message);
         } finally {

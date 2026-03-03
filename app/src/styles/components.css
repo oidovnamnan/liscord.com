@@ -225,68 +225,9 @@
 }
 
 /* ====================================
-   BADGES
+   BADGES (inherits from index.css, add extras here)
    ==================================== */
-.badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    padding: 4px 10px;
-    font-size: 0.75rem;
-    font-weight: 600;
-    border-radius: var(--radius-full);
-    white-space: nowrap;
-}
 
-.badge-new {
-    background: rgba(59, 130, 246, 0.15);
-    color: #3b82f6;
-}
-
-.badge-confirmed {
-    background: rgba(139, 92, 246, 0.15);
-    color: #8b5cf6;
-}
-
-.badge-preparing {
-    background: rgba(245, 158, 11, 0.15);
-    color: #f59e0b;
-}
-
-.badge-shipping {
-    background: rgba(6, 182, 212, 0.15);
-    color: #06b6d4;
-}
-
-.badge-delivered {
-    background: rgba(16, 185, 129, 0.15);
-    color: #10b981;
-}
-
-.badge-cancelled {
-    background: rgba(239, 68, 68, 0.15);
-    color: #ef4444;
-}
-
-.badge-unpaid {
-    background: rgba(239, 68, 68, 0.15);
-    color: #ef4444;
-}
-
-.badge-partial {
-    background: rgba(245, 158, 11, 0.15);
-    color: #f59e0b;
-}
-
-.badge-paid {
-    background: rgba(16, 185, 129, 0.15);
-    color: #10b981;
-}
-
-.badge-primary {
-    background: var(--primary-light);
-    color: var(--primary);
-}
 
 /* ====================================
    MODALS

@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { NavLink, useLocation } from 'react-router-dom';
+import { useState, useEffect, useMemo } from 'react';
+import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import {
     LayoutDashboard,
     Settings,
@@ -21,9 +21,10 @@ import './Sidebar.css';
 
 export function Sidebar() {
     const location = useLocation();
+    const navigate = useNavigate();
     const { sidebarOpen, sidebarCollapsed, toggleSidebar, toggleSidebarCollapsed } = useUIStore();
     const { business, setBusiness, setEmployee } = useBusinessStore();
-    const { user } = useAuthStore();
+    const { user, setUser } = useAuthStore();
     const [switching, setSwitching] = useState(false);
     const [showSwitcher, setShowSwitcher] = useState(false);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -38,10 +39,14 @@ export function Sidebar() {
 
     const loadBusinesses = async () => {
         if (!user) return;
-        const bizs = await Promise.all(
-            user.businessIds.map((id: string) => businessService.getBusiness(id))
-        );
-        setUserBusinesses(bizs.filter(Boolean));
+        try {
+            const bizs = await Promise.all(
+                user.businessIds.map((id: string) => businessService.getBusiness(id))
+            );
+            setUserBusinesses(bizs.filter(Boolean));
+        } catch (error) {
+            console.error('Failed to load businesses:', error);
+        }
     };
 
     const handleSwitch = async (bizId: string) => {
@@ -56,6 +61,7 @@ export function Sidebar() {
             setBusiness(biz);
             setEmployee(emp);
             setShowSwitcher(false);
+            navigate('/app');
             toast.success(`${biz?.name} руу шилжлээ`);
             // eslint-disable-next-line @typescript-eslint/no-unused-vars
         } catch (_error) {
@@ -67,8 +73,16 @@ export function Sidebar() {
 
     const handleAddNew = async () => {
         if (!user) return;
-        await updateDoc(doc(db, 'users', user.uid), { activeBusiness: null });
-        window.location.reload(); // App.tsx will show BusinessWizard
+        try {
+            await updateDoc(doc(db, 'users', user.uid), { activeBusiness: null });
+            // Update local state to trigger BusinessWizard in ProtectedRoute
+            setUser({ ...user, activeBusiness: null });
+            setBusiness(null);
+            navigate('/app');
+        } catch (error) {
+            console.error('Failed to clear active business:', error);
+            toast.error('Алдаа гарлаа');
+        }
     };
 
     const [moduleDefaults, setModuleDefaults] = useState<Record<string, Record<string, string>>>({});
@@ -85,36 +99,38 @@ export function Sidebar() {
         fetchDefaults();
     }, []);
 
-    const filteredNavItems = LISCORD_MODULES.filter((mod, index, self) => {
-        // Core modules (like Dashboard, Reports, Settings) are always visible
-        if (mod.isCore) {
+    const filteredNavItems = useMemo(() => {
+        return LISCORD_MODULES.filter((mod, index, self) => {
+            // Core modules (like Dashboard, Reports, Settings) are always visible
+            if (mod.isCore) {
+                return true;
+            }
+
+            // Global check: Is this module allowed for this business category by Super Admin?
+            if (business?.category && moduleDefaults[business.category]) {
+                const status = moduleDefaults[business.category][mod.id];
+                if (!status) return false; // Not allowed (Off)
+            }
+
+            // Show only if enabled in business AND not expired
+            const isEnabled = business?.activeModules?.includes(mod.id);
+            if (!isEnabled) return false;
+
+            const subscription = business?.moduleSubscriptions?.[mod.id];
+            if (subscription) {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                const expiryDate = subscription.expiresAt ? (typeof (subscription.expiresAt as any).toDate === 'function' ? (subscription.expiresAt as any).toDate() : new Date(subscription.expiresAt as any)) : null;
+                if (expiryDate && expiryDate < new Date()) return false;
+            }
+
+            // If it belongs to a hub, only show the FIRST enabled module of that hub in the sidebar
+            if (mod.hubId) {
+                return self.findIndex(m => m.hubId === mod.hubId && business?.activeModules?.includes(m.id)) === index;
+            }
+
             return true;
-        }
-
-        // Global check: Is this module allowed for this business category by Super Admin?
-        if (business?.category && moduleDefaults[business.category]) {
-            const status = moduleDefaults[business.category][mod.id];
-            if (!status) return false; // Not allowed (Off)
-        }
-
-        // Show only if enabled in business AND not expired
-        const isEnabled = business?.activeModules?.includes(mod.id);
-        if (!isEnabled) return false;
-
-        const subscription = business?.moduleSubscriptions?.[mod.id];
-        if (subscription) {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const expiryDate = subscription.expiresAt ? (typeof (subscription.expiresAt as any).toDate === 'function' ? (subscription.expiresAt as any).toDate() : new Date(subscription.expiresAt as any)) : null;
-            if (expiryDate && expiryDate < new Date()) return false;
-        }
-
-        // If it belongs to a hub, only show the FIRST enabled module of that hub in the sidebar
-        if (mod.hubId) {
-            return self.findIndex(m => m.hubId === mod.hubId && business?.activeModules?.includes(m.id)) === index;
-        }
-
-        return true;
-    });
+        });
+    }, [business?.activeModules, business?.moduleSubscriptions, business?.category, moduleDefaults]);
 
 
     return (

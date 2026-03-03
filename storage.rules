@@ -5,18 +5,14 @@ service firebase.storage {
     function isAuth() {
       return request.auth != null;
     }
-    
-    function isMember(bizId) {
-      // In production, you would ideally check business membership via Firestore bridge
-      // For now, enforcing path-based isolation
-      return request.auth.token.activeBusiness == bizId;
-    }
 
+    // Business files — only members can read/write
     match /businesses/{bizId}/{allPaths=**} {
-      allow read: if isAuth();
-      allow write: if isAuth(); // Basic for now, can be refined per business ID
+      allow read: if isAuth() && exists(/databases/$(database)/documents/businesses/$(bizId)/employees/$(request.auth.uid));
+      allow write: if isAuth() && exists(/databases/$(database)/documents/businesses/$(bizId)/employees/$(request.auth.uid));
     }
 
+    // User files — only the user themselves
     match /users/{userId}/{allPaths=**} {
       allow read, write: if isAuth() && request.auth.uid == userId;
     }

@@ -43,7 +43,7 @@
     padding: 10px;
     background: var(--surface-1);
     border-radius: var(--radius-xl);
-    border: 1px solid var(--border-color);
+    border: 1px solid var(--border-primary);
     box-shadow: 0 4px 12px -4px var(--shadow-sm);
 }
 
@@ -52,7 +52,7 @@
     align-items: center;
     gap: 8px;
     padding: 8px 20px;
-    background: var(--bg-main);
+    background: var(--surface-2);
     border: 1px solid var(--border-secondary);
     border-radius: var(--radius-lg);
     font-size: 0.85rem;
@@ -65,35 +65,26 @@
 }
 
 .orders-status-chip:hover {
-    border-color: #cbd5e1;
-    color: #1e293b;
-    background: #f8fafc;
+    border-color: var(--border-secondary);
+    color: var(--text-primary);
+    background: var(--bg-hover);
 }
 
 .orders-status-chip.active {
-    background: #1e293b;
-    border-color: #1e293b;
+    background: var(--primary);
+    border-color: var(--primary);
     color: #ffffff;
-    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.15);
+    box-shadow: var(--primary-glow);
 }
 
-.badge-paid {
-    background: rgba(0, 184, 148, 0.1);
-    color: #00b894;
-}
 
-.badge-info {
-    background: rgba(9, 132, 227, 0.1);
-    color: #0984e3;
-    font-weight: 600;
-}
 
 .orders-status-count {
     font-size: 0.75rem;
-    background: #f1f5f9;
+    background: var(--bg-tertiary);
     padding: 1px 7px;
     border-radius: 6px;
-    color: #64748b;
+    color: var(--text-secondary);
     font-weight: 700;
 }
 
@@ -115,8 +106,8 @@
     position: relative;
     border-radius: 18px;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    border: 1px solid var(--border-color);
-    background: var(--bg-card);
+    border: 1px solid var(--border-primary);
+    background: var(--surface-1);
 }
 
 .order-card::before {
@@ -143,7 +134,7 @@
 /* Professional Pro Layout */
 .order-card.pro-layout {
     background: var(--surface-1);
-    border: 1px solid var(--border-color);
+    border: 1px solid var(--border-primary);
     border-radius: var(--radius-xl);
     box-shadow: 0 4px 12px -4px var(--shadow-sm);
     margin-bottom: 0;
@@ -215,8 +206,8 @@
 .order-id {
     font-size: 0.75rem;
     font-weight: 700;
-    color: #1e293b;
-    background: #f1f5f9;
+    color: var(--text-primary);
+    background: var(--bg-tertiary);
     padding: 3px 8px;
     border-radius: 6px;
     letter-spacing: 0.5px;
@@ -257,7 +248,7 @@
 
 .pro-date {
     font-size: 0.75rem;
-    color: #64748b;
+    color: var(--text-secondary);
     font-weight: 500;
 }
 
@@ -277,17 +268,17 @@
     align-items: center;
     gap: 8px;
     padding: 6px 8px;
-    background: #f8fafc;
+    background: var(--surface-2);
     border-radius: 10px;
-    border: 1px solid #f1f5f9;
+    border: 1px solid var(--border-primary);
 }
 
 .pro-item-thumb {
     width: 28px;
     height: 28px;
-    background: #fff;
+    background: var(--bg-elevated);
     border-radius: 8px;
-    border: 1px solid #e2e8f0;
+    border: 1px solid var(--border-primary);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -311,7 +302,7 @@
     display: block;
     font-size: 0.8rem;
     font-weight: 600;
-    color: #1e293b;
+    color: var(--text-primary);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -322,7 +313,7 @@
     align-items: center;
     gap: 6px;
     font-size: 0.7rem;
-    color: #64748b;
+    color: var(--text-secondary);
     margin-top: 1px;
 }
 
@@ -343,7 +334,7 @@
 .pro-item-price {
     font-size: 0.75rem;
     font-weight: 700;
-    color: #1e293b;
+    color: var(--text-primary);
 }
 
 /* Pro Meta Bar */
@@ -352,9 +343,9 @@
     align-items: center;
     gap: 8px;
     padding: 6px 8px;
-    background: #f1f5f9;
+    background: var(--bg-tertiary);
     border-radius: 8px;
-    color: #475569;
+    color: var(--text-secondary);
 }
 
 .pro-meta-item {
@@ -365,7 +356,7 @@
 }
 
 .meta-icon {
-    color: #94a3b8;
+    color: var(--text-muted);
 }
 
 .pro-customer-name {
@@ -373,14 +364,14 @@
 }
 
 .pro-customer-phone {
-    color: #64748b;
+    color: var(--text-secondary);
     font-size: 0.65rem;
 }
 
 .pro-meta-divider {
     width: 1px;
     height: 12px;
-    background: #cbd5e1;
+    background: var(--border-secondary);
 }
 
 .pro-assignee-mark {
@@ -403,10 +394,10 @@
 .pro-source-tag {
     margin-left: auto;
     font-size: 0.65rem;
-    background: #fff;
+    background: var(--surface-2);
     padding: 2px 8px;
     border-radius: 12px;
-    border: 1px solid #e2e8f0;
+    border: 1px solid var(--border-primary);
     display: flex;
     align-items: center;
     gap: 4px;
@@ -428,7 +419,7 @@
 .pro-total-label {
     font-size: 0.6rem;
     font-weight: 800;
-    color: #94a3b8;
+    color: var(--text-muted);
     letter-spacing: 1px;
     margin-bottom: 2px;
 }
@@ -436,7 +427,7 @@
 .pro-total-value {
     font-size: 1.15rem;
     font-weight: 800;
-    color: #0f172a;
+    color: var(--text-primary);
 }
 
 .pro-payment-badge {
@@ -471,7 +462,7 @@
 .pro-btn-ghost {
     background: transparent;
     border: none;
-    color: #64748b;
+    color: var(--text-secondary);
     padding: 4px;
     border-radius: 6px;
     cursor: pointer;
@@ -480,8 +471,8 @@
 
 .pro-btn-ghost:hover,
 .pro-btn-ghost.active {
-    background: #f1f5f9;
-    color: #1e293b;
+    background: var(--bg-hover);
+    color: var(--text-primary);
 }
 
 .pro-dropdown-menu {
@@ -491,8 +482,8 @@
     z-index: 1000;
     margin-top: 8px;
     min-width: 180px;
-    background: #ffffff;
-    border: 1px solid #e2e8f0;
+    background: var(--surface-1);
+    border: 1px solid var(--border-primary);
     border-radius: 12px;
     box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
     padding: 6px;
@@ -506,7 +497,7 @@
     padding: 10px 12px;
     font-size: 0.85rem;
     font-weight: 500;
-    color: #475569;
+    color: var(--text-secondary);
     border-radius: 8px;
     transition: all 0.2s;
     background: none;
@@ -515,8 +506,8 @@
 }
 
 .pro-dropdown-item:hover {
-    background: #f8fafc;
-    color: #3b82f6;
+    background: var(--bg-hover);
+    color: var(--primary);
 }
 
 .pro-dropdown-item.text-danger:hover {
@@ -815,7 +806,7 @@
 .order-total-value {
     font-weight: 800;
     font-size: 1.15rem;
-    color: var(--text-main);
+    color: var(--text-primary);
 }
 
 @media (max-width: 640px) {
@@ -850,6 +841,7 @@
 .pro-meta-item[title] {
     cursor: help;
 }
+
 /* Stats Summary */
 .orders-stats-summary {
     display: grid;
@@ -886,10 +878,25 @@
     flex-shrink: 0;
 }
 
-.stat-icon.blue { background: #eff6ff; color: #3b82f6; }
-.stat-icon.green { background: #f0fdf4; color: #22c55e; }
-.stat-icon.orange { background: #fff7ed; color: #f97316; }
-.stat-icon.purple { background: #f5f3ff; color: #8b5cf6; }
+.stat-icon.blue {
+    background: #eff6ff;
+    color: #3b82f6;
+}
+
+.stat-icon.green {
+    background: #f0fdf4;
+    color: #22c55e;
+}
+
+.stat-icon.orange {
+    background: #fff7ed;
+    color: #f97316;
+}
+
+.stat-icon.purple {
+    background: #f5f3ff;
+    color: #8b5cf6;
+}
 
 .stat-info {
     display: flex;

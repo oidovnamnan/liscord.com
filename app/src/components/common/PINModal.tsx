@@ -15,6 +15,8 @@ export function PINModal({ onSuccess, onClose, title = 'Баталгаажуул
     const { business } = useBusinessStore();
     const [pin, setPin] = useState(['', '', '', '']);
     const [loading, setLoading] = useState(false);
+    const [attempts, setAttempts] = useState(0);
+    const MAX_ATTEMPTS = 5;
 
     const handleChange = (val: string, index: number) => {
         if (!/^\d*$/.test(val)) return;
@@ -46,19 +48,36 @@ export function PINModal({ onSuccess, onClose, title = 'Баталгаажуул
             return;
         }
 
+        if (attempts >= MAX_ATTEMPTS) {
+            toast.error('Хэт олон буруу оролдлого. Хуудсаа дахин ачаална уу.');
+            return;
+        }
+
+        // Business must have a PIN configured
+        const businessPin = business?.settings?.pin;
+        if (!businessPin) {
+            toast.error('Бизнесийн PIN тохируулагдаагүй байна. Тохиргоо хэсгээс PIN үүсгэнэ үү.');
+            return;
+        }
+
         setLoading(true);
         // Simulate a small delay for better UX
         await new Promise(r => setTimeout(r, 400));
 
-        if (enteredPin === (business?.settings?.pin || '1234')) {
+        if (enteredPin === businessPin) {
+            setAttempts(0);
             onSuccess();
         } else {
-            toast.error('PIN код буруу байна');
+            const newAttempts = attempts + 1;
+            setAttempts(newAttempts);
+            toast.error(`PIN код буруу байна (${newAttempts}/${MAX_ATTEMPTS})`);
             setPin(['', '', '', '']);
             document.getElementById('pin-0')?.focus();
         }
         setLoading(false);
     };
+
+    const isLocked = attempts >= MAX_ATTEMPTS;
 
     return createPortal(
         <div className="modal-backdrop" onClick={onClose} style={{ zIndex: 2000 }}>
@@ -72,7 +91,7 @@ export function PINModal({ onSuccess, onClose, title = 'Баталгаажуул
                     <h2>{title}</h2>
                     <p className="text-secondary" style={{ marginBottom: 24 }}>{description}</p>
 
-                    <div style={{ display: 'flex', gap: 12, justifyContent: 'center', marginBottom: 24 }}>
+                    <div style={{ display: 'flex', gap: 12, justifyContent: 'center', marginBottom: 16 }}>
                         {pin.map((digit, i) => (
                             <input
                                 key={i}
@@ -86,12 +105,20 @@ export function PINModal({ onSuccess, onClose, title = 'Баталгаажуул
                                 maxLength={1}
                                 inputMode="numeric"
                                 autoComplete="off"
+                                disabled={isLocked}
                             />
                         ))}
                     </div>
+
+                    {attempts > 0 && (
+                        <p style={{ fontSize: '0.8rem', color: 'var(--accent-red)', marginBottom: 8 }}>
+                            Буруу оролдлого: {attempts}/{MAX_ATTEMPTS}
+                            {isLocked && ' — Түгжигдсэн'}
+                        </p>
+                    )}
                 </div>
                 <div className="modal-footer" style={{ flexDirection: 'column', gap: 8 }}>
-                    <button className="btn btn-primary" onClick={handleSubmit} disabled={loading} style={{ width: '100%' }}>
+                    <button className="btn btn-primary" onClick={handleSubmit} disabled={loading || isLocked} style={{ width: '100%' }}>
                         {loading ? <Loader2 size={18} className="animate-spin" /> : 'БАТАЛГААЖУУЛАХ'}
                     </button>
                     <button className="btn btn-ghost" onClick={onClose} disabled={loading} style={{ width: '100%' }}>БОЛИХ</button>

@@ -36,11 +36,14 @@ export function Header({ title, subtitle, action, extra }: HeaderProps) {
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
+    // TODO: Replace with real notification subscription from Firestore
+    // e.g., onSnapshot(query(collection(db, 'businesses', bizId, 'notifications'), where('read', '==', false), limit(10)))
     const dummyNotifications = [
         { id: 1, text: "Шинэ захиалга ирлээ (#1024)", time: "10 минутын өмнө", unread: true },
         { id: 2, text: "Каргоны төлбөр төлөгдсөн (#1022)", time: "1 цагийн өмнө", unread: true },
         { id: 3, text: "Системийн шинэчлэл амжилттай хийгдлээ", time: "Өчигдөр", unread: false },
     ];
+    const unreadCount = dummyNotifications.filter(n => n.unread).length;
 
     const handleToggleV2 = async () => {
         if (!user) return;
@@ -81,7 +84,7 @@ export function Header({ title, subtitle, action, extra }: HeaderProps) {
                 <div className="header-notif-container" ref={notifRef} style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
                     <button className="header-icon-btn header-notif-btn" title="Мэдэгдэл" onClick={() => setIsNotifOpen(!isNotifOpen)}>
                         <Bell size={20} />
-                        <span className="header-notif-badge">3</span>
+                        {unreadCount > 0 && <span className="header-notif-badge">{unreadCount}</span>}
                     </button>
 
                     {isNotifOpen && (
