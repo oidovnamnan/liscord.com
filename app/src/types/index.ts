@@ -599,6 +599,7 @@ export interface Product {
         salePrice: number;
         costPrice: number;
         wholesalePrice: number;
+        comparePrice?: number;
     };
     productType: 'ready' | 'preorder';
     stock: {

@@ -31,95 +31,109 @@ export function ThemeMinimal({ business }: { business: Business }) {
     const storeName = business.settings?.storefront?.name || business.name;
 
     return (
-        <div className="store-bg">
-            {/* Minimal Navbar */}
+        <div className="store-bg animate-fade-in">
+            {/* Floating Premium Navbar */}
             <nav className="store-nav">
                 <a href={`/s/${business.slug}`} className="store-logo">
                     {business.logo && <img src={business.logo} alt={storeName} />}
-                    {storeName}
+                    <span>{storeName}</span>
                 </a>
 
                 <button
                     className="store-cart-btn"
                     onClick={() => useCartStore.getState().setIsOpen(true)}
                 >
-                    <ShoppingBag size={24} strokeWidth={1.5} />
+                    <ShoppingBag size={20} strokeWidth={2.5} />
                     {cartCount > 0 && <span className="cart-badge">{cartCount}</span>}
+                    <span className="hide-mobile" style={{ fontWeight: 700, fontSize: '0.9rem', marginLeft: 4 }}>Сагс</span>
                 </button>
             </nav>
 
-            <main className="store-container">
-                <header className="store-header animate-fade-in">
-                    <h1 className="store-header-title">{activeCategory === 'all' ? storeName : activeCategory}</h1>
-
-                    <div style={{ position: 'relative', maxWidth: '400px', width: '100%' }}>
-                        <Search size={18} style={{ position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
-                        <input
-                            type="text"
-                            placeholder="Бараа хайх..."
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            style={{
-                                width: '100%',
-                                padding: '12px 16px 12px 44px',
-                                borderRadius: '100px',
-                                border: '1px solid var(--border-color)',
-                                background: 'var(--bg-body)',
-                                fontSize: '1rem',
-                                outline: 'none',
-                                transition: 'border-color 0.2s',
-                            }}
-                            onFocus={(e) => e.target.style.borderColor = 'var(--sf-brand-color)'}
-                            onBlur={(e) => e.target.style.borderColor = 'var(--border-color)'}
-                        />
-                    </div>
-
-                    <div className="store-categories">
-                        {categories.map(cat => (
-                            <button
-                                key={cat}
-                                className={`category-pill ${activeCategory === cat ? 'active' : ''}`}
-                                onClick={() => setActiveCategory(cat)}
-                            >
-                                {cat === 'all' ? 'Бүх бараа' : cat}
-                            </button>
-                        ))}
-                    </div>
+            <main>
+                {/* Hero Section */}
+                <header className="store-hero">
+                    <h1 className="store-hero-title">
+                        {activeCategory === 'all' ? (
+                            <>Танд зориулсан<br />шилдэг цуглуулга</>
+                        ) : activeCategory}
+                    </h1>
+                    <p className="store-hero-subtitle">
+                        Бид хамгийн чанартай бараа бүтээгдэхүүнийг танд хамгийн таатай үнээр санал болгож байна.
+                    </p>
                 </header>
 
-                <div className="product-grid animate-fade-in" style={{ animationDelay: '0.1s' }}>
-                    {products.length === 0 ? (
-                        <StorefrontEmpty message="Агнах бараа алга" />
-                    ) : filteredProducts.length === 0 ? (
-                        <StorefrontEmpty />
-                    ) : (
-                        filteredProducts.map(p => (
-                            <div key={p.id} className="product-card">
-                                <div className="product-image-wrap">
-                                    {p.images?.[0] ? (
-                                        <img src={p.images[0]} alt={p.name} className="product-image" loading="lazy" />
-                                    ) : (
-                                        <div style={{ color: 'var(--text-muted)' }}>Зураггүй</div>
-                                    )}
+                {/* Modern Search */}
+                <div className="store-search-container">
+                    <div className="store-search-inner">
+                        <Search size={20} className="store-search-icon" />
+                        <input
+                            type="text"
+                            placeholder="Хүссэн бараагаа хайх..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className="store-search-input"
+                        />
+                    </div>
+                </div>
 
-                                    <button
-                                        className="product-add-overlay"
-                                        onClick={(e) => handleAddToCart(e, p)}
-                                        title="Сагсанд нэмэх"
-                                    >
-                                        <Plus size={20} strokeWidth={2} />
-                                    </button>
-                                </div>
+                {/* Categories */}
+                <div className="store-categories animate-fade-in" style={{ animationDelay: '0.2s' }}>
+                    {categories.map(cat => (
+                        <button
+                            key={cat}
+                            className={`category-pill ${activeCategory === cat ? 'active' : ''}`}
+                            onClick={() => setActiveCategory(cat)}
+                        >
+                            {cat === 'all' ? 'Бүх бараа' : cat}
+                        </button>
+                    ))}
+                </div>
 
-                                <div className="product-info">
-                                    <h3 className="product-name">{p.name}</h3>
-                                    <div className="product-price">
-                                        {(p.pricing?.salePrice || 0).toLocaleString()} ₮
+                {/* Product Grid */}
+                <div className="store-container">
+                    <div className="product-grid animate-fade-in" style={{ animationDelay: '0.3s' }}>
+                        {products.length === 0 ? (
+                            <div style={{ gridColumn: '1/-1' }}>
+                                <StorefrontEmpty message="Одоогоор бараа ороогүй байна" />
+                            </div>
+                        ) : filteredProducts.length === 0 ? (
+                            <div style={{ gridColumn: '1/-1' }}>
+                                <StorefrontEmpty message="Ийм нэртэй бараа олдсонгүй" />
+                            </div>
+                        ) : (
+                            filteredProducts.map(p => (
+                                <div key={p.id} className="product-card" onClick={() => { }}>
+                                    <div className="product-image-wrap">
+                                        {p.images?.[0] ? (
+                                            <img src={p.images[0]} alt={p.name} className="product-image" loading="lazy" />
+                                        ) : (
+                                            <div style={{ color: 'var(--sf-text-muted)', fontSize: '3rem' }}>📦</div>
+                                        )}
+
+                                        <button
+                                            className="product-add-overlay"
+                                            onClick={(e) => handleAddToCart(e, p)}
+                                            title="Сагсанд нэмэх"
+                                        >
+                                            <Plus size={24} strokeWidth={3} />
+                                        </button>
+                                    </div>
+
+                                    <div className="product-info">
+                                        <h3 className="product-name">{p.name}</h3>
+                                        <div className="product-price">
+                                            {(p.pricing?.salePrice || 0).toLocaleString()} ₮
+                                            {p.pricing?.comparePrice && p.pricing.comparePrice > (p.pricing.salePrice || 0) && (
+                                                <span style={{ fontSize: '0.85rem', textDecoration: 'line-through', opacity: 0.4, fontWeight: 500 }}>
+                                                    {p.pricing.comparePrice.toLocaleString()} ₮
+                                                </span>
+                                            )}
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                        ))
-                    )}
+                            ))
+                        )}
+                    </div>
                 </div>
             </main>
         </div>
