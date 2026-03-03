@@ -49,22 +49,37 @@ export interface FBPost {
 // ============ Facebook Graph API ============
 
 export async function fetchFBPageId(pageUrl: string, accessToken: string): Promise<string> {
-    // Extract page name/id from URL
-    const urlObj = new URL(pageUrl);
-    let pageIdentifier = urlObj.pathname.replace(/^\/+|\/+$/g, '');
-    // Handle profile.php?id=xxx format
-    if (pageIdentifier === 'profile.php') {
-        pageIdentifier = urlObj.searchParams.get('id') || '';
-    }
-    if (!pageIdentifier) throw new Error('Page URL буруу байна');
+    try {
+        const urlObj = new URL(pageUrl);
+        let pageIdentifier = '';
 
-    const resp = await fetch(`https://graph.facebook.com/v21.0/${pageIdentifier}?fields=id,name&access_token=${accessToken}`);
-    if (!resp.ok) {
-        const err = await resp.json();
-        throw new Error(err.error?.message || 'Facebook API алдаа');
+        // Handle profile.php?id=xxx
+        if (urlObj.pathname.includes('profile.php')) {
+            pageIdentifier = urlObj.searchParams.get('id') || '';
+        } else {
+            // Handle facebook.com/pagename
+            pageIdentifier = urlObj.pathname.split('/').filter(p => p && p !== 'groups').pop() || '';
+        }
+
+        if (!pageIdentifier) throw new Error('Page URL-ээс ID олж чадсангүй');
+
+        // Try to get ID via Graph API
+        const resp = await fetch(`https://graph.facebook.com/v21.0/${pageIdentifier}?fields=id&access_token=${accessToken}`);
+        const data = await resp.json();
+
+        if (data.id) return data.id;
+
+        // If the identifier is already a numeric ID, return it as fallback
+        if (/^\d+$/.test(pageIdentifier)) return pageIdentifier;
+
+        throw new Error(data.error?.message || 'Facebook Page олдсонгүй');
+    } catch (e: any) {
+        // Final fallback: try regex to find numeric ID in URL
+        const match = pageUrl.match(/(?:id=|\/)([0-9]{10,})/);
+        if (match && match[1]) return match[1];
+
+        throw new Error(e.message || 'Page URL буруу байна');
     }
-    const data = await resp.json();
-    return data.id;
 }
 
 export async function fetchFBPosts(
