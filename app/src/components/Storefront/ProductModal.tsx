@@ -85,7 +85,7 @@ export function ProductModal({ product, onClose }: ProductModalProps) {
 
     const extractBrand = (desc: string) => {
         if (!desc) return null;
-        const brandMatch = desc.match(/(?:Брэнд|Brand):\s*([^\n|*]+)/i);
+        const brandMatch = desc.match(/(?:Брэнд|Brand):\s*([^.,\n]+(?:\s*\([^)]*\))?)/i);
         if (brandMatch) return brandMatch[1].trim();
         return null;
     };
