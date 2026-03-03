@@ -1,4 +1,5 @@
-import { ShoppingBag, Search, Plus } from 'lucide-react';
+import { useState } from 'react';
+import { ShoppingBag, Search, Plus, X, Minus } from 'lucide-react';
 import type { Business, Product } from '../../../types';
 import { useCartStore } from '../../../store';
 import { useStorefrontData } from '../hooks/useStorefrontData';
@@ -11,17 +12,28 @@ export function ThemeMinimal({ business }: { business: Business }) {
         activeCategory, setActiveCategory, categories, filteredProducts
     } = useStorefrontData(business);
 
+    const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+    const [quantity, setQuantity] = useState(1);
+
     const cartItems = useCartStore(state => state.items);
     const cartCount = cartItems.reduce((acc, item) => acc + item.quantity, 0);
 
-    const handleAddToCart = (e: React.MouseEvent, p: Product) => {
-        e.preventDefault();
-        e.stopPropagation();
+    const handleOpenProduct = (p: Product) => {
+        setSelectedProduct(p);
+        setQuantity(1);
+    };
+
+    const handleAddToCart = (e: React.MouseEvent | null, p: Product, qty: number = 1) => {
+        if (e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
         useCartStore.getState().addItem({
             product: p,
-            quantity: 1,
+            quantity: qty,
             price: p.pricing?.salePrice || 0
         });
+        if (!e) setSelectedProduct(null); // Close modal if added from modal
     };
 
     if (loading) {
@@ -102,7 +114,7 @@ export function ThemeMinimal({ business }: { business: Business }) {
                             </div>
                         ) : (
                             filteredProducts.map(p => (
-                                <div key={p.id} className="product-card" onClick={() => { }}>
+                                <div key={p.id} className="product-card" onClick={() => handleOpenProduct(p)}>
                                     <div className="product-image-wrap">
                                         {p.images?.[0] ? (
                                             <img src={p.images[0]} alt={p.name} className="product-image" loading="lazy" />
@@ -136,6 +148,58 @@ export function ThemeMinimal({ business }: { business: Business }) {
                     </div>
                 </div>
             </main>
+
+            {/* Premium Product Modal */}
+            {selectedProduct && (
+                <div className="sf-modal-overlay animate-fade-in" onClick={() => setSelectedProduct(null)}>
+                    <div className="sf-modal-container animate-slide-up" onClick={e => e.stopPropagation()}>
+                        <button className="sf-modal-close" onClick={() => setSelectedProduct(null)}>
+                            <X size={24} />
+                        </button>
+
+                        <div className="sf-modal-content">
+                            <div className="sf-modal-gallery">
+                                {selectedProduct.images?.[0] ? (
+                                    <img src={selectedProduct.images[0]} alt={selectedProduct.name} className="sf-modal-main-img" />
+                                ) : (
+                                    <div className="sf-modal-img-placeholder">📦</div>
+                                )}
+                            </div>
+
+                            <div className="sf-modal-info">
+                                <span className="sf-modal-category">{selectedProduct.categoryName}</span>
+                                <h2 className="sf-modal-title">{selectedProduct.name}</h2>
+                                <div className="sf-modal-price">
+                                    {(selectedProduct.pricing?.salePrice || 0).toLocaleString()} ₮
+                                    {selectedProduct.pricing?.comparePrice && selectedProduct.pricing.comparePrice > (selectedProduct.pricing.salePrice || 0) && (
+                                        <span className="sf-modal-compare-price">
+                                            {selectedProduct.pricing.comparePrice.toLocaleString()} ₮
+                                        </span>
+                                    )}
+                                </div>
+
+                                <div className="sf-modal-desc">
+                                    {selectedProduct.description || 'Энэхүү бүтээгдэхүүний талаарх дэлгэрэнгүй мэдээллийг тун удахгүй оруулах болно.'}
+                                </div>
+
+                                <div className="sf-modal-actions">
+                                    <div className="sf-modal-qty">
+                                        <button onClick={() => setQuantity(Math.max(1, quantity - 1))}><Minus size={18} /></button>
+                                        <span>{quantity}</span>
+                                        <button onClick={() => setQuantity(quantity + 1)}><Plus size={18} /></button>
+                                    </div>
+                                    <button
+                                        className="sf-modal-add-btn"
+                                        onClick={() => handleAddToCart(null, selectedProduct, quantity)}
+                                    >
+                                        Сагсанд нэмэх
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
