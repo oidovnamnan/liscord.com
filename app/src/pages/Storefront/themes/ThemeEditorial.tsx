@@ -1,8 +1,10 @@
+import { useState } from 'react';
 import { ShoppingBag } from 'lucide-react';
 import type { Business, Product } from '../../../types';
 import { useCartStore } from '../../../store';
 import { useStorefrontData } from '../hooks/useStorefrontData';
 import { StorefrontEmpty } from '../../../components/Storefront/StorefrontEmpty';
+import { ProductModal } from '../../../components/Storefront/ProductModal';
 import './ThemeEditorial.css';
 
 export function ThemeEditorial({ business }: { business: Business }) {
@@ -10,6 +12,8 @@ export function ThemeEditorial({ business }: { business: Business }) {
         products, loading, searchQuery, setSearchQuery,
         activeCategory, setActiveCategory, categories, filteredProducts
     } = useStorefrontData(business);
+
+    const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
 
     const cartItems = useCartStore(state => state.items);
     const cartCount = cartItems.reduce((acc, item) => acc + item.quantity, 0);
@@ -81,7 +85,7 @@ export function ThemeEditorial({ business }: { business: Business }) {
                             <StorefrontEmpty />
                         ) : (
                             filteredProducts.map(p => (
-                                <div key={p.id} className="editorial-card">
+                                <div key={p.id} className="editorial-card" onClick={() => setSelectedProduct(p)} style={{ cursor: 'pointer' }}>
                                     <div className="editorial-image-wrap">
                                         {p.images?.[0] ? (
                                             <img src={p.images[0]} alt={p.name} className="editorial-image" loading="lazy" />
@@ -109,6 +113,13 @@ export function ThemeEditorial({ business }: { business: Business }) {
                     </div>
                 </main>
             </div>
+
+            {selectedProduct && (
+                <ProductModal
+                    product={selectedProduct}
+                    onClose={() => setSelectedProduct(null)}
+                />
+            )}
         </div>
     );
 }

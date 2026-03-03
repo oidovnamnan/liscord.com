@@ -381,12 +381,12 @@
 
 /* Footer Evolution - Professional & Compact */
 .sf-footer {
-    background: #f8f9fa;
-    border-top: 1px solid var(--sf-border);
-    padding: 60px 5% 40px;
-    margin-top: 80px;
-    overflow: hidden;
-    /* Fix background overflow issues */
+    background: #fafafa;
+    border-top: 1px solid rgba(0, 0, 0, 0.05);
+    padding: 80px 5% 60px;
+    margin-top: 100px;
+    position: relative;
+    z-index: 10;
 }
 
 .sf-footer-content {
@@ -400,14 +400,15 @@
 
 .sf-footer-info {
     text-align: center;
+    max-width: 700px;
 }
 
 .sf-footer-biz-name {
     font-family: var(--sf-font-title);
-    font-size: 1.5rem;
-    font-weight: 800;
+    font-size: 1.75rem;
+    font-weight: 900;
     letter-spacing: -0.04em;
-    margin-bottom: 16px;
+    margin-bottom: 24px;
     color: #000;
 }
 
@@ -415,254 +416,52 @@
     display: flex;
     justify-content: center;
     flex-wrap: wrap;
-    gap: 24px;
+    gap: 32px;
     margin-bottom: 0;
 }
 
 .sf-footer-item {
-    font-size: 0.9rem;
+    font-size: 0.95rem;
+    font-weight: 500;
     color: var(--sf-text-muted);
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 10px;
+    transition: all 0.2s;
+}
+
+.sf-footer-item:hover {
+    color: #000;
+    transform: translateY(-1px);
 }
 
 .sf-footer-bottom {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 16px;
     width: 100%;
-    padding-top: 32px;
+    padding-top: 40px;
     border-top: 1px solid rgba(0, 0, 0, 0.05);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
     font-size: 0.85rem;
     color: var(--sf-text-muted);
+    flex-wrap: wrap;
+    gap: 20px;
 }
 
 .sf-liscord-logo {
     font-weight: 900;
     color: #000;
     letter-spacing: -0.05em;
-}
-
-/* Premium Product Modal */
-.sf-modal-overlay {
-    position: fixed;
-    inset: 0;
-    background: rgba(255, 255, 255, 0.8);
-    backdrop-filter: blur(12px);
-    z-index: 2000;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 20px;
-}
-
-.sf-modal-container {
-    background: #fff;
-    width: 100%;
-    max-width: 900px;
-    height: auto;
-    max-height: 90vh;
-    border-radius: 32px;
-    box-shadow: 0 40px 100px rgba(0, 0, 0, 0.1);
-    position: relative;
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-}
-
-.sf-modal-close {
-    position: absolute;
-    top: 24px;
-    right: 24px;
-    width: 44px;
-    height: 44px;
-    border-radius: 50%;
-    background: #f8f9fa;
-    border: none;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: all 0.2s;
-    z-index: 10;
-}
-
-.sf-modal-close:hover {
-    background: #000;
-    color: #fff;
-    transform: rotate(90deg);
-}
-
-.sf-modal-content {
-    display: grid;
-    grid-template-columns: 1.1fr 1fr;
-    height: 100%;
-    overflow-y: auto;
-}
-
-.sf-modal-gallery {
-    padding: 30px;
-    background: #fff;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.sf-modal-main-img {
-    width: 100%;
-    aspect-ratio: 1/1;
-    object-fit: cover;
-    border-radius: 24px;
-}
-
-.sf-modal-img-placeholder {
-    font-size: 5rem;
-}
-
-.sf-modal-info {
-    padding: 60px 40px;
-    display: flex;
-    flex-direction: column;
-}
-
-.sf-modal-category {
-    font-size: 0.75rem;
-    font-weight: 800;
-    text-transform: uppercase;
-    color: var(--sf-brand-color);
-    letter-spacing: 0.15em;
-    margin-bottom: 8px;
-    opacity: 0.8;
-}
-
-.sf-modal-title {
-    font-size: 1.75rem;
-    font-weight: 800;
-    letter-spacing: -0.03em;
-    line-height: 1.2;
-    margin-bottom: 16px;
-    color: #000;
-}
-
-.sf-modal-price {
-    font-family: var(--sf-font-title);
-    font-size: 1.5rem;
-    font-weight: 800;
-    margin-bottom: 32px;
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    color: var(--sf-brand-color);
-}
-
-.sf-modal-compare-price {
-    font-size: 1.1rem;
-    text-decoration: line-through;
-    opacity: 0.3;
-    font-weight: 500;
-}
-
-.sf-modal-desc {
-    font-size: 0.95rem;
-    line-height: 1.7;
-    color: #444;
-    margin-bottom: 40px;
-    white-space: pre-wrap;
-    font-weight: 400;
-}
-
-.product-brand-badge {
-    position: absolute;
-    top: 12px;
-    left: 12px;
-    background: #fff;
-    color: #000;
-    padding: 4px 10px;
-    border-radius: 100px;
-    font-size: 0.7rem;
-    font-weight: 800;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    z-index: 5;
-}
-
-.sf-modal-actions {
-    margin-top: auto;
-    display: flex;
-    gap: 16px;
-    align-items: center;
-}
-
-.sf-modal-qty {
-    display: flex;
-    align-items: center;
-    background: #f1f3f5;
-    padding: 4px;
-    border-radius: 16px;
-    gap: 12px;
-}
-
-.sf-modal-qty button {
-    width: 40px;
-    height: 40px;
-    border-radius: 12px;
-    border: none;
-    background: #fff;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: all 0.2s;
-}
-
-.sf-modal-qty button:hover {
-    background: #000;
-    color: #fff;
-}
-
-.sf-modal-qty span {
-    font-weight: 700;
-    min-width: 30px;
-    text-align: center;
-}
-
-.sf-modal-add-btn {
-    flex: 1;
-    height: 48px;
-    background: var(--sf-brand-color);
-    color: #fff;
-    border: none;
-    border-radius: 16px;
-    font-weight: 700;
-    font-size: 1rem;
-    cursor: pointer;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.sf-modal-add-btn:hover {
-    background: #000;
-    transform: translateY(-2px);
-    box-shadow: 0 10px 20px var(--sf-brand-color-soft);
+    opacity: 1;
 }
 
 @media (max-width: 768px) {
-    .sf-modal-container {
-        max-height: 100vh;
-        border-radius: 0;
+    .sf-footer {
+        padding: 60px 20px 40px;
     }
 
-    .sf-modal-content {
-        grid-template-columns: 1fr;
-    }
-
-    .sf-modal-info {
-        padding: 30px 20px;
-    }
-
-    .sf-modal-title {
-        font-size: 1.75rem;
+    .sf-footer-bottom {
+        flex-direction: column;
+        text-align: center;
     }
 }
