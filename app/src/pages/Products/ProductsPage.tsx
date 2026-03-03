@@ -352,7 +352,7 @@ export function ProductsPage() {
                                                         <>
                                                             <span>•</span>
                                                             <span style={{ fontSize: '0.65rem', color: 'var(--accent-orange)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4 }}>
-                                                                <EyeOff size={10} /> НУУЦЛАГДСАН
+                                                                <EyeOff size={10} /> НУУЦЛАГДМАЛ
                                                             </span>
                                                         </>
                                                     )}
