@@ -93,7 +93,7 @@ export function ProductsPage() {
     }, []);
 
     const toggleSelect = (id: string, e?: React.MouseEvent) => {
-        e?.stopPropagation();
+        if (e) e.stopPropagation();
         setSelectedIds(prev =>
             prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
         );
@@ -286,7 +286,7 @@ export function ProductsPage() {
                                     </div>
                                 )}
 
-                                <div className={viewMode === 'grid' ? 'products-grid' : 'products-list'}>
+                                <div className={`${viewMode === 'grid' ? 'products-grid' : 'products-list'} ${selectedIds.length > 0 ? 'selection-mode' : ''}`}>
                                     {filtered.map(p => (
                                         <div
                                             key={p.id}
