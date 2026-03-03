@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { X, Plus, Minus, ShoppingBag, Check } from 'lucide-react';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { X, Plus, Minus, ShoppingBag, Check, ChevronLeft, ChevronRight, Package } from 'lucide-react';
 import type { Product } from '../../types';
 import { useCartStore } from '../../store';
 import './ProductModal.css';
@@ -13,6 +13,8 @@ export function ProductModal({ product, onClose }: ProductModalProps) {
     const [quantity, setQuantity] = useState(1);
     const [added, setAdded] = useState(false);
     const [activeImage, setActiveImage] = useState(0);
+    const [isTransitioning, setIsTransitioning] = useState(false);
+    const touchRef = useRef<{ startX: number; startY: number } | null>(null);
 
     // Lock body scroll
     useEffect(() => {
@@ -20,14 +22,53 @@ export function ProductModal({ product, onClose }: ProductModalProps) {
         return () => { document.body.style.overflow = ''; };
     }, []);
 
-    // Close on Escape
+    // Close on Escape, arrow keys for gallery
     useEffect(() => {
         const handleKey = (e: KeyboardEvent) => {
             if (e.key === 'Escape') onClose();
+            if (e.key === 'ArrowLeft') goToPrev();
+            if (e.key === 'ArrowRight') goToNext();
         };
         window.addEventListener('keydown', handleKey);
         return () => window.removeEventListener('keydown', handleKey);
-    }, [onClose]);
+    }, [onClose, activeImage]);
+
+    const images = product.images?.filter(Boolean) || [];
+
+    const goToNext = useCallback(() => {
+        if (images.length <= 1 || isTransitioning) return;
+        setIsTransitioning(true);
+        setActiveImage(prev => (prev + 1) % images.length);
+        setTimeout(() => setIsTransitioning(false), 300);
+    }, [images.length, isTransitioning]);
+
+    const goToPrev = useCallback(() => {
+        if (images.length <= 1 || isTransitioning) return;
+        setIsTransitioning(true);
+        setActiveImage(prev => (prev - 1 + images.length) % images.length);
+        setTimeout(() => setIsTransitioning(false), 300);
+    }, [images.length, isTransitioning]);
+
+    // Touch swipe handlers
+    const handleTouchStart = (e: React.TouchEvent) => {
+        touchRef.current = {
+            startX: e.touches[0].clientX,
+            startY: e.touches[0].clientY
+        };
+    };
+
+    const handleTouchEnd = (e: React.TouchEvent) => {
+        if (!touchRef.current || images.length <= 1) return;
+        const deltaX = e.changedTouches[0].clientX - touchRef.current.startX;
+        const deltaY = e.changedTouches[0].clientY - touchRef.current.startY;
+
+        // Only swipe if horizontal movement is greater than vertical
+        if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 50) {
+            if (deltaX < 0) goToNext();
+            else goToPrev();
+        }
+        touchRef.current = null;
+    };
 
     const handleAddToCart = () => {
         useCartStore.getState().addItem({
@@ -50,8 +91,8 @@ export function ProductModal({ product, onClose }: ProductModalProps) {
     };
 
     const brand = extractBrand(product.description);
-    const images = product.images?.filter(Boolean) || [];
-    const hasStock = !product.stock?.trackInventory || (product.stock?.quantity ?? 0) > 0;
+    const isPreorder = product.productType === 'preorder';
+    const hasStock = isPreorder || !product.stock?.trackInventory || (product.stock?.quantity ?? 0) > 0;
     const salePrice = product.pricing?.salePrice || 0;
     const comparePrice = product.pricing?.comparePrice;
     const hasDiscount = comparePrice && comparePrice > salePrice;
@@ -65,41 +106,86 @@ export function ProductModal({ product, onClose }: ProductModalProps) {
                 </button>
 
                 <div className="sf-modal-content">
-                    {/* Gallery */}
-                    <div className="sf-modal-gallery">
+                    {/* Gallery with swipe support */}
+                    <div
+                        className="sf-modal-gallery"
+                        onTouchStart={handleTouchStart}
+                        onTouchEnd={handleTouchEnd}
+                    >
                         {images.length > 0 ? (
                             <img
+                                key={activeImage}
                                 src={images[activeImage] || images[0]}
-                                alt={product.name}
-                                className="sf-modal-main-img"
+                                alt={`${product.name} - зураг ${activeImage + 1}`}
+                                className="sf-modal-main-img sf-img-fade"
                                 draggable={false}
                             />
                         ) : (
                             <div className="sf-modal-img-placeholder">📦</div>
                         )}
 
-                        {/* Thumbnail strip */}
+                        {/* Left/Right navigation arrows */}
                         {images.length > 1 && (
-                            <div style={{
-                                position: 'absolute', bottom: 16, left: '50%', transform: 'translateX(-50%)',
-                                display: 'flex', gap: 6
-                            }}>
+                            <>
+                                <button
+                                    className="sf-gallery-arrow sf-gallery-arrow-left"
+                                    onClick={goToPrev}
+                                    aria-label="Өмнөх зураг"
+                                >
+                                    <ChevronLeft size={20} />
+                                </button>
+                                <button
+                                    className="sf-gallery-arrow sf-gallery-arrow-right"
+                                    onClick={goToNext}
+                                    aria-label="Дараагийн зураг"
+                                >
+                                    <ChevronRight size={20} />
+                                </button>
+                            </>
+                        )}
+
+                        {/* Image counter */}
+                        {images.length > 1 && (
+                            <div className="sf-gallery-counter">
+                                {activeImage + 1} / {images.length}
+                            </div>
+                        )}
+
+                        {/* Dot indicators */}
+                        {images.length > 1 && (
+                            <div className="sf-gallery-dots">
                                 {images.map((_, i) => (
                                     <button
                                         key={i}
-                                        onClick={() => setActiveImage(i)}
-                                        style={{
-                                            width: activeImage === i ? 24 : 8,
-                                            height: 8,
-                                            borderRadius: 4,
-                                            border: 'none',
-                                            background: activeImage === i ? 'var(--sf-brand-color, #111)' : 'rgba(0,0,0,0.15)',
-                                            cursor: 'pointer',
-                                            transition: 'all 0.3s ease',
-                                            padding: 0,
+                                        onClick={() => {
+                                            if (!isTransitioning) {
+                                                setIsTransitioning(true);
+                                                setActiveImage(i);
+                                                setTimeout(() => setIsTransitioning(false), 300);
+                                            }
                                         }}
+                                        className={`sf-gallery-dot ${activeImage === i ? 'active' : ''}`}
                                         aria-label={`Зураг ${i + 1}`}
                                     />
+                                ))}
+                            </div>
+                        )}
+
+                        {/* Thumbnail strip for 3+ images */}
+                        {images.length >= 3 && (
+                            <div className="sf-gallery-thumbs">
+                                {images.map((img, i) => (
+                                    <button
+                                        key={i}
+                                        className={`sf-gallery-thumb ${activeImage === i ? 'active' : ''}`}
+                                        onClick={() => {
+                                            setIsTransitioning(true);
+                                            setActiveImage(i);
+                                            setTimeout(() => setIsTransitioning(false), 300);
+                                        }}
+                                    >
+                                        <img src={img} alt={`Thumbnail ${i + 1}`} />
+                                    </button>
                                 ))}
                             </div>
                         )}
@@ -135,11 +221,18 @@ export function ProductModal({ product, onClose }: ProductModalProps) {
 
                         <hr className="sf-modal-divider" />
 
-                        {/* Stock indicator */}
-                        <div className="sf-modal-stock" style={!hasStock ? { color: '#dc2626' } : undefined}>
-                            <span className="sf-modal-stock-dot" style={!hasStock ? { background: '#dc2626', animation: 'none' } : undefined} />
-                            {hasStock ? 'Нөөцөд байгаа' : 'Дууссан'}
-                        </div>
+                        {/* Stock / Preorder indicator */}
+                        {isPreorder ? (
+                            <div className="sf-modal-stock" style={{ color: 'var(--sf-brand-color, #6366f1)' }}>
+                                <Package size={15} />
+                                Захиалгаар авах боломжтой
+                            </div>
+                        ) : (
+                            <div className="sf-modal-stock" style={!hasStock ? { color: '#dc2626' } : undefined}>
+                                <span className="sf-modal-stock-dot" style={!hasStock ? { background: '#dc2626', animation: 'none' } : undefined} />
+                                {hasStock ? 'Нөөцөд байгаа' : 'Дууссан'}
+                            </div>
+                        )}
 
                         {/* Description */}
                         {product.description && (
