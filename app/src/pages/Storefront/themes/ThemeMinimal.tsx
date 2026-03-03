@@ -45,7 +45,7 @@ export function ThemeMinimal({ business }: { business: Business }) {
                 >
                     <ShoppingBag size={20} strokeWidth={2.5} />
                     {cartCount > 0 && <span className="cart-badge">{cartCount}</span>}
-                    <span className="hide-mobile" style={{ fontWeight: 700, fontSize: '0.9rem', marginLeft: 4 }}>Сагс</span>
+                    <span className="hide-mobile" style={{ fontWeight: 700, fontSize: '0.9rem', marginLeft: 4, fontFamily: 'var(--sf-font-body)' }}>Сагс</span>
                 </button>
             </nav>
 
