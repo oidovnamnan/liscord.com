@@ -29,10 +29,10 @@ export function FBImportModal({ onClose }: FBImportModalProps) {
     const [step, setStep] = useState<ImportStep>('setup');
 
     // Setup
-    const [pageUrl, setPageUrl] = useState('');
-    const [accessToken, setAccessToken] = useState(localStorage.getItem('fb_page_token') || '');
-    const [startDate, setStartDate] = useState('');
-    const [endDate, setEndDate] = useState('');
+    const [pageUrl, setPageUrl] = useState(localStorage.getItem('fb_import_url') || '');
+    const [accessToken, setAccessToken] = useState(localStorage.getItem('fb_import_token') || '');
+    const [startDate, setStartDate] = useState(localStorage.getItem('fb_import_start') || '');
+    const [endDate, setEndDate] = useState(localStorage.getItem('fb_import_end') || '');
 
     // Processing
     const [_, setPosts] = useState<FBPost[]>([]);
@@ -56,16 +56,26 @@ export function FBImportModal({ onClose }: FBImportModalProps) {
         return () => { u1(); u2(); };
     }, [business?.id]);
 
-    // Set default dates
+    // Set default dates if not in storage
     useEffect(() => {
-        const now = new Date();
-        const oneMonthAgo = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate());
-        setEndDate(now.toISOString().split('T')[0]);
-        setStartDate(oneMonthAgo.toISOString().split('T')[0]);
+        if (!startDate || !endDate) {
+            const now = new Date();
+            const oneMonthAgo = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate());
+            if (!endDate) setEndDate(now.toISOString().split('T')[0]);
+            if (!startDate) setStartDate(oneMonthAgo.toISOString().split('T')[0]);
+        }
     }, []);
 
     const newProducts = products.filter(p => p.status === 'new' || p.status === 'approved');
     const duplicateProducts = products.filter(p => p.status === 'duplicate');
+
+    // Save to storage helper
+    const saveSettings = () => {
+        localStorage.setItem('fb_import_url', pageUrl);
+        localStorage.setItem('fb_import_token', accessToken);
+        localStorage.setItem('fb_import_start', startDate);
+        localStorage.setItem('fb_import_end', endDate);
+    };
 
     // ===== STEP 1: SETUP & FETCH =====
     const handleStartFetch = async () => {
@@ -74,7 +84,7 @@ export function FBImportModal({ onClose }: FBImportModalProps) {
             return;
         }
 
-        localStorage.setItem('fb_page_token', accessToken);
+        saveSettings();
         setStep('fetching');
         setProgress({ current: 0, total: 0, message: 'Page мэдээлэл татаж байна...' });
 
