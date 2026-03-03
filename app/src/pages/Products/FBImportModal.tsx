@@ -35,6 +35,7 @@ export function FBImportModal({ onClose }: FBImportModalProps) {
     const [geminiApiKey, setGeminiApiKey] = useState('');
     const [startDate, setStartDate] = useState(localStorage.getItem('fb_import_start') || '');
     const [endDate, setEndDate] = useState(localStorage.getItem('fb_import_end') || '');
+    const [importAsHidden, setImportAsHidden] = useState(false);
 
     // Processing
     const [_, setPosts] = useState<FBPost[]>([]);
@@ -49,6 +50,8 @@ export function FBImportModal({ onClose }: FBImportModalProps) {
     // Import progress
     const [importProgress, setImportProgress] = useState({ current: 0, total: 0 });
     const [importResults, setImportResults] = useState({ success: 0, failed: 0 });
+
+    const isFetching = step === 'fetching' || step === 'processing';
 
     // Load data
     useEffect(() => {
@@ -236,7 +239,7 @@ export function FBImportModal({ onClose }: FBImportModalProps) {
                     stock: { quantity: 0, lowStockThreshold: 3, trackInventory: true },
                     unitType: 'ш',
                     isActive: true,
-                    isHidden: true,
+                    isHidden: importAsHidden,
                     stats: { totalSold: 0, totalRevenue: 0 },
                     isDeleted: false
                 });
@@ -395,10 +398,27 @@ export function FBImportModal({ onClose }: FBImportModalProps) {
                                 </div>
                             </div>
 
+                            <div className="modal-section-card">
+                                <div className="modal-section-title">Тохиргоо</div>
+                                <div className="flex items-center justify-between" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                    <div>
+                                        <div style={{ fontWeight: 700, fontSize: '0.9rem' }}>Барааг нууцлагдмал оруулах</div>
+                                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Нийтэд харагдахгүй, зөвхөн админ засаж харна</div>
+                                    </div>
+                                    <div
+                                        className={`modern-toggle-item ${importAsHidden ? 'active' : ''}`}
+                                        onClick={() => setImportAsHidden(!importAsHidden)}
+                                    >
+                                        <div className="toggle" />
+                                    </div>
+                                </div>
+                            </div>
+
                             <button
                                 className="btn btn-primary gradient-btn premium-btn"
                                 onClick={handleStartFetch}
-                                style={{ height: 52, borderRadius: 16, fontSize: '1rem', fontWeight: 800, gap: 10 }}
+                                disabled={isFetching}
+                                style={{ height: 50, borderRadius: 16, fontWeight: 800 }}
                             >
                                 <Sparkles size={20} />
                                 AI Импорт эхлүүлэх

@@ -116,6 +116,18 @@ export const productService = {
             ...updates,
             updatedAt: serverTimestamp()
         });
+    },
+
+    async bulkUpdateProducts(bizId: string, productIds: string[], updates: Partial<Product>): Promise<void> {
+        const batch = writeBatch(db);
+        productIds.forEach(id => {
+            const docRef = doc(db, 'businesses', bizId, 'products', id);
+            batch.update(docRef, {
+                ...updates,
+                updatedAt: serverTimestamp()
+            });
+        });
+        await batch.commit();
     }
 };
 

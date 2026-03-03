@@ -798,4 +798,128 @@
     .stat-value {
         font-size: 1.1rem;
     }
+
+    .hide-mobile {
+        display: none !important;
+    }
+}
+
+/* --- Bulk Selection Styles --- */
+.bulk-selection-bar {
+    position: sticky;
+    top: 20px;
+    z-index: 100;
+    background: rgba(var(--surface-1-rgb, 255, 255, 255), 0.85);
+    backdrop-filter: blur(20px);
+    border: 1px solid var(--primary-light);
+    border-radius: 20px;
+    padding: 12px 24px;
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: 0 15px 40px -10px rgba(var(--primary-rgb), 0.2);
+    animation: slideDownIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes slideDownIn {
+    from {
+        transform: translateY(-30px) scale(0.95);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateY(0) scale(1);
+        opacity: 1;
+    }
+}
+
+.bulk-info {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.bulk-count {
+    font-weight: 900;
+    font-size: 1rem;
+    color: var(--primary);
+    background: rgba(var(--primary-rgb), 0.1);
+    padding: 4px 12px;
+    border-radius: 10px;
+}
+
+.bulk-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.bulk-divider {
+    width: 1px;
+    height: 24px;
+    background: var(--border-secondary);
+    margin: 0 4px;
+}
+
+/* --- Product Selection Checkbox --- */
+.product-selection-overlay {
+    position: absolute;
+    top: 14px;
+    left: 14px;
+    z-index: 10;
+    cursor: pointer;
+}
+
+.selection-checkbox {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.2);
+    border: 2px solid white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    backdrop-filter: blur(4px);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+}
+
+.selection-checkbox.checked {
+    background: var(--primary);
+    border-color: var(--primary);
+    transform: scale(1.15);
+}
+
+.product-card:hover .selection-checkbox {
+    transform: scale(1.1);
+}
+
+.product-card.selected {
+    border-color: var(--primary);
+    background: rgba(var(--primary-rgb), 0.03);
+    box-shadow: 0 0 0 4px rgba(var(--primary-rgb), 0.1);
+}
+
+.product-card.selected::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border: 2px solid var(--primary);
+    border-radius: inherit;
+    pointer-events: none;
+    z-index: 5;
+}
+
+/* Fix for existing badges when checkbox is visible */
+.product-card.selected .product-card-badges,
+.product-card:hover .product-card-badges {
+    left: 52px;
+    /* Move badges to leave space for checkbox */
+    transition: left 0.3s ease;
+}
+
+.product-card-badges {
+    transition: left 0.3s ease;
 }

@@ -4,7 +4,8 @@ import { Header } from '../../components/layout/Header';
 import { ImageUpload } from '../../components/common/ImageUpload';
 import {
     Grid3X3, List, Plus, Search, MoreVertical, AlertTriangle, Loader2,
-    EyeOff, Bot, Target, ShieldCheck, Sparkles, CheckCircle2, Facebook
+    Eye, EyeOff, Bot, Target, ShieldCheck, Sparkles, CheckCircle2, Facebook,
+    Package, Clock, Check, Trash2
 } from 'lucide-react';
 import { useBusinessStore, useAuthStore } from '../../store';
 import { productService, categoryService, cargoService } from '../../services/db';
@@ -36,6 +37,8 @@ export function ProductsPage() {
         out: 0,
         value: 0
     });
+    const [selectedIds, setSelectedIds] = useState<string[]>([]);
+    const [isBulkUpdating, setIsBulkUpdating] = useState(false);
 
     useEffect(() => {
         if (!business?.id) return;
@@ -88,6 +91,46 @@ export function ProductsPage() {
         window.addEventListener('click', handleClickOutside);
         return () => window.removeEventListener('click', handleClickOutside);
     }, []);
+
+    const toggleSelect = (id: string, e?: React.MouseEvent) => {
+        e?.stopPropagation();
+        setSelectedIds(prev =>
+            prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
+        );
+    };
+
+    const toggleSelectAll = () => {
+        if (selectedIds.length === filtered.length) {
+            setSelectedIds([]);
+        } else {
+            setSelectedIds(filtered.map(p => p.id));
+        }
+    };
+
+    const handleBulkUpdate = async (updates: Partial<Product>) => {
+        if (!business || selectedIds.length === 0) return;
+
+        setIsBulkUpdating(true);
+        const toastId = toast.loading(`${selectedIds.length} барааг шинэчилж байна...`);
+
+        try {
+            await productService.bulkUpdateProducts(business.id, selectedIds, updates);
+            toast.success('Амжилттай шинэчлэгдлээ', { id: toastId });
+            setSelectedIds([]);
+        } catch (error) {
+            console.error('Bulk update error:', error);
+            toast.error('Алдаа гарлаа', { id: toastId });
+        } finally {
+            setIsBulkUpdating(false);
+        }
+    };
+
+    const handleBulkDelete = async () => {
+        if (!business || selectedIds.length === 0) return;
+        if (!confirm(`${selectedIds.length} барааг устгахдаа итгэлтэй байна уу?`)) return;
+
+        handleBulkUpdate({ isDeleted: true });
+    };
 
     return (
         <>
@@ -207,83 +250,130 @@ export function ProductsPage() {
                                 )}
                             </div>
                         ) : (
-                            <div className={viewMode === 'grid' ? 'products-grid' : 'products-list'}>
-                                {filtered.map(p => (
-                                    <div key={p.id} className={`product - card card - clickable ${(p.stock?.quantity || 0) === 0 ? 'product-out' : ''} `}>
-                                        <div className="product-card-image-wrapper" onClick={() => setEditingProduct(p)}>
-                                            {p.images?.[0] ? (
-                                                <img src={p.images[0]} alt={p.name} className="product-card-image" />
-                                            ) : (
-                                                <div className="product-card-placeholder">📦</div>
-                                            )}
-                                        </div>
-
-                                        <div className="product-card-badges">
-                                            {p.productType === 'preorder' ? (
-                                                <span className="badge badge-info">♾️ Захиалга</span>
-                                            ) : (p.stock?.quantity || 0) === 0 ? (
-                                                <span className="badge badge-cancelled">Дууссан</span>
-                                            ) : (p.stock?.quantity || 0) <= (p.stock?.lowStockThreshold || 0) ? (
-                                                <span className="badge badge-preparing">⚠️ {p.stock.quantity} ш</span>
-                                            ) : (
-                                                <span className="badge badge-delivered">{p.stock.quantity} ш</span>
-                                            )}
-                                        </div>
-
-                                        <div className="product-card-actions">
-                                            <button
-                                                className={`product - action - btn ${openDropdownId === p.id ? 'active' : ''} `}
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    setOpenDropdownId(openDropdownId === p.id ? null : p.id);
-                                                }}
+                            <>
+                                {selectedIds.length > 0 && (
+                                    <div className="bulk-selection-bar animate-slide-up">
+                                        <div className="bulk-info">
+                                            <div
+                                                className={`selection-checkbox ${selectedIds.length === filtered.length ? 'checked' : ''}`}
+                                                onClick={toggleSelectAll}
+                                                style={{ cursor: 'pointer', width: 24, height: 24 }}
                                             >
-                                                <MoreVertical size={16} />
-                                            </button>
-
-                                            {openDropdownId === p.id && (
-                                                <div className="product-card-dropdown" onClick={e => e.stopPropagation()}>
-                                                    <div className="dropdown-action-item" onClick={() => { setEditingProduct(p); setOpenDropdownId(null); }}>
-                                                        <Plus size={14} style={{ transform: 'rotate(45deg)' }} /> Засах
-                                                    </div>
-                                                    <div className="dropdown-action-item danger" onClick={() => { handleDelete(p.id); setOpenDropdownId(null); }}>
-                                                        <AlertTriangle size={14} /> Устгах
-                                                    </div>
-                                                </div>
-                                            )}
+                                                {selectedIds.length === filtered.length && <Check size={12} />}
+                                            </div>
+                                            <div className="bulk-count">{selectedIds.length} сонгосон</div>
+                                            <button className="btn btn-ghost btn-sm" onClick={() => setSelectedIds([])} disabled={isBulkUpdating}>Цэвэрлэх</button>
                                         </div>
+                                        <div className="bulk-actions">
+                                            <button className="btn btn-secondary btn-sm" onClick={() => handleBulkUpdate({ isHidden: false })} title="Идэвхжүүлэх (Харуулах)" disabled={isBulkUpdating}>
+                                                <Eye size={16} /> <span className="hide-mobile">Идэвхжүүлэх</span>
+                                            </button>
+                                            <button className="btn btn-secondary btn-sm" onClick={() => handleBulkUpdate({ isHidden: true })} title="Нуух (Идэвхгүй)" disabled={isBulkUpdating}>
+                                                <EyeOff size={16} /> <span className="hide-mobile">Нуух</span>
+                                            </button>
+                                            <div className="bulk-divider" />
+                                            <button className="btn btn-secondary btn-sm" onClick={() => handleBulkUpdate({ productType: 'ready' })} title="Бэлэн бараа" disabled={isBulkUpdating}>
+                                                <Package size={16} /> <span className="hide-mobile">Бэлэн</span>
+                                            </button>
+                                            <button className="btn btn-secondary btn-sm" onClick={() => handleBulkUpdate({ productType: 'preorder' })} title="Захиалгын бараа" disabled={isBulkUpdating}>
+                                                <Clock size={16} /> <span className="hide-mobile">Захиалга</span>
+                                            </button>
+                                            <div className="bulk-divider" />
+                                            <button className="btn btn-secondary btn-sm text-danger" onClick={handleBulkDelete} title="Устгах" disabled={isBulkUpdating}>
+                                                <Trash2 size={16} /> <span className="hide-mobile">Устгах</span>
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
 
-                                        <div className="product-card-content" onClick={() => setEditingProduct(p)}>
-                                            <div className="product-card-name">{p.name}</div>
-                                            <div className="product-card-meta">
-                                                <span className="badge badge-soft" style={{ fontSize: '0.65rem' }}>{p.categoryName || 'АНГИЛАЛГҮЙ'}</span>
-                                                <span>•</span>
-                                                <span className="sku-text">{p.sku || '-'}</span>
-                                                {p.isHidden && (
-                                                    <>
-                                                        <span>•</span>
-                                                        <span style={{ fontSize: '0.65rem', color: 'var(--accent-orange)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4 }}>
-                                                            <EyeOff size={10} /> НУУЦЛАГДМАН
-                                                        </span>
-                                                    </>
+                                <div className={viewMode === 'grid' ? 'products-grid' : 'products-list'}>
+                                    {filtered.map(p => (
+                                        <div
+                                            key={p.id}
+                                            className={`product-card card-clickable ${(p.stock?.quantity || 0) === 0 ? 'product-out' : ''} ${selectedIds.includes(p.id) ? 'selected' : ''}`}
+                                            onClick={() => setEditingProduct(p)}
+                                        >
+                                            <div className="product-selection-overlay" onClick={(e) => toggleSelect(p.id, e)}>
+                                                <div className={`selection-checkbox ${selectedIds.includes(p.id) ? 'checked' : ''}`}>
+                                                    {selectedIds.includes(p.id) && <Check size={14} />}
+                                                </div>
+                                            </div>
+
+                                            <div className="product-card-image-wrapper">
+                                                {p.images?.[0] ? (
+                                                    <img src={p.images[0]} alt={p.name} className="product-card-image" />
+                                                ) : (
+                                                    <div className="product-card-placeholder">📦</div>
                                                 )}
                                             </div>
 
-                                            <div className="product-card-price-section">
-                                                <div className="product-card-prices">
-                                                    <div className="product-card-sale-price">{fmt(p.pricing?.salePrice || 0)}</div>
-                                                    {p.pricing?.costPrice && (
-                                                        <div className="product-card-cost-row">
-                                                            <span className="product-card-cost-price">{fmt(p.pricing.costPrice)}</span>
-                                                            <span className="product-card-profit">+{Math.round((p.pricing.salePrice - p.pricing.costPrice) / p.pricing.costPrice * 100)}%</span>
+                                            <div className="product-card-badges">
+                                                {p.productType === 'preorder' ? (
+                                                    <span className="badge badge-info">♾️ Захиалга</span>
+                                                ) : (p.stock?.quantity || 0) === 0 ? (
+                                                    <span className="badge badge-cancelled">Дууссан</span>
+                                                ) : (p.stock?.quantity || 0) <= (p.stock?.lowStockThreshold || 0) ? (
+                                                    <span className="badge badge-preparing">⚠️ {p.stock.quantity} ш</span>
+                                                ) : (
+                                                    <span className="badge badge-delivered">{p.stock.quantity} ш</span>
+                                                )}
+                                            </div>
+
+                                            <div className="product-card-actions">
+                                                <button
+                                                    className={`product-action-btn ${openDropdownId === p.id ? 'active' : ''}`}
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        setOpenDropdownId(openDropdownId === p.id ? null : p.id);
+                                                    }}
+                                                >
+                                                    <MoreVertical size={16} />
+                                                </button>
+
+                                                {openDropdownId === p.id && (
+                                                    <div className="product-card-dropdown" onClick={e => e.stopPropagation()}>
+                                                        <div className="dropdown-action-item" onClick={() => { setEditingProduct(p); setOpenDropdownId(null); }}>
+                                                            <Plus size={14} style={{ transform: 'rotate(45deg)' }} /> Засах
                                                         </div>
+                                                        <div className="dropdown-action-item danger" onClick={() => { handleDelete(p.id); setOpenDropdownId(null); }}>
+                                                            <AlertTriangle size={14} /> Устгах
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </div>
+
+                                            <div className="product-card-content">
+                                                <div className="product-card-name">{p.name}</div>
+                                                <div className="product-card-meta">
+                                                    <span className="badge badge-soft" style={{ fontSize: '0.65rem' }}>{p.categoryName || 'АНГИЛАЛГҮЙ'}</span>
+                                                    <span>•</span>
+                                                    <span className="sku-text">{p.sku || '-'}</span>
+                                                    {p.isHidden && (
+                                                        <>
+                                                            <span>•</span>
+                                                            <span style={{ fontSize: '0.65rem', color: 'var(--accent-orange)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4 }}>
+                                                                <EyeOff size={10} /> НУУЦЛАГДСАН
+                                                            </span>
+                                                        </>
                                                     )}
+                                                </div>
+
+                                                <div className="product-card-price-section">
+                                                    <div className="product-card-prices">
+                                                        <div className="product-card-sale-price">{fmt(p.pricing?.salePrice || 0)}</div>
+                                                        {p.pricing?.costPrice && (
+                                                            <div className="product-card-cost-row">
+                                                                <span className="product-card-cost-price">{fmt(p.pricing.costPrice)}</span>
+                                                                <span className="product-card-profit">+{Math.round((p.pricing.salePrice - p.pricing.costPrice) / p.pricing.costPrice * 100)}%</span>
+                                                            </div>
+                                                        )}
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
-                                    </div>
-                                ))}
-                            </div>
+                                    ))}
+                                </div>
+                            </>
                         )}
                     </>
                 )}
