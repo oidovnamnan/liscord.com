@@ -55,7 +55,12 @@ export function InventoryPage() {
         return () => { unsub1(); unsub2(); };
     }, [business?.id]);
 
-    const lowStockItems = products.filter(p => (p.stock?.quantity || 0) <= (p.stock?.lowStockThreshold || 0));
+    const lowStockItems = products.filter(p =>
+        p.productType !== 'preorder' &&
+        !p.isDeleted &&
+        p.stock?.trackInventory !== false &&
+        (p.stock?.quantity || 0) <= (p.stock?.lowStockThreshold || 0)
+    );
 
     const totalIn = movements.filter(m => m.type === 'in').reduce((s, m) => s + m.quantity, 0);
     const totalOut = movements.filter(m => m.type === 'out').reduce((s, m) => s + m.quantity, 0);

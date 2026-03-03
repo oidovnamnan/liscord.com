@@ -54,9 +54,11 @@ export function ProductsPage() {
 
     useEffect(() => {
         const total = products.length;
-        const low = products.filter(p => (p.stock?.quantity || 0) <= (p.stock?.lowStockThreshold || 0) && (p.stock?.quantity || 0) > 0).length;
-        const out = products.filter(p => (p.stock?.quantity || 0) === 0).length;
-        const value = products.reduce((sum, p) => sum + ((p.pricing?.costPrice || 0) * (p.stock?.quantity || 0)), 0);
+        // Preorder бараа нь агуулахын нөөцтэй хамааралгүй — шүүнэ
+        const stockTracked = products.filter(p => p.productType !== 'preorder' && !p.isDeleted && p.stock?.trackInventory !== false);
+        const low = stockTracked.filter(p => (p.stock?.quantity || 0) <= (p.stock?.lowStockThreshold || 0) && (p.stock?.quantity || 0) > 0).length;
+        const out = stockTracked.filter(p => (p.stock?.quantity || 0) === 0).length;
+        const value = stockTracked.reduce((sum, p) => sum + ((p.pricing?.costPrice || 0) * (p.stock?.quantity || 0)), 0);
 
         setStats({ total, low, out, value });
     }, [products]);
