@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Header } from '../../components/layout/Header';
 import { globalSettingsService } from '../../services/db';
 import type { GlobalSettings } from '../../services/db';
-import { Loader2, Save, MessageSquare, Shield, AlertTriangle, Sun, Moon, Monitor } from 'lucide-react';
+import { Loader2, Save, MessageSquare, Shield, AlertTriangle, Sun, Moon, Monitor, Cpu } from 'lucide-react';
 import { useUIStore } from '../../store';
 import { toast } from 'react-hot-toast';
 import { SecurityModal } from '../../components/common/SecurityModal';
@@ -350,6 +350,30 @@ export function SuperAdminGlobalSettings() {
                                     </div>
                                 </div>
                             </div>
+                        </div>
+                    </div>
+
+                    <div className="card">
+                        <h2 style={{ fontSize: '1.2rem', margin: '0 0 24px 0', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                            <Cpu size={20} className="text-primary" />
+                            External API Settings (AI & Integrations)
+                        </h2>
+                        <p style={{ color: 'var(--text-secondary)', marginBottom: '24px' }}>
+                            Системийн хэмжээнд ашиглагдах AI болон гадны үйлчилгээнүүдийн API түлхүүрүүд.
+                        </p>
+
+                        <div className="input-group">
+                            <label className="input-label">Gemini AI API Key</label>
+                            <input
+                                className="input"
+                                type="password"
+                                placeholder="AI постуудыг уншуулахад ашиглана..."
+                                value={settings.geminiApiKey || ''}
+                                onChange={e => setSettings({ ...settings, geminiApiKey: e.target.value })}
+                            />
+                            <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '8px' }}>
+                                Facebook-ээс бараа импортлоход AI ашиглахад энэ түлхүүр заавал хэрэгтэй.
+                            </p>
                         </div>
                     </div>
 

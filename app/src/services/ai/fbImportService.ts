@@ -1,11 +1,14 @@
 import { GoogleGenAI } from '@google/genai';
 
-const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY || '';
+let lastApiKey = '';
 let aiClient: GoogleGenAI | null = null;
 
-function getClient(): GoogleGenAI {
-    if (!GEMINI_API_KEY) throw new Error('Gemini API Key байхгүй байна. VITE_GEMINI_API_KEY .env файлд нэмнэ үү.');
-    if (!aiClient) aiClient = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
+function getClient(apiKey: string): GoogleGenAI {
+    if (!apiKey) throw new Error('Gemini API Key байхгүй байна. Super Admin тохиргооноос нэмнэ үү.');
+    if (!aiClient || lastApiKey !== apiKey) {
+        aiClient = new GoogleGenAI({ apiKey });
+        lastApiKey = apiKey;
+    }
     return aiClient;
 }
 
@@ -137,13 +140,13 @@ export function extractImagesFromPost(post: FBPost): string[] {
 
 // ============ AI Product Extraction ============
 
-export async function extractProductFromPost(post: FBPost): Promise<FBExtractedProduct | null> {
+export async function extractProductFromPost(post: FBPost, apiKey: string): Promise<FBExtractedProduct | null> {
     const message = post.message || '';
 
     // Skip posts without meaningful text
     if (!message || message.trim().length < 10) return null;
 
-    const client = getClient();
+    const client = getClient(apiKey);
     const images = extractImagesFromPost(post);
 
     const prompt = `
@@ -223,13 +226,14 @@ JSON ХАРИУ:
 
 export async function extractProductsFromPosts(
     posts: FBPost[],
+    apiKey: string,
     onProgress?: (current: number, total: number, product?: FBExtractedProduct) => void
 ): Promise<FBExtractedProduct[]> {
     const products: FBExtractedProduct[] = [];
 
     for (let i = 0; i < posts.length; i++) {
         onProgress?.(i + 1, posts.length);
-        const product = await extractProductFromPost(posts[i]);
+        const product = await extractProductFromPost(posts[i], apiKey);
         if (product) {
             products.push(product);
             onProgress?.(i + 1, posts.length, product);

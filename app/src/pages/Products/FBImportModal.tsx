@@ -12,6 +12,7 @@ import {
     detectDuplicates, uploadAllImages,
     type FBExtractedProduct, type FBPost
 } from '../../services/ai/fbImportService';
+import { globalSettingsService } from '../../services/db';
 import type { Product, Category } from '../../types';
 import { toast } from 'react-hot-toast';
 
@@ -31,6 +32,7 @@ export function FBImportModal({ onClose }: FBImportModalProps) {
     // Setup
     const [pageUrl, setPageUrl] = useState(localStorage.getItem('fb_import_url') || '');
     const [accessToken, setAccessToken] = useState(localStorage.getItem('fb_import_token') || '');
+    const [geminiApiKey, setGeminiApiKey] = useState('');
     const [startDate, setStartDate] = useState(localStorage.getItem('fb_import_start') || '');
     const [endDate, setEndDate] = useState(localStorage.getItem('fb_import_end') || '');
 
@@ -48,11 +50,19 @@ export function FBImportModal({ onClose }: FBImportModalProps) {
     const [importProgress, setImportProgress] = useState({ current: 0, total: 0 });
     const [importResults, setImportResults] = useState({ success: 0, failed: 0 });
 
-    // Load existing products for duplicate detection
+    // Load data
     useEffect(() => {
         if (!business?.id) return;
         const u1 = productService.subscribeProducts(business.id, setExistingProducts);
         const u2 = categoryService.subscribeCategories(business.id, setCategories);
+
+        // Fetch global Gemini API key
+        globalSettingsService.getSettings().then(settings => {
+            if (settings.geminiApiKey) {
+                setGeminiApiKey(settings.geminiApiKey);
+            }
+        });
+
         return () => { u1(); u2(); };
     }, [business?.id]);
 
@@ -84,6 +94,11 @@ export function FBImportModal({ onClose }: FBImportModalProps) {
             return;
         }
 
+        if (!geminiApiKey) {
+            toast.error('AI тохиргоо (Gemini API Key) дутуу байна. Super Admin-д хандана уу.');
+            return;
+        }
+
         saveSettings();
         setStep('fetching');
         setProgress({ current: 0, total: 0, message: 'Page мэдээлэл татаж байна...' });
@@ -110,7 +125,7 @@ export function FBImportModal({ onClose }: FBImportModalProps) {
 
             // Start AI processing
             setStep('processing');
-            const extracted = await extractProductsFromPosts(fetchedPosts, (current, total, product) => {
+            const extracted = await extractProductsFromPosts(fetchedPosts, geminiApiKey, (current, total, product) => {
                 setProgress({
                     current,
                     total,

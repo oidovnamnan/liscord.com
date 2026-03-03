@@ -410,6 +410,7 @@ export interface GlobalSettings {
     };
     maintenanceMode: boolean;
     registrationEnabled: boolean;
+    geminiApiKey?: string;
 }
 
 const DEFAULT_GLOBAL_SETTINGS: GlobalSettings = {
@@ -419,7 +420,8 @@ const DEFAULT_GLOBAL_SETTINGS: GlobalSettings = {
         type: 'info'
     },
     maintenanceMode: false,
-    registrationEnabled: true
+    registrationEnabled: true,
+    geminiApiKey: ''
 };
 
 export const globalSettingsService = {
