@@ -295,19 +295,23 @@
 }
 
 .product-name {
-    font-family: var(--sf-font-title);
-    font-size: 1.2rem;
-    font-weight: 700;
-    letter-spacing: -0.01em;
-    margin: 0 0 8px;
-    color: #1a1a1a;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #000;
+    margin-bottom: 6px;
+    line-height: 1.4;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
 }
 
 .product-price {
-    font-size: 1.15rem;
+    font-family: var(--sf-font-title);
+    font-size: 1.1rem;
     font-weight: 800;
-    color: #000;
-    opacity: 0.9;
+    color: var(--sf-brand-color);
     display: flex;
     align-items: center;
     gap: 8px;
@@ -361,7 +365,7 @@
     }
 
     .product-name {
-        font-size: 1rem;
+        font-size: 0.9rem;
     }
 
     .product-add-overlay {
@@ -499,8 +503,8 @@
 }
 
 .sf-modal-gallery {
-    padding: 40px;
-    background: #fafafa;
+    padding: 30px;
+    background: #fff;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -509,8 +513,8 @@
 .sf-modal-main-img {
     width: 100%;
     aspect-ratio: 1/1;
-    object-fit: contain;
-    border-radius: 20px;
+    object-fit: cover;
+    border-radius: 24px;
 }
 
 .sf-modal-img-placeholder {
@@ -524,30 +528,33 @@
 }
 
 .sf-modal-category {
-    font-size: 0.85rem;
-    font-weight: 700;
+    font-size: 0.75rem;
+    font-weight: 800;
     text-transform: uppercase;
     color: var(--sf-brand-color);
-    letter-spacing: 0.1em;
-    margin-bottom: 12px;
+    letter-spacing: 0.15em;
+    margin-bottom: 8px;
+    opacity: 0.8;
 }
 
 .sf-modal-title {
-    font-size: 2.5rem;
+    font-size: 1.75rem;
     font-weight: 800;
-    letter-spacing: -0.04em;
-    line-height: 1.1;
-    margin-bottom: 20px;
+    letter-spacing: -0.03em;
+    line-height: 1.2;
+    margin-bottom: 16px;
     color: #000;
 }
 
 .sf-modal-price {
-    font-size: 1.75rem;
-    font-weight: 700;
-    margin-bottom: 24px;
+    font-family: var(--sf-font-title);
+    font-size: 1.5rem;
+    font-weight: 800;
+    margin-bottom: 32px;
     display: flex;
     align-items: center;
     gap: 16px;
+    color: var(--sf-brand-color);
 }
 
 .sf-modal-compare-price {
@@ -558,11 +565,28 @@
 }
 
 .sf-modal-desc {
-    font-size: 1.05rem;
-    line-height: 1.6;
-    color: var(--sf-text-muted);
+    font-size: 0.95rem;
+    line-height: 1.7;
+    color: #444;
     margin-bottom: 40px;
     white-space: pre-wrap;
+    font-weight: 400;
+}
+
+.product-brand-badge {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    background: #fff;
+    color: #000;
+    padding: 4px 10px;
+    border-radius: 100px;
+    font-size: 0.7rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    z-index: 5;
 }
 
 .sf-modal-actions {

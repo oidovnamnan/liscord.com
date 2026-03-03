@@ -15,6 +15,14 @@ export function ThemeMinimal({ business }: { business: Business }) {
     const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
     const [quantity, setQuantity] = useState(1);
 
+    const extractBrand = (desc: string) => {
+        if (!desc) return null;
+        // Look for common patterns in FB imported descriptions
+        const brandMatch = desc.match(/(?:Брэнд|Brand):\s*([^\n|*]+)/i);
+        if (brandMatch) return brandMatch[1].trim();
+        return null;
+    };
+
     const cartItems = useCartStore(state => state.items);
     const cartCount = cartItems.reduce((acc, item) => acc + item.quantity, 0);
 
@@ -113,37 +121,41 @@ export function ThemeMinimal({ business }: { business: Business }) {
                                 <StorefrontEmpty message="Ийм нэртэй бараа олдсонгүй" />
                             </div>
                         ) : (
-                            filteredProducts.map(p => (
-                                <div key={p.id} className="product-card" onClick={() => handleOpenProduct(p)}>
-                                    <div className="product-image-wrap">
-                                        {p.images?.[0] ? (
-                                            <img src={p.images[0]} alt={p.name} className="product-image" loading="lazy" />
-                                        ) : (
-                                            <div style={{ color: 'var(--sf-text-muted)', fontSize: '3rem' }}>📦</div>
-                                        )}
-
-                                        <button
-                                            className="product-add-overlay"
-                                            onClick={(e) => handleAddToCart(e, p)}
-                                            title="Сагсанд нэмэх"
-                                        >
-                                            <Plus size={24} strokeWidth={3} />
-                                        </button>
-                                    </div>
-
-                                    <div className="product-info">
-                                        <h3 className="product-name">{p.name}</h3>
-                                        <div className="product-price">
-                                            {(p.pricing?.salePrice || 0).toLocaleString()} ₮
-                                            {p.pricing?.comparePrice && p.pricing.comparePrice > (p.pricing.salePrice || 0) && (
-                                                <span style={{ fontSize: '0.85rem', textDecoration: 'line-through', opacity: 0.4, fontWeight: 500 }}>
-                                                    {p.pricing.comparePrice.toLocaleString()} ₮
-                                                </span>
+                            filteredProducts.map(p => {
+                                const brand = extractBrand(p.description);
+                                return (
+                                    <div key={p.id} className="product-card" onClick={() => handleOpenProduct(p)}>
+                                        <div className="product-image-wrap">
+                                            {brand && <div className="product-brand-badge">{brand}</div>}
+                                            {p.images?.[0] ? (
+                                                <img src={p.images[0]} alt={p.name} className="product-image" loading="lazy" />
+                                            ) : (
+                                                <div style={{ color: 'var(--sf-text-muted)', fontSize: '3rem' }}>📦</div>
                                             )}
+
+                                            <button
+                                                className="product-add-overlay"
+                                                onClick={(e) => handleAddToCart(e, p)}
+                                                title="Сагсанд нэмэх"
+                                            >
+                                                <Plus size={24} strokeWidth={3} />
+                                            </button>
+                                        </div>
+
+                                        <div className="product-info">
+                                            <h3 className="product-name">{p.name}</h3>
+                                            <div className="product-price">
+                                                {(p.pricing?.salePrice || 0).toLocaleString()} ₮
+                                                {p.pricing?.comparePrice && p.pricing.comparePrice > (p.pricing.salePrice || 0) && (
+                                                    <span style={{ fontSize: '0.85rem', textDecoration: 'line-through', opacity: 0.4, fontWeight: 500 }}>
+                                                        {p.pricing.comparePrice.toLocaleString()} ₮
+                                                    </span>
+                                                )}
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
-                            ))
+                                );
+                            })
                         )}
                     </div>
                 </div>
@@ -167,7 +179,9 @@ export function ThemeMinimal({ business }: { business: Business }) {
                             </div>
 
                             <div className="sf-modal-info">
-                                <span className="sf-modal-category">{selectedProduct.categoryName}</span>
+                                <span className="sf-modal-category">
+                                    {extractBrand(selectedProduct.description) || selectedProduct.categoryName}
+                                </span>
                                 <h2 className="sf-modal-title">{selectedProduct.name}</h2>
                                 <div className="sf-modal-price">
                                     {(selectedProduct.pricing?.salePrice || 0).toLocaleString()} ₮
