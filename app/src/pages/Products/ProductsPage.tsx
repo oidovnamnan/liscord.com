@@ -306,7 +306,14 @@ export function ProductsPage() {
 
                                             <div className="product-card-image-wrapper">
                                                 {p.images?.[0] ? (
-                                                    <img src={p.images[0]} alt={p.name} className="product-card-image" />
+                                                    <>
+                                                        <img src={p.images[0]} alt={p.name} className="product-card-image" />
+                                                        {p.images.length > 1 && (
+                                                            <div className="product-image-count">
+                                                                {p.images.length} зураг
+                                                            </div>
+                                                        )}
+                                                    </>
                                                 ) : (
                                                     <div className="product-card-placeholder">📦</div>
                                                 )}
