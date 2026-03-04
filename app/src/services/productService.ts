@@ -15,20 +15,23 @@ export const customerService = {
     },
 
     async getCustomers(bizId: string): Promise<Customer[]> {
-        const q = query(this.getCustomersRef(bizId), where('isDeleted', '==', false), orderBy('name'));
+        const q = query(this.getCustomersRef(bizId), orderBy('name'));
         const snap = await getDocs(q);
-        return snap.docs.map(d => convertTimestamps(d.data()) as Customer);
+        return snap.docs
+            .map(d => convertTimestamps(d.data()) as Customer)
+            .filter(c => !c.isDeleted);
     },
 
     subscribeCustomers(bizId: string, callback: (customers: Customer[]) => void, limitCount: number = 50) {
         const q = query(
             this.getCustomersRef(bizId),
-            where('isDeleted', '==', false),
             orderBy('name'),
             limit(limitCount)
         );
         return onSnapshot(q, (snapshot) => {
-            const customers = snapshot.docs.map(d => ({ id: d.id, ...convertTimestamps(d.data()) } as Customer));
+            const customers = snapshot.docs
+                .map(d => ({ id: d.id, ...convertTimestamps(d.data()) } as Customer))
+                .filter(c => !c.isDeleted);
             callback(customers);
         });
     },
@@ -71,20 +74,22 @@ export const productService = {
     },
 
     async getProducts(bizId: string): Promise<Product[]> {
-        const q = query(this.getProductsRef(bizId), where('isDeleted', '==', false));
-        const snap = await getDocs(q);
-        return snap.docs.map(d => convertTimestamps(d.data()) as Product);
+        const snap = await getDocs(this.getProductsRef(bizId));
+        return snap.docs
+            .map(d => convertTimestamps(d.data()) as Product)
+            .filter(p => !p.isDeleted);
     },
 
     subscribeProducts(bizId: string, callback: (products: Product[]) => void, limitCount: number = 50) {
         const q = query(
             this.getProductsRef(bizId),
-            where('isDeleted', '==', false),
             orderBy('createdAt', 'desc'),
             limit(limitCount)
         );
         return onSnapshot(q, (snapshot) => {
-            const products = snapshot.docs.map(d => ({ id: d.id, ...convertTimestamps(d.data()) } as Product));
+            const products = snapshot.docs
+                .map(d => ({ id: d.id, ...convertTimestamps(d.data()) } as Product))
+                .filter(p => !p.isDeleted);
             callback(products);
         });
     },
