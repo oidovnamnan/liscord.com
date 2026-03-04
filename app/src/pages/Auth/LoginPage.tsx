@@ -24,8 +24,6 @@ export function LoginPage() {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const [confirmationResult, setConfirmationResult] = useState<any>(null);
     const [loading, setLoading] = useState(false);
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const [qrSessionId, setQrSessionId] = useState<string | null>(null);
     const [qrStatus, setQrStatus] = useState<'pending' | 'authorizing' | 'authenticated' | 'expired'>('pending');
 
     useEffect(() => {
@@ -99,7 +97,6 @@ export function LoginPage() {
                 if (!decodedText.startsWith('liscord-login:')) return;
 
                 const sessionId = decodedText.split(':')[1];
-                setQrSessionId(sessionId);
                 setQrStatus('authorizing');
 
                 if (scanner) {
