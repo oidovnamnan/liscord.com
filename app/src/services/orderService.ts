@@ -80,6 +80,7 @@ export const orderService = {
     subscribeOrders(bizId: string, callback: (orders: Order[], lastDoc: any) => void, statusFilter?: string, limitCount: number = 50, startDate?: Date) {
         let q = query(
             this.getOrdersRef(bizId),
+            where('isDeleted', '==', false),
             orderBy('createdAt', 'desc'),
             limit(limitCount)
         );
@@ -93,9 +94,7 @@ export const orderService = {
         }
 
         return onSnapshot(q, (snapshot) => {
-            const orders = snapshot.docs
-                .map(d => ({ id: d.id, ...convertTimestamps(d.data()) } as Order))
-                .filter(o => !o.isDeleted);
+            const orders = snapshot.docs.map(d => ({ id: d.id, ...convertTimestamps(d.data()) } as Order));
             const lastDoc = snapshot.docs[snapshot.docs.length - 1];
             callback(orders, lastDoc);
         });
@@ -104,6 +103,7 @@ export const orderService = {
     async getOrdersPaginated(bizId: string, lastVisible: any, statusFilter?: string): Promise<{ orders: Order[], lastDoc: any }> {
         let q = query(
             this.getOrdersRef(bizId),
+            where('isDeleted', '==', false),
             orderBy('createdAt', 'desc'),
             limit(50)
         );
@@ -117,9 +117,7 @@ export const orderService = {
         }
 
         const snapshot = await getDocs(q);
-        const orders = snapshot.docs
-            .map(d => ({ id: d.id, ...convertTimestamps(d.data()) } as Order))
-            .filter(o => !o.isDeleted);
+        const orders = snapshot.docs.map(d => ({ id: d.id, ...convertTimestamps(d.data()) } as Order));
         const lastDoc = snapshot.docs[snapshot.docs.length - 1];
 
         return { orders, lastDoc };
