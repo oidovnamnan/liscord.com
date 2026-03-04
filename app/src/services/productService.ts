@@ -20,16 +20,20 @@ export const customerService = {
         return snap.docs.map(d => convertTimestamps(d.data()) as Customer);
     },
 
-    subscribeCustomers(bizId: string, callback: (customers: Customer[]) => void, limitCount: number = 50) {
+    subscribeCustomers(bizId: string, callback: (customers: Customer[]) => void, limitCount: number = 200) {
         const q = query(
             this.getCustomersRef(bizId),
             where('isDeleted', '==', false),
-            orderBy('name'),
             limit(limitCount)
         );
         return onSnapshot(q, (snapshot) => {
             const customers = snapshot.docs.map(d => ({ id: d.id, ...convertTimestamps(d.data()) } as Customer));
+            // Sort in memory instead of Firestore complex index
+            customers.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
             callback(customers);
+        }, (error) => {
+            console.error("Firestore subscribeCustomers error:", error);
+            callback([]);
         });
     },
 
@@ -76,16 +80,24 @@ export const productService = {
         return snap.docs.map(d => convertTimestamps(d.data()) as Product);
     },
 
-    subscribeProducts(bizId: string, callback: (products: Product[]) => void, limitCount: number = 50) {
+    subscribeProducts(bizId: string, callback: (products: Product[]) => void, limitCount: number = 200) {
         const q = query(
             this.getProductsRef(bizId),
             where('isDeleted', '==', false),
-            orderBy('createdAt', 'desc'),
             limit(limitCount)
         );
         return onSnapshot(q, (snapshot) => {
             const products = snapshot.docs.map(d => ({ id: d.id, ...convertTimestamps(d.data()) } as Product));
+            // Sort in memory to avoid needing a composite index
+            products.sort((a, b) => {
+                const timeA = a.createdAt instanceof Date ? a.createdAt.getTime() : 0;
+                const timeB = b.createdAt instanceof Date ? b.createdAt.getTime() : 0;
+                return timeB - timeA;
+            });
             callback(products);
+        }, (error) => {
+            console.error("Firestore subscribeProducts error:", error);
+            callback([]); // Return empty list on error to stop loading state
         });
     },
 
