@@ -157,7 +157,7 @@
 .product-card-image-wrapper {
     position: relative;
     width: 100%;
-    aspect-ratio: 1 / 0.75;
+    height: 140px;
     overflow: hidden;
     background: var(--surface-2);
     display: flex;

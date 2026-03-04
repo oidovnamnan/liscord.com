@@ -5,7 +5,7 @@ import { ImageUpload } from '../../components/common/ImageUpload';
 import {
     Grid3X3, List, Plus, Search, MoreVertical, AlertTriangle, Loader2,
     Eye, EyeOff, Bot, Target, ShieldCheck, Sparkles, CheckCircle2, Facebook,
-    Package, Clock, Check, Trash2
+    Package, Clock, Check, Trash2, Image as ImageIcon
 } from 'lucide-react';
 import { useBusinessStore, useAuthStore } from '../../store';
 import { productService, categoryService, cargoService } from '../../services/db';
@@ -309,10 +309,12 @@ export function ProductsPage() {
                                                     <>
                                                         <img src={p.images[0]} alt={p.name} className="product-card-image" />
                                                         {p.images.length > 1 && (
-                                                            <div className="product-image-count">
-                                                                {p.images.length} зураг
+                                                            <div className="product-image-count" title={`${p.images.length} зураг байна`}>
+                                                                <ImageIcon size={12} strokeWidth={2.5} />
+                                                                {p.images.length}
                                                             </div>
                                                         )}
+
                                                     </>
                                                 ) : (
                                                     <div className="product-card-placeholder">📦</div>
