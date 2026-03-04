@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Phone, ArrowRight, Loader2, Mail, Lock, CheckCircle2, QrCode } from 'lucide-react';
+import { Phone, ArrowRight, Loader2, Mail, Lock, CheckCircle2, QrCode, Smartphone, Camera } from 'lucide-react';
 import {
     signInWithPhoneNumber,
     RecaptchaVerifier,
@@ -24,7 +24,7 @@ export function LoginPage() {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const [confirmationResult, setConfirmationResult] = useState<any>(null);
     const [loading, setLoading] = useState(false);
-    const [qrStatus, setQrStatus] = useState<'pending' | 'authorizing' | 'authenticated' | 'expired'>('pending');
+    const [qrStatus, setQrStatus] = useState<'idle' | 'scanning' | 'authorizing' | 'authenticated'>('idle');
 
     useEffect(() => {
         if (authMethod === 'phone' && !window.recaptchaVerifier) {
@@ -81,20 +81,23 @@ export function LoginPage() {
         }
     };
 
-    // Mobile Scanner Logic (Login using Laptop's authorized session)
+    // QR Scanner Initialization
     useEffect(() => {
         let scanner: Html5QrcodeScanner | null = null;
-        let unsubscribe: (() => void) | null = null;
+        let unsubscribeOnSnapshot: (() => void) | null = null;
 
-        if (authMethod === 'qr' && qrStatus === 'pending') {
+        if (authMethod === 'qr' && qrStatus === 'scanning') {
             scanner = new Html5QrcodeScanner(
-                "qr-login-reader",
-                { fps: 10, qrbox: { width: 250, height: 250 } },
+                "qr-scanner",
+                { fps: 15, qrbox: { width: 250, height: 250 } },
                 false
             );
 
             scanner.render(async (decodedText) => {
-                if (!decodedText.startsWith('liscord-login:')) return;
+                if (!decodedText.startsWith('liscord-login:')) {
+                    toast.error('Буруу QR код байна');
+                    return;
+                }
 
                 const sessionId = decodedText.split(':')[1];
                 setQrStatus('authorizing');
@@ -103,19 +106,19 @@ export function LoginPage() {
                     scanner.clear().catch(console.error);
                 }
 
-                // Update session to notify laptop that we scanned it
                 const sessionRef = doc(db, 'qr_logins', sessionId);
                 try {
+                    // Tell the laptop we scanned the code
                     await updateDoc(sessionRef, { status: 'scanned' });
 
-                    // Now listen for the laptop to authorize and Cloud Function to provide custom token
-                    unsubscribe = onSnapshot(sessionRef, async (snapshot) => {
+                    // Wait for laptop to confirm and Cloud Function to provide token
+                    unsubscribeOnSnapshot = onSnapshot(sessionRef, async (snapshot) => {
                         const data = snapshot.data();
                         if (!data) return;
 
                         if (data.status === 'error') {
                             toast.error(data.error || 'Нэвтрэлт амжилтгүй');
-                            setQrStatus('pending');
+                            setQrStatus('idle');
                             return;
                         }
 
@@ -128,8 +131,8 @@ export function LoginPage() {
                                 navigate('/app');
                             } catch (e) {
                                 console.error(e);
-                                toast.error('Токен баталгаажуулахад алдаа гарлаа');
-                                setQrStatus('pending');
+                                toast.error('Холболт амжилтгүй боллоо');
+                                setQrStatus('idle');
                             } finally {
                                 setLoading(false);
                             }
@@ -137,17 +140,17 @@ export function LoginPage() {
                     });
                 } catch (err) {
                     console.error(err);
-                    toast.error('Код баталгаажуулахад алдаа гарлаа');
-                    setQrStatus('pending');
+                    toast.error('Холболт хийхэд алдаа гарлаа');
+                    setQrStatus('idle');
                 }
             }, (_error) => {
-                // scanning...
+                // scanning progress...
             });
         }
 
         return () => {
             if (scanner) scanner.clear().catch(console.error);
-            if (unsubscribe) unsubscribe();
+            if (unsubscribeOnSnapshot) unsubscribeOnSnapshot();
         };
     }, [authMethod, qrStatus, navigate]);
 
@@ -186,23 +189,35 @@ export function LoginPage() {
                     <p className="auth-subtitle">Бизнесээ хялбар удирдаарай</p>
                 </div>
 
-                <div className="auth-tabs">
+                <div className="auth-tabs" style={{
+                    display: 'flex',
+                    overflowX: 'auto',
+                    paddingBottom: '4px',
+                    scrollbarWidth: 'none',
+                    msOverflowStyle: 'none'
+                }}>
                     <button
                         className={`auth-tab ${authMethod === 'phone' ? 'active' : ''}`}
                         onClick={() => { setAuthMethod('phone'); setStep('input'); }}
+                        style={{ minWidth: '80px' }}
                     >
+                        <Phone size={14} style={{ marginBottom: 4, display: 'block', margin: '0 auto' }} />
                         Утас
                     </button>
                     <button
                         className={`auth-tab ${authMethod === 'email' ? 'active' : ''}`}
                         onClick={() => setAuthMethod('email')}
+                        style={{ minWidth: '80px' }}
                     >
+                        <Mail size={14} style={{ marginBottom: 4, display: 'block', margin: '0 auto' }} />
                         И-мэйл
                     </button>
                     <button
                         className={`auth-tab ${authMethod === 'qr' ? 'active' : ''}`}
                         onClick={() => setAuthMethod('qr')}
+                        style={{ minWidth: '80px' }}
                     >
+                        <QrCode size={14} style={{ marginBottom: 4, display: 'block', margin: '0 auto' }} />
                         QR Код
                     </button>
                 </div>
@@ -273,18 +288,49 @@ export function LoginPage() {
                         </button>
                     </form>
                 ) : (
-                    <div className="qr-login-container animate-fade-in" style={{ textAlign: 'center' }}>
+                    <div className="qr-section animate-fade-in" style={{ textAlign: 'center' }}>
                         <div className="qr-scanner-box" style={{
                             borderRadius: '24px',
                             overflow: 'hidden',
-                            background: 'white',
-                            border: '2px solid var(--border-color)',
+                            background: 'var(--bg-soft)',
+                            border: '1px solid var(--border-color)',
                             position: 'relative',
-                            minHeight: '250px',
-                            boxShadow: '0 10px 30px rgba(0,0,0,0.05)'
+                            minHeight: '280px',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            boxShadow: 'inset 0 2px 10px rgba(0,0,0,0.02)'
                         }}>
-                            {qrStatus === 'pending' ? (
-                                <div id="qr-login-reader" style={{ border: 'none' }}></div>
+                            {qrStatus === 'idle' ? (
+                                <div style={{ padding: '40px 20px' }}>
+                                    <div style={{
+                                        width: '64px',
+                                        height: '64px',
+                                        borderRadius: '50%',
+                                        background: 'var(--primary-light)',
+                                        color: 'var(--primary)',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        margin: '0 auto 16px auto'
+                                    }}>
+                                        <Camera size={28} />
+                                    </div>
+                                    <h3 style={{ fontSize: '1.1rem', fontWeight: 800, marginBottom: 8 }}>QR Код уншуулах</h3>
+                                    <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: 24 }}>
+                                        Нотбүүкнийхээ Тохиргоо цэснээс <br /> гарч ирсэн кодыг уншуулна уу.
+                                    </p>
+                                    <button
+                                        className="btn btn-primary gradient-btn"
+                                        onClick={() => setQrStatus('scanning')}
+                                        style={{ height: '48px', padding: '0 32px', borderRadius: '14px' }}
+                                    >
+                                        Камер нээх
+                                    </button>
+                                </div>
+                            ) : qrStatus === 'scanning' ? (
+                                <div id="qr-scanner" style={{ width: '100%', height: '100%', border: 'none' }}></div>
                             ) : (
                                 <div style={{
                                     padding: '60px 20px',
@@ -299,28 +345,37 @@ export function LoginPage() {
                                         <Loader2 size={48} className="animate-spin text-primary" />
                                     )}
                                     <p style={{ fontWeight: 700 }}>
-                                        {qrStatus === 'authorizing' ? 'Баталгаажуулахыг хүлээж байна...' : 'Нэвтэрч байна...'}
+                                        {qrStatus === 'authorizing' ? 'Баталгаажуулалт хүлээж байна...' : 'Нэвтэрч байна...'}
                                     </p>
                                 </div>
                             )}
                         </div>
 
-                        <div style={{ marginTop: '24px' }}>
-                            <h3 style={{ fontSize: '1.1rem', fontWeight: 800, margin: '0 0 8px 0' }}>QR-аар нэвтрэх</h3>
-                            <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
-                                Нотбүүкнийхээ <b>Тохиргоо - Төхөөрөмж холбох</b> цэснээс <br /> QR кодоо гаргаж уншуулна уу.
-                            </p>
-                        </div>
+                        {qrStatus === 'scanning' && (
+                            <button
+                                className="btn btn-ghost btn-sm"
+                                style={{ marginTop: '16px' }}
+                                onClick={() => setQrStatus('idle')}
+                            >
+                                Болих
+                            </button>
+                        )}
 
-                        <button
-                            className="btn btn-ghost btn-full"
-                            style={{ marginTop: '16px' }}
-                            onClick={() => {
-                                setQrStatus('pending');
-                            }}
-                        >
-                            <QrCode size={18} style={{ marginRight: 8 }} /> Дахин уншуулах
-                        </button>
+                        <div style={{
+                            marginTop: '24px',
+                            padding: '12px',
+                            borderRadius: '12px',
+                            background: 'rgba(var(--primary-rgb), 0.05)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '12px',
+                            textAlign: 'left'
+                        }}>
+                            <Smartphone size={20} className="text-primary" />
+                            <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', lineHeight: 1.4 }}>
+                                Нотбүүкээрээ нэвтэрсэн байгаа үед QR уншуулан гар утсаараа шууд орох боломжтой.
+                            </span>
+                        </div>
                     </div>
                 )}
 
