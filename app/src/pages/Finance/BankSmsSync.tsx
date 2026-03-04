@@ -6,7 +6,6 @@ import {
     QrCode,
     CheckCircle2,
     RefreshCcw,
-    Link as LinkIcon,
     ExternalLink,
     AlertCircle,
     Search,
@@ -148,13 +147,13 @@ export function BankSmsSyncPage() {
                                         fontWeight: 800, flexShrink: 0
                                     }}>1</div>
                                     <div>
-                                        <h4 style={{ margin: '0 0 8px 0', fontSize: '1rem' }}>SMS Forwarder апп татах</h4>
+                                        <h4 style={{ margin: '0 0 8px 0', fontSize: '1rem' }}>Liscord Bridge суулгах</h4>
                                         <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', lineHeight: 1.6 }}>
-                                            Android утсан дээрээ Play Store-оос <b>"SMS to HTTP"</b> эсвэл <b>"SMS Forwarder"</b> нэртэй дурын апп татаж суулгана. <i>(iOS дээр боломжгүйг анхаарна уу)</i>
+                                            Манай өөрийн <b>Liscord Bridge</b> (Native Assistant) апп-ыг Android утсан дээрээ суулгана. Энэ нь маш хөнгөн бөгөөд зөвхөн банкны орлогыг дамжуулах үүрэгтэй.
                                         </p>
                                         <div style={{ display: 'flex', gap: '8px', marginTop: '12px' }}>
-                                            <button className="btn btn-xs btn-outline" style={{ borderRadius: '8px' }}>
-                                                <Smartphone size={14} /> Play Store нээх
+                                            <button className="btn btn-xs btn-primary gradient-btn" style={{ borderRadius: '8px' }}>
+                                                <Smartphone size={14} /> Bridge .APK Татах
                                             </button>
                                         </div>
                                     </div>
@@ -167,22 +166,10 @@ export function BankSmsSyncPage() {
                                         fontWeight: 800, flexShrink: 0
                                     }}>2</div>
                                     <div>
-                                        <h4 style={{ margin: '0 0 8px 0', fontSize: '1rem' }}>Webhook тохиргоо хийх</h4>
+                                        <h4 style={{ margin: '0 0 8px 0', fontSize: '1rem' }}>QR уншуулж холбох</h4>
                                         <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', lineHeight: 1.6 }}>
-                                            Апп дотроо <b>POST</b> төрлийн хүсэлт илгээхээр тохируулж, хажуу талын QR кодыг уншуулж холболтын URL-ыг оруулна.
+                                            Апп-аа нээгээд хажуу талын холболтын QR кодыг уншуулахад л хангалттай. Ямар нэгэн гар тохиргоо, URL бичих шаардлагагүй.
                                         </p>
-                                        <div style={{
-                                            background: 'var(--surface-3)', padding: '12px', borderRadius: '12px',
-                                            marginTop: '12px', fontSize: '0.85rem', fontFamily: 'monospace',
-                                            border: '1px dashed var(--border-primary)', color: 'var(--text-primary)',
-                                            display: 'flex', alignItems: 'center', justifyContent: 'space-between'
-                                        }}>
-                                            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{setupUrl}</span>
-                                            <button className="btn btn-ghost btn-xs" onClick={() => {
-                                                navigator.clipboard.writeText(setupUrl);
-                                                toast.success('Хуулагдлаа');
-                                            }}><LinkIcon size={14} /></button>
-                                        </div>
                                     </div>
                                 </div>
 
@@ -193,9 +180,9 @@ export function BankSmsSyncPage() {
                                         fontWeight: 800, flexShrink: 0
                                     }}>3</div>
                                     <div>
-                                        <h4 style={{ margin: '0 0 8px 0', fontSize: '1rem' }}>Шүүлтүүр тохируулах</h4>
+                                        <h4 style={{ margin: '0 0 8px 0', fontSize: '1rem' }}>Бэлэн боллоо</h4>
                                         <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', lineHeight: 1.6 }}>
-                                            Зөвхөн банкны дугааруудаас (жишээ нь: 19001917, 131313) ирэх мессежийг дамжуулахаар шүүлтүүр тохируулна. Ингэснээр таны хувийн мессеж дамжихгүй.
+                                            Одооноос банкны орлого орж ирэх тоолонд систем автоматаар захиалгатай холбож, танд мэдэгдэх болно.
                                         </p>
                                     </div>
                                 </div>
