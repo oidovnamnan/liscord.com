@@ -1568,3 +1568,28 @@ export interface VendingMachine {
     lastPing: Date;
     totalSales: number;
 }
+
+// ============ SMS BANK SYNC ============
+export interface SmsTransaction {
+    id: string;
+    bizId: string;
+    rawBody: string;
+    sender: string;
+    amount: number;
+    currency: string;
+    date: Date;
+    transactionId?: string;
+    description?: string;
+    isMatched: boolean;
+    matchedOrderId?: string;
+    status: 'pending' | 'matched' | 'ignored';
+    createdAt: Date;
+}
+
+export interface SmsSyncConfig {
+    bizId: string;
+    apiKey: string;
+    isEnabled: boolean;
+    lastSyncAt?: Date;
+    connectedDeviceName?: string;
+}

@@ -139,6 +139,7 @@ const AssetsPage = lazy(() => import('./pages/Finance/AssetsPage').then(m => ({ 
 const BudgetingPage = lazy(() => import('./pages/Finance/BudgetingPage').then(m => ({ default: m.BudgetingPage })));
 const MultiCurrencyPage = lazy(() => import('./pages/Finance/MultiCurrencyPage').then(m => ({ default: m.MultiCurrencyPage })));
 const BankSyncPage = lazy(() => import('./pages/Finance/BankSyncPage').then(m => ({ default: m.BankSyncPage })));
+const BankSmsSyncPage = lazy(() => import('./pages/Finance/BankSmsSync').then(m => ({ default: m.BankSmsSyncPage })));
 const FactoringPage = lazy(() => import('./pages/Finance/FactoringPage').then(m => ({ default: m.FactoringPage })));
 const InterCompanyPage = lazy(() => import('./pages/Finance/InterCompanyPage').then(m => ({ default: m.InterCompanyPage })));
 const ConsolidationsPage = lazy(() => import('./pages/Finance/ConsolidationsPage').then(m => ({ default: m.ConsolidationsPage })));
@@ -306,6 +307,7 @@ export default function App() {
             <Route path="budgeting" element={<ModuleGuard moduleId="budgeting"><BudgetingPage /></ModuleGuard>} />
             <Route path="multi-currency" element={<ModuleGuard moduleId="multi-currency"><MultiCurrencyPage /></ModuleGuard>} />
             <Route path="bank-sync" element={<ModuleGuard moduleId="bank-sync"><BankSyncPage /></ModuleGuard>} />
+            <Route path="sms-income-sync" element={<ModuleGuard moduleId="sms-income-sync"><BankSmsSyncPage /></ModuleGuard>} />
             <Route path="factoring" element={<ModuleGuard moduleId="factoring"><FactoringPage /></ModuleGuard>} />
             <Route path="petty-cash" element={<ModuleGuard moduleId="petty-cash"><PettyCashPage /></ModuleGuard>} />
             <Route path="inter-company" element={<ModuleGuard moduleId="inter-company"><InterCompanyPage /></ModuleGuard>} />

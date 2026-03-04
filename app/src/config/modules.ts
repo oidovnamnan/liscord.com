@@ -438,6 +438,21 @@ export const LISCORD_MODULES: AppModule[] = [
         ]
     },
     {
+        id: 'sms-income-sync',
+        name: 'SMS Банк Орлого',
+        description: 'Мессежээр орлого бүртгэж, захиалгатай холбох',
+        icon: 'MessageSquareText',
+        route: '/app/sms-income-sync',
+        isCore: false,
+        category: 'finance',
+        hubId: 'finance-hub',
+        isFree: false,
+        plans: [
+            { id: 'monthly', name: '30 хоног', price: 15000, durationDays: 30 },
+            { id: 'yearly', name: '1 жил', price: 150000, durationDays: 365 }
+        ]
+    },
+    {
         id: 'factoring',
         name: 'Факторинг',
         description: 'Нэхэмжлэх барьцаалсан зээл',
