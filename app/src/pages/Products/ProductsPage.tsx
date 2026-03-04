@@ -977,7 +977,7 @@ function CreateProductModal({ onClose }: { onClose: () => void }) {
                                             </div>
                                         </div>
                                         <div
-                                            className={`modern-toggle-item ${!isHidden ? 'active' : ''}`}
+                                            className={`products-mini-toggle ${!isHidden ? 'active' : ''}`}
                                             onClick={() => setIsHidden(!isHidden)}
                                         >
                                             <div className="toggle" />
@@ -1534,7 +1534,7 @@ function EditProductModal({ product, onClose }: { product: Product; onClose: () 
                                             </div>
                                         </div>
                                         <div
-                                            className={`modern-toggle-item ${!isHidden ? 'active' : ''}`}
+                                            className={`products-mini-toggle ${!isHidden ? 'active' : ''}`}
                                             onClick={() => setIsHidden(!isHidden)}
                                         >
                                             <div className="toggle" />

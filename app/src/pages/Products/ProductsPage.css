@@ -757,7 +757,7 @@
 }
 
 /* --- Modern Toggle (Switch) --- */
-.modern-toggle-item {
+.products-mini-toggle {
     width: 48px;
     min-width: 48px;
     height: 26px;
@@ -770,12 +770,12 @@
     border: 1px solid var(--border-secondary);
 }
 
-.modern-toggle-item.active {
+.products-mini-toggle.active {
     background: var(--primary);
     border-color: var(--primary);
 }
 
-.modern-toggle-item .toggle {
+.products-mini-toggle .toggle {
     width: 20px;
     height: 20px;
     background: white;
@@ -784,7 +784,7 @@
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
-.modern-toggle-item.active .toggle {
+.products-mini-toggle.active .toggle {
     transform: translateX(22px);
 }
 

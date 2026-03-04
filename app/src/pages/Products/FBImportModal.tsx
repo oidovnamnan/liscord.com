@@ -406,7 +406,7 @@ export function FBImportModal({ onClose }: FBImportModalProps) {
                                         <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Нийтэд харагдахгүй, зөвхөн админ засаж харна</div>
                                     </div>
                                     <div
-                                        className={`modern-toggle-item ${importAsHidden ? 'active' : ''}`}
+                                        className={`products-mini-toggle ${importAsHidden ? 'active' : ''}`}
                                         onClick={() => setImportAsHidden(!importAsHidden)}
                                     >
                                         <div className="toggle" />
