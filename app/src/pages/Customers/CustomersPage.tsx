@@ -7,9 +7,10 @@ import { customerService } from '../../services/db';
 import type { Customer } from '../../types';
 import { toast } from 'react-hot-toast';
 import { HubLayout } from '../../components/common/HubLayout';
+import { fmt } from '../../utils/format';
 import './CustomersPage.css';
 
-function fmt(n: number) { return '₮' + n.toLocaleString('mn-MN'); }
+
 
 export function CustomersPage() {
     const { business } = useBusinessStore();
@@ -18,6 +19,8 @@ export function CustomersPage() {
     const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
     const [customers, setCustomers] = useState<Customer[]>([]);
     const [loading, setLoading] = useState(true);
+    const [customersLimit, setCustomersLimit] = useState(50);
+    const [hasMore, setHasMore] = useState(true);
     const [menuId, setMenuId] = useState<string | null>(null);
     const menuRef = useRef<HTMLDivElement>(null);
 
@@ -48,11 +51,12 @@ export function CustomersPage() {
         setTimeout(() => setLoading(true), 0);
         const unsubscribe = customerService.subscribeCustomers(business.id, (data) => {
             setCustomers(data);
+            setHasMore(data.length === customersLimit);
             setLoading(false);
-        });
+        }, customersLimit);
 
         return () => unsubscribe();
-    }, [business?.id]);
+    }, [business?.id, customersLimit]);
 
     const filtered = customers.filter(c => {
         if (c.isDeleted) return false;
@@ -160,6 +164,19 @@ export function CustomersPage() {
                         ))
                     )}
                 </div>
+
+                {hasMore && customers.length > 0 && (
+                    <div className="flex justify-center py-6 mt-4">
+                        <button
+                            className="btn btn-secondary"
+                            style={{ minWidth: '200px', margin: '20px auto', display: 'block' }}
+                            onClick={() => setCustomersLimit(prev => prev + 50)}
+                            disabled={loading}
+                        >
+                            {loading ? <Loader2 className="animate-spin" size={20} /> : `Дараагийн 50 харилцагч (Одоо ${customers.length})`}
+                        </button>
+                    </div>
+                )}
             </div>
 
             {showCreate && <CreateCustomerModal onClose={() => setShowCreate(false)} />}
@@ -209,7 +226,7 @@ function CreateCustomerModal({ onClose }: { onClose: () => void }) {
             });
             onClose();
             toast.success('Харилцагч амжилттай бүртгэгдлээ');
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars
         } catch (error: any) {
             toast.error('Алдаа гарлаа');
         } finally {

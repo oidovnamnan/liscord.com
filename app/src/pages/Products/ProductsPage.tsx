@@ -27,6 +27,8 @@ export function ProductsPage() {
     const [showFBImport, setShowFBImport] = useState(false);
     const [products, setProducts] = useState<Product[]>([]);
     const [loading, setLoading] = useState(true);
+    const [productsLimit, setProductsLimit] = useState(50);
+    const [hasMore, setHasMore] = useState(true);
 
     const [editingProduct, setEditingProduct] = useState<Product | null>(null);
     const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
@@ -46,11 +48,12 @@ export function ProductsPage() {
         setTimeout(() => setLoading(true), 0);
         const unsubscribe = productService.subscribeProducts(business.id, (data) => {
             setProducts(data);
+            setHasMore(data.length === productsLimit);
             setLoading(false);
-        });
+        }, productsLimit);
 
         return () => unsubscribe();
-    }, [business?.id]);
+    }, [business?.id, productsLimit]);
 
     useEffect(() => {
         const total = products.length;
@@ -375,6 +378,19 @@ export function ProductsPage() {
                                         </div>
                                     ))}
                                 </div>
+
+                                {hasMore && products.length > 0 && (
+                                    <div className="flex justify-center py-6 mt-4">
+                                        <button
+                                            className="btn btn-secondary"
+                                            style={{ minWidth: '200px', margin: '20px auto', display: 'block' }}
+                                            onClick={() => setProductsLimit(prev => prev + 50)}
+                                            disabled={loading}
+                                        >
+                                            {loading ? <Loader2 className="animate-spin" size={20} /> : `Дараагийн 50 бараа (Одоо ${products.length})`}
+                                        </button>
+                                    </div>
+                                )}
                             </>
                         )}
                     </>

@@ -16,6 +16,7 @@ import type { OrderSource, SocialAccount, OrderStatusConfig, CargoType } from '.
 import { OrderDetailModal } from './OrderDetailModal';
 import { SendToProviderModal } from './SendToProviderModal';
 import type { Order } from '../../types';
+import { fmt } from '../../utils/format';
 import './OrdersPage.css';
 
 
@@ -34,10 +35,6 @@ const sourceIcons: Record<string, string> = {
     pos: '🏪',
     other: '📦',
 };
-
-function fmt(n: number) {
-    return '₮' + n.toLocaleString('mn-MN');
-}
 
 export function OrdersPage() {
     const { business } = useBusinessStore();
@@ -59,6 +56,9 @@ export function OrdersPage() {
     const [stats, setStats] = useState({ revenue: 0, new: 0, processing: 0, delivered: 0 });
     const { user } = useAuthStore();
     const menuRef = useRef<HTMLDivElement>(null);
+    const bulkStatusRef = useRef<HTMLSelectElement>(null);
+    const [ordersLimit, setOrdersLimit] = useState(50);
+    const [hasMore, setHasMore] = useState(true);
 
     useEffect(() => {
         // Calculate stats whenever orders change
@@ -84,8 +84,9 @@ export function OrdersPage() {
 
         const unOrder = orderService.subscribeOrders(business.id, (data) => {
             setOrders(data);
+            setHasMore(data.length === ordersLimit);
             setLoading(false);
-        });
+        }, statusFilter, ordersLimit);
 
         const unStatus = orderStatusService.subscribeStatuses(business.id, (data) => {
             setStatuses(data);
@@ -103,7 +104,7 @@ export function OrdersPage() {
             unStatus();
             document.removeEventListener('mousedown', handleClickOutside);
         };
-    }, [business?.id]);
+    }, [business?.id, statusFilter, ordersLimit]);
 
     const filtered = orders.filter(o => {
         const matchSearch = !search ||
@@ -467,6 +468,19 @@ export function OrdersPage() {
                     )}
                 </div>
 
+                {hasMore && orders.length > 0 && (
+                    <div className="flex justify-center py-6 mt-4">
+                        <button
+                            className="btn btn-secondary"
+                            style={{ minWidth: '200px', margin: '20px auto', display: 'block' }}
+                            onClick={() => setOrdersLimit(prev => prev + 50)}
+                            disabled={loading}
+                        >
+                            {loading ? <Loader2 className="animate-spin" size={20} /> : `Дараагийн 50 захиалга (Одоо ${orders.length})`}
+                        </button>
+                    </div>
+                )}
+
                 {selectedOrderIds.size > 0 && (
                     <div className="orders-bulk-action-bar animate-fade-in">
                         <div className="bulk-selection-info">
@@ -557,7 +571,7 @@ export function OrdersPage() {
                             <p className="mb-4 text-muted">Сонгосон {selectedOrderIds.size} захиалгуудын төлөвийг өөрчлөхдөө доорхоос сонгоно уу.</p>
                             <div className="input-group">
                                 <label className="input-label">Шинэ төлөв</label>
-                                <select className="input select" id="bulk-status-select">
+                                <select className="input select" ref={bulkStatusRef}>
                                     {statuses.filter(s => s.isActive).map(s => (
                                         <option key={s.id} value={s.id}>{s.label}</option>
                                     ))}
@@ -567,8 +581,8 @@ export function OrdersPage() {
                         <div className="modal-footer">
                             <button className="btn btn-secondary" onClick={() => setShowBulkStatusModal(false)}>Буцах</button>
                             <button className="btn btn-primary" onClick={async () => {
-                                const select = document.getElementById('bulk-status-select') as HTMLSelectElement;
-                                const newStatus = select.value;
+                                const newStatus = bulkStatusRef.current?.value;
+                                if (!newStatus) return;
                                 if (!business) return;
 
                                 const statusConfig = statuses.find(s => s.id === newStatus);
@@ -630,6 +644,7 @@ function CreateOrderModal({ onClose, nextNumber, statuses }: {
     const [showCustomerResults, setShowCustomerResults] = useState(false);
 
     // Customer Info
+    const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(null);
     const [customer, setCustomer] = useState('');
     const [phone, setPhone] = useState('');
     const [socialHandle, setSocialHandle] = useState('');
@@ -843,7 +858,7 @@ function CreateOrderModal({ onClose, nextNumber, statuses }: {
                 status: statuses.find(s => s.isActive && s.id !== 'all')?.id || 'new',
                 paymentStatus: paid >= finalTotal ? 'paid' : paid > 0 ? 'partial' : 'unpaid',
                 customer: {
-                    id: null,
+                    id: selectedCustomerId,
                     name: customer,
                     phone: phone,
                     socialHandle: socialHandle || undefined
@@ -933,6 +948,7 @@ function CreateOrderModal({ onClose, nextNumber, statuses }: {
                                                     key={c.id}
                                                     className="product-result-item"
                                                     onClick={() => {
+                                                        setSelectedCustomerId(c.id || null);
                                                         setCustomer(c.name || '');
                                                         setPhone(c.phone || '');
                                                         setSocialHandle(c.socialHandle || '');

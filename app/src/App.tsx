@@ -461,11 +461,8 @@ export default function App() {
             <Route path="rooms" element={<ModuleGuard moduleId="rooms"><RoomsPage /></ModuleGuard>} />
             <Route path="queue" element={<ModuleGuard moduleId="queue"><QueuePage /></ModuleGuard>} />
             <Route path="rentals" element={<ModuleGuard moduleId="rentals"><ShellPage title="Түрээсийн Удирдлага" moduleId="rentals" /></ModuleGuard>} />
-            <Route path="property-mgt" element={<ModuleGuard moduleId="property-mgt"><ShellPage title="СӨХ Хураамж" moduleId="property-mgt" /></ModuleGuard>} />
-            <Route path="cleaning" element={<ModuleGuard moduleId="cleaning"><ShellPage title="Цэвэрлэгээ" moduleId="cleaning" /></ModuleGuard>} />
             <Route path="salon" element={<ModuleGuard moduleId="salon"><ShellPage title="Гоо Сайхан & Салон" moduleId="salon" /></ModuleGuard>} />
             <Route path="fitness" element={<ModuleGuard moduleId="fitness"><ShellPage title="Фитнес & Клуб" moduleId="fitness" /></ModuleGuard>} />
-            <Route path="laundry" element={<ModuleGuard moduleId="laundry"><ShellPage title="Хими Цэвэрлэгээ" moduleId="laundry" /></ModuleGuard>} />
             <Route path="spa-wellness" element={<ModuleGuard moduleId="spa-wellness"><ShellPage title="Спа & Массаж" moduleId="spa-wellness" /></ModuleGuard>} />
             <Route path="event-tickets" element={<ModuleGuard moduleId="event-tickets"><TicketsPage /></ModuleGuard>} />
             <Route path="field-service" element={<ModuleGuard moduleId="field-service"><ShellPage title="Гадуур Засвар" moduleId="field-service" /></ModuleGuard>} />
@@ -482,32 +479,23 @@ export default function App() {
             <Route path="sub-contracting" element={<ModuleGuard moduleId="sub-contracting"><SubContractingPage /></ModuleGuard>} />
             <Route path="bom" element={<ModuleGuard moduleId="bom"><BOMPage /></ModuleGuard>} />
             <Route path="qa" element={<ModuleGuard moduleId="qa"><QAPage /></ModuleGuard>} />
-            <Route path="milestones" element={<ModuleGuard moduleId="milestones"><MilestonesPage /></ModuleGuard>} />
             <Route path="gantt-chart" element={<ModuleGuard moduleId="gantt-chart"><GanttChartPage /></ModuleGuard>} />
             <Route path="timesheet-billing" element={<ModuleGuard moduleId="timesheet-billing"><TimesheetBillingPage /></ModuleGuard>} />
             <Route path="construction" element={<ModuleGuard moduleId="construction"><ConstructionPage /></ModuleGuard>} />
             <Route path="architecture-design" element={<ModuleGuard moduleId="architecture-design"><ArchitectureDesignPage /></ModuleGuard>} />
             <Route path="education" element={<ModuleGuard moduleId="education"><ShellPage title="Сургалт & Курс" moduleId="education" /></ModuleGuard>} />
             <Route path="healthcare" element={<ModuleGuard moduleId="healthcare"><ShellPage title="Эмнэлэг & Клиник" moduleId="healthcare" /></ModuleGuard>} />
-            <Route path="pharmacy" element={<ModuleGuard moduleId="pharmacy"><ShellPage title="Эмийн Сан" moduleId="pharmacy" /></ModuleGuard>} />
             <Route path="microfinance" element={<ModuleGuard moduleId="microfinance"><ShellPage title="ББСБ / Ломбард" moduleId="microfinance" /></ModuleGuard>} />
-            <Route path="real-estate" element={<ModuleGuard moduleId="real-estate"><ShellPage title="Үл Хөдлөх Хөрөнгө" moduleId="real-estate" /></ModuleGuard>} />
             <Route path="vehicles" element={<ModuleGuard moduleId="vehicles"><VehiclesPage /></ModuleGuard>} />
             <Route path="fleet" element={<ModuleGuard moduleId="fleet"><FleetPage /></ModuleGuard>} />
-            <Route path="import-cost" element={<ModuleGuard moduleId="import-cost"><ImportCostPage /></ModuleGuard>} />
-            <Route path="freight" element={<ModuleGuard moduleId="freight"><FreightPage /></ModuleGuard>} />
-            <Route path="vendor-rating" element={<ModuleGuard moduleId="vendor-rating"><VendorRatingPage /></ModuleGuard>} />
-            <Route path="route-optimize" element={<ModuleGuard moduleId="route-optimize"><RouteOptimizePage /></ModuleGuard>} />
             <Route path="agriculture" element={<ModuleGuard moduleId="agriculture"><ShellPage title="Газар Тариалан" moduleId="agriculture" /></ModuleGuard>} />
             <Route path="veterinary" element={<ModuleGuard moduleId="veterinary"><ShellPage title="Мал Эмнэлэг" moduleId="veterinary" /></ModuleGuard>} />
-            <Route path="mining" element={<ModuleGuard moduleId="mining"><ShellPage title="Уул Уурхай" moduleId="mining" /></ModuleGuard>} />
             <Route path="legal" element={<ModuleGuard moduleId="legal"><ShellPage title="Хуульч & Өмгөөлөгч" moduleId="legal" /></ModuleGuard>} />
             <Route path="ngo" element={<ModuleGuard moduleId="ngo"><ShellPage title="ТББ & Сан" moduleId="ngo" /></ModuleGuard>} />
             <Route path="printing" element={<ModuleGuard moduleId="printing"><ShellPage title="Хэвлэлийн Үйлдвэр" moduleId="printing" /></ModuleGuard>} />
             <Route path="car-rental" element={<ModuleGuard moduleId="car-rental"><ShellPage title="Автомашин Түрээс" moduleId="car-rental" /></ModuleGuard>} />
             <Route path="driving-school" element={<ModuleGuard moduleId="driving-school"><ShellPage title="Жолооны Курс" moduleId="driving-school" /></ModuleGuard>} />
             <Route path="parking" element={<ModuleGuard moduleId="parking"><ShellPage title="Зогсоол" moduleId="parking" /></ModuleGuard>} />
-            <Route path="library" element={<ModuleGuard moduleId="library"><ShellPage title="Номын Сан" moduleId="library" /></ModuleGuard>} />
             <Route path="tour-operator" element={<ModuleGuard moduleId="tour-operator"><ShellPage title="Аялал Жуулчлал" moduleId="tour-operator" /></ModuleGuard>} />
             <Route path="documents" element={<ModuleGuard moduleId="documents"><DocumentsPage /></ModuleGuard>} />
             <Route path="e-sign" element={<ModuleGuard moduleId="e-sign"><ESignPage /></ModuleGuard>} />
@@ -519,9 +507,6 @@ export default function App() {
             <Route path="video-meetings" element={<ModuleGuard moduleId="video-meetings"><VideoMeetingsPage /></ModuleGuard>} />
             <Route path="whiteboard" element={<ModuleGuard moduleId="whiteboard"><WhiteboardPage /></ModuleGuard>} />
             <Route path="announcements" element={<ModuleGuard moduleId="announcements"><AnnouncementsPage /></ModuleGuard>} />
-            <Route path="recruitment" element={<ModuleGuard moduleId="recruitment"><RecruitmentPage /></ModuleGuard>} />
-            <Route path="leave" element={<ModuleGuard moduleId="leave"><LeavePage /></ModuleGuard>} />
-            <Route path="performance" element={<ModuleGuard moduleId="performance"><PerformancePage /></ModuleGuard>} />
             <Route path="automations" element={<ModuleGuard moduleId="automations"><ShellPage title="RPA Автомат" moduleId="automations" /></ModuleGuard>} />
             <Route path="api-webhooks" element={<ModuleGuard moduleId="api-webhooks"><ShellPage title="API & Webhook" moduleId="api-webhooks" /></ModuleGuard>} />
             <Route path="ocr-scanner" element={<ModuleGuard moduleId="ocr-scanner"><ShellPage title="AI Текст Уншигч" moduleId="ocr-scanner" /></ModuleGuard>} />
@@ -546,11 +531,9 @@ export default function App() {
             <Route path="labor-compliance" element={<ModuleGuard moduleId="labor-compliance"><ShellPage title="Хөдөлмөрийн Хууль" moduleId="labor-compliance" /></ModuleGuard>} />
             <Route path="anti-fraud" element={<ModuleGuard moduleId="anti-fraud"><ShellPage title="Залилангийн Илрүүлэлт" moduleId="anti-fraud" /></ModuleGuard>} />
             <Route path="contract-compliance" element={<ModuleGuard moduleId="contract-compliance"><ShellPage title="Гэрээний Нийцлэл" moduleId="contract-compliance" /></ModuleGuard>} />
-            <Route path="insurance" element={<ModuleGuard moduleId="insurance"><ShellPage title="Даатгалын Удирдлага" moduleId="insurance" /></ModuleGuard>} />
             <Route path="risk-assessment" element={<ModuleGuard moduleId="risk-assessment"><ShellPage title="Эрсдэлийн Үнэлгээ" moduleId="risk-assessment" /></ModuleGuard>} />
             <Route path="environmental" element={<ModuleGuard moduleId="environmental"><ShellPage title="Байгаль Орчин" moduleId="environmental" /></ModuleGuard>} />
             <Route path="health-safety" element={<ModuleGuard moduleId="health-safety"><ShellPage title="ХАБЭА" moduleId="health-safety" /></ModuleGuard>} />
-            <Route path="whistleblower" element={<ModuleGuard moduleId="whistleblower"><ShellPage title="Нууц Гомдол" moduleId="whistleblower" /></ModuleGuard>} />
             <Route path="data-retention" element={<ModuleGuard moduleId="data-retention"><ShellPage title="Өгөгдөл Хадгалалт" moduleId="data-retention" /></ModuleGuard>} />
             <Route path="vendor-compliance" element={<ModuleGuard moduleId="vendor-compliance"><ShellPage title="Нийлүүлэгч Шалгалт" moduleId="vendor-compliance" /></ModuleGuard>} />
             <Route path="export-control" element={<ModuleGuard moduleId="export-control"><ShellPage title="Экспортын Хяналт" moduleId="export-control" /></ModuleGuard>} />
@@ -565,10 +548,8 @@ export default function App() {
             <Route path="instagram-api" element={<ModuleGuard moduleId="instagram-api"><ShellPage title="Instagram API" moduleId="instagram-api" /></ModuleGuard>} />
             <Route path="tiktok-shop" element={<ModuleGuard moduleId="tiktok-shop"><ShellPage title="TikTok Shop" moduleId="tiktok-shop" /></ModuleGuard>} />
             <Route path="google-analytics" element={<ModuleGuard moduleId="google-analytics"><ShellPage title="Google Analytics" moduleId="google-analytics" /></ModuleGuard>} />
-            <Route path="sms-gateway" element={<ModuleGuard moduleId="sms-gateway"><ShellPage title="SMS Илгээгч" moduleId="sms-gateway" /></ModuleGuard>} />
             <Route path="email-smtp" element={<ModuleGuard moduleId="email-smtp"><ShellPage title="Email SMTP" moduleId="email-smtp" /></ModuleGuard>} />
             <Route path="push-notifications" element={<ModuleGuard moduleId="push-notifications"><ShellPage title="Push Мэдэгдэл" moduleId="push-notifications" /></ModuleGuard>} />
-            <Route path="iot-sensors" element={<ModuleGuard moduleId="iot-sensors"><ShellPage title="IoT Мэдрэгч" moduleId="iot-sensors" /></ModuleGuard>} />
             <Route path="cold-storage" element={<ModuleGuard moduleId="cold-storage"><ShellPage title="Хүйтэн Агуулах" moduleId="cold-storage" /></ModuleGuard>} />
             <Route path="smart-lock" element={<ModuleGuard moduleId="smart-lock"><ShellPage title="Ухаалаг Түгжээ" moduleId="smart-lock" /></ModuleGuard>} />
             <Route path="rfid-tracking" element={<ModuleGuard moduleId="rfid-tracking"><ShellPage title="RFID Мөрдөлт" moduleId="rfid-tracking" /></ModuleGuard>} />

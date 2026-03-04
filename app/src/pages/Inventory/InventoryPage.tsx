@@ -39,6 +39,10 @@ export function InventoryPage() {
     const [products, setProducts] = useState<Product[]>([]);
     const [movements, setMovements] = useState<StockMovement[]>([]);
     const [loading, setLoading] = useState(true);
+    const [movementsLimit, setMovementsLimit] = useState(50);
+    const [hasMoreMovements, setHasMoreMovements] = useState(true);
+    // For inventory page stats, we might want to see more products than the default 50
+    const [productsLimit] = useState(200);
 
     useEffect(() => {
         if (!business?.id) return;
@@ -47,10 +51,11 @@ export function InventoryPage() {
         const unsub1 = productService.subscribeProducts(business.id, (data) => {
             setProducts(data);
             setLoading(false);
-        });
+        }, productsLimit);
         const unsub2 = stockMovementService.subscribeMovements(business.id, (data) => {
             setMovements(data as StockMovement[]);
-        });
+            setHasMoreMovements(data.length === movementsLimit);
+        }, movementsLimit);
 
         return () => { unsub1(); unsub2(); };
     }, [business?.id]);
@@ -225,6 +230,18 @@ export function InventoryPage() {
                                 </div>
                             );
                         })
+                    )}
+
+                    {hasMoreMovements && (
+                        <div className="load-more-container" style={{ marginTop: 20, textAlign: 'center' }}>
+                            <button
+                                className="btn btn-secondary"
+                                onClick={() => setMovementsLimit(prev => prev + 50)}
+                                style={{ width: '100%', maxWidth: '200px' }}
+                            >
+                                Цааш үзэх
+                            </button>
+                        </div>
                     )}
                 </div>
             </div>

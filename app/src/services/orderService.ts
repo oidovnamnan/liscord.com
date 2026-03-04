@@ -1,6 +1,6 @@
 import {
     collection, doc, getDoc, setDoc, updateDoc, addDoc, query, orderBy, limit,
-    onSnapshot, serverTimestamp, writeBatch
+    onSnapshot, serverTimestamp, writeBatch, where, startAfter, getDocs
 } from 'firebase/firestore';
 import { db } from './firebase';
 import { eventBus, EVENTS } from './eventBus';
@@ -77,16 +77,50 @@ export const orderService = {
         return collection(db, 'businesses', bizId, 'orders');
     },
 
-    subscribeOrders(bizId: string, callback: (orders: Order[]) => void) {
-        const q = query(
+    subscribeOrders(bizId: string, callback: (orders: Order[], lastDoc: any) => void, statusFilter?: string, limitCount: number = 50, startDate?: Date) {
+        let q = query(
             this.getOrdersRef(bizId),
-            limit(100)
+            where('isDeleted', '==', false),
+            orderBy('createdAt', 'desc'),
+            limit(limitCount)
         );
+
+        if (statusFilter && statusFilter !== 'all' && statusFilter !== 'cancelled') {
+            q = query(q, where('status', '==', statusFilter));
+        }
+
+        if (startDate) {
+            q = query(q, where('createdAt', '>=', startDate));
+        }
+
         return onSnapshot(q, (snapshot) => {
             const orders = snapshot.docs.map(d => ({ id: d.id, ...convertTimestamps(d.data()) } as Order));
-            orders.sort((a, b) => (b.createdAt?.getTime() || 0) - (a.createdAt?.getTime() || 0));
-            callback(orders);
+            const lastDoc = snapshot.docs[snapshot.docs.length - 1];
+            callback(orders, lastDoc);
         });
+    },
+
+    async getOrdersPaginated(bizId: string, lastVisible: any, statusFilter?: string): Promise<{ orders: Order[], lastDoc: any }> {
+        let q = query(
+            this.getOrdersRef(bizId),
+            where('isDeleted', '==', false),
+            orderBy('createdAt', 'desc'),
+            limit(50)
+        );
+
+        if (statusFilter && statusFilter !== 'all' && statusFilter !== 'cancelled') {
+            q = query(q, where('status', '==', statusFilter));
+        }
+
+        if (lastVisible) {
+            q = query(q, startAfter(lastVisible));
+        }
+
+        const snapshot = await getDocs(q);
+        const orders = snapshot.docs.map(d => ({ id: d.id, ...convertTimestamps(d.data()) } as Order));
+        const lastDoc = snapshot.docs[snapshot.docs.length - 1];
+
+        return { orders, lastDoc };
     },
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

@@ -20,15 +20,15 @@ export const customerService = {
         return snap.docs.map(d => convertTimestamps(d.data()) as Customer);
     },
 
-    subscribeCustomers(bizId: string, callback: (customers: Customer[]) => void) {
+    subscribeCustomers(bizId: string, callback: (customers: Customer[]) => void, limitCount: number = 50) {
         const q = query(
             this.getCustomersRef(bizId),
-            where('isDeleted', '==', false)
+            where('isDeleted', '==', false),
+            orderBy('name'),
+            limit(limitCount)
         );
         return onSnapshot(q, (snapshot) => {
             const customers = snapshot.docs.map(d => ({ id: d.id, ...convertTimestamps(d.data()) } as Customer));
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            customers.sort((a: any, b: any) => (a.name || '').localeCompare(b.name || ''));
             callback(customers);
         });
     },
@@ -76,15 +76,15 @@ export const productService = {
         return snap.docs.map(d => convertTimestamps(d.data()) as Product);
     },
 
-    subscribeProducts(bizId: string, callback: (products: Product[]) => void) {
+    subscribeProducts(bizId: string, callback: (products: Product[]) => void, limitCount: number = 50) {
         const q = query(
             this.getProductsRef(bizId),
-            where('isDeleted', '==', false)
+            where('isDeleted', '==', false),
+            orderBy('createdAt', 'desc'),
+            limit(limitCount)
         );
         return onSnapshot(q, (snapshot) => {
             const products = snapshot.docs.map(d => ({ id: d.id, ...convertTimestamps(d.data()) } as Product));
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            products.sort((a: any, b: any) => (b.createdAt?.getTime?.() || 0) - (a.createdAt?.getTime?.() || 0));
             callback(products);
         });
     },
@@ -135,11 +135,11 @@ export const productService = {
 
 export const stockMovementService = {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    subscribeMovements(bizId: string, callback: (movements: any[]) => void) {
+    subscribeMovements(bizId: string, callback: (movements: any[]) => void, limitCount: number = 50) {
         const q = query(
             collection(db, 'businesses', bizId, 'stock_movements'),
             orderBy('createdAt', 'desc'),
-            limit(100)
+            limit(limitCount)
         );
         return onSnapshot(q, (snapshot) => {
             callback(snapshot.docs.map(d => convertTimestamps({ id: d.id, ...d.data() })));

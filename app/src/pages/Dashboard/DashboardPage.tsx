@@ -7,9 +7,10 @@ import { auditService } from '../../services/audit';
 import { KPICards } from './components/KPICards';
 import { OrderChart } from './components/OrderChart';
 import type { Order } from '../../types';
+import { fmt } from '../../utils/format';
 import './Dashboard.css';
 
-function fmt(n: number) { return '₮' + (n || 0).toLocaleString('mn-MN'); }
+
 
 const statusLabels: Record<string, { label: string; class: string }> = {
     new: { label: 'Шинэ', class: 'badge-new' },

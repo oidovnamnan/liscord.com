@@ -12,14 +12,6 @@ export function ReportsPage() {
     const { business } = useBusinessStore();
     const [period, setPeriod] = useState('7d');
     const [orders, setOrders] = useState<Order[]>([]);
-
-    useEffect(() => {
-        if (!business) return;
-        return orderService.subscribeOrders(business.id, (data) => {
-            setOrders(data);
-        });
-    }, [business]);
-
     // Period-based date range
     const periodDays = period === '7d' ? 7 : period === '30d' ? 30 : period === '90d' ? 90 : 365;
     const startDate = useMemo(() => {
@@ -28,6 +20,14 @@ export function ReportsPage() {
         d.setHours(0, 0, 0, 0);
         return d;
     }, [periodDays]);
+
+    useEffect(() => {
+        if (!business) return;
+        // Fetch up to 1000 orders within the period for reporting
+        return orderService.subscribeOrders(business.id, (data) => {
+            setOrders(data);
+        }, 'all', 1000, startDate);
+    }, [business, startDate]);
 
     // Active orders filtered by period
     const activeOrders = useMemo(() => orders.filter(o => {
