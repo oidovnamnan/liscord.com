@@ -111,42 +111,73 @@ export function StoreCheckout() {
 
     if (successId) {
         return (
-            <div className="store-bg" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
-                <div style={{ background: '#fff', padding: '40px', borderRadius: '24px', textAlign: 'center', maxWidth: 400, width: '100%', boxShadow: '0 10px 25px rgba(0,0,0,0.05)' }}>
-                    <CheckCircle size={64} color="var(--success)" style={{ marginBottom: 20 }} />
-                    <h2 style={{ marginBottom: 10, fontSize: '1.5rem', fontWeight: 800 }}>Захиалга амжилттай!</h2>
+            <div className="store-bg" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', padding: '60px 20px' }}>
+                <div style={{ maxWidth: 800, margin: '0 auto', width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
 
-                    {qpayInvoice ? (
-                        <div style={{ margin: '20px 0', border: '1px solid var(--border-color)', padding: 20, borderRadius: 16 }}>
-                            <p style={{ fontWeight: 600, marginBottom: 10 }}>Төлбөр төлөх (QPay)</p>
+                    <div className="animate-slide-up" style={{
+                        background: 'var(--surface-1)',
+                        padding: '60px 40px',
+                        borderRadius: 32,
+                        textAlign: 'center',
+                        maxWidth: 500,
+                        width: '100%',
+                        boxShadow: 'var(--shadow-xl)',
+                        border: '1px solid var(--border-color)',
+                        position: 'relative',
+                        overflow: 'hidden'
+                    }}>
+                        <div style={{
+                            position: 'absolute',
+                            top: 0,
+                            left: 0,
+                            width: '100%',
+                            height: 6,
+                            background: 'linear-gradient(90deg, #4BB543, #85e085)'
+                        }} />
 
-                            <div style={{
-                                width: 220, height: 220, margin: '0 auto',
-                                background: '#f5f5f5', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                border: '2px solid var(--primary-light)', borderRadius: 16, borderStyle: 'dashed'
-                            }}>
-                                <div style={{ textAlign: 'center' }}>
-                                    <div style={{ fontSize: '2rem', marginBottom: 8 }}>📱</div>
-                                    <div style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>Дэлгэцэн дээрх<br />QPay QR</div>
-                                </div>
-                            </div>
-
-                            <div style={{ display: 'flex', gap: 10, marginTop: 16, overflowX: 'auto', paddingBottom: 10, justifyContent: 'center' }}>
-                                {qpayInvoice.urls.map(url => (
-                                    <a key={url.name} href={url.link} className="btn btn-outline btn-sm" style={{ flexShrink: 0, textDecoration: 'none' }}>
-                                        {url.name}
-                                    </a>
-                                ))}
-                            </div>
-                            <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginTop: 10 }}>Төлбөр төлснөөр захиалга баталгаажихыг анхаарна уу.</p>
+                        <div style={{ width: 80, height: 80, borderRadius: '50%', background: 'rgba(75, 181, 67, 0.1)', color: '#4BB543', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px' }}>
+                            <CheckCircle size={40} />
                         </div>
-                    ) : (
-                        <p style={{ color: 'var(--text-muted)', marginBottom: 30 }}>Таны захиалга админ руу илгээгдлээ. Бид удахгүй холбогдох болно.</p>
-                    )}
 
-                    <button className="btn btn-primary gradient-btn" onClick={() => navigate(`/s/${slug}`)} style={{ width: '100%' }}>
-                        Дэлгүүр рүү буцах
-                    </button>
+                        <h2 style={{ marginBottom: 16, fontSize: '1.8rem', fontWeight: 900, color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>Захиалга амжилттай!</h2>
+
+                        {qpayInvoice ? (
+                            <div className="animate-fade-in" style={{ margin: '32px 0', background: 'var(--bg-soft)', padding: 32, borderRadius: 24, border: '1px solid var(--border-primary)' }}>
+                                <p style={{ fontWeight: 800, marginBottom: 20, fontSize: '0.95rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Төлбөр төлөх (QPay)</p>
+
+                                <div style={{
+                                    width: 200, height: 200, margin: '0 auto',
+                                    background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                    border: '2px solid var(--primary-light)', borderRadius: 20, boxShadow: 'var(--shadow-md)',
+                                    padding: 10
+                                }}>
+                                    <div style={{ textAlign: 'center' }}>
+                                        <div style={{ fontSize: '2.5rem', marginBottom: 12 }}>📲</div>
+                                        <div style={{ color: 'var(--text-muted)', fontSize: '0.8rem', fontWeight: 600, lineHeight: 1.4 }}>QPay QR<br />энд харагдана</div>
+                                    </div>
+                                </div>
+
+                                <div className="custom-scrollbar" style={{ display: 'flex', gap: 12, marginTop: 24, overflowX: 'auto', paddingBottom: 12, justifyContent: 'center' }}>
+                                    {qpayInvoice.urls.map(url => (
+                                        <a key={url.name} href={url.link} className="btn btn-outline btn-sm" style={{ flexShrink: 0, textDecoration: 'none', borderRadius: 10, fontWeight: 700, padding: '8px 16px' }}>
+                                            {url.name}
+                                        </a>
+                                    ))}
+                                </div>
+                                <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem', marginTop: 16, fontWeight: 500 }}>Төлбөр төлснөөр захиалга баталгаажихыг анхаарна уу.</p>
+                            </div>
+                        ) : (
+                            <div style={{ margin: '24px 0 40px' }}>
+                                <p style={{ color: 'var(--text-muted)', fontSize: '1rem', lineHeight: 1.6, fontWeight: 500 }}>
+                                    Таны захиалга хүлээн авлаа. Манай менежер тун удахгүй тантай холбогдож захиалгыг баталгаажуулна.
+                                </p>
+                            </div>
+                        )}
+
+                        <button className="btn btn-primary gradient-btn" onClick={() => navigate(`/s/${slug}`)} style={{ width: '100%', height: 54, borderRadius: 16, fontSize: '1.05rem', fontWeight: 800 }}>
+                            Дэлгүүр рүү буцах
+                        </button>
+                    </div>
                 </div>
             </div>
         );
@@ -163,15 +194,17 @@ export function StoreCheckout() {
 
     return (
         <div className="store-bg" style={{ minHeight: '100vh', paddingBottom: 60 }}>
-            <nav className="store-nav" style={{ borderBottom: '1px solid var(--border-color)', background: 'var(--surface-1)' }}>
-                <button className="btn btn-ghost" onClick={() => navigate(`/s/${slug}`)} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: 0 }}>
-                    <ChevronLeft size={20} /> Буцах
-                </button>
-                <div style={{ fontWeight: 800, fontSize: '1.2rem', color: 'var(--text-primary)' }}>Тооцоо хийх</div>
-                <div style={{ width: 60 }}></div>
+            <nav className="store-nav" style={{ borderBottom: '1px solid var(--border-color)', background: 'var(--surface-1)', padding: 0 }}>
+                <div style={{ maxWidth: 1100, margin: '0 auto', width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 20px' }}>
+                    <button className="btn btn-ghost" onClick={() => navigate(`/s/${slug}`)} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: 0 }}>
+                        <ChevronLeft size={20} /> Буцах
+                    </button>
+                    <div style={{ fontWeight: 800, fontSize: '1.2rem', color: 'var(--text-primary)' }}>Тооцоо хийх</div>
+                    <div style={{ width: 60 }}></div>
+                </div>
             </nav>
 
-            <main className="store-container" style={{ maxWidth: 1100, marginTop: 40 }}>
+            <main className="store-container" style={{ maxWidth: 1100, marginTop: 40, margin: '40px auto 0' }}>
                 <form onSubmit={handleSubmit} style={{ display: 'grid', gridTemplateColumns: '1fr 420px', gap: 40, alignItems: 'start' }} className="checkout-grid">
 
                     {/* Left Column: Forms */}
@@ -245,15 +278,17 @@ export function StoreCheckout() {
                             <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
                                 {items.map((item, idx) => (
                                     <div key={`${item.product.id}-${idx}`} style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
-                                        <div style={{ width: 64, height: 64, borderRadius: 12, background: 'var(--bg-soft)', overflow: 'hidden', flexShrink: 0, border: '1px solid var(--border-color)', position: 'relative' }}>
-                                            {item.product.images?.[0] ? (
-                                                <img src={item.product.images[0]} alt={item.product.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                                            ) : (
-                                                <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)' }}>
-                                                    <ImageIcon size={20} />
-                                                </div>
-                                            )}
-                                            <div style={{ position: 'absolute', top: -6, right: -6, background: 'var(--text-primary)', color: 'white', fontSize: '0.7rem', fontWeight: 800, width: 22, height: 22, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px solid var(--surface-1)' }}>
+                                        <div style={{ width: 64, height: 64, flexShrink: 0, position: 'relative' }}>
+                                            <div style={{ width: '100%', height: '100%', borderRadius: 12, background: 'var(--bg-soft)', overflow: 'hidden', border: '1px solid var(--border-color)' }}>
+                                                {item.product.images?.[0] ? (
+                                                    <img src={item.product.images[0]} alt={item.product.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                                ) : (
+                                                    <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)' }}>
+                                                        <ImageIcon size={20} />
+                                                    </div>
+                                                )}
+                                            </div>
+                                            <div style={{ position: 'absolute', top: -8, right: -8, background: 'var(--text-primary)', color: 'white', fontSize: '0.75rem', fontWeight: 800, minWidth: 22, height: 22, padding: '0 6px', borderRadius: 11, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px solid var(--surface-1)', zIndex: 2, boxShadow: '0 2px 4px rgba(0,0,0,0.2)' }}>
                                                 {item.quantity}
                                             </div>
                                         </div>

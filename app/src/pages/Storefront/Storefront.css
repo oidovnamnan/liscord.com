@@ -25,7 +25,7 @@
     --sf-font-body: 'Inter', 'Plus Jakarta Sans', system-ui, sans-serif;
     --sf-transition: cubic-bezier(0.16, 1, 0.3, 1);
     --sf-nav-height: 72px;
-    --sf-container: 1360px;
+    --sf-container: 1200px;
 }
 
 /* ============================================
@@ -552,17 +552,18 @@
 .sf-footer {
     background: var(--sf-bg-warm);
     border-top: 1px solid var(--sf-border);
-    padding: 64px clamp(20px, 5vw, 48px) 40px;
+    padding: 64px 0 40px;
     margin-top: 40px;
 }
 
 .sf-footer-content {
-    max-width: var(--sf-container);
+    max-width: 1100px;
     margin: 0 auto;
+    padding: 0 24px;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 32px;
+    gap: 40px;
 }
 
 .sf-footer-info {
@@ -602,15 +603,16 @@
 
 .sf-footer-bottom {
     width: 100%;
-    padding-top: 24px;
+    padding: 32px 0 0;
     border-top: 1px solid var(--sf-border);
     display: flex;
     justify-content: space-between;
     align-items: center;
-    font-size: 0.8rem;
+    font-size: 0.85rem;
+    font-weight: 500;
     color: var(--sf-text-muted);
     flex-wrap: wrap;
-    gap: 16px;
+    gap: 20px;
 }
 
 .sf-liscord-logo {
