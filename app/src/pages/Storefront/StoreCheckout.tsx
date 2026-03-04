@@ -16,17 +16,35 @@ export function StoreCheckout() {
     const [successId, setSuccessId] = useState<string | null>(null);
     const [qpayInvoice, setQpayInvoice] = useState<QPayInvoiceResponse | null>(null);
 
+    const hasReadyItems = items.some(item => item.product.productType === 'ready');
+    const hasPreorderItems = items.some(item => item.product.productType === 'preorder');
+
+    // Default to delivery for ready items, but let user toggle
+    const [isDeliveryRequested, setIsDeliveryRequested] = useState(hasReadyItems);
     const [deliveryZone, setDeliveryZone] = useState('ub_center');
 
-    // Hardcoded simple delivery fees for the demo
+    // Hardcoded simple delivery fees
     const deliveryFees: Record<string, { label: string, fee: number }> = {
         'ub_center': { label: 'Улаанбаатар (А бүс)', fee: 5000 },
         'ub_far': { label: 'Улаанбаатар (Б бүс)', fee: 8000 },
         'local_cargo': { label: 'Орон нутаг (Унаанд тавих)', fee: 0 }
     };
 
-    const currentFee = deliveryFees[deliveryZone].fee;
+    const currentFee = isDeliveryRequested ? deliveryFees[deliveryZone].fee : 0;
     const finalTotal = totalAmount() + currentFee;
+
+    const handleAddressChange = (val: string) => {
+        const lower = val.toLowerCase();
+        // Simple heuristic for UB zones
+        const bZoneKeywords = ['сонгинохайрхан', 'схд', 'хан-уул', 'худ', 'яармаг', 'нисэх', 'амгалан', 'баянхошуу', 'хайлааст', 'чсд', 'зуслан'];
+        if (bZoneKeywords.some(k => lower.includes(k))) {
+            setDeliveryZone('ub_far');
+        } else if (lower.includes('орон нутаг') || lower.includes('аймаг') || lower.includes('сум')) {
+            setDeliveryZone('local_cargo');
+        } else if (val.length > 3) {
+            setDeliveryZone('ub_center');
+        }
+    };
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
@@ -73,7 +91,7 @@ export function StoreCheckout() {
                     paidAmount: 0,
                     balanceDue: finalTotal
                 },
-                deliveryAddress: `${deliveryFees[deliveryZone].label} - ${address}`,
+                deliveryAddress: isDeliveryRequested ? `${deliveryFees[deliveryZone].label} - ${address}` : 'Дэлгүүрээс очиж авах',
                 notes: `Онлайн дэлгүүрээр өгсөн захиалга`,
                 internalNotes: '',
                 tags: ['online'],
@@ -220,35 +238,87 @@ export function StoreCheckout() {
                             <div className="grid-2-gap" style={{ marginBottom: 20 }}>
                                 <div className="input-group">
                                     <label className="input-label" style={{ fontSize: '0.8rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Хүлээн авагчийн нэр *</label>
-                                    <input className="input" name="name" required placeholder="Жнь: Бат" style={{ height: 48, borderRadius: 12, background: 'var(--bg-soft)', border: '1px solid var(--border-primary)' }} />
+                                    <input className="input" name="name" required style={{ height: 48, borderRadius: 12, background: 'var(--bg-soft)', border: '1px solid var(--border-primary)' }} />
                                 </div>
                                 <div className="input-group">
                                     <label className="input-label" style={{ fontSize: '0.8rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Утасны дугаар *</label>
-                                    <input className="input" name="phone" required placeholder="Жнь: 99112233" style={{ height: 48, borderRadius: 12, background: 'var(--bg-soft)', border: '1px solid var(--border-primary)' }} />
+                                    <input className="input" name="phone" required style={{ height: 48, borderRadius: 12, background: 'var(--bg-soft)', border: '1px solid var(--border-primary)' }} />
                                 </div>
                             </div>
 
-                            <div className="input-group" style={{ marginBottom: 24 }}>
-                                <label className="input-label" style={{ fontSize: '0.8rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Хүргэлтийн бүс *</label>
-                                <div style={{ position: 'relative' }}>
-                                    <Truck size={18} style={{ position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', zIndex: 2 }} />
-                                    <select
-                                        className="input"
-                                        value={deliveryZone}
-                                        onChange={(e) => setDeliveryZone(e.target.value)}
-                                        style={{ height: 52, borderRadius: 12, paddingLeft: 44, background: 'var(--bg-soft)', fontSize: '0.95rem', fontWeight: 500, border: '1px solid var(--border-primary)', position: 'relative' }}
-                                    >
-                                        {Object.entries(deliveryFees).map(([key, data]) => (
-                                            <option key={key} value={key}>{data.label} (+{data.fee.toLocaleString()} ₮)</option>
-                                        ))}
-                                    </select>
-                                </div>
-                            </div>
+                            {/* Delivery Options logic */}
+                            {hasReadyItems ? (
+                                <>
+                                    <div style={{
+                                        padding: '16px 20px',
+                                        borderRadius: 16,
+                                        background: isDeliveryRequested ? 'rgba(var(--primary-rgb), 0.05)' : 'var(--bg-soft)',
+                                        border: `1px solid ${isDeliveryRequested ? 'var(--primary)' : 'var(--border-color)'}`,
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'space-between',
+                                        marginBottom: 24,
+                                        cursor: 'pointer',
+                                        transition: 'all 0.2s ease'
+                                    }} onClick={() => setIsDeliveryRequested(!isDeliveryRequested)}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                                            <div style={{
+                                                width: 20,
+                                                height: 20,
+                                                borderRadius: 4,
+                                                border: `2px solid ${isDeliveryRequested ? 'var(--primary)' : 'var(--text-muted)'}`,
+                                                background: isDeliveryRequested ? 'var(--primary)' : 'transparent',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                color: 'white'
+                                            }}>
+                                                {isDeliveryRequested && <CheckCircle size={14} />}
+                                            </div>
+                                            <span style={{ fontWeight: 700, fontSize: '0.95rem', color: isDeliveryRequested ? 'var(--text-primary)' : 'var(--text-secondary)' }}>Хүргүүлэх үү? (Бэлэн бараа)</span>
+                                        </div>
+                                        <Truck size={18} style={{ color: isDeliveryRequested ? 'var(--primary)' : 'var(--text-muted)' }} />
+                                    </div>
 
-                            <div className="input-group" style={{ marginBottom: 10 }}>
-                                <label className="input-label" style={{ fontSize: '0.8rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Дэлгэрэнгүй хаяг *</label>
-                                <textarea className="input" name="address" required rows={3} placeholder="Дүүрэг, Хороо, Хотхон/Байр, Орц, Давхар, Тоот..." style={{ borderRadius: 12, padding: 16, background: 'var(--bg-soft)', resize: 'none', border: '1px solid var(--border-primary)' }}></textarea>
-                            </div>
+                                    {isDeliveryRequested && (
+                                        <div className="animate-fade-in">
+                                            <div className="input-group" style={{ marginBottom: 24 }}>
+                                                <label className="input-label" style={{ fontSize: '0.8rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Хүргэлтийн бүс *</label>
+                                                <div style={{ position: 'relative' }}>
+                                                    <Truck size={18} style={{ position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', zIndex: 2 }} />
+                                                    <select
+                                                        className="input"
+                                                        value={deliveryZone}
+                                                        onChange={(e) => setDeliveryZone(e.target.value)}
+                                                        style={{ height: 52, borderRadius: 12, paddingLeft: 44, background: 'var(--bg-soft)', fontSize: '0.95rem', fontWeight: 500, border: '1px solid var(--border-primary)', position: 'relative' }}
+                                                    >
+                                                        {Object.entries(deliveryFees).map(([key, data]) => (
+                                                            <option key={key} value={key}>{data.label} (+{data.fee.toLocaleString()} ₮)</option>
+                                                        ))}
+                                                    </select>
+                                                </div>
+                                            </div>
+
+                                            <div className="input-group" style={{ marginBottom: 10 }}>
+                                                <label className="input-label" style={{ fontSize: '0.8rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Дэлгэрэнгүй хаяг *</label>
+                                                <textarea
+                                                    className="input"
+                                                    name="address"
+                                                    required
+                                                    rows={3}
+                                                    onChange={(e) => handleAddressChange(e.target.value)}
+                                                    placeholder="Дүүрэг, Хороо, Хотхон/Байр, Орц, Давхар, Тоот..."
+                                                    style={{ borderRadius: 12, padding: 16, background: 'var(--bg-soft)', resize: 'none', border: '1px solid var(--border-primary)' }}
+                                                ></textarea>
+                                            </div>
+                                        </div>
+                                    )}
+                                </>
+                            ) : hasPreorderItems ? (
+                                <div style={{ padding: '20px', borderRadius: 16, background: 'var(--bg-soft)', border: '1px dotted var(--border-color)', textAlign: 'center' }}>
+                                    <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', margin: 0, fontWeight: 600 }}>Захиалгын бараа тул хүргэлтийн сонголтгүй.</p>
+                                </div>
+                            ) : null}
                         </div>
 
                         <div className="settings-card animate-slide-up" style={{ padding: 32, borderRadius: 24, boxShadow: 'var(--shadow-sm)', border: '1px solid var(--border-color)', background: 'var(--surface-1)', animationDelay: '0.1s' }}>
