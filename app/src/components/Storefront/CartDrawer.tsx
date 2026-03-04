@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { useCartStore } from '../../store';
 import { X, Minus, Plus, ShoppingBag, ArrowRight } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
+import './CartDrawer.css';
 
 export function CartDrawer() {
     const { items, isOpen, setIsOpen, removeItem, updateQuantity, totalAmount, totalItems } = useCartStore();
