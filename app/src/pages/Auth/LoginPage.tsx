@@ -1,18 +1,21 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Phone, ArrowRight, Loader2, Mail, Lock } from 'lucide-react';
+import { Phone, ArrowRight, Loader2, Mail, Lock, Smartphone, CheckCircle2 } from 'lucide-react';
 import {
     signInWithPhoneNumber,
     RecaptchaVerifier,
-    signInWithEmailAndPassword
+    signInWithEmailAndPassword,
+    signInWithCustomToken
 } from 'firebase/auth';
-import { auth } from '../../services/firebase';
+import { auth, db } from '../../services/firebase';
+import { doc, setDoc, onSnapshot, serverTimestamp, deleteDoc } from 'firebase/firestore';
+import { QRCodeSVG } from 'qrcode.react';
 import { toast } from 'react-hot-toast';
 import './AuthPage.css';
 
 export function LoginPage() {
     const navigate = useNavigate();
-    const [authMethod, setAuthMethod] = useState<'phone' | 'email'>('phone');
+    const [authMethod, setAuthMethod] = useState<'phone' | 'email' | 'qr'>('phone');
     const [phone, setPhone] = useState('');
     const [otp, setOtp] = useState('');
     const [email, setEmail] = useState('');
@@ -21,6 +24,8 @@ export function LoginPage() {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const [confirmationResult, setConfirmationResult] = useState<any>(null);
     const [loading, setLoading] = useState(false);
+    const [qrSessionId, setQrSessionId] = useState<string | null>(null);
+    const [qrStatus, setQrStatus] = useState<'pending' | 'authorizing' | 'authenticated' | 'expired'>('pending');
 
     useEffect(() => {
         if (authMethod === 'phone' && !window.recaptchaVerifier) {
@@ -44,7 +49,7 @@ export function LoginPage() {
             setConfirmationResult(result);
             setStep('otp');
             toast.success('Баталгаажуулах код илгээлээ');
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (error: any) {
             console.error(error);
             toast.error('Алдаа гарлаа. Дугаараа шалгана уу.');
@@ -69,13 +74,67 @@ export function LoginPage() {
         try {
             await confirmationResult.confirm(otp);
             navigate('/app');
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars
         } catch (error: any) {
             toast.error('Код буруу байна');
         } finally {
             setLoading(false);
         }
     };
+
+    // QR Login Logic
+    useEffect(() => {
+        let unsubscribe: (() => void) | null = null;
+
+        if (authMethod === 'qr') {
+            const startQrSession = async () => {
+                const sessionId = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+                setQrSessionId(sessionId);
+                setQrStatus('pending');
+
+                const sessionRef = doc(db, 'qr_logins', sessionId);
+                await setDoc(sessionRef, {
+                    status: 'pending',
+                    createdAt: serverTimestamp(),
+                    deviceInfo: {
+                        userAgent: navigator.userAgent,
+                        platform: navigator.platform
+                    }
+                });
+
+                unsubscribe = onSnapshot(sessionRef, async (snapshot) => {
+                    const data = snapshot.data();
+                    if (!data) return;
+
+                    if (data.status === 'authorizing') {
+                        setQrStatus('authorizing');
+                    } else if (data.status === 'authenticated' && data.customToken) {
+                        setQrStatus('authenticated');
+                        try {
+                            setLoading(true);
+                            await signInWithCustomToken(auth, data.customToken);
+                            toast.success('Амжилттай нэвтэрлээ!');
+                            // Cleanup session doc
+                            await deleteDoc(sessionRef);
+                            navigate('/app');
+                        } catch (error) {
+                            console.error("QR Auth Error:", error);
+                            toast.error('Нэвтрэлт амжилтгүй. Дахин оролдоно уу.');
+                            setQrStatus('pending');
+                        } finally {
+                            setLoading(false);
+                        }
+                    }
+                });
+            };
+
+            startQrSession();
+        }
+
+        return () => {
+            if (unsubscribe) unsubscribe();
+        };
+    }, [authMethod, navigate]);
 
     const handleEmailLogin = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -85,7 +144,7 @@ export function LoginPage() {
         try {
             await signInWithEmailAndPassword(auth, email, password);
             navigate('/app');
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (error: any) {
             let message = 'И-мэйл эсвэл нууц үг буруу байна';
             if (error.code === 'auth/user-not-found') {
@@ -124,6 +183,12 @@ export function LoginPage() {
                         onClick={() => setAuthMethod('email')}
                     >
                         И-мэйл
+                    </button>
+                    <button
+                        className={`auth-tab ${authMethod === 'qr' ? 'active' : ''}`}
+                        onClick={() => setAuthMethod('qr')}
+                    >
+                        QR Код
                     </button>
                 </div>
 
@@ -165,7 +230,7 @@ export function LoginPage() {
                             <button type="button" className="btn btn-link btn-full" onClick={() => setStep('input')}>Буцах</button>
                         </form>
                     )
-                ) : (
+                ) : authMethod === 'email' ? (
                     <form onSubmit={handleEmailLogin} className="auth-form">
                         <div className="input-group">
                             <label className="input-label"><Mail size={14} /> И-мэйл</label>
@@ -192,6 +257,67 @@ export function LoginPage() {
                             {loading ? <Loader2 size={18} className="animate-spin" /> : 'Нэвтрэх'}
                         </button>
                     </form>
+                ) : (
+                    <div className="qr-login-container animate-fade-in" style={{ textAlign: 'center', padding: '10px 0' }}>
+                        <div className="qr-wrapper" style={{
+                            background: 'white',
+                            padding: '12px',
+                            borderRadius: '20px',
+                            display: 'inline-block',
+                            position: 'relative',
+                            boxShadow: '0 10px 30px rgba(0,0,0,0.1)'
+                        }}>
+                            {qrSessionId && (
+                                <QRCodeSVG
+                                    value={`liscord-login:${qrSessionId}`}
+                                    size={180}
+                                    level="M"
+                                    includeMargin={false}
+                                />
+                            )}
+                            {(qrStatus === 'authorizing' || qrStatus === 'authenticated' || loading) && (
+                                <div style={{
+                                    position: 'absolute',
+                                    inset: 0,
+                                    background: 'rgba(255,255,255,0.8)',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    borderRadius: '20px',
+                                    backdropFilter: 'blur(2px)'
+                                }}>
+                                    {qrStatus === 'authenticated' ? (
+                                        <CheckCircle2 size={48} className="text-success" />
+                                    ) : (
+                                        <Loader2 size={48} className="animate-spin text-primary" />
+                                    )}
+                                </div>
+                            )}
+                        </div>
+
+                        <div style={{ marginTop: '24px' }}>
+                            <h3 style={{ fontSize: '1.1rem', fontWeight: 800, margin: '0 0 8px 0' }}>QR кодоор нэвтрэх</h3>
+                            <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+                                Утсан дээрх Liscord апп-аар <br /> <b>Тохиргоо - QR Нэвтрэлт</b> цэс рүү орж уншуулна уу.
+                            </p>
+                        </div>
+
+                        <div style={{
+                            marginTop: '20px',
+                            padding: '12px',
+                            borderRadius: '12px',
+                            background: 'rgba(var(--primary-rgb), 0.05)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '12px',
+                            textAlign: 'left'
+                        }}>
+                            <Smartphone size={20} className="text-primary" />
+                            <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                                Нууц үг оруулах шаардлагагүй, шууд утсаараа баталгаажуулна.
+                            </span>
+                        </div>
+                    </div>
                 )}
 
                 <div className="auth-footer">

@@ -188,3 +188,42 @@ export const onCustomerCreate = onDocumentCreated(
             "stats.totalCustomers": admin.firestore.FieldValue.increment(1),
         });
     });
+
+/**
+ * QR Code Login Trigger
+ * 1. Mobile app updates status to 'authorizing' and provides its UID
+ * 2. Cloud Function generates a custom token for that UID
+ * 3. Frontend on the laptop uses this custom token to sign in
+ */
+export const onQrLoginUpdate = onDocumentUpdated(
+    "qr_logins/{sessionId}",
+    async (event: any) => {
+        const change = event.data;
+        if (!change) return;
+
+        const before = change.before.data();
+        const after = change.after.data();
+
+        // Only act if status changed to 'authorizing'
+        if (before.status !== 'authorizing' && after.status === 'authorizing' && after.uid) {
+            try {
+                // Generate Firebase Custom Token
+                const customToken = await admin.auth().createCustomToken(after.uid);
+
+                // Update doc with token and status
+                return change.after.ref.update({
+                    status: 'authenticated',
+                    customToken: customToken,
+                    authenticatedAt: admin.firestore.FieldValue.serverTimestamp()
+                });
+            } catch (error) {
+                console.error("Error generating custom token:", error);
+                return change.after.ref.update({
+                    status: 'error',
+                    error: "Token generation failed"
+                });
+            }
+        }
+        return null;
+    }
+);
