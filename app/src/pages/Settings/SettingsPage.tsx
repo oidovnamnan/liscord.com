@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, Suspense } from 'react';
 import { createPortal } from 'react-dom';
 import { useSearchParams } from 'react-router-dom';
 import { Header } from '../../components/layout/Header';
-import { Building2, Palette, Bell, Shield, Users, Globe, Loader2, Share2, X, CheckSquare, ListOrdered, ShoppingBag, CreditCard, Sun, Moon, Monitor, CheckCircle2, QrCode } from 'lucide-react';
+import { Building2, Palette, Bell, Shield, Users, Globe, Loader2, Share2, X, CheckSquare, ListOrdered, ShoppingBag, CreditCard, Sun, Moon, Monitor, CheckCircle2, Smartphone } from 'lucide-react';
 import { useBusinessStore, useUIStore } from '../../store';
 import { businessService, businessRequestService, moduleSettingsService } from '../../services/db';
 import { eventBus, EVENTS } from '../../services/eventBus';
@@ -82,7 +82,7 @@ export function SettingsPage() {
         const coreTabs = [
             { id: 'general', label: 'Ерөнхий', icon: Building2 },
             { id: 'team', label: 'Баг', icon: Users },
-            { id: 'qr-login', label: 'QR Нэвтрэлт', icon: QrCode },
+            { id: 'qr-login', label: 'Төхөөрөмж холбох', icon: Smartphone },
             { id: 'storefront', label: 'Дэлгүүр', icon: ShoppingBag },
             ...(isStorefrontEnabled ? [{ id: 'themes', label: 'Загварууд', icon: Palette }] : []),
             { id: 'payment', label: 'Төлбөр & НӨАТ', icon: CreditCard },

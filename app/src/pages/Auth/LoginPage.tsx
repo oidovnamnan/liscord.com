@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Phone, ArrowRight, Loader2, Mail, Lock, Smartphone, CheckCircle2 } from 'lucide-react';
+import { Phone, ArrowRight, Loader2, Mail, Lock, CheckCircle2, QrCode } from 'lucide-react';
 import {
     signInWithPhoneNumber,
     RecaptchaVerifier,
@@ -8,8 +8,8 @@ import {
     signInWithCustomToken
 } from 'firebase/auth';
 import { auth, db } from '../../services/firebase';
-import { doc, setDoc, onSnapshot, serverTimestamp, deleteDoc } from 'firebase/firestore';
-import { QRCodeSVG } from 'qrcode.react';
+import { doc, updateDoc, onSnapshot } from 'firebase/firestore';
+import { Html5QrcodeScanner } from 'html5-qrcode';
 import { toast } from 'react-hot-toast';
 import './AuthPage.css';
 
@@ -24,6 +24,7 @@ export function LoginPage() {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const [confirmationResult, setConfirmationResult] = useState<any>(null);
     const [loading, setLoading] = useState(false);
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [qrSessionId, setQrSessionId] = useState<string | null>(null);
     const [qrStatus, setQrStatus] = useState<'pending' | 'authorizing' | 'authenticated' | 'expired'>('pending');
 
@@ -82,59 +83,76 @@ export function LoginPage() {
         }
     };
 
-    // QR Login Logic
+    // Mobile Scanner Logic (Login using Laptop's authorized session)
     useEffect(() => {
+        let scanner: Html5QrcodeScanner | null = null;
         let unsubscribe: (() => void) | null = null;
 
-        if (authMethod === 'qr') {
-            const startQrSession = async () => {
-                const sessionId = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+        if (authMethod === 'qr' && qrStatus === 'pending') {
+            scanner = new Html5QrcodeScanner(
+                "qr-login-reader",
+                { fps: 10, qrbox: { width: 250, height: 250 } },
+                false
+            );
+
+            scanner.render(async (decodedText) => {
+                if (!decodedText.startsWith('liscord-login:')) return;
+
+                const sessionId = decodedText.split(':')[1];
                 setQrSessionId(sessionId);
-                setQrStatus('pending');
+                setQrStatus('authorizing');
 
+                if (scanner) {
+                    scanner.clear().catch(console.error);
+                }
+
+                // Update session to notify laptop that we scanned it
                 const sessionRef = doc(db, 'qr_logins', sessionId);
-                await setDoc(sessionRef, {
-                    status: 'pending',
-                    createdAt: serverTimestamp(),
-                    deviceInfo: {
-                        userAgent: navigator.userAgent,
-                        platform: navigator.platform
-                    }
-                });
+                try {
+                    await updateDoc(sessionRef, { status: 'scanned' });
 
-                unsubscribe = onSnapshot(sessionRef, async (snapshot) => {
-                    const data = snapshot.data();
-                    if (!data) return;
+                    // Now listen for the laptop to authorize and Cloud Function to provide custom token
+                    unsubscribe = onSnapshot(sessionRef, async (snapshot) => {
+                        const data = snapshot.data();
+                        if (!data) return;
 
-                    if (data.status === 'authorizing') {
-                        setQrStatus('authorizing');
-                    } else if (data.status === 'authenticated' && data.customToken) {
-                        setQrStatus('authenticated');
-                        try {
-                            setLoading(true);
-                            await signInWithCustomToken(auth, data.customToken);
-                            toast.success('Амжилттай нэвтэрлээ!');
-                            // Cleanup session doc
-                            await deleteDoc(sessionRef);
-                            navigate('/app');
-                        } catch (error) {
-                            console.error("QR Auth Error:", error);
-                            toast.error('Нэвтрэлт амжилтгүй. Дахин оролдоно уу.');
+                        if (data.status === 'error') {
+                            toast.error(data.error || 'Нэвтрэлт амжилтгүй');
                             setQrStatus('pending');
-                        } finally {
-                            setLoading(false);
+                            return;
                         }
-                    }
-                });
-            };
 
-            startQrSession();
+                        if (data.status === 'authenticated' && data.customToken) {
+                            setQrStatus('authenticated');
+                            try {
+                                setLoading(true);
+                                await signInWithCustomToken(auth, data.customToken);
+                                toast.success('Амжилттай нэвтэрлээ!');
+                                navigate('/app');
+                            } catch (e) {
+                                console.error(e);
+                                toast.error('Токен баталгаажуулахад алдаа гарлаа');
+                                setQrStatus('pending');
+                            } finally {
+                                setLoading(false);
+                            }
+                        }
+                    });
+                } catch (err) {
+                    console.error(err);
+                    toast.error('Код баталгаажуулахад алдаа гарлаа');
+                    setQrStatus('pending');
+                }
+            }, (_error) => {
+                // scanning...
+            });
         }
 
         return () => {
+            if (scanner) scanner.clear().catch(console.error);
             if (unsubscribe) unsubscribe();
         };
-    }, [authMethod, navigate]);
+    }, [authMethod, qrStatus, navigate]);
 
     const handleEmailLogin = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -258,65 +276,54 @@ export function LoginPage() {
                         </button>
                     </form>
                 ) : (
-                    <div className="qr-login-container animate-fade-in" style={{ textAlign: 'center', padding: '10px 0' }}>
-                        <div className="qr-wrapper" style={{
+                    <div className="qr-login-container animate-fade-in" style={{ textAlign: 'center' }}>
+                        <div className="qr-scanner-box" style={{
+                            borderRadius: '24px',
+                            overflow: 'hidden',
                             background: 'white',
-                            padding: '12px',
-                            borderRadius: '20px',
-                            display: 'inline-block',
+                            border: '2px solid var(--border-color)',
                             position: 'relative',
-                            boxShadow: '0 10px 30px rgba(0,0,0,0.1)'
+                            minHeight: '250px',
+                            boxShadow: '0 10px 30px rgba(0,0,0,0.05)'
                         }}>
-                            {qrSessionId && (
-                                <QRCodeSVG
-                                    value={`liscord-login:${qrSessionId}`}
-                                    size={180}
-                                    level="M"
-                                    includeMargin={false}
-                                />
-                            )}
-                            {(qrStatus === 'authorizing' || qrStatus === 'authenticated' || loading) && (
+                            {qrStatus === 'pending' ? (
+                                <div id="qr-login-reader" style={{ border: 'none' }}></div>
+                            ) : (
                                 <div style={{
-                                    position: 'absolute',
-                                    inset: 0,
-                                    background: 'rgba(255,255,255,0.8)',
+                                    padding: '60px 20px',
                                     display: 'flex',
+                                    flexDirection: 'column',
                                     alignItems: 'center',
-                                    justifyContent: 'center',
-                                    borderRadius: '20px',
-                                    backdropFilter: 'blur(2px)'
+                                    gap: '16px'
                                 }}>
                                     {qrStatus === 'authenticated' ? (
                                         <CheckCircle2 size={48} className="text-success" />
                                     ) : (
                                         <Loader2 size={48} className="animate-spin text-primary" />
                                     )}
+                                    <p style={{ fontWeight: 700 }}>
+                                        {qrStatus === 'authorizing' ? 'Баталгаажуулахыг хүлээж байна...' : 'Нэвтэрч байна...'}
+                                    </p>
                                 </div>
                             )}
                         </div>
 
                         <div style={{ marginTop: '24px' }}>
-                            <h3 style={{ fontSize: '1.1rem', fontWeight: 800, margin: '0 0 8px 0' }}>QR кодоор нэвтрэх</h3>
+                            <h3 style={{ fontSize: '1.1rem', fontWeight: 800, margin: '0 0 8px 0' }}>QR-аар нэвтрэх</h3>
                             <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
-                                Утсан дээрх Liscord апп-аар <br /> <b>Тохиргоо - QR Нэвтрэлт</b> цэс рүү орж уншуулна уу.
+                                Нотбүүкнийхээ <b>Тохиргоо - Төхөөрөмж холбох</b> цэснээс <br /> QR кодоо гаргаж уншуулна уу.
                             </p>
                         </div>
 
-                        <div style={{
-                            marginTop: '20px',
-                            padding: '12px',
-                            borderRadius: '12px',
-                            background: 'rgba(var(--primary-rgb), 0.05)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '12px',
-                            textAlign: 'left'
-                        }}>
-                            <Smartphone size={20} className="text-primary" />
-                            <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-                                Нууц үг оруулах шаардлагагүй, шууд утсаараа баталгаажуулна.
-                            </span>
-                        </div>
+                        <button
+                            className="btn btn-ghost btn-full"
+                            style={{ marginTop: '16px' }}
+                            onClick={() => {
+                                setQrStatus('pending');
+                            }}
+                        >
+                            <QrCode size={18} style={{ marginRight: 8 }} /> Дахин уншуулах
+                        </button>
                     </div>
                 )}
 
@@ -339,4 +346,3 @@ declare global {
         recaptchaVerifier: any;
     }
 }
-
