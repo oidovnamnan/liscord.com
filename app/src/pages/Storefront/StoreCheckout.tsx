@@ -15,6 +15,7 @@ export function StoreCheckout() {
     const [loading, setLoading] = useState(false);
     const [successId, setSuccessId] = useState<string | null>(null);
     const [qpayInvoice, setQpayInvoice] = useState<QPayInvoiceResponse | null>(null);
+    const [phoneError, setPhoneError] = useState(false);
 
     const hasReadyItems = items.some(item => item.product.productType === 'ready');
     const hasPreorderItems = items.some(item => item.product.productType === 'preorder');
@@ -52,8 +53,17 @@ export function StoreCheckout() {
 
         const fd = new FormData(e.currentTarget);
         const name = fd.get('name') as string;
-        const phone = fd.get('phone') as string;
+        const rawPhone = fd.get('phone') as string;
         const address = fd.get('address') as string;
+
+        // Phone validation (8 digits numeric)
+        const phone = rawPhone.replace(/\D/g, '');
+        if (phone.length !== 8) {
+            setPhoneError(true);
+            alert('Утасны дугаар 8 оронтой тоо байх ёстой (Жишээ: 88111010)');
+            return;
+        }
+        setPhoneError(false);
 
         setLoading(true);
 
@@ -242,7 +252,22 @@ export function StoreCheckout() {
                                 </div>
                                 <div className="input-group">
                                     <label className="input-label" style={{ fontSize: '0.8rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Утасны дугаар *</label>
-                                    <input className="input" name="phone" required style={{ height: 48, borderRadius: 12, background: 'var(--bg-soft)', border: '1px solid var(--border-primary)' }} />
+                                    <input
+                                        className="input"
+                                        name="phone"
+                                        required
+                                        type="tel"
+                                        maxLength={8}
+                                        onFocus={() => setPhoneError(false)}
+                                        style={{
+                                            height: 48,
+                                            borderRadius: 12,
+                                            background: 'var(--bg-soft)',
+                                            border: `1px solid ${phoneError ? '#ff4d4f' : 'var(--border-primary)'}`,
+                                            boxShadow: phoneError ? '0 0 0 2px rgba(255, 77, 79, 0.1)' : 'none'
+                                        }}
+                                    />
+                                    {phoneError && <span style={{ color: '#ff4d4f', fontSize: '0.75rem', marginTop: 4, fontWeight: 600 }}>8 оронтой тоо оруулна уу</span>}
                                 </div>
                             </div>
 
