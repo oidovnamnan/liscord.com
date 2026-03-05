@@ -95,7 +95,11 @@ export function SettingsPage() {
 
         // Dynamic Plugin Tabs from modules.ts
         const pluginTabs = LISCORD_MODULES
-            .filter(mod => mod.hasSettings && business?.activeModules?.includes(mod.id))
+            .filter(mod => {
+                const placement = mod.placement || 'sidebar';
+                const isSettingsMod = placement === 'settings' || placement === 'both' || mod.hasSettings;
+                return isSettingsMod && business?.activeModules?.includes(mod.id);
+            })
             .map(mod => ({
                 id: mod.id === 'orders' ? 'statuses' : mod.id, // Legacy compatibility for 'statuses' tab
                 label: mod.id === 'orders' ? 'Захиалгын төлөв' : mod.name,

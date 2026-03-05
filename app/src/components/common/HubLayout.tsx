@@ -2,6 +2,7 @@ import { NavLink, useLocation } from 'react-router-dom';
 import * as Icons from 'lucide-react';
 import { LISCORD_MODULES } from '../../config/modules';
 import './HubLayout.css';
+import { useBusinessStore } from '../../store';
 
 interface HubLayoutProps {
     hubId: string;
@@ -10,9 +11,12 @@ interface HubLayoutProps {
 
 export function HubLayout({ hubId, children }: HubLayoutProps) {
     const location = useLocation();
+    const { business } = useBusinessStore();
 
-    // Find all modules belonging to this hub
-    const hubModules = LISCORD_MODULES.filter(m => m.hubId === hubId);
+    // Find all modules belonging to this hub that are active for the business
+    const hubModules = LISCORD_MODULES.filter(m =>
+        m.hubId === hubId && business?.activeModules?.includes(m.id)
+    );
 
     if (hubModules.length <= 1) {
         return <>{children}</>;

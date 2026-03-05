@@ -46,6 +46,7 @@ export interface AppModule {
     durationDays?: number;  // Subscription period (legacy)
     hasSettings?: boolean;  // Системийн Тохиргоо руу тусгай цэс нэмэх эсэх
     settingsRoute?: string; // Тохиргоо цэсний зам (e.g. '/app/settings/orders')
+    placement?: 'sidebar' | 'settings' | 'both'; // Хаана харагдахыг тодорхойлох (default: 'sidebar')
     plans?: AppModulePricingPlan[]; // Multi-pricing support
 }
 

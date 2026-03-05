@@ -106,15 +106,23 @@ export function Sidebar() {
                 return true;
             }
 
-            // Global check: Is this module allowed for this business category by Super Admin?
-            if (business?.category && moduleDefaults[business.category]) {
-                const status = moduleDefaults[business.category][mod.id];
-                if (!status) return false; // Not allowed (Off)
+            // Hide modules that are purely for Settings page
+            const placement = mod.placement || 'sidebar';
+            if (placement === 'settings') {
+                return false;
             }
 
-            // Show only if enabled in business AND not expired
-            const isEnabled = business?.activeModules?.includes(mod.id);
-            if (!isEnabled) return false;
+            // Check explicit enablement (App Store purchase/installation)
+            const isExplicitlyEnabled = business?.activeModules?.includes(mod.id);
+
+            // If completely disabled for this business category by Super Admin AND not explicitly enabled, hide it
+            if (!isExplicitlyEnabled && business?.category && moduleDefaults[business.category]) {
+                const status = moduleDefaults[business.category][mod.id];
+                if (status !== 'core') return false; // Hide if not core and not explicitly enabled
+            } else if (!isExplicitlyEnabled) {
+                // Not enabled and no category defaults to fall back on
+                return false;
+            }
 
             const subscription = business?.moduleSubscriptions?.[mod.id];
             if (subscription) {
