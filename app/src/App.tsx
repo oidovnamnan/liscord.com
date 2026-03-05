@@ -1,11 +1,13 @@
 import { useEffect, lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { auth } from './services/firebase';
+import { auth, db } from './services/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
+import { doc, onSnapshot } from 'firebase/firestore';
 import { Toaster } from 'react-hot-toast';
 import { userService, businessService } from './services/db';
 import { useAuthStore, useBusinessStore } from './store';
 import { Loader2 } from 'lucide-react';
+import { getDeviceId, getDeviceInfo } from './utils/device';
 
 // Layouts
 const AppLayout = lazy(() => import('./components/layout/AppLayout').then(m => ({ default: m.AppLayout })));
@@ -218,6 +220,8 @@ export default function App() {
   const { setBusiness, setEmployee, clear } = useBusinessStore();
 
   useEffect(() => {
+    let unsubscribeDevice: (() => void) | undefined;
+
     const unsubscribeAuth = onAuthStateChanged(auth, async (firebaseUser) => {
       try {
         if (firebaseUser) {
@@ -236,9 +240,29 @@ export default function App() {
           } else {
             setUser({ uid: firebaseUser.uid, phone: firebaseUser.phoneNumber, email: firebaseUser.email, displayName: firebaseUser.displayName || '', photoURL: firebaseUser.photoURL, businessIds: [], activeBusiness: null, language: 'mn', createdAt: new Date() });
           }
+
+          // --- Device Tracking & Remote Logout ---
+          const deviceId = getDeviceId();
+          const deviceInfo = getDeviceInfo();
+          await userService.registerDevice(firebaseUser.uid, deviceId, deviceInfo);
+
+          if (unsubscribeDevice) unsubscribeDevice();
+          unsubscribeDevice = onSnapshot(doc(db, `users/${firebaseUser.uid}/devices`, deviceId), (snap) => {
+            // If the document is deleted (e.g., from another device kicking this one out), sign out locally
+            if (!snap.exists()) {
+              auth.signOut();
+            }
+          }, (err) => {
+            console.error("Device listener error:", err);
+          });
+
         } else {
           setUser(null);
           clear();
+          if (unsubscribeDevice) {
+            unsubscribeDevice();
+            unsubscribeDevice = undefined;
+          }
         }
       } catch (error) {
         console.error('Auth error:', error);
@@ -247,7 +271,10 @@ export default function App() {
       }
     });
 
-    return () => unsubscribeAuth();
+    return () => {
+      unsubscribeAuth();
+      if (unsubscribeDevice) unsubscribeDevice();
+    };
   }, [setUser, setLoading, setBusiness, setEmployee, clear]);
 
   return (

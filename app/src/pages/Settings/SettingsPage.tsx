@@ -15,7 +15,7 @@ import { LISCORD_MODULES } from '../../config/modules';
 import { ActivityTab } from './components/ActivityTab';
 import { PaymentTab } from './components/PaymentTab';
 import { TeamSettings } from './components/TeamSettings';
-import { QrLoginTab } from './components/QrLoginTab';
+import { DevicesTab } from './components/DevicesTab';
 import { SettingsRegistry } from '../../config/settingsRegistry';
 import { type BusinessRequest } from '../../types';
 import { STOREFRONT_THEMES } from '../../config/themes';
@@ -82,7 +82,7 @@ export function SettingsPage() {
         const coreTabs = [
             { id: 'general', label: 'Ерөнхий', icon: Building2 },
             { id: 'team', label: 'Баг', icon: Users },
-            { id: 'qr-login', label: 'Төхөөрөмж холбох', icon: Smartphone },
+            { id: 'qr-login', label: 'Төхөөрөмжүүд', icon: Smartphone },
             { id: 'storefront', label: 'Дэлгүүр', icon: ShoppingBag },
             ...(isStorefrontEnabled ? [{ id: 'themes', label: 'Загварууд', icon: Palette }] : []),
             { id: 'payment', label: 'Төлбөр & НӨАТ', icon: CreditCard },
@@ -758,7 +758,7 @@ export function SettingsPage() {
                         {activeTab === 'activity' && <ActivityTab />}
 
                         {activeTab === 'qr-login' && (
-                            <QrLoginTab />
+                            <DevicesTab />
                         )}
 
                         {/* --- Dynamic Module Settings (Lazy Loaded) --- */}

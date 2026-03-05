@@ -38,5 +38,32 @@ export const userService = {
             isDisabled,
             updatedAt: serverTimestamp()
         });
+    },
+
+    // --- Device Management ---
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    async registerDevice(uid: string, deviceId: string, deviceInfo: any): Promise<void> {
+        const deviceRef = doc(db, `users/${uid}/devices`, deviceId);
+        await setDoc(deviceRef, {
+            ...deviceInfo,
+            lastActive: serverTimestamp(),
+            deviceId
+        }, { merge: true });
+    },
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    async getDevices(uid: string): Promise<any[]> {
+        const { collection, getDocs, orderBy, query } = await import('firebase/firestore');
+        const devicesRef = collection(db, `users/${uid}/devices`);
+        const q = query(devicesRef, orderBy('lastActive', 'desc'));
+        const snapshot = await getDocs(q);
+        return snapshot.docs.map(doc => ({ id: doc.id, ...convertTimestamps(doc.data()) }));
+    },
+
+    async removeDevice(uid: string, deviceId: string): Promise<void> {
+        const { deleteDoc } = await import('firebase/firestore');
+        const deviceRef = doc(db, `users/${uid}/devices`, deviceId);
+        await deleteDoc(deviceRef);
     }
 };
