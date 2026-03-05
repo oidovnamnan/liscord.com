@@ -40,7 +40,7 @@ jobs:
         working-directory: ./liscordbridge/android
         run: |
           chmod +x ./gradlew
-          ./gradlew assembleRelease -x lint --no-daemon -Dorg.gradle.jvmargs="-Xmx4g" > build.log 2>&1 || (tail -n 1000 build.log && exit 1)
+          ./gradlew assembleRelease -x lint --no-daemon --stacktrace -Dorg.gradle.jvmargs="-Xmx4g"
 
       - name: Upload Logs on Failure
         uses: actions/upload-artifact@v4
