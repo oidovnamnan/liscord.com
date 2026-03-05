@@ -12,12 +12,11 @@ export function QrLoginTab() {
     const [status, setStatus] = useState<'pending' | 'scanned' | 'authorizing' | 'authenticated'>('pending');
     const [loading, setLoading] = useState(false);
 
+    // Initial session setup
     useEffect(() => {
-        let unsubscribe: (() => void) | null = null;
+        if (!user || sessionId) return;
 
         const startSession = async () => {
-            if (!user) return;
-
             const newSessionId = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
             setSessionId(newSessionId);
             setLoading(true);
@@ -31,46 +30,46 @@ export function QrLoginTab() {
                     createdAt: serverTimestamp(),
                     type: 'link_device'
                 });
-
-                unsubscribe = onSnapshot(sessionRef, (snapshot) => {
-                    const data = snapshot.data();
-                    if (!data) return;
-
-                    // Sync DB status to local state
-                    if (data.status === 'scanned' && status !== 'scanned') {
-                        setStatus('scanned');
-                        toast.success('Төхөөрөмж кодыг уншлаа!');
-                    } else if (data.status === 'authenticated' && status !== 'authenticated') {
-                        setStatus('authenticated');
-                        toast.success('Төхөөрөмжийг амжилттай холболоо');
-                        // Clean up after 60 seconds to allow mobile to finish sign-in
-                        setTimeout(() => {
-                            if (newSessionId) {
-                                deleteDoc(doc(db, 'qr_logins', newSessionId)).catch(console.error);
-                            }
-                        }, 60000);
-                    } else if (data.status === 'error') {
-                        toast.error(data.error || 'Алдаа гарлаа');
-                        setStatus('pending');
-                        setSessionId(null); // Force restart
-                    }
-                });
             } catch (err) {
-                console.error(err);
+                console.error('Session creation failed:', err);
                 toast.error('Сесс үүсгэхэд алдаа гарлаа');
             } finally {
                 setLoading(false);
             }
         };
 
-        if (user && !sessionId) {
-            startSession();
-        }
+        startSession();
+    }, [user, sessionId]);
 
-        return () => {
-            if (unsubscribe) unsubscribe();
-        };
-    }, [user, sessionId, status]); // Added status to dependency to handle cross-device sync
+    // Independent Real-time Listener
+    useEffect(() => {
+        if (!sessionId) return;
+
+        const sessionRef = doc(db, 'qr_logins', sessionId);
+        const unsubscribe = onSnapshot(sessionRef, (snapshot) => {
+            const data = snapshot.data();
+            if (!data) return;
+
+            console.log('Laptop Session Update:', data.status);
+
+            if (data.status === 'scanned') {
+                setStatus('scanned');
+            } else if (data.status === 'authenticated') {
+                setStatus('authenticated');
+                toast.success('Төхөөрөмжийг амжилттай холболоо');
+                // Cleanup
+                setTimeout(() => {
+                    deleteDoc(sessionRef).catch(console.error);
+                }, 60000);
+            } else if (data.status === 'error') {
+                toast.error(data.error || 'Алдаа гарлаа');
+                setStatus('pending');
+                setSessionId(null);
+            }
+        });
+
+        return () => unsubscribe();
+    }, [sessionId]);
 
     const handleAuthorize = async () => {
         if (!sessionId) return;
@@ -201,7 +200,7 @@ export function QrLoginTab() {
                 </h4>
                 <ul style={{ margin: 0, paddingLeft: '20px', fontSize: '0.85rem', color: 'var(--text-secondary)', display: 'flex', flexDirection: 'column', gap: '8px' }}>
                     <li>Энэ кодоор дамжуулан таны аккаунт руу шууд нэвтрэх боломжтой тул зөвхөн өөрийн утсаар уншуулна уу.</li>
-                    <li>Гар утсан дээрээ "Confirm" эсвэл "Тийм" товч дарсны дараа энд "Би зөвшөөрч байна" товч гарч ирнэ.</li>
+                    <li>Гар утсан дээрээ "Би зөвшөөрч байна" товч дарсны дараа энд "Би зөвшөөрч байна" товч гарч ирнэ.</li>
                     <li>Танихгүй хүнд энэ кодыг бүү харуул.</li>
                 </ul>
             </div>

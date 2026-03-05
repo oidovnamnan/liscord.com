@@ -79,14 +79,17 @@ export function LoginPage() {
         }
     }, [authMethod]);
 
-    // Handshake listener for Mobile side
+    // Independent Handshake listener for Mobile side
     useEffect(() => {
-        if (!currentSessionId || qrStatus !== 'authorizing') return;
+        if (!currentSessionId) return;
 
+        console.log('Mobile Listener Started for:', currentSessionId);
         const sessionRef = doc(db, 'qr_logins', currentSessionId);
         const unsubscribe = onSnapshot(sessionRef, async (snapshot) => {
             const data = snapshot.data();
             if (!data) return;
+
+            console.log('Mobile Session Update:', data.status);
 
             if (data.status === 'error') {
                 toast.error(data.error || 'Нэвтрэлт амжилтгүй');
@@ -99,11 +102,12 @@ export function LoginPage() {
                 setQrStatus('authenticated');
                 try {
                     setLoading(true);
+                    console.log('Attempting custom token sign-in...');
                     await signInWithCustomToken(auth, data.customToken);
                     toast.success('Амжилттай нэвтэрлээ!');
                     navigate('/app');
                 } catch (e) {
-                    console.error(e);
+                    console.error('Custom token sign-in failed:', e);
                     toast.error('Холболт амжилтгүй боллоо');
                     setQrStatus('idle');
                     setCurrentSessionId(null);
@@ -114,7 +118,7 @@ export function LoginPage() {
         });
 
         return () => unsubscribe();
-    }, [currentSessionId, qrStatus, navigate]);
+    }, [currentSessionId, navigate]);
 
     const handleConfirmLogin = async () => {
         if (!currentSessionId) return;
