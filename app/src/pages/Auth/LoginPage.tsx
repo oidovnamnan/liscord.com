@@ -28,30 +28,38 @@ export function LoginPage() {
     const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
     const [sessionData, setSessionData] = useState<any>(null);
 
-    // Check for Magic Link on mount
+    // Initial check for magic link
     useEffect(() => {
         const params = new URLSearchParams(window.location.search);
         const magicLink = params.get('magic_link');
         if (magicLink) {
             setAuthMethod('qr');
-            loadSessionData(magicLink);
+            handleScannedId(magicLink);
             // Clean up the URL
             window.history.replaceState({}, '', window.location.pathname);
         }
     }, []);
 
-    async function loadSessionData(sessionId: string) {
+    async function handleScannedId(sessionId: string) {
         setLoading(true);
         try {
             const snap = await getDoc(doc(db, 'qr_logins', sessionId));
-            if (snap.exists() && snap.data().status === 'pending') {
-                setCurrentSessionId(sessionId);
-                setSessionData(snap.data());
-                setQrStatus('confirming');
-            } else {
-                toast.error('Энэ код хүчингүй болсон байна');
-                setAuthMethod('phone');
+            if (!snap.exists()) {
+                toast.error('Энэ код хүчингүй байна');
+                setQrStatus('idle');
+                return;
             }
+
+            const data = snap.data();
+            if (data.status === 'authenticated') {
+                toast.error('Энэ код ашиглагдсан байна');
+                setQrStatus('idle');
+                return;
+            }
+
+            setCurrentSessionId(sessionId);
+            setSessionData(data);
+            setQrStatus('confirming');
         } catch (e) {
             console.error(e);
             toast.error('Мэдээлэл авахад алдаа гарлаа');
@@ -60,16 +68,98 @@ export function LoginPage() {
         }
     }
 
+    // Handshake listener for Mobile side
     useEffect(() => {
-        if (authMethod === 'phone' && !window.recaptchaVerifier) {
-            window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
-                size: 'invisible',
-                callback: () => {
-                    console.log('reCAPTCHA solved');
+        if (!currentSessionId || qrStatus !== 'authorizing') return;
+
+        const sessionRef = doc(db, 'qr_logins', currentSessionId);
+        const unsubscribe = onSnapshot(sessionRef, async (snapshot) => {
+            const data = snapshot.data();
+            if (!data) return;
+
+            if (data.status === 'error') {
+                toast.error(data.error || 'Нэвтрэлт амжилтгүй');
+                setQrStatus('idle');
+                setCurrentSessionId(null);
+                return;
+            }
+
+            if (data.status === 'authenticated' && data.customToken) {
+                setQrStatus('authenticated');
+                try {
+                    setLoading(true);
+                    await signInWithCustomToken(auth, data.customToken);
+                    toast.success('Амжилттай нэвтэрлээ!');
+                    navigate('/app');
+                } catch (e) {
+                    console.error(e);
+                    toast.error('Холболт амжилтгүй боллоо');
+                    setQrStatus('idle');
+                    setCurrentSessionId(null);
+                } finally {
+                    setLoading(false);
                 }
+            }
+        });
+
+        return () => unsubscribe();
+    }, [currentSessionId, qrStatus, navigate]);
+
+    const handleConfirmLogin = async () => {
+        if (!currentSessionId) return;
+
+        try {
+            setLoading(true);
+            const sessionRef = doc(db, 'qr_logins', currentSessionId);
+            // Notify laptop that we scanned and confirmed
+            await updateDoc(sessionRef, { status: 'scanned' });
+            setQrStatus('authorizing');
+        } catch (err) {
+            console.error(err);
+            toast.error('Холболт хийхэд алдаа гарлаа');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // QR Scanner Initialization
+    useEffect(() => {
+        let scanner: Html5QrcodeScanner | null = null;
+
+        if (authMethod === 'qr' && qrStatus === 'scanning') {
+            scanner = new Html5QrcodeScanner(
+                "qr-scanner",
+                { fps: 15, qrbox: { width: 250, height: 250 } },
+                false
+            );
+
+            scanner.render(async (decodedText) => {
+                let sessionId = '';
+                if (decodedText.startsWith('liscord-login:')) {
+                    sessionId = decodedText.split(':')[1];
+                } else if (decodedText.includes('magic_link=')) {
+                    sessionId = new URLSearchParams(decodedText.split('?')[1]).get('magic_link') || '';
+                }
+
+                if (!sessionId) {
+                    toast.error('Буруу QR код байна');
+                    return;
+                }
+
+                if (scanner) {
+                    scanner.clear().catch(console.error);
+                }
+
+                handleScannedId(sessionId);
+            }, (_error) => {
+                // scanning progress...
             });
         }
-    }, [authMethod]);
+
+        return () => {
+            if (scanner) scanner.clear().catch(console.error);
+        };
+    }, [authMethod, qrStatus]);
 
     const handlePhoneSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -114,95 +204,6 @@ export function LoginPage() {
             setLoading(false);
         }
     };
-
-    // Confirm QR Login Request
-    const handleConfirmLogin = async () => {
-        if (!currentSessionId) return;
-
-        setQrStatus('authorizing');
-        const sessionRef = doc(db, 'qr_logins', currentSessionId);
-
-        try {
-            // Tell the laptop we scanned and confirmed
-            await updateDoc(sessionRef, { status: 'scanned' });
-
-            // Wait for laptop user to click "Authorize" and Cloud Function to provide token
-            const unsubscribe = onSnapshot(sessionRef, async (snapshot) => {
-                const data = snapshot.data();
-                if (!data) return;
-
-                if (data.status === 'error') {
-                    toast.error(data.error || 'Нэвтрэлт амжилтгүй');
-                    setQrStatus('idle');
-                    setCurrentSessionId(null);
-                    unsubscribe();
-                    return;
-                }
-
-                if (data.status === 'authenticated' && data.customToken) {
-                    setQrStatus('authenticated');
-                    unsubscribe();
-                    try {
-                        setLoading(true);
-                        await signInWithCustomToken(auth, data.customToken);
-                        toast.success('Амжилттай нэвтэрлээ!');
-                        navigate('/app');
-                    } catch (e) {
-                        console.error(e);
-                        toast.error('Холболт амжилтгүй боллоо');
-                        setQrStatus('idle');
-                        setCurrentSessionId(null);
-                    } finally {
-                        setLoading(false);
-                    }
-                }
-            });
-        } catch (err) {
-            console.error(err);
-            toast.error('Холболт хийхэд алдаа гарлаа');
-            setQrStatus('idle');
-            setCurrentSessionId(null);
-        }
-    };
-
-    // QR Scanner Initialization
-    useEffect(() => {
-        let scanner: Html5QrcodeScanner | null = null;
-
-        if (authMethod === 'qr' && qrStatus === 'scanning') {
-            scanner = new Html5QrcodeScanner(
-                "qr-scanner",
-                { fps: 15, qrbox: { width: 250, height: 250 } },
-                false
-            );
-
-            scanner.render(async (decodedText) => {
-                let sessionId = '';
-                if (decodedText.startsWith('liscord-login:')) {
-                    sessionId = decodedText.split(':')[1];
-                } else if (decodedText.includes('magic_link=')) {
-                    sessionId = new URLSearchParams(decodedText.split('?')[1]).get('magic_link') || '';
-                }
-
-                if (!sessionId) {
-                    toast.error('Буруу QR код байна');
-                    return;
-                }
-
-                if (scanner) {
-                    scanner.clear().catch(console.error);
-                }
-
-                loadSessionData(sessionId);
-            }, (_error) => {
-                // scanning progress...
-            });
-        }
-
-        return () => {
-            if (scanner) scanner.clear().catch(console.error);
-        };
-    }, [authMethod, qrStatus]);
 
     const handleEmailLogin = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -412,7 +413,7 @@ export function LoginPage() {
                                             onClick={handleConfirmLogin}
                                             disabled={loading}
                                         >
-                                            {loading ? <Loader2 size={18} className="animate-spin" /> : 'Нэвтрэх'}
+                                            {loading ? <Loader2 size={18} className="animate-spin" /> : 'Тийм'}
                                         </button>
                                     </div>
                                 </div>
@@ -435,7 +436,7 @@ export function LoginPage() {
                                             {qrStatus === 'authorizing' ? 'Баталгаажуулалт хүлээж байна...' : 'Нэвтэрч байна...'}
                                         </p>
                                         <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-                                            Нотбүүк дээрээ "Зөвшөөрөх" товчийг дарна уу.
+                                            Нотбүүк дээрээ "Би зөвшөөрч байна" товчийг дарна уу.
                                         </p>
                                     </div>
                                 </div>

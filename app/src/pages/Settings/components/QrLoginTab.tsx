@@ -1,15 +1,15 @@
 import { useState, useEffect } from 'react';
-import { doc, setDoc, onSnapshot, serverTimestamp, updateDoc, deleteDoc } from 'firebase/firestore';
+import { Smartphone, CheckCircle2, Loader2, Shield, QrCode } from 'lucide-react';
+import { QRCodeSVG } from 'qrcode.react';
+import { doc, setDoc, onSnapshot, deleteDoc, serverTimestamp, updateDoc } from 'firebase/firestore';
 import { db } from '../../../services/firebase';
 import { useAuthStore } from '../../../store';
 import { toast } from 'react-hot-toast';
-import { Loader2, Smartphone, CheckCircle2, Shield } from 'lucide-react';
-import { QRCodeSVG } from 'qrcode.react';
 
 export function QrLoginTab() {
     const { user } = useAuthStore();
     const [sessionId, setSessionId] = useState<string | null>(null);
-    const [status, setStatus] = useState<'pending' | 'scanned' | 'authorizing' | 'authenticated' | 'expired'>('pending');
+    const [status, setStatus] = useState<'pending' | 'scanned' | 'authorizing' | 'authenticated'>('pending');
     const [loading, setLoading] = useState(false);
 
     useEffect(() => {
@@ -36,18 +36,23 @@ export function QrLoginTab() {
                     const data = snapshot.data();
                     if (!data) return;
 
-                    if (data.status === 'scanned') {
+                    // Sync DB status to local state
+                    if (data.status === 'scanned' && status !== 'scanned') {
                         setStatus('scanned');
                         toast.success('Төхөөрөмж кодыг уншлаа!');
-                    } else if (data.status === 'authenticated') {
+                    } else if (data.status === 'authenticated' && status !== 'authenticated') {
                         setStatus('authenticated');
                         toast.success('Төхөөрөмжийг амжилттай холболоо');
                         // Clean up after 60 seconds to allow mobile to finish sign-in
                         setTimeout(() => {
-                            deleteDoc(sessionRef).catch(console.error);
-                            setSessionId(null);
-                            setStatus('pending');
+                            if (newSessionId) {
+                                deleteDoc(doc(db, 'qr_logins', newSessionId)).catch(console.error);
+                            }
                         }, 60000);
+                    } else if (data.status === 'error') {
+                        toast.error(data.error || 'Алдаа гарлаа');
+                        setStatus('pending');
+                        setSessionId(null); // Force restart
                     }
                 });
             } catch (err) {
@@ -65,7 +70,7 @@ export function QrLoginTab() {
         return () => {
             if (unsubscribe) unsubscribe();
         };
-    }, [user, sessionId]);
+    }, [user, sessionId, status]); // Added status to dependency to handle cross-device sync
 
     const handleAuthorize = async () => {
         if (!sessionId) return;
@@ -109,9 +114,9 @@ export function QrLoginTab() {
                 }}>
                     <Smartphone size={32} />
                 </div>
-                <h3>Шинэ төхөөрөмж холбох</h3>
-                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', maxWidth: '350px', margin: '8px auto' }}>
-                    Гар утасныхаа нэвтрэх хэсгээс <b>QR Код</b> цэсийг сонгож энэ кодыг уншуулна уу.
+                <h3 style={{ fontSize: '1.4rem', fontWeight: 800 }}>Шинэ төхөөрөмж холбох</h3>
+                <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', maxWidth: '400px', margin: '0 auto' }}>
+                    Гар утасныхаа камераар энэ кодыг уншуулж <br /> шууд нэвтрэх боломжтой.
                 </p>
             </div>
 
@@ -140,22 +145,37 @@ export function QrLoginTab() {
                         </div>
                     ) : status === 'scanned' ? (
                         <div style={{ padding: '20px' }}>
-                            <CheckCircle2 size={64} className="text-success" style={{ margin: '0 auto 20px auto' }} />
-                            <h4 style={{ fontWeight: 800 }}>Төхөөрөмж холбох уу?</h4>
+                            <div style={{
+                                width: '64px',
+                                height: '64px',
+                                borderRadius: '50%',
+                                background: 'rgba(var(--primary-rgb), 0.1)',
+                                color: 'var(--primary)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                margin: '0 auto 20px auto'
+                            }}>
+                                <Smartphone size={32} />
+                            </div>
+                            <h4 style={{ fontWeight: 800, marginBottom: 8 }}>Төхөөрөмж холбох уу?</h4>
                             <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', marginBottom: '24px' }}>
-                                Шинэ төхөөрөмжөөс таны аккаунт руу нэвтрэх хүсэлт ирлээ.
+                                Таны гар утсаар энэ кодын хүсэлтийг ирүүлсэн байна. Та зөвшөөрч нэвтрүүлэх үү?
                             </p>
                             <div style={{ display: 'flex', gap: '12px' }}>
-                                <button className="btn btn-outline flex-1" onClick={handleCancel}>Үгүй</button>
+                                <button className="btn btn-outline flex-1" onClick={handleCancel}>Болих</button>
                                 <button className="btn btn-primary flex-1 gradient-btn" onClick={handleAuthorize} disabled={loading}>
-                                    {loading ? <Loader2 size={18} className="animate-spin" /> : 'Тийм, зөвшөөрөх'}
+                                    {loading ? <Loader2 size={18} className="animate-spin" /> : 'Би зөвшөөрч байна'}
                                 </button>
                             </div>
                         </div>
                     ) : status === 'authorizing' ? (
                         <div style={{ padding: '40px' }}>
                             <Loader2 size={48} className="animate-spin text-primary" style={{ margin: '0 auto 20px auto' }} />
-                            <p style={{ fontWeight: 700 }}>Төхөөрөмжийг баталгаажуулж байна...</p>
+                            <p style={{ fontWeight: 700, marginBottom: 8 }}>Төхөөрөмжийг баталгаажуулж байна...</p>
+                            <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                                Гар утас нэвтэрч дуустал түр хүлээнэ үү.
+                            </p>
                         </div>
                     ) : (
                         <div style={{ padding: '40px' }}>
@@ -181,8 +201,8 @@ export function QrLoginTab() {
                 </h4>
                 <ul style={{ margin: 0, paddingLeft: '20px', fontSize: '0.85rem', color: 'var(--text-secondary)', display: 'flex', flexDirection: 'column', gap: '8px' }}>
                     <li>Энэ кодоор дамжуулан таны аккаунт руу шууд нэвтрэх боломжтой тул зөвхөн өөрийн утсаар уншуулна уу.</li>
+                    <li>Гар утсан дээрээ "Confirm" эсвэл "Тийм" товч дарсны дараа энд "Би зөвшөөрч байна" товч гарч ирнэ.</li>
                     <li>Танихгүй хүнд энэ кодыг бүү харуул.</li>
-                    <li>Холбосон төхөөрөмжүүдээ "Аюулгүй байдал" хэсгээс хянах боломжтой (Coming Soon).</li>
                 </ul>
             </div>
         </div>

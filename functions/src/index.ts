@@ -50,150 +50,30 @@ export const onOrderCreate = onDocumentCreated(
                         const productRef = db.doc(`businesses/${bizId}/products/${item.productId}`);
                         const productSnap = await transaction.get(productRef);
 
-                        if (productSnap.exists) {
-                            const productData = productSnap.data();
-                            // Only decrement if it's NOT a 'preorder' type (unless user wants to track that too)
-                            // But usually we only track 'ready' products.
-                            if (productData?.productType !== 'preorder' && productData?.stock?.trackInventory !== false) {
+                        if (productSnap.exists()) {
+                            const productData = productSnap.data() || {};
+                            if (productData.stock?.trackInventory) {
                                 transaction.update(productRef, {
                                     "stock.quantity": admin.firestore.FieldValue.increment(-(item.quantity || 0)),
-                                    "stats.totalSold": admin.firestore.FieldValue.increment(item.quantity || 0),
-                                    "stats.totalRevenue": admin.firestore.FieldValue.increment(item.totalPrice || 0),
-                                    "updatedAt": admin.firestore.FieldValue.serverTimestamp(),
-                                });
-
-                                // Log stock movement
-                                const movementRef = db.collection(`businesses/${bizId}/stock_movements`).doc();
-                                transaction.set(movementRef, {
-                                    productId: item.productId,
-                                    productName: item.name,
-                                    type: 'out',
-                                    quantity: item.quantity,
-                                    reason: `Захиалга #${orderData.orderNumber || event.params.orderId}`,
-                                    createdBy: 'system.orders',
-                                    createdAt: admin.firestore.FieldValue.serverTimestamp()
+                                    "updatedAt": admin.firestore.FieldValue.serverTimestamp()
                                 });
                             }
                         }
                     }
                 }
             }
+            return null;
         });
-    });
-
-/**
- * Trigger: On Order Update (Handle deletion, cancellation, and un-deletion)
- */
-export const onOrderUpdate = onDocumentUpdated(
-    "businesses/{bizId}/orders/{orderId}",
-    async (event: any) => {
-        const change = event.data;
-        if (!change) return;
-
-        const before = change.before.data();
-        const after = change.after.data();
-        const bizId = event.params.bizId;
-
-        const wasActive = !before.isDeleted && before.status !== 'cancelled';
-        const isActiveNow = !after.isDeleted && after.status !== 'cancelled';
-
-        // 1. If it was active and now is NOT active (deleted or cancelled) -> Restore Stock
-        if (wasActive && !isActiveNow) {
-            return db.runTransaction(async (transaction) => {
-                // Adjust Business Stats
-                const bizRef = db.doc(`businesses/${bizId}`);
-                transaction.update(bizRef, {
-                    "stats.totalOrders": admin.firestore.FieldValue.increment(-1),
-                    "stats.totalRevenue": admin.firestore.FieldValue.increment(-(after.financials?.totalAmount || 0)),
-                });
-
-                // Restore Stock for each product
-                if (Array.isArray(after.items)) {
-                    for (const item of after.items) {
-                        if (item.productId) {
-                            const productRef = db.doc(`businesses/${bizId}/products/${item.productId}`);
-                            transaction.update(productRef, {
-                                "stock.quantity": admin.firestore.FieldValue.increment(item.quantity || 0),
-                                "stats.totalSold": admin.firestore.FieldValue.increment(-(item.quantity || 0)),
-                                "stats.totalRevenue": admin.firestore.FieldValue.increment(-(item.totalPrice || 0)),
-                            });
-
-                            // Log restoration
-                            const movRef = db.collection(`businesses/${bizId}/stock_movements`).doc();
-                            transaction.set(movRef, {
-                                productId: item.productId,
-                                productName: item.name,
-                                type: 'in',
-                                quantity: item.quantity,
-                                reason: after.isDeleted ? `Захиалга устгасан (#${after.orderNumber})` : `Захиалга цуцалсан (#${after.orderNumber})`,
-                                createdBy: 'system.orders',
-                                createdAt: admin.firestore.FieldValue.serverTimestamp()
-                            });
-                        }
-                    }
-                }
-            });
-        }
-
-        // 2. If it was NOT active and now IS active (un-deleted or un-cancelled) -> Decrement Stock again
-        if (!wasActive && isActiveNow) {
-            return db.runTransaction(async (transaction) => {
-                // Adjust Business Stats
-                const bizRef = db.doc(`businesses/${bizId}`);
-                transaction.update(bizRef, {
-                    "stats.totalOrders": admin.firestore.FieldValue.increment(1),
-                    "stats.totalRevenue": admin.firestore.FieldValue.increment(after.financials?.totalAmount || 0),
-                });
-
-                // Re-decrement Stock
-                if (Array.isArray(after.items)) {
-                    for (const item of after.items) {
-                        if (item.productId) {
-                            const productRef = db.doc(`businesses/${bizId}/products/${item.productId}`);
-                            transaction.update(productRef, {
-                                "stock.quantity": admin.firestore.FieldValue.increment(-(item.quantity || 0)),
-                                "stats.totalSold": admin.firestore.FieldValue.increment(item.quantity || 0),
-                                "stats.totalRevenue": admin.firestore.FieldValue.increment(item.totalPrice || 0),
-                            });
-
-                            // Log re-deduction
-                            const movRef = db.collection(`businesses/${bizId}/stock_movements`).doc();
-                            transaction.set(movRef, {
-                                productId: item.productId,
-                                productName: item.name,
-                                type: 'out',
-                                quantity: item.quantity,
-                                reason: `Захиалга сэргээсэн (#${after.orderNumber})`,
-                                createdBy: 'system.orders',
-                                createdAt: admin.firestore.FieldValue.serverTimestamp()
-                            });
-                        }
-                    }
-                }
-            });
-        }
-
-        return null;
-    });
-
-/**
- * Trigger: On Customer Create
- */
-export const onCustomerCreate = onDocumentCreated(
-    "businesses/{bizId}/customers/{custId}",
-    async (event: any) => {
-        const bizId = event.params.bizId;
-        const bizRef = db.doc(`businesses/${bizId}`);
-        return bizRef.update({
-            "stats.totalCustomers": admin.firestore.FieldValue.increment(1),
-        });
-    });
+    }
+);
 
 /**
  * QR Code Login Trigger
- * 1. Mobile app updates status to 'authorizing' and provides its UID
- * 2. Cloud Function generates a custom token for that UID
- * 3. Frontend on the laptop uses this custom token to sign in
+ * 
+ * 1. Mobile app updates status to 'scanned'
+ * 2. Laptop updates status to 'authorizing'
+ * 3. This Cloud Function generates a custom token for the laptop's UID
+ * 4. Mobile app uses this token to sign in
  */
 export const onQrLoginUpdate = onDocumentUpdated(
     "qr_logins/{sessionId}",
@@ -205,10 +85,22 @@ export const onQrLoginUpdate = onDocumentUpdated(
         const after = change.after.data();
 
         // Only act if status changed to 'authorizing'
-        if (before.status !== 'authorizing' && after.status === 'authorizing' && after.uid) {
+        // Note: we check for 'after.uid' which should be present from the initial setDoc
+        if (before.status !== 'authorizing' && after.status === 'authorizing') {
+            const uid = after.uid;
+
+            if (!uid) {
+                console.error("Missing UID in session:", event.params.sessionId);
+                return change.after.ref.update({
+                    status: 'error',
+                    error: "Хэрэглэгчийн мэдээлэл олдсонгүй (UID missing)"
+                });
+            }
+
             try {
                 // Generate Firebase Custom Token
-                const customToken = await admin.auth().createCustomToken(after.uid);
+                console.log(`Generating custom token for UID: ${uid}`);
+                const customToken = await admin.auth().createCustomToken(uid);
 
                 // Update doc with token and status
                 return change.after.ref.update({
@@ -216,11 +108,11 @@ export const onQrLoginUpdate = onDocumentUpdated(
                     customToken: customToken,
                     authenticatedAt: admin.firestore.FieldValue.serverTimestamp()
                 });
-            } catch (error) {
+            } catch (error: any) {
                 console.error("Error generating custom token:", error);
                 return change.after.ref.update({
                     status: 'error',
-                    error: "Token generation failed"
+                    error: `Token generation failed: ${error.message}`
                 });
             }
         }
