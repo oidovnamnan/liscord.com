@@ -153,7 +153,7 @@ export function BankSmsSyncPage() {
                                         </p>
                                         <div style={{ display: 'flex', gap: '8px', marginTop: '12px' }}>
                                             <a
-                                                href="https://github.com/oidovnamnan/liscord.com/releases/download/bridge-latest/app-release.apk"
+                                                href="https://github.com/oidovnamnan/liscord.com/releases/download/bridge-v1/app-release.apk"
                                                 target="_blank"
                                                 rel="noopener noreferrer"
                                                 className="btn btn-xs btn-primary gradient-btn"

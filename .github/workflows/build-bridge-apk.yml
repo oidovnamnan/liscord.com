@@ -40,24 +40,21 @@ jobs:
         working-directory: ./liscordbridge/android
         run: |
           chmod +x ./gradlew
-          ./gradlew assembleRelease -x lint > build.log 2>&1 || (cp build.log ../../build_error.log && exit 1)
+          ./gradlew assembleRelease -x lint --no-daemon -Dorg.gradle.jvmargs="-Xmx4g" > build.log 2>&1 || (tail -n 1000 build.log && exit 1)
 
-      - name: Push execution logs
-        if: failure()
-        run: |
-          git config --global user.name "GitHub Action Bot"
-          git config --global user.email "action@github.com"
-          git pull --rebase origin main || true
-          git add build_error.log
-          git commit -m "ci: append build failure logs [skip ci]" || echo "No changes"
-          git push origin main
+      - name: Upload APK Artifact
+        uses: actions/upload-artifact@v4
+        if: success()
+        with:
+          name: LiscordBridge-app-release
+          path: liscordbridge/android/app/build/outputs/apk/release/app-release.apk
 
       - name: Create Release
         uses: softprops/action-gh-release@v1
-        if: startsWith(github.ref, 'refs/heads/main')
+        if: success() && github.ref == 'refs/heads/main'
         with:
-          tag_name: bridge-latest
-          name: Liscord Bridge Latest
+          tag_name: bridge-v1
+          name: Liscord Bridge v1.0
           files: liscordbridge/android/app/build/outputs/apk/release/app-release.apk
           draft: false
           prerelease: false
