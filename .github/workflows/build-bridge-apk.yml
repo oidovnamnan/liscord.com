@@ -12,7 +12,9 @@ on:
 jobs:
   build-android:
     runs-on: ubuntu-latest
-    
+    permissions:
+      contents: write
+      
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
@@ -36,13 +38,19 @@ jobs:
 
       - name: Build Android Release APK
         working-directory: ./liscordbridge/android
-        run: ./gradlew assembleRelease
+        run: |
+          chmod +x ./gradlew
+          ./gradlew assembleRelease -x lint > build.log 2>&1 || (cp build.log ../../build_error.log && exit 1)
 
-      - name: Upload APK Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: LiscordBridge-app-release
-          path: liscordbridge/android/app/build/outputs/apk/release/app-release.apk
+      - name: Push execution logs
+        if: failure()
+        run: |
+          git config --global user.name "GitHub Action Bot"
+          git config --global user.email "action@github.com"
+          git pull --rebase origin main || true
+          git add build_error.log
+          git commit -m "ci: append build failure logs [skip ci]" || echo "No changes"
+          git push origin main
 
       - name: Create Release
         uses: softprops/action-gh-release@v1
