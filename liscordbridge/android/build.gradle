@@ -6,7 +6,6 @@ buildscript {
         targetSdkVersion = 34
         ndkVersion = "25.1.8937393"
         kotlinVersion = "1.9.10"
-        kspVersion = "1.9.10-1.0.13"
     }
     repositories {
         google()
@@ -26,9 +25,6 @@ allprojects {
         }
         maven {
             url("$rootDir/../node_modules/jsc-android/dist")
-        }
-        maven {
-            url("$rootDir/../node_modules/@react-native-async-storage/async-storage/android/local_repo")
         }
         google()
         maven { url "https://www.jitpack.io" }
