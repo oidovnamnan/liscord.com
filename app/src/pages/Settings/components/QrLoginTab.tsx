@@ -27,7 +27,7 @@ export function QrLoginTab() {
                 await setDoc(sessionRef, {
                     status: 'pending',
                     uid: user.uid,
-                    displayName: user.displayName || user.email || user.phone,
+                    displayName: user.displayName || user.email || user.phone || 'Хэрэглэгч',
                     createdAt: serverTimestamp(),
                     type: 'link_device'
                 });
