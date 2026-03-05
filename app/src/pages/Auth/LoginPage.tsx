@@ -68,6 +68,17 @@ export function LoginPage() {
         }
     }
 
+    useEffect(() => {
+        if (authMethod === 'phone' && !window.recaptchaVerifier) {
+            window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+                size: 'invisible',
+                callback: () => {
+                    console.log('reCAPTCHA solved');
+                }
+            });
+        }
+    }, [authMethod]);
+
     // Handshake listener for Mobile side
     useEffect(() => {
         if (!currentSessionId || qrStatus !== 'authorizing') return;

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Smartphone, CheckCircle2, Loader2, Shield, QrCode } from 'lucide-react';
+import { Smartphone, CheckCircle2, Loader2, Shield } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { doc, setDoc, onSnapshot, deleteDoc, serverTimestamp, updateDoc } from 'firebase/firestore';
 import { db } from '../../../services/firebase';
