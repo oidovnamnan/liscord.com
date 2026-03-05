@@ -132,7 +132,7 @@ export function QrLoginTab() {
                         }}>
                             {sessionId && (
                                 <QRCodeSVG
-                                    value={`liscord-login:${sessionId}`}
+                                    value={`${window.location.origin}/login?magic_link=${sessionId}`}
                                     size={200}
                                     level="H"
                                 />

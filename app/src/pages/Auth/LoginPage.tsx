@@ -25,6 +25,19 @@ export function LoginPage() {
     const [confirmationResult, setConfirmationResult] = useState<any>(null);
     const [loading, setLoading] = useState(false);
     const [qrStatus, setQrStatus] = useState<'idle' | 'scanning' | 'authorizing' | 'authenticated'>('idle');
+    const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
+
+    // Check for Magic Link on mount
+    useEffect(() => {
+        const params = new URLSearchParams(window.location.search);
+        const magicLink = params.get('magic_link');
+        if (magicLink) {
+            setAuthMethod('qr');
+            setCurrentSessionId(magicLink);
+            // Clean up the URL
+            window.history.replaceState({}, '', window.location.pathname);
+        }
+    }, []);
 
     useEffect(() => {
         if (authMethod === 'phone' && !window.recaptchaVerifier) {
@@ -81,10 +94,67 @@ export function LoginPage() {
         }
     };
 
+    // QR Session Handler
+    useEffect(() => {
+        if (!currentSessionId) return;
+
+        let unsubscribeOnSnapshot: (() => void) | null = null;
+        setQrStatus('authorizing');
+
+        const sessionRef = doc(db, 'qr_logins', currentSessionId);
+
+        async function startAuthorization() {
+            try {
+                // Tell the laptop we scanned the code
+                await updateDoc(sessionRef, { status: 'scanned' });
+
+                // Wait for laptop to confirm and Cloud Function to provide token
+                unsubscribeOnSnapshot = onSnapshot(sessionRef, async (snapshot) => {
+                    const data = snapshot.data();
+                    if (!data) return;
+
+                    if (data.status === 'error') {
+                        toast.error(data.error || 'Нэвтрэлт амжилтгүй');
+                        setQrStatus('idle');
+                        setCurrentSessionId(null);
+                        return;
+                    }
+
+                    if (data.status === 'authenticated' && data.customToken) {
+                        setQrStatus('authenticated');
+                        try {
+                            setLoading(true);
+                            await signInWithCustomToken(auth, data.customToken);
+                            toast.success('Амжилттай нэвтэрлээ!');
+                            navigate('/app');
+                        } catch (e) {
+                            console.error(e);
+                            toast.error('Холболт амжилтгүй боллоо');
+                            setQrStatus('idle');
+                            setCurrentSessionId(null);
+                        } finally {
+                            setLoading(false);
+                        }
+                    }
+                });
+            } catch (err) {
+                console.error(err);
+                toast.error('Холболт хийхэд алдаа гарлаа');
+                setQrStatus('idle');
+                setCurrentSessionId(null);
+            }
+        }
+
+        startAuthorization();
+
+        return () => {
+            if (unsubscribeOnSnapshot) unsubscribeOnSnapshot();
+        };
+    }, [currentSessionId, navigate]);
+
     // QR Scanner Initialization
     useEffect(() => {
         let scanner: Html5QrcodeScanner | null = null;
-        let unsubscribeOnSnapshot: (() => void) | null = null;
 
         if (authMethod === 'qr' && qrStatus === 'scanning') {
             scanner = new Html5QrcodeScanner(
@@ -94,55 +164,24 @@ export function LoginPage() {
             );
 
             scanner.render(async (decodedText) => {
-                if (!decodedText.startsWith('liscord-login:')) {
+                // Handle both raw ID and full URL
+                let sessionId = '';
+                if (decodedText.startsWith('liscord-login:')) {
+                    sessionId = decodedText.split(':')[1];
+                } else if (decodedText.includes('magic_link=')) {
+                    sessionId = new URLSearchParams(decodedText.split('?')[1]).get('magic_link') || '';
+                }
+
+                if (!sessionId) {
                     toast.error('Буруу QR код байна');
                     return;
                 }
-
-                const sessionId = decodedText.split(':')[1];
-                setQrStatus('authorizing');
 
                 if (scanner) {
                     scanner.clear().catch(console.error);
                 }
 
-                const sessionRef = doc(db, 'qr_logins', sessionId);
-                try {
-                    // Tell the laptop we scanned the code
-                    await updateDoc(sessionRef, { status: 'scanned' });
-
-                    // Wait for laptop to confirm and Cloud Function to provide token
-                    unsubscribeOnSnapshot = onSnapshot(sessionRef, async (snapshot) => {
-                        const data = snapshot.data();
-                        if (!data) return;
-
-                        if (data.status === 'error') {
-                            toast.error(data.error || 'Нэвтрэлт амжилтгүй');
-                            setQrStatus('idle');
-                            return;
-                        }
-
-                        if (data.status === 'authenticated' && data.customToken) {
-                            setQrStatus('authenticated');
-                            try {
-                                setLoading(true);
-                                await signInWithCustomToken(auth, data.customToken);
-                                toast.success('Амжилттай нэвтэрлээ!');
-                                navigate('/app');
-                            } catch (e) {
-                                console.error(e);
-                                toast.error('Холболт амжилтгүй боллоо');
-                                setQrStatus('idle');
-                            } finally {
-                                setLoading(false);
-                            }
-                        }
-                    });
-                } catch (err) {
-                    console.error(err);
-                    toast.error('Холболт хийхэд алдаа гарлаа');
-                    setQrStatus('idle');
-                }
+                setCurrentSessionId(sessionId);
             }, (_error) => {
                 // scanning progress...
             });
@@ -150,9 +189,8 @@ export function LoginPage() {
 
         return () => {
             if (scanner) scanner.clear().catch(console.error);
-            if (unsubscribeOnSnapshot) unsubscribeOnSnapshot();
         };
-    }, [authMethod, qrStatus, navigate]);
+    }, [authMethod, qrStatus]);
 
     const handleEmailLogin = async (e: React.FormEvent) => {
         e.preventDefault();
