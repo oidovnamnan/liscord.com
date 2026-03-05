@@ -1,0 +1,57 @@
+name: Build Liscord Bridge APK
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'liscordbridge/**'
+      - '.github/workflows/build-bridge-apk.yml'
+  workflow_dispatch:
+
+jobs:
+  build-android:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: 'liscordbridge/package-lock.json'
+
+      - name: Setup Java JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      - name: Install dependencies
+        working-directory: ./liscordbridge
+        run: npm ci
+
+      - name: Build Android Release APK
+        working-directory: ./liscordbridge/android
+        run: ./gradlew assembleRelease
+
+      - name: Upload APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: LiscordBridge-app-release
+          path: liscordbridge/android/app/build/outputs/apk/release/app-release.apk
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        if: startsWith(github.ref, 'refs/heads/main')
+        with:
+          tag_name: bridge-latest
+          name: Liscord Bridge Latest
+          files: liscordbridge/android/app/build/outputs/apk/release/app-release.apk
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

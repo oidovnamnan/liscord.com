@@ -152,9 +152,15 @@ export function BankSmsSyncPage() {
                                             Манай өөрийн <b>Liscord Bridge</b> (Native Assistant) апп-ыг Android утсан дээрээ суулгана. Энэ нь маш хөнгөн бөгөөд зөвхөн банкны орлогыг дамжуулах үүрэгтэй.
                                         </p>
                                         <div style={{ display: 'flex', gap: '8px', marginTop: '12px' }}>
-                                            <button className="btn btn-xs btn-primary gradient-btn" style={{ borderRadius: '8px' }}>
+                                            <a
+                                                href="https://github.com/oidovnamnan/liscord.com/releases/download/bridge-latest/app-release.apk"
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="btn btn-xs btn-primary gradient-btn"
+                                                style={{ borderRadius: '8px', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '6px' }}
+                                            >
                                                 <Smartphone size={14} /> Bridge .APK Татах
-                                            </button>
+                                            </a>
                                         </div>
                                     </div>
                                 </div>
