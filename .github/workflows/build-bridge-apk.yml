@@ -42,6 +42,13 @@ jobs:
           chmod +x ./gradlew
           ./gradlew assembleRelease -x lint --no-daemon -Dorg.gradle.jvmargs="-Xmx4g" > build.log 2>&1 || (tail -n 1000 build.log && exit 1)
 
+      - name: Upload Logs on Failure
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: build-logs
+          path: liscordbridge/android/build.log
+
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         if: success()
