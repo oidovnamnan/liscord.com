@@ -27,8 +27,29 @@ allprojects {
             url("$rootDir/../node_modules/jsc-android/dist")
         }
         google()
-        mavenCentral()
         maven { url "https://www.jitpack.io" }
+        mavenCentral()
+    }
+}
+
+subprojects {
+    afterEvaluate { project ->
+        if (project.hasProperty("android")) {
+            // Fix missing namespace for older libraries in Gradle 8+
+            if (project.android.namespace == null) {
+                project.android.namespace = project.group ?: "com.liscord.fallback"
+            }
+            // Fix old compileSdkVersion/targetSdkVersion/buildToolsVersion
+            project.android {
+                compileSdkVersion rootProject.ext.compileSdkVersion
+                buildToolsVersion rootProject.ext.buildToolsVersion
+                defaultConfig {
+                    if (it.hasProperty("targetSdkVersion")) {
+                        targetSdkVersion rootProject.ext.targetSdkVersion
+                    }
+                }
+            }
+        }
     }
 }
 
