@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Phone, ArrowRight, Loader2, Mail, Lock, CheckCircle2, QrCode, Smartphone, Camera } from 'lucide-react';
+import { Phone, ArrowRight, Loader2, Mail, Lock, CheckCircle2, QrCode, Smartphone, Camera, User } from 'lucide-react';
 import {
     signInWithPhoneNumber,
     RecaptchaVerifier,
@@ -8,7 +8,7 @@ import {
     signInWithCustomToken
 } from 'firebase/auth';
 import { auth, db } from '../../services/firebase';
-import { doc, updateDoc, onSnapshot } from 'firebase/firestore';
+import { doc, updateDoc, onSnapshot, getDoc } from 'firebase/firestore';
 import { Html5QrcodeScanner } from 'html5-qrcode';
 import { toast } from 'react-hot-toast';
 import './AuthPage.css';
@@ -24,8 +24,9 @@ export function LoginPage() {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const [confirmationResult, setConfirmationResult] = useState<any>(null);
     const [loading, setLoading] = useState(false);
-    const [qrStatus, setQrStatus] = useState<'idle' | 'scanning' | 'authorizing' | 'authenticated'>('idle');
+    const [qrStatus, setQrStatus] = useState<'idle' | 'scanning' | 'confirming' | 'authorizing' | 'authenticated'>('idle');
     const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
+    const [sessionData, setSessionData] = useState<any>(null);
 
     // Check for Magic Link on mount
     useEffect(() => {
@@ -33,11 +34,31 @@ export function LoginPage() {
         const magicLink = params.get('magic_link');
         if (magicLink) {
             setAuthMethod('qr');
-            setCurrentSessionId(magicLink);
+            loadSessionData(magicLink);
             // Clean up the URL
             window.history.replaceState({}, '', window.location.pathname);
         }
     }, []);
+
+    async function loadSessionData(sessionId: string) {
+        setLoading(true);
+        try {
+            const snap = await getDoc(doc(db, 'qr_logins', sessionId));
+            if (snap.exists() && snap.data().status === 'pending') {
+                setCurrentSessionId(sessionId);
+                setSessionData(snap.data());
+                setQrStatus('confirming');
+            } else {
+                toast.error('Энэ код хүчингүй болсон байна');
+                setAuthMethod('phone');
+            }
+        } catch (e) {
+            console.error(e);
+            toast.error('Мэдээлэл авахад алдаа гарлаа');
+        } finally {
+            setLoading(false);
+        }
+    }
 
     useEffect(() => {
         if (authMethod === 'phone' && !window.recaptchaVerifier) {
@@ -94,63 +115,55 @@ export function LoginPage() {
         }
     };
 
-    // QR Session Handler
-    useEffect(() => {
+    // Confirm QR Login Request
+    const handleConfirmLogin = async () => {
         if (!currentSessionId) return;
 
-        let unsubscribeOnSnapshot: (() => void) | null = null;
         setQrStatus('authorizing');
-
         const sessionRef = doc(db, 'qr_logins', currentSessionId);
 
-        async function startAuthorization() {
-            try {
-                // Tell the laptop we scanned the code
-                await updateDoc(sessionRef, { status: 'scanned' });
+        try {
+            // Tell the laptop we scanned and confirmed
+            await updateDoc(sessionRef, { status: 'scanned' });
 
-                // Wait for laptop to confirm and Cloud Function to provide token
-                unsubscribeOnSnapshot = onSnapshot(sessionRef, async (snapshot) => {
-                    const data = snapshot.data();
-                    if (!data) return;
+            // Wait for laptop user to click "Authorize" and Cloud Function to provide token
+            const unsubscribe = onSnapshot(sessionRef, async (snapshot) => {
+                const data = snapshot.data();
+                if (!data) return;
 
-                    if (data.status === 'error') {
-                        toast.error(data.error || 'Нэвтрэлт амжилтгүй');
+                if (data.status === 'error') {
+                    toast.error(data.error || 'Нэвтрэлт амжилтгүй');
+                    setQrStatus('idle');
+                    setCurrentSessionId(null);
+                    unsubscribe();
+                    return;
+                }
+
+                if (data.status === 'authenticated' && data.customToken) {
+                    setQrStatus('authenticated');
+                    unsubscribe();
+                    try {
+                        setLoading(true);
+                        await signInWithCustomToken(auth, data.customToken);
+                        toast.success('Амжилттай нэвтэрлээ!');
+                        navigate('/app');
+                    } catch (e) {
+                        console.error(e);
+                        toast.error('Холболт амжилтгүй боллоо');
                         setQrStatus('idle');
                         setCurrentSessionId(null);
-                        return;
+                    } finally {
+                        setLoading(false);
                     }
-
-                    if (data.status === 'authenticated' && data.customToken) {
-                        setQrStatus('authenticated');
-                        try {
-                            setLoading(true);
-                            await signInWithCustomToken(auth, data.customToken);
-                            toast.success('Амжилттай нэвтэрлээ!');
-                            navigate('/app');
-                        } catch (e) {
-                            console.error(e);
-                            toast.error('Холболт амжилтгүй боллоо');
-                            setQrStatus('idle');
-                            setCurrentSessionId(null);
-                        } finally {
-                            setLoading(false);
-                        }
-                    }
-                });
-            } catch (err) {
-                console.error(err);
-                toast.error('Холболт хийхэд алдаа гарлаа');
-                setQrStatus('idle');
-                setCurrentSessionId(null);
-            }
+                }
+            });
+        } catch (err) {
+            console.error(err);
+            toast.error('Холболт хийхэд алдаа гарлаа');
+            setQrStatus('idle');
+            setCurrentSessionId(null);
         }
-
-        startAuthorization();
-
-        return () => {
-            if (unsubscribeOnSnapshot) unsubscribeOnSnapshot();
-        };
-    }, [currentSessionId, navigate]);
+    };
 
     // QR Scanner Initialization
     useEffect(() => {
@@ -164,7 +177,6 @@ export function LoginPage() {
             );
 
             scanner.render(async (decodedText) => {
-                // Handle both raw ID and full URL
                 let sessionId = '';
                 if (decodedText.startsWith('liscord-login:')) {
                     sessionId = decodedText.split(':')[1];
@@ -181,7 +193,7 @@ export function LoginPage() {
                     scanner.clear().catch(console.error);
                 }
 
-                setCurrentSessionId(sessionId);
+                loadSessionData(sessionId);
             }, (_error) => {
                 // scanning progress...
             });
@@ -333,7 +345,7 @@ export function LoginPage() {
                             background: 'var(--bg-soft)',
                             border: '1px solid var(--border-color)',
                             position: 'relative',
-                            minHeight: '280px',
+                            minHeight: '320px',
                             display: 'flex',
                             flexDirection: 'column',
                             alignItems: 'center',
@@ -369,31 +381,72 @@ export function LoginPage() {
                                 </div>
                             ) : qrStatus === 'scanning' ? (
                                 <div id="qr-scanner" style={{ width: '100%', height: '100%', border: 'none' }}></div>
+                            ) : qrStatus === 'confirming' ? (
+                                <div style={{ padding: '32px 20px' }}>
+                                    <div style={{
+                                        width: '64px',
+                                        height: '64px',
+                                        borderRadius: '50%',
+                                        background: 'rgba(var(--primary-rgb), 0.1)',
+                                        color: 'var(--primary)',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        margin: '0 auto 20px auto'
+                                    }}>
+                                        <User size={32} />
+                                    </div>
+                                    <h3 style={{ fontSize: '1.2rem', fontWeight: 800, marginBottom: 12 }}>Нэвтрэх үү?</h3>
+                                    <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: 24 }}>
+                                        <strong style={{ color: 'var(--text-primary)' }}>{sessionData?.displayName}</strong> эрхээр <br /> энэ төхөөрөмж дээр нэвтрэх үү?
+                                    </p>
+                                    <div style={{ display: 'flex', gap: '12px', width: '100%' }}>
+                                        <button
+                                            className="btn btn-outline flex-1"
+                                            onClick={() => { setQrStatus('idle'); setCurrentSessionId(null); }}
+                                        >
+                                            Болих
+                                        </button>
+                                        <button
+                                            className="btn btn-primary flex-1 gradient-btn"
+                                            onClick={handleConfirmLogin}
+                                            disabled={loading}
+                                        >
+                                            {loading ? <Loader2 size={18} className="animate-spin" /> : 'Нэвтрэх'}
+                                        </button>
+                                    </div>
+                                </div>
                             ) : (
                                 <div style={{
                                     padding: '60px 20px',
                                     display: 'flex',
                                     flexDirection: 'column',
                                     alignItems: 'center',
-                                    gap: '16px'
+                                    gap: '16px',
+                                    textAlign: 'center'
                                 }}>
                                     {qrStatus === 'authenticated' ? (
                                         <CheckCircle2 size={48} className="text-success" />
                                     ) : (
                                         <Loader2 size={48} className="animate-spin text-primary" />
                                     )}
-                                    <p style={{ fontWeight: 700 }}>
-                                        {qrStatus === 'authorizing' ? 'Баталгаажуулалт хүлээж байна...' : 'Нэвтэрч байна...'}
-                                    </p>
+                                    <div>
+                                        <p style={{ fontWeight: 700, marginBottom: 4 }}>
+                                            {qrStatus === 'authorizing' ? 'Баталгаажуулалт хүлээж байна...' : 'Нэвтэрч байна...'}
+                                        </p>
+                                        <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                                            Нотбүүк дээрээ "Зөвшөөрөх" товчийг дарна уу.
+                                        </p>
+                                    </div>
                                 </div>
                             )}
                         </div>
 
-                        {qrStatus === 'scanning' && (
+                        {(qrStatus === 'scanning' || qrStatus === 'confirming') && (
                             <button
                                 className="btn btn-ghost btn-sm"
                                 style={{ marginTop: '16px' }}
-                                onClick={() => setQrStatus('idle')}
+                                onClick={() => { setQrStatus('idle'); setCurrentSessionId(null); }}
                             >
                                 Болих
                             </button>

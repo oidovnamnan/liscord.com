@@ -42,12 +42,12 @@ export function QrLoginTab() {
                     } else if (data.status === 'authenticated') {
                         setStatus('authenticated');
                         toast.success('Төхөөрөмжийг амжилттай холболоо');
-                        // Optional: Clean up after a delay
+                        // Clean up after 60 seconds to allow mobile to finish sign-in
                         setTimeout(() => {
                             deleteDoc(sessionRef).catch(console.error);
                             setSessionId(null);
                             setStatus('pending');
-                        }, 5000);
+                        }, 60000);
                     }
                 });
             } catch (err) {
