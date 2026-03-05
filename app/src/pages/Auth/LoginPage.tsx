@@ -27,33 +27,44 @@ export function LoginPage() {
     const [qrStatus, setQrStatus] = useState<'idle' | 'scanning' | 'confirming' | 'authorizing' | 'authenticated'>('idle');
     const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
     const [sessionData, setSessionData] = useState<any>(null);
+    const [isProcessingMagicLink, setIsProcessingMagicLink] = useState(false);
 
     // Initial check for magic link
     useEffect(() => {
-        const params = new URLSearchParams(window.location.search);
-        const magicLink = params.get('magic_link');
+        const searchParams = new URLSearchParams(window.location.search);
+        const magicLink = searchParams.get('magic_link');
+
+        console.log('LoginPage: Check for magic_link:', magicLink);
+
         if (magicLink) {
+            setIsProcessingMagicLink(true);
             setAuthMethod('qr');
             handleScannedId(magicLink);
-            // Clean up the URL
+            // Clean up the URL but keep the params for now just in case
             window.history.replaceState({}, '', window.location.pathname);
         }
     }, []);
 
     async function handleScannedId(sessionId: string) {
+        console.log('handleScannedId starting for:', sessionId);
         setLoading(true);
         try {
             const snap = await getDoc(doc(db, 'qr_logins', sessionId));
             if (!snap.exists()) {
+                console.error('Session document not found:', sessionId);
                 toast.error('Энэ код хүчингүй байна');
                 setQrStatus('idle');
+                setIsProcessingMagicLink(false);
                 return;
             }
 
             const data = snap.data();
+            console.log('Session data fetched:', data.status);
+
             if (data.status === 'authenticated') {
                 toast.error('Энэ код ашиглагдсан байна');
                 setQrStatus('idle');
+                setIsProcessingMagicLink(false);
                 return;
             }
 
@@ -61,10 +72,11 @@ export function LoginPage() {
             setSessionData(data);
             setQrStatus('confirming');
         } catch (e) {
-            console.error(e);
+            console.error('Error fetching session data:', e);
             toast.error('Мэдээлэл авахад алдаа гарлаа');
         } finally {
             setLoading(false);
+            setIsProcessingMagicLink(false);
         }
     }
 
@@ -83,13 +95,13 @@ export function LoginPage() {
     useEffect(() => {
         if (!currentSessionId) return;
 
-        console.log('Mobile Listener Started for:', currentSessionId);
+        console.log('Mobile Real-time Listener Started for:', currentSessionId);
         const sessionRef = doc(db, 'qr_logins', currentSessionId);
         const unsubscribe = onSnapshot(sessionRef, async (snapshot) => {
             const data = snapshot.data();
             if (!data) return;
 
-            console.log('Mobile Session Update:', data.status);
+            console.log('Mobile Listener Update Status:', data.status);
 
             if (data.status === 'error') {
                 toast.error(data.error || 'Нэвтрэлт амжилтгүй');
@@ -102,12 +114,12 @@ export function LoginPage() {
                 setQrStatus('authenticated');
                 try {
                     setLoading(true);
-                    console.log('Attempting custom token sign-in...');
+                    console.log('Found custom token, signing in...');
                     await signInWithCustomToken(auth, data.customToken);
                     toast.success('Амжилттай нэвтэрлээ!');
                     navigate('/app');
                 } catch (e) {
-                    console.error('Custom token sign-in failed:', e);
+                    console.error('signInWithCustomToken failed:', e);
                     toast.error('Холболт амжилтгүй боллоо');
                     setQrStatus('idle');
                     setCurrentSessionId(null);
@@ -115,6 +127,8 @@ export function LoginPage() {
                     setLoading(false);
                 }
             }
+        }, (err) => {
+            console.error('Mobile Snapshot ERROR:', err);
         });
 
         return () => unsubscribe();
@@ -127,17 +141,18 @@ export function LoginPage() {
             setLoading(true);
             const sessionRef = doc(db, 'qr_logins', currentSessionId);
             // Notify laptop that we scanned and confirmed
+            console.log('Updating status to scanned...');
             await updateDoc(sessionRef, { status: 'scanned' });
             setQrStatus('authorizing');
         } catch (err) {
-            console.error(err);
+            console.error('Confirm login failed:', err);
             toast.error('Холболт хийхэд алдаа гарлаа');
         } finally {
             setLoading(false);
         }
     };
 
-    // QR Scanner Initialization
+    // QR Scanner Initialization (Built-in)
     useEffect(() => {
         let scanner: Html5QrcodeScanner | null = null;
 
@@ -153,7 +168,13 @@ export function LoginPage() {
                 if (decodedText.startsWith('liscord-login:')) {
                     sessionId = decodedText.split(':')[1];
                 } else if (decodedText.includes('magic_link=')) {
-                    sessionId = new URLSearchParams(decodedText.split('?')[1]).get('magic_link') || '';
+                    try {
+                        const url = new URL(decodedText);
+                        sessionId = url.searchParams.get('magic_link') || '';
+                    } catch (e) {
+                        // Fallback simple extract
+                        sessionId = new URLSearchParams(decodedText.split('?')[1]).get('magic_link') || '';
+                    }
                 }
 
                 if (!sessionId) {
@@ -167,7 +188,7 @@ export function LoginPage() {
 
                 handleScannedId(sessionId);
             }, (_error) => {
-                // scanning progress...
+                // scanning...
             });
         }
 
@@ -187,7 +208,6 @@ export function LoginPage() {
             setConfirmationResult(result);
             setStep('otp');
             toast.success('Баталгаажуулах код илгээлээ');
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (error: any) {
             console.error(error);
             toast.error('Алдаа гарлаа. Дугаараа шалгана уу.');
@@ -212,7 +232,6 @@ export function LoginPage() {
         try {
             await confirmationResult.confirm(otp);
             navigate('/app');
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars
         } catch (error: any) {
             toast.error('Код буруу байна');
         } finally {
@@ -228,7 +247,6 @@ export function LoginPage() {
         try {
             await signInWithEmailAndPassword(auth, email, password);
             navigate('/app');
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (error: any) {
             let message = 'И-мэйл эсвэл нууц үг буруу байна';
             if (error.code === 'auth/user-not-found') {
@@ -243,6 +261,18 @@ export function LoginPage() {
             setLoading(false);
         }
     };
+
+    if (isProcessingMagicLink) {
+        return (
+            <div className="auth-page" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <div className="auth-card" style={{ textAlign: 'center', padding: '60px 20px' }}>
+                    <Loader2 size={48} className="animate-spin text-primary" style={{ margin: '0 auto 20px auto' }} />
+                    <h3>Бэлдэж байна...</h3>
+                    <p style={{ color: 'var(--text-secondary)' }}>Түр хүлээнэ үү</p>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="auth-page">

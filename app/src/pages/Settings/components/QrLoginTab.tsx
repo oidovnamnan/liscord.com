@@ -12,12 +12,19 @@ export function QrLoginTab() {
     const [status, setStatus] = useState<'pending' | 'scanned' | 'authorizing' | 'authenticated'>('pending');
     const [loading, setLoading] = useState(false);
 
+    // Get guaranteed origin/host
+    const getAppUrl = () => {
+        const origin = window.location.origin || (window.location.protocol + '//' + window.location.host);
+        return origin.replace(/\/$/, ''); // Remove trailing slash
+    };
+
     // Initial session setup
     useEffect(() => {
         if (!user || sessionId) return;
 
         const startSession = async () => {
-            const newSessionId = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+            // Generate a simpler alphabetic ID to be extra safe with URL parsing
+            const newSessionId = 'qr_' + Math.random().toString(36).substring(2, 12);
             setSessionId(newSessionId);
             setLoading(true);
 
@@ -30,6 +37,7 @@ export function QrLoginTab() {
                     createdAt: serverTimestamp(),
                     type: 'link_device'
                 });
+                console.log('QR Session started:', newSessionId);
             } catch (err) {
                 console.error('Session creation failed:', err);
                 toast.error('Сесс үүсгэхэд алдаа гарлаа');
@@ -50,14 +58,14 @@ export function QrLoginTab() {
             const data = snapshot.data();
             if (!data) return;
 
-            console.log('Laptop Session Update:', data.status);
+            console.log('Laptop Session Status:', data.status);
 
             if (data.status === 'scanned') {
                 setStatus('scanned');
             } else if (data.status === 'authenticated') {
                 setStatus('authenticated');
                 toast.success('Төхөөрөмжийг амжилттай холболоо');
-                // Cleanup
+                // Cleanup after a while
                 setTimeout(() => {
                     deleteDoc(sessionRef).catch(console.error);
                 }, 60000);
@@ -66,6 +74,8 @@ export function QrLoginTab() {
                 setStatus('pending');
                 setSessionId(null);
             }
+        }, (err) => {
+            console.error('Snapshot error:', err);
         });
 
         return () => unsubscribe();
@@ -136,7 +146,7 @@ export function QrLoginTab() {
                         }}>
                             {sessionId && (
                                 <QRCodeSVG
-                                    value={`${window.location.origin}/login?magic_link=${sessionId}`}
+                                    value={`${getAppUrl()}/login?magic_link=${sessionId}`}
                                     size={200}
                                     level="H"
                                 />
@@ -200,7 +210,7 @@ export function QrLoginTab() {
                 </h4>
                 <ul style={{ margin: 0, paddingLeft: '20px', fontSize: '0.85rem', color: 'var(--text-secondary)', display: 'flex', flexDirection: 'column', gap: '8px' }}>
                     <li>Энэ кодоор дамжуулан таны аккаунт руу шууд нэвтрэх боломжтой тул зөвхөн өөрийн утсаар уншуулна уу.</li>
-                    <li>Гар утсан дээрээ "Би зөвшөөрч байна" товч дарсны дараа энд "Би зөвшөөрч байна" товч гарч ирнэ.</li>
+                    <li>Гар утсан дээрээ "Confirm" эсвэл "Тийм" товч дарсны дараа энд "Би зөвшөөрч байна" товч гарч ирнэ.</li>
                     <li>Танихгүй хүнд энэ кодыг бүү харуул.</li>
                 </ul>
             </div>
