@@ -37,7 +37,7 @@ subprojects {
         if (project.hasProperty("android")) {
             // Fix missing namespace for older libraries in Gradle 8+
             if (project.android.namespace == null) {
-                project.android.namespace = project.group ?: "com.liscord.fallback"
+                project.android.namespace = project.group ?: "com.liscord.fallback.${project.name}"
             }
             // Fix old compileSdkVersion/targetSdkVersion/buildToolsVersion
             project.android {
@@ -46,6 +46,9 @@ subprojects {
                 defaultConfig {
                     if (it.hasProperty("targetSdkVersion")) {
                         targetSdkVersion rootProject.ext.targetSdkVersion
+                    }
+                    if (it.hasProperty("minSdkVersion")) {
+                        minSdkVersion rootProject.ext.minSdkVersion
                     }
                 }
             }
