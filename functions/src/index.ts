@@ -50,7 +50,7 @@ export const onOrderCreate = onDocumentCreated(
                         const productRef = db.doc(`businesses/${bizId}/products/${item.productId}`);
                         const productSnap = await transaction.get(productRef);
 
-                        if (productSnap.exists()) {
+                        if (productSnap.exists) {
                             const productData = productSnap.data() || {};
                             if (productData.stock?.trackInventory) {
                                 transaction.update(productRef, {
