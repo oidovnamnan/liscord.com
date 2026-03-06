@@ -12,6 +12,26 @@ export default defineConfig({
         skipWaiting: true,
         clientsClaim: true,
         cleanupOutdatedCaches: true,
+        // Only precache the app shell, not all JS chunks
+        globPatterns: ['**/*.{html,css,ico,png,svg,webmanifest}'],
+        // Prevent SW from serving index.html for JS/CSS module requests
+        navigateFallbackDenylist: [/^\/api/, /\.(js|css|json|png|jpg|svg|webp|woff2?)$/],
+        // Only use navigateFallback for actual page navigations
+        navigateFallbackAllowlist: [/^\/app/, /^\/login/, /^\/register/, /^\/s\//],
+        // Runtime caching for JS chunks — always use network first
+        runtimeCaching: [
+          {
+            urlPattern: /\.(?:js|css)$/,
+            handler: 'StaleWhileRevalidate',
+            options: {
+              cacheName: 'static-assets',
+              expiration: {
+                maxEntries: 200,
+                maxAgeSeconds: 60 * 60 * 24, // 1 day
+              },
+            },
+          },
+        ],
       },
       includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'mask-icon.svg'],
       manifest: {
