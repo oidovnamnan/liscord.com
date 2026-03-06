@@ -208,8 +208,8 @@ export function ProductsPage() {
                         <input className="input orders-search-input" placeholder="Бараа, SKU хайх..." value={search} onChange={e => setSearch(e.target.value)} />
                     </div>
                     <div className="products-view-toggle">
-                        <button className={`btn btn - ghost ${viewMode === 'grid' ? 'active' : ''} `} onClick={() => setViewMode('grid')}><Grid3X3 size={18} /></button>
-                        <button className={`btn btn - ghost ${viewMode === 'list' ? 'active' : ''} `} onClick={() => setViewMode('list')}><List size={18} /></button>
+                        <button className={`btn btn-ghost ${viewMode === 'grid' ? 'active' : ''}`} onClick={() => setViewMode('grid')}><Grid3X3 size={18} /></button>
+                        <button className={`btn btn-ghost ${viewMode === 'list' ? 'active' : ''}`} onClick={() => setViewMode('list')}><List size={18} /></button>
                     </div>
                 </div>
 
@@ -217,7 +217,7 @@ export function ProductsPage() {
                 {categories.length > 0 && (
                     <div className="category-chips-wrapper animate-fade-in" style={{ display: 'flex', gap: 8, overflowX: 'auto', padding: '4px 0 16px', scrollbarWidth: 'none' }}>
                         <button
-                            className={`date - chip ${categoryFilter === 'all' ? 'active' : ''} `}
+                            className={`date-chip ${categoryFilter === 'all' ? 'active' : ''}`}
                             onClick={() => setCategoryFilter('all')}
                         >
                             Бүгд
@@ -225,7 +225,7 @@ export function ProductsPage() {
                         {categories.map(cat => (
                             <button
                                 key={cat.id}
-                                className={`date - chip ${categoryFilter === cat.id ? 'active' : ''} `}
+                                className={`date-chip ${categoryFilter === cat.id ? 'active' : ''}`}
                                 onClick={() => setCategoryFilter(cat.id)}
                             >
                                 {cat.name}

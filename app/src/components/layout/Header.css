@@ -144,3 +144,56 @@
     transform: translateY(-1px);
     box-shadow: 0 4px 12px rgba(var(--primary-rgb), 0.15);
 }
+
+/* --- Mobile Header --- */
+@media (max-width: 640px) {
+    .header {
+        padding: 0 var(--space-sm);
+        height: 52px;
+    }
+
+    .header-left {
+        gap: var(--space-xs);
+    }
+
+    .header-title {
+        font-size: 1rem;
+    }
+
+    .header-subtitle {
+        font-size: 0.7rem;
+    }
+
+    .header-right {
+        gap: var(--space-xs);
+    }
+
+    .header-icon-btn {
+        min-width: 36px;
+        min-height: 36px;
+        padding: 4px;
+    }
+
+    .header-menu-btn {
+        min-width: 36px;
+        min-height: 36px;
+    }
+
+    .header-avatar {
+        width: 30px;
+        height: 30px;
+        font-size: 0.75rem;
+    }
+
+    .header-appstore-btn {
+        display: none !important;
+    }
+
+    .header-notif-badge {
+        top: 2px;
+        right: 2px;
+        min-width: 14px;
+        height: 14px;
+        font-size: 0.6rem;
+    }
+}
