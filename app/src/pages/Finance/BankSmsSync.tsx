@@ -60,8 +60,7 @@ export function BankSmsSyncPage() {
         }
     ]);
 
-    const setupUrl = `${window.location.origin}/sms-pairing?key=${apiKey}`;
-    const qrCodeValue = setupUrl;
+    const qrCodeValue = apiKey;
 
     const handleGenerateKey = () => {
         setApiKey('ls_sk_' + Math.random().toString(36).substring(2, 12));
