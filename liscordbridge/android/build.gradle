@@ -37,7 +37,9 @@ subprojects {
         if (project.hasProperty("android")) {
             // Fix missing namespace for older libraries in Gradle 8+
             if (project.android.namespace == null) {
-                project.android.namespace = project.group ?: "com.liscord.fallback.${project.name}"
+                def fallbackNamespace = (project.group ?: "com.liscord.fallback.${project.name}").replace("-", "_")
+                project.android.namespace = fallbackNamespace
+                println "Enforcing namespace for ${project.name}: ${fallbackNamespace}"
             }
 
             // Remove 'package' attribute from AndroidManifest.xml for Gradle 8 compatibility
@@ -46,6 +48,7 @@ subprojects {
                     if (manifestFile.exists()) {
                         def content = manifestFile.text
                         if (content.contains("package=")) {
+                            println "Stripping 'package' from ${project.name} manifest: ${manifestFile.absolutePath}"
                             manifestFile.text = content.replaceAll(/package="[^"]*"/, "")
                         }
                     }
