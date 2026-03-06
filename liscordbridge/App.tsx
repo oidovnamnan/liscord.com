@@ -496,7 +496,7 @@ const App = () => {
   if (showSettings) {
     return (
       <SafeAreaView style={styles.container}>
-        <StatusBar barStyle="dark-content" backgroundColor="#ffffff" />
+        <StatusBar barStyle="light-content" backgroundColor="#0f0f14" />
         <View style={styles.header}>
           <Text style={styles.title}>⚙️ Тохиргоо</Text>
           <TouchableOpacity onPress={() => setShowSettings(false)}>
@@ -515,8 +515,8 @@ const App = () => {
               <Switch
                 value={settings.onlyIncome}
                 onValueChange={(val) => saveSettings({ ...settings, onlyIncome: val })}
-                trackColor={{ false: '#e5e7eb', true: '#a5b4fc' }}
-                thumbColor={settings.onlyIncome ? '#6366f1' : '#9ca3af'}
+                trackColor={{ false: 'rgba(255,255,255,0.1)', true: 'rgba(99,102,241,0.4)' }}
+                thumbColor={settings.onlyIncome ? '#6366f1' : '#4b5563'}
               />
             </View>
           </View>
@@ -532,7 +532,7 @@ const App = () => {
                 placeholder="Дугаар нэмэх... (1900, Golomt гм)"
                 value={newSender}
                 onChangeText={setNewSender}
-                placeholderTextColor="#9ca3af"
+                placeholderTextColor="rgba(255,255,255,0.2)"
               />
               <TouchableOpacity style={styles.addBtn} onPress={addBankSender}>
                 <Text style={styles.addBtnText}>+</Text>
@@ -578,7 +578,7 @@ const App = () => {
   // ---- MAIN VIEW ----
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#ffffff" />
+      <StatusBar barStyle="light-content" backgroundColor="#0f0f14" />
       <View style={styles.header}>
         <Text style={styles.title}>Liscord Bridge</Text>
         <Text style={styles.subtitle}>SMS Forwarder</Text>
@@ -631,7 +631,7 @@ const App = () => {
               <Text style={styles.logsTitle}>📋 Үйл ажиллагааны лог</Text>
               {isRunning && (
                 <TouchableOpacity onPress={refreshFromStorage}>
-                  <Text style={{ color: '#6366f1', fontSize: 13, fontWeight: '600' }}>🔄 Шинэчлэх</Text>
+                  <Text style={{ color: '#818cf8', fontSize: 13, fontWeight: '600' }}>🔄 Шинэчлэх</Text>
                 </TouchableOpacity>
               )}
             </View>
@@ -660,66 +660,136 @@ const App = () => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f8f9fa' },
-  header: { padding: 24, paddingTop: 40, alignItems: 'center', borderBottomWidth: 1, borderColor: '#eee', backgroundColor: 'white' },
-  title: { fontSize: 24, fontWeight: '800', color: '#1a1a1a' },
-  subtitle: { fontSize: 14, color: '#666', marginTop: 4 },
-  backBtn: { fontSize: 16, color: '#6366f1', fontWeight: '600', marginTop: 8 },
+  // ===== BASE =====
+  container: { flex: 1, backgroundColor: '#0f0f14' },
+  header: {
+    padding: 24, paddingTop: 48, alignItems: 'center',
+    borderBottomWidth: 1, borderColor: 'rgba(255,255,255,0.06)',
+    backgroundColor: '#0f0f14',
+  },
+  title: { fontSize: 26, fontWeight: '900', color: '#ffffff', letterSpacing: -0.5 },
+  subtitle: { fontSize: 13, color: 'rgba(255,255,255,0.4)', marginTop: 4, fontWeight: '500', letterSpacing: 1, textTransform: 'uppercase' },
+  backBtn: { fontSize: 15, color: '#818cf8', fontWeight: '700', marginTop: 10 },
   content: { flex: 1, padding: 20 },
 
-  // Status
-  statusCard: { padding: 20, borderRadius: 16, marginBottom: 24 },
-  statusCardInactive: { backgroundColor: '#fee2e2' },
-  statusCardActive: { backgroundColor: '#dcfce7' },
-  statusLabel: { fontSize: 11, color: '#666', textTransform: 'uppercase', fontWeight: 'bold', letterSpacing: 1 },
-  statusValue: { fontSize: 20, fontWeight: '700', marginTop: 8, color: '#1a1a1a' },
-  keyText: { fontSize: 11, color: '#666', marginTop: 12, opacity: 0.7 },
-  statText: { fontSize: 13, color: '#166534', marginTop: 6, fontWeight: '600' },
+  // ===== STATUS CARD (glassmorphism) =====
+  statusCard: {
+    padding: 22, borderRadius: 20, marginBottom: 24,
+    borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)',
+  },
+  statusCardInactive: { backgroundColor: 'rgba(239,68,68,0.08)', borderColor: 'rgba(239,68,68,0.2)' },
+  statusCardActive: { backgroundColor: 'rgba(16,185,129,0.08)', borderColor: 'rgba(16,185,129,0.2)' },
+  statusLabel: {
+    fontSize: 10, color: 'rgba(255,255,255,0.45)', textTransform: 'uppercase',
+    fontWeight: '800', letterSpacing: 2,
+  },
+  statusValue: { fontSize: 22, fontWeight: '800', marginTop: 8, color: '#ffffff' },
+  keyText: { fontSize: 11, color: 'rgba(255,255,255,0.3)', marginTop: 14, fontFamily: 'monospace' },
+  statText: {
+    fontSize: 14, color: '#34d399', marginTop: 8, fontWeight: '700',
+  },
 
-  // Buttons
-  primaryBtn: { backgroundColor: '#6366f1', padding: 18, borderRadius: 14, alignItems: 'center', marginBottom: 16 },
-  primaryBtnText: { color: 'white', fontSize: 16, fontWeight: 'bold' },
-  actionsBox: { gap: 12, marginBottom: 24 },
-  actionBtn: { padding: 18, borderRadius: 14, alignItems: 'center' },
-  actionBtnStart: { backgroundColor: '#10b981' },
-  actionBtnStop: { backgroundColor: '#ef4444' },
-  actionBtnText: { color: 'white', fontSize: 16, fontWeight: 'bold' },
-  settingsBtn: { padding: 16, borderRadius: 14, alignItems: 'center', backgroundColor: '#eef2ff', borderWidth: 1, borderColor: '#c7d2fe' },
-  settingsBtnText: { color: '#4338ca', fontSize: 16, fontWeight: '600' },
-  secondaryBtn: { padding: 14, borderRadius: 14, alignItems: 'center', backgroundColor: '#fef2f2', borderWidth: 1, borderColor: '#fecaca' },
-  secondaryBtnText: { color: '#dc2626', fontSize: 15, fontWeight: '600' },
+  // ===== BUTTONS =====
+  primaryBtn: {
+    backgroundColor: '#6366f1', padding: 18, borderRadius: 16,
+    alignItems: 'center', marginBottom: 16,
+    shadowColor: '#6366f1', shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.4, shadowRadius: 20, elevation: 8,
+  },
+  primaryBtnText: { color: 'white', fontSize: 16, fontWeight: '800', letterSpacing: 0.5 },
+  actionsBox: { gap: 12, marginBottom: 28 },
+  actionBtn: {
+    padding: 18, borderRadius: 16, alignItems: 'center',
+    shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.35, shadowRadius: 16, elevation: 6,
+  },
+  actionBtnStart: {
+    backgroundColor: '#6366f1',
+    shadowColor: '#6366f1',
+  },
+  actionBtnStop: {
+    backgroundColor: '#ef4444',
+    shadowColor: '#ef4444',
+  },
+  actionBtnText: { color: 'white', fontSize: 15, fontWeight: '800', letterSpacing: 0.5 },
+  settingsBtn: {
+    padding: 16, borderRadius: 16, alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.04)',
+    borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)',
+  },
+  settingsBtnText: { color: '#a5b4fc', fontSize: 15, fontWeight: '700' },
+  secondaryBtn: {
+    padding: 14, borderRadius: 16, alignItems: 'center',
+    backgroundColor: 'rgba(239,68,68,0.08)',
+    borderWidth: 1, borderColor: 'rgba(239,68,68,0.2)',
+  },
+  secondaryBtnText: { color: '#f87171', fontSize: 14, fontWeight: '700' },
 
-  // Scanner
-  closeBtn: { position: 'absolute', bottom: 50, alignSelf: 'center', backgroundColor: 'rgba(0,0,0,0.7)', paddingHorizontal: 32, paddingVertical: 16, borderRadius: 30 },
-  closeBtnText: { color: 'white', fontWeight: 'bold', fontSize: 16 },
-  scannerOverlay: { position: 'absolute', top: 60, alignSelf: 'center', backgroundColor: 'rgba(0,0,0,0.5)', paddingHorizontal: 20, paddingVertical: 10, borderRadius: 20 },
-  scannerHint: { color: 'white', fontSize: 14, fontWeight: '600' },
+  // ===== SCANNER =====
+  closeBtn: {
+    position: 'absolute', bottom: 50, alignSelf: 'center',
+    backgroundColor: 'rgba(0,0,0,0.8)', paddingHorizontal: 36,
+    paddingVertical: 16, borderRadius: 30,
+    borderWidth: 1, borderColor: 'rgba(255,255,255,0.15)',
+  },
+  closeBtnText: { color: 'white', fontWeight: '800', fontSize: 15, letterSpacing: 1 },
+  scannerOverlay: {
+    position: 'absolute', top: 60, alignSelf: 'center',
+    backgroundColor: 'rgba(0,0,0,0.6)', paddingHorizontal: 24,
+    paddingVertical: 12, borderRadius: 24,
+    borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)',
+  },
+  scannerHint: { color: 'white', fontSize: 14, fontWeight: '700' },
 
-  // Settings
-  settingCard: { backgroundColor: 'white', borderRadius: 16, padding: 20, marginBottom: 16, borderWidth: 1, borderColor: '#f0f0f0' },
+  // ===== SETTINGS =====
+  settingCard: {
+    backgroundColor: '#1a1b23', borderRadius: 18, padding: 20,
+    marginBottom: 16, borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)',
+  },
   settingRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  settingTitle: { fontSize: 16, fontWeight: '700', color: '#1a1a1a', marginBottom: 4 },
-  settingDesc: { fontSize: 13, color: '#6b7280', marginBottom: 12 },
+  settingTitle: { fontSize: 16, fontWeight: '800', color: '#ffffff', marginBottom: 4 },
+  settingDesc: { fontSize: 12, color: 'rgba(255,255,255,0.4)', marginBottom: 14 },
   senderInputRow: { flexDirection: 'row', gap: 8, marginBottom: 12 },
-  senderInput: { flex: 1, backgroundColor: '#f9fafb', borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 10, paddingHorizontal: 14, paddingVertical: 10, fontSize: 14, color: '#1a1a1a' },
-  addBtn: { backgroundColor: '#6366f1', width: 44, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
-  addBtnText: { color: 'white', fontSize: 22, fontWeight: 'bold' },
+  senderInput: {
+    flex: 1, backgroundColor: 'rgba(255,255,255,0.05)',
+    borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)',
+    borderRadius: 12, paddingHorizontal: 14, paddingVertical: 10,
+    fontSize: 14, color: '#ffffff',
+  },
+  addBtn: {
+    backgroundColor: '#6366f1', width: 44, borderRadius: 12,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  addBtnText: { color: 'white', fontSize: 22, fontWeight: '800' },
   sendersList: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  senderChip: { backgroundColor: '#eef2ff', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, borderWidth: 1, borderColor: '#c7d2fe' },
-  senderChipText: { color: '#4338ca', fontSize: 13, fontWeight: '600' },
-  hintText: { fontSize: 11, color: '#9ca3af', marginTop: 8, fontStyle: 'italic' },
-  resetBtn: { padding: 16, borderRadius: 14, alignItems: 'center', backgroundColor: '#fff7ed', borderWidth: 1, borderColor: '#fed7aa' },
-  resetBtnText: { color: '#c2410c', fontSize: 15, fontWeight: '600' },
+  senderChip: {
+    backgroundColor: 'rgba(99,102,241,0.12)', paddingHorizontal: 12,
+    paddingVertical: 6, borderRadius: 20,
+    borderWidth: 1, borderColor: 'rgba(99,102,241,0.3)',
+  },
+  senderChipText: { color: '#a5b4fc', fontSize: 12, fontWeight: '700' },
+  hintText: { fontSize: 11, color: 'rgba(255,255,255,0.25)', marginTop: 8, fontStyle: 'italic' },
+  resetBtn: {
+    padding: 16, borderRadius: 14, alignItems: 'center',
+    backgroundColor: 'rgba(249,115,22,0.08)',
+    borderWidth: 1, borderColor: 'rgba(249,115,22,0.25)',
+  },
+  resetBtnText: { color: '#fb923c', fontSize: 14, fontWeight: '700' },
 
-  // Logs
-  logsCard: { backgroundColor: 'white', borderRadius: 16, padding: 16, marginBottom: 16, borderWidth: 1, borderColor: '#f0f0f0' },
-  logsTitle: { fontSize: 14, fontWeight: '700', color: '#1a1a1a' },
-  logEntry: { fontSize: 12, color: '#6b7280', marginBottom: 4, fontFamily: 'monospace' },
+  // ===== LOGS =====
+  logsCard: {
+    backgroundColor: '#1a1b23', borderRadius: 18, padding: 16,
+    marginBottom: 16, borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)',
+  },
+  logsTitle: { fontSize: 14, fontWeight: '800', color: '#ffffff' },
+  logEntry: { fontSize: 11, color: 'rgba(255,255,255,0.45)', marginBottom: 4, fontFamily: 'monospace' },
 
-  // Info
-  infoCard: { backgroundColor: '#f0f9ff', borderRadius: 16, padding: 16, borderWidth: 1, borderColor: '#bae6fd' },
-  infoTitle: { fontSize: 14, fontWeight: '700', color: '#0c4a6e', marginBottom: 8 },
-  infoText: { fontSize: 13, color: '#0369a1', marginBottom: 6, lineHeight: 20 },
+  // ===== INFO =====
+  infoCard: {
+    backgroundColor: 'rgba(59,130,246,0.06)', borderRadius: 18,
+    padding: 16, borderWidth: 1, borderColor: 'rgba(59,130,246,0.15)',
+  },
+  infoTitle: { fontSize: 14, fontWeight: '800', color: '#93c5fd', marginBottom: 8 },
+  infoText: { fontSize: 12, color: 'rgba(147,197,253,0.7)', marginBottom: 6, lineHeight: 19 },
 });
 
 export default App;
