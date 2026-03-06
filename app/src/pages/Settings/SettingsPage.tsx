@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, Suspense } from 'react';
 import { createPortal } from 'react-dom';
 import { useSearchParams } from 'react-router-dom';
 import { Header } from '../../components/layout/Header';
-import { Building2, Palette, Bell, Shield, Users, Globe, Loader2, Share2, X, CheckSquare, ListOrdered, ShoppingBag, CreditCard, Sun, Moon, Monitor, CheckCircle2, Smartphone } from 'lucide-react';
+import { Building2, Palette, Bell, Shield, Users, Globe, Loader2, Share2, X, CheckSquare, ListOrdered, ShoppingBag, CreditCard, Sun, Moon, Monitor, CheckCircle2, Smartphone, MessageSquare } from 'lucide-react';
 import { useBusinessStore, useUIStore } from '../../store';
 import { businessService, businessRequestService, moduleSettingsService } from '../../services/db';
 import { eventBus, EVENTS } from '../../services/eventBus';
@@ -111,7 +111,9 @@ export function SettingsPage() {
         // Additional legacy tabs if needed
         const extraTabs = [
             { id: 'sources', label: 'Эх сурвалж', icon: Share2, moduleId: 'orders' },
-        ].filter(t => business?.activeModules?.includes(t.moduleId));
+            { id: 'sms-income-sync', label: 'SMS холболт', icon: Smartphone, moduleId: '_always_' },
+            { id: 'sms-templates', label: 'SMS формат', icon: MessageSquare, moduleId: '_always_' },
+        ].filter(t => t.moduleId === '_always_' || business?.activeModules?.includes(t.moduleId));
 
         return { core: coreTabs, plugins: [...pluginTabs, ...extraTabs] };
     }, [business?.activeModules, isStorefrontEnabled]);

@@ -1,0 +1,435 @@
+.sms-tmpl-container {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.sms-tmpl-loading {
+    text-align: center;
+    padding: 40px;
+    color: var(--text-secondary);
+}
+
+/* Cards */
+.sms-tmpl-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-xl);
+    padding: 24px;
+}
+
+.sms-tmpl-card-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    margin-bottom: 20px;
+}
+
+.sms-tmpl-card-header h3 {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+.sms-tmpl-card-header p {
+    font-size: 0.82rem;
+    color: var(--text-secondary);
+    margin: 2px 0 0;
+}
+
+.sms-tmpl-card-icon {
+    width: 38px;
+    height: 38px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.sms-tmpl-card-icon.test {
+    background: rgba(16, 185, 129, 0.1);
+    color: #10b981;
+}
+
+.sms-tmpl-card-icon.templates {
+    background: rgba(99, 102, 241, 0.1);
+    color: #6366f1;
+}
+
+/* Test SMS */
+.sms-tmpl-test-card {
+    border-color: rgba(16, 185, 129, 0.2);
+}
+
+.sms-tmpl-test-input {
+    width: 100%;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-lg);
+    padding: 14px;
+    font-size: 0.9rem;
+    color: var(--text-primary);
+    resize: vertical;
+    font-family: inherit;
+    transition: border-color 0.2s;
+}
+
+.sms-tmpl-test-input:focus {
+    outline: none;
+    border-color: #10b981;
+    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+}
+
+.sms-tmpl-test-input::placeholder {
+    color: var(--text-tertiary);
+}
+
+.sms-tmpl-test-result {
+    margin-top: 14px;
+    border-radius: var(--radius-lg);
+    padding: 16px;
+    border: 1px solid;
+}
+
+.sms-tmpl-test-result.matched {
+    background: rgba(16, 185, 129, 0.05);
+    border-color: rgba(16, 185, 129, 0.2);
+}
+
+.sms-tmpl-test-result.unmatched {
+    background: rgba(245, 158, 11, 0.05);
+    border-color: rgba(245, 158, 11, 0.2);
+}
+
+.sms-tmpl-test-result-header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.82rem;
+    font-weight: 700;
+    margin-bottom: 12px;
+}
+
+.sms-tmpl-test-result.matched .sms-tmpl-test-result-header {
+    color: #10b981;
+}
+
+.sms-tmpl-test-result.unmatched .sms-tmpl-test-result-header {
+    color: #f59e0b;
+}
+
+.sms-tmpl-test-fields {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+}
+
+.sms-tmpl-test-field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.sms-tmpl-test-field label {
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: var(--text-tertiary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.sms-tmpl-test-field span {
+    font-size: 0.9rem;
+    color: var(--text-primary);
+    font-weight: 600;
+}
+
+.sms-tmpl-test-field span.amount {
+    color: #10b981;
+    font-weight: 800;
+    font-size: 1.05rem;
+}
+
+/* Add button */
+.sms-tmpl-add-btn {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    background: var(--primary);
+    color: white;
+    border: none;
+    border-radius: var(--radius-full);
+    font-size: 0.82rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+}
+
+.sms-tmpl-add-btn:hover {
+    opacity: 0.9;
+    transform: translateY(-1px);
+}
+
+/* Template List */
+.sms-tmpl-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.sms-tmpl-item {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-lg);
+    padding: 14px 18px;
+    transition: all 0.2s;
+}
+
+.sms-tmpl-item.active {
+    border-color: rgba(99, 102, 241, 0.15);
+}
+
+.sms-tmpl-item.inactive {
+    opacity: 0.55;
+}
+
+.sms-tmpl-item-main {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.sms-tmpl-bank-name {
+    font-weight: 700;
+    font-size: 0.95rem;
+    color: var(--text-primary);
+}
+
+.sms-tmpl-senders {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-top: 4px;
+}
+
+.sms-tmpl-sender-chip {
+    background: rgba(99, 102, 241, 0.08);
+    color: var(--primary);
+    padding: 2px 8px;
+    border-radius: 20px;
+    font-size: 0.72rem;
+    font-weight: 700;
+}
+
+.sms-tmpl-item-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+}
+
+.sms-tmpl-toggle {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 6px;
+    transition: color 0.2s;
+}
+
+.sms-tmpl-toggle.on {
+    color: #10b981;
+}
+
+.sms-tmpl-toggle.off {
+    color: var(--text-tertiary);
+}
+
+.sms-tmpl-edit-btn,
+.sms-tmpl-delete-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 6px;
+    border-radius: 8px;
+    transition: all 0.2s;
+    color: var(--text-secondary);
+}
+
+.sms-tmpl-edit-btn:hover {
+    background: rgba(99, 102, 241, 0.1);
+    color: #6366f1;
+}
+
+.sms-tmpl-delete-btn:hover {
+    background: rgba(239, 68, 68, 0.1);
+    color: #ef4444;
+}
+
+.sms-tmpl-sample {
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+    margin-top: 8px;
+    font-size: 0.78rem;
+    color: var(--text-tertiary);
+    font-style: italic;
+    line-height: 1.4;
+}
+
+.sms-tmpl-sample svg {
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+
+/* Edit Form */
+.sms-tmpl-edit-form {
+    background: var(--bg-secondary);
+    border: 1px solid rgba(99, 102, 241, 0.2);
+    border-radius: var(--radius-lg);
+    padding: 20px;
+    margin-bottom: 12px;
+}
+
+.sms-tmpl-edit-form h4 {
+    margin: 0 0 16px;
+    font-size: 0.95rem;
+    color: var(--text-primary);
+}
+
+.sms-tmpl-form-fields {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.sms-tmpl-form-row {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.sms-tmpl-form-row label {
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: var(--text-secondary);
+}
+
+.sms-tmpl-form-row input,
+.sms-tmpl-form-row textarea {
+    background: var(--bg-primary);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-md);
+    padding: 10px 12px;
+    font-size: 0.85rem;
+    color: var(--text-primary);
+    font-family: inherit;
+    transition: border-color 0.2s;
+}
+
+.sms-tmpl-form-row input:focus,
+.sms-tmpl-form-row textarea:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+.sms-tmpl-form-row input.mono,
+.sms-tmpl-form-row textarea.mono {
+    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+    font-size: 0.8rem;
+}
+
+.sms-tmpl-form-row input::placeholder,
+.sms-tmpl-form-row textarea::placeholder {
+    color: var(--text-tertiary);
+}
+
+.sms-tmpl-form-preview {
+    padding: 10px 14px;
+    border-radius: var(--radius-md);
+    font-size: 0.82rem;
+    font-weight: 600;
+}
+
+.sms-tmpl-form-preview.ok {
+    background: rgba(16, 185, 129, 0.08);
+    color: #10b981;
+}
+
+.sms-tmpl-form-preview.fail {
+    background: rgba(239, 68, 68, 0.08);
+    color: #ef4444;
+}
+
+.sms-tmpl-edit-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 16px;
+}
+
+.sms-tmpl-save-btn,
+.sms-tmpl-cancel-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 18px;
+    border-radius: var(--radius-full);
+    font-size: 0.82rem;
+    font-weight: 700;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.sms-tmpl-save-btn {
+    background: #10b981;
+    color: white;
+}
+
+.sms-tmpl-save-btn:hover {
+    background: #059669;
+}
+
+.sms-tmpl-cancel-btn {
+    background: var(--bg-primary);
+    color: var(--text-secondary);
+    border: 1px solid var(--border-primary);
+}
+
+.sms-tmpl-cancel-btn:hover {
+    background: var(--bg-secondary);
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+    .sms-tmpl-card {
+        padding: 18px;
+    }
+
+    .sms-tmpl-test-fields {
+        grid-template-columns: 1fr;
+        gap: 8px;
+    }
+
+    .sms-tmpl-item-main {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .sms-tmpl-item-actions {
+        align-self: flex-end;
+        margin-top: -32px;
+    }
+
+    .sms-tmpl-add-btn {
+        padding: 6px 12px;
+        font-size: 0.75rem;
+    }
+}
