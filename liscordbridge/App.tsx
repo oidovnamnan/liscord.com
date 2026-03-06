@@ -70,43 +70,78 @@ let _forwardCount = 0;
 
 // Parse amount from SMS body
 function parseAmount(body: string): number {
-  // Match patterns like "50,000.00", "125000", "50 000"
+  // Pattern 1: ORLOGO: 1975000.00MNT or ORLOGO: 50,000.00 MNT
   const patterns = [
-    /(\d{1,3}(?:,\d{3})*(?:\.\d{1,2})?)\s*(?:MNT|₮|төг)/i,
-    /(?:орлого|orlogo|credited|дүн|amount)[:\s]*(\d{1,3}(?:[,\s]\d{3})*(?:\.\d{1,2})?)/i,
-    /(\d{1,3}(?:,\d{3})*(?:\.\d{1,2})?)\s*(?:орлого|orlogo)/i,
+    /(?:orlogo|орлого)[:\s]*(\d[\d,]*(?:\.\d{1,2})?)\s*(?:MNT|₮|төг)/i,
+    /(\d[\d,]*(?:\.\d{1,2})?)\s*(?:MNT|₮|төг)/i,
+    /(?:орлого|orlogo|credited|дүн|amount)[:\s]*(\d[\d,\s]*(?:\.\d{1,2})?)/i,
+    /(\d[\d,]*(?:\.\d{1,2})?)\s*(?:орлого|orlogo)/i,
   ];
   for (const pattern of patterns) {
     const match = body.match(pattern);
     if (match) {
-      return parseFloat(match[1].replace(/[,\s]/g, ''));
+      const val = parseFloat(match[1].replace(/[,\s]/g, ''));
+      if (val > 0) return val;
     }
   }
-  // Fallback: find largest number in SMS
-  const numbers = body.match(/\d{1,3}(?:[,\s]\d{3})*(?:\.\d{1,2})?/g);
+  // Fallback: find largest number in SMS (> 100)
+  const numbers = body.match(/\d[\d,]*(?:\.\d{1,2})?/g);
   if (numbers) {
     const parsed = numbers.map(n => parseFloat(n.replace(/[,\s]/g, '')));
-    return Math.max(...parsed.filter(n => n > 100)); // Filter out tiny numbers
+    return Math.max(...parsed.filter(n => n > 100));
   }
   return 0;
 }
 
 // Parse bank name from sender
-function parseBankName(sender: string): string {
+function parseBankName(sender: string, body?: string): string {
+  // Check sender first
   if (sender.includes('1900') || sender.toLowerCase().includes('khan')) return 'Khan Bank';
   if (sender.includes('1800') || sender.toLowerCase().includes('golomt')) return 'Golomt';
   if (sender.includes('1500') || sender.toLowerCase().includes('tdb')) return 'TDB';
   if (sender.includes('7575') || sender.toLowerCase().includes('xac')) return 'XacBank';
   if (sender.includes('1234') || sender.toLowerCase().includes('state')) return 'Төрийн Банк';
   if (sender.includes('2525') || sender.toLowerCase().includes('bogd')) return 'Bogd Bank';
+  // Check SMS body for bank identifiers
+  if (body) {
+    const lower = body.toLowerCase();
+    if (lower.includes('khan') || lower.includes('хаан')) return 'Khan Bank';
+    if (lower.includes('golomt') || lower.includes('голомт')) return 'Golomt';
+    if (lower.includes('tdb') || lower.includes('худалдаа')) return 'TDB';
+    if (lower.includes('xac') || lower.includes('хас')) return 'XacBank';
+    if (lower.includes('state') || lower.includes('төрийн')) return 'Төрийн Банк';
+    if (lower.includes('bogd') || lower.includes('богд')) return 'Bogd Bank';
+    // If body has ORLOGO pattern, it's a bank SMS — use sender as label
+    if (/orlogo|орлого/i.test(body)) return `Банк (${sender})`;
+  }
   return sender;
 }
 
+// Parse transaction note/utga from SMS body
+function parseUtga(body: string): string {
+  const patterns = [
+    /(?:guilgeenii\s*)?utga[:\s]*([^\n,.]+)/i,
+    /(?:гүйлгээний\s*)?утга[:\s]*([^\n,.]+)/i,
+    /note[:\s]*([^\n,.]+)/i,
+  ];
+  for (const pattern of patterns) {
+    const match = body.match(pattern);
+    if (match) return match[1].trim();
+  }
+  return '';
+}
+
 // ======= MODULE-LEVEL HELPERS (accessible from background task) =======
-function isBankSms(sender: string, currentSettings: AppSettings): boolean {
-  return currentSettings.bankSenders.some(bankNum =>
+function isBankSms(sender: string, body: string, currentSettings: AppSettings): boolean {
+  // Check sender match
+  const senderMatch = currentSettings.bankSenders.some(bankNum =>
     sender.includes(bankNum) || bankNum.includes(sender)
   );
+  if (senderMatch) return true;
+  // Content-based detection: if body contains income keywords, treat as bank SMS
+  const hasIncomeKeyword = /orlogo|орлого|credited|received/i.test(body);
+  const hasAmount = /\d+\.?\d*\s*MNT/i.test(body);
+  return hasIncomeKeyword && hasAmount;
 }
 
 function isIncomeSms(body: string, currentSettings: AppSettings): boolean {
@@ -163,11 +198,12 @@ const backgroundTask = async (taskDataArguments: any) => {
                   const sender = msg.address || '';
                   const body = msg.body || '';
 
-                  if (!isBankSms(sender, currentSettings)) continue;
+                  if (!isBankSms(sender, body, currentSettings)) continue;
                   if (currentSettings.onlyIncome && !isIncomeSms(body, currentSettings)) continue;
 
                   const amount = parseAmount(body);
-                  const bank = parseBankName(sender);
+                  const bank = parseBankName(sender, body);
+                  const utga = parseUtga(body);
 
                   const success = await sendToFirestore(currentKey, {
                     sender,
@@ -175,6 +211,7 @@ const backgroundTask = async (taskDataArguments: any) => {
                     timestamp: msg.date || Date.now(),
                     amount,
                     bank,
+                    utga,
                   });
 
                   if (success) {
@@ -213,6 +250,7 @@ async function sendToFirestore(pairingKey: string, smsData: {
   timestamp: number;
   amount: number;
   bank: string;
+  utga: string;
 }): Promise<boolean> {
   try {
     // Write to sms_inbox collection using the pairing key as a pseudo-auth
@@ -226,6 +264,7 @@ async function sendToFirestore(pairingKey: string, smsData: {
         body: { stringValue: smsData.body },
         bank: { stringValue: smsData.bank },
         amount: { doubleValue: smsData.amount },
+        utga: { stringValue: smsData.utga },
         timestamp: { integerValue: String(smsData.timestamp) },
         status: { stringValue: 'pending' },
         createdAt: { timestampValue: new Date().toISOString() },

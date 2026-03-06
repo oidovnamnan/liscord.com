@@ -78,13 +78,16 @@ export function BankSmsSyncPage() {
                 const createdAt = d.createdAt?.toDate?.() || new Date(d.timestamp || Date.now());
                 const timeStr = createdAt.toLocaleTimeString('mn-MN', { hour: '2-digit', minute: '2-digit' });
 
-                // Extract note/utga from SMS body
-                let note = '';
-                const utgaMatch = d.body?.match(/(?:utga|утга|note)[:\s]*([^\n,]+)/i);
-                if (utgaMatch) {
-                    note = utgaMatch[1].trim();
-                } else {
-                    note = d.body?.substring(0, 50) || '';
+                // Use utga field from Firestore, or extract from body
+                let note = d.utga || '';
+                if (!note) {
+                    const utgaMatch = d.body?.match(/(?:guilgeenii\s*)?utga[:\s]*([^\n,.]+)/i)
+                        || d.body?.match(/(?:гүйлгээний\s*)?утга[:\s]*([^\n,.]+)/i);
+                    if (utgaMatch) {
+                        note = utgaMatch[1].trim();
+                    } else {
+                        note = d.body?.substring(0, 50) || '';
+                    }
                 }
 
                 return {
