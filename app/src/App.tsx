@@ -226,35 +226,50 @@ export default function App() {
       try {
         if (firebaseUser) {
           setLoading(true);
-          const profile = await userService.getUser(firebaseUser.uid);
+
+          // 1. Get user profile
+          let profile;
+          try {
+            profile = await userService.getUser(firebaseUser.uid);
+          } catch (e) {
+            console.error('[Auth] getUser failed:', e);
+          }
+
           if (profile) {
             setUser({ ...profile, uid: firebaseUser.uid });
             if (profile.activeBusiness) {
-              const [biz, emp] = await Promise.all([
-                businessService.getBusiness(profile.activeBusiness),
-                businessService.getEmployeeProfile(profile.activeBusiness, firebaseUser.uid)
-              ]);
-              setBusiness(biz);
-              setEmployee(emp);
+              try {
+                const [biz, emp] = await Promise.all([
+                  businessService.getBusiness(profile.activeBusiness),
+                  businessService.getEmployeeProfile(profile.activeBusiness, firebaseUser.uid)
+                ]);
+                setBusiness(biz);
+                setEmployee(emp);
+              } catch (e) {
+                console.error('[Auth] getBusiness/getEmployee failed:', e);
+              }
             }
           } else {
             setUser({ uid: firebaseUser.uid, phone: firebaseUser.phoneNumber, email: firebaseUser.email, displayName: firebaseUser.displayName || '', photoURL: firebaseUser.photoURL, businessIds: [], activeBusiness: null, language: 'mn', createdAt: new Date() });
           }
 
-          // --- Device Tracking & Remote Logout ---
-          const deviceId = getDeviceId();
-          const deviceInfo = getDeviceInfo();
-          await userService.registerDevice(firebaseUser.uid, deviceId, deviceInfo);
+          // 2. Device Tracking (non-blocking — should not crash auth flow)
+          try {
+            const deviceId = getDeviceId();
+            const deviceInfo = getDeviceInfo();
+            await userService.registerDevice(firebaseUser.uid, deviceId, deviceInfo);
 
-          if (unsubscribeDevice) unsubscribeDevice();
-          unsubscribeDevice = onSnapshot(doc(db, `users/${firebaseUser.uid}/devices`, deviceId), (snap) => {
-            // If the document is deleted (e.g., from another device kicking this one out), sign out locally
-            if (!snap.exists()) {
-              auth.signOut();
-            }
-          }, (err) => {
-            console.error("Device listener error:", err);
-          });
+            if (unsubscribeDevice) unsubscribeDevice();
+            unsubscribeDevice = onSnapshot(doc(db, `users/${firebaseUser.uid}/devices`, deviceId), (snap) => {
+              if (!snap.exists()) {
+                auth.signOut();
+              }
+            }, (err) => {
+              console.warn('[Auth] Device listener error (non-critical):', err);
+            });
+          } catch (deviceErr) {
+            console.warn('[Auth] Device tracking failed (non-critical):', deviceErr);
+          }
 
         } else {
           setUser(null);
