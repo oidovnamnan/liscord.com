@@ -1167,19 +1167,19 @@
 /* Stats Summary */
 .orders-stats-summary {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 16px;
-    margin-bottom: 24px;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 12px;
+    margin-bottom: 20px;
 }
 
 .stat-card {
     background: var(--surface-1);
-    padding: 20px;
+    padding: 16px;
     border-radius: var(--radius-xl);
     border: 1px solid var(--border-secondary);
     display: flex;
     align-items: center;
-    gap: 16px;
+    gap: 12px;
     transition: all 0.3s ease;
     box-shadow: 0 4px 12px -4px var(--shadow-sm);
 }
