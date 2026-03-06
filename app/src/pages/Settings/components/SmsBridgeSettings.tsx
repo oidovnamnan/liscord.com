@@ -4,6 +4,7 @@ import { Smartphone, RefreshCcw, Copy, CheckCircle2, Download, Shield, Wifi, Ale
 import { toast } from 'react-hot-toast';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { db } from '../../../services/firebase';
+import { SmsTemplateSettings } from './SmsTemplateSettings';
 import './SmsBridgeSettings.css';
 
 export function SmsBridgeSettings({ bizId }: { bizId: string }) {
@@ -163,6 +164,15 @@ export function SmsBridgeSettings({ bizId }: { bizId: string }) {
                         <span>Гар утасны камер биш, Bridge апп-ын сканнераар уншуулна</span>
                     </div>
                 </div>
+            </div>
+
+            {/* SMS Template Settings — embedded section */}
+            <div style={{ marginTop: 32 }}>
+                <h2>SMS формат тохиргоо</h2>
+                <p className="sms-settings-desc">
+                    Банк бүрийн мессежний формат тохируулж, зөв таниулна.
+                </p>
+                <SmsTemplateSettings bizId={bizId} />
             </div>
         </div>
     );
