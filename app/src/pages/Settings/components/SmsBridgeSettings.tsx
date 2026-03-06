@@ -1,16 +1,53 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import { Smartphone, RefreshCcw, Copy, CheckCircle2, Download, Shield, Wifi, AlertCircle } from 'lucide-react';
 import { toast } from 'react-hot-toast';
+import { doc, getDoc, updateDoc } from 'firebase/firestore';
+import { db } from '../../../services/firebase';
 import './SmsBridgeSettings.css';
 
-export function SmsBridgeSettings({ bizId: _bizId }: { bizId: string }) {
-    const [apiKey, setApiKey] = useState(() => 'ls_sk_' + Math.random().toString(36).substring(2, 12));
+export function SmsBridgeSettings({ bizId }: { bizId: string }) {
+    const [apiKey, setApiKey] = useState<string>('');
     const [copied, setCopied] = useState(false);
+    const [loading, setLoading] = useState(true);
 
-    const handleGenerateKey = () => {
-        setApiKey('ls_sk_' + Math.random().toString(36).substring(2, 12));
-        toast.success('Шинэ түлхүүр үүсгэлээ');
+    // Load or generate pairing key from Firestore
+    useEffect(() => {
+        if (!bizId) return;
+        const loadKey = async () => {
+            try {
+                const bizRef = doc(db, 'businesses', bizId);
+                const snap = await getDoc(bizRef);
+                const data = snap.data();
+                if (data?.smsBridgeKey) {
+                    setApiKey(data.smsBridgeKey);
+                } else {
+                    // First time: generate and save
+                    const newKey = 'ls_sk_' + Math.random().toString(36).substring(2, 12);
+                    await updateDoc(bizRef, { smsBridgeKey: newKey });
+                    setApiKey(newKey);
+                }
+            } catch (err) {
+                console.error('Failed to load bridge key:', err);
+                // Fallback: local key
+                setApiKey('ls_sk_' + Math.random().toString(36).substring(2, 12));
+            } finally {
+                setLoading(false);
+            }
+        };
+        loadKey();
+    }, [bizId]);
+
+    const handleGenerateKey = async () => {
+        const newKey = 'ls_sk_' + Math.random().toString(36).substring(2, 12);
+        setApiKey(newKey);
+        try {
+            const bizRef = doc(db, 'businesses', bizId);
+            await updateDoc(bizRef, { smsBridgeKey: newKey });
+            toast.success('Шинэ түлхүүр үүсгэж хадгаллаа');
+        } catch {
+            toast.error('Түлхүүр хадгалахад алдаа гарлаа');
+        }
     };
 
     const handleCopy = () => {
@@ -19,6 +56,10 @@ export function SmsBridgeSettings({ bizId: _bizId }: { bizId: string }) {
         toast.success('Хуулагдлаа');
         setTimeout(() => setCopied(false), 2000);
     };
+
+    if (loading) {
+        return <div className="settings-section animate-fade-in"><p>Ачааллаж байна...</p></div>;
+    }
 
     return (
         <div className="settings-section animate-fade-in">

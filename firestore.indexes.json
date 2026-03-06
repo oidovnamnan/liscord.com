@@ -45,6 +45,20 @@
                     "order": "ASCENDING"
                 }
             ]
+        },
+        {
+            "collectionGroup": "sms_inbox",
+            "queryScope": "COLLECTION",
+            "fields": [
+                {
+                    "fieldPath": "pairingKey",
+                    "order": "ASCENDING"
+                },
+                {
+                    "fieldPath": "createdAt",
+                    "order": "DESCENDING"
+                }
+            ]
         }
     ],
     "fieldOverrides": []
