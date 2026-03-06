@@ -810,8 +810,330 @@
 }
 
 @media (max-width: 640px) {
+
+    /* --- Stats: 2x2 compact grid --- */
+    .orders-stats-summary {
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        margin-bottom: 16px;
+    }
+
+    .stat-card {
+        padding: 12px 14px;
+        border-radius: 14px;
+        gap: 10px;
+        box-shadow: none;
+    }
+
+    .stat-card:hover {
+        transform: none;
+        box-shadow: none;
+    }
+
+    .stat-icon {
+        width: 36px;
+        height: 36px;
+        border-radius: 10px;
+    }
+
+    .stat-label {
+        font-size: 0.65rem;
+        letter-spacing: 0.3px;
+    }
+
+    .stat-value {
+        font-size: 1.05rem;
+    }
+
+    /* --- Toolbar: Stack on mobile --- */
     .orders-toolbar {
         flex-direction: column;
+        gap: 8px;
+        margin-bottom: 12px;
+    }
+
+    .orders-search {
+        min-width: 100%;
+    }
+
+    .orders-search-input {
+        height: 40px;
+        font-size: 0.85rem;
+        border-radius: 10px;
+    }
+
+    .orders-search-icon {
+        left: 12px;
+    }
+
+    .orders-search-input {
+        padding-left: 38px !important;
+    }
+
+    .orders-filters {
+        width: 100%;
+    }
+
+    .orders-filter-select {
+        min-width: auto;
+        flex: 1;
+    }
+
+    /* --- Status Chips: Compact scroll --- */
+    .orders-status-bar {
+        gap: 6px;
+        padding: 6px;
+        margin-bottom: 12px;
+        border-radius: 12px;
+        box-shadow: none;
+    }
+
+    .orders-status-chip {
+        padding: 6px 12px;
+        font-size: 0.75rem;
+        border-radius: 8px;
+        box-shadow: none;
+    }
+
+    .orders-status-count {
+        font-size: 0.65rem;
+        padding: 0px 5px;
+    }
+
+    /* --- Date Filter: Compact --- */
+    .date-filter-group {
+        padding: 3px;
+        border-radius: 10px;
+    }
+
+    .date-chip {
+        padding: 5px 10px;
+        font-size: 0.7rem;
+        border-radius: 6px;
+    }
+
+    /* --- Order Cards: Compact, flat --- */
+    .orders-list {
+        gap: 8px;
+    }
+
+    .order-card {
+        border-radius: 14px;
+        box-shadow: none;
+    }
+
+    .order-card:hover {
+        transform: none;
+        box-shadow: none;
+    }
+
+    .order-card.pro-layout {
+        border-radius: 14px;
+        box-shadow: none;
+    }
+
+    .order-card.pro-layout:hover {
+        transform: none;
+        box-shadow: none;
+    }
+
+    .order-card-inner {
+        padding: 10px 12px;
+        gap: 6px;
+    }
+
+    .order-card::before {
+        width: 4px;
+    }
+
+    /* --- Pro Header: Tighter --- */
+    .pro-card-header {
+        gap: 6px;
+    }
+
+    .header-id-group {
+        gap: 6px;
+    }
+
+    .order-id {
+        font-size: 0.7rem;
+        padding: 2px 6px;
+    }
+
+    .pro-badge {
+        font-size: 0.6rem;
+        padding: 1px 5px;
+    }
+
+    .pro-date {
+        font-size: 0.68rem;
+    }
+
+    .header-actions-group {
+        gap: 8px;
+    }
+
+    /* --- Pro Items: Compact --- */
+    .pro-item-row {
+        padding: 4px 6px;
+        gap: 6px;
+        border-radius: 8px;
+    }
+
+    .pro-item-thumb {
+        width: 24px;
+        height: 24px;
+        border-radius: 6px;
+    }
+
+    .pro-item-name {
+        font-size: 0.75rem;
+    }
+
+    .pro-item-meta {
+        font-size: 0.65rem;
+    }
+
+    .pro-item-price {
+        font-size: 0.7rem;
+    }
+
+    .pro-qty {
+        font-size: 0.65rem;
+        padding: 0px 3px;
+    }
+
+    /* --- Meta Bar: Compact --- */
+    .pro-card-meta-bar {
+        padding: 4px 6px;
+        gap: 6px;
+        border-radius: 6px;
+    }
+
+    .pro-meta-item {
+        font-size: 0.65rem;
+    }
+
+    .pro-assignee-mark {
+        width: 12px;
+        height: 12px;
+        font-size: 0.5rem;
+    }
+
+    .pro-source-tag {
+        font-size: 0.6rem;
+        padding: 1px 6px;
+    }
+
+    /* --- Footer: Compact --- */
+    .pro-card-footer {
+        padding-top: 0;
+    }
+
+    .pro-total-label {
+        font-size: 0.55rem;
+    }
+
+    .pro-total-value {
+        font-size: 1rem;
+    }
+
+    .pro-payment-badge {
+        font-size: 0.65rem;
+        padding: 3px 6px;
+    }
+
+    /* --- Item Tags Scroll --- */
+    .order-items-scroll {
+        gap: 6px;
+        margin-top: 4px;
+    }
+
+    .order-item-tag-premium {
+        padding: 3px 8px 3px 4px;
+        font-size: 0.72rem;
+        border-radius: 8px;
+    }
+
+    .order-item-tag-premium:hover {
+        transform: none;
+    }
+
+    .item-img-mini {
+        width: 20px;
+        height: 20px;
+        border-radius: 4px;
+    }
+
+    .item-name-mini {
+        max-width: 100px;
+    }
+
+    .item-qty-badge {
+        font-size: 0.65rem;
+        padding: 0px 4px;
+    }
+
+    /* --- Dropdown: Bottom sheet on mobile --- */
+    .pro-dropdown-menu,
+    .order-dropdown-menu {
+        position: fixed;
+        top: auto;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        border-radius: 20px 20px 0 0;
+        min-width: 100%;
+        padding: 12px 16px 24px;
+        box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.15);
+        z-index: 1000;
+    }
+
+    .pro-dropdown-item,
+    .dropdown-item {
+        padding: 14px 16px;
+        font-size: 0.9rem;
+    }
+
+    /* --- Button sizing --- */
+    .btn-primary,
+    .btn-secondary,
+    .btn.gradient-btn {
+        padding: 8px 14px;
+        font-size: 0.8rem;
+        border-radius: 10px;
+    }
+
+    /* --- Cancel reason --- */
+    .order-cancel-reason-hint {
+        padding: 6px 12px;
+        font-size: 0.7rem;
+    }
+
+    /* --- Empty state --- */
+    .empty-state {
+        padding: 60px 24px;
+    }
+
+    .empty-state-icon {
+        font-size: 2.5rem;
+    }
+
+    .empty-state h3 {
+        font-size: 0.95rem;
+    }
+
+    .empty-state p {
+        font-size: 0.8rem;
+    }
+
+    /* --- Order total --- */
+    .order-total-value {
+        font-size: 1rem;
+    }
+
+    .order-total-label {
+        font-size: 0.6rem;
     }
 
     .order-card-body {
