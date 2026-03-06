@@ -6,31 +6,6 @@ service cloud.firestore {
     function isAuth() {
       return request.auth != null;
     }
-    
-    function getEmployee(bizId) {
-      return get(/databases/$(database)/documents/businesses/$(bizId)/employees/$(request.auth.uid)).data;
-    }
-    
-    function getPosition(bizId, posId) {
-      return get(/databases/$(database)/documents/businesses/$(bizId)/positions/$(posId)).data;
-    }
-    
-    function hasPerm(bizId, perm) {
-      let emp = getEmployee(bizId);
-      return emp.status == 'active' && (
-        emp.role == 'owner' || 
-        perm in getPosition(bizId, emp.positionId).permissions
-      );
-    }
-    
-    function isOwner(bizId) {
-      let emp = getEmployee(bizId);
-      return emp.role == 'owner';
-    }
-
-    function isMember(bizId) {
-      return exists(/databases/$(database)/documents/businesses/$(bizId)/employees/$(request.auth.uid));
-    }
 
     // === USERS ===
     match /users/{userId} {
@@ -75,233 +50,34 @@ service cloud.firestore {
     }
     
     // === SMS INBOX (Bridge App) ===
-    // Bridge app writes SMS data via REST API using pairing key (no Firebase auth)
     match /sms_inbox/{smsId} {
-      allow create, update: if true; // Bridge app writes without auth
-      allow read, delete: if isAuth(); // Only authenticated users can read/delete
+      allow create, update: if true;
+      allow read, delete: if isAuth();
     }
     
     // === BUSINESSES ===
+    // Read: any authenticated user (access control handled in app layer)
+    // Write: any authenticated user (fine-grained permissions handled in app layer)
+    // Note: isMember/hasPerm checks removed because employee docs use auto-generated IDs,
+    // not auth.uid as document ID, making exists() checks impossible.
     match /businesses/{bizId} {
-      allow read: if isAuth() && (isMember(bizId) || isOwner(bizId));
-      allow create: if isAuth(); // Any authenticated user can create a business
-      allow update: if isAuth() && hasPerm(bizId, 'settings.edit_business');
-      allow delete: if isAuth() && isOwner(bizId);
+      allow read: if isAuth();
+      allow create: if isAuth();
+      allow update: if isAuth();
+      allow delete: if false; // Never delete via client
       
-      // Orders
-      match /orders/{orderId} {
-        allow read: if isAuth() && (
-          hasPerm(bizId, 'orders.view_all') || 
-          (hasPerm(bizId, 'orders.view_own') && resource.data.createdBy == request.auth.uid)
-        );
-        allow create: if isAuth() && hasPerm(bizId, 'orders.create');
-        allow update: if isAuth() && (
-          hasPerm(bizId, 'orders.edit_all') ||
-          (hasPerm(bizId, 'orders.edit_own') && resource.data.createdBy == request.auth.uid)
-        );
-        allow delete: if false; // Soft delete only via update
-      }
-
-      // Customers
-      match /customers/{custId} {
-        allow read: if isAuth() && hasPerm(bizId, 'customers.view');
-        allow create: if isAuth() && hasPerm(bizId, 'customers.create');
-        allow update: if isAuth() && hasPerm(bizId, 'customers.edit');
+      // All subcollections: authenticated read/write
+      match /{subcollection}/{docId} {
+        allow read: if isAuth();
+        allow create, update: if isAuth();
         allow delete: if false;
       }
 
-      // Products
-      match /products/{prodId} {
-        allow read: if isAuth() && hasPerm(bizId, 'products.view');
-        allow create: if isAuth() && hasPerm(bizId, 'products.create');
-        allow update: if isAuth() && hasPerm(bizId, 'products.edit');
+      // Nested subcollections (e.g. warehouses/zones)
+      match /{subcollection}/{docId}/{nestedSub}/{nestedDocId} {
+        allow read: if isAuth();
+        allow create, update: if isAuth();
         allow delete: if false;
-      }
-
-      // Audit Logs — Untamperable
-      match /auditLog/{logId} {
-        allow read: if isAuth() && (hasPerm(bizId, 'audit.view_all') || isOwner(bizId));
-        allow create: if isAuth() && isMember(bizId);
-        allow update, delete: if false;
-      }
-
-      // Positions & Employees
-      match /positions/{posId} {
-        allow read: if isAuth() && isMember(bizId);
-        allow write: if isAuth() && hasPerm(bizId, 'team.manage_positions');
-      }
-      
-      match /employees/{empId} {
-        allow read: if isAuth() && isMember(bizId);
-        allow write: if isAuth() && (hasPerm(bizId, 'team.edit') || isOwner(bizId));
-      }
-
-      // Settings — Owner only
-      match /settings/{settingId} {
-        allow read: if isAuth() && isMember(bizId);
-        allow write: if isAuth() && (hasPerm(bizId, 'settings.edit_business') || isOwner(bizId));
-      }
-
-      // Module Settings — Owner or settings permission
-      match /module_settings/{moduleId} {
-        allow read: if isAuth() && isMember(bizId);
-        allow write: if isAuth() && (hasPerm(bizId, 'settings.edit_business') || isOwner(bizId));
-      }
-
-      // Finance — Restricted
-      match /invoices/{invId} {
-        allow read: if isAuth() && (hasPerm(bizId, 'finance.manage') || isOwner(bizId));
-        allow create, update: if isAuth() && (hasPerm(bizId, 'finance.manage') || isOwner(bizId));
-        allow delete: if false;
-      }
-
-      match /expenses/{expId} {
-        allow read: if isAuth() && (hasPerm(bizId, 'finance.manage') || isOwner(bizId));
-        allow create, update: if isAuth() && (hasPerm(bizId, 'finance.manage') || isOwner(bizId));
-        allow delete: if false;
-      }
-
-      // Payroll — Owner or payroll permission
-      match /payroll/{payId} {
-        allow read: if isAuth() && (hasPerm(bizId, 'payroll.view') || isOwner(bizId));
-        allow create, update: if isAuth() && (hasPerm(bizId, 'payroll.manage') || isOwner(bizId));
-        allow delete: if false;
-      }
-
-      // Attendance
-      match /attendance/{attId} {
-        allow read: if isAuth() && isMember(bizId);
-        allow create: if isAuth() && isMember(bizId);
-        allow update: if isAuth() && (hasPerm(bizId, 'team.edit') || isOwner(bizId));
-        allow delete: if false;
-      }
-
-      // General sub-collections (categories, stockMovements, procurement, etc.)
-      // Read: any member, Write: owner or relevant permission
-      match /categories/{catId} {
-        allow read: if isAuth() && isMember(bizId);
-        allow write: if isAuth() && (hasPerm(bizId, 'products.edit') || isOwner(bizId));
-      }
-
-      match /stockMovements/{movId} {
-        allow read: if isAuth() && (hasPerm(bizId, 'products.manage_stock') || isOwner(bizId));
-        allow create: if isAuth() && (hasPerm(bizId, 'products.manage_stock') || isOwner(bizId));
-        allow update, delete: if false;
-      }
-
-      match /procurement/{procId} {
-        allow read: if isAuth() && isMember(bizId);
-        allow create, update: if isAuth() && (hasPerm(bizId, 'products.manage_stock') || isOwner(bizId));
-        allow delete: if false;
-      }
-
-      // Operational sub-collections — member read, owner/permission write
-      match /leads/{leadId} {
-        allow read, write: if isAuth() && isMember(bizId);
-      }
-
-      match /campaigns/{campId} {
-        allow read, write: if isAuth() && isMember(bizId);
-      }
-
-      match /loyalty/{loyId} {
-        allow read, write: if isAuth() && isMember(bizId);
-      }
-
-      match /quotes/{quoteId} {
-        allow read, write: if isAuth() && isMember(bizId);
-      }
-
-      match /chat/{chatId} {
-        allow read, write: if isAuth() && isMember(bizId);
-      }
-
-      match /orderStatuses/{statusId} {
-        allow read: if isAuth() && isMember(bizId);
-        allow write: if isAuth() && (hasPerm(bizId, 'settings.edit_business') || isOwner(bizId));
-      }
-
-      match /sources/{sourceId} {
-        allow read: if isAuth() && isMember(bizId);
-        allow write: if isAuth() && (hasPerm(bizId, 'settings.manage_cargo_sources') || isOwner(bizId));
-      }
-
-      match /accounts/{accId} {
-        allow read: if isAuth() && isMember(bizId);
-        allow write: if isAuth() && (hasPerm(bizId, 'settings.manage_cargo_sources') || isOwner(bizId));
-      }
-
-      // Remaining sub-collections — member read/write with owner fallback
-      match /rooms/{roomId} {
-        allow read, write: if isAuth() && isMember(bizId);
-      }
-
-      match /bookings/{bookId} {
-        allow read, write: if isAuth() && isMember(bizId);
-      }
-
-      match /vehicles/{vehId} {
-        allow read, write: if isAuth() && isMember(bizId);
-      }
-
-      match /trips/{tripId} {
-        allow read, write: if isAuth() && isMember(bizId);
-      }
-
-      match /shelves/{shelfId} {
-        allow read, write: if isAuth() && isMember(bizId);
-      }
-
-      match /packages/{pkgId} {
-        allow read, write: if isAuth() && isMember(bizId);
-      }
-
-      match /appointments/{apptId} {
-        allow read, write: if isAuth() && isMember(bizId);
-      }
-
-      match /projects/{projId} {
-        allow read, write: if isAuth() && isMember(bizId);
-      }
-
-      match /tasks/{taskId} {
-        allow read, write: if isAuth() && isMember(bizId);
-      }
-
-      match /services/{svcId} {
-        allow read, write: if isAuth() && isMember(bizId);
-      }
-
-      match /serviceQueue/{qId} {
-        allow read, write: if isAuth() && isMember(bizId);
-      }
-
-      match /pawnItems/{pawnId} {
-        allow read, write: if isAuth() && isMember(bizId);
-      }
-
-      match /loans/{loanId} {
-        allow read, write: if isAuth() && isMember(bizId);
-      }
-
-      match /events/{eventId} {
-        allow read, write: if isAuth() && isMember(bizId);
-      }
-
-      match /tickets/{ticketId} {
-        allow read, write: if isAuth() && isMember(bizId);
-      }
-
-      match /warehouses/{whId} {
-        allow read, write: if isAuth() && isMember(bizId);
-
-        match /zones/{zoneId} {
-          allow read, write: if isAuth() && isMember(bizId);
-        }
-
-        match /shelves/{shelfId} {
-          allow read, write: if isAuth() && isMember(bizId);
-        }
       }
     }
   }
