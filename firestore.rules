@@ -35,6 +35,11 @@ service cloud.firestore {
     // === USERS ===
     match /users/{userId} {
       allow read, write: if isAuth() && request.auth.uid == userId;
+      
+      // Device tracking for remote logout
+      match /devices/{deviceId} {
+        allow read, write: if isAuth() && request.auth.uid == userId;
+      }
     }
 
     // === SYSTEM SETTINGS (Super Admin only via Admin SDK) ===
