@@ -262,14 +262,212 @@
 }
 
 @media (max-width: 640px) {
-    .dashboard-order-item {
-        flex-wrap: wrap;
+
+    /* --- Hero: Compact, no glow --- */
+    .dashboard-hero {
+        padding: var(--space-md);
+        margin-bottom: var(--space-md);
+        border-radius: var(--radius-lg);
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--space-sm);
+    }
+
+    .dashboard-hero::after {
+        display: none;
+    }
+
+    .dashboard-hero-content h1 {
+        font-size: 1.3rem;
+    }
+
+    .dashboard-hero-content p {
+        font-size: 0.8rem;
+    }
+
+    .hero-badge {
+        padding: 4px 10px;
+        font-size: 0.65rem;
+        margin-bottom: 8px;
+    }
+
+    /* --- KPI Cards: 2x2 compact grid --- */
+    .grid-4 {
+        grid-template-columns: 1fr 1fr !important;
+        gap: 10px !important;
+    }
+
+    .stat-card.card {
         padding: var(--space-sm) var(--space-md);
+        border-radius: var(--radius-md);
+    }
+
+    .stat-card-icon {
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+    }
+
+    .stat-card-icon svg {
+        width: 16px;
+        height: 16px;
+    }
+
+    .stat-card-change {
+        font-size: 0.65rem;
+    }
+
+    .stat-card-value {
+        font-size: 1.1rem;
+    }
+
+    .stat-card-label {
+        font-size: 0.7rem;
+    }
+
+    /* --- Chart: Tighter --- */
+    .dashboard-chart-container {
+        margin: var(--space-md) 0;
+        padding: var(--space-md);
+        border-radius: var(--radius-lg);
+    }
+
+    .chart-header {
+        margin-bottom: var(--space-md);
+        flex-direction: column;
+        gap: var(--space-sm);
+    }
+
+    .chart-header h3 {
+        font-size: 0.95rem;
+    }
+
+    .chart-body {
+        height: 150px;
+    }
+
+    .chart-bars {
+        gap: var(--space-xs);
+    }
+
+    .chart-bar {
+        max-width: 28px;
+    }
+
+    .chart-bar-label {
+        font-size: 0.65rem;
+    }
+
+    /* --- Grid layout: Stack columns --- */
+    .grid-2-1 {
+        grid-template-columns: 1fr !important;
+        gap: var(--space-md) !important;
+    }
+
+    /* --- Getting Started: Compact --- */
+    .getting-started-card {
+        padding: var(--space-md);
+        margin: var(--space-md) 0;
+        border-radius: var(--radius-lg);
+    }
+
+    .getting-started-card h3 {
+        font-size: 1rem;
+    }
+
+    .checklist-items {
+        grid-template-columns: 1fr;
+        gap: var(--space-sm);
+        margin-top: var(--space-md);
+    }
+
+    .checklist-item {
+        padding: var(--space-sm) var(--space-md);
+        font-size: 0.85rem;
+    }
+
+    .checklist-item:hover {
+        transform: none;
+    }
+
+    /* --- Sections: Tighter --- */
+    .dashboard-section {
+        margin-top: var(--space-md);
+    }
+
+    .glass-section {
+        padding: var(--space-md);
+        border-radius: var(--radius-lg);
+    }
+
+    .dashboard-section-header h3 {
+        font-size: 0.9rem;
+    }
+
+    /* --- Order Items: Compact --- */
+    .dashboard-order-item {
+        padding: var(--space-sm) var(--space-md);
+        gap: var(--space-sm);
+        border-radius: var(--radius-sm);
+    }
+
+    .dashboard-order-item:hover {
+        transform: none;
+        box-shadow: none;
+    }
+
+    .dashboard-order-number {
+        font-size: 0.8rem;
+    }
+
+    .dashboard-order-customer {
+        font-size: 0.8rem;
+    }
+
+    .dashboard-order-amount {
+        font-size: 0.8rem;
     }
 
     .dashboard-order-right {
-        width: 100%;
-        justify-content: space-between;
+        gap: var(--space-sm);
+    }
+
+    /* --- Activity Stream: Compact --- */
+    .activity-item {
+        padding: var(--space-sm) var(--space-md);
+        gap: var(--space-sm);
+        border-radius: var(--radius-sm);
+    }
+
+    .activity-item:hover {
+        transform: none;
+    }
+
+    .activity-icon {
+        font-size: 1rem;
+    }
+
+    .activity-text {
+        font-size: 0.8rem;
+    }
+
+    .activity-time {
+        font-size: 0.7rem;
+    }
+
+    /* --- Empty state --- */
+    .premium-empty {
+        padding: var(--space-lg);
+    }
+
+    .empty-state-compact {
+        padding: var(--space-md);
+    }
+
+    /* --- No hover effects on mobile --- */
+    .premium-hover:hover {
+        transform: none;
+        box-shadow: none;
     }
 }
 
