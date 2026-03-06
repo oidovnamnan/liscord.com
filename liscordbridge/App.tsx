@@ -16,10 +16,9 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import BackgroundService from 'react-native-background-actions';
 import SmsAndroid from 'react-native-get-sms-android';
 import { Camera, useCameraDevice, useCodeScanner } from 'react-native-vision-camera';
-import axios from 'axios';
 
-// Firebase Cloud Function endpoint for SMS forwarding
-const CALLBACK_URL = 'https://us-central1-liscord-2b529.cloudfunctions.net/api/sms/callback';
+// Firestore REST API base URL for direct document creation
+const FIRESTORE_BASE = 'https://firestore.googleapis.com/v1/projects/liscord-2b529/databases/(default)/documents';
 
 const sleep = (time: number) => new Promise<void>((resolve) => setTimeout(() => resolve(), time));
 
@@ -27,7 +26,7 @@ const sleep = (time: number) => new Promise<void>((resolve) => setTimeout(() => 
 const DEFAULT_BANK_SENDERS = [
   '1900', '19001917', '19001918',  // Khan Bank
   '1800', '18001800',              // Golomt Bank
-  '1500', '15001500',              // TDB (Trade and Development Bank)
+  '1500', '15001500',              // TDB
   '1234',                          // State Bank
   '7575',                          // XacBank
   '2525',                          // Bogd Bank
@@ -64,6 +63,79 @@ const DEFAULT_SETTINGS: AppSettings = {
   customKeywords: [],
 };
 
+// Parse amount from SMS body
+function parseAmount(body: string): number {
+  // Match patterns like "50,000.00", "125000", "50 000"
+  const patterns = [
+    /(\d{1,3}(?:,\d{3})*(?:\.\d{1,2})?)\s*(?:MNT|₮|төг)/i,
+    /(?:орлого|orlogo|credited|дүн|amount)[:\s]*(\d{1,3}(?:[,\s]\d{3})*(?:\.\d{1,2})?)/i,
+    /(\d{1,3}(?:,\d{3})*(?:\.\d{1,2})?)\s*(?:орлого|orlogo)/i,
+  ];
+  for (const pattern of patterns) {
+    const match = body.match(pattern);
+    if (match) {
+      return parseFloat(match[1].replace(/[,\s]/g, ''));
+    }
+  }
+  // Fallback: find largest number in SMS
+  const numbers = body.match(/\d{1,3}(?:[,\s]\d{3})*(?:\.\d{1,2})?/g);
+  if (numbers) {
+    const parsed = numbers.map(n => parseFloat(n.replace(/[,\s]/g, '')));
+    return Math.max(...parsed.filter(n => n > 100)); // Filter out tiny numbers
+  }
+  return 0;
+}
+
+// Parse bank name from sender
+function parseBankName(sender: string): string {
+  if (sender.includes('1900') || sender.toLowerCase().includes('khan')) return 'Khan Bank';
+  if (sender.includes('1800') || sender.toLowerCase().includes('golomt')) return 'Golomt';
+  if (sender.includes('1500') || sender.toLowerCase().includes('tdb')) return 'TDB';
+  if (sender.includes('7575') || sender.toLowerCase().includes('xac')) return 'XacBank';
+  if (sender.includes('1234') || sender.toLowerCase().includes('state')) return 'Төрийн Банк';
+  if (sender.includes('2525') || sender.toLowerCase().includes('bogd')) return 'Bogd Bank';
+  return sender;
+}
+
+// Send SMS data to Firestore REST API
+async function sendToFirestore(pairingKey: string, smsData: {
+  sender: string;
+  body: string;
+  timestamp: number;
+  amount: number;
+  bank: string;
+}): Promise<boolean> {
+  try {
+    // Write to sms_inbox collection using the pairing key as a pseudo-auth
+    const docId = `sms_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
+    const url = `${FIRESTORE_BASE}/sms_inbox/${docId}`;
+
+    const firestoreDoc = {
+      fields: {
+        pairingKey: { stringValue: pairingKey },
+        sender: { stringValue: smsData.sender },
+        body: { stringValue: smsData.body },
+        bank: { stringValue: smsData.bank },
+        amount: { doubleValue: smsData.amount },
+        timestamp: { integerValue: String(smsData.timestamp) },
+        status: { stringValue: 'pending' },
+        createdAt: { timestampValue: new Date().toISOString() },
+      }
+    };
+
+    const response = await fetch(url, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(firestoreDoc),
+    });
+
+    return response.ok;
+  } catch (error) {
+    console.error('Firestore write failed:', error);
+    return false;
+  }
+}
+
 const App = () => {
   const [pairingKey, setPairingKey] = useState<string | null>(null);
   const [isScanning, setIsScanning] = useState(false);
@@ -77,6 +149,8 @@ const App = () => {
   // Use refs for background task to avoid stale closures
   const pairingKeyRef = useRef<string | null>(null);
   const settingsRef = useRef<AppSettings>(DEFAULT_SETTINGS);
+  const forwardCountRef = useRef(0);
+  const logsRef = useRef<string[]>([]);
 
   const device = useCameraDevice('back');
 
@@ -88,17 +162,15 @@ const App = () => {
   }, []);
 
   // Keep refs in sync
-  useEffect(() => {
-    pairingKeyRef.current = pairingKey;
-  }, [pairingKey]);
-
-  useEffect(() => {
-    settingsRef.current = settings;
-  }, [settings]);
+  useEffect(() => { pairingKeyRef.current = pairingKey; }, [pairingKey]);
+  useEffect(() => { settingsRef.current = settings; }, [settings]);
+  useEffect(() => { forwardCountRef.current = forwardCount; }, [forwardCount]);
+  useEffect(() => { logsRef.current = logs; }, [logs]);
 
   const addLog = useCallback((msg: string) => {
     const timestamp = new Date().toLocaleTimeString('mn-MN', { hour: '2-digit', minute: '2-digit' });
-    setLogs(prev => [`[${timestamp}] ${msg}`, ...prev].slice(0, 20));
+    const entry = `[${timestamp}] ${msg}`;
+    setLogs(prev => [entry, ...prev].slice(0, 30));
   }, []);
 
   const checkPermissions = async () => {
@@ -111,10 +183,13 @@ const App = () => {
       ]);
       const allGranted = Object.values(results).every(r => r === 'granted');
       if (!allGranted) {
-        Alert.alert("Зөвшөөрөл", "SMS унших болон камерын зөвшөөрөл шаардлагатай. Тохиргоо хэсгээс зөвшөөрнө үү.");
+        addLog('⚠️ Зөвшөөрөл бүрэн олгогдоогүй');
+      } else {
+        addLog('✅ Бүх зөвшөөрөл олгогдлоо');
       }
     } catch (err) {
       console.warn(err);
+      addLog('❌ Зөвшөөрөл авахад алдаа');
     }
   };
 
@@ -147,13 +222,11 @@ const App = () => {
 
   const loadForwardCount = async () => {
     const count = await AsyncStorage.getItem('LiscordForwardCount');
-    if (count) setForwardCount(parseInt(count, 10));
-  };
-
-  const incrementForwardCount = async () => {
-    const newCount = forwardCount + 1;
-    setForwardCount(newCount);
-    await AsyncStorage.setItem('LiscordForwardCount', String(newCount));
+    if (count) {
+      const n = parseInt(count, 10);
+      setForwardCount(n);
+      forwardCountRef.current = n;
+    }
   };
 
   const startScanning = async () => {
@@ -186,6 +259,7 @@ const App = () => {
           AsyncStorage.setItem('LiscordPairingKey', finalKey);
           setPairingKey(finalKey);
           pairingKeyRef.current = finalKey;
+          addLog('✅ QR холболт амжилттай');
           Alert.alert("Амжилттай", "Холболт амжилттай үүслээ!");
         }
       }
@@ -201,20 +275,21 @@ const App = () => {
     pairingKeyRef.current = null;
     setIsRunning(false);
     setForwardCount(0);
+    forwardCountRef.current = 0;
     await AsyncStorage.setItem('LiscordForwardCount', '0');
+    addLog('🔓 Салгалт хийгдлээ');
   };
 
   // Check if SMS is from a known bank sender
-  const isBankSms = (sender: string): boolean => {
-    const currentSettings = settingsRef.current;
+  const isBankSms = (sender: string, currentSettings: AppSettings): boolean => {
     return currentSettings.bankSenders.some(bankNum =>
       sender.includes(bankNum) || bankNum.includes(sender)
     );
   };
 
   // Check if SMS contains income keywords
-  const isIncomeSms = (body: string): boolean => {
-    const allKeywords = [...INCOME_KEYWORDS, ...settingsRef.current.customKeywords];
+  const isIncomeSms = (body: string, currentSettings: AppSettings): boolean => {
+    const allKeywords = [...INCOME_KEYWORDS, ...currentSettings.customKeywords];
     return allKeywords.some(keyword => body.toLowerCase().includes(keyword.toLowerCase()));
   };
 
@@ -223,66 +298,97 @@ const App = () => {
     let lastCheckedStamp = Date.now();
     const { delay } = taskDataArguments;
 
-    await new Promise<void>(async (resolve) => {
-      while (BackgroundService.isRunning()) {
-        const currentKey = pairingKeyRef.current;
-        if (!currentKey) {
-          await sleep(delay);
-          continue;
-        }
+    // Log to AsyncStorage for persistence (UI updates won't work in background)
+    const bgLog = async (msg: string) => {
+      try {
+        const existing = await AsyncStorage.getItem('LiscordBgLogs');
+        const arr = existing ? JSON.parse(existing) : [];
+        const timestamp = new Date().toLocaleTimeString('mn-MN', { hour: '2-digit', minute: '2-digit' });
+        arr.unshift(`[${timestamp}] ${msg}`);
+        await AsyncStorage.setItem('LiscordBgLogs', JSON.stringify(arr.slice(0, 30)));
+      } catch (_e) { /* ignore */ }
+    };
 
+    await bgLog('🚀 Background task эхэллээ');
+
+    while (BackgroundService.isRunning()) {
+      const currentKey = pairingKeyRef.current;
+      const currentSettings = settingsRef.current;
+
+      if (!currentKey) {
+        await sleep(delay);
+        continue;
+      }
+
+      try {
         const filter = {
           box: 'inbox',
           minDate: lastCheckedStamp,
         };
 
-        try {
+        await new Promise<void>((resolve) => {
           SmsAndroid.list(
             JSON.stringify(filter),
-            (fail: any) => {
-              console.log('SMS read failed: ' + fail);
+            (fail: string) => {
+              bgLog(`❌ SMS уншихад алдаа: ${fail}`);
+              resolve();
             },
-            (count: number, smsList: string) => {
-              if (count === 0) return;
-              const arr = JSON.parse(smsList);
-              arr.forEach((msg: any) => {
-                const sender = msg.address || '';
-                const body = msg.body || '';
+            async (count: number, smsList: string) => {
+              if (count > 0) {
+                try {
+                  const arr = JSON.parse(smsList);
+                  let forwarded = 0;
 
-                // Filter: only bank senders
-                if (!isBankSms(sender)) return;
+                  for (const msg of arr) {
+                    const sender = msg.address || '';
+                    const body = msg.body || '';
 
-                // Filter: only income if setting is on
-                const currentSettings = settingsRef.current;
-                if (currentSettings.onlyIncome && !isIncomeSms(body)) return;
+                    // Filter: only bank senders
+                    if (!isBankSms(sender, currentSettings)) continue;
 
-                // Forward to server
-                axios.post(CALLBACK_URL, {
-                  sender: sender,
-                  text: body,
-                  timestamp: msg.date,
-                }, {
-                  headers: {
-                    'Authorization': `Bearer ${currentKey}`,
-                    'Content-Type': 'application/json',
-                  },
-                  timeout: 15000,
-                }).then(() => {
-                  incrementForwardCount();
-                }).catch(err => {
-                  console.error("Forward failed:", err?.message || err);
-                });
-              });
+                    // Filter: only income if setting is on
+                    if (currentSettings.onlyIncome && !isIncomeSms(body, currentSettings)) continue;
+
+                    // Parse amount and bank
+                    const amount = parseAmount(body);
+                    const bank = parseBankName(sender);
+
+                    // Send to Firestore
+                    const success = await sendToFirestore(currentKey, {
+                      sender,
+                      body,
+                      timestamp: msg.date || Date.now(),
+                      amount,
+                      bank,
+                    });
+
+                    if (success) {
+                      forwarded++;
+                      // Update persistent counter
+                      const countStr = await AsyncStorage.getItem('LiscordForwardCount');
+                      const newCount = (parseInt(countStr || '0', 10)) + 1;
+                      await AsyncStorage.setItem('LiscordForwardCount', String(newCount));
+                    }
+                  }
+
+                  if (forwarded > 0) {
+                    await bgLog(`📤 ${forwarded} мессеж дамжууллаа`);
+                  }
+                } catch (parseErr: any) {
+                  await bgLog(`❌ SMS parse алдаа: ${parseErr?.message || parseErr}`);
+                }
+              }
+              resolve();
             },
           );
-        } catch (e) {
-          console.error('SMS polling error:', e);
-        }
-
-        lastCheckedStamp = Date.now();
-        await sleep(delay);
+        });
+      } catch (e: any) {
+        await bgLog(`❌ Polling алдаа: ${e?.message || e}`);
       }
-    });
+
+      lastCheckedStamp = Date.now();
+      await sleep(delay);
+    }
   };
 
   const toggleService = async () => {
@@ -292,20 +398,63 @@ const App = () => {
     }
 
     if (isRunning) {
-      await BackgroundService.stop();
-      setIsRunning(false);
-      addLog('Дамжуулалт зогслоо');
+      try {
+        await BackgroundService.stop();
+        setIsRunning(false);
+        addLog('⏹ Дамжуулалт зогслоо');
+      } catch (e: any) {
+        addLog(`❌ Зогсооход алдаа: ${e?.message}`);
+      }
     } else {
       try {
+        // Test SMS read permission first
+        await new Promise<void>((resolve, reject) => {
+          SmsAndroid.list(
+            JSON.stringify({ box: 'inbox', maxCount: 1 }),
+            (fail: string) => reject(new Error(`SMS зөвшөөрөл: ${fail}`)),
+            (_count: number, _smsList: string) => resolve(),
+          );
+        });
+
+        addLog('✅ SMS унших зөвшөөрөл ажиллаж байна');
+
         await BackgroundService.start(backgroundTask, backgroundTaskOptions);
         setIsRunning(true);
-        addLog('Дамжуулалт эхэллээ');
+        addLog('▶ Дамжуулалт эхэллээ');
       } catch (e: any) {
         console.error('Background service error:', e);
-        Alert.alert("Алдаа", `Арын үйлчилгээ эхлүүлж чадсангүй: ${e?.message || 'Тодорхойгүй алдаа'}`);
+        addLog(`❌ Алдаа: ${e?.message || 'Тодорхойгүй'}`);
+        Alert.alert("Алдаа", `${e?.message || 'Тодорхойгүй алдаа'}\n\nSMS унших зөвшөөрөл олгосон эсэхээ шалгана уу.`);
       }
     }
   };
+
+  // Refresh visible state from AsyncStorage (for background task updates)
+  const refreshFromStorage = useCallback(async () => {
+    const count = await AsyncStorage.getItem('LiscordForwardCount');
+    if (count) {
+      setForwardCount(parseInt(count, 10));
+    }
+    const bgLogs = await AsyncStorage.getItem('LiscordBgLogs');
+    if (bgLogs) {
+      try {
+        const parsed = JSON.parse(bgLogs);
+        setLogs(prev => {
+          // Merge bg logs with UI logs, deduplicate
+          const combined = [...parsed, ...prev];
+          const unique = [...new Set(combined)];
+          return unique.slice(0, 30);
+        });
+      } catch (_e) { /* ignore */ }
+    }
+  }, []);
+
+  // Periodically refresh UI from storage when running
+  useEffect(() => {
+    if (!isRunning) return;
+    const interval = setInterval(refreshFromStorage, 5000);
+    return () => clearInterval(interval);
+  }, [isRunning, refreshFromStorage]);
 
   const addBankSender = () => {
     if (!newSender.trim()) return;
@@ -474,7 +623,14 @@ const App = () => {
         {/* Activity Log */}
         {logs.length > 0 && (
           <View style={styles.logsCard}>
-            <Text style={styles.logsTitle}>📋 Үйл ажиллагааны лог</Text>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+              <Text style={styles.logsTitle}>📋 Үйл ажиллагааны лог</Text>
+              {isRunning && (
+                <TouchableOpacity onPress={refreshFromStorage}>
+                  <Text style={{ color: '#6366f1', fontSize: 13, fontWeight: '600' }}>🔄 Шинэчлэх</Text>
+                </TouchableOpacity>
+              )}
+            </View>
             {logs.map((log, i) => (
               <Text key={i} style={styles.logEntry}>{log}</Text>
             ))}
@@ -486,10 +642,12 @@ const App = () => {
           <Text style={styles.infoTitle}>ℹ️ Тухай</Text>
           <Text style={styles.infoText}>
             Энэ апп нь таны утсанд ирсэн банкны SMS мессежийг автоматаар Liscord систем рүү дамжуулна.
-            Зөвхөн тохируулсан банкны дугааруудаас ирсэн, орлогын мессежийг дамжуулдаг.
           </Text>
           <Text style={styles.infoText}>
-            ⚙️ Тохиргоо хэсэгт банкны дугаар нэмэх/хасах, зөвхөн орлого шүүх тохиргоог өөрчлөх боломжтой.
+            ⚙️ Тохиргоо хэсэгт банкны дугаар нэмэх/хасах, зөвхөн орлого шүүх тохиргоо өөрчлөх боломжтой.
+          </Text>
+          <Text style={styles.infoText}>
+            ⚠️ "Дамжуулалтыг ЭХЛҮҮЛЭХ" дарсны дараа утсаа хааж болно — арын горимд автоматаар ажиллана.
           </Text>
         </View>
       </ScrollView>
@@ -551,7 +709,7 @@ const styles = StyleSheet.create({
 
   // Logs
   logsCard: { backgroundColor: 'white', borderRadius: 16, padding: 16, marginBottom: 16, borderWidth: 1, borderColor: '#f0f0f0' },
-  logsTitle: { fontSize: 14, fontWeight: '700', color: '#1a1a1a', marginBottom: 10 },
+  logsTitle: { fontSize: 14, fontWeight: '700', color: '#1a1a1a' },
   logEntry: { fontSize: 12, color: '#6b7280', marginBottom: 4, fontFamily: 'monospace' },
 
   // Info

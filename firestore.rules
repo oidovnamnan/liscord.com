@@ -69,6 +69,13 @@ service cloud.firestore {
       allow create, delete: if isAuth();
     }
     
+    // === SMS INBOX (Bridge App) ===
+    // Bridge app writes SMS data via REST API using pairing key (no Firebase auth)
+    match /sms_inbox/{smsId} {
+      allow create, update: if true; // Bridge app writes without auth
+      allow read, delete: if isAuth(); // Only authenticated users can read/delete
+    }
+    
     // === BUSINESSES ===
     match /businesses/{bizId} {
       allow read: if isAuth() && (isMember(bizId) || isOwner(bizId));
