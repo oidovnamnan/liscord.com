@@ -446,6 +446,7 @@ export const LISCORD_MODULES: AppModule[] = [
         isCore: false,
         category: 'finance',
         hubId: 'finance-hub',
+        hasSettings: true,
         isFree: false,
         plans: [
             { id: 'monthly', name: '30 хоног', price: 15000, durationDays: 30 },

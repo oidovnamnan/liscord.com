@@ -1,0 +1,204 @@
+/* SMS Bridge Settings — Minimal Professional Design */
+
+.sms-settings-desc {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    margin-bottom: var(--space-lg);
+    line-height: 1.6;
+}
+
+/* Setup Steps */
+.sms-setup-card {
+    margin-bottom: var(--space-md) !important;
+}
+
+.sms-setup-step {
+    display: flex;
+    gap: var(--space-lg);
+    align-items: flex-start;
+}
+
+.sms-step-number {
+    width: 32px;
+    height: 32px;
+    min-width: 32px;
+    border-radius: var(--radius-full);
+    background: var(--primary-light);
+    color: var(--primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    font-size: 0.85rem;
+}
+
+.sms-step-content {
+    flex: 1;
+}
+
+.sms-step-content h4 {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: var(--space-xxs);
+}
+
+.sms-step-content p {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    margin-bottom: var(--space-md);
+    line-height: 1.5;
+}
+
+/* Download Button */
+.sms-download-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-xs);
+    padding: 10px 20px;
+    background: var(--primary);
+    color: white;
+    border-radius: var(--radius-md);
+    font-weight: 600;
+    font-size: 0.85rem;
+    text-decoration: none;
+    transition: all var(--transition-fast);
+}
+
+.sms-download-btn:hover {
+    background: var(--primary-hover);
+    color: white;
+    transform: translateY(-1px);
+}
+
+/* QR Section */
+.sms-qr-section {
+    display: flex;
+    gap: var(--space-lg);
+    align-items: center;
+}
+
+.sms-qr-wrapper {
+    padding: var(--space-md);
+    background: var(--surface-2);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-lg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.sms-key-section {
+    flex: 1;
+    min-width: 0;
+}
+
+.sms-key-label {
+    display: block;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-tertiary);
+    font-weight: 700;
+    margin-bottom: var(--space-xs);
+}
+
+.sms-key-row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+}
+
+.sms-key-value {
+    flex: 1;
+    padding: 8px 12px;
+    background: var(--surface-2);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-sm);
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    font-size: 0.85rem;
+    color: var(--text-primary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.sms-icon-btn {
+    width: 36px;
+    height: 36px;
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-sm);
+    background: var(--surface-2);
+    color: var(--text-secondary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all var(--transition-fast);
+    flex-shrink: 0;
+}
+
+.sms-icon-btn:hover {
+    background: var(--bg-hover);
+    color: var(--primary);
+    border-color: var(--border-secondary);
+}
+
+/* Info Grid */
+.sms-info-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--space-sm);
+    margin-top: var(--space-lg);
+}
+
+.sms-info-item {
+    display: flex;
+    gap: var(--space-sm);
+    padding: var(--space-md);
+    background: var(--surface-1);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-md);
+    align-items: flex-start;
+}
+
+.sms-info-item svg {
+    color: var(--text-tertiary);
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+
+.sms-info-item strong {
+    display: block;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 2px;
+}
+
+.sms-info-item span {
+    font-size: 0.75rem;
+    color: var(--text-tertiary);
+    line-height: 1.4;
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+    .sms-qr-section {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .sms-qr-wrapper {
+        align-self: center;
+    }
+
+    .sms-info-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .sms-setup-step {
+        gap: var(--space-md);
+    }
+}
