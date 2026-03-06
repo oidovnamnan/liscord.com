@@ -68,436 +68,522 @@ export function BankSmsSyncPage() {
     };
 
     return (
-        <div className="page-container animate-fade-in">
+        <div className="super-pro-page page-container animate-fade-in">
+            <div className="glass-ambient-glow" />
+
             <Header
                 title="SMS Банк Холболт"
                 subtitle="Гар утсан дээр ирж буй банкны гүйлгээг автоматаар уншиж, захиалгатай холбох ухаалаг систем"
             />
 
-            <div className="page-content">
-                {/* Module Status Header */}
-                <div className="status-header-premium">
-                    <div className="status-info-side">
-                        <div className={`status-icon-box ${isConnected ? 'active' : ''}`}>
-                            <Zap size={28} className={isConnected ? 'animate-pulse' : ''} />
-                            {isConnected && <span className="ping-dot" />}
-                        </div>
-                        <div>
-                            <h3 className="status-title">Системийн төлөв</h3>
-                            <div className="status-indicator">
-                                <span className={`status-dot ${isConnected ? 'active' : ''}`} />
-                                <span className={`status-text ${isConnected ? 'active' : ''}`}>
-                                    {isConnected ? `Идэвхтэй (Сүүлийн синк: ${lastSync || 'Дөнгөж сая'})` : 'Төхөөрөмж холбогдоогүй байна'}
-                                </span>
+            <div className="page-content dashboard-grid">
+                {/* Header Stats / Status Section */}
+                <section className="dashboard-top-section">
+                    <div className="glass-card status-card">
+                        <div className="status-main-info">
+                            <div className={`status-orb ${isConnected ? 'active' : ''}`}>
+                                <Zap size={32} />
+                                {isConnected && <div className="orb-pulse" />}
                             </div>
-                        </div>
-                    </div>
-
-                    <div className="tab-switcher">
-                        <button
-                            className={`tab-btn ${activeTab === 'setup' ? 'active' : ''}`}
-                            onClick={() => setActiveTab('setup')}
-                        >
-                            <QrCode size={18} /> <span>Тохиргоо</span>
-                        </button>
-                        <button
-                            className={`tab-btn ${activeTab === 'feed' ? 'active' : ''}`}
-                            onClick={() => setActiveTab('feed')}
-                        >
-                            <History size={18} /> <span>Түүх</span>
-                        </button>
-                    </div>
-                </div>
-
-                {activeTab === 'setup' ? (
-                    <div className="setup-grid-layout">
-                        {/* Step by Step Guide */}
-                        <div className="card-premium glass-card">
-                            <h3 className="card-title">Автоматжуулалт идэвхжүүлэх</h3>
-
-                            <div className="setup-steps">
-                                <div className="step-item">
-                                    <div className="step-badge">1</div>
-                                    <div style={{ flex: 1 }}>
-                                        <div className="step-header-row">
-                                            <h4 className="step-heading">Bridge суулгах</h4>
-                                            <span className="version-badge">v1.0 Stable</span>
-                                        </div>
-                                        <p className="step-description">
-                                            <b>Liscord Bridge</b> туслах апп-ыг Android утсан дээрээ суулгана. Энэ нь банкны орлогыг систем рүү аюулгүй дамжуулах үүрэгтэй.
-                                        </p>
-                                        <div className="download-action">
-                                            <a
-                                                href="https://github.com/oidovnamnan/liscord.com/releases/download/bridge-v1/app-release.apk"
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                className="btn btn-primary gradient-glow mobile-full-btn"
-                                            >
-                                                <Smartphone size={18} /> .APK Татах
-                                            </a>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div className="step-item">
-                                    <div className="step-badge outline">2</div>
-                                    <div>
-                                        <h4 className="step-heading">QR код уншуулах</h4>
-                                        <p className="step-description">
-                                            Bridge апп-аараа хажуу талын (эсвэл доорх) холболтын кодыг уншуулна уу. Систем таныг автоматаар таньж холбогдох болно.
-                                        </p>
-                                    </div>
-                                </div>
-
-                                <div className="step-item">
-                                    <div className="step-badge outline">3</div>
-                                    <div>
-                                        <h4 className="step-heading">Зөвшөөрөл өгөх</h4>
-                                        <p className="step-description">
-                                            Апп-д "SMS унших" зөвшөөрлийг өгснөөр таныг утсаа ашиглаагүй үед ч орлого автоматаар бүртгэгдэнэ.
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="info-box">
-                                <AlertCircle className="text-secondary" size={24} />
-                                <div>
-                                    <h5 className="info-title">Санамж</h5>
-                                    <p className="info-text">
-                                        Хаан, Голомт, Төрийн банк зэрэг бүх банкны SMS-ийг дэмждэг. Дата эсвэл Wi-Fi асаалттай байх шаардлагатай.
+                            <div className="status-text-group">
+                                <h3 className="section-label">Системийн төлөв</h3>
+                                <div className="status-badge-row">
+                                    <span className={`status-pill-pro ${isConnected ? 'active' : ''}`}>
+                                        {isConnected ? 'LIVE' : 'IDLE'}
+                                    </span>
+                                    <p className="status-detail-text">
+                                        {isConnected ? `Идэвхтэй (Синхрончлол: ${lastSync || 'Дөнгөж сая'})` : 'Төхөөрөмж холбогдоогүй байна'}
                                     </p>
                                 </div>
                             </div>
                         </div>
 
-                        {/* QR Connection Card */}
-                        <div className="setup-side-panel">
-                            <div className="card-premium glass-card qr-card-mobile">
-                                <div className="qr-container">
-                                    <div className="qr-scan-line" />
-                                    <QRCodeSVG value={setupUrl} size={180} level="H" includeMargin={true} />
-                                </div>
-                                <h3 className="qr-title">Холболтын QR</h3>
-                                <p className="qr-subtitle">
-                                    Bridge апп-аараа энэхүү кодыг уншуулж холболтыг идэвхжүүлнэ.
-                                </p>
+                        <div className="dashboard-tabs">
+                            <button
+                                className={`tab-item-pro ${activeTab === 'setup' ? 'active' : ''}`}
+                                onClick={() => setActiveTab('setup')}
+                            >
+                                <QrCode size={20} /> <span>Тохиргоо</span>
+                            </button>
+                            <button
+                                className={`tab-item-pro ${activeTab === 'feed' ? 'active' : ''}`}
+                                onClick={() => setActiveTab('feed')}
+                            >
+                                <History size={20} /> <span>Гүйлгээний түүх</span>
+                            </button>
+                        </div>
+                    </div>
+                </section>
 
-                                <div className="security-key-section">
-                                    <div className="key-header">
-                                        <label className="label-caps">Аюулгүй байдлын түлхүүр</label>
-                                        <button className="text-btn" onClick={handleGenerateKey}>
-                                            <RefreshCcw size={12} /> Шинэчлэх
-                                        </button>
+                <div className="dashboard-main-area">
+                    {activeTab === 'setup' ? (
+                        <div className="pro-setup-flow">
+                            {/* Main Setup Content */}
+                            <div className="pro-content-stack">
+                                <div className="glass-card instruction-card">
+                                    <div className="card-inner-header">
+                                        <h2 className="pro-card-title">Автоматжуулалт идэвхжүүлэх</h2>
+                                        <div className="pro-version-pill">v1.0 Stable</div>
                                     </div>
-                                    <div className="key-box">
-                                        <code>{apiKey}</code>
+
+                                    <div className="pro-steps-container">
+                                        <div className="pro-step">
+                                            <div className="pro-step-numb">01</div>
+                                            <div className="pro-step-body">
+                                                <h4>Bridge суулгах</h4>
+                                                <p><b>Liscord Bridge</b> туслах апп-ыг Android утсан дээрээ суулгаснаар гүйлгээг систем рүү аюулгүй дамжуулах боломжтой болно.</p>
+                                                <a
+                                                    href="https://github.com/oidovnamnan/liscord.com/releases/download/bridge-v1/app-release.apk"
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="pro-download-btn"
+                                                >
+                                                    <Smartphone size={18} /> .APK Татах
+                                                </a>
+                                            </div>
+                                        </div>
+
+                                        <div className="pro-step">
+                                            <div className="pro-step-numb">02</div>
+                                            <div className="pro-step-body">
+                                                <h4>QR код уншуулах</h4>
+                                                <p>Bridge апп-аараа холболтын кодыг уншуулна уу. Систем таныг шууд таньж холбогдох болно.</p>
+                                            </div>
+                                        </div>
+
+                                        <div className="pro-step">
+                                            <div className="pro-step-numb">03</div>
+                                            <div className="pro-step-body">
+                                                <h4>Зөвшөөрөл өгөх</h4>
+                                                <p>Апп-д "SMS унших" зөвшөөрлийг өгснөөр таныг утсаа ашиглаагүй үед ч орлого автоматаар бүртгэгдэнэ.</p>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="pro-alert-box">
+                                        <AlertCircle size={24} />
+                                        <div className="alert-content">
+                                            <strong>Санамж:</strong> Хаан, Голомт, Төрийн банк зэрэг бүх банкны SMS-ийг дэмждэг. Интернэт холболт тогтвортой байх шаардлагатай.
+                                        </div>
                                     </div>
                                 </div>
+                            </div>
 
-                                <button className="btn btn-outline w-full check-link-btn">
-                                    <Smartphone size={18} /> Холболт шалгах
+                            {/* Side Panel / QR Section */}
+                            <aside className="pro-side-pane">
+                                <div className="glass-card qr-card-pro">
+                                    <div className="qr-wrapper-outer">
+                                        <div className="qr-scanner-overlay" />
+                                        <div className="qr-white-bg">
+                                            <QRCodeSVG value={setupUrl} size={180} level="H" />
+                                        </div>
+                                    </div>
+                                    <h3 className="qr-card-heading">Холболтын QR</h3>
+                                    <p className="qr-card-sub">Апп-аараа уншуулж холболтыг баталгаажуулна уу</p>
+
+                                    <div className="key-section-pro">
+                                        <div className="key-top">
+                                            <label>SECURITY KEY</label>
+                                            <button onClick={handleGenerateKey}><RefreshCcw size={14} /></button>
+                                        </div>
+                                        <div className="key-display-box">
+                                            <code>{apiKey}</code>
+                                        </div>
+                                    </div>
+
+                                    <button className="pro-action-btn">
+                                        <Smartphone size={18} /> Холболт шалгах
+                                    </button>
+                                </div>
+
+                                <div className="glass-card benefits-grid">
+                                    <div className="benefit-item">
+                                        <div className="benefit-icon"><Zap size={18} /></div>
+                                        <span>Шуурхай</span>
+                                    </div>
+                                    <div className="benefit-item">
+                                        <div className="benefit-icon"><CircleCheck size={18} /></div>
+                                        <span>Автомат</span>
+                                    </div>
+                                    <div className="benefit-item">
+                                        <div className="benefit-icon"><RefreshCcw size={18} /></div>
+                                        <span>24/7 Найдвартай</span>
+                                    </div>
+                                </div>
+                            </aside>
+                        </div>
+                    ) : (
+                        <div className="pro-history-view">
+                            <div className="glass-card history-header-pro">
+                                <div className="search-bar-pro">
+                                    <Search size={20} />
+                                    <input
+                                        type="text"
+                                        placeholder="Гүйлгээний түүхээс хайх..."
+                                        value={searchQuery}
+                                        onChange={(e) => setSearchQuery(e.target.value)}
+                                    />
+                                </div>
+                                <button className="refresh-btn-pro">
+                                    <RefreshCcw size={18} /> <span>Шинэчлэх</span>
                                 </button>
                             </div>
 
-                            <div className="card-premium glass-card benefits-card">
-                                <div className="benefits-header">
-                                    <Zap size={20} />
-                                    <h4 className="benefits-title">Давуу талууд</h4>
-                                </div>
-                                <ul className="feature-list">
-                                    <li>
-                                        <CircleCheck size={18} className="text-success" />
-                                        <span>Гүйлгээг шуурхай таних</span>
-                                    </li>
-                                    <li>
-                                        <CircleCheck size={18} className="text-success" />
-                                        <span>Автомат төлөлт</span>
-                                    </li>
-                                    <li>
-                                        <CircleCheck size={18} className="text-success" />
-                                        <span>24/7 найдвартай ажиллагаа</span>
-                                    </li>
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
-                ) : (
-                    <div className="card-premium glass-card history-container">
-                        <div className="history-header">
-                            <div className="search-wrapper">
-                                <Search size={18} />
-                                <input
-                                    placeholder="Гүйлгээ хайх..."
-                                    value={searchQuery}
-                                    onChange={(e) => setSearchQuery(e.target.value)}
-                                />
-                            </div>
-                            <button className="btn btn-ghost btn-refresh">
-                                <RefreshCcw size={16} /> <span>Шинэчлэх</span>
-                            </button>
-                        </div>
-
-                        {/* Desktop Table View */}
-                        <div className="desktop-only">
-                            <div style={{ overflowX: 'auto' }}>
-                                <table className="custom-table">
-                                    <thead>
-                                        <tr>
-                                            <th style={{ paddingLeft: '32px' }}>Хугацаа</th>
-                                            <th>Банк</th>
-                                            <th>Дүн</th>
-                                            <th>Мэдээлэл</th>
-                                            <th>Төлөв</th>
-                                            <th style={{ textAlign: 'right', paddingRight: '32px' }}>Үйлдэл</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {logs.map(log => (
-                                            <tr key={log.id} className="table-row">
-                                                <td style={{ paddingLeft: '32px' }}>
-                                                    <div className="log-time">{log.time}</div>
-                                                    <div className="log-sender">{log.sender}</div>
-                                                </td>
-                                                <td><div className="bank-badge">{log.bank}</div></td>
-                                                <td><div className="log-amount">+{log.amount.toLocaleString()}₮</div></td>
-                                                <td>
-                                                    <div className="log-info">
-                                                        <div className="log-note">{log.note}</div>
-                                                        <div className="log-body">"{log.body}"</div>
-                                                    </div>
-                                                </td>
-                                                <td>
-                                                    <div className={`status-pill ${log.status === 'matched' ? 'success' : 'warning'}`}>
-                                                        {log.status === 'matched' ? <CircleCheck size={14} /> : <AlertCircle size={14} />}
-                                                        <span>{log.status === 'matched' ? `Холбогдсон (${log.orderId})` : 'Танигдаагүй'}</span>
-                                                    </div>
-                                                </td>
-                                                <td style={{ textAlign: 'right', paddingRight: '32px' }}>
-                                                    <div className="action-row">
-                                                        {log.status === 'pending' && <button className="btn btn-primary btn-xs gradient-btn">Холбох</button>}
-                                                        <button className="btn btn-ghost btn-xs"><ExternalLink size={16} /></button>
-                                                    </div>
-                                                </td>
+                            <div className="history-entries-container">
+                                {/* Desktop Table */}
+                                <div className="desktop-table-container">
+                                    <table className="pro-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Хугацаа</th>
+                                                <th>Банк</th>
+                                                <th>Дүн</th>
+                                                <th>Мэдээлэл</th>
+                                                <th>Төлөв</th>
+                                                <th className="text-right">Үйлдэл</th>
                                             </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
+                                        </thead>
+                                        <tbody>
+                                            {logs.map(log => (
+                                                <tr key={log.id}>
+                                                    <td>
+                                                        <div className="pro-cell-time">{log.time}</div>
+                                                        <div className="pro-cell-sender">{log.sender}</div>
+                                                    </td>
+                                                    <td><span className="pro-bank-badge">{log.bank}</span></td>
+                                                    <td><div className="pro-cell-amount">+{log.amount.toLocaleString()}₮</div></td>
+                                                    <td>
+                                                        <div className="pro-cell-info">
+                                                            <strong>{log.note}</strong>
+                                                            <p>"{log.body}"</p>
+                                                        </div>
+                                                    </td>
+                                                    <td>
+                                                        <span className={`pro-status-tag ${log.status}`}>
+                                                            {log.status === 'matched' ? <CircleCheck size={14} /> : <AlertCircle size={14} />}
+                                                            {log.status === 'matched' ? `Холбогдсон` : 'Танигдаагүй'}
+                                                        </span>
+                                                    </td>
+                                                    <td className="text-right">
+                                                        <div className="pro-action-row">
+                                                            {log.status === 'pending' && <button className="pro-small-btn primary">Холбох</button>}
+                                                            <button className="pro-small-btn ghost"><ExternalLink size={16} /></button>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
 
-                        {/* Mobile Card View */}
-                        <div className="mobile-only">
-                            <div className="mobile-log-list">
-                                {logs.map(log => (
-                                    <div key={log.id} className="mobile-log-card">
-                                        <div className="mlc-header">
-                                            <div className="mlc-time-group">
-                                                <div className="mlc-time">{log.time}</div>
-                                                <div className="mlc-bank">{log.bank}</div>
+                                {/* Mobile Cards */}
+                                <div className="mobile-cards-container">
+                                    {logs.map(log => (
+                                        <div key={log.id} className="glass-card mobile-entry-card">
+                                            <div className="mec-header">
+                                                <div className="mec-meta">
+                                                    <span className="mec-time">{log.time}</span>
+                                                    <span className="mec-bank">{log.bank}</span>
+                                                </div>
+                                                <div className="mec-amount">+{log.amount.toLocaleString()}₮</div>
                                             </div>
-                                            <div className="mlc-amount">+{log.amount.toLocaleString()}₮</div>
-                                        </div>
-                                        <div className="mlc-content">
-                                            <div className="mlc-note">{log.note}</div>
-                                            <div className="mlc-body">{log.body}</div>
-                                        </div>
-                                        <div className="mlc-footer">
-                                            <div className={`status-pill ${log.status === 'matched' ? 'success' : 'warning'}`}>
-                                                {log.status === 'matched' ? <CircleCheck size={12} /> : <AlertCircle size={12} />}
-                                                <span>{log.status === 'matched' ? log.orderId : 'Танигдаагүй'}</span>
+                                            <div className="mec-content">
+                                                <strong>{log.note}</strong>
+                                                <p>"{log.body}"</p>
                                             </div>
-                                            <div className="mlc-actions">
-                                                {log.status === 'pending' && <button className="btn btn-primary btn-xs">Холбох</button>}
-                                                <button className="btn btn-ghost btn-xs"><ExternalLink size={14} /></button>
+                                            <div className="mec-footer">
+                                                <span className={`pro-status-tag ${log.status}`}>
+                                                    {log.status === 'matched' ? log.orderId : 'Танигдаагүй'}
+                                                </span>
+                                                <div className="mec-actions">
+                                                    {log.status === 'pending' && <button className="pro-small-btn primary">Холбох</button>}
+                                                    <button className="pro-small-btn ghost"><ExternalLink size={16} /></button>
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
-                                ))}
+                                    ))}
+                                </div>
                             </div>
                         </div>
-                    </div>
-                )}
+                    )}
+                </div>
             </div>
 
             <style>{`
-                /* Shared Styles */
+                :root {
+                    --pro-primary: #6366f1;
+                    --pro-primary-dark: #4f46e5;
+                    --pro-accent: #a855f7;
+                    --pro-glass: rgba(255, 255, 255, 0.04);
+                    --pro-glass-border: rgba(255, 255, 255, 0.08);
+                    --pro-glass-shade: rgba(0, 0, 0, 0.2);
+                    --pro-text: #ffffff;
+                    --pro-text-dim: #94a3b8;
+                    --pro-success: #22c55e;
+                    --pro-warning: #f59e0b;
+                }
+
+                .super-pro-page {
+                    position: relative;
+                    min-height: 100vh;
+                    background: #0f172a;
+                    color: var(--pro-text);
+                    overflow-x: hidden;
+                    padding-bottom: 50px;
+                }
+
+                .glass-ambient-glow {
+                    position: fixed;
+                    top: -10%;
+                    right: -10%;
+                    width: 60%;
+                    height: 60%;
+                    background: radial-gradient(circle, rgba(99, 102, 241, 0.15) 0%, transparent 70%);
+                    filter: blur(80px);
+                    pointer-events: none;
+                    z-index: 0;
+                }
+
                 .glass-card {
-                    background: rgba(255, 255, 255, 0.03);
-                    backdrop-filter: blur(20px);
-                    border: 1px solid rgba(255, 255, 255, 0.05);
-                    box-shadow: 0 20px 50px rgba(0,0,0,0.1);
+                    background: var(--pro-glass);
+                    backdrop-filter: blur(24px);
+                    border: 1px solid var(--pro-glass-border);
+                    border-radius: 28px;
+                    box-shadow: 0 20px 50px var(--pro-glass-shade);
+                    transition: transform 0.3s ease, box-shadow 0.3s ease;
                 }
-                .card-premium {
-                    border-radius: 32px;
-                    padding: 32px;
+
+                /* Dashboard Layout */
+                .dashboard-grid {
+                    display: flex;
+                    flex-direction: column;
+                    gap: 32px;
+                    position: relative;
+                    z-index: 1;
+                    max-width: 1400px;
+                    margin: 0 auto;
                 }
-                
-                /* Status Header */
-                .status-header-premium {
+
+                /* Status Card */
+                .status-card {
                     display: flex;
                     justify-content: space-between;
                     align-items: center;
-                    margin-bottom: 28px;
-                    background: linear-gradient(135deg, var(--surface-2), var(--surface-3));
-                    padding: 20px 28px;
-                    border-radius: 24px;
-                    border: 1px solid var(--border-glass);
-                    box-shadow: 0 8px 32px rgba(0,0,0,0.05);
-                    backdrop-filter: blur(10px);
+                    padding: 24px 40px;
+                    margin-top: 10px;
                 }
-                .status-info-side { display: flex; alignItems: center; gap: 20px; }
-                .status-icon-box {
-                    width: 56px; height: 56px; border-radius: 18px;
-                    background: rgba(100, 116, 139, 0.15);
-                    display: flex; alignItems: center; justifyContent: center;
-                    color: var(--text-tertiary); position: relative;
-                }
-                .status-icon-box.active { background: rgba(34, 197, 94, 0.15); color: var(--success); }
-                .status-title { margin: 0; fontSize: 1.2rem; fontWeight: 900; color: 'var(--text-primary)'; }
-                .status-indicator { display: flex; alignItems: center; gap: 8px; margin-top: 6px; }
-                .status-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--text-tertiary); }
-                .status-dot.active { background: var(--success); box-shadow: 0 0 10px var(--success); }
-                .status-text { fontSize: 0.95rem; color: var(--text-secondary); fontWeight: 500; }
-                .status-text.active { color: var(--text-primary); }
 
-                /* Tabs */
-                .tab-switcher { display: flex; gap: 8px; background: var(--surface-4); padding: 6px; borderRadius: 16px; }
-                .tab-btn {
-                    display: flex; align-items: center; gap: 8px; border: none; background: none;
-                    padding: 10px 16px; borderRadius: 12px; cursor: pointer; color: var(--text-secondary);
-                    font-weight: 700; transition: all 0.2s;
-                }
-                .tab-btn.active { background: var(--primary); color: white; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3); }
-
-                /* Grid Layout */
-                .setup-grid-layout { display: grid; gridTemplateColumns: 1fr 380px; gap: 28px; }
-                .setup-steps { display: flex; flexDirection: column; gap: 36px; marginTop: 28px; }
-                .step-item { display: flex; gap: 24px; position: relative; }
-                .step-header-row { display: flex; justify-content: space-between; align-items: flex-start; }
-                .step-heading { margin: 0 0 6px 0; font-size: 1.1rem; font-weight: 800; }
-                .step-description { color: var(--text-secondary); font-size: 0.92rem; line-height: 1.6; }
-                .step-badge {
-                    width: 38px; height: 38px; border-radius: 12px;
-                    background: var(--primary); color: white;
-                    display: flex; alignItems: center; justifyContent: center;
-                    font-weight: 900; flex-shrink: 0;
-                    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
-                }
-                .step-badge.outline { background: transparent; border: 2px solid var(--border-glass); color: var(--text-tertiary); box-shadow: none; }
-                .version-badge { font-size: 0.7rem; font-weight: 800; background: rgba(34, 197, 94, 0.1); color: var(--success); padding: 4px 10px; border-radius: 20px; border: 1px solid rgba(34, 197, 94, 0.2); }
-                .gradient-glow { background: linear-gradient(135deg, var(--primary), #4f46e5); box-shadow: 0 10px 25px rgba(59, 130, 246, 0.4); text-decoration: none; border-radius: 14px; display: flex; align-items: center; gap: 10px; padding: 12px 20px; color: white; font-weight: 700; }
+                .status-main-info { display: flex; align-items: center; gap: 24px; }
                 
-                /* QR Panel */
-                .setup-side-panel { display: flex; flex-direction: column; gap: 24px; }
-                .qr-container { background: white; padding: 20px; border-radius: 28px; display: inline-block; position: relative; box-shadow: 0 30px 60px rgba(0,0,0,0.12); overflow: hidden; margin: 0 auto; }
-                .qr-scan-line { position: absolute; left: 0; right: 0; height: 2px; background: var(--primary); opacity: 0.5; box-shadow: 0 0 15px var(--primary); animation: qrScan 3s linear infinite; z-index: 10; }
-                @keyframes qrScan { 0% { top: 0; } 100% { top: 100%; } }
-                .qr-title { margin: 24px 0 8px 0; font-size: 1.3rem; font-weight: 950; }
-                .qr-subtitle { color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 28px; line-height: 1.5; }
-                .security-key-section { text-align: left; margin-bottom: 28px; }
-                .key-header { display: flex; justify-content: space-between; align-items: center; marginBottom: 8px; }
-                .label-caps { font-size: 0.7rem; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 1.2px; font-weight: 800; }
-                .key-box { background: var(--surface-3); padding: 14px 18px; border-radius: 14px; border: 1px solid var(--border-glass); color: var(--text-primary); font-family: monospace; }
+                .status-orb {
+                    width: 64px; height: 64px; border-radius: 20px;
+                    background: rgba(255,255,255,0.05);
+                    display: flex; align-items: center; justify-content: center;
+                    color: var(--pro-text-dim); position: relative;
+                }
+                .status-orb.active { background: rgba(34, 197, 94, 0.12); color: var(--pro-success); }
                 
-                /* Benefits */
-                .benefits-header { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
-                .benefits-header > svg { color: var(--primary); background: rgba(59, 130, 246, 0.1); padding: 8px; border-radius: 10px; width: 36px; height: 36px; }
-                .benefits-title { margin: 0; font-weight: 800; }
-                .feature-list { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 14px; }
-                .feature-list li { font-size: 0.9rem; display: flex; align-items: center; gap: 12px; color: var(--text-secondary); font-weight: 500; }
+                .orb-pulse {
+                    position: absolute; width: 100%; height: 100%;
+                    border: 2px solid var(--pro-success); border-radius: 20px;
+                    animation: orbRipple 2s infinite ease-out;
+                }
+                @keyframes orbRipple {
+                    0% { transform: scale(1); opacity: 0.8; }
+                    100% { transform: scale(1.8); opacity: 0; }
+                }
 
-                /* History Feed */
-                .history-header { padding: 24px 32px; border-bottom: 1px solid var(--border-glass); display: flex; justify-content: space-between; align-items: center; background: var(--surface-3); border-top-left-radius: 32px; border-top-right-radius: 32px; }
-                .search-wrapper { position: relative; width: 380px; display: flex; align-items: center; }
-                .search-wrapper svg { position: absolute; left: 16px; color: var(--text-tertiary); }
-                .search-wrapper input { width: 100%; background: var(--surface-2); border: 1px solid var(--border-glass); padding: 12px 16px 12px 48px; border-radius: 16px; font-size: 0.95rem; transition: all 0.2s; color: var(--text-primary); }
-                .btn-refresh { display: flex; align-items: center; gap: 8px; }
+                .section-label { font-size: 0.85rem; text-transform: uppercase; letter-spacing: 2px; color: var(--pro-text-dim); font-weight: 800; margin-bottom: 8px; }
+                .status-badge-row { display: flex; align-items: center; gap: 12px; }
+                .status-pill-pro { font-size: 0.7rem; font-weight: 950; background: #334155; padding: 4px 10px; border-radius: 8px; letter-spacing: 1px; }
+                .status-pill-pro.active { background: var(--pro-success); color: #000; }
+                .status-detail-text { margin: 0; font-size: 1rem; font-weight: 600; }
 
-                /* Table Styles */
-                .custom-table { width: 100%; border-collapse: separate; border-spacing: 0; }
-                .custom-table th { text-align: left; padding: 18px 24px; font-size: 0.75rem; font-weight: 800; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 1px; }
-                .table-row { border-bottom: 1px solid var(--border-glass); transition: background 0.2s; }
-                .table-row:hover { background: rgba(255, 255, 255, 0.02); }
-                .table-row td { padding: 24px; }
-                .log-time { font-size: 0.9rem; font-weight: 700; color: var(--text-primary); }
-                .log-sender { font-size: 0.75rem; color: var(--text-tertiary); margin-top: 2px; }
-                .log-amount { font-weight: 900; color: var(--success); fontSize: 1.05rem; }
-                .log-note { font-weight: 700; font-size: 0.9rem; color: var(--text-primary); }
-                .log-body { font-size: 0.75rem; color: var(--text-secondary); margin-top: 4px; font-style: italic; }
-                .bank-badge { display: inline-block; padding: 6px 14px; border-radius: 12px; background: var(--surface-4); border: 1px solid var(--border-glass); font-size: 0.75rem; font-weight: 800; color: var(--text-secondary); }
-                .status-pill { display: inline-flex; align-items: center; gap: 8px; padding: 8px 14px; border-radius: 12px; font-size: 0.8rem; font-weight: 700; }
-                .status-pill.success { background: rgba(34, 197, 94, 0.1); color: var(--success); }
-                .status-pill.warning { background: rgba(245, 158, 11, 0.1); color: var(--warning); }
+                /* Dashboard Tabs */
+                .dashboard-tabs { display: flex; background: rgba(0,0,0,0.2); padding: 6px; border-radius: 18px; border: 1px solid var(--pro-glass-border); }
+                .tab-item-pro {
+                    display: flex; align-items: center; gap: 10px; padding: 12px 24px;
+                    border-radius: 14px; border: none; background: none; color: var(--pro-text-dim);
+                    font-weight: 700; cursor: pointer; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+                }
+                .tab-item-pro:hover { color: #fff; }
+                .tab-item-pro.active { background: #fff; color: #000; box-shadow: 0 10px 20px rgba(255,255,255,0.1); }
 
-                /* Mobile Optimizations */
-                .mobile-only { display: none; }
-                .desktop-only { display: block; }
+                /* Setup Flow */
+                .pro-setup-flow { display: grid; grid-template-columns: 1fr 400px; gap: 32px; align-items: start; }
                 
-                @media (max-width: 992px) {
-                    .setup-grid-layout { grid-template-columns: 1fr; }
-                    .setup-side-panel { order: -1; }
-                    .qr-card-mobile { text-align: center; }
+                .instruction-card { padding: 48px; }
+                .card-inner-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 40px; }
+                .pro-card-title { font-size: 2.2rem; font-weight: 950; letter-spacing: -1.5px; margin: 0; }
+                .pro-version-pill { background: rgba(99, 102, 241, 0.1); color: var(--pro-primary); padding: 6px 14px; border-radius: 12px; font-weight: 800; font-size: 0.75rem; border: 1px solid rgba(99,102,241,0.2); }
+
+                .pro-steps-container { display: flex; flex-direction: column; gap: 40px; }
+                .pro-step { display: flex; gap: 32px; }
+                .pro-step-numb { font-size: 2.5rem; font-weight: 950; opacity: 0.1; line-height: 1; letter-spacing: -2px; }
+                .pro-step-body h4 { font-size: 1.3rem; font-weight: 800; margin: 0 0 10px 0; }
+                .pro-step-body p { color: var(--pro-text-dim); line-height: 1.7; font-size: 1.05rem; margin-bottom: 20px; }
+                
+                .pro-download-btn {
+                    display: inline-flex; align-items: center; gap: 12px;
+                    background: linear-gradient(135deg, var(--pro-primary), var(--pro-accent));
+                    color: white; padding: 14px 28px; border-radius: 16px; font-weight: 900;
+                    text-decoration: none; box-shadow: 0 10px 25px rgba(99,102,241,0.4);
+                    transition: transform 0.2s;
+                }
+                .pro-download-btn:hover { transform: translateY(-3px); box-shadow: 0 15px 35px rgba(99,102,241,0.5); }
+
+                .pro-alert-box {
+                    margin-top: 60px; padding: 24px; border-radius: 20px;
+                    background: rgba(245, 158, 11, 0.05); border: 1px solid rgba(245, 158, 11, 0.1);
+                    display: flex; gap: 20px; align-items: center;
+                }
+                .alert-content { font-size: 0.95rem; color: #d97706; }
+
+                /* Pro Side Panel */
+                .pro-side-pane { display: flex; flex-direction: column; gap: 32px; }
+                .qr-card-pro { padding: 48px 40px; text-align: center; }
+                
+                .qr-wrapper-outer {
+                    position: relative; padding: 24px; display: inline-block;
+                    margin-bottom: 32px; border-radius: 36px;
+                    background: linear-gradient(135deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02));
+                    border: 1px solid var(--pro-glass-border);
+                }
+                .qr-white-bg { background: white; padding: 20px; border-radius: 24px; }
+                .qr-scanner-overlay {
+                    position: absolute; top: 0; left: 0; right: 0; height: 3px;
+                    background: var(--pro-primary); box-shadow: 0 0 20px var(--pro-primary);
+                    animation: scanLine 4s infinite linear; pointer-events: none; z-index: 10;
+                }
+                @keyframes scanLine { 0% { top: 0; } 100% { top: 100%; } }
+
+                .qr-card-heading { font-size: 1.6rem; font-weight: 950; margin: 0 0 8px 0; }
+                .qr-card-sub { color: var(--pro-text-dim); font-size: 0.95rem; margin-bottom: 32px; }
+
+                .key-section-pro { text-align: left; margin-bottom: 32px; }
+                .key-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+                .key-top label { font-size: 0.7rem; font-weight: 900; opacity: 0.5; letter-spacing: 1.5px; }
+                .key-top button { background: none; border: none; color: var(--pro-primary); cursor: pointer; }
+                .key-display-box {
+                    background: #1e293b; padding: 18px; border-radius: 16px;
+                    border: 1px solid var(--pro-glass-border); font-family: monospace;
+                    font-size: 1.1rem; font-weight: 700; color: var(--pro-primary); text-align: center;
+                }
+
+                .pro-action-btn {
+                    width: 100%; padding: 18px; border-radius: 18px; border: 1px solid #fff;
+                    background: transparent; color: #fff; font-weight: 900; font-size: 1rem;
+                    cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 12px;
+                    transition: all 0.2s;
+                }
+                .pro-action-btn:hover { background: #fff; color: #000; }
+
+                .benefits-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; padding: 20px; }
+                .benefit-item { display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center; }
+                .benefit-icon { width: 44px; height: 44px; border-radius: 14px; background: rgba(255,255,255,0.05); display: flex; align-items: center; justify-content: center; color: var(--pro-primary); }
+                .benefit-item span { font-size: 0.75rem; font-weight: 800; opacity: 0.6; }
+
+                /* History Feed - Pro */
+                .pro-history-view { display: flex; flex-direction: column; gap: 24px; }
+                .history-header-pro { display: flex; justify-content: space-between; align-items: center; padding: 20px 32px; border-radius: 20px; }
+                .search-bar-pro { display: flex; align-items: center; gap: 16px; flex: 1; max-width: 500px; }
+                .search-bar-pro input { background: none; border: none; font-size: 1.1rem; color: #fff; width: 100%; outline: none; font-weight: 600; }
+                .search-bar-pro input::placeholder { color: var(--pro-text-dim); }
+                .search-bar-pro svg { color: var(--pro-text-dim); }
+
+                .refresh-btn-pro {
+                    display: flex; align-items: center; gap: 10px; background: rgba(255,255,255,0.05);
+                    border: 1px solid var(--pro-glass-border); padding: 12px 24px; border-radius: 14px;
+                    color: #fff; font-weight: 800; cursor: pointer; transition: all 0.2s;
+                }
+                .refresh-btn-pro:hover { background: rgba(255,255,255,0.1); }
+
+                /* Premium Table */
+                .desktop-table-container { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+                .pro-table { width: 100%; border-collapse: separate; border-spacing: 0 12px; }
+                .pro-table th { padding: 16px 24px; text-align: left; font-size: 0.75rem; font-weight: 900; color: var(--pro-text-dim); text-transform: uppercase; letter-spacing: 1.5px; }
+                .pro-table tr td { background: var(--pro-glass); padding: 24px; vertical-align: middle; transition: all 0.2s; border: 1px solid transparent; }
+                .pro-table tr:hover td { background: rgba(255,255,255,0.07); transform: scale(1.005); border-color: var(--pro-glass-border); }
+                .pro-table tr td:first-child { border-top-left-radius: 20px; border-bottom-left-radius: 20px; border-left: 1px solid var(--pro-glass-border); }
+                .pro-table tr td:last-child { border-top-right-radius: 20px; border-bottom-right-radius: 20px; border-right: 1px solid var(--pro-glass-border); }
+                
+                .pro-cell-time { font-size: 1rem; font-weight: 800; }
+                .pro-cell-sender { font-size: 0.8rem; opacity: 0.5; margin-top: 2px; font-weight: 600; }
+                .pro-bank-badge { font-size: 0.75rem; font-weight: 900; background: #1e293b; padding: 6px 14px; border-radius: 10px; border: 1px solid var(--pro-glass-border); }
+                .pro-cell-amount { font-size: 1.2rem; font-weight: 950; color: var(--pro-success); }
+                .pro-cell-info strong { display: block; font-size: 1rem; margin-bottom: 4px; }
+                .pro-cell-info p { margin: 0; font-size: 0.85rem; opacity: 0.6; font-style: italic; }
+
+                .pro-status-tag {
+                    display: inline-flex; align-items: center; gap: 8px;
+                    padding: 8px 16px; border-radius: 12px; font-size: 0.8rem; font-weight: 800;
+                    background: rgba(255,255,255,0.05);
+                }
+                .pro-status-tag.matched { color: var(--pro-success); background: rgba(34, 197, 94, 0.1); }
+                .pro-status-tag.pending { color: var(--pro-warning); background: rgba(245, 158, 11, 0.1); }
+
+                .pro-action-row { display: flex; gap: 8px; justify-content: flex-end; }
+                .pro-small-btn { padding: 8px 16px; border-radius: 10px; font-weight: 800; cursor: pointer; border: 1px solid transparent; transition: all 0.2s; }
+                .pro-small-btn.primary { background: #fff; color: #000; }
+                .pro-small-btn.ghost { background: transparent; border-color: var(--pro-glass-border); color: #fff; }
+                .pro-small-btn.ghost:hover { background: rgba(255,255,255,0.1); }
+
+                .mobile-cards-container { display: none; }
+
+                /* Responsive - Mobile Mastery */
+                @media (max-width: 1024px) {
+                    .pro-setup-flow { grid-template-columns: 1fr; }
+                    .pro-side-pane { order: -1; }
                 }
 
                 @media (max-width: 768px) {
-                    .mobile-only { display: block; }
-                    .desktop-only { display: none; }
+                    .dashboard-grid { gap: 20px; }
+                    .status-card { flex-direction: column; gap: 24px; padding: 24px; border-radius: 20px; }
+                    .dashboard-tabs { width: 100%; padding: 4px; }
+                    .tab-item-pro { flex: 1; justify-content: center; font-size: 0.9rem; padding: 10px; }
+                    .tab-item-pro span { display: none; } /* Hide text for small icons if overlapping */
                     
-                    .page-content { padding: 16px 0; }
-                    .card-premium { padding: 20px; border-radius: 20px; }
+                    .pro-setup-flow { gap: 20px; }
+                    .instruction-card { padding: 32px 24px; border-radius: 24px; }
+                    .pro-card-title { font-size: 1.6rem; }
+                    .pro-step { gap: 20px; }
+                    .pro-step-numb { font-size: 1.8rem; }
+                    .pro-step-body h4 { font-size: 1.1rem; }
+                    .pro-step-body p { font-size: 0.95rem; }
+                    .pro-download-btn { width: 100%; justify-content: center; }
+
+                    .qr-card-pro { padding: 32px 20px; border-radius: 24px; }
+                    .qr-wrapper-outer { padding: 16px; border-radius: 28px; }
+                    .qr-white-bg { padding: 12px; }
                     
-                    .status-header-premium {
-                        flex-direction: column;
-                        gap: 20px;
-                        padding: 20px;
-                        align-items: flex-start;
-                        border-radius: 20px;
-                    }
-                    .tab-switcher { width: 100%; }
-                    .tab-btn { flex: 1; justify-content: center; }
+                    /* History Mobile View */
+                    .history-header-pro { padding: 16px; border-radius: 16px; gap: 12px; }
+                    .refresh-btn-pro span { display: none; }
+
+                    .desktop-table-container { display: none; }
+                    .mobile-cards-container { display: flex; flex-direction: column; gap: 16px; }
                     
-                    .step-item { gap: 16px; }
-                    .step-badge { width: 32px; height: 32px; font-size: 0.9rem; }
-                    .setup-steps { gap: 28px; }
-                    
-                    .history-header {
-                        flex-direction: column;
-                        padding: 16px;
-                        gap: 12px;
-                        align-items: stretch;
-                    }
-                    .search-wrapper { width: 100%; }
-                    .btn-refresh span { display: none; }
-                    .btn-refresh { justify-content: center; }
-                    
-                    .mobile-log-list { display: flex; flex-direction: column; gap: 12px; padding: 16px; }
-                    .mobile-log-card {
-                        background: rgba(255,255,255,0.02);
-                        border: 1px solid var(--border-glass);
-                        border-radius: 16px;
-                        padding: 16px;
-                    }
-                    .mlc-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
-                    .mlc-time { font-size: 0.8rem; font-weight: 800; color: var(--text-primary); }
-                    .mlc-bank { font-size: 0.7rem; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px; }
-                    .mlc-amount { font-weight: 900; color: var(--success); font-size: 1rem; }
-                    .mlc-content { margin-bottom: 12px; }
-                    .mlc-note { font-weight: 700; font-size: 0.9rem; margin-bottom: 4px; }
-                    .mlc-body { font-size: 0.75rem; color: var(--text-secondary); line-height: 1.4; opacity: 0.8; }
-                    .mlc-footer { display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border-glass); padding-top: 12px; }
-                    .mlc-actions { display: flex; gap: 8px; }
-                    
-                    .mobile-full-btn { width: 100%; justify-content: center; }
+                    .mobile-entry-card { padding: 20px; border-radius: 20px; }
+                    .mec-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; }
+                    .mec-meta { display: flex; flex-direction: column; gap: 4px; }
+                    .mec-time { font-size: 0.9rem; font-weight: 800; }
+                    .mec-bank { font-size: 0.75rem; text-transform: uppercase; font-weight: 900; color: var(--pro-primary); }
+                    .mec-amount { font-size: 1.1rem; font-weight: 950; color: var(--pro-success); }
+                    .mec-content { margin-bottom: 20px; }
+                    .mec-content strong { display: block; margin-bottom: 6px; }
+                    .mec-content p { margin: 0; font-size: 0.8rem; opacity: 0.6; font-style: italic; }
+                    .mec-footer { display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--pro-glass-border); padding-top: 16px; }
+                    .mec-actions { display: flex; gap: 8px; }
                 }
 
-                .ping-dot {
-                    position: absolute; top: -2px; right: -2px; width: 12px; height: 12px;
-                    background: var(--success); border-radius: 50%; border: 2px solid var(--surface-2);
-                    animation: ping 1.5s cubic-bezier(0, 0, 0.2, 1) infinite;
-                }
-                @keyframes ping {
-                    75%, 100% { transform: scale(2.5); opacity: 0; }
+                /* iPhone 14 / Narrow Viewports */
+                @media (max-width: 440px) {
+                    .tab-item-pro span { display: none; }
+                    .tab-item-pro { padding: 12px 18px; }
+                    .pro-card-title { font-size: 1.4rem; letter-spacing: -1px; }
+                    .status-main-info { gap: 16px; }
+                    .status-orb { width: 48px; height: 48px; border-radius: 14px; }
+                    .status-orb svg { width: 24px; height: 24px; }
                 }
             `}</style>
         </div>
