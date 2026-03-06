@@ -3,7 +3,7 @@ import { collection, doc, getDocs, setDoc, updateDoc, deleteDoc } from 'firebase
 import { db } from '../../../services/firebase';
 import { toast } from 'react-hot-toast';
 import {
-    MessageSquare, Plus, Trash2, Edit3, TestTube, ChevronDown, ChevronUp,
+    MessageSquare, Plus, Trash2, Edit3, TestTube,
     Check, X, ToggleLeft, ToggleRight, Banknote, Search, Sparkles
 } from 'lucide-react';
 import './SmsTemplateSettings.css';
