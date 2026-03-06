@@ -178,7 +178,11 @@ export function LoginPage() {
                 }
 
                 if (!sessionId) {
-                    toast.error('Буруу QR код байна');
+                    if (decodedText.startsWith('ls_sk_') || decodedText.includes('sms-pairing')) {
+                        toast.error('Энэ бол SMS Sync код байна. Та Liscord Bridge апп-аа ашиглан уншуулна уу.', { duration: 5000 });
+                    } else {
+                        toast.error('Буруу QR код байна');
+                    }
                     return;
                 }
 

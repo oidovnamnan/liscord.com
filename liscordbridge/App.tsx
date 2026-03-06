@@ -85,10 +85,22 @@ const App = () => {
     onCodeScanned: (codes) => {
       if (codes.length > 0 && codes[0].value) {
         const scanned = codes[0].value;
+        let finalKey = '';
+
         if (scanned.startsWith('ls_sk_')) {
+          finalKey = scanned;
+        } else if (scanned.includes('key=ls_sk_')) {
+          // Extract from URL: ...?key=ls_sk_abc123...
+          const parts = scanned.split('key=');
+          if (parts.length > 1) {
+            finalKey = parts[1].split('&')[0];
+          }
+        }
+
+        if (finalKey.startsWith('ls_sk_')) {
           setIsScanning(false);
-          AsyncStorage.setItem('LiscordPairingKey', scanned);
-          setPairingKey(scanned);
+          AsyncStorage.setItem('LiscordPairingKey', finalKey);
+          setPairingKey(finalKey);
           Alert.alert("Амжилттай", "Холболт амжилттай үүслээ!");
         }
       }

@@ -60,7 +60,8 @@ export function BankSmsSyncPage() {
         }
     ]);
 
-    const qrCodeValue = apiKey; // Bridge app expects a key starting with 'ls_sk_'
+    const setupUrl = `${window.location.origin}/sms-pairing?key=${apiKey}`;
+    const qrCodeValue = setupUrl;
 
     const handleGenerateKey = () => {
         setApiKey('ls_sk_' + Math.random().toString(36).substring(2, 12));
@@ -147,7 +148,7 @@ export function BankSmsSyncPage() {
                                             <div className="pro-step-numb">02</div>
                                             <div className="pro-step-body">
                                                 <h4>QR код уншуулах</h4>
-                                                <p><b>Liscord Bridge</b> апп-аа нээж "Системтэй холбох (QR Scan)" товчийг дарж доорх кодыг уншуулна уу. (Жирийн камер биш апп доторх камераар уншуулна уу)</p>
+                                                <p><b>Liscord Bridge</b> апп-аа нээж "Системтэй холбох (QR Scan)" товчийг дарж доорх кодыг уншуулна уу. (Гар утасныхаа камер биш, заавал <b>апп доторх</b> камераар уншуулахыг анхаарна уу)</p>
                                             </div>
                                         </div>
 
@@ -179,7 +180,7 @@ export function BankSmsSyncPage() {
                                         </div>
                                     </div>
                                     <h3 className="qr-card-heading">Холболтын QR</h3>
-                                    <p className="qr-card-sub">Bridge апп доторх камераар уншуулна уу</p>
+                                    <p className="qr-card-sub">Liscord Bridge апп-ын сканнераар уншуулна уу</p>
 
                                     <div className="key-section-pro">
                                         <div className="key-top">
