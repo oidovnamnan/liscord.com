@@ -63,6 +63,11 @@ const DEFAULT_SETTINGS: AppSettings = {
   customKeywords: [],
 };
 
+// ======= MODULE-LEVEL REFS (accessible from headless JS task) =======
+let _pairingKey: string | null = null;
+let _settings: AppSettings = DEFAULT_SETTINGS;
+let _forwardCount = 0;
+
 // Parse amount from SMS body
 function parseAmount(body: string): number {
   // Match patterns like "50,000.00", "125000", "50 000"
@@ -96,6 +101,110 @@ function parseBankName(sender: string): string {
   if (sender.includes('2525') || sender.toLowerCase().includes('bogd')) return 'Bogd Bank';
   return sender;
 }
+
+// ======= MODULE-LEVEL HELPERS (accessible from background task) =======
+function isBankSms(sender: string, currentSettings: AppSettings): boolean {
+  return currentSettings.bankSenders.some(bankNum =>
+    sender.includes(bankNum) || bankNum.includes(sender)
+  );
+}
+
+function isIncomeSms(body: string, currentSettings: AppSettings): boolean {
+  const allKeywords = [...INCOME_KEYWORDS, ...currentSettings.customKeywords];
+  return allKeywords.some(keyword => body.toLowerCase().includes(keyword.toLowerCase()));
+}
+
+// ======= BACKGROUND TASK (module-level, no closure dependency) =======
+const backgroundTask = async (taskDataArguments: any) => {
+  let lastCheckedStamp = Date.now();
+  const { delay } = taskDataArguments;
+
+  const bgLog = async (msg: string) => {
+    try {
+      const existing = await AsyncStorage.getItem('LiscordBgLogs');
+      const arr = existing ? JSON.parse(existing) : [];
+      const timestamp = new Date().toLocaleTimeString('mn-MN', { hour: '2-digit', minute: '2-digit' });
+      arr.unshift(`[${timestamp}] ${msg}`);
+      await AsyncStorage.setItem('LiscordBgLogs', JSON.stringify(arr.slice(0, 30)));
+    } catch (_e) { /* ignore */ }
+  };
+
+  await bgLog('🚀 Background task эхэллээ');
+
+  while (BackgroundService.isRunning()) {
+    const currentKey = _pairingKey;
+    const currentSettings = _settings;
+
+    if (!currentKey) {
+      await sleep(delay);
+      continue;
+    }
+
+    try {
+      const filter = {
+        box: 'inbox',
+        minDate: lastCheckedStamp,
+      };
+
+      await new Promise<void>((resolve) => {
+        SmsAndroid.list(
+          JSON.stringify(filter),
+          (fail: string) => {
+            bgLog(`❌ SMS уншихад алдаа: ${fail}`);
+            resolve();
+          },
+          async (count: number, smsList: string) => {
+            if (count > 0) {
+              try {
+                const arr = JSON.parse(smsList);
+                let forwarded = 0;
+
+                for (const msg of arr) {
+                  const sender = msg.address || '';
+                  const body = msg.body || '';
+
+                  if (!isBankSms(sender, currentSettings)) continue;
+                  if (currentSettings.onlyIncome && !isIncomeSms(body, currentSettings)) continue;
+
+                  const amount = parseAmount(body);
+                  const bank = parseBankName(sender);
+
+                  const success = await sendToFirestore(currentKey, {
+                    sender,
+                    body,
+                    timestamp: msg.date || Date.now(),
+                    amount,
+                    bank,
+                  });
+
+                  if (success) {
+                    forwarded++;
+                    const countStr = await AsyncStorage.getItem('LiscordForwardCount');
+                    const newCount = (parseInt(countStr || '0', 10)) + 1;
+                    _forwardCount = newCount;
+                    await AsyncStorage.setItem('LiscordForwardCount', String(newCount));
+                  }
+                }
+
+                if (forwarded > 0) {
+                  await bgLog(`📤 ${forwarded} мессеж дамжууллаа`);
+                }
+              } catch (parseErr: any) {
+                await bgLog(`❌ SMS parse алдаа: ${parseErr?.message || parseErr}`);
+              }
+            }
+            resolve();
+          },
+        );
+      });
+    } catch (e: any) {
+      await bgLog(`❌ Polling алдаа: ${e?.message || e}`);
+    }
+
+    lastCheckedStamp = Date.now();
+    await sleep(delay);
+  }
+};
 
 // Send SMS data to Firestore REST API
 async function sendToFirestore(pairingKey: string, smsData: {
@@ -161,10 +270,10 @@ const App = () => {
     loadForwardCount();
   }, []);
 
-  // Keep refs in sync
-  useEffect(() => { pairingKeyRef.current = pairingKey; }, [pairingKey]);
-  useEffect(() => { settingsRef.current = settings; }, [settings]);
-  useEffect(() => { forwardCountRef.current = forwardCount; }, [forwardCount]);
+  // Keep refs AND module-level vars in sync
+  useEffect(() => { pairingKeyRef.current = pairingKey; _pairingKey = pairingKey; }, [pairingKey]);
+  useEffect(() => { settingsRef.current = settings; _settings = settings; }, [settings]);
+  useEffect(() => { forwardCountRef.current = forwardCount; _forwardCount = forwardCount; }, [forwardCount]);
   useEffect(() => { logsRef.current = logs; }, [logs]);
 
   const addLog = useCallback((msg: string) => {
@@ -198,6 +307,7 @@ const App = () => {
     if (key) {
       setPairingKey(key);
       pairingKeyRef.current = key;
+      _pairingKey = key;
     }
   };
 
@@ -206,8 +316,10 @@ const App = () => {
       const saved = await AsyncStorage.getItem('LiscordSettings');
       if (saved) {
         const parsed = JSON.parse(saved);
-        setSettings({ ...DEFAULT_SETTINGS, ...parsed });
-        settingsRef.current = { ...DEFAULT_SETTINGS, ...parsed };
+        const merged = { ...DEFAULT_SETTINGS, ...parsed };
+        setSettings(merged);
+        settingsRef.current = merged;
+        _settings = merged;
       }
     } catch (e) {
       console.warn('Failed to load settings:', e);
@@ -217,6 +329,7 @@ const App = () => {
   const saveSettings = async (newSettings: AppSettings) => {
     setSettings(newSettings);
     settingsRef.current = newSettings;
+    _settings = newSettings;
     await AsyncStorage.setItem('LiscordSettings', JSON.stringify(newSettings));
   };
 
@@ -280,116 +393,7 @@ const App = () => {
     addLog('🔓 Салгалт хийгдлээ');
   };
 
-  // Check if SMS is from a known bank sender
-  const isBankSms = (sender: string, currentSettings: AppSettings): boolean => {
-    return currentSettings.bankSenders.some(bankNum =>
-      sender.includes(bankNum) || bankNum.includes(sender)
-    );
-  };
-
-  // Check if SMS contains income keywords
-  const isIncomeSms = (body: string, currentSettings: AppSettings): boolean => {
-    const allKeywords = [...INCOME_KEYWORDS, ...currentSettings.customKeywords];
-    return allKeywords.some(keyword => body.toLowerCase().includes(keyword.toLowerCase()));
-  };
-
-  // Background task that polls SMS inbox
-  const backgroundTask = async (taskDataArguments: any) => {
-    let lastCheckedStamp = Date.now();
-    const { delay } = taskDataArguments;
-
-    // Log to AsyncStorage for persistence (UI updates won't work in background)
-    const bgLog = async (msg: string) => {
-      try {
-        const existing = await AsyncStorage.getItem('LiscordBgLogs');
-        const arr = existing ? JSON.parse(existing) : [];
-        const timestamp = new Date().toLocaleTimeString('mn-MN', { hour: '2-digit', minute: '2-digit' });
-        arr.unshift(`[${timestamp}] ${msg}`);
-        await AsyncStorage.setItem('LiscordBgLogs', JSON.stringify(arr.slice(0, 30)));
-      } catch (_e) { /* ignore */ }
-    };
-
-    await bgLog('🚀 Background task эхэллээ');
-
-    while (BackgroundService.isRunning()) {
-      const currentKey = pairingKeyRef.current;
-      const currentSettings = settingsRef.current;
-
-      if (!currentKey) {
-        await sleep(delay);
-        continue;
-      }
-
-      try {
-        const filter = {
-          box: 'inbox',
-          minDate: lastCheckedStamp,
-        };
-
-        await new Promise<void>((resolve) => {
-          SmsAndroid.list(
-            JSON.stringify(filter),
-            (fail: string) => {
-              bgLog(`❌ SMS уншихад алдаа: ${fail}`);
-              resolve();
-            },
-            async (count: number, smsList: string) => {
-              if (count > 0) {
-                try {
-                  const arr = JSON.parse(smsList);
-                  let forwarded = 0;
-
-                  for (const msg of arr) {
-                    const sender = msg.address || '';
-                    const body = msg.body || '';
-
-                    // Filter: only bank senders
-                    if (!isBankSms(sender, currentSettings)) continue;
-
-                    // Filter: only income if setting is on
-                    if (currentSettings.onlyIncome && !isIncomeSms(body, currentSettings)) continue;
-
-                    // Parse amount and bank
-                    const amount = parseAmount(body);
-                    const bank = parseBankName(sender);
-
-                    // Send to Firestore
-                    const success = await sendToFirestore(currentKey, {
-                      sender,
-                      body,
-                      timestamp: msg.date || Date.now(),
-                      amount,
-                      bank,
-                    });
-
-                    if (success) {
-                      forwarded++;
-                      // Update persistent counter
-                      const countStr = await AsyncStorage.getItem('LiscordForwardCount');
-                      const newCount = (parseInt(countStr || '0', 10)) + 1;
-                      await AsyncStorage.setItem('LiscordForwardCount', String(newCount));
-                    }
-                  }
-
-                  if (forwarded > 0) {
-                    await bgLog(`📤 ${forwarded} мессеж дамжууллаа`);
-                  }
-                } catch (parseErr: any) {
-                  await bgLog(`❌ SMS parse алдаа: ${parseErr?.message || parseErr}`);
-                }
-              }
-              resolve();
-            },
-          );
-        });
-      } catch (e: any) {
-        await bgLog(`❌ Polling алдаа: ${e?.message || e}`);
-      }
-
-      lastCheckedStamp = Date.now();
-      await sleep(delay);
-    }
-  };
+  // ---- REMOVED: backgroundTask moved to module scope ----
 
   const toggleService = async () => {
     if (!pairingKey) {
