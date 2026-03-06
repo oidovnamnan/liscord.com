@@ -75,8 +75,15 @@ export function BankSmsSyncPage() {
         const unsubscribe = onSnapshot(q, (snapshot) => {
             const items: SmsLog[] = snapshot.docs.map(docSnap => {
                 const d = docSnap.data();
-                const createdAt = d.createdAt?.toDate?.() || new Date(d.timestamp || Date.now());
-                const timeStr = createdAt.toLocaleTimeString('mn-MN', { hour: '2-digit', minute: '2-digit' });
+                // Use SMS timestamp (phone local time) for accurate time, fallback to Firestore createdAt
+                const smsTimestamp = d.timestamp ? new Date(typeof d.timestamp === 'string' ? parseInt(d.timestamp, 10) : d.timestamp) : null;
+                const createdAt = smsTimestamp || d.createdAt?.toDate?.() || new Date();
+
+                const now = new Date();
+                const isToday = createdAt.toDateString() === now.toDateString();
+                const timeStr = isToday
+                    ? createdAt.toLocaleTimeString('mn-MN', { hour: '2-digit', minute: '2-digit' })
+                    : createdAt.toLocaleDateString('mn-MN', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
 
                 // Use utga field from Firestore, or extract from body
                 let note = d.utga || '';
