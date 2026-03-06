@@ -525,23 +525,182 @@
 @media (max-width: 768px) {
     .settings-layout {
         grid-template-columns: 1fr;
-        padding: 16px;
+        padding: 12px;
+        gap: 16px;
     }
 
     .settings-sidebar {
         position: static;
+        display: flex;
         flex-direction: row;
+        flex-wrap: nowrap;
         overflow-x: auto;
-        padding: 12px;
-        gap: 12px;
+        -webkit-overflow-scrolling: touch;
+        padding: 8px;
+        gap: 0;
+        scrollbar-width: none;
+        border-radius: var(--radius-xl);
+    }
+
+    .settings-sidebar::-webkit-scrollbar {
+        display: none;
+    }
+
+    /* Hide group titles on mobile */
+    .settings-sidebar-group-title {
+        display: none;
+    }
+
+    /* Make sidebar groups inline */
+    .settings-sidebar-group {
+        display: flex;
+        flex-direction: row;
+        flex-wrap: nowrap;
+        gap: 4px;
+    }
+
+    .settings-sidebar-group+.settings-sidebar-group {
+        margin-left: 4px;
+        padding-left: 8px;
+        border-left: 1px solid var(--border-primary);
     }
 
     .settings-tab {
         white-space: nowrap;
         width: auto;
+        padding: 8px 14px;
+        font-size: 0.8rem;
+        border-radius: var(--radius-full);
+        gap: 6px;
+        flex-shrink: 0;
+    }
+
+    .settings-tab:hover {
+        transform: none;
+    }
+
+    .settings-tab svg {
+        width: 14px;
+        height: 14px;
+    }
+
+    .settings-tab.active {
+        background: var(--primary-light);
+        color: var(--primary);
+        border-color: transparent;
+        font-weight: 700;
+    }
+
+    /* Compact cards on mobile */
+    .settings-section h2 {
+        font-size: 1.35rem;
+        margin-bottom: 16px;
+    }
+
+    .settings-card {
+        padding: 20px;
+        margin-bottom: 16px;
+        border-radius: 16px;
+    }
+
+    .settings-card-header {
+        margin-bottom: 16px;
+        gap: 12px;
+    }
+
+    .settings-card-header h3 {
+        font-size: 1.05rem;
+    }
+
+    .settings-card-icon {
+        width: 36px;
+        height: 36px;
+        border-radius: 10px;
     }
 
     .settings-input-row {
         grid-template-columns: 1fr;
+        gap: 16px;
+    }
+
+    .logo-upload-premium {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        gap: 16px;
+        padding: 16px;
+    }
+
+    .theme-previews {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px;
+    }
+
+    .theme-mockup {
+        height: 80px;
+        padding: 8px;
+    }
+
+    .theme-preview-label {
+        padding: 8px;
+        font-size: 0.75rem;
+    }
+
+    .modern-toggle-item {
+        padding: 14px;
+        border-radius: 12px;
+    }
+
+    .toggle-info h4 {
+        font-size: 0.9rem;
+    }
+
+    .toggle-info p {
+        font-size: 0.78rem;
+    }
+
+    /* Color picker compact */
+    .premium-color-picker {
+        padding: 14px;
+    }
+
+    .color-presets {
+        gap: 8px;
+    }
+
+    .color-preset-btn {
+        width: 30px;
+        height: 30px;
+        border-radius: 8px;
+    }
+}
+
+@media (max-width: 480px) {
+    .settings-layout {
+        padding: 8px;
+    }
+
+    .settings-tab {
+        padding: 6px 10px;
+        font-size: 0.75rem;
+    }
+
+    .settings-tab svg {
+        display: none;
+    }
+
+    .settings-card {
+        padding: 16px;
+        border-radius: 14px;
+    }
+
+    .settings-section h2 {
+        font-size: 1.2rem;
+        margin-bottom: 12px;
+    }
+
+    .theme-previews {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 6px;
     }
 }
