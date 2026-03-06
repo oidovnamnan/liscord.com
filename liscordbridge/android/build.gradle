@@ -39,20 +39,6 @@ subprojects {
             if (project.android.namespace == null) {
                 def fallbackNamespace = (project.group ?: "com.liscord.fallback.${project.name}").replace("-", "_")
                 project.android.namespace = fallbackNamespace
-                println "Enforcing namespace for ${project.name}: ${fallbackNamespace}"
-            }
-
-            // Remove 'package' attribute from AndroidManifest.xml for Gradle 8 compatibility
-            project.android.sourceSets.all { sourceSet ->
-                sourceSet.manifest.srcFile.with { manifestFile ->
-                    if (manifestFile.exists()) {
-                        def content = manifestFile.text
-                        if (content.contains("package=")) {
-                            println "Stripping 'package' from ${project.name} manifest: ${manifestFile.absolutePath}"
-                            manifestFile.text = content.replaceAll(/package="[^"]*"/, "")
-                        }
-                    }
-                }
             }
 
             // Fix old compileSdkVersion/targetSdkVersion/buildToolsVersion
