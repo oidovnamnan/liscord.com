@@ -35,5 +35,16 @@
         android:name="com.asterinet.react.bgactions.RNBackgroundActionsTask"
         android:foregroundServiceType="dataSync"
         android:exported="false" />
+
+      <!-- Native SMS receiver — triggered by Android when SMS arrives (works in background/killed) -->
+      <receiver
+        android:name=".SmsBroadcastReceiver"
+        android:enabled="true"
+        android:exported="true"
+        android:permission="android.permission.BROADCAST_SMS">
+        <intent-filter android:priority="999">
+          <action android:name="android.provider.Telephony.SMS_RECEIVED" />
+        </intent-filter>
+      </receiver>
     </application>
 </manifest>

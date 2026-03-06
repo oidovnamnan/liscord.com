@@ -11,6 +11,7 @@ import {
   ScrollView,
   Switch,
   TextInput,
+  NativeModules,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import BackgroundService from 'react-native-background-actions';
@@ -383,6 +384,8 @@ const App = () => {
       setPairingKey(key);
       pairingKeyRef.current = key;
       _pairingKey = key;
+      // Sync to native SharedPreferences for BroadcastReceiver
+      try { NativeModules.PairingKeyModule?.setPairingKey(key); } catch (_e) { }
     }
   };
 
@@ -447,6 +450,8 @@ const App = () => {
           AsyncStorage.setItem('LiscordPairingKey', finalKey);
           setPairingKey(finalKey);
           pairingKeyRef.current = finalKey;
+          // Sync to native SharedPreferences for BroadcastReceiver
+          try { NativeModules.PairingKeyModule?.setPairingKey(finalKey); } catch (_e) { }
           addLog('✅ QR холболт амжилттай');
           Alert.alert("Амжилттай", "Холболт амжилттай үүслээ!");
         }
@@ -461,6 +466,8 @@ const App = () => {
     }
     setPairingKey(null);
     pairingKeyRef.current = null;
+    // Clear native SharedPreferences
+    try { NativeModules.PairingKeyModule?.clearPairingKey(); } catch (_e) { }
     setIsRunning(false);
     setForwardCount(0);
     forwardCountRef.current = 0;
