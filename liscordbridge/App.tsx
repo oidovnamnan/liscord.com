@@ -23,15 +23,8 @@ const FIRESTORE_BASE = 'https://firestore.googleapis.com/v1/projects/liscord-2b5
 const sleep = (time: number) => new Promise<void>((resolve) => setTimeout(() => resolve(), time));
 
 // Default Mongolian bank SMS senders
-const DEFAULT_BANK_SENDERS = [
-  '1900', '19001917', '19001918',  // Khan Bank
-  '1800', '18001800',              // Golomt Bank
-  '1500', '15001500',              // TDB
-  '1234',                          // State Bank
-  '7575',                          // XacBank
-  '2525',                          // Bogd Bank
-  'KhanBank', 'Golomt', 'TDB', 'XacBank', 'StateBank',
-];
+// Empty by default — user adds their bank's actual SMS sender numbers
+const DEFAULT_BANK_SENDERS: string[] = [];
 
 // Income keywords in Mongolian bank SMS
 const INCOME_KEYWORDS = ['orlogo', 'Orlogo', 'ORLOGO', 'орлого', 'Орлого', 'орсон', 'credited', 'received'];
@@ -46,6 +39,13 @@ const backgroundTaskOptions = {
   },
   color: '#6366f1',
   linkingURI: 'liscordbridge://home',
+  // Keep service running when app is closed
+  android: {
+    notification: {
+      channelName: 'SMS Bridge',
+      channelDescription: 'Банкны SMS мониторинг',
+    },
+  },
   parameters: {
     delay: 10000,
   },
@@ -579,22 +579,22 @@ const App = () => {
             </View>
 
             <View style={styles.sendersList}>
+              {settings.bankSenders.length === 0 && (
+                <Text style={styles.hintText}>Банкнаас ирдэг SMS-ийн дугаарыг нэмнэ үү (жнь: 1900, Golomt)</Text>
+              )}
               {settings.bankSenders.map((sender, i) => (
-                <TouchableOpacity
-                  key={`${sender}-${i}`}
-                  style={styles.senderChip}
-                  onLongPress={() => {
-                    Alert.alert('Устгах уу?', `"${sender}" дугаарыг жагсаалтаас хасах уу?`, [
-                      { text: 'Үгүй', style: 'cancel' },
-                      { text: 'Тийм', onPress: () => removeBankSender(sender), style: 'destructive' },
-                    ]);
-                  }}
-                >
+                <View key={`${sender}-${i}`} style={styles.senderChip}>
                   <Text style={styles.senderChipText}>{sender}</Text>
-                </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.senderDeleteBtn}
+                    onPress={() => removeBankSender(sender)}
+                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                  >
+                    <Text style={styles.senderDeleteText}>✕</Text>
+                  </TouchableOpacity>
+                </View>
               ))}
             </View>
-            <Text style={styles.hintText}>Устгахдаа удаан дарна уу</Text>
           </View>
 
           {/* Reset */}
@@ -804,8 +804,15 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(99,102,241,0.12)', paddingHorizontal: 12,
     paddingVertical: 6, borderRadius: 20,
     borderWidth: 1, borderColor: 'rgba(99,102,241,0.3)',
+    flexDirection: 'row', alignItems: 'center', gap: 6,
   },
   senderChipText: { color: '#a5b4fc', fontSize: 12, fontWeight: '700' },
+  senderDeleteBtn: {
+    width: 18, height: 18, borderRadius: 9,
+    backgroundColor: 'rgba(239,68,68,0.2)',
+    alignItems: 'center', justifyContent: 'center',
+  },
+  senderDeleteText: { color: '#f87171', fontSize: 10, fontWeight: '900' },
   hintText: { fontSize: 11, color: 'rgba(255,255,255,0.25)', marginTop: 8, fontStyle: 'italic' },
   resetBtn: {
     padding: 16, borderRadius: 14, alignItems: 'center',
