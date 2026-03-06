@@ -50,7 +50,9 @@
 
 @media (max-width: 600px) {
     .inv-stats-grid {
-        grid-template-columns: 1fr;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        margin-top: 16px;
     }
 }
 
@@ -542,25 +544,197 @@
     .inv-toolbar {
         flex-direction: column;
         align-items: stretch;
+        margin-top: 16px;
+        gap: 8px;
     }
 
     .inv-move-card {
         flex-wrap: wrap;
-        gap: 12px;
-        padding: 16px;
+        gap: 10px;
+        padding: 12px 14px;
+        border-radius: 14px;
+    }
+
+    .inv-move-card:hover {
+        transform: none;
+        box-shadow: none;
+    }
+
+    .inv-move-card::after {
+        display: none;
+    }
+
+    .inv-move-icon {
+        width: 36px;
+        height: 36px;
+        border-radius: 10px;
+    }
+
+    .inv-move-product {
+        font-size: 0.85rem;
+    }
+
+    .inv-move-reason {
+        font-size: 0.7rem;
+    }
+
+    .inv-move-change {
+        font-size: 1rem;
+    }
+
+    .inv-move-stock {
+        font-size: 0.65rem;
+    }
+
+    .inv-move-qty {
+        min-width: 70px;
     }
 
     .inv-move-meta {
         width: 100%;
         text-align: left;
         border-top: 1px solid var(--border-primary);
-        padding-top: 12px;
+        padding-top: 8px;
         display: flex;
         justify-content: space-between;
+        min-width: auto;
+    }
+
+    .inv-move-user {
+        font-size: 0.7rem;
+    }
+
+    .inv-move-date {
+        font-size: 0.65rem;
     }
 
     .page-section-header {
         flex-direction: column;
         align-items: flex-start;
+        gap: 8px;
+    }
+
+    .page-section-title {
+        font-size: 1.1rem;
+    }
+
+    /* --- Stat Cards: Compact 2x2 --- */
+    .inv-stat-card {
+        padding: 14px 16px;
+        border-radius: 14px;
+    }
+
+    .inv-stat-card:hover {
+        transform: none;
+        box-shadow: none;
+    }
+
+    .inv-stat-card::after {
+        display: none;
+    }
+
+    .inv-stat-content h4 {
+        font-size: 0.6rem;
+        letter-spacing: 1px;
+        margin-bottom: 4px;
+    }
+
+    .inv-stat-value {
+        font-size: 1.3rem;
+    }
+
+    .inv-stat-icon {
+        width: 38px;
+        height: 38px;
+        border-radius: 10px;
+    }
+
+    /* --- Toolbar: Compact --- */
+    .inv-search-input {
+        padding: 10px 14px 10px 44px;
+        font-size: 0.85rem;
+        border-radius: 12px;
+    }
+
+    .inv-search-wrap .inv-search-icon {
+        left: 14px;
+    }
+
+    /* --- Filter Chips: Compact --- */
+    .inv-chip {
+        height: 36px;
+        padding: 0 14px;
+        font-size: 0.72rem;
+        border-radius: 10px;
+    }
+
+    .inv-chip .chip-count {
+        font-size: 0.6rem;
+        padding: 1px 6px;
+    }
+
+    /* --- Low Stock Alert: Compact --- */
+    .inv-low-stock-premium {
+        margin-top: 16px;
+        padding: 14px 16px;
+        border-radius: 14px;
+    }
+
+    .inv-low-stock-premium::before {
+        display: none;
+    }
+
+    .low-stock-header {
+        font-size: 0.75rem;
+        margin-bottom: 10px;
+    }
+
+    .low-stock-item {
+        gap: 8px;
+        padding: 8px 12px;
+        border-radius: 10px;
+    }
+
+    .low-stock-item:hover {
+        transform: none;
+    }
+
+    .low-stock-item-name {
+        font-size: 0.8rem;
+    }
+
+    .low-stock-item-badge {
+        padding: 2px 8px;
+        font-size: 0.6rem;
+    }
+
+    /* --- Movements: Compact list --- */
+    .inv-movements-premium {
+        gap: 8px;
+        margin-top: 16px;
+    }
+
+    /* --- Empty/Loading: Compact --- */
+    .inv-empty-state {
+        padding: 48px 24px;
+    }
+
+    .inv-empty-icon {
+        width: 56px;
+        height: 56px;
+        border-radius: 16px;
+        margin-bottom: 16px;
+    }
+
+    .inv-empty-title {
+        font-size: 1rem;
+    }
+
+    .inv-empty-desc {
+        font-size: 0.8rem;
+    }
+
+    .inv-loading {
+        padding: 48px 24px;
     }
 }
