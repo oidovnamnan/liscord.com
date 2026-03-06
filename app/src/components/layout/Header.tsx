@@ -77,7 +77,7 @@ export function Header({ title, subtitle, action, extra }: HeaderProps) {
             </div>
 
             <div className="header-right">
-                <button className="header-icon-btn" title="Хайлт (Ctrl+K)">
+                <button className="header-icon-btn hide-mobile" title="Хайлт (Ctrl+K)">
                     <Search size={20} />
                 </button>
 
@@ -150,7 +150,7 @@ export function Header({ title, subtitle, action, extra }: HeaderProps) {
                 {/* V2 Toggle Switcher */}
                 <button
                     onClick={handleToggleV2}
-                    className="btn btn-sm"
+                    className="btn btn-sm hide-mobile"
                     style={{
                         background: user?.uiVersion === 'v2' ? 'linear-gradient(135deg, #fcd34d 0%, #f59e0b 100%)' : 'rgba(255,255,255,0.1)',
                         color: user?.uiVersion === 'v2' ? '#000' : 'var(--text-primary)',

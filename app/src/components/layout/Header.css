@@ -148,7 +148,7 @@
 /* --- Mobile Header --- */
 @media (max-width: 640px) {
     .header {
-        padding: 0 var(--space-sm);
+        padding: 0 var(--space-md);
         height: 52px;
     }
 
@@ -165,13 +165,22 @@
     }
 
     .header-right {
-        gap: var(--space-xs);
+        gap: 4px;
     }
 
     .header-icon-btn {
-        min-width: 36px;
-        min-height: 36px;
+        min-width: 34px;
+        min-height: 34px;
         padding: 4px;
+    }
+
+    /* Hide non-essential buttons on mobile */
+    .header-right>button[title="Хайлт (Ctrl+K)"] {
+        display: none !important;
+    }
+
+    .header-right>button[title="Switch Workspace Version"] {
+        display: none !important;
     }
 
     .header-menu-btn {
@@ -195,5 +204,11 @@
         min-width: 14px;
         height: 14px;
         font-size: 0.6rem;
+    }
+
+    /* Notification dropdown: full-width on mobile */
+    .notif-dropdown {
+        width: calc(100vw - 32px) !important;
+        right: -12px !important;
     }
 }
