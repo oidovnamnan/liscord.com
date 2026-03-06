@@ -39,6 +39,19 @@ subprojects {
             if (project.android.namespace == null) {
                 project.android.namespace = project.group ?: "com.liscord.fallback.${project.name}"
             }
+
+            // Remove 'package' attribute from AndroidManifest.xml for Gradle 8 compatibility
+            project.android.sourceSets.all { sourceSet ->
+                sourceSet.manifest.srcFile.with { manifestFile ->
+                    if (manifestFile.exists()) {
+                        def content = manifestFile.text
+                        if (content.contains("package=")) {
+                            manifestFile.text = content.replaceAll(/package="[^"]*"/, "")
+                        }
+                    }
+                }
+            }
+
             // Fix old compileSdkVersion/targetSdkVersion/buildToolsVersion
             project.android {
                 compileSdkVersion rootProject.ext.compileSdkVersion
