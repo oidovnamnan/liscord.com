@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useBusinessStore } from '../../store';
+// import { useBusinessStore } from '../../store'; // Removed unused
 import { Header } from '../../components/layout/Header';
 import {
     Smartphone,
@@ -28,7 +28,7 @@ interface SmsLog {
 }
 
 export function BankSmsSyncPage() {
-    const { business } = useBusinessStore();
+    // const { business } = useBusinessStore(); // Removed unused
     const [apiKey, setApiKey] = useState('ls_sk_' + Math.random().toString(36).substring(2, 12));
     const [isConnected] = useState(false);
     const [lastSync] = useState<string | null>(null);
@@ -60,7 +60,7 @@ export function BankSmsSyncPage() {
         }
     ]);
 
-    const setupUrl = `https://api.liscord.com/sms/sync?bid=${business?.id}&key=${apiKey}`;
+    const qrCodeValue = apiKey; // Bridge app expects a key starting with 'ls_sk_'
 
     const handleGenerateKey = () => {
         setApiKey('ls_sk_' + Math.random().toString(36).substring(2, 12));
@@ -147,7 +147,7 @@ export function BankSmsSyncPage() {
                                             <div className="pro-step-numb">02</div>
                                             <div className="pro-step-body">
                                                 <h4>QR код уншуулах</h4>
-                                                <p>Bridge апп-аараа холболтын кодыг уншуулна уу. Систем таныг шууд таньж холбогдох болно.</p>
+                                                <p><b>Liscord Bridge</b> апп-аа нээж "Системтэй холбох (QR Scan)" товчийг дарж доорх кодыг уншуулна уу. (Жирийн камер биш апп доторх камераар уншуулна уу)</p>
                                             </div>
                                         </div>
 
@@ -175,11 +175,11 @@ export function BankSmsSyncPage() {
                                     <div className="qr-wrapper-outer">
                                         <div className="qr-scanner-overlay" />
                                         <div className="qr-white-bg">
-                                            <QRCodeSVG value={setupUrl} size={180} level="H" />
+                                            <QRCodeSVG value={qrCodeValue} size={180} level="H" />
                                         </div>
                                     </div>
                                     <h3 className="qr-card-heading">Холболтын QR</h3>
-                                    <p className="qr-card-sub">Апп-аараа уншуулж холболтыг баталгаажуулна уу</p>
+                                    <p className="qr-card-sub">Bridge апп доторх камераар уншуулна уу</p>
 
                                     <div className="key-section-pro">
                                         <div className="key-top">
