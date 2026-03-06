@@ -23,6 +23,12 @@ service cloud.firestore {
       allow write: if false; // Admin SDK only
     }
 
+    // system_settings (snake_case — used by services)
+    match /system_settings/{docId} {
+      allow read: if isAuth();
+      allow write: if isAuth(); // Super Admin writes module defaults
+    }
+
     // === BUSINESS CATEGORIES (public read) ===
     match /businessCategories/{catId} {
       allow read: if isAuth();
