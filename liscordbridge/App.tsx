@@ -307,6 +307,17 @@ const App = () => {
     loadPairingKey();
     loadSettings();
     loadForwardCount();
+    // Restore running state from actual background service
+    const checkServiceStatus = async () => {
+      try {
+        const running = BackgroundService.isRunning();
+        if (running) {
+          setIsRunning(true);
+          addLog('🔄 Дамжуулалт ажиллаж байна (сэргээгдлээ)');
+        }
+      } catch (_e) { /* ignore */ }
+    };
+    checkServiceStatus();
   }, []);
 
   // Keep refs AND module-level vars in sync
