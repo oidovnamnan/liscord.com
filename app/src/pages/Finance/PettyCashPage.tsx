@@ -1,20 +1,34 @@
 import { useState, useEffect } from 'react';
 import { Header } from '../../components/layout/Header';
-import { Loader2, MoreVertical, ArrowUpRight, ArrowDownLeft, History } from 'lucide-react';
+import { Loader2, MoreVertical, ArrowUpRight, ArrowDownLeft, History, Wallet } from 'lucide-react';
 import { useBusinessStore } from '../../store';
 import { pettyCashService } from '../../services/db';
 import { format } from 'date-fns';
-import { toast } from 'react-hot-toast';
+import { GenericCrudModal, type CrudField } from '../../components/common/GenericCrudModal';
+
+const PETTYCASH_FIELDS: CrudField[] = [
+    { name: 'title', label: 'Гүйлгээний утга', type: 'text', required: true, span: 2, placeholder: 'Офисийн хангамж, түлш гэх мэт' },
+    { name: 'amount', label: 'Дүн', type: 'currency', required: true },
+    {
+        name: 'type', label: 'Төрөл', type: 'select', required: true, defaultValue: 'expense', options: [
+            { value: 'income', label: 'Орлого' },
+            { value: 'expense', label: 'Зарлага' },
+        ]
+    },
+    { name: 'note', label: 'Тэмдэглэл', type: 'textarea', span: 2 },
+];
 
 export function PettyCashPage() {
     const { business } = useBusinessStore();
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const [transactions, setTransactions] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
+    const [showModal, setShowModal] = useState(false);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const [editingItem, setEditingItem] = useState<any>(null);
 
     useEffect(() => {
         if (!business?.id) return;
-        setTimeout(() => setLoading(true), 0);
         const unsubscribe = pettyCashService.subscribeTransactions(business.id, (data) => {
             setTransactions(data);
             setLoading(false);
@@ -22,17 +36,13 @@ export function PettyCashPage() {
         return () => unsubscribe();
     }, [business?.id]);
 
-    const handleAddTransaction = () => {
-        toast('Бэлэн касс руу гүйлгээ нэмэх модал удахгүй нэмэгдэнэ.');
-    };
-
     const currentBalance = transactions.reduce((sum, tx) => {
         return sum + (tx.type === 'income' ? (tx.amount || 0) : -(tx.amount || 0));
     }, 0);
 
     return (
         <>
-            <Header title="Бэлэн Касс (Petty Cash)" action={{ label: 'Гүйлгээ', onClick: handleAddTransaction }} />
+            <Header title="Бэлэн Касс" action={{ label: '+ Гүйлгээ', onClick: () => { setEditingItem(null); setShowModal(true); } }} />
             <div className="page">
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 20, marginBottom: 24 }}>
                     <div className="card" style={{ padding: 24, background: 'var(--primary)', color: 'white' }}>
@@ -60,31 +70,16 @@ export function PettyCashPage() {
                         </h3>
                     </div>
                     {loading ? (
-                        <div className="flex-center" style={{ height: '300px' }}>
-                            <Loader2 className="animate-spin" size={32} />
-                        </div>
+                        <div className="flex-center" style={{ height: '300px' }}><Loader2 className="animate-spin" size={32} /></div>
                     ) : (
                         <table className="table">
-                            <thead>
-                                <tr>
-                                    <th>Огноо</th>
-                                    <th>Утга</th>
-                                    <th>Төрөл</th>
-                                    <th>Дүн</th>
-                                    <th>Тайлбар</th>
-                                    <th></th>
-                                </tr>
-                            </thead>
+                            <thead><tr><th>Огноо</th><th>Утга</th><th>Төрөл</th><th>Дүн</th><th>Тайлбар</th><th></th></tr></thead>
                             <tbody>
                                 {transactions.length === 0 ? (
-                                    <tr>
-                                        <td colSpan={6} style={{ textAlign: 'center', padding: '48px', color: 'var(--text-muted)' }}>
-                                            Гүйлгээ олдсонгүй
-                                        </td>
-                                    </tr>
+                                    <tr><td colSpan={6} style={{ textAlign: 'center', padding: '48px', color: 'var(--text-muted)' }}>Гүйлгээ олдсонгүй</td></tr>
                                 ) : (
                                     transactions.map(tx => (
-                                        <tr key={tx.id}>
+                                        <tr key={tx.id} style={{ cursor: 'pointer' }} onClick={() => { setEditingItem(tx); setShowModal(true); }}>
                                             <td>{tx.createdAt ? format(tx.createdAt, 'HH:mm dd/MM') : '-'}</td>
                                             <td style={{ fontWeight: 600 }}>{tx.title || 'Тодорхойгүй'}</td>
                                             <td>
@@ -95,7 +90,7 @@ export function PettyCashPage() {
                                             </td>
                                             <td style={{ fontWeight: 700 }}>{tx.amount?.toLocaleString() || 0} ₮</td>
                                             <td>{tx.note || '-'}</td>
-                                            <td><button className="btn-icon"><MoreVertical size={16} /></button></td>
+                                            <td><button className="btn-icon" onClick={ev => { ev.stopPropagation(); setEditingItem(tx); setShowModal(true); }}><MoreVertical size={16} /></button></td>
                                         </tr>
                                     ))
                                 )}
@@ -104,6 +99,17 @@ export function PettyCashPage() {
                     )}
                 </div>
             </div>
+
+            {showModal && (
+                <GenericCrudModal
+                    title="Бэлэн касс гүйлгээ"
+                    icon={<Wallet size={20} />}
+                    collectionPath="businesses/{bizId}/pettyCash"
+                    fields={PETTYCASH_FIELDS}
+                    editingItem={editingItem}
+                    onClose={() => setShowModal(false)}
+                />
+            )}
         </>
     );
 }

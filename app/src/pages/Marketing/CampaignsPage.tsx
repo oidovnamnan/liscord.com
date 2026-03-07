@@ -1,10 +1,36 @@
 import { useState, useEffect } from 'react';
 import { Header } from '../../components/layout/Header';
-import { Megaphone, Search, Loader2, MoreVertical, Calendar, TrendingUp, Users } from 'lucide-react';
+import { Megaphone, Search, Loader2, Calendar, TrendingUp, Users, Edit2 } from 'lucide-react';
 import { useBusinessStore } from '../../store';
 import { campaignService } from '../../services/db';
 import { format } from 'date-fns';
-import { toast } from 'react-hot-toast';
+import { GenericCrudModal, type CrudField } from '../../components/common/GenericCrudModal';
+
+const CAMPAIGN_FIELDS: CrudField[] = [
+    { name: 'name', label: 'Аяны нэр', type: 'text', required: true, placeholder: 'Зуны хямдрал 2024', span: 2 },
+    {
+        name: 'type', label: 'Төрөл', type: 'select', required: true, options: [
+            { value: 'discount', label: 'Хямдрал' },
+            { value: 'promotion', label: 'Промо' },
+            { value: 'loyalty', label: 'Урамшуулал' },
+            { value: 'social', label: 'Сошиал медиа' },
+            { value: 'email', label: 'И-мэйл' },
+            { value: 'sms', label: 'SMS' },
+        ]
+    },
+    {
+        name: 'status', label: 'Төлөв', type: 'select', defaultValue: 'draft', options: [
+            { value: 'draft', label: 'Ноорог' },
+            { value: 'scheduled', label: 'Төлөвлөсөн' },
+            { value: 'active', label: 'Идэвхтэй' },
+            { value: 'completed', label: 'Дууссан' },
+        ]
+    },
+    { name: 'budget', label: 'Төсөв', type: 'currency' },
+    { name: 'startDate', label: 'Эхлэх огноо', type: 'date', required: true },
+    { name: 'endDate', label: 'Дуусах огноо', type: 'date' },
+    { name: 'description', label: 'Тайлбар', type: 'textarea', span: 2 },
+];
 
 export function CampaignsPage() {
     const { business } = useBusinessStore();
@@ -12,6 +38,9 @@ export function CampaignsPage() {
     const [campaigns, setCampaigns] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
+    const [showModal, setShowModal] = useState(false);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const [editingItem, setEditingItem] = useState<any>(null);
 
     useEffect(() => {
         if (!business?.id) return;
@@ -36,40 +65,29 @@ export function CampaignsPage() {
         }
     };
 
-    const handleCreateCampaign = () => {
-        toast('Шинэ аян үүсгэх модал удахгүй нэмэгдэнэ.');
-    };
-
     return (
         <>
-            <Header title="Маркетинг Аян (Campaigns)" action={{ label: 'Шинэ аян', onClick: handleCreateCampaign }} />
+            <Header title="Маркетинг Аян" action={{ label: '+ Шинэ аян', onClick: () => { setEditingItem(null); setShowModal(true); } }} />
             <div className="page">
                 <div className="page-header-actions" style={{ marginBottom: 20 }}>
                     <div className="search-box">
                         <Search size={18} />
-                        <input
-                            type="text"
-                            placeholder="Аяны нэрээр хайх..."
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                        />
+                        <input type="text" placeholder="Аяны нэрээр хайх..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
                     </div>
                 </div>
 
-                <div className="campaigns-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 20 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 20 }}>
                     {loading ? (
-                        <div className="flex-center" style={{ gridColumn: '1 / -1', height: '200px' }}>
-                            <Loader2 className="animate-spin" size={32} />
-                        </div>
+                        <div className="flex-center" style={{ gridColumn: '1 / -1', height: '200px' }}><Loader2 className="animate-spin" size={32} /></div>
                     ) : campaigns.length === 0 ? (
-                        <div className="empty-state card" style={{ gridColumn: '1 / -1', padding: '60px' }}>
+                        <div className="empty-state card" style={{ gridColumn: '1 / -1', padding: '60px', textAlign: 'center' }}>
                             <Megaphone size={48} color="var(--text-muted)" style={{ marginBottom: 16 }} />
                             <h3>Аян байхгүй байна</h3>
-                            <button className="btn btn-primary" onClick={handleCreateCampaign} style={{ marginTop: 16 }}>Анхны аянаа эхлүүлэх</button>
+                            <button className="btn btn-primary" onClick={() => { setEditingItem(null); setShowModal(true); }} style={{ marginTop: 16 }}>Анхны аянаа эхлүүлэх</button>
                         </div>
                     ) : (
                         filteredCampaigns.map(c => (
-                            <div key={c.id} className="card campaign-card" style={{ padding: 20 }}>
+                            <div key={c.id} className="card" style={{ padding: 20, cursor: 'pointer' }} onClick={() => { setEditingItem(c); setShowModal(true); }}>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
                                     <div>
                                         {getStatusBadge(c.status)}
@@ -78,7 +96,7 @@ export function CampaignsPage() {
                                             <Calendar size={14} /> {c.startDate ? format(c.startDate, 'yyyy/MM/dd') : 'Эхлээгүй'}
                                         </div>
                                     </div>
-                                    <button className="btn-icon"><MoreVertical size={18} /></button>
+                                    <button className="btn-icon" onClick={ev => { ev.stopPropagation(); setEditingItem(c); setShowModal(true); }}><Edit2 size={18} /></button>
                                 </div>
                                 <div className="divider" />
                                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginTop: 12 }}>
@@ -102,6 +120,17 @@ export function CampaignsPage() {
                     )}
                 </div>
             </div>
+
+            {showModal && (
+                <GenericCrudModal
+                    title="Маркетинг аян"
+                    icon={<Megaphone size={20} />}
+                    collectionPath="businesses/{bizId}/campaigns"
+                    fields={CAMPAIGN_FIELDS}
+                    editingItem={editingItem}
+                    onClose={() => setShowModal(false)}
+                />
+            )}
         </>
     );
 }

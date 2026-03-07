@@ -1,10 +1,33 @@
 import { useState, useEffect } from 'react';
 import { Header } from '../../components/layout/Header';
-import { Search, Loader2, MoreVertical, CheckCircle2, XCircle, Clock, CreditCard, Printer } from 'lucide-react';
+import { Search, Loader2, CheckCircle2, XCircle, Clock, Edit2, Printer } from 'lucide-react';
 import { useBusinessStore } from '../../store';
 import { invoiceService } from '../../services/db';
 import { format } from 'date-fns';
-import { toast } from 'react-hot-toast';
+import { GenericCrudModal, type CrudField } from '../../components/common/GenericCrudModal';
+
+const INVOICE_FIELDS: CrudField[] = [
+    { name: 'invoiceNumber', label: 'Нэхэмжлэх дугаар', type: 'text', placeholder: 'INV-001' },
+    { name: 'customerName', label: 'Харилцагч', type: 'text', required: true, placeholder: 'Харилцагчийн нэр' },
+    { name: 'totalAmount', label: 'Нийт дүн', type: 'currency', required: true },
+    {
+        name: 'status', label: 'Төлөв', type: 'select', required: true, defaultValue: 'unpaid', options: [
+            { value: 'unpaid', label: 'Төлөгдөөгүй' },
+            { value: 'paid', label: 'Төлөгдсөн' },
+            { value: 'overdue', label: 'Хугацаа хэтэрсэн' },
+            { value: 'void', label: 'Хүчингүй' },
+        ]
+    },
+    { name: 'dueDate', label: 'Хугацаа', type: 'date', required: true },
+    {
+        name: 'paymentMethod', label: 'Төлбөрийн хэлбэр', type: 'select', options: [
+            { value: 'transfer', label: 'Шилжүүлэг' },
+            { value: 'cash', label: 'Бэлэн' },
+            { value: 'card', label: 'Карт' },
+        ]
+    },
+    { name: 'description', label: 'Тайлбар', type: 'textarea', span: 2 },
+];
 
 export function InvoicesPage() {
     const { business } = useBusinessStore();
@@ -12,6 +35,9 @@ export function InvoicesPage() {
     const [invoices, setInvoices] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
+    const [showModal, setShowModal] = useState(false);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const [editingItem, setEditingItem] = useState<any>(null);
 
     useEffect(() => {
         if (!business?.id) return;
@@ -37,53 +63,31 @@ export function InvoicesPage() {
         }
     };
 
-    const handleCreateInvoice = () => {
-        toast('Шинэ нэхэмжлэх үүсгэх модал удахгүй нэмэгдэнэ.');
-    };
-
     return (
         <>
-            <Header title="Нэхэмжлэх (Invoices)" action={{ label: 'Шинэ нэхэмжлэх', onClick: handleCreateInvoice }} />
+            <Header title="Нэхэмжлэх" action={{ label: '+ Шинэ нэхэмжлэх', onClick: () => { setEditingItem(null); setShowModal(true); } }} />
             <div className="page">
                 <div className="page-header-actions" style={{ marginBottom: 20 }}>
                     <div className="search-box">
                         <Search size={18} />
-                        <input
-                            type="text"
-                            placeholder="Нэхэмжлэх № эсвэл харилцагчаар хайх..."
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                        />
+                        <input type="text" placeholder="Нэхэмжлэх № эсвэл харилцагчаар хайх..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
                     </div>
                 </div>
 
                 <div className="card" style={{ padding: 0 }}>
                     {loading ? (
-                        <div className="flex-center" style={{ height: '300px' }}>
-                            <Loader2 className="animate-spin" size={32} />
-                        </div>
+                        <div className="flex-center" style={{ height: '300px' }}><Loader2 className="animate-spin" size={32} /></div>
                     ) : (
                         <table className="table">
                             <thead>
-                                <tr>
-                                    <th>Дугаар</th>
-                                    <th>Огноо</th>
-                                    <th>Харилцагч</th>
-                                    <th>Дүн</th>
-                                    <th>Төлөв</th>
-                                    <th>Үйлдэл</th>
-                                </tr>
+                                <tr><th>Дугаар</th><th>Огноо</th><th>Харилцагч</th><th>Дүн</th><th>Төлөв</th><th>Үйлдэл</th></tr>
                             </thead>
                             <tbody>
                                 {filteredInvoices.length === 0 ? (
-                                    <tr>
-                                        <td colSpan={6} style={{ textAlign: 'center', padding: '48px', color: 'var(--text-muted)' }}>
-                                            Нэхэмжлэх олдсонгүй
-                                        </td>
-                                    </tr>
+                                    <tr><td colSpan={6} style={{ textAlign: 'center', padding: '48px', color: 'var(--text-muted)' }}>Нэхэмжлэх олдсонгүй</td></tr>
                                 ) : (
                                     filteredInvoices.map(inv => (
-                                        <tr key={inv.id}>
+                                        <tr key={inv.id} style={{ cursor: 'pointer' }} onClick={() => { setEditingItem(inv); setShowModal(true); }}>
                                             <td style={{ fontWeight: 600 }}>#{inv.invoiceNumber || inv.id.slice(0, 6).toUpperCase()}</td>
                                             <td>{inv.createdAt ? format(inv.createdAt, 'yyyy/MM/dd') : '-'}</td>
                                             <td>{inv.customerName || 'Харилцагчгүй'}</td>
@@ -91,15 +95,8 @@ export function InvoicesPage() {
                                             <td>{getStatusBadge(inv.status)}</td>
                                             <td>
                                                 <div style={{ display: 'flex', gap: 8 }}>
-                                                    <button className="btn-icon" title="Хэвлэх">
-                                                        <Printer size={16} />
-                                                    </button>
-                                                    <button className="btn-icon" title="Төлөх">
-                                                        <CreditCard size={16} />
-                                                    </button>
-                                                    <button className="btn-icon">
-                                                        <MoreVertical size={16} />
-                                                    </button>
+                                                    <button className="btn-icon" title="Хэвлэх" onClick={ev => ev.stopPropagation()}><Printer size={16} /></button>
+                                                    <button className="btn-icon" onClick={ev => { ev.stopPropagation(); setEditingItem(inv); setShowModal(true); }}><Edit2 size={16} /></button>
                                                 </div>
                                             </td>
                                         </tr>
@@ -110,6 +107,17 @@ export function InvoicesPage() {
                     )}
                 </div>
             </div>
+
+            {showModal && (
+                <GenericCrudModal
+                    title="Нэхэмжлэх"
+                    icon={<Printer size={20} />}
+                    collectionPath="businesses/{bizId}/invoices"
+                    fields={INVOICE_FIELDS}
+                    editingItem={editingItem}
+                    onClose={() => setShowModal(false)}
+                />
+            )}
         </>
     );
 }
