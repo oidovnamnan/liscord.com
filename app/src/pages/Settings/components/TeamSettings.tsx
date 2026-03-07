@@ -516,8 +516,6 @@ function EmployeeLimitsTab({ bizId }: { bizId: string }) {
         maxDiscountPercent: limits.maxDiscountPercent ?? 10,
         maxDiscountPercentManager: limits.maxDiscountPercentManager ?? 20,
         maxRefundAmount: limits.maxRefundAmount ?? 500000,
-        canDeleteOrders: limits.canDeleteOrders ?? false,
-        canChangePrice: limits.canChangePrice ?? false,
         orderEditWindow: limits.orderEditWindow ?? 60,
     });
     const [saving, setSaving] = useState(false);
@@ -607,35 +605,6 @@ function EmployeeLimitsTab({ bizId }: { bizId: string }) {
                     </div>
                 </div>
 
-                {/* Action Permissions */}
-                <div className="settings-card team-limit-card">
-                    <div className="team-limit-header">
-                        <Shield size={18} />
-                        <h4>Үйлдлийн эрх</h4>
-                    </div>
-                    <div className="team-limit-body">
-                        <div className="team-limit-toggle-row">
-                            <div>
-                                <div className="team-limit-toggle-label">Захиалга устгах</div>
-                                <div className="team-limit-toggle-desc">Ажилтан захиалга устгаж болох эсэх</div>
-                            </div>
-                            <label className="toggle">
-                                <input type="checkbox" checked={form.canDeleteOrders} onChange={e => setForm(f => ({ ...f, canDeleteOrders: e.target.checked }))} />
-                                <span className="toggle-slider" />
-                            </label>
-                        </div>
-                        <div className="team-limit-toggle-row">
-                            <div>
-                                <div className="team-limit-toggle-label">Үнэ өөрчлөх</div>
-                                <div className="team-limit-toggle-desc">Ажилтан барааны үнэ өөрчлөх эсэх</div>
-                            </div>
-                            <label className="toggle">
-                                <input type="checkbox" checked={form.canChangePrice} onChange={e => setForm(f => ({ ...f, canChangePrice: e.target.checked }))} />
-                                <span className="toggle-slider" />
-                            </label>
-                        </div>
-                    </div>
-                </div>
 
                 {/* Time Window */}
                 <div className="settings-card team-limit-card">
