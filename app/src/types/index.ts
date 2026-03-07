@@ -30,6 +30,11 @@ export interface AppModulePricingPlan {
     durationDays: number;
 }
 
+export interface ModulePermission {
+    id: string;             // e.g. 'inventory.view', 'inventory.adjust'
+    label: string;          // e.g. 'Нөөц харах'
+}
+
 export interface AppModule {
     id: string;             // unique identifier, e.g. 'inventory', 'hrm'
     name: string;           // Display name in App Store
@@ -48,6 +53,7 @@ export interface AppModule {
     settingsRoute?: string; // Тохиргоо цэсний зам (e.g. '/app/settings/orders')
     placement?: 'sidebar' | 'settings' | 'both'; // Хаана харагдахыг тодорхойлох (default: 'sidebar')
     plans?: AppModulePricingPlan[]; // Multi-pricing support
+    permissions?: ModulePermission[]; // Module-specific permissions for team roles
 }
 
 // ============ BUSINESS ============

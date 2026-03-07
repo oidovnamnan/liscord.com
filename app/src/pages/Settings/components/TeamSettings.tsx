@@ -4,7 +4,9 @@ import { Users, Plus, Shield, Trash2, X, UserPlus, Phone, Mail, Briefcase, Clock
 import { teamService } from '../../../services/db';
 import { toast } from 'react-hot-toast';
 import { PINModal } from '../../../components/common/PINModal';
-import { ALL_PERMISSIONS, type Position, type Employee } from '../../../types';
+import { type Position, type Employee } from '../../../types';
+import { getActivePermissions } from '../../../config/modulePermissions';
+import { LISCORD_MODULES } from '../../../config/modules';
 import { useBusinessStore } from '../../../store';
 import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '../../../services/firebase';
@@ -683,12 +685,17 @@ function CreatePositionModal({ bizId, editingPosition, onClose }: { bizId: strin
         } catch (_e) { toast.error('Алдаа гарлаа'); } finally { setLoading(false); }
     };
 
-    // Group permissions by category
-    const groupedPermissions: Record<string, { id: string; label: string }[]> = {};
-    Object.entries(ALL_PERMISSIONS).forEach(([id, perm]) => {
-        if (!groupedPermissions[perm.group]) groupedPermissions[perm.group] = [];
-        groupedPermissions[perm.group].push({ id, label: perm.label });
-    });
+    // Dynamic permissions based on active modules
+    const { business } = useBusinessStore();
+    const activeModuleIds = business?.activeModules || [];
+    const permissionGroups = useMemo(() => {
+        const groups = getActivePermissions(activeModuleIds);
+        // Resolve module IDs to display names
+        return groups.map(g => {
+            const mod = LISCORD_MODULES.find(m => m.id === g.group);
+            return { ...g, group: mod?.name || g.group };
+        });
+    }, [activeModuleIds]);
 
     return createPortal(
         <div className="modal-backdrop" onClick={onClose}>
@@ -726,7 +733,7 @@ function CreatePositionModal({ bizId, editingPosition, onClose }: { bizId: strin
                         <div className="modal-section" style={{ padding: '24px 32px', background: 'var(--bg-soft)', borderTop: '1px solid var(--border-primary)' }}>
                             <div className="modal-section-title" style={{ fontSize: '0.85rem', fontWeight: 700, letterSpacing: '0.5px', color: 'var(--primary)', textTransform: 'uppercase', marginBottom: 20 }}>Системийн эрхүүд</div>
                             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 24 }}>
-                                {Object.entries(groupedPermissions).map(([groupName, perms]) => {
+                                {permissionGroups.map(({ group: groupName, permissions: perms }) => {
                                     const allSelected = perms.every(p => selectedPerms.includes(p.id));
                                     const someSelected = perms.some(p => selectedPerms.includes(p.id));
 
