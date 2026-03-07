@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Header } from '../../components/layout/Header';
 import { HubLayout } from '../../components/common/HubLayout';
-import { Target, TrendingUp, Award, Star } from 'lucide-react';
+import { Target, Star } from 'lucide-react';
 import { useBusinessStore } from '../../store';
 import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
 import { db } from '../../services/firebase';
@@ -36,7 +36,7 @@ export function PerformancePage() {
 
     useEffect(() => {
         if (!business?.id) return;
-        const q = query(collection(db, `businesses/${business.id}/performanceReviews`), orderBy('createdAt', 'desc'));
+        const q = query(collection(db, `businesses / ${business.id}/performanceReviews`), orderBy('createdAt', 'desc'));
         const unsub = onSnapshot(q, (snap) => {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             setReviews(snap.docs.map(d => ({ id: d.id, ...d.data() } as any)));
