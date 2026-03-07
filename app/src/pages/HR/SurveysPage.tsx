@@ -1,182 +1,81 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Header } from '../../components/layout/Header';
 import { HubLayout } from '../../components/common/HubLayout';
-import {
-    ClipboardList,
-    TrendingUp,
-    Users,
-    MessageSquare,
-    PieChart,
-    Calendar,
-    Search,
-    Filter,
-    Plus,
-    BarChart3,
-    ArrowUpRight,
-    Star
-} from 'lucide-react';
+import { ClipboardList, BarChart2, CheckCircle2 } from 'lucide-react';
+import { useBusinessStore } from '../../store';
+import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
+import { db } from '../../services/firebase';
+import { GenericCrudModal, type CrudField } from '../../components/common/GenericCrudModal';
 
-interface SurveyRecord {
-    id: string;
-    title: string;
-    targetAudience: string;
-    responses: number;
-    completionRate: number;
-    status: 'active' | 'closed' | 'draft';
-    endDate: string;
-}
-
-const MOCK_SURVEYS: SurveyRecord[] = [
+const SURVEY_FIELDS: CrudField[] = [
+    { name: 'title', label: 'Судалгааны нэр', type: 'text', required: true, span: 2 },
     {
-        id: 'SRV-001',
-        title: 'Q1 Сотко ажиллах орчны санал асуулга',
-        targetAudience: 'Бүх ажилчид',
-        responses: 84,
-        completionRate: 65,
-        status: 'active',
-        endDate: '2024-03-30'
+        name: 'type', label: 'Төрөл', type: 'select', required: true, options: [
+            { value: 'satisfaction', label: 'Сэтгэл ханамж' },
+            { value: 'engagement', label: 'Оролцоо' },
+            { value: 'feedback', label: 'Санал хүсэлт' },
+            { value: 'exit', label: 'Гарах үеийн' },
+            { value: 'pulse', label: 'Хурдан судалгаа' },
+        ]
     },
     {
-        id: 'SRV-002',
-        title: 'Шинэ цайны газрын цэсний сонголт',
-        targetAudience: 'Улаанбаатар салбар',
-        responses: 112,
-        completionRate: 95,
-        status: 'closed',
-        endDate: '2024-03-15'
+        name: 'status', label: 'Төлөв', type: 'select', defaultValue: 'draft', options: [
+            { value: 'draft', label: 'Ноорог' },
+            { value: 'active', label: 'Явагдаж буй' },
+            { value: 'closed', label: 'Хаагдсан' },
+        ]
     },
     {
-        id: 'SRV-003',
-        title: 'Ажилтнуудын халамж үйлчилгээний хэрэгцээ',
-        targetAudience: 'Удирдах ажилтнууд',
-        responses: 0,
-        completionRate: 0,
-        status: 'draft',
-        endDate: '2024-04-10'
-    }
+        name: 'targetAudience', label: 'Хамрагдагсад', type: 'select', options: [
+            { value: 'all', label: 'Бүх ажилтан' },
+            { value: 'department', label: 'Хэлтэс' },
+            { value: 'management', label: 'Удирдлага' },
+        ]
+    },
+    { name: 'deadline', label: 'Хугацаа', type: 'date' },
+    { name: 'description', label: 'Тайлбар', type: 'textarea', span: 2 },
 ];
 
 export function SurveysPage() {
-    const [surveys] = useState<SurveyRecord[]>(MOCK_SURVEYS);
+    const { business } = useBusinessStore();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const [surveys, setSurveys] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [showModal, setShowModal] = useState(false);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const [editingItem, setEditingItem] = useState<any>(null);
+
+    useEffect(() => {
+        if (!business?.id) return;
+        const q = query(collection(db, `businesses/${business.id}/surveys`), orderBy('createdAt', 'desc'));
+        const unsub = onSnapshot(q, (snap) => {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            setSurveys(snap.docs.map(d => ({ id: d.id, ...d.data() } as any)));
+            setLoading(false);
+        });
+        return () => unsub();
+    }, [business?.id]);
 
     return (
         <HubLayout hubId="hr-hub">
             <div className="page-container animate-fade-in">
-                <Header
-                    title="Санал Асуулга"
-                    subtitle="Дотоод Pulse survey, ажилчдын сэтгэл ханамж болон санал хүсэлт цуглуулах"
-                    action={{
-                        label: "Санал Асуулга Үүсгэх",
-                        onClick: () => { }
-                    }}
-                />
-
-                <div className="grid-12 gap-6 mt-6">
-                    {/* Insights Hub */}
-                    <div className="col-12 grid grid-cols-4 gap-6">
-                        <div className="card p-6 bg-surface-1 border-none shadow-sm flex items-center justify-between group overflow-hidden relative">
-                            <MessageSquare size={48} className="absolute -right-4 -top-4 opacity-[0.05] group-hover:scale-110 transition-transform text-primary" />
-                            <div>
-                                <h4 className="text-[10px] text-muted font-black tracking-widest uppercase mb-1">Нийт Санал Асуулга</h4>
-                                <div className="text-2xl font-black">12ш</div>
-                            </div>
-                            <div className="bg-primary/10 p-4 rounded-2xl text-primary"><ClipboardList size={24} /></div>
-                        </div>
-
-                        <div className="card p-6 bg-surface-1 border-none shadow-sm flex items-center justify-between group overflow-hidden relative">
-                            <PieChart size={48} className="absolute -right-4 -top-4 opacity-[0.05] group-hover:scale-110 transition-transform text-secondary" />
-                            <div>
-                                <h4 className="text-[10px] text-muted font-black tracking-widest uppercase mb-1">Оролцооны Хувь</h4>
-                                <div className="text-2xl font-black text-secondary">78.4%</div>
-                            </div>
-                            <div className="bg-secondary/10 p-4 rounded-2xl text-secondary"><Users size={24} /></div>
-                        </div>
-
-                        <div className="card p-6 bg-surface-1 border-none shadow-sm flex items-center justify-between group overflow-hidden relative border-l-4 border-success">
-                            <TrendingUp size={48} className="absolute -right-4 -top-4 opacity-[0.05] group-hover:scale-110 transition-transform text-success" />
-                            <div>
-                                <h4 className="text-[10px] text-muted font-black tracking-widest uppercase mb-1">eNPS Оноо</h4>
-                                <div className="text-2xl font-black text-success">+42</div>
-                                <div className="text-[10px] font-bold text-muted mt-1 uppercase tracking-widest">Great (Excellent is &gt;50)</div>
-                            </div>
-                            <div className="bg-success text-white p-4 rounded-2xl shadow-lg shadow-success/20"><Star size={24} /></div>
-                        </div>
-
-                        <div className="card p-6 bg-surface-1 border-none shadow-sm flex items-center justify-between group overflow-hidden relative">
-                            <BarChart3 size={48} className="absolute -right-4 -top-4 opacity-[0.05] group-hover:scale-110 transition-transform text-warning" />
-                            <div>
-                                <h4 className="text-[10px] text-muted font-black tracking-widest uppercase mb-1">Сүүлийн Асуулга</h4>
-                                <div className="text-2xl font-black text-warning">84 Хариу</div>
-                            </div>
-                            <div className="bg-warning/10 p-4 rounded-2xl text-warning"><BarChart3 size={24} /></div>
-                        </div>
-                    </div>
-
-                    {/* Controls */}
-                    <div className="col-12 flex items-center justify-between gap-4 mt-2">
-                        <div className="flex-1 relative">
-                            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
-                            <input className="input pl-10 h-11 w-full" placeholder="Санал асуулгын нэр, бүтээгчээр хайх..." />
-                        </div>
-                        <div className="flex gap-2">
-                            <button className="btn btn-outline h-11 px-6 flex items-center gap-2 font-black border-border-color/10"><Filter size={18} /> Төлөв</button>
-                            <button className="btn btn-primary h-11 px-8 flex items-center gap-2 font-black shadow-lg shadow-primary/20"><Plus size={18} /> Шинэ टेंплэйт</button>
-                        </div>
-                    </div>
-
-                    {/* Surveys List */}
-                    <div className="col-12 card p-0 bg-surface-1 border-none shadow-sm overflow-hidden">
-                        <table className="w-full text-left border-collapse">
-                            <thead>
-                                <tr className="bg-surface-2 border-b border-border-color/10">
-                                    <th className="p-4 text-[10px] font-black text-muted uppercase tracking-widest">Асуулгын Нэр</th>
-                                    <th className="p-4 text-[10px] font-black text-muted uppercase tracking-widest text-center">Оролцоо</th>
-                                    <th className="p-4 text-[10px] font-black text-muted uppercase tracking-widest text-right">Хариулт</th>
-                                    <th className="p-4 text-[10px] font-black text-muted uppercase tracking-widest text-center">Төлөв</th>
-                                    <th className="p-4 text-[10px] font-black text-muted uppercase tracking-widest text-right">Хаагдах Огноо</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {surveys.map(item => (
-                                    <tr key={item.id} className="border-b border-border-color/5 hover:bg-surface-2 transition-colors group cursor-pointer">
-                                        <td className="p-4">
-                                            <div className="flex flex-col">
-                                                <div className="font-black text-sm flex items-center gap-2 group-hover:text-primary transition-colors">
-                                                    {item.title} <ArrowUpRight size={14} className="opacity-0 group-hover:opacity-100 transition-opacity" />
-                                                </div>
-                                                <div className="text-[10px] text-muted font-bold tracking-widest uppercase flex items-center gap-1 mt-1">
-                                                    <Users size={10} /> {item.targetAudience}
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td className="p-4 text-center">
-                                            <div className="w-24 bg-surface-3 h-2 rounded-full overflow-hidden mx-auto border border-border-color/10">
-                                                <div className="bg-primary h-full rounded-full transition-all" style={{ width: `${item.completionRate}%` }} />
-                                            </div>
-                                            <div className="text-[9px] font-black uppercase tracking-widest text-primary mt-1">{item.completionRate}%</div>
-                                        </td>
-                                        <td className="p-4 text-right">
-                                            <div className="font-black text-md">{item.responses}</div>
-                                            <div className="text-[9px] font-bold text-muted uppercase tracking-widest">Нийт</div>
-                                        </td>
-                                        <td className="p-4 text-center">
-                                            <span className={`px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-widest ${item.status === 'active' ? 'bg-success/10 text-success' :
-                                                item.status === 'draft' ? 'bg-muted/10 text-muted' : 'bg-danger/10 text-danger'
-                                                }`}>
-                                                {item.status === 'active' ? 'ИДЭВХТЭЙ' :
-                                                    item.status === 'closed' ? 'ХААГДСАН' : 'НООРОГ'}
-                                            </span>
-                                        </td>
-                                        <td className="p-4 text-right">
-                                            <div className="text-[10px] font-bold text-muted uppercase tracking-widest flex items-center justify-end gap-1"><Calendar size={10} /> {item.endDate}</div>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
+                <Header title="Дотоод Судалгаа" action={{ label: '+ Судалгаа', onClick: () => { setEditingItem(null); setShowModal(true); } }} />
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 20, marginTop: 20 }}>
+                    {loading ? <div style={{ gridColumn: '1 / -1', padding: 48, textAlign: 'center', color: 'var(--text-muted)' }}>Ачаалж байна...</div> :
+                        surveys.length === 0 ? <div className="card" style={{ gridColumn: '1 / -1', padding: 60, textAlign: 'center' }}><ClipboardList size={48} color="var(--text-muted)" /><h3>Судалгаа байхгүй</h3><button className="btn btn-primary" onClick={() => setShowModal(true)} style={{ marginTop: 16 }}>Эхлэх</button></div> :
+                            surveys.map(s => (
+                                <div key={s.id} className="card" style={{ padding: 20, cursor: 'pointer' }} onClick={() => { setEditingItem(s); setShowModal(true); }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
+                                        <span className={`badge ${s.status === 'active' ? 'badge-success' : s.status === 'closed' ? 'badge-soft' : ''}`}>{s.status === 'active' ? 'Явагдаж буй' : s.status === 'closed' ? 'Хаагдсан' : 'Ноорог'}</span>
+                                        <BarChart2 size={18} color="var(--primary)" />
+                                    </div>
+                                    <h3 style={{ margin: '0 0 8px', fontSize: '1.05rem' }}>{s.title}</h3>
+                                    <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{s.type || 'Судалгаа'} • {s.targetAudience || 'Бүгд'}</div>
+                                </div>
+                            ))}
                 </div>
             </div>
+            {showModal && <GenericCrudModal title="Судалгаа" icon={<ClipboardList size={20} />} collectionPath="businesses/{bizId}/surveys" fields={SURVEY_FIELDS} editingItem={editingItem} onClose={() => setShowModal(false)} />}
         </HubLayout>
     );
 }
