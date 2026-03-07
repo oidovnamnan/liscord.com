@@ -1,169 +1,42 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Header } from '../../components/layout/Header';
 import { HubLayout } from '../../components/common/HubLayout';
-import {
-    Search,
-    Filter,
-    User,
-    Calendar,
-    ArrowRight,
-    Tag,
-    Clock,
-    CheckCircle2,
-    QrCode,
-    Printer,
-    ClipboardList
-} from 'lucide-react';
-
-interface JobOrder {
-    id: string;
-    description: string;
-    product: string;
-    quantity: number;
-    assignedTo: string;
-    dueDate: string;
-    priority: 'low' | 'medium' | 'high';
-    status: 'draft' | 'released' | 'active' | 'completed';
-}
-
-const MOCK_JOBS: JobOrder[] = [
+import { ClipboardList } from 'lucide-react';
+import { useBusinessStore } from '../../store';
+import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
+import { db } from '../../services/firebase';
+import { GenericCrudModal, type CrudField } from '../../components/common/GenericCrudModal';
+const JOB_FIELDS: CrudField[] = [
+    { name: 'title', label: 'Ажлын нэр', type: 'text', required: true, span: 2 },
+    { name: 'productName', label: 'Бүтээгдэхүүн', type: 'text', required: true },
+    { name: 'quantity', label: 'Тоо', type: 'number', required: true },
     {
-        id: 'JO-8821',
-        description: 'Үйлдвэрийн тавилгын эсгүүр',
-        product: 'Оффисын ширээ ST-20',
-        quantity: 20,
-        assignedTo: 'Э.Батболд',
-        dueDate: '2026-03-05',
-        priority: 'high',
-        status: 'active'
+        name: 'priority', label: 'Ач холбогдол', type: 'select', options: [
+            { value: 'low', label: 'Бага' }, { value: 'medium', label: 'Дунд' }, { value: 'high', label: 'Өндөр' }, { value: 'urgent', label: 'Яаралтай' },
+        ]
     },
     {
-        id: 'JO-8822',
-        description: 'Лакны өмнөх бэлтгэл',
-        product: 'Гал тогооны шүүгээ KW-05',
-        quantity: 5,
-        assignedTo: 'Г.Тулга',
-        dueDate: '2026-03-02',
-        priority: 'medium',
-        status: 'released'
+        name: 'status', label: 'Төлөв', type: 'select', defaultValue: 'planned', options: [
+            { value: 'planned', label: 'Төлөвлөсөн' }, { value: 'in_progress', label: 'Явагдаж буй' }, { value: 'completed', label: 'Дууссан' }, { value: 'cancelled', label: 'Цуцалсан' },
+        ]
     },
-    {
-        id: 'JO-8823',
-        description: 'Угсралтын шат',
-        product: 'Номын тавиур BK-12',
-        quantity: 15,
-        assignedTo: 'Ч.Зориг',
-        dueDate: '2026-03-10',
-        priority: 'low',
-        status: 'draft'
-    }
+    { name: 'startDate', label: 'Эхлэх', type: 'date' },
+    { name: 'endDate', label: 'Дуусах', type: 'date' },
+    { name: 'assignee', label: 'Хариуцагч', type: 'text' },
+    { name: 'notes', label: 'Тэмдэглэл', type: 'textarea', span: 2 },
 ];
-
 export function JobOrdersPage() {
-    const [jobs] = useState<JobOrder[]>(MOCK_JOBS);
-
+    const { business } = useBusinessStore();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const [items, setItems] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [showModal, setShowModal] = useState(false);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const [editingItem, setEditingItem] = useState<any>(null);
+    useEffect(() => { if (!business?.id) return; const q = query(collection(db, `businesses/${business.id}/jobOrders`), orderBy('createdAt', 'desc')); const unsub = onSnapshot(q, (snap) => { setItems(snap.docs.map(d => ({ id: d.id, ...d.data() } as any))); setLoading(false); }); return () => unsub(); }, [business?.id]);
     return (
-        <HubLayout hubId="manufacturing-hub">
-            <div className="page-container animate-fade-in">
-                <Header
-                    title="Ажлын Даалгавар (Job Orders)"
-                    subtitle="Цехийн ажилчид болон машин механизмын өдөр тутмын үйлдвэрлэлийн даалгавар хянах"
-                    action={{
-                        label: "Даалгавар үүсгэх",
-                        onClick: () => { }
-                    }}
-                />
-
-                <div className="flex flex-col gap-6 mt-6">
-                    {/* Filters & Search */}
-                    <div className="flex gap-4 items-center">
-                        <div className="flex-1 relative">
-                            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
-                            <input className="input pl-10 h-10 w-full" placeholder="Даалгаврын дугаар, ажилтан, бүтээгдэхүүнээр хайх..." />
-                        </div>
-                        <button className="btn btn-outline h-10 px-4">
-                            <Filter size={16} className="mr-2" /> Сүүлийн 30 хоног
-                        </button>
-                        <button className="btn btn-outline h-10 px-4">
-                            <Printer size={16} className="mr-2" /> Баркод хэвлэх
-                        </button>
-                    </div>
-
-                    {/* Job Order Cards/List */}
-                    <div className="grid-1 gap-4">
-                        {jobs.map(job => (
-                            <div key={job.id} className="card p-0 overflow-hidden hover-shadow transition-shadow border-none bg-surface-1">
-                                <div className="flex bg-surface-2 p-5 border-b border-border-color/10">
-                                    <div className="flex-1">
-                                        <div className="flex items-center gap-3 mb-1">
-                                            <span className="text-xl font-black">{job.id}</span>
-                                            <span className={`badge badge-${job.priority === 'high' ? 'danger' : job.priority === 'medium' ? 'warning' : 'outline'}`}>
-                                                {job.priority === 'high' ? 'Яаралтай' : job.priority === 'medium' ? 'Энгийн' : 'Бага'}
-                                            </span>
-                                        </div>
-                                        <h3 className="text-lg font-bold text-primary">{job.description}</h3>
-                                    </div>
-                                    <div className="flex gap-2">
-                                        <button className="btn btn-ghost bg-surface-3 p-3 rounded-xl border border-border-color/10">
-                                            <QrCode size={20} />
-                                        </button>
-                                        <button className="btn btn-ghost bg-surface-3 p-3 rounded-xl border border-border-color/10">
-                                            <Printer size={20} />
-                                        </button>
-                                    </div>
-                                </div>
-
-                                <div className="p-5 grid-12 gap-4 bg-surface-1">
-                                    <div className="col-3 flex flex-col gap-1">
-                                        <span className="text-[10px] text-muted font-bold tracking-widest uppercase">Бүтээгдэхүүн</span>
-                                        <div className="flex items-center gap-2 font-bold text-sm">
-                                            <Tag size={12} className="text-muted" /> {job.product}
-                                        </div>
-                                    </div>
-                                    <div className="col-2 flex flex-col gap-1">
-                                        <span className="text-[10px] text-muted font-bold tracking-widest uppercase">Тоо ширхэг</span>
-                                        <div className="flex items-center gap-2 font-bold text-sm">
-                                            <ClipboardList size={12} className="text-muted" /> {job.quantity} ш
-                                        </div>
-                                    </div>
-                                    <div className="col-3 flex flex-col gap-1">
-                                        <span className="text-[10px] text-muted font-bold tracking-widest uppercase">Хариуцагч</span>
-                                        <div className="flex items-center gap-2 font-bold text-sm">
-                                            <User size={12} className="text-muted" /> {job.assignedTo}
-                                        </div>
-                                    </div>
-                                    <div className="col-2 flex flex-col gap-1">
-                                        <span className="text-[10px] text-muted font-bold tracking-widest uppercase">Дуусах хугацаа</span>
-                                        <div className="flex items-center gap-2 font-bold text-sm text-danger">
-                                            <Clock size={12} className="text-danger" /> {job.dueDate}
-                                        </div>
-                                    </div>
-                                    <div className="col-2 flex flex-col justify-center items-end">
-                                        <div className={`badge badge-${job.status === 'active' ? 'primary' : job.status === 'released' ? 'warning' : 'outline'}`} style={{ width: '100%', textAlign: 'center' }}>
-                                            {job.status === 'active' ? 'Хийгдэж байна' :
-                                                job.status === 'released' ? 'Гаргасан' : 'Ноорог'}
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div className="px-5 py-3 bg-surface-2 flex justify-between items-center text-xs">
-                                    <div className="flex gap-4">
-                                        <span className="text-muted flex items-center gap-1 font-bold">
-                                            <Calendar size={12} /> 2026-02-27 10:45
-                                        </span>
-                                        <span className="text-muted flex items-center gap-1 font-bold">
-                                            <CheckCircle2 size={12} /> ШАТ: ЭСГҮҮР (2/5)
-                                        </span>
-                                    </div>
-                                    <button className="btn btn-link btn-xs flex items-center gap-2 p-0 h-auto font-black text-primary">
-                                        Бүх шатлал харах <ArrowRight size={12} />
-                                    </button>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            </div>
-        </HubLayout>
-    );
+        <HubLayout hubId="manufacturing-hub"><div className="page-container animate-fade-in"><Header title="Ажлын Захиалга" action={{ label: '+ Захиалга', onClick: () => { setEditingItem(null); setShowModal(true); } }} />
+            <div className="card" style={{ padding: 0, marginTop: 20 }}>{loading ? <div style={{ padding: 48, textAlign: 'center', color: 'var(--text-muted)' }}>Ачаалж байна...</div> : (<table className="table"><thead><tr><th>Нэр</th><th>Бүтээгдэхүүн</th><th>Тоо</th><th>Хариуцагч</th><th>Хугацаа</th><th>Төлөв</th></tr></thead><tbody>{items.length === 0 ? <tr><td colSpan={6} style={{ textAlign: 'center', padding: 48, color: 'var(--text-muted)' }}>Олдсонгүй</td></tr> : items.map(i => (<tr key={i.id} style={{ cursor: 'pointer' }} onClick={() => { setEditingItem(i); setShowModal(true); }}><td style={{ fontWeight: 600 }}>{i.title}</td><td>{i.productName}</td><td>{i.quantity}</td><td>{i.assignee || '-'}</td><td>{i.startDate || '-'} → {i.endDate || '-'}</td><td><span className={`badge ${i.status === 'completed' ? 'badge-success' : i.status === 'in_progress' ? 'badge-info' : i.status === 'cancelled' ? 'badge-danger' : 'badge-warning'}`}>{i.status === 'completed' ? 'Дууссан' : i.status === 'in_progress' ? 'Явагдаж буй' : i.status === 'cancelled' ? 'Цуцалсан' : 'Төлөвлөсөн'}</span></td></tr>))}</tbody></table>)}</div>
+        </div>{showModal && <GenericCrudModal title="Ажлын захиалга" icon={<ClipboardList size={20} />} collectionPath="businesses/{bizId}/jobOrders" fields={JOB_FIELDS} editingItem={editingItem} onClose={() => setShowModal(false)} />}
+        </HubLayout>);
 }

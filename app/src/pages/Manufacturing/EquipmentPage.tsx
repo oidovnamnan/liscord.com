@@ -1,175 +1,38 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Header } from '../../components/layout/Header';
 import { HubLayout } from '../../components/common/HubLayout';
-import {
-    Activity,
-    History,
-    Plus,
-    Calendar,
-    Cog,
-    Thermometer,
-    Gauge
-} from 'lucide-react';
-
-interface Equipment {
-    id: string;
-    name: string;
-    model: string;
-    status: 'running' | 'maintenance' | 'offline';
-    lastService: string;
-    nextService: string;
-    runtimeHours: number;
-    health: number;
-    metrics: { t: number; p: number };
-}
-
-const MOCK_EQUIPMENT: Equipment[] = [
+import { Wrench, AlertTriangle, CheckCircle2 } from 'lucide-react';
+import { useBusinessStore } from '../../store';
+import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
+import { db } from '../../services/firebase';
+import { GenericCrudModal, type CrudField } from '../../components/common/GenericCrudModal';
+const EQUIP_FIELDS: CrudField[] = [
+    { name: 'name', label: 'Тоноглолын нэр', type: 'text', required: true },
+    { name: 'serialNumber', label: 'Серийн дугаар', type: 'text' },
     {
-        id: 'EQ-01',
-        name: 'Үйлдвэрийн таслагч (Laser)',
-        model: 'Trumpf 3030',
-        status: 'running',
-        lastService: '2026-02-15',
-        nextService: '2026-03-30',
-        runtimeHours: 1245,
-        health: 98,
-        metrics: { t: 45, p: 6.2 }
+        name: 'status', label: 'Төлөв', type: 'select', defaultValue: 'operational', options: [
+            { value: 'operational', label: '✅ Хэвийн' }, { value: 'maintenance', label: '🔧 Засварт' }, { value: 'broken', label: '❌ Эвдэрсэн' }, { value: 'retired', label: '📦 Ашиглахгүй' },
+        ]
     },
-    {
-        id: 'EQ-02',
-        name: 'Угсралтын гар (Robot)',
-        model: 'Universal Robotics UR10',
-        status: 'maintenance',
-        lastService: '2026-01-10',
-        nextService: '2026-02-28',
-        runtimeHours: 850,
-        health: 72,
-        metrics: { t: 38, p: 0 }
-    },
-    {
-        id: 'EQ-03',
-        name: 'Агаарын компрессор',
-        model: 'Atlas Copco GA37',
-        status: 'offline',
-        lastService: '2025-12-01',
-        nextService: '2026-02-25',
-        runtimeHours: 4230,
-        health: 45,
-        metrics: { t: 15, p: 0.2 }
-    }
+    { name: 'location', label: 'Байршил', type: 'text' },
+    { name: 'lastMaintenance', label: 'Сүүлийн засвар', type: 'date' },
+    { name: 'nextMaintenance', label: 'Дараагийн засвар', type: 'date' },
+    { name: 'purchaseDate', label: 'Авсан огноо', type: 'date' },
+    { name: 'value', label: 'Үнэ', type: 'currency' },
+    { name: 'notes', label: 'Тэмдэглэл', type: 'textarea', span: 2 },
 ];
-
 export function EquipmentPage() {
-    const [equipments] = useState<Equipment[]>(MOCK_EQUIPMENT);
-
+    const { business } = useBusinessStore();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const [items, setItems] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [showModal, setShowModal] = useState(false);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const [editingItem, setEditingItem] = useState<any>(null);
+    useEffect(() => { if (!business?.id) return; const q = query(collection(db, `businesses/${business.id}/equipment`), orderBy('createdAt', 'desc')); const unsub = onSnapshot(q, (snap) => { setItems(snap.docs.map(d => ({ id: d.id, ...d.data() } as any))); setLoading(false); }); return () => unsub(); }, [business?.id]);
     return (
-        <HubLayout hubId="manufacturing-hub">
-            <div className="page-container animate-fade-in">
-                <Header
-                    title="Тоног Төхөөрөмж (CMMS)"
-                    subtitle="Үйлдвэрийн машин механизмын ажиллагаа, засвар үйлчилгээ болон IoT хяналт"
-                    action={{
-                        label: "Засвар бүртгэх",
-                        onClick: () => { }
-                    }}
-                />
-
-                <div className="grid-12 gap-6 mt-6">
-                    {/* Real-time Health Monitor */}
-                    <div className="col-12 card p-6 bg-surface-2 overflow-hidden relative">
-                        <div className="flex items-center gap-3 mb-6">
-                            <Activity className="text-secondary animate-pulse" />
-                            <h3 className="text-lg font-bold">Системийн төлөв байдал (Live)</h3>
-                        </div>
-                        <div className="flex gap-12">
-                            <div className="flex flex-col gap-1 items-center">
-                                <span className="text-xs text-muted uppercase font-bold tracking-widest">Нийт эрүүл мэнд</span>
-                                <span className="text-4xl font-black text-secondary">82%</span>
-                            </div>
-                            <div className="h-14 w-px bg-border-color" />
-                            <div className="flex flex-col gap-1 items-center">
-                                <span className="text-xs text-muted uppercase font-bold tracking-widest">Ажиллаж буй</span>
-                                <span className="text-4xl font-black text-success">4/5</span>
-                            </div>
-                            <div className="h-14 w-px bg-border-color" />
-                            <div className="flex flex-col gap-1 items-center">
-                                <span className="text-xs text-muted uppercase font-bold tracking-widest">Эрчим хүч (kW)</span>
-                                <span className="text-4xl font-black text-warning">124.5</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Equipment Cards */}
-                    {equipments.map(eq => (
-                        <div key={eq.id} className="col-4 card p-0 overflow-hidden hover-lift shadow-sm transition-all border-l-4" style={{
-                            borderLeftColor: eq.status === 'running' ? 'var(--success-color)' :
-                                eq.status === 'maintenance' ? 'var(--warning-color)' : 'var(--danger-color)'
-                        }}>
-                            <div className="p-5 flex flex-col gap-4">
-                                <div className="flex justify-between items-start">
-                                    <div className="bg-surface-3 p-3 rounded-2xl">
-                                        <Cog size={28} className={eq.status === 'running' ? 'text-success' : 'text-muted'} />
-                                    </div>
-                                    <span className={`badge badge-outline`}>{eq.id}</span>
-                                </div>
-
-                                <div className="space-y-1">
-                                    <h3 className="text-lg font-bold leading-tight">{eq.name}</h3>
-                                    <p className="text-sm text-muted">{eq.model}</p>
-                                </div>
-
-                                <div className="flex flex-col gap-3">
-                                    <div className="flex justify-between items-center bg-surface-2 p-3 rounded-xl border border-border-color/10">
-                                        <div className="flex items-center gap-2 text-xs text-muted font-bold">
-                                            <Thermometer size={14} /> ТЕМПЕРАТУР
-                                        </div>
-                                        <span className="font-bold">{eq.metrics.t}°C</span>
-                                    </div>
-                                    <div className="flex justify-between items-center bg-surface-2 p-3 rounded-xl border border-border-color/10">
-                                        <div className="flex items-center gap-2 text-xs text-muted font-bold">
-                                            <Gauge size={14} /> ДАРАЛТ (Bar)
-                                        </div>
-                                        <span className="font-bold">{eq.metrics.p}</span>
-                                    </div>
-                                </div>
-
-                                <div className="space-y-2 mt-2">
-                                    <div className="flex justify-between text-xs font-bold mb-1">
-                                        <span className="text-muted">АШИГЛАЛТЫН ЦАГ</span>
-                                        <span>{eq.runtimeHours}ч / 10,000ч</span>
-                                    </div>
-                                    <div className="h-2 bg-surface-3 rounded-full overflow-hidden">
-                                        <div className="h-full bg-primary" style={{ width: `${(eq.runtimeHours / 10000) * 100}%` }} />
-                                    </div>
-                                </div>
-
-                                <div className="pt-4 border-t flex justify-between items-center mt-2">
-                                    <div className="flex flex-col">
-                                        <span className="text-[10px] text-muted font-bold uppercase tracking-wider">Дараагийн засвар</span>
-                                        <span className="text-xs font-bold flex items-center gap-1">
-                                            <Calendar size={10} /> {eq.nextService}
-                                        </span>
-                                    </div>
-                                    <button className="btn btn-ghost btn-xs text-primary px-3 py-2 rounded-lg bg-primary-light">
-                                        Харах
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    ))}
-
-                    <div className="col-12 mt-4 flex gap-4">
-                        <button className="btn btn-outline flex-1 py-4 border-dashed border-2 text-muted hover:border-primary hover:text-primary transition-all">
-                            <Plus size={20} className="mb-1" />
-                            <div className="text-xs font-bold uppercase tracking-widest">Шинэ техник бүртгэх</div>
-                        </button>
-                        <button className="btn btn-outline flex-1 py-4 border-dashed border-2 text-muted hover:border-secondary hover:text-secondary transition-all">
-                            <History size={20} className="mb-1" />
-                            <div className="text-xs font-bold uppercase tracking-widest">Засварын түүх</div>
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </HubLayout>
-    );
+        <HubLayout hubId="manufacturing-hub"><div className="page-container animate-fade-in"><Header title="Тоноглол" action={{ label: '+ Тоноглол', onClick: () => { setEditingItem(null); setShowModal(true); } }} />
+            <div className="card" style={{ padding: 0, marginTop: 20 }}>{loading ? <div style={{ padding: 48, textAlign: 'center', color: 'var(--text-muted)' }}>Ачаалж байна...</div> : (<table className="table"><thead><tr><th>Нэр</th><th>Серийн №</th><th>Байршил</th><th>Сүүлийн засвар</th><th>Дараагийн</th><th>Төлөв</th></tr></thead><tbody>{items.length === 0 ? <tr><td colSpan={6} style={{ textAlign: 'center', padding: 48, color: 'var(--text-muted)' }}>Олдсонгүй</td></tr> : items.map(i => (<tr key={i.id} style={{ cursor: 'pointer' }} onClick={() => { setEditingItem(i); setShowModal(true); }}><td style={{ fontWeight: 600 }}>{i.name}</td><td style={{ fontFamily: 'monospace' }}>{i.serialNumber || '-'}</td><td>{i.location || '-'}</td><td>{i.lastMaintenance || '-'}</td><td>{i.nextMaintenance || '-'}</td><td><span className={`badge ${i.status === 'operational' ? 'badge-success' : i.status === 'broken' ? 'badge-danger' : 'badge-warning'}`}>{i.status === 'operational' ? 'Хэвийн' : i.status === 'broken' ? 'Эвдэрсэн' : i.status === 'maintenance' ? 'Засварт' : 'Ашиглахгүй'}</span></td></tr>))}</tbody></table>)}</div>
+        </div>{showModal && <GenericCrudModal title="Тоноглол" icon={<Wrench size={20} />} collectionPath="businesses/{bizId}/equipment" fields={EQUIP_FIELDS} editingItem={editingItem} onClose={() => setShowModal(false)} />}
+        </HubLayout>);
 }

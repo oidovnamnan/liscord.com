@@ -1,128 +1,82 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Header } from '../../components/layout/Header';
-import { Filter, Plus, Cog, CheckCircle2, Timer, PlayCircle } from 'lucide-react';
 import { HubLayout } from '../../components/common/HubLayout';
+import { Cog, CheckCircle2, Timer, PlayCircle, Factory } from 'lucide-react';
+import { useBusinessStore } from '../../store';
+import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
+import { db } from '../../services/firebase';
+import { GenericCrudModal, type CrudField } from '../../components/common/GenericCrudModal';
 
-type OrderStatus = 'pending' | 'cutting' | 'assembling' | 'finished';
-
-interface ProductionOrder {
-    id: string;
-    product: string;
-    quantity: number;
-    client: string;
-    status: OrderStatus;
-    deadline: string;
-}
-
-const MOCK_ORDERS: ProductionOrder[] = [
-    { id: 'PRD-101', product: 'Гал тогооны тавилга', quantity: 1, client: 'Цэнгэл', status: 'pending', deadline: '2026-03-01' },
-    { id: 'PRD-102', product: 'Оффисын ширээ', quantity: 15, client: 'М банк', status: 'cutting', deadline: '2026-02-28' },
-    { id: 'PRD-103', product: 'Аварга том хаалга', quantity: 2, client: 'Хотол', status: 'assembling', deadline: '2026-02-26' },
+const ORDER_FIELDS: CrudField[] = [
+    { name: 'product', label: 'Бүтээгдэхүүн', type: 'text', required: true },
+    { name: 'quantity', label: 'Тоо', type: 'number', required: true },
+    { name: 'client', label: 'Захиалагч', type: 'text', required: true },
+    {
+        name: 'status', label: 'Төлөв', type: 'select', defaultValue: 'pending', options: [
+            { value: 'pending', label: '⏳ Хүлээгдэж буй' }, { value: 'cutting', label: '✂️ Зүсэж буй' },
+            { value: 'assembling', label: '🔧 Угсарч буй' }, { value: 'finished', label: '✅ Дууссан' },
+        ]
+    },
+    { name: 'deadline', label: 'Хугацаа', type: 'date' },
+    { name: 'notes', label: 'Тэмдэглэл', type: 'textarea', span: 2 },
 ];
 
 export function ManufacturingPage() {
-    const [orders] = useState<ProductionOrder[]>(MOCK_ORDERS);
-
+    const { business } = useBusinessStore();
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const columns: { id: OrderStatus; title: string; icon: any; color: string }[] = [
-        { id: 'pending', title: 'Хүлээгдэж буй', icon: Timer, color: 'var(--border-secondary)' },
-        { id: 'cutting', title: 'Эсгүүр / Бэлтгэл', icon: Cog, color: 'var(--warning-color)' },
-        { id: 'assembling', title: 'Угсралт / Үйлдвэрлэл', icon: PlayCircle, color: 'var(--primary)' },
-        { id: 'finished', title: 'Бэлэн болсон', icon: CheckCircle2, color: 'var(--success-color)' },
-    ];
+    const [orders, setOrders] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [showModal, setShowModal] = useState(false);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const [editingItem, setEditingItem] = useState<any>(null);
+    const [filter, setFilter] = useState('all');
+
+    useEffect(() => {
+        if (!business?.id) return;
+        const q = query(collection(db, `businesses/${business.id}/productionOrders`), orderBy('createdAt', 'desc'));
+        const unsub = onSnapshot(q, (snap) => {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            setOrders(snap.docs.map(d => ({ id: d.id, ...d.data() } as any)));
+            setLoading(false);
+        });
+        return () => unsub();
+    }, [business?.id]);
+
+    const filtered = filter === 'all' ? orders : orders.filter(o => o.status === filter);
+    const statusIcons: Record<string, React.ReactNode> = { pending: <Timer size={16} color="#f39c12" />, cutting: <Cog size={16} color="#3498db" />, assembling: <PlayCircle size={16} color="#9b59b6" />, finished: <CheckCircle2 size={16} color="#2ecc71" /> };
+    const statusLabels: Record<string, string> = { pending: 'Хүлээгдэж буй', cutting: 'Зүсэж буй', assembling: 'Угсарч буй', finished: 'Дууссан' };
 
     return (
-        <HubLayout hubId="inventory-hub">
-            <div className="page-container animate-fade-in" style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-                <Header
-                    title="Үйлдвэрлэл & Угсралт"
-                    subtitle="Тавилга, хэвлэл болон бусад үе шаттай үйлдвэрлэлийн захиалгууд"
-                />
-
-                <div className="page-content" style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '24px' }}>
-                        <div style={{ display: 'flex', gap: '12px' }}>
-                            <button className="btn btn-outline">
-                                <Filter size={18} /> Үе шат
-                            </button>
-                        </div>
-                        <button className="btn btn-primary gradient-btn">
-                            <Plus size={18} /> Захиалга оруулах
+        <HubLayout hubId="manufacturing-hub">
+            <div className="page-container animate-fade-in">
+                <Header title="Үйлдвэрлэл" action={{ label: '+ Захиалга', onClick: () => { setEditingItem(null); setShowModal(true); } }} />
+                <div style={{ display: 'flex', gap: 8, margin: '20px 0', flexWrap: 'wrap' }}>
+                    {['all', 'pending', 'cutting', 'assembling', 'finished'].map(s => (
+                        <button key={s} className={`btn ${filter === s ? 'btn-primary' : ''}`} onClick={() => setFilter(s)} style={{ fontSize: '0.85rem' }}>
+                            {s === 'all' ? `Бүгд (${orders.length})` : `${statusLabels[s]} (${orders.filter(o => o.status === s).length})`}
                         </button>
-                    </div>
-
-                    {/* Kanban Board */}
-                    <div style={{ display: 'flex', gap: '20px', flex: 1, overflowX: 'auto', paddingBottom: '16px' }}>
-                        {columns.map(col => {
-                            const colOrders = orders.filter(t => t.status === col.id);
-                            const Icon = col.icon;
-                            return (
-                                <div key={col.id} style={{
-                                    flex: '0 0 320px',
-                                    background: 'var(--surface-1)',
-                                    borderRadius: 'var(--radius-lg)',
-                                    display: 'flex',
-                                    flexDirection: 'column',
-                                    maxHeight: '100%'
-                                }}>
-                                    {/* Header */}
-                                    <div style={{
-                                        padding: '16px',
-                                        borderBottom: '2px solid',
-                                        borderBottomColor: col.color,
-                                        display: 'flex',
-                                        justifyContent: 'space-between',
-                                        alignItems: 'center'
-                                    }}>
-                                        <h3 style={{ margin: 0, fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                            <Icon size={16} /> {col.title}
-                                        </h3>
-                                        <span style={{
-                                            background: 'var(--surface-2)',
-                                            padding: '2px 8px',
-                                            borderRadius: '12px',
-                                            fontSize: '0.8rem',
-                                            fontWeight: 600
-                                        }}>
-                                            {colOrders.length}
-                                        </span>
-                                    </div>
-
-                                    {/* List */}
-                                    <div style={{ padding: '12px', overflowY: 'auto', flex: 1, display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                                        {colOrders.map(order => (
-                                            <div key={order.id} style={{
-                                                background: 'var(--surface-2)',
-                                                padding: '16px',
-                                                borderRadius: '8px',
-                                                border: '1px solid var(--border-color)',
-                                                cursor: 'pointer',
-                                                transition: 'transform 0.2s',
-                                            }}
-                                                onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-2px)'}
-                                                onMouseLeave={e => e.currentTarget.style.transform = 'translateY(0)'}
-                                            >
-                                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                                                    <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 600 }}>{order.id}</span>
-                                                    <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>{order.quantity} ш</span>
-                                                </div>
-                                                <div style={{ fontWeight: 500, marginBottom: '4px' }}>{order.product}</div>
-                                                <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Захиалагч: {order.client}</div>
-                                                <div style={{ fontSize: '0.8rem', color: 'var(--warning-color)', marginTop: '8px', textAlign: 'right' }}>Хугацаа: {order.deadline}</div>
-                                            </div>
-                                        ))}
-                                        {colOrders.length === 0 && (
-                                            <div style={{ padding: '24px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.9rem' }}>
-                                                Хоосон байна
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
-                            )
-                        })}
-                    </div>
+                    ))}
+                </div>
+                <div className="card" style={{ padding: 0 }}>
+                    {loading ? <div style={{ padding: 48, textAlign: 'center', color: 'var(--text-muted)' }}>Ачаалж байна...</div> : (
+                        <table className="table">
+                            <thead><tr><th>Бүтээгдэхүүн</th><th>Тоо</th><th>Захиалагч</th><th>Хугацаа</th><th>Төлөв</th></tr></thead>
+                            <tbody>{filtered.length === 0 ? <tr><td colSpan={5} style={{ textAlign: 'center', padding: 48, color: 'var(--text-muted)' }}>Захиалга олдсонгүй</td></tr> :
+                                filtered.map(o => (
+                                    <tr key={o.id} style={{ cursor: 'pointer' }} onClick={() => { setEditingItem(o); setShowModal(true); }}>
+                                        <td style={{ fontWeight: 600 }}>{o.product}</td>
+                                        <td>{o.quantity}</td>
+                                        <td>{o.client}</td>
+                                        <td>{o.deadline || '-'}</td>
+                                        <td><div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>{statusIcons[o.status]}<span>{statusLabels[o.status] || o.status}</span></div></td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    )}
                 </div>
             </div>
+            {showModal && <GenericCrudModal title="Үйлдвэрлэлийн захиалга" icon={<Factory size={20} />} collectionPath="businesses/{bizId}/productionOrders" fields={ORDER_FIELDS} editingItem={editingItem} onClose={() => setShowModal(false)} />}
         </HubLayout>
     );
 }
