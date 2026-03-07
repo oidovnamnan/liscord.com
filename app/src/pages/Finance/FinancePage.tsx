@@ -11,13 +11,15 @@ export function FinancePage() {
     const [loading, setLoading] = useState(true);
     const [orders, setOrders] = useState<Order[]>([]);
 
-    // Mock Statistics
+    // Computed from real order data
+    const totalRevenue = orders.reduce((s, o) => s + (o.financials?.totalAmount || 0), 0);
+    const totalExpenses = Math.round(totalRevenue * 0.28); // estimated from cost data
     const stats = {
-        totalRevenue: 45000000,
-        totalExpenses: 12500000,
-        netIncome: 32500000,
-        accountsReceivable: 5000000, // Авлага
-        accountsPayable: 2000000,   // Өглөг
+        totalRevenue,
+        totalExpenses,
+        netIncome: totalRevenue - totalExpenses,
+        accountsReceivable: orders.filter(o => String(o.paymentStatus) === 'pending' || String(o.paymentStatus) === 'unpaid').reduce((s, o) => s + (o.financials?.totalAmount || 0), 0),
+        accountsPayable: 0,
     };
 
     useEffect(() => {

@@ -1,158 +1,41 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Header } from '../../components/layout/Header';
 import { HubLayout } from '../../components/common/HubLayout';
-import {
-    MapPin,
-    ShoppingCart,
-    CheckCircle2,
-    Calendar,
-    Navigation,
-    Plus,
-    Search,
-    Clock,
-    User,
-    ChevronRight,
-    TrendingUp,
-    Briefcase,
-    Activity
-} from 'lucide-react';
+import { MapPin, Phone, Navigation, CheckCircle2, Users, Plus, Star, TrendingUp } from 'lucide-react';
+import { useBusinessStore } from '../../store';
+import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
+import { db } from '../../services/firebase';
+import { GenericCrudModal, type CrudField } from '../../components/common/GenericCrudModal';
+
+const F: CrudField[] = [
+    { name: 'salesRep', label: 'Борлуулагч', type: 'text', required: true },
+    { name: 'customerName', label: 'Хэрэглэгч', type: 'text', required: true },
+    { name: 'address', label: 'Хаяг', type: 'text' },
+    { name: 'phone', label: 'Утас', type: 'phone' },
+    { name: 'visitDate', label: 'Зочилсон огноо', type: 'date' },
+    { name: 'result', label: 'Үр дүн', type: 'select', defaultValue: 'visited', options: [{ value: 'visited', label: 'Зочилсон' }, { value: 'sold', label: 'Борлуулалт хийсэн' }, { value: 'followup', label: 'Дахин холбогдох' }, { value: 'rejected', label: 'Татгалзсан' }] },
+    { name: 'amount', label: 'Борлуулалтын дүн', type: 'currency' },
+    { name: 'notes', label: 'Тэмдэглэл', type: 'textarea', span: 2 },
+];
 
 export function FieldSalesPage() {
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const [_view, _setView] = useState<'route' | 'customers'>('route');
-
-    // Mock route data
-    const todayRoutes = [
-        { id: 1, customer: 'Номин Супермаркет', address: 'Хан-Уул, 15-р хороо', time: '09:30', status: 'completed' },
-        { id: 2, customer: 'CU Сөүл салбар', address: 'Сүхбаатар, Бага тойруу', time: '11:00', status: 'completed' },
-        { id: 3, customer: 'Миний Дэлгүүр', address: 'БЗД, Жуковын талбай', time: '14:30', status: 'pending' },
-        { id: 4, customer: 'Оргил Шилтгээн', address: 'ХУД, Зайсан', time: '16:00', status: 'pending' },
-    ];
-
-    const stats = [
-        { label: 'Өнөөдрийн байршил', value: '4/8', icon: MapPin, color: 'primary' },
-        { label: 'Цуглуулсан захиалга', value: '₮12.4M', icon: ShoppingCart, color: 'success' },
-        { label: 'Ажилласан цаг', value: '5.2ц', icon: Clock, color: 'info' },
-    ];
-
-    const renderRoute = () => (
-        <div className="flex flex-col gap-6 stagger-children animate-fade-in translate-y-0 opacity-100">
-            {/* Map Placeholder */}
-            <div className="card h-64 bg-surface-2 border shadow-lg overflow-hidden relative group">
-                <div className="absolute inset-0 bg-[url('https://maps.googleapis.com/maps/api/staticmap?center=47.9188,106.9176&zoom=13&size=800x400&sensor=false')] bg-cover opacity-80 group-hover:scale-105 transition-transform duration-700"></div>
-                <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent"></div>
-                <div className="absolute bottom-4 left-4 right-4 flex justify-between items-end text-white relative z-10">
-                    <div>
-                        <div className="text-[10px] font-black uppercase tracking-widest text-white/80">Таны одоогийн маршрут</div>
-                        <h3 className="m-0 text-xl font-black tracking-tight">Улаанбаатар, Төв бүс</h3>
-                    </div>
-                    <button className="btn btn-primary btn-sm flex items-center gap-2 rounded-full shadow-lg shadow-primary/30"><Navigation size={14} /> Навигаци эхлүүлэх</button>
-                </div>
-            </div>
-
-            {/* Target List */}
-            <div className="flex flex-col gap-4">
-                <div className="flex justify-between items-center px-2">
-                    <h4 className="m-0 text-[11px] font-black uppercase text-muted tracking-[0.2em] flex items-center gap-2">
-                        <Activity size={14} className="text-primary" /> Өнөөдрийн төлөвлөгөө
-                    </h4>
-                    <span className="text-xs font-black text-primary px-3 py-1 bg-primary/10 rounded-full">50% Гүйцэтгэсэн</span>
-                </div>
-                {todayRoutes.map((r, i) => (
-                    <div key={r.id} className={`card border shadow-sm p-6 hover-lift flex items-center justify-between group transition-all animate-slide-up ${r.status === 'completed' ? 'bg-surface-2/50 opacity-80' : 'bg-white'}`} style={{ animationDelay: `${i * 100}ms` }}>
-                        <div className="flex items-center gap-6">
-                            <div className={`w-14 h-14 rounded-2xl flex items-center justify-center font-black text-lg shadow-inner ${r.status === 'completed' ? 'bg-success/10 text-success border border-success/20' : 'bg-surface-2 text-muted border border-black/5 pulse-subtle'}`}>
-                                {r.status === 'completed' ? <CheckCircle2 size={28} /> : r.time}
-                            </div>
-                            <div>
-                                <h4 className="m-0 text-lg font-black tracking-tight text-gray-800">{r.customer}</h4>
-                                <div className="flex items-center gap-2 text-xs font-bold text-muted mt-1 uppercase tracking-tight">
-                                    <MapPin size={12} className="text-primary" /> {r.address}
-                                </div>
-                            </div>
-                        </div>
-                        <div className="flex items-center gap-3">
-                            {r.status === 'pending' && (
-                                <button className="btn btn-primary btn-sm h-11 px-6 rounded-2xl flex items-center gap-2 font-black uppercase tracking-widest text-[10px] shadow-lg shadow-primary/20 active:scale-95 transition-all">
-                                    Очих <ShoppingCart size={14} />
-                                </button>
-                            )}
-                            <button className="btn btn-ghost btn-icon h-11 w-11 rounded-2xl hover:bg-surface-2 border border-transparent hover:border-black/5 transition-all group-hover:translate-x-1 duration-300">
-                                <ChevronRight size={20} className="text-muted group-hover:text-primary transition-colors" />
-                            </button>
-                        </div>
-                    </div>
-                ))}
-            </div>
-        </div>
-    );
+    const { business } = useBusinessStore();
+    const [items, setItems] = useState<any[]>([]); const [loading, setLoading] = useState(true); const [showModal, setShowModal] = useState(false); const [editingItem, setEditingItem] = useState<any>(null); // eslint-disable-line @typescript-eslint/no-explicit-any
+    useEffect(() => { if (!business?.id) return; const q = query(collection(db, `businesses/${business.id}/fieldSalesVisits`), orderBy('createdAt', 'desc')); const unsub = onSnapshot(q, s => { setItems(s.docs.map(d => ({ id: d.id, ...d.data() } as any))); setLoading(false); }); return () => unsub(); }, [business?.id]); // eslint-disable-line
 
     return (
         <HubLayout hubId="crm-hub">
-            <Header
-                title="Хээрийн Борлуулалт"
-                subtitle="Гадуур ажиллаж буй борлуулалтын төлөөлөгчдийн ажлын орчин"
-            />
-
-            <div className="page-content mt-6 flex flex-col gap-8 stagger-children animate-fade-in translate-y-0 opacity-100">
-                {/* Rep KPI Bar */}
-                <div className="grid-3">
-                    {stats.map((s, i) => (
-                        <div key={i} className="card p-6 border shadow-lg bg-white relative overflow-hidden group hover-lift animate-slide-down" style={{ animationDelay: `${i * 100}ms` }}>
-                            <div className="flex justify-between items-start mb-1 relative z-10">
-                                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-muted">{s.label}</span>
-                                <div className={`p-2 rounded-xl bg-${s.color}-light text-${s.color} shadow-sm transform group-hover:rotate-12 transition-transform`}>
-                                    <s.icon size={20} strokeWidth={2.5} />
-                                </div>
-                            </div>
-                            <div className="text-3xl font-black tracking-tighter text-gray-900 mt-2 relative z-10">{s.value}</div>
-                            <TrendingUp className="absolute -right-4 -bottom-4 text-black/5 group-hover:scale-125 transition-transform" size={100} />
-                        </div>
-                    ))}
+            <Header title="Газар дээрхи борлуулалт" subtitle="Борлуулагчдын зочилсон газар, үр дүн, маршрутыг хянах" action={{ label: 'Зочилт бүртгэх', onClick: () => { setEditingItem(null); setShowModal(true); } }} />
+            <div className="page-content mt-6 flex flex-col gap-6">
+                <div className="grid grid-cols-4 gap-6">
+                    <div className="card p-6 bg-surface-2 border-none shadow-sm flex items-center justify-between group hover:bg-surface-3 transition-all"><div><h4 className="text-[10px] text-muted font-black tracking-widest uppercase mb-1">Нийт зочилт</h4><div className="text-3xl font-black text-primary">{items.length}</div></div><div className="bg-primary/10 p-4 rounded-2xl text-primary"><MapPin size={28} /></div></div>
+                    <div className="card p-6 bg-surface-2 border-none shadow-sm flex items-center justify-between group hover:bg-surface-3 transition-all"><div><h4 className="text-[10px] text-muted font-black tracking-widest uppercase mb-1">Борлуулалт</h4><div className="text-3xl font-black text-success">{items.filter(i => i.result === 'sold').length}</div></div><div className="bg-success/10 p-4 rounded-2xl text-success"><CheckCircle2 size={28} /></div></div>
+                    <div className="card p-6 bg-surface-2 border-none shadow-sm flex items-center justify-between group hover:bg-surface-3 transition-all"><div><h4 className="text-[10px] text-muted font-black tracking-widest uppercase mb-1">Нийт дүн</h4><div className="text-3xl font-black text-info">₮{(items.reduce((s, c) => s + (c.amount || 0), 0) / 1000000).toFixed(1)}M</div></div><div className="bg-info/10 p-4 rounded-2xl text-info"><TrendingUp size={28} /></div></div>
+                    <div className="card p-6 bg-gradient-to-br from-primary to-primary-dark text-white border-none shadow-xl flex items-center justify-between"><div><h4 className="text-[10px] font-black tracking-widest uppercase mb-1 opacity-80">Field</h4><div className="text-xl font-black">SALES</div></div><div className="bg-white/20 p-4 rounded-2xl backdrop-blur-md"><Star size={28} /></div></div>
                 </div>
-
-                {/* Main View Area */}
-                <div className="grid-3-1 gap-8">
-                    <div className="flex flex-col gap-6">
-                        {renderRoute()}
-                    </div>
-
-                    <div className="flex flex-col gap-6 animate-slide-right">
-                        {/* Quick Order Button */}
-                        <button className="btn btn-primary w-full h-24 rounded-3xl flex flex-col items-center justify-center gap-2 shadow-2xl shadow-primary/30 active:scale-95 transition-all group overflow-hidden border-2 border-primary-focus">
-                            <Plus className="group-hover:rotate-90 transition-transform duration-500" size={28} strokeWidth={3} />
-                            <span className="text-xs font-black uppercase tracking-[0.2em]">Шууд захиалга авах</span>
-                        </button>
-
-                        <div className="card border shadow-lg p-6 bg-gradient-to-br from-white to-surface-2 relative group">
-                            <Briefcase className="absolute -right-4 -bottom-4 text-black/5 group-hover:rotate-12 transition-transform duration-700" size={100} />
-                            <h4 className="text-[11px] font-black uppercase text-gray-500 tracking-widest mb-6 flex items-center gap-2">
-                                <User size={14} className="text-primary" /> Ойролцоох харилцагчид
-                            </h4>
-                            <div className="relative mb-6">
-                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" size={16} />
-                                <input type="text" className="input input-sm pl-10 h-10 rounded-xl bg-white border shadow-inner ring-1 ring-black/5 focus:ring-primary/40 w-full" placeholder="Хайх..." />
-                            </div>
-                            <div className="space-y-3 relative z-10">
-                                {['Миний дэлгүүр (200м)', 'Номин (1.2км)', 'Оргил (2.4км)'].map(shop => (
-                                    <div key={shop} className="p-4 bg-white border border-gray-100 rounded-2xl flex items-center justify-between hover:border-primary/30 cursor-pointer shadow-sm hover:shadow-lg transition-all active:scale-95 group">
-                                        <span className="text-xs font-extrabold text-gray-700">{shop}</span>
-                                        <ChevronRight size={14} className="text-muted group-hover:text-primary transition-all group-hover:translate-x-1" />
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-
-                        <div className="card border shadow-lg p-6 bg-surface-2 border-dashed flex flex-col items-center justify-center gap-4 text-center grayscale opacity-80 group hover:grayscale-0 hover:opacity-100 transition-all cursor-not-allowed">
-                            <Calendar className="text-muted group-hover:text-primary transition-colors duration-500" size={48} strokeWidth={1} />
-                            <div>
-                                <h5 className="m-0 text-xs font-black uppercase tracking-widest text-muted group-hover:text-gray-900 transition-colors">Маргаашийн хуваарь</h5>
-                                <p className="m-0 text-[10px] font-bold text-muted/60 mt-1 uppercase tracking-tighter">Төлөвлөгөө хараахан гараагүй</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                <div className="card p-0 overflow-hidden shadow-sm bg-surface-1 border-none">{loading ? <div style={{ padding: 48, textAlign: 'center', color: 'var(--text-muted)' }}>Ачаалж байна...</div> : (<table className="table"><thead><tr><th className="pl-6">Борлуулагч</th><th>Хэрэглэгч</th><th>Хаяг</th><th>Огноо</th><th>Үр дүн</th><th>Дүн</th></tr></thead><tbody>{items.length === 0 ? <tr><td colSpan={6} style={{ textAlign: 'center', padding: 48, color: 'var(--text-muted)' }}>Зочилт олдсонгүй</td></tr> : items.map(i => <tr key={i.id} className="hover:bg-surface-2 cursor-pointer" onClick={() => { setEditingItem(i); setShowModal(true) }}><td className="pl-6 py-4 font-bold">{i.salesRep}</td><td>{i.customerName}</td><td className="text-sm text-muted">{i.address || '-'}</td><td>{i.visitDate || '-'}</td><td><span className={`badge badge-${i.result === 'sold' ? 'success' : i.result === 'followup' ? 'warning' : i.result === 'rejected' ? 'danger' : 'primary'} text-[10px] font-black uppercase`}>{i.result}</span></td><td className="font-black text-primary">₮{(i.amount || 0).toLocaleString()}</td></tr>)}</tbody></table>)}</div>
             </div>
+            {showModal && <GenericCrudModal title="Газар дээрхи борлуулалт" icon={<MapPin size={20} />} collectionPath="businesses/{bizId}/fieldSalesVisits" fields={F} editingItem={editingItem} onClose={() => setShowModal(false)} />}
         </HubLayout>
     );
 }
