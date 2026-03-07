@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
-import { Users, Plus, MoreVertical, Shield, Trash2, X, UserPlus, Phone, Mail, Briefcase, Clock, Edit2, Eye, DollarSign, AlertTriangle, Settings } from 'lucide-react';
+import { Users, Plus, Shield, Trash2, X, UserPlus, Phone, Mail, Briefcase, Clock, Edit2, Eye, DollarSign, AlertTriangle, Settings } from 'lucide-react';
 import { teamService } from '../../../services/db';
 import { toast } from 'react-hot-toast';
 import { PINModal } from '../../../components/common/PINModal';
