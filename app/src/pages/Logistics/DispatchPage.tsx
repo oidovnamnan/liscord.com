@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Header } from '../../components/layout/Header';
 import { HubLayout } from '../../components/common/HubLayout';
 import {
@@ -17,49 +17,52 @@ import {
     Navigation,
     Flag
 } from 'lucide-react';
+import { useBusinessStore } from '../../store';
+import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
+import { db } from '../../services/firebase';
+import { GenericCrudModal, type CrudField } from '../../components/common/GenericCrudModal';
 
-interface DispatchOrder {
-    id: string;
-    customer: string;
-    address: string;
-    driver: string;
-    status: 'assigned' | 'picked-up' | 'delivered' | 'failed';
-    priority: 'high' | 'normal';
-    time: string;
-}
-
-const MOCK_DISPATCH: DispatchOrder[] = [
+const DISPATCH_FIELDS: CrudField[] = [
+    { name: 'customer', label: 'Хэрэглэгч', type: 'text', required: true },
+    { name: 'address', label: 'Хаяг', type: 'text', required: true },
+    { name: 'driver', label: 'Жолооч', type: 'text', required: true },
+    { name: 'time', label: 'Цаг', type: 'text' },
     {
-        id: 'DIS-101',
-        customer: 'Б.Тулга',
-        address: 'СБД, 1-р хороо, 40-р байр',
-        driver: 'Э.Бат-Эрдэнэ',
-        status: 'picked-up',
-        priority: 'high',
-        time: '12:45'
+        name: 'status', label: 'Төлөв', type: 'select', defaultValue: 'assigned', options: [
+            { value: 'assigned', label: 'Оноосон' },
+            { value: 'picked-up', label: 'Замд яваа' },
+            { value: 'delivered', label: 'Хүргэгдсэн' },
+            { value: 'failed', label: 'Гүйцэтгэлгүй' },
+        ]
     },
     {
-        id: 'DIS-102',
-        customer: 'Г.Марал',
-        address: 'БЗД, 26-р хороо, Parkside',
-        driver: 'С.Болд',
-        status: 'assigned',
-        priority: 'normal',
-        time: '14:20'
+        name: 'priority', label: 'Эрэмбэ', type: 'select', defaultValue: 'normal', options: [
+            { value: 'high', label: 'Яаралтай' },
+            { value: 'normal', label: 'Ердийн' },
+        ]
     },
-    {
-        id: 'DIS-103',
-        customer: 'Д.Тэмүүлэн',
-        address: 'ХУД, Ривер Гарден 1',
-        driver: 'М.Тэмүүжин',
-        status: 'delivered',
-        priority: 'normal',
-        time: '11:15'
-    }
+    { name: 'notes', label: 'Тэмдэглэл', type: 'textarea', span: 2 },
 ];
 
 export function DispatchPage() {
-    const [orders] = useState<DispatchOrder[]>(MOCK_DISPATCH);
+    const { business } = useBusinessStore();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const [orders, setOrders] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [showModal, setShowModal] = useState(false);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const [editingItem, setEditingItem] = useState<any>(null);
+
+    useEffect(() => {
+        if (!business?.id) return;
+        const q = query(collection(db, `businesses/${business.id}/dispatch`), orderBy('createdAt', 'desc'));
+        const unsub = onSnapshot(q, (snap) => {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            setOrders(snap.docs.map(d => ({ id: d.id, ...d.data() } as any)));
+            setLoading(false);
+        });
+        return () => unsub();
+    }, [business?.id]);
 
     return (
         <HubLayout hubId="logistics-hub">
@@ -69,31 +72,30 @@ export function DispatchPage() {
                     subtitle="Хотын хүргэлтийн захиалгыг жолоочид оноох, замыг хянах, гүйцэтгэл шалгах"
                     action={{
                         label: "Илгээлт үүсгэх",
-                        onClick: () => { }
+                        onClick: () => { setEditingItem(null); setShowModal(true); }
                     }}
                 />
 
                 <div className="grid-12 gap-6 mt-6">
-                    {/* Insights Hub */}
                     <div className="col-12 grid grid-cols-4 gap-6">
                         <div className="card p-6 bg-surface-2 border-none shadow-sm flex items-center justify-between group cursor-pointer hover:bg-surface-3 transition-all">
                             <div>
                                 <h4 className="text-[10px] text-muted font-black tracking-widest uppercase mb-1">Нийт хүргэлт</h4>
-                                <div className="text-3xl font-black text-primary">124</div>
+                                <div className="text-3xl font-black text-primary">{orders.length}</div>
                             </div>
                             <div className="bg-primary/10 p-4 rounded-2xl text-primary group-hover:scale-110 transition-transform"><Navigation size={28} /></div>
                         </div>
                         <div className="card p-6 bg-surface-2 border-none shadow-sm flex items-center justify-between group cursor-pointer hover:bg-surface-3 transition-all">
                             <div>
                                 <h4 className="text-[10px] text-muted font-black tracking-widest uppercase mb-1">Амжилттай</h4>
-                                <div className="text-3xl font-black text-success">112</div>
+                                <div className="text-3xl font-black text-success">{orders.filter(o => o.status === 'delivered').length}</div>
                             </div>
                             <div className="bg-success/10 p-4 rounded-2xl text-success group-hover:scale-110 transition-transform"><CheckCircle2 size={28} /></div>
                         </div>
                         <div className="card p-6 bg-surface-2 border-none shadow-sm flex items-center justify-between group cursor-pointer hover:bg-surface-3 transition-all">
                             <div>
                                 <h4 className="text-[10px] text-muted font-black tracking-widest uppercase mb-1">Жолооч (Online)</h4>
-                                <div className="text-3xl font-black text-warning">8</div>
+                                <div className="text-3xl font-black text-warning">{new Set(orders.filter(o => o.status === 'picked-up').map(o => o.driver)).size}</div>
                             </div>
                             <div className="bg-warning/10 p-4 rounded-2xl text-warning group-hover:scale-110 transition-transform"><User size={28} /></div>
                         </div>
@@ -115,76 +117,77 @@ export function DispatchPage() {
                         <button className="btn btn-outline h-10 px-4"><Filter size={16} className="mr-2" /> Бүс</button>
                     </div>
 
-                    {/* Dispatch Table Layout */}
                     <div className="col-12 card p-0 overflow-hidden shadow-sm bg-surface-1 border-none">
-                        <table className="table">
-                            <thead>
-                                <tr>
-                                    <th className="pl-6 py-4">ID / Цаг</th>
-                                    <th>Хэрэглэгч & Хаяг</th>
-                                    <th>Жолооч</th>
-                                    <th>Эрэмбэ</th>
-                                    <th>Төлөв</th>
-                                    <th className="pr-6 text-right">Үйлдэл</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {orders.map(order => (
-                                    <tr key={order.id} className="hover:bg-surface-2 transition-all group">
-                                        <td className="pl-6 py-5">
-                                            <div className="flex flex-col">
-                                                <div className="font-bold text-sm tracking-tight">{order.id}</div>
-                                                <div className="text-[10px] font-black text-muted uppercase tracking-widest mt-1 flex items-center gap-1">
-                                                    <Clock size={10} /> {order.time}
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td>
-                                            <div className="flex flex-col gap-1">
-                                                <div className="text-xs font-black uppercase tracking-widest">{order.customer}</div>
-                                                <div className="text-[10px] text-muted flex items-center gap-1">
-                                                    <MapPin size={10} className="text-primary" /> {order.address}
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td>
-                                            <div className="flex items-center gap-2">
-                                                <div className="h-6 w-6 rounded-full bg-surface-2 flex items-center justify-center text-[10px] font-black text-primary border border-border-color/10">
-                                                    {order.driver.substring(0, 1)}
-                                                </div>
-                                                <span className="text-xs font-bold text-muted uppercase tracking-widest">{order.driver}</span>
-                                            </div>
-                                        </td>
-                                        <td>
-                                            <div className={`text-[10px] font-black uppercase tracking-widest flex items-center gap-1 ${order.priority === 'high' ? 'text-danger' : 'text-muted'}`}>
-                                                {order.priority === 'high' ? <Flag size={12} /> : null} {order.priority}
-                                            </div>
-                                        </td>
-                                        <td>
-                                            <span className={`badge font-black text-[10px] px-3 py-1 uppercase tracking-widest badge-${order.status === 'delivered' ? 'success' :
-                                                order.status === 'picked-up' ? 'warning' :
-                                                    order.status === 'failed' ? 'danger' : 'primary'
-                                                }`}>
-                                                {order.status === 'delivered' ? 'ХҮРГЭГДСЭН' :
-                                                    order.status === 'picked-up' ? 'ЗАМД ЯВАА' :
-                                                        order.status === 'failed' ? 'ГҮЙЦЭТГЭЛГҮЙ' : 'ОНООСОН'}
-                                            </span>
-                                        </td>
-                                        <td className="pr-6 text-right">
-                                            <div className="flex justify-end gap-2">
-                                                <button className="btn btn-ghost p-2 rounded-xl group-hover:text-primary transition-colors"><MoreVertical size={18} /></button>
-                                                <button className="btn btn-primary p-2 h-10 w-10 rounded-xl shadow-lg hover:scale-110 transition-transform flex items-center justify-center">
-                                                    <ArrowRight size={18} />
-                                                </button>
-                                            </div>
-                                        </td>
+                        {loading ? <div style={{ padding: 48, textAlign: 'center', color: 'var(--text-muted)' }}>Ачаалж байна...</div> : (
+                            <table className="table">
+                                <thead>
+                                    <tr>
+                                        <th className="pl-6 py-4">ID / Цаг</th>
+                                        <th>Хэрэглэгч & Хаяг</th>
+                                        <th>Жолооч</th>
+                                        <th>Эрэмбэ</th>
+                                        <th>Төлөв</th>
+                                        <th className="pr-6 text-right">Үйлдэл</th>
                                     </tr>
-                                ))}
-                            </tbody>
-                        </table>
+                                </thead>
+                                <tbody>
+                                    {orders.length === 0 ? <tr><td colSpan={6} style={{ textAlign: 'center', padding: 48, color: 'var(--text-muted)' }}>Илгээлт олдсонгүй</td></tr> :
+                                        orders.map(order => (
+                                            <tr key={order.id} className="hover:bg-surface-2 transition-all group" style={{ cursor: 'pointer' }} onClick={() => { setEditingItem(order); setShowModal(true); }}>
+                                                <td className="pl-6 py-5">
+                                                    <div className="flex flex-col">
+                                                        <div className="font-bold text-sm tracking-tight">{order.id.substring(0, 8)}</div>
+                                                        <div className="text-[10px] font-black text-muted uppercase tracking-widest mt-1 flex items-center gap-1">
+                                                            <Clock size={10} /> {order.time || '-'}
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <div className="flex flex-col gap-1">
+                                                        <div className="text-xs font-black uppercase tracking-widest">{order.customer}</div>
+                                                        <div className="text-[10px] text-muted flex items-center gap-1">
+                                                            <MapPin size={10} className="text-primary" /> {order.address}
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <div className="flex items-center gap-2">
+                                                        <div className="h-6 w-6 rounded-full bg-surface-2 flex items-center justify-center text-[10px] font-black text-primary border border-border-color/10">
+                                                            {(order.driver || '?').substring(0, 1)}
+                                                        </div>
+                                                        <span className="text-xs font-bold text-muted uppercase tracking-widest">{order.driver}</span>
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <div className={`text-[10px] font-black uppercase tracking-widest flex items-center gap-1 ${order.priority === 'high' ? 'text-danger' : 'text-muted'}`}>
+                                                        {order.priority === 'high' ? <Flag size={12} /> : null} {order.priority || 'normal'}
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <span className={`badge font-black text-[10px] px-3 py-1 uppercase tracking-widest badge-${order.status === 'delivered' ? 'success' :
+                                                        order.status === 'picked-up' ? 'warning' :
+                                                            order.status === 'failed' ? 'danger' : 'primary'
+                                                        }`}>
+                                                        {order.status === 'delivered' ? 'ХҮРГЭГДСЭН' :
+                                                            order.status === 'picked-up' ? 'ЗАМД ЯВАА' :
+                                                                order.status === 'failed' ? 'ГҮЙЦЭТГЭЛГҮЙ' : 'ОНООСОН'}
+                                                    </span>
+                                                </td>
+                                                <td className="pr-6 text-right">
+                                                    <div className="flex justify-end gap-2">
+                                                        <button className="btn btn-ghost p-2 rounded-xl group-hover:text-primary transition-colors"><MoreVertical size={18} /></button>
+                                                        <button className="btn btn-primary p-2 h-10 w-10 rounded-xl shadow-lg hover:scale-110 transition-transform flex items-center justify-center">
+                                                            <ArrowRight size={18} />
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                </tbody>
+                            </table>
+                        )}
                     </div>
 
-                    {/* Driver App Alert / Sync */}
                     <div className="col-12 mt-6 card p-6 bg-surface-2 border-dashed border-2 flex flex-col md:flex-row items-center justify-between gap-6 shadow-md shadow-primary/5">
                         <div className="flex items-center gap-6">
                             <div className="bg-primary/5 p-4 rounded-2xl text-primary"><Smartphone size={32} /></div>
@@ -200,6 +203,8 @@ export function DispatchPage() {
                     </div>
                 </div>
             </div>
+
+            {showModal && <GenericCrudModal title="Дотоод хүргэлт" icon={<Navigation size={20} />} collectionPath="businesses/{bizId}/dispatch" fields={DISPATCH_FIELDS} editingItem={editingItem} onClose={() => setShowModal(false)} />}
         </HubLayout>
     );
 }

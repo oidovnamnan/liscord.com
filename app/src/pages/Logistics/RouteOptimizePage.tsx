@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Header } from '../../components/layout/Header';
 import { HubLayout } from '../../components/common/HubLayout';
 import {
@@ -15,52 +15,48 @@ import {
     BrainCircuit,
     Route as RouteIcon,
     Maximize,
-    ChevronRight,
-    Search as SearchIcon
+    ChevronRight
 } from 'lucide-react';
+import { useBusinessStore } from '../../store';
+import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
+import { db } from '../../services/firebase';
+import { GenericCrudModal, type CrudField } from '../../components/common/GenericCrudModal';
 
-interface OptimizedRoute {
-    id: string;
-    driver: string;
-    pointsCount: number;
-    distance: string;
-    estimatedTime: string;
-    savings: string;
-    status: 'optimized' | 'active' | 'pending';
-}
-
-const MOCK_ROUTES: OptimizedRoute[] = [
+const ROUTE_FIELDS: CrudField[] = [
+    { name: 'driver', label: 'Жолооч', type: 'text', required: true },
+    { name: 'pointsCount', label: 'Цэгийн тоо', type: 'number', required: true },
+    { name: 'distance', label: 'Зай (км)', type: 'text' },
+    { name: 'estimatedTime', label: 'Тооцоолсон хугацаа', type: 'text' },
+    { name: 'savings', label: 'Хэмнэлт', type: 'text' },
     {
-        id: 'RT-101',
-        driver: 'Э.Бат-Эрдэнэ',
-        pointsCount: 15,
-        distance: '24.2 km',
-        estimatedTime: '1:45 hr',
-        savings: '12% Fuel',
-        status: 'active'
+        name: 'status', label: 'Төлөв', type: 'select', defaultValue: 'pending', options: [
+            { value: 'optimized', label: 'Оновчлогдсон' },
+            { value: 'active', label: 'Идэвхтэй' },
+            { value: 'pending', label: 'Хүлээгдэж буй' },
+        ]
     },
-    {
-        id: 'RT-102',
-        driver: 'С.Болд',
-        pointsCount: 22,
-        distance: '38.5 km',
-        estimatedTime: '3:12 hr',
-        savings: '18% Fuel',
-        status: 'optimized'
-    },
-    {
-        id: 'RT-103',
-        driver: 'М.Тэмүүжин',
-        pointsCount: 8,
-        distance: '12.4 km',
-        estimatedTime: '0:45 hr',
-        savings: '5% Fuel',
-        status: 'pending'
-    }
+    { name: 'notes', label: 'Тэмдэглэл', type: 'textarea', span: 2 },
 ];
 
 export function RouteOptimizePage() {
-    const [routes] = useState<OptimizedRoute[]>(MOCK_ROUTES);
+    const { business } = useBusinessStore();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const [routes, setRoutes] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [showModal, setShowModal] = useState(false);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const [editingItem, setEditingItem] = useState<any>(null);
+
+    useEffect(() => {
+        if (!business?.id) return;
+        const q = query(collection(db, `businesses/${business.id}/routeOptimize`), orderBy('createdAt', 'desc'));
+        const unsub = onSnapshot(q, (snap) => {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            setRoutes(snap.docs.map(d => ({ id: d.id, ...d.data() } as any)));
+            setLoading(false);
+        });
+        return () => unsub();
+    }, [business?.id]);
 
     return (
         <HubLayout hubId="logistics-hub">
@@ -70,31 +66,30 @@ export function RouteOptimizePage() {
                     subtitle="Хүргэлтийн хамгийн дөт замыг AI ашиглан тооцоолж, цаг болон түлш хэмнэх"
                     action={{
                         label: "AI Тооцоолол",
-                        onClick: () => { }
+                        onClick: () => { setEditingItem(null); setShowModal(true); }
                     }}
                 />
 
                 <div className="grid-12 gap-6 mt-6">
-                    {/* Insights Hub */}
                     <div className="col-12 grid grid-cols-4 gap-6">
                         <div className="card p-6 bg-surface-2 border-none shadow-sm flex items-center justify-between group cursor-pointer hover:bg-surface-3 transition-all">
                             <div>
                                 <h4 className="text-[10px] text-muted font-black tracking-widest uppercase mb-1">Нийт маршрут</h4>
-                                <div className="text-3xl font-black text-primary">45</div>
+                                <div className="text-3xl font-black text-primary">{routes.length}</div>
                             </div>
                             <div className="bg-primary/10 p-4 rounded-2xl text-primary group-hover:scale-110 transition-transform"><RouteIcon size={28} /></div>
                         </div>
                         <div className="card p-6 bg-surface-2 border-none shadow-sm flex items-center justify-between group cursor-pointer hover:bg-surface-3 transition-all">
                             <div>
-                                <h4 className="text-[10px] text-muted font-black tracking-widest uppercase mb-1">Хэмнэсэн цаг</h4>
-                                <div className="text-3xl font-black text-secondary">24.5ч</div>
+                                <h4 className="text-[10px] text-muted font-black tracking-widest uppercase mb-1">Идэвхтэй</h4>
+                                <div className="text-3xl font-black text-secondary">{routes.filter(r => r.status === 'active').length}</div>
                             </div>
                             <div className="bg-secondary/10 p-4 rounded-2xl text-secondary group-hover:scale-110 transition-transform"><Clock size={28} /></div>
                         </div>
                         <div className="card p-6 bg-surface-2 border-none shadow-sm flex items-center justify-between group cursor-pointer hover:bg-surface-3 transition-all">
                             <div>
-                                <h4 className="text-[10px] text-muted font-black tracking-widest uppercase mb-1">Хэмнэсэн түлш</h4>
-                                <div className="text-3xl font-black text-success">15%</div>
+                                <h4 className="text-[10px] text-muted font-black tracking-widest uppercase mb-1">Оновчлогдсон</h4>
+                                <div className="text-3xl font-black text-success">{routes.filter(r => r.status === 'optimized').length}</div>
                             </div>
                             <div className="bg-success/10 p-4 rounded-2xl text-success group-hover:scale-110 transition-transform"><Fuel size={28} /></div>
                         </div>
@@ -116,53 +111,57 @@ export function RouteOptimizePage() {
                         <button className="btn btn-outline h-10 px-4">Бүх бүс</button>
                     </div>
 
-                    {/* Route List & Map Container */}
                     <div className="col-12 grid grid-cols-12 gap-6">
                         <div className="col-span-4 space-y-4">
-                            {routes.map(route => (
-                                <div key={route.id} className={`card p-6 cursor-pointer transition-all border-none hover-lift shadow-sm ${route.status === 'active' ? 'bg-primary/5 ring-1 ring-primary' : 'bg-surface-1'
-                                    }`}>
-                                    <div className="flex justify-between items-start mb-4">
-                                        <div className="flex flex-col gap-1">
-                                            <div className="text-[10px] font-black text-primary uppercase tracking-widest">{route.id} / {route.driver}</div>
-                                            <h3 className="text-lg font-black leading-tight">Маршрут #{route.id.split('-')[1]}</h3>
+                            {loading ? (
+                                <div style={{ padding: 48, textAlign: 'center', color: 'var(--text-muted)' }}>Ачаалж байна...</div>
+                            ) : routes.length === 0 ? (
+                                <div className="card" style={{ padding: 60, textAlign: 'center' }}><RouteIcon size={48} color="var(--text-muted)" /><h3>Маршрут олдсонгүй</h3></div>
+                            ) : (
+                                routes.map(route => (
+                                    <div key={route.id} className={`card p-6 cursor-pointer transition-all border-none hover-lift shadow-sm ${route.status === 'active' ? 'bg-primary/5 ring-1 ring-primary' : 'bg-surface-1'}`}
+                                        onClick={() => { setEditingItem(route); setShowModal(true); }}>
+                                        <div className="flex justify-between items-start mb-4">
+                                            <div className="flex flex-col gap-1">
+                                                <div className="text-[10px] font-black text-primary uppercase tracking-widest">{route.id.substring(0, 8)} / {route.driver}</div>
+                                                <h3 className="text-lg font-black leading-tight">{route.driver}</h3>
+                                            </div>
+                                            <div className={`p-2 rounded-xl ${route.status === 'active' ? 'bg-primary text-white' : 'bg-surface-2 text-muted'}`}>
+                                                <Navigation size={20} />
+                                            </div>
                                         </div>
-                                        <div className={`p-2 rounded-xl ${route.status === 'active' ? 'bg-primary text-white' : 'bg-surface-2 text-muted'}`}>
-                                            <Navigation size={20} />
-                                        </div>
-                                    </div>
 
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div className="bg-surface-2/50 p-2 rounded-xl text-center">
-                                            <div className="text-[8px] font-black text-muted uppercase mb-1">ЦЭГИЙН ТОО</div>
-                                            <div className="text-sm font-black text-primary">{route.pointsCount}</div>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div className="bg-surface-2/50 p-2 rounded-xl text-center">
+                                                <div className="text-[8px] font-black text-muted uppercase mb-1">ЦЭГИЙН ТОО</div>
+                                                <div className="text-sm font-black text-primary">{route.pointsCount || 0}</div>
+                                            </div>
+                                            <div className="bg-surface-2/50 p-2 rounded-xl text-center">
+                                                <div className="text-[8px] font-black text-muted uppercase mb-1">ХУГАЦАА</div>
+                                                <div className="text-sm font-black text-primary">{route.estimatedTime || '-'}</div>
+                                            </div>
                                         </div>
-                                        <div className="bg-surface-2/50 p-2 rounded-xl text-center">
-                                            <div className="text-[8px] font-black text-muted uppercase mb-1">ХУГАЦАА</div>
-                                            <div className="text-sm font-black text-primary">{route.estimatedTime}</div>
-                                        </div>
-                                    </div>
 
-                                    <div className="mt-4 pt-4 border-t border-border-color/10 flex justify-between items-center">
-                                        <div className="flex items-center gap-1 text-[10px] font-black text-success uppercase tracking-widest">
-                                            <TrendingDown size={12} /> {route.savings} ХЭМНЭЛТ
-                                        </div>
-                                        <span className={`badge font-black text-[10px] px-2 py-0.5 uppercase tracking-widest badge-${route.status === 'active' ? 'success' :
+                                        <div className="mt-4 pt-4 border-t border-border-color/10 flex justify-between items-center">
+                                            <div className="flex items-center gap-1 text-[10px] font-black text-success uppercase tracking-widest">
+                                                <TrendingDown size={12} /> {route.savings || '-'} ХЭМНЭЛТ
+                                            </div>
+                                            <span className={`badge font-black text-[10px] px-2 py-0.5 uppercase tracking-widest badge-${route.status === 'active' ? 'success' :
                                                 route.status === 'optimized' ? 'primary' : 'secondary'
-                                            }`}>
-                                            {route.status}
-                                        </span>
+                                                }`}>
+                                                {route.status || 'pending'}
+                                            </span>
+                                        </div>
                                     </div>
-                                </div>
-                            ))}
+                                ))
+                            )}
                         </div>
 
-                        {/* Interactive Route Map Simulation */}
                         <div className="col-span-8 card p-0 overflow-hidden bg-surface-2 h-[550px] shadow-lg relative border-none flex flex-col group">
                             <div className="p-4 bg-surface-1 border-b flex justify-between items-center">
                                 <h3 className="text-sm font-black uppercase tracking-widest text-muted">Интерактив маршрут зураглал</h3>
                                 <div className="flex gap-2">
-                                    <button className="btn btn-ghost btn-sm h-10 w-10 p-0 rounded-xl bg-surface-2"><SearchIcon size={18} /></button>
+                                    <button className="btn btn-ghost btn-sm h-10 w-10 p-0 rounded-xl bg-surface-2"><Search size={18} /></button>
                                     <button className="btn btn-ghost btn-sm h-10 w-10 p-0 rounded-xl bg-surface-2"><Maximize size={18} /></button>
                                 </div>
                             </div>
@@ -174,14 +173,13 @@ export function RouteOptimizePage() {
                                     </div>
                                     <div className="text-center max-w-sm">
                                         <h3 className="text-2xl font-black mb-2">Live Route Mapping</h3>
-                                        <p className="text-sm text-muted font-bold leading-relaxed uppercase tracking-tighter">AI Оновчлол хийгдсэн 15 цэгийн хамгийн дөт замыг энд графикаар харуулна.</p>
+                                        <p className="text-sm text-muted font-bold leading-relaxed uppercase tracking-tighter">AI Оновчлол хийгдсэн цэгийн хамгийн дөт замыг энд графикаар харуулна.</p>
                                     </div>
                                     <button className="btn btn-primary px-10 py-4 rounded-2xl font-black shadow-xl hover:scale-105 transition-transform flex items-center gap-3">
                                         МАРШРУТ ИДЭВХЖҮҮЛЭХ <ChevronRight size={24} />
                                     </button>
                                 </div>
 
-                                {/* Floating indicators */}
                                 <div className="absolute top-8 left-8 card px-4 py-2 bg-white/80 backdrop-blur border-none shadow-sm flex items-center gap-2">
                                     <div className="h-2 w-2 rounded-full bg-success animate-ping" />
                                     <span className="text-[10px] font-black uppercase tracking-widest">System Live</span>
@@ -190,7 +188,6 @@ export function RouteOptimizePage() {
                         </div>
                     </div>
 
-                    {/* Google Maps / OSM Sync Alert */}
                     <div className="col-12 mt-6 card p-6 bg-surface-2 border-dashed border-2 flex flex-col md:flex-row items-center justify-between gap-6 shadow-md shadow-primary/5">
                         <div className="flex items-center gap-6">
                             <div className="bg-primary/5 p-4 rounded-2xl text-primary"><Layers size={32} /></div>
@@ -206,6 +203,8 @@ export function RouteOptimizePage() {
                     </div>
                 </div>
             </div>
+
+            {showModal && <GenericCrudModal title="Маршрут" icon={<RouteIcon size={20} />} collectionPath="businesses/{bizId}/routeOptimize" fields={ROUTE_FIELDS} editingItem={editingItem} onClose={() => setShowModal(false)} />}
         </HubLayout>
     );
 }
