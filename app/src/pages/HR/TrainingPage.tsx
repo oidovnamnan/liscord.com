@@ -1,185 +1,101 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Header } from '../../components/layout/Header';
 import { HubLayout } from '../../components/common/HubLayout';
-import {
-    GraduationCap,
-    BookOpen,
-    CheckCircle2,
-    Clock,
-    PlayCircle,
-    Award,
-    Star,
-    MonitorPlay,
-    TrendingUp,
-    Search,
-    Filter,
-    Plus,
-    Users
-} from 'lucide-react';
+import { GraduationCap, BookOpen, CheckCircle2, Clock, Award } from 'lucide-react';
+import { useBusinessStore } from '../../store';
+import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
+import { db } from '../../services/firebase';
+import { GenericCrudModal, type CrudField } from '../../components/common/GenericCrudModal';
 
-interface Course {
-    id: string;
-    title: string;
-    category: 'onboarding' | 'skill' | 'compliance' | 'leadership';
-    status: 'mandatory' | 'optional';
-    progress: number;
-    duration: string;
-    enrolled: number;
-}
-
-const MOCK_COURSES: Course[] = [
+const TRAINING_FIELDS: CrudField[] = [
+    { name: 'title', label: 'Сургалтын нэр', type: 'text', required: true, span: 2 },
     {
-        id: 'LMS-001',
-        title: 'Шинэ ажилтны чиглүүлэх хөтөлбөр (Onboarding)',
-        category: 'onboarding',
-        status: 'mandatory',
-        progress: 85,
-        duration: '4 цаг 30 мин',
-        enrolled: 12
+        name: 'category', label: 'Ангилал', type: 'select', required: true, options: [
+            { value: 'onboarding', label: 'Шинэ ажилтан' },
+            { value: 'technical', label: 'Техникийн' },
+            { value: 'soft-skills', label: 'Зөөлөн ур чадвар' },
+            { value: 'safety', label: 'Аюулгүй ажиллагаа' },
+            { value: 'compliance', label: 'Дүрэм журам' },
+            { value: 'certification', label: 'Гэрчилгээ' },
+        ]
     },
+    { name: 'instructor', label: 'Сургагч', type: 'text' },
+    { name: 'duration', label: 'Хугацаа (цаг)', type: 'number' },
     {
-        id: 'LMS-002',
-        title: 'Мэдээллийн аюулгүй байдлын суурь',
-        category: 'compliance',
-        status: 'mandatory',
-        progress: 100,
-        duration: '1 цаг 15 мин',
-        enrolled: 145
+        name: 'status', label: 'Төлөв', type: 'select', defaultValue: 'planned', options: [
+            { value: 'planned', label: 'Төлөвлөсөн' },
+            { value: 'in_progress', label: 'Явагдаж буй' },
+            { value: 'completed', label: 'Дууссан' },
+        ]
     },
-    {
-        id: 'LMS-003',
-        title: 'Борлуулалтын ур чадвар: Харилцагчийн үйлчилгээ',
-        category: 'skill',
-        status: 'optional',
-        progress: 32,
-        duration: '2 цаг 45 мин',
-        enrolled: 48
-    }
+    { name: 'date', label: 'Огноо', type: 'date' },
+    { name: 'maxParticipants', label: 'Хамрагдах хүн', type: 'number' },
+    { name: 'description', label: 'Тайлбар', type: 'textarea', span: 2 },
 ];
 
 export function TrainingPage() {
-    const [courses] = useState<Course[]>(MOCK_COURSES);
+    const { business } = useBusinessStore();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const [trainings, setTrainings] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [showModal, setShowModal] = useState(false);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const [editingItem, setEditingItem] = useState<any>(null);
+
+    useEffect(() => {
+        if (!business?.id) return;
+        const q = query(collection(db, `businesses/${business.id}/trainings`), orderBy('createdAt', 'desc'));
+        const unsub = onSnapshot(q, (snap) => {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            setTrainings(snap.docs.map(d => ({ id: d.id, ...d.data() } as any)));
+            setLoading(false);
+        });
+        return () => unsub();
+    }, [business?.id]);
+
+    const getStatusBadge = (status: string) => {
+        switch (status) {
+            case 'completed': return <span className="badge badge-success"><CheckCircle2 size={12} /> Дууссан</span>;
+            case 'in_progress': return <span className="badge badge-info"><Clock size={12} /> Явагдаж буй</span>;
+            default: return <span className="badge badge-warning"><Clock size={12} /> Төлөвлөсөн</span>;
+        }
+    };
 
     return (
         <HubLayout hubId="hr-hub">
             <div className="page-container animate-fade-in">
-                <Header
-                    title="Дотоод Сургалт (LMS)"
-                    subtitle="Ажилтнуудын мэдлэг, ур чадварыг дээшлүүлэх, сертификатжуулах систем"
-                    action={{
-                        label: "Сургалт Нэмэх",
-                        onClick: () => { }
-                    }}
-                />
-
-                <div className="grid-12 gap-6 mt-6">
-                    {/* Stats */}
-                    <div className="col-12 grid grid-cols-4 gap-6">
-                        <div className="card p-6 bg-surface-1 border-none shadow-sm flex items-center justify-between group overflow-hidden relative">
-                            <GraduationCap size={48} className="absolute -right-4 -top-4 opacity-[0.05] group-hover:scale-110 transition-transform" />
-                            <div>
-                                <h4 className="text-[10px] text-muted font-black tracking-widest uppercase mb-1">Нийт Сургалт</h4>
-                                <div className="text-2xl font-black">24 цогц</div>
-                            </div>
-                            <div className="bg-primary/10 p-4 rounded-2xl text-primary"><BookOpen size={24} /></div>
+                <Header title="Сургалт & Хөгжил" action={{ label: '+ Сургалт нэмэх', onClick: () => { setEditingItem(null); setShowModal(true); } }} />
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 20, marginTop: 20 }}>
+                    {loading ? (
+                        <div style={{ gridColumn: '1 / -1', padding: 48, textAlign: 'center', color: 'var(--text-muted)' }}>Ачаалж байна...</div>
+                    ) : trainings.length === 0 ? (
+                        <div className="card" style={{ gridColumn: '1 / -1', padding: 60, textAlign: 'center' }}>
+                            <GraduationCap size={48} color="var(--text-muted)" style={{ marginBottom: 16 }} />
+                            <h3>Сургалт бүртгэгдээгүй</h3>
+                            <button className="btn btn-primary" onClick={() => { setEditingItem(null); setShowModal(true); }} style={{ marginTop: 16 }}>Эхний сургалтаа нэмэх</button>
                         </div>
-
-                        <div className="card p-6 bg-surface-1 border-none shadow-sm flex items-center justify-between group overflow-hidden relative">
-                            <Users size={48} className="absolute -right-4 -top-4 opacity-[0.05] group-hover:scale-110 transition-transform" />
-                            <div>
-                                <h4 className="text-[10px] text-muted font-black tracking-widest uppercase mb-1">Идэвхтэй Суралцагчид</h4>
-                                <div className="text-2xl font-black">156</div>
-                            </div>
-                            <div className="bg-secondary/10 p-4 rounded-2xl text-secondary"><MonitorPlay size={24} /></div>
-                        </div>
-
-                        <div className="card p-6 bg-surface-1 border-none shadow-sm flex items-center justify-between group border-l-4 border-success relative overflow-hidden">
-                            <div>
-                                <h4 className="text-[10px] text-muted font-black tracking-widest uppercase mb-1">Курс Дүүргэлт</h4>
-                                <div className="text-2xl font-black text-success">84.5%</div>
-                            </div>
-                            <div className="bg-success text-white p-4 rounded-2xl shadow-lg shadow-success/20"><CheckCircle2 size={24} /></div>
-                        </div>
-
-                        <div className="card p-6 bg-surface-1 border-none shadow-sm flex items-center justify-between group relative overflow-hidden">
-                            <div>
-                                <h4 className="text-[10px] text-muted font-black tracking-widest uppercase mb-1">Олгосон Сертификат</h4>
-                                <div className="text-2xl font-black text-warning">480</div>
-                            </div>
-                            <div className="bg-warning/10 p-4 rounded-2xl text-warning"><Award size={24} /></div>
-                        </div>
-                    </div>
-
-                    {/* Controls */}
-                    <div className="col-12 flex items-center justify-between gap-4 mt-2">
-                        <div className="flex-1 relative">
-                            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
-                            <input className="input pl-10 h-11 w-full" placeholder="Хичээлийн нэр, багшаар хайх..." />
-                        </div>
-                        <div className="flex gap-2">
-                            <button className="btn btn-outline h-11 px-6 flex items-center gap-2 font-black border-border-color/10"><Filter size={18} /> Ангилал</button>
-                            <button className="btn btn-primary h-11 px-8 flex items-center gap-2 font-black shadow-lg shadow-primary/20"><Plus size={18} /> Хуваарь Үүсгэх</button>
-                        </div>
-                    </div>
-
-                    {/* Course Lists */}
-                    <div className="col-12 grid grid-cols-1 md:grid-cols-3 gap-6">
-                        {courses.map(course => (
-                            <div key={course.id} className="card p-0 bg-surface-1 border-none shadow-sm overflow-hidden group hover:shadow-md transition-all">
-                                <div className="h-32 bg-surface-2 relative overflow-hidden flex items-center justify-center">
-                                    <PlayCircle size={48} className="text-primary opacity-50 group-hover:scale-110 group-hover:opacity-100 transition-all z-10" />
-                                    <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
+                    ) : (
+                        trainings.map(t => (
+                            <div key={t.id} className="card" style={{ padding: 20, cursor: 'pointer' }} onClick={() => { setEditingItem(t); setShowModal(true); }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
+                                    {getStatusBadge(t.status)}
+                                    {t.category === 'certification' && <Award size={18} color="#f1c40f" />}
                                 </div>
-                                <div className="p-6">
-                                    <div className="flex items-center gap-2 mb-3">
-                                        <span className={`px-2 py-0.5 border border-border-color/10 rounded text-[9px] font-black uppercase tracking-widest ${course.status === 'mandatory' ? 'bg-danger/10 text-danger' : 'bg-success/10 text-success'
-                                            }`}>
-                                            {course.status === 'mandatory' ? 'ЗААВАЛ СУДЛАХ' : 'СОНГОН СУДЛАХ'}
-                                        </span>
-                                        <span className="text-[9px] font-bold text-muted uppercase tracking-widest bg-surface-2 px-2 py-0.5 rounded">{course.category}</span>
-                                    </div>
-                                    <h3 className="font-black text-lg h-14 line-clamp-2 leading-tight">{course.title}</h3>
-
-                                    <div className="mt-4 space-y-2">
-                                        <div className="flex justify-between text-xs font-black uppercase tracking-widest">
-                                            <span>Дүүргэлт</span>
-                                            <span className="text-primary">{course.progress}%</span>
-                                        </div>
-                                        <div className="h-1.5 bg-surface-2 rounded-full overflow-hidden shadow-inner w-full">
-                                            <div className="h-full bg-primary rounded-full" style={{ width: `${course.progress}%` }} />
-                                        </div>
-                                    </div>
-
-                                    <div className="mt-6 pt-4 border-t border-border-color/5 flex items-center justify-between text-[10px] font-bold text-muted uppercase tracking-widest">
-                                        <span className="flex items-center gap-1"><Clock size={12} /> {course.duration}</span>
-                                        <span className="flex items-center gap-1"><Users size={12} /> {course.enrolled}</span>
-                                        <span className="flex items-center gap-1 text-warning"><Star size={12} /> 4.8</span>
-                                    </div>
+                                <h3 style={{ margin: '0 0 8px', fontSize: '1.1rem' }}>{t.title}</h3>
+                                <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+                                    {t.instructor && <span><BookOpen size={12} /> {t.instructor}</span>}
+                                    {t.duration && <span><Clock size={12} /> {t.duration}ц</span>}
+                                    {t.date && <span>{t.date}</span>}
                                 </div>
                             </div>
-                        ))}
-                    </div>
-
-                    {/* Analytics Preview */}
-                    <div className="col-12 mt-4 grid grid-cols-2 gap-6">
-                        <div className="card p-6 bg-surface-1 border-none shadow-sm flex items-center justify-between">
-                            <div>
-                                <h3 className="text-sm font-black flex items-center gap-2"><TrendingUp size={18} className="text-primary" /> Сургалтын Үр Дүн</h3>
-                                <p className="text-xs font-bold text-muted mt-1">Ажилчдын ур чадварын өсөлт: +12.4%</p>
-                            </div>
-                            <button className="btn btn-ghost h-10 px-4 text-xs font-black text-primary hover:bg-primary/10 transition-colors">ДЭЛГЭРЭНГҮЙ ТАЙЛАН</button>
-                        </div>
-                        <div className="card p-6 bg-gradient-to-r from-primary to-primary-dark text-white border-none shadow-xl flex items-center justify-between group overflow-hidden relative">
-                            <Award size={128} className="absolute -right-8 -top-8 opacity-10 group-hover:scale-110 transition-transform" />
-                            <div className="z-10 relative">
-                                <h3 className="text-sm font-black flex items-center gap-2 tracking-tight"><Award size={18} /> Сертификатны Дизайн Тохиргоо</h3>
-                                <p className="text-xs font-bold text-white/70 mt-1">Курс төгссөн ажилчдад очих цахим батламж</p>
-                            </div>
-                            <button className="btn bg-white/20 hover:bg-white/30 text-white border-none h-10 px-6 font-black rounded-xl text-xs backdrop-blur-md relative z-10 transition-colors">ТОХИРУУЛАХ</button>
-                        </div>
-                    </div>
+                        ))
+                    )}
                 </div>
             </div>
+
+            {showModal && (
+                <GenericCrudModal title="Сургалт" icon={<GraduationCap size={20} />} collectionPath="businesses/{bizId}/trainings" fields={TRAINING_FIELDS} editingItem={editingItem} onClose={() => setShowModal(false)} />
+            )}
         </HubLayout>
     );
 }
