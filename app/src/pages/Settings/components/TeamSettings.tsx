@@ -1,20 +1,26 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
-import { Users, Plus, MoreVertical, Shield, Trash2, X } from 'lucide-react';
+import { Users, Plus, MoreVertical, Shield, Trash2, X, UserPlus, Phone, Mail, Briefcase, Clock, Edit2, Eye, DollarSign, AlertTriangle, Settings } from 'lucide-react';
 import { teamService } from '../../../services/db';
 import { toast } from 'react-hot-toast';
 import { PINModal } from '../../../components/common/PINModal';
 import { ALL_PERMISSIONS, type Position, type Employee } from '../../../types';
+import { useBusinessStore } from '../../../store';
+import { doc, updateDoc } from 'firebase/firestore';
+import { db } from '../../../services/firebase';
+import './TeamSettings.css';
 
+// ============ MAIN COMPONENT ============
 export function TeamSettings({ bizId }: { bizId: string }) {
-    const [subTab, setSubTab] = useState<'employees' | 'positions'>('employees');
+    const [subTab, setSubTab] = useState<'employees' | 'positions' | 'limits'>('employees');
     const [employees, setEmployees] = useState<Employee[]>([]);
     const [positions, setPositions] = useState<Position[]>([]);
     const [showPosModal, setShowPosModal] = useState(false);
     const [editingPosition, setEditingPosition] = useState<Position | null>(null);
     const [showPIN, setShowPIN] = useState(false);
-    const [showInvite, setShowInvite] = useState(false);
+    const [showCreateEmployee, setShowCreateEmployee] = useState(false);
     const [selectedPosId, setSelectedPosId] = useState<string | null>(null);
+    const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
 
     useEffect(() => {
         if (!bizId) return;
@@ -22,6 +28,10 @@ export function TeamSettings({ bizId }: { bizId: string }) {
         const u2 = teamService.subscribePositions(bizId, setPositions);
         return () => { u1(); u2(); };
     }, [bizId]);
+
+    const activeEmployees = useMemo(() => employees.filter(e => !e.isDeleted && e.status === 'active'), [employees]);
+    const pendingEmployees = useMemo(() => employees.filter(e => !e.isDeleted && e.status === 'pending_invite'), [employees]);
+    const allVisible = useMemo(() => employees.filter(e => !e.isDeleted), [employees]);
 
     const handleDeletePos = (id: string) => {
         setSelectedPosId(id);
@@ -31,96 +41,631 @@ export function TeamSettings({ bizId }: { bizId: string }) {
     const confirmDelete = async () => {
         if (!selectedPosId) return;
         try {
-            await teamService.updatePosition(bizId, selectedPosId, { isDeleted: true } as any); // eslint-disable-line @typescript-eslint/no-explicit-any
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            await teamService.updatePosition(bizId, selectedPosId, { isDeleted: true } as any);
             toast.success('Устгагдлаа');
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
         } catch (_e) { toast.error('Алдаа гарлаа'); } finally { setShowPIN(false); }
     };
 
+    const getStatusBadge = (status: string) => {
+        switch (status) {
+            case 'active': return <span className="team-status-badge active">Идэвхтэй</span>;
+            case 'pending_invite': return <span className="team-status-badge pending">Хүлээгдэж буй</span>;
+            case 'inactive': return <span className="team-status-badge inactive">Идэвхгүй</span>;
+            default: return null;
+        }
+    };
+
+    const subTabs = [
+        { id: 'employees' as const, label: 'Ажилчид', icon: Users },
+        { id: 'positions' as const, label: 'Эрхүүд / Тушаал', icon: Shield },
+        { id: 'limits' as const, label: 'Хязгаарлалт', icon: AlertTriangle },
+    ];
+
     return (
         <div className="settings-section animate-fade-in">
-            <h2>Баг</h2>
-            <div className="settings-card">
-                <div className="settings-card-header" style={{ marginBottom: 0 }}>
-                    <div className="settings-card-icon"><Users size={20} /></div>
-                    <div style={{ flex: 1 }}>
-                        <h3 style={{ margin: 0 }}>Багийн гишүүд болон эрх</h3>
-                        <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', margin: '4px 0 0 0' }}>Багийн гишүүдийг урих, тэдний системд хандах эрхийг удирдах.</p>
-                    </div>
-                </div>
-
-                <div style={{ display: 'flex', gap: 4, marginTop: 24, marginBottom: 32, padding: 4, background: 'var(--bg-soft)', borderRadius: 12, width: 'fit-content' }}>
-                    <button
-                        className={`btn btn-sm ${subTab === 'employees' ? '' : 'btn-ghost'}`}
-                        onClick={() => setSubTab('employees')}
-                        style={{ borderRadius: 8, padding: '6px 16px', background: subTab === 'employees' ? '#fff' : 'transparent', color: subTab === 'employees' ? '#000' : 'inherit', boxShadow: subTab === 'employees' ? '0 2px 8px rgba(0,0,0,0.05)' : 'none' }}
-                    >Ажилчид</button>
-                    <button
-                        className={`btn btn-sm ${subTab === 'positions' ? '' : 'btn-ghost'}`}
-                        onClick={() => setSubTab('positions')}
-                        style={{ borderRadius: 8, padding: '6px 16px', background: subTab === 'positions' ? '#fff' : 'transparent', color: subTab === 'positions' ? '#000' : 'inherit', boxShadow: subTab === 'positions' ? '0 2px 8px rgba(0,0,0,0.05)' : 'none' }}
-                    >Эрхүүд / Албан тушаал</button>
-                </div>
-
-                {subTab === 'employees' ? (
-                    <div className="team-list">
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
-                            <h3 style={{ margin: 0 }}>Ажилчид ({employees.length})</h3>
-                            <button className="btn btn-primary btn-sm gradient-btn" onClick={() => setShowInvite(true)}><Plus size={14} /> Урих</button>
-                        </div>
-                        <div className="employee-grid">
-                            {employees.map(emp => (
-                                <div key={emp.id} className="settings-card employee-card">
-                                    <div className="employee-avatar">{emp.avatar || emp.name.charAt(0)}</div>
-                                    <div className="employee-info">
-                                        <div className="employee-name">{emp.name}</div>
-                                        <div className="employee-role">{emp.positionName || 'Ажилтан'}</div>
-                                    </div>
-                                    <button className="btn btn-ghost btn-sm btn-icon"><MoreVertical size={16} /></button>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                ) : (
-                    <div className="positions-list">
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                                <div className="icon-badge"><Shield size={16} /></div>
-                                <h3 style={{ margin: 0 }}>Албан тушаалууд</h3>
-                            </div>
-                            <button className="btn btn-primary btn-sm gradient-btn" onClick={() => { setEditingPosition(null); setShowPosModal(true); }}>
-                                <Plus size={14} /> Нэмэх
-                            </button>
-                        </div>
-                        <div className="positions-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 16 }}>
-                            {positions.filter(p => !(p as any).isDeleted).map(pos => ( // eslint-disable-line @typescript-eslint/no-explicit-any
-                                <div key={pos.id} className="settings-card position-card">
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
-                                        <div className="position-info">
-                                            <div className="position-name" style={{ fontWeight: 600, fontSize: '1rem', marginBottom: 4 }}>{pos.name}</div>
-                                            <div className="position-desc" style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>{pos.description || 'Тайлбар байхгүй'}</div>
-                                        </div>
-                                        <div style={{ display: 'flex', gap: 4 }}>
-                                            <button className="btn btn-ghost btn-sm btn-icon" onClick={() => { setEditingPosition(pos); setShowPosModal(true); }}>
-                                                <MoreVertical size={14} />
-                                            </button>
-                                            <button className="btn btn-ghost btn-sm btn-icon text-danger" onClick={() => handleDeletePos(pos.id)}><Trash2 size={14} /></button>
-                                        </div>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                )}
+            {/* ── Dashboard Header ── */}
+            <div className="team-dashboard-header">
+                <h2>Баг удирдлага</h2>
+                <p className="team-desc">Ажилтан нэмэх, эрх тохируулах, хязгаарлалт тогтоох</p>
             </div>
 
+            <div className="team-stats-grid">
+                <div className="team-stat-card">
+                    <div className="team-stat-icon" style={{ background: 'rgba(108, 92, 231, 0.1)', color: '#6c5ce7' }}><Users size={20} /></div>
+                    <div className="team-stat-info">
+                        <div className="team-stat-value">{allVisible.length}</div>
+                        <div className="team-stat-label">Нийт ажилтан</div>
+                    </div>
+                </div>
+                <div className="team-stat-card">
+                    <div className="team-stat-icon" style={{ background: 'rgba(0, 206, 158, 0.1)', color: '#00ce9e' }}><Eye size={20} /></div>
+                    <div className="team-stat-info">
+                        <div className="team-stat-value">{activeEmployees.length}</div>
+                        <div className="team-stat-label">Идэвхтэй</div>
+                    </div>
+                </div>
+                <div className="team-stat-card">
+                    <div className="team-stat-icon" style={{ background: 'rgba(253, 203, 110, 0.1)', color: '#e17055' }}><Clock size={20} /></div>
+                    <div className="team-stat-info">
+                        <div className="team-stat-value">{pendingEmployees.length}</div>
+                        <div className="team-stat-label">Хүлээгдэж буй</div>
+                    </div>
+                </div>
+                <div className="team-stat-card">
+                    <div className="team-stat-icon" style={{ background: 'rgba(9, 132, 227, 0.1)', color: '#0984e3' }}><Shield size={20} /></div>
+                    <div className="team-stat-info">
+                        <div className="team-stat-value">{positions.filter(p => !(p as any).isDeleted).length}</div> {/* eslint-disable-line @typescript-eslint/no-explicit-any */}
+                        <div className="team-stat-label">Албан тушаал</div>
+                    </div>
+                </div>
+            </div>
+
+            {/* ── Sub Tabs ── */}
+            <div className="team-sub-tabs">
+                {subTabs.map(t => {
+                    const Icon = t.icon;
+                    return (
+                        <button
+                            key={t.id}
+                            className={`team-sub-tab ${subTab === t.id ? 'active' : ''}`}
+                            onClick={() => setSubTab(t.id)}
+                        >
+                            <Icon size={16} />
+                            {t.label}
+                        </button>
+                    );
+                })}
+            </div>
+
+            {/* ── Employees Tab ── */}
+            {subTab === 'employees' && (
+                <div className="team-section animate-fade-in">
+                    <div className="team-section-header">
+                        <h3>Ажилчид ({allVisible.length})</h3>
+                        <button className="btn btn-primary btn-sm gradient-btn" onClick={() => setShowCreateEmployee(true)}>
+                            <UserPlus size={14} /> Ажилтан нэмэх
+                        </button>
+                    </div>
+
+                    {allVisible.length === 0 ? (
+                        <div className="team-empty-state">
+                            <Users size={48} />
+                            <h4>Ажилтан байхгүй</h4>
+                            <p>Багтаа ажилтан нэмээрэй</p>
+                            <button className="btn btn-primary gradient-btn" onClick={() => setShowCreateEmployee(true)}>
+                                <UserPlus size={16} /> Эхний ажилтан нэмэх
+                            </button>
+                        </div>
+                    ) : (
+                        <div className="team-employee-grid">
+                            {allVisible.map(emp => (
+                                <div key={emp.id} className="team-employee-card" onClick={() => setSelectedEmployee(emp)}>
+                                    <div className="team-emp-top">
+                                        <div className={`team-emp-avatar ${emp.status}`}>
+                                            {emp.avatar || emp.name.charAt(0)}
+                                            <span className={`team-emp-status-dot ${emp.status}`} />
+                                        </div>
+                                        <div className="team-emp-info">
+                                            <div className="team-emp-name">{emp.name}</div>
+                                            <div className="team-emp-position">{emp.positionName || 'Ажилтан'}</div>
+                                        </div>
+                                        {getStatusBadge(emp.status)}
+                                    </div>
+                                    <div className="team-emp-details">
+                                        {emp.phone && (
+                                            <div className="team-emp-detail-item">
+                                                <Phone size={12} />
+                                                <span>{emp.phone}</span>
+                                            </div>
+                                        )}
+                                        {emp.email && (
+                                            <div className="team-emp-detail-item">
+                                                <Mail size={12} />
+                                                <span>{emp.email}</span>
+                                            </div>
+                                        )}
+                                    </div>
+                                    <div className="team-emp-stats">
+                                        <div className="team-emp-stat">
+                                            <span className="team-emp-stat-value">{emp.stats?.totalOrdersCreated || 0}</span>
+                                            <span className="team-emp-stat-label">Захиалга</span>
+                                        </div>
+                                        <div className="team-emp-stat">
+                                            <span className="team-emp-stat-value">{emp.stats?.totalOrdersHandled || 0}</span>
+                                            <span className="team-emp-stat-label">Хариуцсан</span>
+                                        </div>
+                                        {emp.baseSalary ? (
+                                            <div className="team-emp-stat">
+                                                <span className="team-emp-stat-value">₮{(emp.baseSalary / 1000).toFixed(0)}K</span>
+                                                <span className="team-emp-stat-label">Цалин</span>
+                                            </div>
+                                        ) : null}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            )}
+
+            {/* ── Positions Tab ── */}
+            {subTab === 'positions' && (
+                <div className="team-section animate-fade-in">
+                    <div className="team-section-header">
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                            <div className="icon-badge"><Shield size={16} /></div>
+                            <h3>Албан тушаалууд</h3>
+                        </div>
+                        <button className="btn btn-primary btn-sm gradient-btn" onClick={() => { setEditingPosition(null); setShowPosModal(true); }}>
+                            <Plus size={14} /> Нэмэх
+                        </button>
+                    </div>
+                    <div className="team-positions-grid">
+                        {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                        {positions.filter(p => !(p as any).isDeleted).map(pos => (
+                            <div key={pos.id} className="team-position-card">
+                                <div className="team-pos-header">
+                                    <div className="team-pos-info">
+                                        <div className="team-pos-color" style={{ background: pos.color || '#6c5ce7' }} />
+                                        <div>
+                                            <div className="team-pos-name">{pos.name}</div>
+                                            <div className="team-pos-desc">{pos.description || 'Тайлбар байхгүй'}</div>
+                                        </div>
+                                    </div>
+                                    <div className="team-pos-actions">
+                                        <button className="btn btn-ghost btn-sm btn-icon" onClick={() => { setEditingPosition(pos); setShowPosModal(true); }}>
+                                            <Edit2 size={14} />
+                                        </button>
+                                        <button className="btn btn-ghost btn-sm btn-icon text-danger" onClick={() => handleDeletePos(pos.id)}>
+                                            <Trash2 size={14} />
+                                        </button>
+                                    </div>
+                                </div>
+                                <div className="team-pos-perms">
+                                    <span className="team-pos-perm-count">{pos.permissions?.length || 0} эрх</span>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
+
+            {/* ── Limits Tab ── */}
+            {subTab === 'limits' && <EmployeeLimitsTab bizId={bizId} />}
+
+            {/* Modals */}
             {showPosModal && <CreatePositionModal bizId={bizId} editingPosition={editingPosition} onClose={() => setShowPosModal(false)} />}
             {showPIN && <PINModal title="Устгах баталгаажуулалт" description="Албан тушаалын эрхийг устгахын тулд PIN кодыг оруулна уу." onSuccess={confirmDelete} onClose={() => setShowPIN(false)} />}
-            {showInvite && <InviteEmployeeModal onClose={() => setShowInvite(false)} positions={positions} />}
+            {showCreateEmployee && <CreateEmployeeModal bizId={bizId} positions={positions} onClose={() => setShowCreateEmployee(false)} />}
+            {selectedEmployee && <EmployeeDetailModal employee={selectedEmployee} bizId={bizId} positions={positions} onClose={() => setSelectedEmployee(null)} />}
         </div>
     );
 }
 
+// ============ CREATE EMPLOYEE MODAL ============
+function CreateEmployeeModal({ bizId, positions, onClose }: { bizId: string; positions: Position[]; onClose: () => void }) {
+    const [loading, setLoading] = useState(false);
+
+    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+        const fd = new FormData(e.currentTarget);
+        const name = fd.get('name') as string;
+        const phone = fd.get('phone') as string;
+
+        if (!name.trim()) { toast.error('Нэр оруулна уу'); return; }
+        if (!phone.trim()) { toast.error('Утас оруулна уу'); return; }
+
+        setLoading(true);
+        try {
+            const posId = fd.get('positionId') as string;
+            const pos = positions.find(p => p.id === posId);
+
+            await teamService.inviteEmployee(bizId, {
+                name: name.trim(),
+                phone: phone.trim(),
+                email: (fd.get('email') as string)?.trim() || null,
+                positionId: posId || '',
+                positionName: pos?.name || 'Ажилтан',
+                role: 'employee',
+                status: 'active',
+                baseSalary: Number(fd.get('baseSalary')) || 0,
+                avatar: null,
+                userId: '',
+                businessId: bizId,
+            });
+            toast.success(`${name} амжилттай нэмэгдлээ`);
+            onClose();
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        } catch (_e) { toast.error('Алдаа гарлаа'); } finally { setLoading(false); }
+    };
+
+    return createPortal(
+        <div className="modal-backdrop" onClick={onClose}>
+            <div className="modal team-modal" onClick={e => e.stopPropagation()}>
+                <div className="modal-header">
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                        <div className="icon-badge" style={{ background: 'var(--primary)', color: 'white' }}><UserPlus size={20} /></div>
+                        <div>
+                            <h2 style={{ margin: 0 }}>Ажилтан нэмэх</h2>
+                            <p style={{ margin: '4px 0 0 0', fontSize: '0.85rem', color: 'var(--text-muted)' }}>Шинэ ажилтан бүртгэх</p>
+                        </div>
+                    </div>
+                    <button className="btn btn-ghost btn-icon" onClick={onClose}><X size={20} /></button>
+                </div>
+                <form onSubmit={handleSubmit}>
+                    <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+                            <div className="input-group">
+                                <label className="input-label">Нэр <span className="required">*</span></label>
+                                <input className="input" name="name" placeholder="Ажилтны нэр" autoFocus required style={{ height: 44 }} />
+                            </div>
+                            <div className="input-group">
+                                <label className="input-label">Утас <span className="required">*</span></label>
+                                <input className="input" name="phone" placeholder="+976 9900 1234" required style={{ height: 44 }} />
+                            </div>
+                        </div>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+                            <div className="input-group">
+                                <label className="input-label">И-мэйл</label>
+                                <input className="input" name="email" type="email" placeholder="email@example.com" style={{ height: 44 }} />
+                            </div>
+                            <div className="input-group">
+                                <label className="input-label">Албан тушаал</label>
+                                <select className="input select" name="positionId" style={{ height: 44 }}>
+                                    <option value="">Сонгох...</option>
+                                    {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                                    {positions.filter(p => !(p as any).isDeleted).map(p => (
+                                        <option key={p.id} value={p.id}>{p.name}</option>
+                                    ))}
+                                </select>
+                            </div>
+                        </div>
+                        <div className="input-group">
+                            <label className="input-label">Үндсэн цалин (₮)</label>
+                            <input className="input" name="baseSalary" type="number" placeholder="0" style={{ height: 44 }} />
+                        </div>
+                    </div>
+                    <div className="modal-footer">
+                        <button type="button" className="btn btn-secondary" onClick={onClose}>Болих</button>
+                        <button type="submit" className="btn btn-primary gradient-btn" disabled={loading}>
+                            <UserPlus size={16} /> {loading ? 'Нэмж байна...' : 'Нэмэх'}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>,
+        document.body
+    );
+}
+
+// ============ EMPLOYEE DETAIL MODAL ============
+function EmployeeDetailModal({ employee, bizId, positions, onClose }: { employee: Employee; bizId: string; positions: Position[]; onClose: () => void }) {
+    const [editing, setEditing] = useState(false);
+    const [loading, setLoading] = useState(false);
+    const [showDeletePIN, setShowDeletePIN] = useState(false);
+
+    const handleSave = async (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+        const fd = new FormData(e.currentTarget);
+        setLoading(true);
+        try {
+            const posId = fd.get('positionId') as string;
+            const pos = positions.find(p => p.id === posId);
+            await teamService.updateEmployee(bizId, employee.id, {
+                name: (fd.get('name') as string).trim(),
+                phone: (fd.get('phone') as string).trim(),
+                email: (fd.get('email') as string)?.trim() || null,
+                positionId: posId,
+                positionName: pos?.name || employee.positionName,
+                baseSalary: Number(fd.get('baseSalary')) || 0,
+            });
+            toast.success('Амжилттай хадгаллаа');
+            setEditing(false);
+            onClose();
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        } catch (_e) { toast.error('Алдаа гарлаа'); } finally { setLoading(false); }
+    };
+
+    const handleDelete = async () => {
+        try {
+            await teamService.deleteEmployee(bizId, employee.id);
+            toast.success('Ажилтан хасагдлаа');
+            onClose();
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        } catch (_e) { toast.error('Алдаа гарлаа'); }
+    };
+
+    const joinDate = employee.joinedAt ? new Date(employee.joinedAt).toLocaleDateString('mn-MN') : '—';
+
+    return createPortal(
+        <div className="modal-backdrop" onClick={onClose}>
+            <div className="modal team-modal team-detail-modal" onClick={e => e.stopPropagation()}>
+                <div className="modal-header">
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                        <div className={`team-emp-avatar large ${employee.status}`}>
+                            {employee.avatar || employee.name.charAt(0)}
+                            <span className={`team-emp-status-dot ${employee.status}`} />
+                        </div>
+                        <div>
+                            <h2 style={{ margin: 0 }}>{employee.name}</h2>
+                            <p style={{ margin: '4px 0 0 0', fontSize: '0.85rem', color: 'var(--text-muted)' }}>{employee.positionName || 'Ажилтан'}</p>
+                        </div>
+                    </div>
+                    <div style={{ display: 'flex', gap: 8 }}>
+                        <button className="btn btn-ghost btn-sm" onClick={() => setEditing(!editing)}>
+                            <Edit2 size={14} /> {editing ? 'Болих' : 'Засах'}
+                        </button>
+                        <button className="btn btn-ghost btn-icon" onClick={onClose}><X size={20} /></button>
+                    </div>
+                </div>
+
+                {editing ? (
+                    <form onSubmit={handleSave}>
+                        <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+                                <div className="input-group">
+                                    <label className="input-label">Нэр</label>
+                                    <input className="input" name="name" defaultValue={employee.name} style={{ height: 44 }} />
+                                </div>
+                                <div className="input-group">
+                                    <label className="input-label">Утас</label>
+                                    <input className="input" name="phone" defaultValue={employee.phone} style={{ height: 44 }} />
+                                </div>
+                            </div>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+                                <div className="input-group">
+                                    <label className="input-label">И-мэйл</label>
+                                    <input className="input" name="email" defaultValue={employee.email || ''} style={{ height: 44 }} />
+                                </div>
+                                <div className="input-group">
+                                    <label className="input-label">Тушаал</label>
+                                    <select className="input select" name="positionId" defaultValue={employee.positionId} style={{ height: 44 }}>
+                                        {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                                        {positions.filter(p => !(p as any).isDeleted).map(p => (
+                                            <option key={p.id} value={p.id}>{p.name}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                            </div>
+                            <div className="input-group">
+                                <label className="input-label">Үндсэн цалин (₮)</label>
+                                <input className="input" name="baseSalary" type="number" defaultValue={employee.baseSalary || 0} style={{ height: 44 }} />
+                            </div>
+                        </div>
+                        <div className="modal-footer">
+                            <button type="button" className="btn btn-ghost text-danger" onClick={() => setShowDeletePIN(true)}>
+                                <Trash2 size={14} /> Хасах
+                            </button>
+                            <div style={{ display: 'flex', gap: 8 }}>
+                                <button type="button" className="btn btn-secondary" onClick={() => setEditing(false)}>Болих</button>
+                                <button type="submit" className="btn btn-primary gradient-btn" disabled={loading}>
+                                    {loading ? 'Хадгалж байна...' : 'Хадгалах'}
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                ) : (
+                    <div className="modal-body">
+                        <div className="team-detail-grid">
+                            <div className="team-detail-section">
+                                <h4><Briefcase size={16} /> Мэдээлэл</h4>
+                                <div className="team-detail-list">
+                                    <div className="team-detail-row">
+                                        <span className="team-detail-label">Утас</span>
+                                        <span className="team-detail-value">{employee.phone || '—'}</span>
+                                    </div>
+                                    <div className="team-detail-row">
+                                        <span className="team-detail-label">И-мэйл</span>
+                                        <span className="team-detail-value">{employee.email || '—'}</span>
+                                    </div>
+                                    <div className="team-detail-row">
+                                        <span className="team-detail-label">Тушаал</span>
+                                        <span className="team-detail-value">{employee.positionName || 'Ажилтан'}</span>
+                                    </div>
+                                    <div className="team-detail-row">
+                                        <span className="team-detail-label">Нэгдсэн</span>
+                                        <span className="team-detail-value">{joinDate}</span>
+                                    </div>
+                                    <div className="team-detail-row">
+                                        <span className="team-detail-label">Статус</span>
+                                        <span className="team-detail-value">{employee.status === 'active' ? '🟢 Идэвхтэй' : employee.status === 'pending_invite' ? '🟡 Хүлээгдэж буй' : '⚫ Идэвхгүй'}</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="team-detail-section">
+                                <h4><DollarSign size={16} /> Цалин & Гүйцэтгэл</h4>
+                                <div className="team-detail-stats-grid">
+                                    <div className="team-mini-stat">
+                                        <div className="team-mini-stat-value">₮{((employee.baseSalary || 0) / 1000).toFixed(0)}K</div>
+                                        <div className="team-mini-stat-label">Үндсэн цалин</div>
+                                    </div>
+                                    <div className="team-mini-stat">
+                                        <div className="team-mini-stat-value">{employee.stats?.totalOrdersCreated || 0}</div>
+                                        <div className="team-mini-stat-label">Үүсгэсэн</div>
+                                    </div>
+                                    <div className="team-mini-stat">
+                                        <div className="team-mini-stat-value">{employee.stats?.totalOrdersHandled || 0}</div>
+                                        <div className="team-mini-stat-label">Хариуцсан</div>
+                                    </div>
+                                    <div className="team-mini-stat">
+                                        <div className="team-mini-stat-value">{employee.commissionRate ? `${employee.commissionRate}%` : '—'}</div>
+                                        <div className="team-mini-stat-label">Шимтгэл</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
+            </div>
+            {showDeletePIN && <PINModal title="Ажилтан хасах" description={`${employee.name}-г багаас хасахын тулд PIN оруулна уу.`} onSuccess={handleDelete} onClose={() => setShowDeletePIN(false)} />}
+        </div>,
+        document.body
+    );
+}
+
+// ============ EMPLOYEE LIMITS TAB ============
+function EmployeeLimitsTab({ bizId }: { bizId: string }) {
+    const { business } = useBusinessStore();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const settings = (business?.settings as any) || {};
+    const limits = settings.employeeLimits || {};
+
+    const [form, setForm] = useState({
+        maxDiscountPercent: limits.maxDiscountPercent ?? 10,
+        maxDiscountPercentManager: limits.maxDiscountPercentManager ?? 20,
+        maxRefundAmount: limits.maxRefundAmount ?? 500000,
+        canDeleteOrders: limits.canDeleteOrders ?? false,
+        canChangePrice: limits.canChangePrice ?? false,
+        orderEditWindow: limits.orderEditWindow ?? 60,
+    });
+    const [saving, setSaving] = useState(false);
+
+    const handleSave = async () => {
+        setSaving(true);
+        try {
+            const bizRef = doc(db, 'businesses', bizId);
+            await updateDoc(bizRef, { 'settings.employeeLimits': form });
+            toast.success('Хязгаарлалт хадгалагдлаа');
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        } catch (_e) { toast.error('Алдаа гарлаа'); } finally { setSaving(false); }
+    };
+
+    return (
+        <div className="team-section animate-fade-in">
+            <div className="team-section-header">
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <div className="icon-badge"><Settings size={16} /></div>
+                    <div>
+                        <h3 style={{ margin: 0 }}>Ажилтны хязгаарлалт</h3>
+                        <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', margin: '4px 0 0 0' }}>Ажилтнууд ямар үйлдэл хийж болох хязгаарыг тохируулна</p>
+                    </div>
+                </div>
+                <button className="btn btn-primary btn-sm gradient-btn" onClick={handleSave} disabled={saving}>
+                    {saving ? 'Хадгалж байна...' : 'Хадгалах'}
+                </button>
+            </div>
+
+            <div className="team-limits-grid">
+                {/* Discount Limits */}
+                <div className="settings-card team-limit-card">
+                    <div className="team-limit-header">
+                        <DollarSign size={18} />
+                        <h4>Хөнгөлөлтийн хязгаар</h4>
+                    </div>
+                    <div className="team-limit-body">
+                        <div className="team-limit-row">
+                            <label>Ажилтны хамгийн их хөнгөлөлт</label>
+                            <div className="team-limit-input-row">
+                                <input
+                                    type="range"
+                                    min={0} max={50}
+                                    value={form.maxDiscountPercent}
+                                    onChange={e => setForm(f => ({ ...f, maxDiscountPercent: Number(e.target.value) }))}
+                                    className="team-slider"
+                                />
+                                <span className="team-limit-value">{form.maxDiscountPercent}%</span>
+                            </div>
+                        </div>
+                        <div className="team-limit-row">
+                            <label>Менежерийн хамгийн их хөнгөлөлт</label>
+                            <div className="team-limit-input-row">
+                                <input
+                                    type="range"
+                                    min={0} max={100}
+                                    value={form.maxDiscountPercentManager}
+                                    onChange={e => setForm(f => ({ ...f, maxDiscountPercentManager: Number(e.target.value) }))}
+                                    className="team-slider"
+                                />
+                                <span className="team-limit-value">{form.maxDiscountPercentManager}%</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Refund Limits */}
+                <div className="settings-card team-limit-card">
+                    <div className="team-limit-header">
+                        <AlertTriangle size={18} />
+                        <h4>Буцаалтын хязгаар</h4>
+                    </div>
+                    <div className="team-limit-body">
+                        <div className="team-limit-row">
+                            <label>Хамгийн их буцаалтын дүн</label>
+                            <div className="input-group" style={{ marginTop: 8 }}>
+                                <input
+                                    className="input"
+                                    type="number"
+                                    value={form.maxRefundAmount}
+                                    onChange={e => setForm(f => ({ ...f, maxRefundAmount: Number(e.target.value) }))}
+                                    style={{ height: 44 }}
+                                />
+                                <span className="input-suffix">₮</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Action Permissions */}
+                <div className="settings-card team-limit-card">
+                    <div className="team-limit-header">
+                        <Shield size={18} />
+                        <h4>Үйлдлийн эрх</h4>
+                    </div>
+                    <div className="team-limit-body">
+                        <div className="team-limit-toggle-row">
+                            <div>
+                                <div className="team-limit-toggle-label">Захиалга устгах</div>
+                                <div className="team-limit-toggle-desc">Ажилтан захиалга устгаж болох эсэх</div>
+                            </div>
+                            <label className="toggle">
+                                <input type="checkbox" checked={form.canDeleteOrders} onChange={e => setForm(f => ({ ...f, canDeleteOrders: e.target.checked }))} />
+                                <span className="toggle-slider" />
+                            </label>
+                        </div>
+                        <div className="team-limit-toggle-row">
+                            <div>
+                                <div className="team-limit-toggle-label">Үнэ өөрчлөх</div>
+                                <div className="team-limit-toggle-desc">Ажилтан барааны үнэ өөрчлөх эсэх</div>
+                            </div>
+                            <label className="toggle">
+                                <input type="checkbox" checked={form.canChangePrice} onChange={e => setForm(f => ({ ...f, canChangePrice: e.target.checked }))} />
+                                <span className="toggle-slider" />
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Time Window */}
+                <div className="settings-card team-limit-card">
+                    <div className="team-limit-header">
+                        <Clock size={18} />
+                        <h4>Цагийн хязгаар</h4>
+                    </div>
+                    <div className="team-limit-body">
+                        <div className="team-limit-row">
+                            <label>Захиалга засах цонх</label>
+                            <p className="team-limit-desc">Захиалга үүсгэснээс хэдэн минутын дотор засаж болох</p>
+                            <div className="team-limit-input-row">
+                                <input
+                                    type="range"
+                                    min={5} max={1440}
+                                    value={form.orderEditWindow}
+                                    onChange={e => setForm(f => ({ ...f, orderEditWindow: Number(e.target.value) }))}
+                                    className="team-slider"
+                                />
+                                <span className="team-limit-value">{form.orderEditWindow >= 60 ? `${Math.floor(form.orderEditWindow / 60)} цаг` : `${form.orderEditWindow} мин`}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+// ============ CREATE POSITION MODAL ============
 function CreatePositionModal({ bizId, editingPosition, onClose }: { bizId: string; editingPosition: Position | null; onClose: () => void }) {
     const [loading, setLoading] = useState(false);
     const [selectedPerms, setSelectedPerms] = useState<string[]>(editingPosition?.permissions || []);
@@ -165,7 +710,7 @@ function CreatePositionModal({ bizId, editingPosition, onClose }: { bizId: strin
                 toast.success('Амжилттай үүсгэлээ');
             }
             onClose();
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
         } catch (_e) { toast.error('Алдаа гарлаа'); } finally { setLoading(false); }
     };
 
@@ -255,41 +800,6 @@ function CreatePositionModal({ bizId, editingPosition, onClose }: { bizId: strin
                         </button>
                     </div>
                 </form>
-            </div>
-        </div>,
-        document.body
-    );
-}
-
-function InviteEmployeeModal({ onClose, positions }: { onClose: () => void; positions: Position[] }) {
-    return createPortal(
-        <div className="modal-backdrop" onClick={onClose}>
-            <div className="modal" onClick={e => e.stopPropagation()}>
-                <div className="modal-header">
-                    <h2>Ажилтан урих</h2>
-                    <button className="btn btn-ghost btn-icon" onClick={onClose}>✕</button>
-                </div>
-                <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                    <div className="input-group">
-                        <label className="input-label">Утасны дугаар <span className="required">*</span></label>
-                        <input className="input" placeholder="+976 9900 1234" autoFocus />
-                    </div>
-                    <div className="input-group">
-                        <label className="input-label">Албан тушаал</label>
-                        <select className="input select">
-                            {positions.map(p => (
-                                <option key={p.id} value={p.id}>{p.name}</option>
-                            ))}
-                        </select>
-                    </div>
-                    <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                        Урилга линк тухайн дугаар руу SMS-ээр илгээгдэнэ.
-                    </p>
-                </div>
-                <div className="modal-footer">
-                    <button className="btn btn-secondary" onClick={onClose}>Болих</button>
-                    <button className="btn btn-primary" onClick={onClose}><Plus size={16} /> Урих</button>
-                </div>
             </div>
         </div>,
         document.body
