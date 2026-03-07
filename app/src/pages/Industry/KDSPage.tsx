@@ -1,181 +1,50 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { Header } from '../../components/layout/Header';
 import { HubLayout } from '../../components/common/HubLayout';
-import {
-    CheckCircle2,
-    AlertCircle,
-    ChefHat,
-    Utensils,
-    Grid,
-    List,
-    Play,
-    Timer
-} from 'lucide-react';
-
+import { MonitorSmartphone, Plus, Clock, CheckCircle2, ChefHat, AlertTriangle } from 'lucide-react';
+import { useBusinessStore } from '../../store';
+import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
+import { db } from '../../services/firebase';
+import { GenericCrudModal, type CrudField } from '../../components/common/GenericCrudModal';
+const F: CrudField[] = [
+    { name: 'orderNumber', label: 'Захиалгын дугаар', type: 'text', required: true },
+    { name: 'items', label: 'Хоол (нэрс)', type: 'text', required: true },
+    { name: 'table', label: 'Ширээ', type: 'text' },
+    { name: 'priority', label: 'Эрэмбэ', type: 'select', defaultValue: 'normal', options: [{ value: 'urgent', label: 'Яаралтай' }, { value: 'normal', label: 'Ердийн' }] },
+    { name: 'status', label: 'Төлөв', type: 'select', defaultValue: 'new', options: [{ value: 'new', label: 'Шинэ' }, { value: 'cooking', label: 'Хийж буй' }, { value: 'ready', label: 'Бэлэн' }, { value: 'served', label: 'Гаргасан' }] },
+    { name: 'notes', label: 'Тэмдэглэл', type: 'textarea', span: 2 },
+];
 export function KDSPage() {
-    const [view, setView] = useState<'grid' | 'list'>('grid');
-
-    const orders = [
-        {
-            id: 'KDS-001',
-            table: 'T4',
-            time: '05:12',
-            status: 'preparing',
-            priority: 'normal',
-            items: [
-                { name: 'Цуйван', quantity: 2, status: 'cooking' },
-                { name: 'Гуляш', quantity: 1, status: 'pending' },
-                { name: 'Кола', quantity: 3, status: 'ready' }
-            ]
-        },
-        {
-            id: 'KDS-002',
-            table: 'VIP-1',
-            time: '12:45',
-            status: 'preparing',
-            priority: 'urgent',
-            items: [
-                { name: 'Хорхог (1кг)', quantity: 2, status: 'cooking' },
-                { name: 'Шарсан хавирга', quantity: 4, status: 'cooking' }
-            ]
-        },
-        {
-            id: 'KDS-003',
-            table: 'Bar 3',
-            time: '02:30',
-            status: 'new',
-            priority: 'low',
-            items: [
-                { name: 'Бууз (5ш)', quantity: 2, status: 'pending' }
-            ]
-        },
-        {
-            id: 'KDS-004',
-            table: 'T12',
-            time: '18:20',
-            status: 'ready',
-            priority: 'normal',
-            items: [
-                { name: 'Нийслэл салат', quantity: 2, status: 'ready' },
-                { name: 'Пирожки', quantity: 5, status: 'ready' }
-            ]
-        }
-    ];
-
+    const { business } = useBusinessStore();
+    const [items, setItems] = useState<any[]>([]); const [loading, setLoading] = useState(true); const [showModal, setShowModal] = useState(false); const [editingItem, setEditingItem] = useState<any>(null); // eslint-disable-line @typescript-eslint/no-explicit-any
+    useEffect(() => { if (!business?.id) return; const q = query(collection(db, `businesses/${business.id}/kdsOrders`), orderBy('createdAt', 'desc')); const unsub = onSnapshot(q, s => { setItems(s.docs.map(d => ({ id: d.id, ...d.data() } as any))); setLoading(false); }); return () => unsub(); }, [business?.id]); // eslint-disable-line
     return (
-        <HubLayout hubId="industry-hub">
-            <div className="bg-[#0f1115] min-h-screen text-gray-100 -m-8 p-8">
-                <div className="flex justify-between items-center mb-10">
-                    <div>
-                        <h1 className="m-0 text-3xl font-black tracking-tighter flex items-center gap-3">
-                            <ChefHat className="text-primary" size={32} /> Гал Тогооны Дэлгэц (KDS)
-                        </h1>
-                        <p className="text-gray-500 font-bold uppercase tracking-widest text-[10px] mt-2">Нийт 4 идэвхтэй захиалга байна</p>
-                    </div>
-                    <div className="flex gap-4">
-                        <div className="bg-white/5 p-1 rounded-2xl flex border border-white/10">
-                            <button
-                                className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all ${view === 'grid' ? 'bg-primary text-white shadow-lg' : 'text-gray-500 hover:text-gray-300'}`}
-                                onClick={() => setView('grid')}
-                            >
-                                <Grid size={20} />
-                            </button>
-                            <button
-                                className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all ${view === 'list' ? 'bg-primary text-white shadow-lg' : 'text-gray-500 hover:text-gray-300'}`}
-                                onClick={() => setView('list')}
-                            >
-                                <List size={20} />
-                            </button>
-                        </div>
-                        <div className="flex flex-col items-end">
-                            <span className="text-[10px] font-black uppercase text-gray-500 tracking-widest">Одоогийн цаг</span>
-                            <span className="text-xl font-black tracking-widest">19:45:22</span>
-                        </div>
-                    </div>
+        <HubLayout hubId="industry-hub"><Header title="KDS (Kitchen Display)" subtitle="Гал тогооны дэлгэцийн систем - захиалгын урсгал хянах" action={{ label: 'Захиалга нэмэх', onClick: () => { setEditingItem(null); setShowModal(true); } }} />
+            <div className="page-content mt-6 flex flex-col gap-6">
+                <div className="grid grid-cols-4 gap-6">
+                    <div className="card p-6 bg-surface-2 border-none shadow-sm flex items-center justify-between group hover:bg-surface-3 transition-all"><div><h4 className="text-[10px] text-muted font-black tracking-widest uppercase mb-1">Нийт</h4><div className="text-3xl font-black text-primary">{items.length}</div></div><div className="bg-primary/10 p-4 rounded-2xl text-primary group-hover:scale-110 transition-transform"><MonitorSmartphone size={28} /></div></div>
+                    <div className="card p-6 bg-surface-2 border-none shadow-sm flex items-center justify-between group hover:bg-surface-3 transition-all"><div><h4 className="text-[10px] text-muted font-black tracking-widest uppercase mb-1">Хийж буй</h4><div className="text-3xl font-black text-warning">{items.filter(i => i.status === 'cooking' || i.status === 'new').length}</div></div><div className="bg-warning/10 p-4 rounded-2xl text-warning group-hover:scale-110 transition-transform"><Clock size={28} /></div></div>
+                    <div className="card p-6 bg-surface-2 border-none shadow-sm flex items-center justify-between group hover:bg-surface-3 transition-all"><div><h4 className="text-[10px] text-muted font-black tracking-widest uppercase mb-1">Бэлэн</h4><div className="text-3xl font-black text-success">{items.filter(i => i.status === 'ready' || i.status === 'served').length}</div></div><div className="bg-success/10 p-4 rounded-2xl text-success group-hover:scale-110 transition-transform"><CheckCircle2 size={28} /></div></div>
+                    <div className="card p-6 bg-gradient-to-br from-primary to-primary-dark text-white border-none shadow-xl flex items-center justify-between group hover:scale-[1.02] transition-transform"><div><h4 className="text-[10px] font-black tracking-widest uppercase mb-1 opacity-80">Kitchen</h4><div className="text-xl font-black">KDS LIVE</div></div><div className="bg-white/20 p-4 rounded-2xl backdrop-blur-md group-hover:scale-110 transition-transform"><ChefHat size={28} /></div></div>
                 </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-                    {orders.map((order, i) => (
-                        <div
-                            key={order.id}
-                            className={`flex flex-col rounded-[2.5rem] border-2 overflow-hidden transition-all hover:scale-[1.02] active:scale-98 animate-slide-up bg-[#161920] shadow-2xl
-                                ${order.priority === 'urgent' ? 'border-error/40 shadow-error/10' :
-                                    order.status === 'ready' ? 'border-success/40 shadow-success/10' : 'border-white/5 shadow-black/40'}`}
-                            style={{ animationDelay: `${i * 100}ms` }}
-                        >
-                            {/* Header */}
-                            <div className={`p-6 flex justify-between items-start ${order.priority === 'urgent' ? 'bg-error/10' : order.status === 'ready' ? 'bg-success/10' : 'bg-white/5'}`}>
-                                <div>
-                                    <div className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1">{order.id}</div>
-                                    <h3 className="m-0 text-3xl font-black tracking-tighter">{order.table}</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    {loading ? <div className="col-span-4" style={{ padding: 48, textAlign: 'center', color: 'var(--text-muted)' }}>Ачаалж байна...</div> : items.length === 0 ? <div className="col-span-4 card" style={{ padding: 60, textAlign: 'center' }}><ChefHat size={48} color="var(--text-muted)" /><h3>Захиалга олдсонгүй</h3></div> :
+                        items.map(i => (
+                            <div key={i.id} className={`card p-6 border-2 cursor-pointer hover:scale-[1.02] transition-all ${i.status === 'new' ? 'border-danger bg-danger/5' : i.status === 'cooking' ? 'border-warning bg-warning/5' : i.status === 'ready' ? 'border-success bg-success/5' : 'border-border-color/10'}`} onClick={() => { setEditingItem(i); setShowModal(true) }}>
+                                <div className="flex justify-between items-center mb-4">
+                                    <span className="font-black text-primary">#{i.orderNumber}</span>
+                                    <span className={`badge badge-${i.status === 'new' ? 'danger' : i.status === 'cooking' ? 'warning' : i.status === 'ready' ? 'success' : 'secondary'} text-[10px] font-black uppercase`}>{i.status === 'new' ? 'ШИНЭ' : i.status === 'cooking' ? 'ХИЙЖ БУЙ' : i.status === 'ready' ? 'БЭЛЭН' : 'ГАРГАСАН'}</span>
                                 </div>
-                                <div className="flex flex-col items-end gap-2">
-                                    <div className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest flex items-center gap-2
-                                        ${order.priority === 'urgent' ? 'bg-error text-white animate-pulse' : 'bg-gray-800 text-gray-400'}`}>
-                                        <Timer size={12} /> {order.time}
-                                    </div>
-                                    {order.priority === 'urgent' && <AlertCircle size={20} className="text-error" />}
+                                <div className="text-sm font-bold mb-2">{i.items}</div>
+                                <div className="flex justify-between text-[10px] font-black text-muted uppercase tracking-widest">
+                                    <span>Ширээ: {i.table || '-'}</span>
+                                    {i.priority === 'urgent' && <span className="text-danger flex items-center gap-1"><AlertTriangle size={10} /> ЯАРАЛТАЙ</span>}
                                 </div>
                             </div>
-
-                            {/* Items List */}
-                            <div className="flex-1 p-8 space-y-6">
-                                {order.items.map((item, idx) => (
-                                    <div key={idx} className="flex items-start justify-between group">
-                                        <div className="flex items-start gap-4">
-                                            <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-black text-xs
-                                                ${item.status === 'ready' ? 'bg-success/20 text-success' : 'bg-white/10 text-gray-400'}`}>
-                                                {item.quantity}
-                                            </div>
-                                            <div>
-                                                <div className={`font-black text-lg tracking-tight ${item.status === 'ready' ? 'text-gray-500 line-through' : 'text-gray-100'}`}>
-                                                    {item.name}
-                                                </div>
-                                                {item.status === 'cooking' && (
-                                                    <div className="flex items-center gap-2 mt-1">
-                                                        <div className="w-1.5 h-1.5 rounded-full bg-primary animate-ping"></div>
-                                                        <span className="text-[10px] font-black uppercase text-primary tracking-widest">Бэлдэж байна</span>
-                                                    </div>
-                                                )}
-                                            </div>
-                                        </div>
-                                        {item.status !== 'ready' && (
-                                            <button className="w-10 h-10 rounded-xl bg-white/5 hover:bg-primary/20 hover:text-primary transition-all flex items-center justify-center text-gray-600">
-                                                <Play size={16} />
-                                            </button>
-                                        )}
-                                    </div>
-                                ))}
-                            </div>
-
-                            {/* Footer Actions */}
-                            <div className="p-8 pt-0 mt-auto">
-                                <button className={`w-full h-16 rounded-[1.5rem] flex items-center justify-center gap-3 font-black uppercase tracking-[0.2em] text-sm transition-all shadow-xl
-                                    ${order.status === 'ready' ? 'bg-success text-white shadow-success/20' : 'bg-primary text-white shadow-primary/20'}`}>
-                                    {order.status === 'ready' ? <CheckCircle2 size={24} /> : <Play size={24} />}
-                                    {order.status === 'ready' ? 'Гарсан' : 'Бэлэн боллоо'}
-                                </button>
-                            </div>
-                        </div>
-                    ))}
-                </div>
-
-                {/* Legend / Tooltips */}
-                <div className="fixed bottom-10 left-1/2 -translate-x-1/2 bg-white/5 backdrop-blur-3xl px-10 py-6 rounded-[2rem] border border-white/10 flex items-center gap-12 shadow-2xl z-50">
-                    <div className="flex items-center gap-3 text-sm font-black text-gray-400 uppercase tracking-widest">
-                        <div className="w-4 h-4 rounded-full bg-error"></div> Яаралтай
-                    </div>
-                    <div className="flex items-center gap-3 text-sm font-black text-gray-400 uppercase tracking-widest">
-                        <div className="w-4 h-4 rounded-full bg-primary"></div> Бэлтгэгдэж буй
-                    </div>
-                    <div className="flex items-center gap-3 text-sm font-black text-gray-400 uppercase tracking-widest">
-                        <div className="w-4 h-4 rounded-full bg-success"></div> Бэлэн болсон
-                    </div>
-                    <div className="h-6 w-px bg-white/10"></div>
-                    <div className="flex items-center gap-4 text-gray-400 font-bold">
-                        <Utensils size={20} className="text-primary" /> 12 Идэвхтэй хоол
-                    </div>
+                        ))}
                 </div>
             </div>
+            {showModal && <GenericCrudModal title="KDS Захиалга" icon={<ChefHat size={20} />} collectionPath="businesses/{bizId}/kdsOrders" fields={F} editingItem={editingItem} onClose={() => setShowModal(false)} />}
         </HubLayout>
     );
 }
