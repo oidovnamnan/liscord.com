@@ -1,225 +1,59 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { Header } from '../../components/layout/Header';
 import { HubLayout } from '../../components/common/HubLayout';
-import './BarcodeLabelsPage.css';
-import {
-    Search,
-    Printer,
-    LayoutTemplate,
-    Zap,
-    Share2,
-    Database,
-    Maximize,
-    Scan,
-    Tag,
-    Smartphone,
-    Download,
-    Clock,
-    CheckCircle2,
-    Settings,
-    MoreVertical,
-    Plus
-} from 'lucide-react';
+import { Tag, Printer } from 'lucide-react';
+import { useBusinessStore } from '../../store';
+import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
+import { db } from '../../services/firebase';
+import { GenericCrudModal, type CrudField } from '../../components/common/GenericCrudModal';
 
-interface LabelDesign {
-    id: string;
-    name: string;
-    type: 'barcode' | 'qr' | 'address' | 'price';
-    size: string;
-    lastUsed: string;
-    status: 'Ready' | 'In Use';
-}
-
-const MOCK_LABELS: LabelDesign[] = [
+const LABEL_FIELDS: CrudField[] = [
+    { name: 'productName', label: 'Бүтээгдэхүүн', type: 'text', required: true },
+    { name: 'barcode', label: 'Баркод', type: 'text', required: true },
+    { name: 'price', label: 'Үнэ', type: 'currency' },
+    { name: 'quantity', label: 'Хэвлэх тоо', type: 'number', defaultValue: '1' },
     {
-        id: 'LBL-01',
-        name: 'Standard Product Barcode (EAN-13)',
-        type: 'barcode',
-        size: '50×30mm',
-        lastUsed: '2026-02-28',
-        status: 'Ready'
+        name: 'size', label: 'Хэмжээ', type: 'select', defaultValue: 'medium', options: [
+            { value: 'small', label: 'Жижиг (30x20)' }, { value: 'medium', label: 'Дунд (50x25)' }, { value: 'large', label: 'Том (100x38)' },
+        ]
     },
-    {
-        id: 'LBL-02',
-        name: 'Inventory QR (Dynamic)',
-        type: 'qr',
-        size: '25×25mm',
-        lastUsed: '2026-02-27',
-        status: 'In Use'
-    },
-    {
-        id: 'LBL-03',
-        name: 'Shipping Label (A6)',
-        type: 'address',
-        size: '100×150mm',
-        lastUsed: '2026-02-20',
-        status: 'Ready'
-    }
 ];
 
 export function BarcodeLabelsPage() {
-    const [labels] = useState<LabelDesign[]>(MOCK_LABELS);
+    const { business } = useBusinessStore();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const [items, setItems] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [showModal, setShowModal] = useState(false);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const [editingItem, setEditingItem] = useState<any>(null);
+
+    useEffect(() => {
+        if (!business?.id) return;
+        const q = query(collection(db, `businesses/${business.id}/barcodeLabels`), orderBy('createdAt', 'desc'));
+        const unsub = onSnapshot(q, (snap) => {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            setItems(snap.docs.map(d => ({ id: d.id, ...d.data() } as any)));
+            setLoading(false);
+        });
+        return () => unsub();
+    }, [business?.id]);
 
     return (
         <HubLayout hubId="inventory-hub">
-            <div className="barcode-labels-page animate-fade-in">
-                {/* Page Section Header — no sticky bar */}
-                <div className="page-section-header">
-                    <div>
-                        <h2 className="page-section-title">Баркод & Шошго (Labels)</h2>
-                        <p className="page-section-subtitle">Барааны баркод, QR код үүсгэх, шошго хэвлэх загвар болон принтерийн тохиргоо</p>
-                    </div>
-                    <button className="btn btn-primary btn-sm">
-                        <Plus size={16} /> Шинэ загвар
-                    </button>
-                </div>
-
-                {/* ====== Stats Grid ====== */}
-                <div className="stats-grid-premium">
-                    <div className="stat-card-v2">
-                        <div className="stat-content">
-                            <h4>Нийт загвар</h4>
-                            <div className="stat-value-large">12</div>
-                        </div>
-                        <div className="stat-icon-box icon-primary">
-                            <LayoutTemplate size={28} />
-                        </div>
-                    </div>
-
-                    <div className="stat-card-v2">
-                        <div className="stat-content">
-                            <h4>Хэвлэсэн тоо</h4>
-                            <div className="stat-value-large">4,250</div>
-                        </div>
-                        <div className="stat-icon-box icon-cyan">
-                            <Printer size={28} />
-                        </div>
-                    </div>
-
-                    <div className="stat-card-v2">
-                        <div className="stat-content">
-                            <h4>Төхөөрөмжүүд</h4>
-                            <div className="stat-value-large">3</div>
-                        </div>
-                        <div className="stat-icon-box icon-orange">
-                            <Scan size={28} />
-                        </div>
-                    </div>
-
-                    <div className="stat-card-v2 cloud-print-card">
-                        <div className="stat-content">
-                            <h4>Cloud Print</h4>
-                            <div className="status-indicator">
-                                <div className="pulse-dot" />
-                                SYSTEM READY
-                            </div>
-                        </div>
-                        <div className="stat-icon-box">
-                            <Smartphone size={28} />
-                        </div>
-                    </div>
-                </div>
-
-                {/* ====== Search Toolbar ====== */}
-                <div className="search-toolbar-premium">
-                    <div className="search-input-wrap">
-                        <Search size={18} className="search-icon" />
-                        <input className="search-input-premium" placeholder="Загвар хайх..." />
-                    </div>
-                    <button className="toolbar-btn">
-                        <Clock size={18} /> Сүүлийнх
-                    </button>
-                    <button className="toolbar-btn toolbar-btn-icon">
-                        <MoreVertical size={20} />
-                    </button>
-                </div>
-
-                {/* ====== Template Cards ====== */}
-                <div className="template-grid-premium">
-                    {labels.map(label => (
-                        <div key={label.id} className="template-card-premium">
-                            <div className="template-preview-premium">
-                                <div className="preview-bg-icon">
-                                    <Database size={200} />
-                                </div>
-
-                                <div className="label-mockup">
-                                    {label.type === 'barcode' ? (
-                                        <>
-                                            <div className="barcode-visual" />
-                                            <div className="mockup-text">Liscord OS Label</div>
-                                        </>
-                                    ) : label.type === 'qr' ? (
-                                        <>
-                                            <div className="qr-visual" />
-                                            <div className="mockup-text-sm">Dynamic System QR</div>
-                                        </>
-                                    ) : (
-                                        <div className="shipping-mockup">
-                                            <Tag size={28} />
-                                            <div className="shipping-mockup-label">SHIPPING TRACKING</div>
-                                            <div className="shipping-mockup-id">ID: {label.id}</div>
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-
-                            <div className="template-details-premium">
-                                <div className="template-header-row">
-                                    <div className="template-name">{label.name}</div>
-                                    <div className={`status-badge ${label.status === 'In Use' ? 'in-use' : 'ready'}`}>
-                                        {label.status}
-                                    </div>
-                                </div>
-
-                                <div className="template-meta-row">
-                                    <div className="meta-badge">
-                                        <Maximize size={11} /> {label.size}
-                                    </div>
-                                    <div className="meta-badge">
-                                        <Database size={11} /> {label.id}
-                                    </div>
-                                </div>
-
-                                <div className="template-date-row">
-                                    <Clock size={12} />
-                                    <span>Сүүлд: {label.lastUsed}</span>
-                                    <CheckCircle2 size={13} className="checkmark" />
-                                </div>
-
-                                <div className="template-actions">
-                                    <button className="btn-download">
-                                        <Download size={16} /> ТАТАХ
-                                    </button>
-                                    <button className="btn-print">
-                                        <Printer size={16} /> ХЭВЛЭХ
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    ))}
-                </div>
-
-                {/* ====== Zebra Integration ====== */}
-                <div className="zebra-section">
-                    <div className="zebra-info">
-                        <div className="zebra-icon-box">
-                            <Zap size={32} />
-                        </div>
-                        <div>
-                            <div className="zebra-title">Zebra & TSC Принтер Холболт</div>
-                            <div className="zebra-desc">Төвлөрсөн Cloud Print системээр хэвлэгч төхөөрөмжүүдийг алсаас удирдаж, шууд хэвлэх модуль.</div>
-                        </div>
-                    </div>
-                    <div className="zebra-actions">
-                        <button className="btn-config">
-                            <Settings size={18} /> ТОХИРГОО
-                        </button>
-                        <button className="btn-share">
-                            <Share2 size={20} />
-                        </button>
-                    </div>
+            <div className="page-container animate-fade-in">
+                <Header title="Шошго хэвлэх" action={{ label: '+ Шошго', onClick: () => { setEditingItem(null); setShowModal(true); } }} />
+                <div className="card" style={{ padding: 0, marginTop: 20 }}>
+                    {loading ? <div style={{ padding: 48, textAlign: 'center', color: 'var(--text-muted)' }}>Ачаалж байна...</div> : (
+                        <table className="table"><thead><tr><th>Бүтээгдэхүүн</th><th>Баркод</th><th>Үнэ</th><th>Тоо</th><th>Хэмжээ</th></tr></thead>
+                            <tbody>{items.length === 0 ? <tr><td colSpan={5} style={{ textAlign: 'center', padding: 48, color: 'var(--text-muted)' }}>Шошго олдсонгүй</td></tr> :
+                                items.map(i => (<tr key={i.id} style={{ cursor: 'pointer' }} onClick={() => { setEditingItem(i); setShowModal(true); }}><td style={{ fontWeight: 600 }}>{i.productName}</td><td style={{ fontFamily: 'monospace' }}>{i.barcode}</td><td>{i.price ? i.price.toLocaleString() + ' ₮' : '-'}</td><td>{i.quantity || 1}</td><td>{i.size || 'Дунд'}</td></tr>))}
+                            </tbody>
+                        </table>
+                    )}
                 </div>
             </div>
+            {showModal && <GenericCrudModal title="Шошго" icon={<Tag size={20} />} collectionPath="businesses/{bizId}/barcodeLabels" fields={LABEL_FIELDS} editingItem={editingItem} onClose={() => setShowModal(false)} />}
         </HubLayout>
     );
 }
