@@ -1,211 +1,89 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Header } from '../../components/layout/Header';
 import { HubLayout } from '../../components/common/HubLayout';
-import {
-    FileText,
-    Folder,
-    Search,
-    Filter,
-    Plus,
-    MoreVertical,
-    Download,
-    Share2,
-    Trash2,
-    Clock,
-    Shield,
-    Star,
-    LayoutGrid,
-    List
-} from 'lucide-react';
+import { FileText, Search, Folder, Clock, Star, Edit2 } from 'lucide-react';
+import { useBusinessStore } from '../../store';
+import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
+import { db } from '../../services/firebase';
+import { GenericCrudModal, type CrudField } from '../../components/common/GenericCrudModal';
 
-interface Document {
-    id: string;
-    name: string;
-    type: 'pdf' | 'docx' | 'xlsx' | 'folder';
-    size: string;
-    modified: string;
-    owner: string;
-    starred: boolean;
-}
-
-const MOCK_DOCS: Document[] = [
+const DOC_FIELDS: CrudField[] = [
+    { name: 'title', label: 'Баримтын нэр', type: 'text', required: true, span: 2 },
     {
-        id: 'DOC-001',
-        name: 'Үйлдвэрлэлийн журам.pdf',
-        type: 'pdf',
-        size: '2.4 MB',
-        modified: '2026-02-27',
-        owner: 'Э.Батболд',
-        starred: true
+        name: 'category', label: 'Ангилал', type: 'select', options: [
+            { value: 'contract', label: '📄 Гэрээ' },
+            { value: 'policy', label: '📋 Дотоод журам' },
+            { value: 'report', label: '📊 Тайлан' },
+            { value: 'template', label: '📝 Загвар' },
+            { value: 'hr', label: '👤 Хүний нөөц' },
+            { value: 'finance', label: '💰 Санхүү' },
+            { value: 'other', label: 'Бусад' },
+        ]
     },
     {
-        id: 'DOC-002',
-        name: 'Төслийн санхүүжилт (Зайсан)',
-        type: 'folder',
-        size: '--',
-        modified: '2026-02-25',
-        owner: 'Г.Тулга',
-        starred: false
+        name: 'status', label: 'Төлөв', type: 'select', defaultValue: 'draft', options: [
+            { value: 'draft', label: 'Ноорог' },
+            { value: 'published', label: 'Нийтлэгдсэн' },
+            { value: 'archived', label: 'Архивласан' },
+        ]
     },
-    {
-        id: 'DOC-003',
-        name: 'Ажилчдын цагийн хүснэгт.xlsx',
-        type: 'xlsx',
-        size: '1.2 MB',
-        modified: '2026-02-20',
-        owner: 'С.Баяр',
-        starred: false
-    }
+    { name: 'isImportant', label: 'Чухал', type: 'toggle' },
+    { name: 'content', label: 'Агуулга / Тэмдэглэл', type: 'textarea', span: 2 },
 ];
 
 export function DocumentsPage() {
-    const [docs] = useState<Document[]>(MOCK_DOCS);
-    const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+    const { business } = useBusinessStore();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const [docs, setDocs] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [showModal, setShowModal] = useState(false);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const [editingItem, setEditingItem] = useState<any>(null);
+    const [searchQuery, setSearchQuery] = useState('');
+
+    useEffect(() => {
+        if (!business?.id) return;
+        const q = query(collection(db, `businesses/${business.id}/documents`), orderBy('createdAt', 'desc'));
+        const unsub = onSnapshot(q, (snap) => {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            setDocs(snap.docs.map(d => ({ id: d.id, ...d.data() } as any)));
+            setLoading(false);
+        });
+        return () => unsub();
+    }, [business?.id]);
+
+    const filtered = docs.filter(d => (d.title || '').toLowerCase().includes(searchQuery.toLowerCase()));
 
     return (
         <HubLayout hubId="workspace-hub">
             <div className="page-container animate-fade-in">
-                <Header
-                    title="Бичиг Баримт (Documents)"
-                    subtitle="Байгууллагын дундын файл, бичиг баримтын сан болон хавтаст бүтэц"
-                    action={{
-                        label: "Файл хуулах",
-                        onClick: () => { }
-                    }}
-                />
-
-                <div className="grid-12 gap-6 mt-6">
-                    {/* Toolbar */}
-                    <div className="col-12 flex gap-4 items-center">
-                        <div className="flex-1 relative">
-                            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
-                            <input className="input pl-10 h-10 w-full" placeholder="Файл, хавтсын нэрээр хайх..." />
-                        </div>
-                        <div className="flex bg-surface-2 p-1 rounded-xl border border-border-color/10">
-                            <button
-                                onClick={() => setViewMode('grid')}
-                                className={`p-2 rounded-lg transition-all ${viewMode === 'grid' ? 'bg-surface-1 text-primary shadow-sm' : 'text-muted'}`}
-                            >
-                                <LayoutGrid size={18} />
-                            </button>
-                            <button
-                                onClick={() => setViewMode('list')}
-                                className={`p-2 rounded-lg transition-all ${viewMode === 'list' ? 'bg-surface-1 text-primary shadow-sm' : 'text-muted'}`}
-                            >
-                                <List size={18} />
-                            </button>
-                        </div>
-                        <button className="btn btn-outline h-10 px-4"><Filter size={16} className="mr-2" /> Сүүлийнх</button>
-                        <button className="btn btn-primary h-10 px-6 font-bold flex items-center gap-2">
-                            <Plus size={18} /> Шинэ хавтас
-                        </button>
-                    </div>
-
-                    {/* Quick Access */}
-                    <div className="col-12 grid grid-cols-4 gap-6 mb-2">
-                        <div className="card p-5 bg-surface-2 hover:bg-surface-3 transition-all cursor-pointer border-none flex items-center gap-4">
-                            <div className="bg-primary/10 p-3 rounded-2xl text-primary"><Star size={24} /></div>
-                            <div>
-                                <h4 className="font-black text-sm">Одонтой</h4>
-                                <p className="text-[10px] text-muted font-bold tracking-widest uppercase">12 Файл</p>
-                            </div>
-                        </div>
-                        <div className="card p-5 bg-surface-2 hover:bg-surface-3 transition-all cursor-pointer border-none flex items-center gap-4">
-                            <div className="bg-secondary/10 p-3 rounded-2xl text-secondary"><Clock size={24} /></div>
-                            <div>
-                                <h4 className="font-black text-sm">Сүүлд үзсэн</h4>
-                                <p className="text-[10px] text-muted font-bold tracking-widest uppercase">48 Файл</p>
-                            </div>
-                        </div>
-                        <div className="card p-5 bg-surface-2 hover:bg-surface-3 transition-all cursor-pointer border-none flex items-center gap-4">
-                            <div className="bg-success/10 p-3 rounded-2xl text-success"><Shield size={24} /></div>
-                            <div>
-                                <h4 className="font-black text-sm">Хамгаалагдсан</h4>
-                                <p className="text-[10px] text-muted font-bold tracking-widest uppercase">5 Файл</p>
-                            </div>
-                        </div>
-                        <div className="card p-5 bg-surface-2 hover:bg-surface-3 transition-all cursor-pointer border-none flex items-center gap-4">
-                            <div className="bg-warning/10 p-3 rounded-2xl text-warning"><Trash2 size={24} /></div>
-                            <div>
-                                <h4 className="font-black text-sm">Хогийн сав</h4>
-                                <p className="text-[10px] text-muted font-bold tracking-widest uppercase">20 Файл</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Files Display */}
-                    <div className="col-12">
-                        {viewMode === 'grid' ? (
-                            <div className="grid grid-cols-4 gap-6">
-                                {docs.map(doc => (
-                                    <div key={doc.id} className="card p-0 overflow-hidden hover-lift shadow-sm group bg-surface-1">
-                                        <div className="aspect-[4/3] bg-surface-2 flex items-center justify-center border-b border-border-color/10 bg-gradient-to-br from-surface-2 to-surface-3">
-                                            {doc.type === 'folder' ? (
-                                                <Folder size={64} className="text-warning fill-warning/20" />
-                                            ) : (
-                                                <div className="relative">
-                                                    <FileText size={64} className="text-primary" />
-                                                    <span className="absolute bottom-1 right-1 bg-primary text-white text-[8px] font-black px-1.5 py-0.5 rounded uppercase tracking-tighter">
-                                                        {doc.type}
-                                                    </span>
-                                                </div>
-                                            )}
-                                        </div>
-                                        <div className="p-4">
-                                            <div className="flex justify-between items-start mb-2">
-                                                <h3 className="text-sm font-bold truncate pr-4">{doc.name}</h3>
-                                                <button className="btn btn-ghost p-1 opacity-0 group-hover:opacity-100 transition-opacity"><MoreVertical size={14} /></button>
-                                            </div>
-                                            <div className="flex justify-between items-center text-[10px] font-bold text-muted uppercase tracking-widest">
-                                                <span>{doc.size}</span>
-                                                <span>{doc.modified}</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        ) : (
-                            <div className="card p-0 overflow-hidden">
-                                <table className="table">
-                                    <thead>
-                                        <tr>
-                                            <th>Нэр</th>
-                                            <th>Төрөл</th>
-                                            <th>Хэмжээ</th>
-                                            <th>Огноо</th>
-                                            <th>Эзэмшигч</th>
-                                            <th className="text-right">Үйлдэл</th>
+                <Header title="Баримт бичиг" action={{ label: '+ Шинэ баримт', onClick: () => { setEditingItem(null); setShowModal(true); } }} />
+                <div style={{ margin: '20px 0' }}><div className="search-box" style={{ maxWidth: 400 }}><Search size={18} /><input type="text" placeholder="Баримт хайх..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} /></div></div>
+                <div className="card" style={{ padding: 0 }}>
+                    {loading ? (
+                        <div style={{ padding: 48, textAlign: 'center', color: 'var(--text-muted)' }}>Ачаалж байна...</div>
+                    ) : (
+                        <table className="table">
+                            <thead><tr><th>Нэр</th><th>Ангилал</th><th>Төлөв</th><th></th></tr></thead>
+                            <tbody>
+                                {filtered.length === 0 ? (
+                                    <tr><td colSpan={4} style={{ textAlign: 'center', padding: 48, color: 'var(--text-muted)' }}>Баримт олдсонгүй</td></tr>
+                                ) : (
+                                    filtered.map(d => (
+                                        <tr key={d.id} style={{ cursor: 'pointer' }} onClick={() => { setEditingItem(d); setShowModal(true); }}>
+                                            <td><div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>{d.isImportant ? <Star size={14} fill="#f1c40f" color="#f1c40f" /> : <FileText size={14} />}<span style={{ fontWeight: 600 }}>{d.title}</span></div></td>
+                                            <td><span className="badge">{d.category || 'Бусад'}</span></td>
+                                            <td><span className={`badge ${d.status === 'published' ? 'badge-success' : d.status === 'archived' ? 'badge-soft' : ''}`}>{d.status === 'published' ? 'Нийтлэгдсэн' : d.status === 'archived' ? 'Архивласан' : 'Ноорог'}</span></td>
+                                            <td><button className="btn-icon" onClick={ev => { ev.stopPropagation(); setEditingItem(d); setShowModal(true); }}><Edit2 size={16} /></button></td>
                                         </tr>
-                                    </thead>
-                                    <tbody>
-                                        {docs.map(doc => (
-                                            <tr key={doc.id} className="hover:bg-surface-2 transition-colors">
-                                                <td>
-                                                    <div className="flex items-center gap-3">
-                                                        {doc.type === 'folder' ? <Folder size={18} className="text-warning" /> : <FileText size={18} className="text-primary" />}
-                                                        <span className="font-bold text-sm">{doc.name}</span>
-                                                    </div>
-                                                </td>
-                                                <td><span className="badge badge-outline text-[10px] font-black uppercase">{doc.type}</span></td>
-                                                <td className="text-xs text-muted">{doc.size}</td>
-                                                <td className="text-xs text-muted">{doc.modified}</td>
-                                                <td className="text-xs font-bold">{doc.owner}</td>
-                                                <td className="text-right">
-                                                    <div className="flex justify-end gap-1">
-                                                        <button className="btn btn-ghost p-2"><Download size={14} /></button>
-                                                        <button className="btn btn-ghost p-2"><Share2 size={14} /></button>
-                                                        <button className="btn btn-ghost p-2"><MoreVertical size={14} /></button>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
-                        )}
-                    </div>
+                                    ))
+                                )}
+                            </tbody>
+                        </table>
+                    )}
                 </div>
             </div>
+            {showModal && <GenericCrudModal title="Баримт бичиг" icon={<FileText size={20} />} collectionPath="businesses/{bizId}/documents" fields={DOC_FIELDS} editingItem={editingItem} onClose={() => setShowModal(false)} />}
         </HubLayout>
     );
 }

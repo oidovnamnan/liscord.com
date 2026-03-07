@@ -1,153 +1,75 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Header } from '../../components/layout/Header';
 import { HubLayout } from '../../components/common/HubLayout';
-import {
-    Search,
-    Plus,
-    MoreVertical,
-    Folder,
-    Star,
-    Clock,
-    FileText,
-    Share2,
-    Trash2,
-    Layout
-} from 'lucide-react';
+import { StickyNote, Search, Star, Edit2 } from 'lucide-react';
+import { useBusinessStore } from '../../store';
+import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
+import { db } from '../../services/firebase';
+import { GenericCrudModal, type CrudField } from '../../components/common/GenericCrudModal';
 
-interface Note {
-    id: string;
-    title: string;
-    preview: string;
-    category: string;
-    updatedAt: string;
-    starred: boolean;
-}
-
-const MOCK_NOTES: Note[] = [
+const NOTE_FIELDS: CrudField[] = [
+    { name: 'title', label: 'Гарчиг', type: 'text', required: true, span: 2 },
     {
-        id: 'N-101',
-        title: 'Маркетингийн төлөвлөгөө - 2026',
-        preview: 'Энэ жилийн маркетингийн төлөвлөгөөнд сошиал медиа сувгуудыг түлхүү ашиглахаар...',
-        category: 'Маркетинг',
-        updatedAt: '2026-02-27',
-        starred: true
+        name: 'category', label: 'Хавтас', type: 'select', options: [
+            { value: 'general', label: 'Ерөнхий' },
+            { value: 'meeting', label: 'Хурал' },
+            { value: 'idea', label: '💡 Санаа' },
+            { value: 'todo', label: '✅ Хийх зүйлс' },
+            { value: 'personal', label: 'Хувийн' },
+        ]
     },
-    {
-        id: 'N-102',
-        title: 'Үйлдвэрийн аюулгүй байдал',
-        preview: 'Аюулгүй ажиллагааны зааварчилгааг өдөр бүр ажил эхлэхээс өмнө...',
-        category: 'Үйлдвэрлэл',
-        updatedAt: '2026-02-25',
-        starred: false
-    },
-    {
-        id: 'N-103',
-        title: 'Шинэ төслийн санаанууд',
-        preview: '1. Хүүхдийн тоглоомын тавилга, 2. Модон хэрэгсэл...',
-        category: 'R&D',
-        updatedAt: '2026-02-20',
-        starred: false
-    }
+    { name: 'isStarred', label: 'Тэмдэглэсэн', type: 'toggle' },
+    { name: 'content', label: 'Агуулга', type: 'textarea', required: true, span: 2 },
 ];
 
 export function NotesPage() {
-    const [notes] = useState<Note[]>(MOCK_NOTES);
+    const { business } = useBusinessStore();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const [notes, setNotes] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [showModal, setShowModal] = useState(false);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const [editingItem, setEditingItem] = useState<any>(null);
+    const [searchQuery, setSearchQuery] = useState('');
+
+    useEffect(() => {
+        if (!business?.id) return;
+        const q = query(collection(db, `businesses/${business.id}/notes`), orderBy('createdAt', 'desc'));
+        const unsub = onSnapshot(q, (snap) => {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            setNotes(snap.docs.map(d => ({ id: d.id, ...d.data() } as any)));
+            setLoading(false);
+        });
+        return () => unsub();
+    }, [business?.id]);
+
+    const filtered = notes.filter(n => (n.title || '').toLowerCase().includes(searchQuery.toLowerCase()) || (n.content || '').toLowerCase().includes(searchQuery.toLowerCase()));
 
     return (
         <HubLayout hubId="workspace-hub">
             <div className="page-container animate-fade-in">
-                <Header
-                    title="Тэмдэглэл (Notes)"
-                    subtitle="Хувийн болон дундын тэмдэглэл хөтлөх, мэдлэгийн сан үүсгэх"
-                    action={{
-                        label: "Тэмдэглэл бичих",
-                        onClick: () => { }
-                    }}
-                />
-
-                <div className="grid-12 gap-6 mt-6">
-                    {/* Notes Sidebar/Navigation */}
-                    <div className="col-3 flex flex-col gap-4">
-                        <div className="card p-4 bg-surface-2 border-none shadow-sm flex flex-col gap-2">
-                            <button className="flex items-center gap-3 p-3 rounded-xl bg-primary text-white font-black shadow-lg">
-                                <Plus size={20} /> Шинэ тэмдэглэл
-                            </button>
-                            <div className="h-px bg-border-color/10 my-2" />
-                            <button className="flex items-center gap-3 p-3 rounded-xl hover:bg-surface-3 transition-all text-sm font-bold text-muted">
-                                <Clock size={20} /> Сүүлд үзсэн
-                            </button>
-                            <button className="flex items-center gap-3 p-3 rounded-xl hover:bg-surface-3 transition-all text-sm font-bold text-muted">
-                                <Star size={20} /> Одонтой
-                            </button>
-                            <button className="flex items-center gap-3 p-3 rounded-xl hover:bg-surface-3 transition-all text-sm font-bold text-muted">
-                                <Folder size={20} /> Хавтаснууд
-                            </button>
-                            <button className="flex items-center gap-3 p-3 rounded-xl hover:bg-surface-3 transition-all text-sm font-bold text-muted">
-                                <Trash2 size={20} /> Хогийн сав
-                            </button>
-                        </div>
-                    </div>
-
-                    {/* Notes Content */}
-                    <div className="col-9">
-                        <div className="flex gap-4 mb-6">
-                            <div className="flex-1 relative">
-                                <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
-                                <input className="input pl-10 h-10 w-full" placeholder="Тэмдэглэл хайх..." />
-                            </div>
-                            <button className="btn btn-outline h-10 px-4"><Layout size={16} className="mr-2" /> Сүлжээ</button>
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-6">
-                            {notes.map(note => (
-                                <div key={note.id} className="card p-6 hover-lift shadow-sm bg-surface-1 border-none group relative cursor-pointer">
-                                    <div className="flex justify-between items-start mb-4">
-                                        <div className="bg-primary-light p-3 rounded-2xl text-primary font-black">
-                                            <FileText size={24} />
-                                        </div>
-                                        <div className="flex gap-1">
-                                            <button className={`btn btn-ghost p-2 rounded-xl transition-all ${note.starred ? 'text-warning' : 'text-muted'}`}>
-                                                <Star size={18} fill={note.starred ? 'currentColor' : 'none'} />
-                                            </button>
-                                            <button className="btn btn-ghost p-2 rounded-xl text-muted opacity-0 group-hover:opacity-100 transition-opacity">
-                                                <MoreVertical size={18} />
-                                            </button>
-                                        </div>
-                                    </div>
-                                    <h3 className="text-xl font-black mb-2 group-hover:text-primary transition-colors">{note.title}</h3>
-                                    <p className="text-sm text-muted mb-6 line-clamp-3 leading-relaxed">
-                                        {note.preview}
-                                    </p>
-                                    <div className="flex justify-between items-center pt-4 border-t border-border-color/10">
-                                        <span className="badge badge-outline text-[10px] font-black uppercase tracking-widest">{note.category}</span>
-                                        <span className="text-[10px] font-bold text-muted uppercase tracking-widest flex items-center gap-1">
-                                            <Clock size={12} /> {note.updatedAt}
-                                        </span>
-                                    </div>
-                                    <div className="absolute inset-0 bg-primary/5 opacity-0 group-hover:opacity-100 transition-opacity rounded-3xl pointer-events-none" />
+                <Header title="Тэмдэглэл" action={{ label: '+ Шинэ', onClick: () => { setEditingItem(null); setShowModal(true); } }} />
+                <div style={{ margin: '20px 0' }}><div className="search-box" style={{ maxWidth: 400 }}><Search size={18} /><input type="text" placeholder="Тэмдэглэл хайх..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} /></div></div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 16 }}>
+                    {loading ? (
+                        <div style={{ gridColumn: '1 / -1', padding: 48, textAlign: 'center', color: 'var(--text-muted)' }}>Ачаалж байна...</div>
+                    ) : filtered.length === 0 ? (
+                        <div className="card" style={{ gridColumn: '1 / -1', padding: 60, textAlign: 'center' }}><StickyNote size={48} color="var(--text-muted)" /><h3>Тэмдэглэл олдсонгүй</h3></div>
+                    ) : (
+                        filtered.map(n => (
+                            <div key={n.id} className="card" style={{ padding: 20, cursor: 'pointer' }} onClick={() => { setEditingItem(n); setShowModal(true); }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+                                    <span className="badge">{n.category || 'Ерөнхий'}</span>
+                                    {n.isStarred && <Star size={16} fill="#f1c40f" color="#f1c40f" />}
                                 </div>
-                            ))}
-
-                            <div className="card p-6 border-dashed border-2 bg-surface-2 flex flex-col items-center justify-center text-center group cursor-pointer hover:border-primary transition-all">
-                                <div className="bg-surface-3 p-4 rounded-3xl text-muted group-hover:text-primary transition-colors mb-4">
-                                    <Share2 size={32} />
-                                </div>
-                                <h4 className="font-bold">Дундын тэмдэглэл</h4>
-                                <p className="text-xs text-muted max-w-[150px] mt-1">Бусадтайгаа хамтран тэмдэглэл хөтлөх</p>
+                                <h4 style={{ margin: '0 0 8px', fontSize: '1rem' }}>{n.title}</h4>
+                                <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-muted)', display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{n.content}</p>
                             </div>
-                        </div>
-                    </div>
+                        ))
+                    )}
                 </div>
             </div>
-
-            <style>{`
-                .line-clamp-3 {
-                    display: -webkit-box;
-                    -webkit-line-clamp: 3;
-                    -webkit-box-orient: vertical;
-                    overflow: hidden;
-                }
-            `}</style>
+            {showModal && <GenericCrudModal title="Тэмдэглэл" icon={<StickyNote size={20} />} collectionPath="businesses/{bizId}/notes" fields={NOTE_FIELDS} editingItem={editingItem} onClose={() => setShowModal(false)} />}
         </HubLayout>
     );
 }

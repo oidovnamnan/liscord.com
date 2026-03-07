@@ -1,192 +1,99 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Header } from '../../components/layout/Header';
 import { HubLayout } from '../../components/common/HubLayout';
-import {
-    CheckCircle2,
-    XCircle,
-    Clock,
-    AlertCircle,
-    Search,
-    Filter,
-    ArrowRight,
-    User,
-    FileText,
-    CheckSquare,
-    History,
-    Zap,
-    Download,
-    MessageSquare,
-    Send
-} from 'lucide-react';
+import { ClipboardCheck, CheckCircle2, XCircle, Clock, Search } from 'lucide-react';
+import { useBusinessStore } from '../../store';
+import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
+import { db } from '../../services/firebase';
+import { GenericCrudModal, type CrudField } from '../../components/common/GenericCrudModal';
 
-interface Approval {
-    id: string;
-    title: string;
-    status: 'approved' | 'pending' | 'rejected' | 'draft';
-    requestedBy: string;
-    requestedAt: string;
-    priority: 'low' | 'medium' | 'high';
-    category: 'expense' | 'leave' | 'purchase' | 'contract';
-    amount?: number;
-}
-
-const MOCK_APPROVALS: Approval[] = [
+const APPROVAL_FIELDS: CrudField[] = [
+    { name: 'title', label: 'Гарчиг', type: 'text', required: true, span: 2 },
     {
-        id: 'APP-5021',
-        title: 'Урамшуулалт олгох хүсэлт - 2026 Q1',
-        status: 'pending',
-        requestedBy: 'Э.Батболд',
-        requestedAt: '2026-02-27',
-        priority: 'high',
-        category: 'expense',
-        amount: 2500000
+        name: 'type', label: 'Төрөл', type: 'select', required: true, options: [
+            { value: 'expense', label: '💰 Зардал' },
+            { value: 'leave', label: '🏖 Чөлөө' },
+            { value: 'purchase', label: '🛒 Худалдан авалт' },
+            { value: 'contract', label: '📄 Гэрээ' },
+            { value: 'policy', label: '📋 Дүрэм' },
+            { value: 'other', label: 'Бусад' },
+        ]
     },
+    { name: 'requestedBy', label: 'Хүсэлт гаргагч', type: 'text', required: true },
+    { name: 'amount', label: 'Дүн', type: 'currency' },
     {
-        id: 'APP-5022',
-        title: 'Чөлөө авах - Д.Тэмүүлэн (3 хоног)',
-        status: 'pending',
-        requestedBy: 'Д.Тэмүүлэн',
-        requestedAt: '2026-02-27',
-        priority: 'medium',
-        category: 'leave'
+        name: 'status', label: 'Төлөв', type: 'select', defaultValue: 'pending', options: [
+            { value: 'pending', label: 'Хүлээгдэж буй' },
+            { value: 'approved', label: 'Зөвшөөрсөн' },
+            { value: 'rejected', label: 'Татгалзсан' },
+        ]
     },
-    {
-        id: 'APP-5023',
-        title: 'Барилгын материалын захиалга (Зайсан)',
-        status: 'approved',
-        requestedBy: 'Г.Тулга',
-        requestedAt: '2026-02-25',
-        priority: 'high',
-        category: 'purchase',
-        amount: 14500000
-    }
+    { name: 'description', label: 'Тайлбар', type: 'textarea', span: 2 },
 ];
 
 export function ApprovalsPage() {
-    const [approvals] = useState<Approval[]>(MOCK_APPROVALS);
+    const { business } = useBusinessStore();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const [approvals, setApprovals] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [showModal, setShowModal] = useState(false);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const [editingItem, setEditingItem] = useState<any>(null);
+
+    useEffect(() => {
+        if (!business?.id) return;
+        const q = query(collection(db, `businesses/${business.id}/approvals`), orderBy('createdAt', 'desc'));
+        const unsub = onSnapshot(q, (snap) => {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            setApprovals(snap.docs.map(d => ({ id: d.id, ...d.data() } as any)));
+            setLoading(false);
+        });
+        return () => unsub();
+    }, [business?.id]);
+
+    const getStatusBadge = (status: string) => {
+        switch (status) {
+            case 'approved': return <span className="badge badge-success"><CheckCircle2 size={12} /> Зөвшөөрсөн</span>;
+            case 'rejected': return <span className="badge badge-danger"><XCircle size={12} /> Татгалзсан</span>;
+            default: return <span className="badge badge-warning"><Clock size={12} /> Хүлээгдэж буй</span>;
+        }
+    };
 
     return (
         <HubLayout hubId="workspace-hub">
             <div className="page-container animate-fade-in">
-                <Header
-                    title="Зөвшөөрөл (Approvals)"
-                    subtitle="Байгууллагын зардлын хүсэлт, чөлөө олголт болон шийдвэр гаргах үйл явц"
-                    action={{
-                        label: "Хүсэлт гаргах",
-                        onClick: () => { }
-                    }}
-                />
-
-                <div className="grid-12 gap-6 mt-6">
-                    {/* Insights Hub */}
-                    <div className="col-12 grid grid-cols-4 gap-6">
-                        <div className="card p-6 bg-surface-2 border-none shadow-sm flex items-center justify-between group cursor-pointer hover:bg-surface-3 transition-all">
-                            <div>
-                                <h4 className="text-[10px] text-muted font-black tracking-widest uppercase mb-1">Шийдээгүй</h4>
-                                <div className="text-3xl font-black text-warning">12</div>
-                            </div>
-                            <div className="bg-warning/10 p-4 rounded-2xl text-warning group-hover:scale-110 transition-transform"><Clock size={28} /></div>
-                        </div>
-                        <div className="card p-6 bg-surface-2 border-none shadow-sm flex items-center justify-between group cursor-pointer hover:bg-surface-3 transition-all">
-                            <div>
-                                <h4 className="text-[10px] text-muted font-black tracking-widest uppercase mb-1">Зөвшөөрсөн</h4>
-                                <div className="text-3xl font-black text-success">148</div>
-                            </div>
-                            <div className="bg-success/10 p-4 rounded-2xl text-success group-hover:scale-110 transition-transform"><CheckCircle2 size={28} /></div>
-                        </div>
-                        <div className="card p-6 bg-surface-2 border-none shadow-sm flex items-center justify-between group cursor-pointer hover:bg-surface-3 transition-all">
-                            <div>
-                                <h4 className="text-[10px] text-muted font-black tracking-widest uppercase mb-1">Татгалзсан</h4>
-                                <div className="text-3xl font-black text-danger">4</div>
-                            </div>
-                            <div className="bg-danger/10 p-4 rounded-2xl text-danger group-hover:scale-110 transition-transform"><XCircle size={28} /></div>
-                        </div>
-                        <div className="card p-6 bg-gradient-to-br from-primary to-primary-dark text-white border-none shadow-xl flex items-center justify-between group cursor-pointer hover:scale-[1.02] transition-transform overflow-hidden relative">
-                            <Zap size={64} className="absolute -bottom-4 -right-4 opacity-10" />
-                            <div className="relative z-10">
-                                <h4 className="text-[10px] font-black tracking-widest uppercase mb-1 opacity-80">Шуурхай Шилжилт</h4>
-                                <div className="text-xl font-black">AI REVIEW</div>
-                            </div>
-                            <div className="relative z-10 bg-white/20 p-4 rounded-2xl backdrop-blur-md group-hover:scale-110 transition-transform"><ArrowRight size={28} /></div>
-                        </div>
-                    </div>
-
-                    <div className="col-12 flex gap-4 mt-2">
-                        <div className="flex-1 relative">
-                            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
-                            <input className="input pl-10 h-10 w-full" placeholder="Хүсэлтийн гарчиг, дугаараар хайх..." />
-                        </div>
-                        <button className="btn btn-outline h-10 px-4"><Filter size={16} className="mr-2" /> Сар</button>
-                    </div>
-
-                    {/* Approvals List */}
-                    <div className="col-12 grid grid-cols-1 gap-4">
-                        {approvals.map(app => (
-                            <div key={app.id} className="card p-0 overflow-hidden hover-shadow transition-shadow border-none bg-surface-1">
-                                <div className="flex flex-col md:flex-row items-stretch">
-                                    <div className={`p-6 flex flex-col justify-center items-center border-r border-border-color/10 min-w-[120px] bg-surface-2 ${app.priority === 'high' ? 'text-danger' :
-                                        app.priority === 'medium' ? 'text-warning' : 'text-primary'
-                                        }`}>
-                                        {app.category === 'expense' ? <Download size={32} /> :
-                                            app.category === 'leave' ? <History size={32} /> :
-                                                app.category === 'purchase' ? <CheckSquare size={32} /> : <FileText size={32} />}
-                                        <div className="text-[10px] font-black uppercase tracking-widest mt-2">{app.category}</div>
-                                    </div>
-
-                                    <div className="flex-1 p-6 flex flex-col md:flex-row items-center gap-6">
-                                        <div className="flex-1">
-                                            <div className="flex items-center gap-3 mb-1">
-                                                <h3 className="text-xl font-black leading-tight hover:text-primary transition-colors cursor-pointer">{app.title}</h3>
-                                                <span className={`badge badge-outline text-[10px] font-black uppercase tracking-widest border-${app.priority === 'high' ? 'danger' : 'border-color'}`}>
-                                                    {app.priority === 'high' ? 'ЯАРАЛТАЙ' : app.priority === 'medium' ? 'ЭНГИЙН' : 'БАГА'}
-                                                </span>
-                                            </div>
-                                            <div className="flex gap-4 text-xs font-bold text-muted uppercase tracking-widest mt-2">
-                                                <span className="flex items-center gap-1"><User size={12} className="text-primary" /> {app.requestedBy}</span>
-                                                <span className="flex items-center gap-1"><Clock size={12} /> {app.requestedAt}</span>
-                                                {app.amount && <span className="flex items-center gap-1 font-black text-secondary"><AlertCircle size={12} /> {app.amount.toLocaleString()} ₮</span>}
-                                            </div>
-                                        </div>
-
-                                        <div className="flex items-center gap-3">
-                                            {app.status === 'pending' ? (
-                                                <>
-                                                    <button className="btn btn-ghost p-4 rounded-2xl bg-surface-3 hover:bg-danger-light hover:text-danger transition-all group">
-                                                        <XCircle size={24} className="group-hover:scale-110 transition-transform" />
-                                                    </button>
-                                                    <button className="btn btn-primary h-14 px-8 rounded-2xl font-black shadow-lg flex items-center justify-center gap-2 hover:scale-105 transition-all">
-                                                        ЗӨВШӨӨРӨХ <CheckCircle2 size={24} />
-                                                    </button>
-                                                </>
-                                            ) : (
-                                                <div className={`badge badge-block badge-${app.status === 'approved' ? 'success' : 'danger'} py-4 px-8 font-black rounded-2xl`}>
-                                                    {app.status === 'approved' ? 'ЗӨВШӨӨРСӨН' : 'ТАТГАЛЗСАН'}
-                                                </div>
-                                            )}
-                                            <div className="h-10 w-px bg-border-color/10 mx-2" />
-                                            <button className="btn btn-ghost p-4 rounded-xl hover:bg-surface-3 transition-colors"><MessageSquare size={20} /></button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-
-                    {/* Pending Actions */}
-                    <div className="col-12 card p-6 bg-surface-2 border-dashed border-2 flex flex-col md:flex-row items-center justify-between gap-6 shadow-md mt-6">
-                        <div className="flex items-center gap-4">
-                            <div className="bg-primary/5 p-4 rounded-2xl text-primary"><Send size={32} /></div>
-                            <div>
-                                <h3 className="text-lg font-black leading-tight">Бүгдийг нэг дор зөвшөөрөх</h3>
-                                <p className="text-sm text-muted">Таны хүлээж буй 12 хүсэлтийг бүгдийг зөвшөөрөх бол дарна уу.</p>
-                            </div>
-                        </div>
-                        <button className="btn btn-outline border-primary text-primary font-black px-10 py-3 rounded-2xl hover:bg-primary hover:text-white transition-all shadow-sm">
-                            МАСС ЗӨВШӨӨРӨЛ
-                        </button>
-                    </div>
+                <Header title="Зөвшөөрөл" action={{ label: '+ Хүсэлт', onClick: () => { setEditingItem(null); setShowModal(true); } }} />
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, margin: '20px 0' }}>
+                    <div className="card" style={{ padding: 20, textAlign: 'center' }}><div style={{ fontSize: '1.4rem', fontWeight: 700, color: '#f39c12' }}>{approvals.filter(a => a.status === 'pending').length}</div><div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Хүлээгдэж мутуй</div></div>
+                    <div className="card" style={{ padding: 20, textAlign: 'center' }}><div style={{ fontSize: '1.4rem', fontWeight: 700, color: '#2ecc71' }}>{approvals.filter(a => a.status === 'approved').length}</div><div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Зөвшөөрсөн</div></div>
+                    <div className="card" style={{ padding: 20, textAlign: 'center' }}><div style={{ fontSize: '1.4rem', fontWeight: 700, color: '#e74c3c' }}>{approvals.filter(a => a.status === 'rejected').length}</div><div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Татгалзсан</div></div>
+                </div>
+                <div className="card" style={{ padding: 0 }}>
+                    {loading ? (
+                        <div style={{ padding: 48, textAlign: 'center', color: 'var(--text-muted)' }}>Ачаалж байна...</div>
+                    ) : (
+                        <table className="table">
+                            <thead><tr><th>Гарчиг</th><th>Төрөл</th><th>Хүсэгч</th><th>Дүн</th><th>Төлөв</th></tr></thead>
+                            <tbody>
+                                {approvals.length === 0 ? (
+                                    <tr><td colSpan={5} style={{ textAlign: 'center', padding: 48, color: 'var(--text-muted)' }}>Хүсэлт олдсонгүй</td></tr>
+                                ) : (
+                                    approvals.map(a => (
+                                        <tr key={a.id} style={{ cursor: 'pointer' }} onClick={() => { setEditingItem(a); setShowModal(true); }}>
+                                            <td style={{ fontWeight: 600 }}>{a.title}</td>
+                                            <td>{a.type || '-'}</td>
+                                            <td>{a.requestedBy || '-'}</td>
+                                            <td style={{ fontWeight: 600 }}>{a.amount ? a.amount.toLocaleString() + ' ₮' : '-'}</td>
+                                            <td>{getStatusBadge(a.status)}</td>
+                                        </tr>
+                                    ))
+                                )}
+                            </tbody>
+                        </table>
+                    )}
                 </div>
             </div>
+            {showModal && <GenericCrudModal title="Зөвшөөрөл" icon={<ClipboardCheck size={20} />} collectionPath="businesses/{bizId}/approvals" fields={APPROVAL_FIELDS} editingItem={editingItem} onClose={() => setShowModal(false)} />}
         </HubLayout>
     );
 }
