@@ -6,6 +6,11 @@ service cloud.firestore {
     function isAuth() {
       return request.auth != null;
     }
+    
+    function isMemberOf(bizId) {
+      // Check if user has this business in their businessIds array
+      return isAuth() && bizId in get(/databases/$(database)/documents/users/$(request.auth.uid)).data.businessIds;
+    }
 
     // === USERS ===
     match /users/{userId} {
@@ -62,27 +67,27 @@ service cloud.firestore {
     }
     
     // === BUSINESSES ===
-    // Read: any authenticated user (access control handled in app layer)
-    // Write: any authenticated user (fine-grained permissions handled in app layer)
-    // Note: isMember/hasPerm checks removed because employee docs use auto-generated IDs,
-    // not auth.uid as document ID, making exists() checks impossible.
     match /businesses/{bizId} {
-      allow read: if isAuth();
+      // Read: only members of this business
+      allow read: if isMemberOf(bizId);
+      // Create: any authenticated user (creating new business)
       allow create: if isAuth();
-      allow update: if isAuth();
-      allow delete: if false; // Never delete via client
+      // Update: only members
+      allow update: if isMemberOf(bizId);
+      // Delete: never via client
+      allow delete: if false;
       
-      // All subcollections: authenticated read/write
+      // All subcollections: member read/write only
       match /{subcollection}/{docId} {
-        allow read: if isAuth();
-        allow create, update: if isAuth();
+        allow read: if isMemberOf(bizId);
+        allow create, update: if isMemberOf(bizId);
         allow delete: if false;
       }
 
       // Nested subcollections (e.g. warehouses/zones)
       match /{subcollection}/{docId}/{nestedSub}/{nestedDocId} {
-        allow read: if isAuth();
-        allow create, update: if isAuth();
+        allow read: if isMemberOf(bizId);
+        allow create, update: if isMemberOf(bizId);
         allow delete: if false;
       }
     }

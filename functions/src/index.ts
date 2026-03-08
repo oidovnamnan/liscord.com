@@ -90,7 +90,8 @@ export const onQrLoginUpdate = functions
                     customToken: customToken,
                     authenticatedAt: admin.firestore.FieldValue.serverTimestamp()
                 });
-            } catch (error: any) {
+            } catch (err: unknown) {
+                const error = err as Error;
                 console.error("Error generating custom token:", error);
                 return change.after.ref.update({
                     status: 'error',
@@ -98,5 +99,164 @@ export const onQrLoginUpdate = functions
                 });
             }
         }
+        return null;
+    });
+
+/**
+ * Push Notification on New Order
+ * Sends FCM notification to business owner when a new order is created
+ */
+export const sendOrderNotification = functions
+    .firestore
+    .document("businesses/{bizId}/orders/{orderId}")
+    .onCreate(async (snap, context) => {
+        const orderData = snap.data();
+        const bizId = context.params.bizId;
+        if (!orderData || orderData.isDeleted) return null;
+
+        try {
+            // Get business info
+            const bizSnap = await db.doc(`businesses/${bizId}`).get();
+            const bizData = bizSnap.data();
+            if (!bizData) return null;
+
+            // Get owner's FCM tokens
+            const ownerId = bizData.ownerId;
+            if (!ownerId) return null;
+
+            const userSnap = await db.doc(`users/${ownerId}`).get();
+            const userData = userSnap.data();
+            const fcmTokens: string[] = userData?.fcmTokens || [];
+
+            if (fcmTokens.length === 0) return null;
+
+            const customerName = orderData.customer?.name || 'Зочин';
+            const totalAmount = orderData.financials?.totalAmount || 0;
+            const orderNumber = orderData.orderNumber || snap.id.slice(0, 6);
+
+            const message: admin.messaging.MulticastMessage = {
+                notification: {
+                    title: `🛒 Шинэ захиалга #${orderNumber}`,
+                    body: `${customerName} - ₮${totalAmount.toLocaleString()}`,
+                },
+                data: {
+                    type: 'new_order',
+                    orderId: snap.id,
+                    bizId: bizId,
+                },
+                tokens: fcmTokens,
+            };
+
+            const response = await admin.messaging().sendEachForMulticast(message);
+
+            // Clean up invalid tokens
+            const tokensToRemove: string[] = [];
+            response.responses.forEach((resp, idx) => {
+                if (!resp.success && resp.error?.code === 'messaging/registration-token-not-registered') {
+                    tokensToRemove.push(fcmTokens[idx]);
+                }
+            });
+
+            if (tokensToRemove.length > 0) {
+                await db.doc(`users/${ownerId}`).update({
+                    fcmTokens: admin.firestore.FieldValue.arrayRemove(...tokensToRemove),
+                });
+            }
+
+            return null;
+        } catch (err) {
+            console.error("Failed to send order notification:", err);
+            return null;
+        }
+    });
+
+/**
+ * Low Stock Alert
+ * Checks for low stock products when stock is updated
+ */
+export const lowStockAlert = functions
+    .firestore
+    .document("businesses/{bizId}/products/{productId}")
+    .onUpdate(async (change, context) => {
+        const after = change.after.data();
+        const before = change.before.data();
+        const bizId = context.params.bizId;
+
+        if (!after || !after.stock?.trackInventory) return null;
+
+        const currentQty = after.stock?.quantity ?? 0;
+        const previousQty = before?.stock?.quantity ?? 0;
+        const lowStockThreshold = after.stock?.lowStockThreshold ?? 5;
+
+        // Only trigger when stock drops below threshold (not on every update)
+        if (currentQty < lowStockThreshold && previousQty >= lowStockThreshold) {
+            try {
+                // Create a notification record
+                await db.collection(`businesses/${bizId}/notifications`).add({
+                    type: 'low_stock',
+                    title: 'Бараа дуусах дөхлөө',
+                    message: `"${after.name}" барааны үлдэгдэл ${currentQty} болж буурлаа (босго: ${lowStockThreshold})`,
+                    productId: context.params.productId,
+                    productName: after.name,
+                    currentStock: currentQty,
+                    threshold: lowStockThreshold,
+                    isRead: false,
+                    createdAt: admin.firestore.FieldValue.serverTimestamp(),
+                });
+            } catch (err) {
+                console.error("Failed to create low stock notification:", err);
+            }
+        }
+
+        return null;
+    });
+
+/**
+ * Scheduled Cleanup - Runs daily at 3:00 AM UTC
+ * Archives old soft-deleted records (older than 30 days)
+ */
+export const scheduledCleanup = functions
+    .pubsub
+    .schedule("every 24 hours")
+    .timeZone("Asia/Ulaanbaatar")
+    .onRun(async () => {
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+        const collectionsToClean = ['orders', 'products', 'invoices', 'expenses'];
+        let totalCleaned = 0;
+
+        try {
+            // Get all businesses
+            const bizsSnap = await db.collection('businesses').get();
+
+            for (const bizDoc of bizsSnap.docs) {
+                for (const colName of collectionsToClean) {
+                    const deletedDocs = await db
+                        .collection(`businesses/${bizDoc.id}/${colName}`)
+                        .where('isDeleted', '==', true)
+                        .where('deletedAt', '<=', thirtyDaysAgo)
+                        .limit(100)
+                        .get();
+
+                    if (deletedDocs.empty) continue;
+
+                    const batch = db.batch();
+                    deletedDocs.docs.forEach(doc => {
+                        batch.update(doc.ref, {
+                            isArchived: true,
+                            archivedAt: admin.firestore.FieldValue.serverTimestamp(),
+                        });
+                    });
+                    await batch.commit();
+                    totalCleaned += deletedDocs.size;
+                }
+            }
+
+            console.log(`Scheduled cleanup completed. Archived ${totalCleaned} records.`);
+        } catch (err) {
+            console.error("Scheduled cleanup failed:", err);
+        }
+
         return null;
     });

@@ -34,7 +34,7 @@ export function LoginPage() {
         const searchParams = new URLSearchParams(window.location.search);
         const magicLink = searchParams.get('magic_link');
 
-        console.log('LoginPage: Check for magic_link:', magicLink);
+
 
         if (magicLink) {
             setIsProcessingMagicLink(true);
@@ -46,7 +46,7 @@ export function LoginPage() {
     }, []);
 
     async function handleScannedId(sessionId: string) {
-        console.log('handleScannedId starting for:', sessionId);
+
         setLoading(true);
         try {
             const snap = await getDoc(doc(db, 'qr_logins', sessionId));
@@ -59,7 +59,7 @@ export function LoginPage() {
             }
 
             const data = snap.data();
-            console.log('Session data fetched:', data.status);
+
 
             if (data.status === 'authenticated') {
                 toast.error('Энэ код ашиглагдсан байна');
@@ -85,7 +85,7 @@ export function LoginPage() {
             window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
                 size: 'invisible',
                 callback: () => {
-                    console.log('reCAPTCHA solved');
+
                 }
             });
         }
@@ -95,13 +95,13 @@ export function LoginPage() {
     useEffect(() => {
         if (!currentSessionId) return;
 
-        console.log('Mobile Real-time Listener Started for:', currentSessionId);
+
         const sessionRef = doc(db, 'qr_logins', currentSessionId);
         const unsubscribe = onSnapshot(sessionRef, async (snapshot) => {
             const data = snapshot.data();
             if (!data) return;
 
-            console.log('Mobile Listener Update Status:', data.status);
+
 
             if (data.status === 'error') {
                 toast.error(data.error || 'Нэвтрэлт амжилтгүй');
@@ -114,7 +114,7 @@ export function LoginPage() {
                 setQrStatus('authenticated');
                 try {
                     setLoading(true);
-                    console.log('Found custom token, signing in...');
+
                     await signInWithCustomToken(auth, data.customToken);
                     toast.success('Амжилттай нэвтэрлээ!');
                     navigate('/app');
@@ -141,7 +141,7 @@ export function LoginPage() {
             setLoading(true);
             const sessionRef = doc(db, 'qr_logins', currentSessionId);
             // Notify laptop that we scanned and confirmed
-            console.log('Updating status to scanned...');
+
             await updateDoc(sessionRef, { status: 'scanned' });
             setQrStatus('authorizing');
         } catch (err) {
