@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { Header } from '../../components/layout/Header';
 import { Plus, Search, MoreVertical, Loader2, X, User, Package, CreditCard, Trash2, CheckSquare, Settings, ShoppingCart } from 'lucide-react';
+import '../Inventory/InventoryPage.css';
 import { useBusinessStore, useAuthStore } from '../../store';
 import { toast } from 'react-hot-toast';
 import {
@@ -204,7 +204,6 @@ export function OrdersPage() {
 
     return (
         <>
-            <Header title="" subtitle="" />
             <div className="page">
                 <div className="page-hero" style={{ marginBottom: 24 }}>
                     <div className="page-hero-left">
@@ -225,34 +224,46 @@ export function OrdersPage() {
                         <span style={{ fontWeight: 700 }}>Шинэ захиалга</span>
                     </button>
                 </div>
-                {/* Stats Summary Section */}
-                <div className="orders-stats-summary animate-fade-in">
-                    <div className="stat-card">
-                        <div className="stat-icon green"><CreditCard size={24} /></div>
-                        <div className="stat-info">
-                            <span className="stat-label">Өнөөдрийн орлого</span>
-                            <span className="stat-value">{fmt(stats.revenue)}</span>
+
+                {/* Stats Grid — Inventory-style Glassmorphism */}
+                <div className="inv-stats-grid" style={{ marginBottom: 24 }}>
+                    <div className="inv-stat-card">
+                        <div className="inv-stat-content">
+                            <h4>Өнөөдрийн орлого</h4>
+                            <div className="inv-stat-value">{fmt(stats.revenue)}</div>
+                        </div>
+                        <div className="inv-stat-icon icon-green">
+                            <CreditCard size={24} />
                         </div>
                     </div>
-                    <div className="stat-card">
-                        <div className="stat-icon blue"><Plus size={24} /></div>
-                        <div className="stat-info">
-                            <span className="stat-label">Шинэ захиалга</span>
-                            <span className="stat-value">{stats.new}</span>
+
+                    <div className="inv-stat-card">
+                        <div className="inv-stat-content">
+                            <h4>Шинэ захиалга</h4>
+                            <div className="inv-stat-value">{stats.new}</div>
+                        </div>
+                        <div className="inv-stat-icon icon-primary">
+                            <Plus size={24} />
                         </div>
                     </div>
-                    <div className="stat-card">
-                        <div className="stat-icon orange"><Loader2 size={24} /></div>
-                        <div className="stat-info">
-                            <span className="stat-label">Боловсруулагдаж буй</span>
-                            <span className="stat-value">{stats.processing}</span>
+
+                    <div className="inv-stat-card">
+                        <div className="inv-stat-content">
+                            <h4>Боловсруулагдаж буй</h4>
+                            <div className="inv-stat-value">{stats.processing}</div>
+                        </div>
+                        <div className="inv-stat-icon icon-red">
+                            <Loader2 size={24} />
                         </div>
                     </div>
-                    <div className="stat-card">
-                        <div className="stat-icon purple"><CheckSquare size={24} /></div>
-                        <div className="stat-info">
-                            <span className="stat-label">Хүргэгдсэн</span>
-                            <span className="stat-value">{stats.delivered}</span>
+
+                    <div className="inv-stat-card">
+                        <div className="inv-stat-content">
+                            <h4>Хүргэгдсэн</h4>
+                            <div className="inv-stat-value">{stats.delivered}</div>
+                        </div>
+                        <div className="inv-stat-icon icon-primary">
+                            <CheckSquare size={24} />
                         </div>
                     </div>
                 </div>
