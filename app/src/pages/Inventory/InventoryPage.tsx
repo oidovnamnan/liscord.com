@@ -31,6 +31,38 @@ const typeConfig: Record<string, { label: string; moveCls: string; changeCls: st
     adjustment: { label: 'Тохируулга', moveCls: 'move-adj', changeCls: 'change-adj', icon: History },
 };
 
+// ═══════════════════════════════════
+// HELPERS
+// ═══════════════════════════════════
+function getRelativeTime(date: Date): string {
+    const now = Date.now();
+    const diff = now - date.getTime();
+    const minutes = Math.floor(diff / 60000);
+    const hours = Math.floor(diff / 3600000);
+    const days = Math.floor(diff / 86400000);
+
+    if (minutes < 1) return 'Саяхан';
+    if (minutes < 60) return `${minutes} мин`;
+    if (hours < 24) return `${hours} цаг`;
+    if (days < 7) return `${days} хоног`;
+    return date.toLocaleDateString('mn-MN');
+}
+
+function getInitials(name: string): string {
+    return name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+}
+
+function getStockLevel(current: number, max: number) {
+    if (max === 0) return { percent: 0, cls: 'low' };
+    const ratio = current / max;
+    if (ratio > 0.5) return { percent: Math.min(ratio * 100, 100), cls: 'high' };
+    if (ratio > 0.2) return { percent: ratio * 100, cls: 'medium' };
+    return { percent: Math.max(ratio * 100, 5), cls: 'low' };
+}
+
+// ═══════════════════════════════════
+// MAIN PAGE
+// ═══════════════════════════════════
 export function InventoryPage() {
     const { business } = useBusinessStore();
     const [typeFilter, setTypeFilter] = useState('all');
@@ -41,7 +73,6 @@ export function InventoryPage() {
     const [loading, setLoading] = useState(true);
     const [movementsLimit, setMovementsLimit] = useState(50);
     const [hasMoreMovements, setHasMoreMovements] = useState(true);
-    // For inventory page stats, we might want to see more products than the default 50
     const [productsLimit] = useState(200);
 
     useEffect(() => {
@@ -81,39 +112,49 @@ export function InventoryPage() {
     const countOut = movements.filter(m => m.type === 'out').length;
     const countAdj = movements.filter(m => m.type === 'adjustment').length;
 
+    // Trend percentages (mock — based on count ratios)
+    const totalMoves = countIn + countOut || 1;
+    const inPercent = Math.round((countIn / totalMoves) * 100);
+
     return (
         <HubLayout hubId="inventory-hub">
             <div className="inventory-page animate-fade-in">
-                {/* Page Section Header */}
+                {/* Page Header */}
                 <div className="page-section-header">
                     <div>
                         <h2 className="page-section-title">Агуулах / Логистик</h2>
                         <p className="page-section-subtitle">Барааны орлого, зарлага, нөөцийн түүх</p>
                     </div>
-                    <button className="btn btn-primary btn-sm" onClick={() => setShowAdd(true)}>
+                    <button className="btn btn-primary btn-sm gradient-btn" onClick={() => setShowAdd(true)} style={{ gap: 6 }}>
                         <Plus size={16} /> Нөөц нэмэх
                     </button>
                 </div>
 
-                {/* ====== Stats Grid ====== */}
+                {/* ====== Stats Grid — Glassmorphism ====== */}
                 <div className="inv-stats-grid">
                     <div className="inv-stat-card">
                         <div className="inv-stat-content">
                             <h4>Нийт орлого</h4>
-                            <div className="inv-stat-value">{totalIn}</div>
+                            <div className="inv-stat-value">{totalIn.toLocaleString()}</div>
+                            <div className={`inv-stat-trend ${inPercent > 50 ? 'up' : 'neutral'}`}>
+                                <TrendingUp size={10} /> {inPercent}%
+                            </div>
                         </div>
                         <div className="inv-stat-icon icon-green">
-                            <TrendingUp size={28} />
+                            <TrendingUp size={24} />
                         </div>
                     </div>
 
                     <div className="inv-stat-card">
                         <div className="inv-stat-content">
                             <h4>Нийт зарлага</h4>
-                            <div className="inv-stat-value">{totalOut}</div>
+                            <div className="inv-stat-value">{totalOut.toLocaleString()}</div>
+                            <div className={`inv-stat-trend ${countOut > countIn ? 'down' : 'neutral'}`}>
+                                <TrendingDown size={10} /> {100 - inPercent}%
+                            </div>
                         </div>
                         <div className="inv-stat-icon icon-red">
-                            <TrendingDown size={28} />
+                            <TrendingDown size={24} />
                         </div>
                     </div>
 
@@ -121,9 +162,12 @@ export function InventoryPage() {
                         <div className="inv-stat-content">
                             <h4>Барааны нэр төрөл</h4>
                             <div className="inv-stat-value">{products.length}</div>
+                            <div className="inv-stat-trend neutral">
+                                <Package size={10} /> SKU
+                            </div>
                         </div>
                         <div className="inv-stat-icon icon-primary">
-                            <Package size={28} />
+                            <Package size={24} />
                         </div>
                     </div>
 
@@ -131,30 +175,47 @@ export function InventoryPage() {
                         <div className="inv-stat-content">
                             <h4>Нөөц бага</h4>
                             <div className="inv-stat-value">{lowStockItems.length}</div>
+                            {lowStockItems.length > 0 && (
+                                <div className="inv-stat-trend down">
+                                    <AlertTriangle size={10} /> Анхааруулга
+                                </div>
+                            )}
                         </div>
                         <div className="inv-stat-icon icon-orange">
-                            <AlertTriangle size={28} />
+                            <AlertTriangle size={24} />
                         </div>
                     </div>
                 </div>
 
-                {/* ====== Low Stock Alert ====== */}
+                {/* ====== Low Stock — Horizontal Carousel ====== */}
                 {!loading && lowStockItems.length > 0 && (
                     <div className="inv-low-stock-premium">
                         <div className="low-stock-header">
-                            <AlertTriangle size={18} />
+                            <AlertTriangle size={16} />
                             Нөөц бага байгаа бараа
+                            <span className="low-stock-count">{lowStockItems.length}</span>
                         </div>
-                        <div className="low-stock-list">
-                            {lowStockItems.map((item, i) => (
-                                <div key={i} className="low-stock-item">
-                                    <span className="low-stock-item-name">{item.name}</span>
-                                    {item.sku && <span className="badge badge-surface">{item.sku}</span>}
-                                    <span className={`low-stock-item-badge ${(item.stock?.quantity || 0) === 0 ? 'out-of-stock' : 'low'}`}>
-                                        {(item.stock?.quantity || 0) === 0 ? 'Дууссан' : `${item.stock?.quantity} ш`}
-                                    </span>
-                                </div>
-                            ))}
+                        <div className="low-stock-carousel">
+                            {lowStockItems.map((item, i) => {
+                                const qty = item.stock?.quantity || 0;
+                                const isCritical = qty === 0;
+                                return (
+                                    <div key={i} className="low-stock-chip">
+                                        <div className={`low-stock-avatar ${isCritical ? 'critical' : 'warning'}`}>
+                                            {getInitials(item.name)}
+                                        </div>
+                                        <div className="low-stock-chip-info">
+                                            <span className="low-stock-chip-name">{item.name}</span>
+                                            <span className={`low-stock-chip-qty ${isCritical ? 'critical' : 'warning'}`}>
+                                                {item.sku && `${item.sku} · `}{qty} ш үлдсэн
+                                            </span>
+                                        </div>
+                                        <span className={`low-stock-chip-badge ${isCritical ? 'critical' : 'warning'}`}>
+                                            {isCritical ? 'Дууссан' : 'Бага'}
+                                        </span>
+                                    </div>
+                                );
+                            })}
                         </div>
                     </div>
                 )}
@@ -171,22 +232,22 @@ export function InventoryPage() {
                         />
                     </div>
                     <div className="inv-filter-chips">
-                        <button className={`inv-chip ${typeFilter === 'all' ? 'active' : ''}`} onClick={() => setTypeFilter('all')}>
+                        <button data-type="all" className={`inv-chip ${typeFilter === 'all' ? 'active' : ''}`} onClick={() => setTypeFilter('all')}>
                             Бүгд <span className="chip-count">{countAll}</span>
                         </button>
-                        <button className={`inv-chip ${typeFilter === 'in' ? 'active' : ''}`} onClick={() => setTypeFilter('in')}>
+                        <button data-type="in" className={`inv-chip ${typeFilter === 'in' ? 'active' : ''}`} onClick={() => setTypeFilter('in')}>
                             Орлого <span className="chip-count">{countIn}</span>
                         </button>
-                        <button className={`inv-chip ${typeFilter === 'out' ? 'active' : ''}`} onClick={() => setTypeFilter('out')}>
+                        <button data-type="out" className={`inv-chip ${typeFilter === 'out' ? 'active' : ''}`} onClick={() => setTypeFilter('out')}>
                             Зарлага <span className="chip-count">{countOut}</span>
                         </button>
-                        <button className={`inv-chip ${typeFilter === 'adjustment' ? 'active' : ''}`} onClick={() => setTypeFilter('adjustment')}>
+                        <button data-type="adjustment" className={`inv-chip ${typeFilter === 'adjustment' ? 'active' : ''}`} onClick={() => setTypeFilter('adjustment')}>
                             Тохируулга <span className="chip-count">{countAdj}</span>
                         </button>
                     </div>
                 </div>
 
-                {/* ====== Movement List ====== */}
+                {/* ====== Movement List — Premium Cards ====== */}
                 <div className="inv-movements-premium">
                     {loading ? (
                         <div className="inv-loading">
@@ -196,49 +257,62 @@ export function InventoryPage() {
                     ) : filtered.length === 0 ? (
                         <div className="inv-empty-state">
                             <div className="inv-empty-icon">
-                                <History size={40} />
+                                <History size={36} />
                             </div>
                             <div className="inv-empty-title">Түүх олдсонгүй</div>
                             <div className="inv-empty-desc">Нөөцийн хөдөлгөөн бүртгэгдээгүй байна</div>
+                            <button className="btn btn-primary btn-sm gradient-btn inv-empty-btn" onClick={() => setShowAdd(true)}>
+                                <Plus size={14} /> Эхний бичлэг нэмэх
+                            </button>
                         </div>
                     ) : (
                         filtered.map(m => {
                             const cfg = typeConfig[m.type];
                             const Icon = cfg?.icon || ArrowDownRight;
-                            const dateStr = m.createdAt instanceof Date
-                                ? m.createdAt.toLocaleDateString('mn-MN') + ' ' + m.createdAt.toLocaleTimeString('mn-MN', { hour: '2-digit', minute: '2-digit' })
-                                : '';
+
+                            // Relative time
+                            const dateObj = m.createdAt?.toDate ? m.createdAt.toDate() : (m.createdAt instanceof Date ? m.createdAt : null);
+                            const timeStr = dateObj ? getRelativeTime(dateObj) : '';
+
+                            // Stock progress
+                            const maxStock = Math.max(m.newStock, m.previousStock, 1);
+                            const stockLevel = getStockLevel(m.newStock, maxStock * 1.5);
+
                             return (
                                 <div key={m.id} className={`inv-move-card ${cfg?.moveCls || ''}`}>
-                                    <div className="inv-move-icon"><Icon size={22} /></div>
+                                    <div className="inv-move-icon"><Icon size={20} /></div>
                                     <div className="inv-move-info">
                                         <div className="inv-move-product">{m.productName}</div>
                                         <div className="inv-move-reason">{m.reason || cfg?.label}</div>
+                                        <div className="inv-move-stock-bar">
+                                            <div className={`stock-fill ${stockLevel.cls}`} style={{ width: `${stockLevel.percent}%` }} />
+                                        </div>
                                     </div>
                                     <div className="inv-move-qty">
                                         <span className={`inv-move-change ${cfg?.changeCls || ''}`}>
-                                            {m.type === 'out' ? '-' : m.type === 'in' ? '+' : ''}{Math.abs(m.quantity)} ш
+                                            {m.type === 'out' ? '-' : m.type === 'in' ? '+' : '±'}{Math.abs(m.quantity)} ш
                                         </span>
                                         <div className="inv-move-stock">
-                                            {m.previousStock} <ArrowRight size={10} /> {m.newStock}
+                                            {m.previousStock} <ArrowRight size={9} /> {m.newStock}
                                         </div>
                                     </div>
                                     <div className="inv-move-meta">
-                                        <div className="inv-move-user">{m.createdBy}</div>
-                                        <div className="inv-move-date">{dateStr}</div>
+                                        <div className="inv-move-avatar">
+                                            {getInitials(m.createdBy || 'SY')}
+                                        </div>
+                                        <div className="inv-move-meta-text">
+                                            <div className="inv-move-user">{m.createdBy}</div>
+                                            <div className="inv-move-date">{timeStr}</div>
+                                        </div>
                                     </div>
                                 </div>
                             );
                         })
                     )}
 
-                    {hasMoreMovements && (
-                        <div className="load-more-container" style={{ marginTop: 20, textAlign: 'center' }}>
-                            <button
-                                className="btn btn-secondary"
-                                onClick={() => setMovementsLimit(prev => prev + 50)}
-                                style={{ width: '100%', maxWidth: '200px' }}
-                            >
+                    {!loading && hasMoreMovements && filtered.length > 0 && (
+                        <div className="inv-load-more">
+                            <button onClick={() => setMovementsLimit(prev => prev + 50)}>
                                 Цааш үзэх
                             </button>
                         </div>
@@ -251,6 +325,9 @@ export function InventoryPage() {
     );
 }
 
+// ═══════════════════════════════════
+// ADD MOVEMENT MODAL
+// ═══════════════════════════════════
 function AddMovementModal({ products, onClose }: { products: Product[]; onClose: () => void }) {
     const { business } = useBusinessStore();
     const { user } = useAuthStore();
@@ -283,10 +360,14 @@ function AddMovementModal({ products, onClose }: { products: Product[]; onClose:
         return warehouseService.subscribeShelves(business.id, selectedWarehouseId, setShelves);
     }, [business?.id, selectedWarehouseId]);
 
+    // Live preview
+    const currentStock = selectedProduct?.stock?.quantity || 0;
+    const qty = parseInt(quantity) || 0;
+    const previewStock = type === 'in' ? currentStock + qty : type === 'out' ? currentStock - qty : qty;
+
     async function handleSubmit(e: React.FormEvent) {
         e.preventDefault();
         if (!business || !user) return;
-        const qty = parseInt(quantity);
         if (!productId || !qty || qty <= 0) {
             toast.error('Бараа болон тоо ширхэг оруулна уу');
             return;
@@ -319,10 +400,42 @@ function AddMovementModal({ products, onClose }: { products: Product[]; onClose:
             <div className="modal" onClick={e => e.stopPropagation()}>
                 <form onSubmit={handleSubmit}>
                     <div className="modal-header">
-                        <h2>Нөөцийн хөдөлгөөн бүртгэх</h2>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                            <div className="icon-badge" style={{ background: 'var(--primary)', color: 'white' }}>
+                                <Package size={18} />
+                            </div>
+                            <div>
+                                <h2 style={{ margin: 0, fontSize: '1.1rem' }}>Нөөцийн хөдөлгөөн бүртгэх</h2>
+                                <p style={{ margin: '2px 0 0 0', fontSize: '0.78rem', color: 'var(--text-muted)' }}>Орлого, зарлага, тохируулга</p>
+                            </div>
+                        </div>
                         <button type="button" className="btn btn-ghost btn-icon" onClick={onClose}>✕</button>
                     </div>
                     <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                        {/* Type Selector — Visual Cards */}
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
+                            {(['in', 'out', 'adjustment'] as const).map(t => {
+                                const tc = typeConfig[t];
+                                const TIcon = tc.icon;
+                                const colors = { in: 'var(--accent-green)', out: 'var(--accent-red)', adjustment: 'var(--primary)' };
+                                const tints = { in: 'var(--green-tint)', out: 'var(--red-tint)', adjustment: 'var(--primary-tint)' };
+                                const isActive = type === t;
+                                return (
+                                    <button key={t} type="button" onClick={() => setType(t)} style={{
+                                        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
+                                        padding: '14px 8px', borderRadius: 14, cursor: 'pointer',
+                                        background: isActive ? tints[t] : 'var(--surface-2)',
+                                        border: `2px solid ${isActive ? colors[t] : 'var(--border-primary)'}`,
+                                        color: isActive ? colors[t] : 'var(--text-secondary)',
+                                        transition: 'all 0.2s', fontFamily: 'inherit',
+                                    }}>
+                                        <TIcon size={20} />
+                                        <span style={{ fontSize: '0.75rem', fontWeight: 700 }}>{tc.label}</span>
+                                    </button>
+                                );
+                            })}
+                        </div>
+
                         <div className="grid grid-cols-2 gap-4">
                             <div className="input-group">
                                 <label className="input-label">Бараа <span className="required">*</span></label>
@@ -333,14 +446,26 @@ function AddMovementModal({ products, onClose }: { products: Product[]; onClose:
                                 </select>
                             </div>
                             <div className="input-group">
-                                <label className="input-label">Төрөл</label>
-                                <select className="input select" value={type} onChange={e => setType(e.target.value as 'in' | 'out' | 'adjustment')}>
-                                    <option value="in">Орлого (Татан авалт)</option>
-                                    <option value="out">Зарлага</option>
-                                    <option value="adjustment">Тохируулга</option>
-                                </select>
+                                <label className="input-label">Тоо ширхэг <span className="required">*</span></label>
+                                <input className="input" type="number" min="1" placeholder="10" value={quantity} onChange={e => setQuantity(e.target.value)} required />
                             </div>
                         </div>
+
+                        {/* Live Stock Preview */}
+                        {qty > 0 && selectedProduct && (
+                            <div style={{
+                                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 16,
+                                padding: '12px 16px', borderRadius: 12,
+                                background: 'var(--surface-2)', border: '1px solid var(--border-primary)',
+                                fontSize: '0.85rem', fontWeight: 700
+                            }}>
+                                <span style={{ color: 'var(--text-muted)' }}>Одоо: <strong style={{ color: 'var(--text-primary)' }}>{currentStock}</strong></span>
+                                <ArrowRight size={14} style={{ color: 'var(--text-muted)' }} />
+                                <span style={{ color: previewStock >= 0 ? 'var(--accent-green)' : 'var(--accent-red)' }}>
+                                    Дараа: <strong>{previewStock}</strong>
+                                </span>
+                            </div>
+                        )}
 
                         <div className="grid grid-cols-2 gap-4">
                             <div className="input-group">
@@ -363,20 +488,14 @@ function AddMovementModal({ products, onClose }: { products: Product[]; onClose:
                             </div>
                         </div>
 
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="input-group">
-                                <label className="input-label">Тоо ширхэг <span className="required">*</span></label>
-                                <input className="input" type="number" min="1" placeholder="10" value={quantity} onChange={e => setQuantity(e.target.value)} required />
-                            </div>
-                            <div className="input-group">
-                                <label className="input-label">Шалтгаан</label>
-                                <input className="input" placeholder="Жишээ: Шинэ бараа ирсэн..." value={reason} onChange={e => setReason(e.target.value)} />
-                            </div>
+                        <div className="input-group">
+                            <label className="input-label">Шалтгаан</label>
+                            <input className="input" placeholder="Жишээ: Шинэ бараа ирсэн..." value={reason} onChange={e => setReason(e.target.value)} />
                         </div>
                     </div>
                     <div className="modal-footer">
                         <button type="button" className="btn btn-secondary" onClick={onClose}>Болих</button>
-                        <button type="submit" className="btn btn-primary" disabled={saving || products.length === 0}>
+                        <button type="submit" className="btn btn-primary gradient-btn" disabled={saving || products.length === 0} style={{ gap: 6 }}>
                             {saving ? <Loader2 size={16} className="animate-spin" /> : <Plus size={16} />} Бүртгэх
                         </button>
                     </div>
