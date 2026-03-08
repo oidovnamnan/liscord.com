@@ -44,9 +44,7 @@
 }
 
 .inv-stat-card {
-    background: var(--gradient-glass);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
+    background: var(--surface-1);
     border: 1px solid var(--border-primary);
     border-radius: 20px;
     padding: 22px 24px;
@@ -57,6 +55,28 @@
     position: relative;
     overflow: hidden;
     cursor: pointer;
+    box-shadow: var(--shadow-sm);
+}
+
+/* Each card gets unique gradient tint */
+.inv-stat-card:nth-child(1) {
+    background: linear-gradient(135deg, rgba(11, 232, 129, 0.06) 0%, var(--surface-1) 60%);
+    border-color: rgba(11, 232, 129, 0.2);
+}
+
+.inv-stat-card:nth-child(2) {
+    background: linear-gradient(135deg, rgba(255, 71, 87, 0.06) 0%, var(--surface-1) 60%);
+    border-color: rgba(255, 71, 87, 0.2);
+}
+
+.inv-stat-card:nth-child(3) {
+    background: linear-gradient(135deg, rgba(108, 92, 231, 0.06) 0%, var(--surface-1) 60%);
+    border-color: rgba(108, 92, 231, 0.2);
+}
+
+.inv-stat-card:nth-child(4) {
+    background: linear-gradient(135deg, rgba(255, 159, 67, 0.06) 0%, var(--surface-1) 60%);
+    border-color: rgba(255, 159, 67, 0.2);
 }
 
 .inv-stat-card::before {
@@ -67,8 +87,8 @@
     right: 0;
     height: 3px;
     border-radius: 20px 20px 0 0;
-    opacity: 0;
-    transition: opacity 0.3s;
+    opacity: 1;
+    transition: height 0.3s;
 }
 
 .inv-stat-card:nth-child(1)::before {
@@ -88,7 +108,7 @@
 }
 
 .inv-stat-card:hover::before {
-    opacity: 1;
+    height: 4px;
 }
 
 .inv-stat-card::after {
@@ -102,8 +122,23 @@
 
 .inv-stat-card:hover {
     transform: translateY(-6px);
-    border-color: rgba(var(--primary-rgb), 0.3);
-    box-shadow: var(--shadow-lg), var(--shadow-glow);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12), 0 0 20px rgba(var(--primary-rgb), 0.08);
+}
+
+.inv-stat-card:nth-child(1):hover {
+    box-shadow: 0 12px 40px rgba(11, 232, 129, 0.15);
+}
+
+.inv-stat-card:nth-child(2):hover {
+    box-shadow: 0 12px 40px rgba(255, 71, 87, 0.15);
+}
+
+.inv-stat-card:nth-child(3):hover {
+    box-shadow: 0 12px 40px rgba(108, 92, 231, 0.15);
+}
+
+.inv-stat-card:nth-child(4):hover {
+    box-shadow: 0 12px 40px rgba(255, 159, 67, 0.15);
 }
 
 .inv-stat-content {
@@ -572,8 +607,8 @@
     left: 0;
     top: 0;
     bottom: 0;
-    width: 3px;
-    border-radius: 3px 0 0 3px;
+    width: 4px;
+    border-radius: 4px 0 0 4px;
 }
 
 .inv-move-card.move-in::before {
@@ -586,6 +621,19 @@
 
 .inv-move-card.move-adj::before {
     background: var(--primary);
+}
+
+/* Row tint */
+.inv-move-card.move-in {
+    background: linear-gradient(90deg, rgba(11, 232, 129, 0.04), var(--surface-1) 30%);
+}
+
+.inv-move-card.move-out {
+    background: linear-gradient(90deg, rgba(255, 71, 87, 0.04), var(--surface-1) 30%);
+}
+
+.inv-move-card.move-adj {
+    background: linear-gradient(90deg, rgba(108, 92, 231, 0.04), var(--surface-1) 30%);
 }
 
 .inv-move-card::after {
