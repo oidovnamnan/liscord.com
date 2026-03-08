@@ -76,7 +76,7 @@ export async function fetchFBPageId(pageUrl: string, accessToken: string): Promi
         if (/^\d+$/.test(pageIdentifier)) return pageIdentifier;
 
         throw new Error(data.error?.message || 'Facebook Page олдсонгүй');
-    } catch (e: any) {
+    } catch (e: unknown) {
         // Final fallback: try regex to find numeric ID in URL
         const match = pageUrl.match(/(?:id=|\/)([0-9]{10,})/);
         if (match && match[1]) return match[1];

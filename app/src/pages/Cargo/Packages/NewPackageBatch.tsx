@@ -89,7 +89,7 @@ export function NewPackageBatch({ onCancel }: { onCancel: () => void }) {
                 } : p));
 
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            } catch (error: any) {
+            } catch (error: unknown) {
                 // Update item status to error
                 setScannedItems(prev => prev.map(p => p.id === item.id ? {
                     ...p,

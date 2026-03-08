@@ -154,7 +154,7 @@ export function FBImportModal({ onClose }: FBImportModalProps) {
             setStep('review');
             toast.success(`${extracted.length} бараа олдлоо!`);
 
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error('FB Import error:', error);
             toast.error(error.message || 'Алдаа гарлаа');
             setStep('setup');

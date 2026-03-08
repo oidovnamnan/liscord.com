@@ -51,7 +51,7 @@ export function RegisterPage() {
             toast.success('Амжилттай бүртгүүллээ!');
             navigate('/app');
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error(error);
             let message = 'Бүртгэлд алдаа гарлаа';
 
