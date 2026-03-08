@@ -648,7 +648,7 @@ function CreateProductModal({ onClose }: { onClose: () => void }) {
             toast.success('Бараа амжилттай нэмэгдлээ');
 
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        } catch (error: unknown) {
+        } catch (error: any) {
             console.error(error);
             toast.error('Алдаа гарлаа');
         } finally {

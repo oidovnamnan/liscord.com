@@ -227,7 +227,7 @@ function CreateCustomerModal({ onClose }: { onClose: () => void }) {
             onClose();
             toast.success('Харилцагч амжилттай бүртгэгдлээ');
             // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars
-        } catch (error: unknown) {
+        } catch (error: any) {
             toast.error('Алдаа гарлаа');
         } finally {
             setLoading(false);

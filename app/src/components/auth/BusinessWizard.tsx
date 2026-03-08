@@ -67,7 +67,7 @@ export function BusinessWizard() {
             setEmployee(emp);
             toast.success('Бизнес амжилттай үүслээ!');
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        } catch (error: unknown) {
+        } catch (error: any) {
             toast.error('Алдаа гарлаа: ' + error.message);
         } finally {
             setLoading(false);

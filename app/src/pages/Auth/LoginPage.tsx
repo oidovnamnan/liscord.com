@@ -212,7 +212,7 @@ export function LoginPage() {
             setConfirmationResult(result);
             setStep('otp');
             toast.success('Баталгаажуулах код илгээлээ');
-        } catch (error: unknown) {
+        } catch (error: any) {
             console.error(error);
             toast.error('Алдаа гарлаа. Дугаараа шалгана уу.');
             if (window.recaptchaVerifier && typeof window.recaptchaVerifier.reset === 'function') {
@@ -236,7 +236,7 @@ export function LoginPage() {
         try {
             await confirmationResult.confirm(otp);
             navigate('/app');
-        } catch (error: unknown) {
+        } catch (error: any) {
             toast.error('Код буруу байна');
         } finally {
             setLoading(false);
@@ -251,7 +251,7 @@ export function LoginPage() {
         try {
             await signInWithEmailAndPassword(auth, email, password);
             navigate('/app');
-        } catch (error: unknown) {
+        } catch (error: any) {
             let message = 'И-мэйл эсвэл нууц үг буруу байна';
             if (error.code === 'auth/user-not-found') {
                 message = 'Ийм бүртгэлтэй хэрэглэгч олдсонгүй';

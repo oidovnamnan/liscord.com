@@ -897,7 +897,7 @@ function CreateOrderModal({ onClose, nextNumber, statuses }: {
             });
             onClose();
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        } catch (error: unknown) {
+        } catch (error: any) {
             console.error(error);
         } finally {
             setLoading(false);
