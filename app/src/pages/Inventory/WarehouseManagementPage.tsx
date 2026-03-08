@@ -34,9 +34,22 @@ export function WarehouseManagementPage() {
     useEffect(() => { if (!business?.id) return; const q = query(collection(db, `businesses/${business.id}/warehouseOps`), orderBy('createdAt', 'desc')); const unsub = onSnapshot(q, (snap) => { setItems(snap.docs.map(d => ({ id: d.id, ...d.data() } as any))); setLoading(false); }); return () => unsub(); }, [business?.id]);
     return (
         <HubLayout hubId="inventory-hub">
-            <div className="page-container animate-fade-in">
-                <Header title="Агуулахын Удирдлага" action={{ label: '+ Үйлдэл', onClick: () => { setEditingItem(null); setShowModal(true); } }} />
-                <div className="card" style={{ padding: 0, marginTop: 20 }}>
+            <div className="page animate-fade-in">
+                <div className="page-hero" style={{ marginBottom: 24 }}>
+                    <div className="page-hero-left">
+                        <div className="page-hero-icon">
+                            <Warehouse size={24} />
+                        </div>
+                        <div>
+                            <h2 className="page-hero-title">Агуулахын Удирдлага</h2>
+                            <p className="page-hero-subtitle">Бараа материалын байршил, хөдөлгөөн хянах</p>
+                        </div>
+                    </div>
+                    <button className="btn btn-primary btn-sm gradient-btn" onClick={() => { setEditingItem(null); setShowModal(true); }} style={{ gap: 6 }}>
+                        + Үйлдэл
+                    </button>
+                </div>
+                <div className="card" style={{ padding: 0 }}>
                     {loading ? <div style={{ padding: 48, textAlign: 'center', color: 'var(--text-muted)' }}>Ачаалж байна...</div> : (
                         <table className="table"><thead><tr><th>Байршил</th><th>Бараа</th><th>Тоо</th><th>Бүс</th><th>Үйлдэл</th><th>Огноо</th></tr></thead>
                             <tbody>{items.length === 0 ? <tr><td colSpan={6} style={{ textAlign: 'center', padding: 48, color: 'var(--text-muted)' }}>Бүртгэл олдсонгүй</td></tr> :

@@ -67,12 +67,17 @@ export function ProcurementPage() {
     return (
         <HubLayout hubId="inventory-hub">
             <div className="procurement-page animate-fade-in">
-                <div className="page-section-header">
-                    <div>
-                        <h2 className="page-section-title">Худалдан Авалт (PO)</h2>
-                        <p className="page-section-subtitle">Нийлүүлэгчид рүү илгээх худалдан авалтын захиалга</p>
+                <div className="page-hero" style={{ marginBottom: 24 }}>
+                    <div className="page-hero-left">
+                        <div className="page-hero-icon">
+                            <ShoppingCart size={24} />
+                        </div>
+                        <div>
+                            <h2 className="page-hero-title">Худалдан Авалт (PO)</h2>
+                            <p className="page-hero-subtitle">Нийлүүлэгчид рүү илгээх худалдан авалтын захиалга</p>
+                        </div>
                     </div>
-                    <button className="btn btn-primary btn-sm" onClick={() => { setEditingItem(null); setShowModal(true); }}>
+                    <button className="btn btn-primary btn-sm gradient-btn" onClick={() => { setEditingItem(null); setShowModal(true); }} style={{ gap: 6 }}>
                         <Plus size={16} /> Шинэ PO
                     </button>
                 </div>

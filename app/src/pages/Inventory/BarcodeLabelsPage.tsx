@@ -41,9 +41,22 @@ export function BarcodeLabelsPage() {
 
     return (
         <HubLayout hubId="inventory-hub">
-            <div className="page-container animate-fade-in">
-                <Header title="Шошго хэвлэх" action={{ label: '+ Шошго', onClick: () => { setEditingItem(null); setShowModal(true); } }} />
-                <div className="card" style={{ padding: 0, marginTop: 20 }}>
+            <div className="page animate-fade-in">
+                <div className="page-hero" style={{ marginBottom: 24 }}>
+                    <div className="page-hero-left">
+                        <div className="page-hero-icon">
+                            <Tag size={24} />
+                        </div>
+                        <div>
+                            <h2 className="page-hero-title">Шошго хэвлэх</h2>
+                            <p className="page-hero-subtitle">Баркод, шошго бэлтгэх</p>
+                        </div>
+                    </div>
+                    <button className="btn btn-primary btn-sm gradient-btn" onClick={() => { setEditingItem(null); setShowModal(true); }} style={{ gap: 6 }}>
+                        + Шошго
+                    </button>
+                </div>
+                <div className="card" style={{ padding: 0 }}>
                     {loading ? <div style={{ padding: 48, textAlign: 'center', color: 'var(--text-muted)' }}>Ачаалж байна...</div> : (
                         <table className="table"><thead><tr><th>Бүтээгдэхүүн</th><th>Баркод</th><th>Үнэ</th><th>Тоо</th><th>Хэмжээ</th></tr></thead>
                             <tbody>{items.length === 0 ? <tr><td colSpan={5} style={{ textAlign: 'center', padding: 48, color: 'var(--text-muted)' }}>Шошго олдсонгүй</td></tr> :
