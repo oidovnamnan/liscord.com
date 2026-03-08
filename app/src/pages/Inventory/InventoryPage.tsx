@@ -119,11 +119,16 @@ export function InventoryPage() {
     return (
         <HubLayout hubId="inventory-hub">
             <div className="inventory-page animate-fade-in">
-                {/* Page Header */}
-                <div className="page-section-header">
-                    <div>
-                        <h2 className="page-section-title">Агуулах / Логистик</h2>
-                        <p className="page-section-subtitle">Барааны орлого, зарлага, нөөцийн түүх</p>
+                {/* Page Header — Premium */}
+                <div className="inv-page-hero">
+                    <div className="inv-hero-left">
+                        <div className="inv-hero-icon">
+                            <Package size={24} />
+                        </div>
+                        <div>
+                            <h2 className="inv-hero-title">Агуулах / Логистик</h2>
+                            <p className="inv-hero-subtitle">Барааны орлого, зарлага, нөөцийн түүх</p>
+                        </div>
                     </div>
                     <button className="btn btn-primary btn-sm gradient-btn" onClick={() => setShowAdd(true)} style={{ gap: 6 }}>
                         <Plus size={16} /> Нөөц нэмэх
