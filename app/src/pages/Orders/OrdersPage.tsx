@@ -205,7 +205,7 @@ export function OrdersPage() {
     return (
         <>
             <div className="page">
-                <div className="page-hero" style={{ marginBottom: 24 }}>
+                <div className="page-hero" style={{ marginBottom: 8 }}>
                     <div className="page-hero-left">
                         <div className="page-hero-icon">
                             <ShoppingCart size={24} />
