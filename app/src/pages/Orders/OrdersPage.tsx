@@ -279,37 +279,40 @@ export function OrdersPage() {
                         />
                     </div>
                     <div className="orders-filters" style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                        <div className="date-filter-group">
-                            <button className={`date-chip ${dateFilter === 'all' ? 'active' : ''}`} onClick={() => setDateFilter('all')}>Бүгд</button>
-                            <button className={`date-chip ${dateFilter === 'today' ? 'active' : ''}`} onClick={() => setDateFilter('today')}>Өнөөдөр</button>
-                            <button className={`date-chip ${dateFilter === 'yesterday' ? 'active' : ''}`} onClick={() => setDateFilter('yesterday')}>Өчигдөр</button>
-                            <button className={`date-chip ${dateFilter === 'week' ? 'active' : ''}`} onClick={() => setDateFilter('week')}>7 хоног</button>
-                        </div>
-                        <div className="pro-meta-divider" style={{ height: '24px' }}></div>
+                        <select
+                            className="input"
+                            value={statusFilter}
+                            onChange={(e) => setStatusFilter(e.target.value)}
+                            style={{ minWidth: 140, height: 42, borderRadius: 12, fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer', padding: '0 12px', background: 'var(--surface-1)', border: '1.5px solid var(--border-primary)', color: 'var(--text-primary)' }}
+                        >
+                            {statuses.filter(s => s.isActive || s.id === 'cancelled' || s.id === 'all').map(s => {
+                                const count = s.id === 'all'
+                                    ? orders.length
+                                    : s.id === 'cancelled'
+                                        ? orders.filter(o => o.isDeleted || o.status?.toLowerCase() === 'cancelled').length
+                                        : orders.filter(o => o.status?.toLowerCase() === s.id.toLowerCase() && !o.isDeleted).length;
+                                return (
+                                    <option key={s.id} value={s.id}>
+                                        {s.label} ({count})
+                                    </option>
+                                );
+                            })}
+                        </select>
+                        <select
+                            className="input"
+                            value={dateFilter}
+                            onChange={(e) => setDateFilter(e.target.value as any)}
+                            style={{ minWidth: 120, height: 42, borderRadius: 12, fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer', padding: '0 12px', background: 'var(--surface-1)', border: '1.5px solid var(--border-primary)', color: 'var(--text-primary)' }}
+                        >
+                            <option value="all">Бүгд</option>
+                            <option value="today">Өнөөдөр</option>
+                            <option value="yesterday">Өчигдөр</option>
+                            <option value="week">7 хоног</option>
+                        </select>
                         <button className="btn-secondary btn-sm" onClick={toggleAll} style={{ borderRadius: '10px' }}>
                             {selectedOrderIds.size === filtered.length && filtered.length > 0 ? 'Сонголт арилгах' : 'Бүгдийг сонгох'}
                         </button>
                     </div>
-                </div>
-
-                <div className="orders-status-bar">
-                    {statuses.filter(s => s.isActive || s.id === 'cancelled' || s.id === 'all').map(s => {
-                        const count = s.id === 'all'
-                            ? orders.length
-                            : s.id === 'cancelled'
-                                ? orders.filter(o => o.isDeleted || o.status?.toLowerCase() === 'cancelled').length
-                                : orders.filter(o => o.status?.toLowerCase() === s.id.toLowerCase() && !o.isDeleted).length;
-
-                        return (
-                            <button
-                                key={s.id}
-                                className={`orders-status-chip ${statusFilter === s.id ? 'active' : ''}`}
-                                onClick={() => setStatusFilter(s.id)}
-                            >
-                                {s.label} <span className="orders-status-count">{count}</span>
-                            </button>
-                        );
-                    })}
                 </div>
 
                 <div className="orders-list stagger-children">
