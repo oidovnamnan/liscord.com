@@ -64,7 +64,7 @@ export function DeliveryPage() {
         try {
             await deliveryService.updateStatus(business.id, deliveryId, status, 'Статус гараар шинэчлэв');
             toast.success('Статус шинэчлэгдлээ');
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
         } catch (_error) {
             toast.error('Алдаа гарлаа');
         }
@@ -72,15 +72,18 @@ export function DeliveryPage() {
 
     return (
         <HubLayout hubId="logistics-hub">
-            <Header
-                title="Хүргэлтийн удирдлага"
-                subtitle={`Өнөөдөр ${deliveries.length} хүргэлт системд байна`}
-                action={{
-                    label: "Шинэ хүргэлт үүсгэх",
-                    onClick: () => toast('Захиалга цэснээс хүргэлт үүсгэж болно')
-                }}
-            />
             <div className="page">
+                <div className="page-hero" style={{ marginBottom: 24 }}>
+                    <div className="page-hero-left">
+                        <div className="page-hero-icon">
+                            <Truck size={24} />
+                        </div>
+                        <div>
+                            <h2 className="page-hero-title">Хүргэлтийн удирдлага</h2>
+                            <p className="page-hero-subtitle">{`Өнөөдөр ${deliveries.length} хүргэлт системд байна`}</p>
+                        </div>
+                    </div>
+                </div>
                 <div className="grid-4 stagger-children" style={{ marginBottom: 'var(--space-lg)' }}>
                     <div className="stat-card"><div className="stat-card-label">Хүлээгдэж буй</div><div className="stat-card-value">{stats.pending}</div></div>
                     <div className="stat-card"><div className="stat-card-label">Замд байгаа</div><div className="stat-card-value">{stats.inTransit}</div></div>

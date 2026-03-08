@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Search, Plus, Phone, Shield, MoreVertical, Clock, Loader2, Pencil, Trash2 } from 'lucide-react';
+import { Search, Plus, Phone, Shield, MoreVertical, Clock, Loader2, Pencil, Trash2, Users } from 'lucide-react';
 import { useBusinessStore } from '../../store';
 import { teamService } from '../../services/db';
 import type { Employee, Position } from '../../types';
@@ -56,8 +56,21 @@ export function EmployeesPage() {
 
     return (
         <HubLayout hubId="staff-hub">
-            <Header title="Ажилтан" subtitle={`Нийт ${employees.length} ажилтан`} action={{ label: 'Урих', onClick: () => setShowInvite(true) }} />
             <div className="page" onClick={() => setMenuId(null)}>
+                <div className="page-hero" style={{ marginBottom: 24 }}>
+                    <div className="page-hero-left">
+                        <div className="page-hero-icon">
+                            <Users size={24} />
+                        </div>
+                        <div>
+                            <h2 className="page-hero-title">Ажилтан</h2>
+                            <p className="page-hero-subtitle">Нийт {employees.length} ажилтан</p>
+                        </div>
+                    </div>
+                    <button className="btn btn-primary btn-sm gradient-btn" onClick={() => setShowInvite(true)} style={{ gap: 6 }}>
+                        <Plus size={16} /> Урих
+                    </button>
+                </div>
                 <div className="orders-toolbar">
                     <div className="orders-search">
                         <Search size={18} className="orders-search-icon" />

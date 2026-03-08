@@ -68,8 +68,18 @@ export function PaymentsPage() {
 
     return (
         <HubLayout hubId="finance-hub">
-            <Header title="Төлбөр тооцоо" subtitle="Орлого, зарлага бүртгэл" />
             <div className="page">
+                <div className="page-hero" style={{ marginBottom: 24 }}>
+                    <div className="page-hero-left">
+                        <div className="page-hero-icon">
+                            <DollarSign size={24} />
+                        </div>
+                        <div>
+                            <h2 className="page-hero-title">Төлбөр тооцоо</h2>
+                            <p className="page-hero-subtitle">Орлого, зарлага бүртгэл</p>
+                        </div>
+                    </div>
+                </div>
                 <div className="grid-3" style={{ marginBottom: 'var(--space-lg)' }}>
                     <div className="stat-card">
                         <div className="stat-card-header">

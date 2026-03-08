@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo } from 'react';
 import { Header } from '../../components/layout/Header';
-import { DollarSign, ShoppingCart, Users } from 'lucide-react';
+import { DollarSign, ShoppingCart, Users, BarChart3 } from 'lucide-react';
 import { useBusinessStore } from '../../store';
 import { orderService } from '../../services/db';
 import type { Order } from '../../types';
@@ -102,8 +102,19 @@ export function ReportsPage() {
 
     return (
         <>
-            <Header title="Бизнес Анализ" subtitle="Таны бизнесийн гүйцэтгэлийг нэг дороос" />
+            <Header title="" subtitle="" />
             <div className="page" style={{ padding: '0 var(--space-xl) var(--space-2xl)' }}>
+                <div className="page-hero" style={{ marginBottom: 24 }}>
+                    <div className="page-hero-left">
+                        <div className="page-hero-icon">
+                            <BarChart3 size={24} />
+                        </div>
+                        <div>
+                            <h2 className="page-hero-title">Бизнес Анализ</h2>
+                            <p className="page-hero-subtitle">Таны бизнесийн гүйцэтгэлийг нэг дороос</p>
+                        </div>
+                    </div>
+                </div>
 
                 {/* Modern Period Switcher */}
                 <div style={{ display: 'flex', justifyContent: 'center' }}>

@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { Header } from '../../components/layout/Header';
-import { Search, Plus, Phone, Mail, MoreVertical, ShoppingCart, DollarSign, Loader2, Pencil, Trash2 } from 'lucide-react';
+import { Search, Plus, Phone, Mail, MoreVertical, ShoppingCart, DollarSign, Loader2, Pencil, Trash2, Users } from 'lucide-react';
 import { useBusinessStore, useAuthStore } from '../../store';
 import { customerService } from '../../services/db';
 import type { Customer } from '../../types';
@@ -67,12 +67,21 @@ export function CustomersPage() {
 
     return (
         <HubLayout hubId="crm-hub">
-            <Header
-                title="Харилцагч"
-                subtitle={loading ? 'Уншиж байна...' : `Нийт ${customers.length} харилцагч`}
-                action={{ label: 'Шинэ харилцагч', onClick: () => setShowCreate(true) }}
-            />
             <div className="page">
+                <div className="page-hero" style={{ marginBottom: 24 }}>
+                    <div className="page-hero-left">
+                        <div className="page-hero-icon">
+                            <Users size={24} />
+                        </div>
+                        <div>
+                            <h2 className="page-hero-title">Харилцагчид</h2>
+                            <p className="page-hero-subtitle">{loading ? 'Уншиж байна...' : `Нийт ${customers.length} харилцагч`}</p>
+                        </div>
+                    </div>
+                    <button className="btn btn-primary btn-sm gradient-btn" onClick={() => setShowCreate(true)} style={{ gap: 6 }}>
+                        <Plus size={16} /> Шинэ харилцагч
+                    </button>
+                </div>
                 <div className="orders-toolbar">
                     <div className="orders-search">
                         <Search size={18} className="orders-search-icon" />

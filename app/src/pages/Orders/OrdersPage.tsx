@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { Header } from '../../components/layout/Header';
-import { Plus, Search, MoreVertical, Loader2, X, User, Package, CreditCard, Trash2, CheckSquare, Settings } from 'lucide-react';
+import { Plus, Search, MoreVertical, Loader2, X, User, Package, CreditCard, Trash2, CheckSquare, Settings, ShoppingCart } from 'lucide-react';
 import { useBusinessStore, useAuthStore } from '../../store';
 import { toast } from 'react-hot-toast';
 import {
@@ -204,11 +204,27 @@ export function OrdersPage() {
 
     return (
         <>
-            <Header
-                title="Захиалга"
-                subtitle={loading ? 'Уншиж байна...' : `Нийт ${orders.length} захиалга`}
-            />
+            <Header title="" subtitle="" />
             <div className="page">
+                <div className="page-hero" style={{ marginBottom: 24 }}>
+                    <div className="page-hero-left">
+                        <div className="page-hero-icon">
+                            <ShoppingCart size={24} />
+                        </div>
+                        <div>
+                            <h2 className="page-hero-title">Борлуулалтын Захиалга</h2>
+                            <p className="page-hero-subtitle">{loading ? 'Уншиж байна...' : `Нийт ${orders.length} захиалга`}</p>
+                        </div>
+                    </div>
+                    <button
+                        className="btn btn-primary gradient-btn"
+                        onClick={() => setShowCreate(true)}
+                        style={{ height: '42px', padding: '0 20px', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}
+                    >
+                        <Plus size={18} />
+                        <span style={{ fontWeight: 700 }}>Шинэ захиалга</span>
+                    </button>
+                </div>
                 {/* Stats Summary Section */}
                 <div className="orders-stats-summary animate-fade-in">
                     <div className="stat-card">
@@ -242,15 +258,6 @@ export function OrdersPage() {
                 </div>
 
                 <div className="orders-toolbar animate-fade-in">
-                    <button
-                        className="btn btn-primary gradient-btn"
-                        onClick={() => setShowCreate(true)}
-                        style={{ height: '42px', padding: '0 20px', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}
-                    >
-                        <Plus size={18} />
-                        <span style={{ fontWeight: 700 }}>Шинэ захиалга</span>
-                    </button>
-
                     <div className="orders-search">
                         <Search size={18} className="orders-search-icon" />
                         <input

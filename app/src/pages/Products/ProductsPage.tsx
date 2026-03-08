@@ -139,11 +139,38 @@ export function ProductsPage() {
 
     return (
         <>
-            <Header
-                title="Бараа Материал"
-                subtitle={loading ? 'Уншиж байна...' : `Нийт ${products.length} төрлийн бараа`}
-            />
+            <Header title="" subtitle="" />
             <div className="page">
+                <div className="page-hero" style={{ marginBottom: 24 }}>
+                    <div className="page-hero-left">
+                        <div className="page-hero-icon">
+                            <Package size={24} />
+                        </div>
+                        <div>
+                            <h2 className="page-hero-title">Бараа Материал</h2>
+                            <p className="page-hero-subtitle">{loading ? 'Уншиж байна...' : `Нийт ${products.length} төрлийн бараа`}</p>
+                        </div>
+                    </div>
+                    <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                        <button
+                            className="btn btn-secondary"
+                            onClick={() => setShowFBImport(true)}
+                            style={{ height: '42px', padding: '0 16px', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '8px', background: 'rgba(24, 119, 242, 0.1)', border: '1px solid rgba(24, 119, 242, 0.2)', color: '#1877f2' }}
+                        >
+                            <Facebook size={18} />
+                            <span style={{ fontWeight: 700, fontSize: '0.85rem' }}>FB</span>
+                        </button>
+                        <button
+                            className="btn btn-primary gradient-btn"
+                            onClick={() => setShowCreate(true)}
+                            style={{ height: '42px', padding: '0 20px', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}
+                        >
+                            <Plus size={18} />
+                            <span style={{ fontWeight: 700 }}>Шинэ бараа</span>
+                        </button>
+                    </div>
+                </div>
+
                 {/* Stats Summary Section */}
                 <div className="orders-stats-summary animate-fade-in">
                     <div className="stat-card">
@@ -185,24 +212,6 @@ export function ProductsPage() {
                 </div>
 
                 <div className="orders-toolbar animate-fade-in">
-                    <button
-                        className="btn btn-primary gradient-btn premium-btn"
-                        onClick={() => setShowCreate(true)}
-                        style={{ height: '46px', padding: '0 24px', borderRadius: '14px', display: 'flex', alignItems: 'center', gap: '10px' }}
-                    >
-                        <Plus size={20} />
-                        <span style={{ fontWeight: 800, fontSize: '0.95rem' }}>Шинэ бараа</span>
-                    </button>
-
-                    <button
-                        className="btn btn-secondary"
-                        onClick={() => setShowFBImport(true)}
-                        style={{ height: '46px', padding: '0 20px', borderRadius: '14px', display: 'flex', alignItems: 'center', gap: '10px', background: 'rgba(24, 119, 242, 0.1)', border: '1px solid rgba(24, 119, 242, 0.2)', color: '#1877f2' }}
-                    >
-                        <Facebook size={20} />
-                        <span style={{ fontWeight: 800, fontSize: '0.95rem' }}>FB Импорт</span>
-                    </button>
-
                     <div className="orders-search">
                         <Search size={18} className="orders-search-icon" />
                         <input className="input orders-search-input" placeholder="Бараа, SKU хайх..." value={search} onChange={e => setSearch(e.target.value)} />

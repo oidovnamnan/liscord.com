@@ -33,12 +33,18 @@ export function FinancePage() {
 
     return (
         <HubLayout hubId="finance-hub">
-            <Header
-                title="Санхүү & Татвар"
-                subtitle="Компанийн орлого, зарлага болон авлага өглөгийн нэгдсэн самбар"
-            />
-
             <div className="page animate-fade-in">
+                <div className="page-hero" style={{ marginBottom: 24 }}>
+                    <div className="page-hero-left">
+                        <div className="page-hero-icon">
+                            <Wallet size={24} />
+                        </div>
+                        <div>
+                            <h2 className="page-hero-title">Санхүү & Татвар</h2>
+                            <p className="page-hero-subtitle">Компанийн орлого, зарлага болон авлага өглөгийн нэгдсэн самбар</p>
+                        </div>
+                    </div>
+                </div>
                 <div style={{ display: 'flex', gap: '16px', marginBottom: '32px', flexWrap: 'wrap' }}>
                     <button className="btn btn-primary gradient-btn" style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 20px' }}>
                         <TrendingUp size={18} /> Орлого бүртгэх
