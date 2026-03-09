@@ -239,6 +239,36 @@
     color: var(--text-primary);
 }
 
+/* View Toggle */
+.ot-view-toggle {
+    display: flex;
+    background: var(--surface-2);
+    border: 1px solid var(--border-primary);
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.ot-view-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px 10px;
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.ot-view-btn:hover {
+    color: var(--text-primary);
+}
+
+.ot-view-btn.active {
+    background: var(--primary);
+    color: white;
+}
+
 /* Responsive: hide less important columns on small screens */
 @media (max-width: 900px) {
 

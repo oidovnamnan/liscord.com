@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { Plus, Search, MoreVertical, Loader2, X, User, Package, CreditCard, Trash2, CheckSquare, Settings, ShoppingCart } from 'lucide-react';
+import { Plus, Search, MoreVertical, Loader2, X, User, Package, CreditCard, Trash2, CheckSquare, Settings, ShoppingCart, List, LayoutGrid } from 'lucide-react';
 import '../Inventory/InventoryPage.css';
 import { useBusinessStore, useAuthStore } from '../../store';
 import { toast } from 'react-hot-toast';
@@ -59,6 +59,14 @@ export function OrdersPage() {
     const bulkStatusRef = useRef<HTMLSelectElement>(null);
     const [ordersLimit, setOrdersLimit] = useState(50);
     const [hasMore, setHasMore] = useState(true);
+    const [viewMode, setViewMode] = useState<'table' | 'card'>(() => {
+        return (localStorage.getItem('liscord_ordersView') as 'table' | 'card') || 'table';
+    });
+
+    const handleViewChange = (mode: 'table' | 'card') => {
+        setViewMode(mode);
+        localStorage.setItem('liscord_ordersView', mode);
+    };
 
     useEffect(() => {
         // Calculate stats whenever orders change
@@ -308,23 +316,40 @@ export function OrdersPage() {
                             <option value="yesterday">Өчигдөр</option>
                             <option value="week">7 хоног</option>
                         </select>
+                        <div className="ot-view-toggle">
+                            <button
+                                className={`ot-view-btn ${viewMode === 'table' ? 'active' : ''}`}
+                                onClick={() => handleViewChange('table')}
+                                title="Хүснэгт"
+                            >
+                                <List size={16} />
+                            </button>
+                            <button
+                                className={`ot-view-btn ${viewMode === 'card' ? 'active' : ''}`}
+                                onClick={() => handleViewChange('card')}
+                                title="Карт"
+                            >
+                                <LayoutGrid size={16} />
+                            </button>
+                        </div>
                     </div>
                 </div>
 
-                {/* Table */}
-                <div className="ot-container animate-fade-in">
-                    {loading ? (
-                        <div className="loading-state">
-                            <Loader2 size={32} className="animate-spin" />
-                            <p>Захиалга ачаалж байна...</p>
-                        </div>
-                    ) : filtered.length === 0 ? (
-                        <div className="empty-state">
-                            <div className="empty-state-icon">📋</div>
-                            <h3>Захиалга олдсонгүй</h3>
-                            <p>Хайлтын нөхцөлөө өөрчилнө үү</p>
-                        </div>
-                    ) : (
+                {/* Orders List — Table or Card View */}
+                {loading ? (
+                    <div className="loading-state">
+                        <Loader2 size={32} className="animate-spin" />
+                        <p>Захиалга ачаалж байна...</p>
+                    </div>
+                ) : filtered.length === 0 ? (
+                    <div className="empty-state">
+                        <div className="empty-state-icon">📋</div>
+                        <h3>Захиалга олдсонгүй</h3>
+                        <p>Хайлтын нөхцөлөө өөрчилнө үү</p>
+                    </div>
+                ) : viewMode === 'table' ? (
+                    /* ═══ TABLE VIEW ═══ */
+                    <div className="ot-container animate-fade-in">
                         <table className="ot-table">
                             <thead>
                                 <tr>
@@ -457,8 +482,149 @@ export function OrdersPage() {
                                 })}
                             </tbody>
                         </table>
-                    )}
-                </div>
+                    </div>
+                ) : (
+                    /* ═══ CARD VIEW ═══ */
+                    <div className="orders-list stagger-children animate-fade-in">
+                        {filtered.map(order => {
+                            const statusConf = statuses.find(s => s.id.toLowerCase() === order.status?.toLowerCase());
+                            const statusColor = order.isDeleted ? '#ef4444' : (statusConf?.color || '#3b82f6');
+                            const statusLabel = order.isDeleted ? 'Цуцлагдсан' : (statusConf?.label || order.status);
+
+                            return (
+                                <div
+                                    key={order.id}
+                                    className={`order-card pro-layout ${order.isDeleted ? 'is-deleted' : ''} stagger-item`}
+                                    style={{ '--status-color': statusColor } as React.CSSProperties}
+                                    onClick={() => setSelectedOrder(order)}
+                                >
+                                    <div className="pro-status-border"></div>
+                                    <div className="order-card-inner">
+                                        {/* Header */}
+                                        <div className="pro-card-header">
+                                            <div className="header-id-group">
+                                                <input
+                                                    type="checkbox"
+                                                    className="order-checkbox"
+                                                    checked={selectedOrderIds.has(order.id)}
+                                                    onChange={() => { }}
+                                                    onClick={(e) => toggleSelection(e, order.id)}
+                                                />
+                                                <span className="order-id">#{order.orderNumber}</span>
+                                                <span
+                                                    className="pro-badge"
+                                                    style={{
+                                                        background: statusColor + '20',
+                                                        color: statusColor,
+                                                        border: `1px solid ${statusColor}40`
+                                                    }}
+                                                >
+                                                    {statusLabel}
+                                                </span>
+                                            </div>
+                                            <div className="header-actions-group">
+                                                <span className="pro-date">
+                                                    {order.createdAt instanceof Date
+                                                        ? `${order.createdAt.toLocaleDateString('mn-MN')} ${order.createdAt.toLocaleTimeString('mn-MN', { hour: '2-digit', minute: '2-digit' })}`
+                                                        : 'Саяхан'}
+                                                </span>
+                                                <div className="order-actions-dropdown" ref={openMenuId === order.id ? menuRef : null}>
+                                                    <button
+                                                        className={`pro-btn-ghost btn-icon ${openMenuId === order.id ? 'active' : ''}`}
+                                                        onClick={e => {
+                                                            e.stopPropagation();
+                                                            setOpenMenuId(openMenuId === order.id ? null : order.id);
+                                                        }}
+                                                    >
+                                                        <MoreVertical size={14} />
+                                                    </button>
+                                                    {openMenuId === order.id && (
+                                                        <div className="pro-dropdown-menu" onClick={e => e.stopPropagation()}>
+                                                            <button className="pro-dropdown-item" onClick={() => { setSelectedOrder(order); setOpenMenuId(null); }}>
+                                                                <Package size={14} /> Дэлгэрэнгүй
+                                                            </button>
+                                                            <button className="pro-dropdown-item" onClick={() => { setOpenMenuId(null); }}>
+                                                                <CheckSquare size={14} /> Статус солих
+                                                            </button>
+                                                            <hr />
+                                                            <button
+                                                                className="pro-dropdown-item text-danger"
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    setDeleteOrderId(order.id);
+                                                                    setShowDeleteModal(true);
+                                                                    setOpenMenuId(null);
+                                                                }}
+                                                            >
+                                                                <Trash2 size={14} /> Устгах
+                                                            </button>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Items */}
+                                        <div className="pro-card-main">
+                                            <div className="pro-product-listing">
+                                                {order.items.slice(0, 2).map((item, idx) => (
+                                                    <div key={idx} className="pro-item-row">
+                                                        <div className="pro-item-thumb">
+                                                            {item.image ? <img src={item.image} alt="" /> : <Package size={16} />}
+                                                        </div>
+                                                        <div className="pro-item-info">
+                                                            <span className="pro-item-name">{item.name}</span>
+                                                            <div className="pro-item-meta">
+                                                                {item.variant && <span className="pro-variant">{item.variant}</span>}
+                                                                <span className="pro-qty">x{item.quantity}</span>
+                                                            </div>
+                                                        </div>
+                                                        <div className="pro-item-price">{fmt(item.totalPrice)}</div>
+                                                    </div>
+                                                ))}
+                                                {order.items.length > 2 && (
+                                                    <div className="pro-items-overflow">
+                                                        <Package size={12} /> +{order.items.length - 2} бараа
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        {/* Customer & Source */}
+                                        <div className="pro-card-meta-bar">
+                                            <div className="pro-meta-item">
+                                                <User size={12} className="meta-icon" />
+                                                <span className="pro-customer-name">{order.customer.name}</span>
+                                                {order.customer.phone && <span className="pro-customer-phone">· {order.customer.phone}</span>}
+                                            </div>
+                                            {order.source && (
+                                                <div className="pro-source-tag">
+                                                    {sourceIcons[order.source] || '📦'} {order.source}
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        {/* Footer */}
+                                        <div className="pro-card-footer">
+                                            <div className="pro-financial-summary">
+                                                <div className="pro-total-label">НИЙТ ДҮН</div>
+                                                <div className="pro-total-value">{fmt(order.financials.totalAmount)}</div>
+                                            </div>
+                                            <span className={`pro-payment-badge ${order.paymentStatus}`}>
+                                                {paymentConfig[order.paymentStatus]?.label}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    {order.isDeleted && order.cancelReason && (
+                                        <div className="order-cancel-reason-hint" title={order.cancelReason}>
+                                            🔒 {order.cancelReason}
+                                        </div>
+                                    )}
+                                </div>
+                            );
+                        })}
+                    </div>
+                )}
 
                 {hasMore && orders.length > 0 && (
                     <div style={{ textAlign: 'center', marginTop: 16 }}>
