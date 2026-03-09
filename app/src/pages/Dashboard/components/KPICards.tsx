@@ -1,4 +1,4 @@
-import { TrendingUp, ShoppingCart, DollarSign, Users, Package, ScanLine, Truck, CheckCircle2 } from 'lucide-react';
+import { ShoppingCart, DollarSign, Users, Package, ScanLine, Truck, CheckCircle2 } from 'lucide-react';
 import type { BusinessStats, BusinessCategory } from '../../../types';
 
 interface KPICardsProps {
@@ -16,7 +16,7 @@ export function KPICards({ stats, category }: KPICardsProps) {
             icon: ScanLine,
             color: 'var(--primary)',
             bg: 'var(--primary-tint)',
-            trend: 'Шинэ',
+            sub: 'бүртгэгдсэн',
         },
         {
             label: 'Замдаа яваа',
@@ -24,7 +24,7 @@ export function KPICards({ stats, category }: KPICardsProps) {
             icon: Truck,
             color: 'var(--accent-orange)',
             bg: 'var(--orange-tint)',
-            trend: (stats.totalBatches || 0) + ' багц',
+            sub: (stats.totalBatches || 0) + ' багц',
         },
         {
             label: 'УБ-д ирсэн',
@@ -32,7 +32,7 @@ export function KPICards({ stats, category }: KPICardsProps) {
             icon: CheckCircle2,
             color: 'var(--accent-green)',
             bg: 'var(--green-tint)',
-            trend: 'Бэлэн',
+            sub: 'бэлэн',
         },
         {
             label: 'Нийт орлого',
@@ -40,7 +40,7 @@ export function KPICards({ stats, category }: KPICardsProps) {
             icon: DollarSign,
             color: 'var(--secondary)',
             bg: 'var(--cyan-tint)',
-            trend: '+8%',
+            sub: 'нийлбэр',
         },
     ] : [
         {
@@ -49,7 +49,7 @@ export function KPICards({ stats, category }: KPICardsProps) {
             icon: ShoppingCart,
             color: 'var(--primary)',
             bg: 'var(--primary-tint)',
-            trend: '+12%',
+            sub: 'бүртгэгдсэн',
         },
         {
             label: 'Нийт орлого',
@@ -57,7 +57,7 @@ export function KPICards({ stats, category }: KPICardsProps) {
             icon: DollarSign,
             color: 'var(--accent-green)',
             bg: 'var(--green-tint)',
-            trend: '+8%',
+            sub: 'нийлбэр',
         },
         {
             label: 'Харилцагч',
@@ -65,7 +65,7 @@ export function KPICards({ stats, category }: KPICardsProps) {
             icon: Users,
             color: 'var(--secondary)',
             bg: 'var(--cyan-tint)',
-            trend: '+5%',
+            sub: 'бүртгэлтэй',
         },
         {
             label: 'Бараа',
@@ -73,7 +73,7 @@ export function KPICards({ stats, category }: KPICardsProps) {
             icon: Package,
             color: 'var(--accent-pink)',
             bg: 'var(--pink-tint)',
-            trend: '+2',
+            sub: 'идэвхтэй',
         },
     ];
 
@@ -95,8 +95,8 @@ export function KPICards({ stats, category }: KPICardsProps) {
                             >
                                 <Icon size={20} />
                             </div>
-                            <span className="stat-card-change positive">
-                                <TrendingUp size={14} /> {card.trend}
+                            <span className="stat-card-sub" style={{ color: 'var(--text-muted)', fontSize: '0.68rem', fontWeight: 700 }}>
+                                {card.sub}
                             </span>
                         </div>
                         <div className="stat-card-value">{card.value}</div>
