@@ -673,9 +673,9 @@ function ProductCard({ product, onToggle }: { product: FBExtractedProduct; onTog
             </div>
 
             {/* Info */}
-            <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                    <div style={{ fontWeight: 700, fontSize: '0.9rem', lineHeight: 1.3 }}>{product.name}</div>
+            <div style={{ flex: 1, minWidth: 0, overflow: 'hidden' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>
+                    <div style={{ fontWeight: 700, fontSize: '0.9rem', lineHeight: 1.3, overflow: 'hidden', textOverflow: 'ellipsis', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' as const, wordBreak: 'break-word' as const }}>{product.name}</div>
                     <input
                         type="checkbox"
                         checked={product.isSelected}
@@ -695,7 +695,7 @@ function ProductCard({ product, onToggle }: { product: FBExtractedProduct; onTog
                     </span>
                 </div>
                 {product.description && (
-                    <p style={{ margin: '4px 0 0', fontSize: '0.72rem', color: 'var(--text-muted)', lineHeight: 1.4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    <p style={{ margin: '4px 0 0', fontSize: '0.72rem', color: 'var(--text-muted)', lineHeight: 1.4, overflow: 'hidden', textOverflow: 'ellipsis', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' as const, wordBreak: 'break-word' as const }}>
                         {product.description}
                     </p>
                 )}
@@ -721,8 +721,8 @@ function DuplicateCard({ product, onActionChange }: { product: FBExtractedProduc
                         </div>
                     )}
                 </div>
-                <div style={{ flex: 1 }}>
-                    <div style={{ fontWeight: 700, fontSize: '0.85rem' }}>{product.name}</div>
+                <div style={{ flex: 1, minWidth: 0, overflow: 'hidden' }}>
+                    <div style={{ fontWeight: 700, fontSize: '0.85rem', overflow: 'hidden', textOverflow: 'ellipsis', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' as const, wordBreak: 'break-word' as const }}>{product.name}</div>
                     <div style={{ fontSize: '0.72rem', color: 'var(--accent-orange)', fontWeight: 600, marginTop: 2 }}>
                         ⚠️ "{product.duplicateOfName}" бараатай давхардаж байна
                     </div>
