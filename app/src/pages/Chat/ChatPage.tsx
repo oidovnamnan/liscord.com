@@ -251,7 +251,7 @@ export function ChatPage() {
 
                             <div className="chat-messages">
                                 {messages.length === 0 && (
-                                    <div className="chat-empty-state" style={{ opacity: 0.4 }}>
+                                    <div className="chat-empty-msg">
                                         <p>Зурвас алга байна. Эхний зурвасаа бичээрэй! 👋</p>
                                     </div>
                                 )}
@@ -264,9 +264,9 @@ export function ChatPage() {
                                     return (
                                         <div key={m.id}>
                                             {!isSameDay && (
-                                                <div className="date-separator" style={{ textAlign: 'center', margin: '20px 0', position: 'relative' }}>
-                                                    <div style={{ position: 'absolute', top: '50%', left: 0, right: 0, height: 1, background: 'var(--border-primary)', zIndex: 0 }} />
-                                                    <span style={{ position: 'relative', zIndex: 1, background: 'var(--bg-secondary)', padding: '0 12px', fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>
+                                                <div className="date-separator">
+                                                    <div className="date-separator-line" />
+                                                    <span className="date-separator-label">
                                                         {mDate.toLocaleDateString('mn-MN', { month: 'long', day: 'numeric' })}
                                                     </span>
                                                 </div>
