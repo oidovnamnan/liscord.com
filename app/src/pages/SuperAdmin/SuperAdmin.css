@@ -1028,6 +1028,85 @@
     color: white;
 }
 
+/* ═══════════ Relevance Group Headers ═══════════ */
+.relevance-group-header {
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 14px;
+    margin-top: 8px;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    user-select: none;
+}
+
+.relevance-group-header:first-child {
+    margin-top: 0;
+}
+
+.relevance-group-count {
+    font-size: 10px;
+    font-weight: 700;
+    opacity: 0.6;
+}
+
+.relevance-group-header.rel-essential {
+    background: var(--red-tint);
+    color: var(--accent-red);
+    border: 1px solid rgba(239, 68, 68, 0.15);
+}
+
+.relevance-group-header.rel-important {
+    background: var(--orange-tint);
+    color: var(--accent-orange);
+    border: 1px solid rgba(245, 158, 11, 0.15);
+}
+
+.relevance-group-header.rel-optional {
+    background: var(--primary-light);
+    color: var(--primary);
+    border: 1px solid rgba(var(--primary-rgb), 0.1);
+}
+
+.relevance-group-header.rel-not-needed {
+    background: var(--bg-soft);
+    color: var(--text-tertiary);
+    border: 1px solid var(--border-primary);
+    opacity: 0.7;
+}
+
+/* ═══════════ Relevance Card Left Border ═══════════ */
+.pro-module-card.rel-essential:not(.active) {
+    border-left: 3px solid var(--accent-red);
+}
+
+.pro-module-card.rel-important:not(.active) {
+    border-left: 3px solid var(--accent-orange);
+}
+
+.pro-module-card.rel-optional:not(.active) {
+    border-left: 3px solid var(--primary);
+    opacity: 0.85;
+}
+
+.pro-module-card.rel-not-needed:not(.active) {
+    border-left: 3px solid var(--border-primary);
+    opacity: 0.5;
+}
+
+.pro-module-card.rel-not-needed:not(.active) .pro-module-icon {
+    filter: grayscale(0.6);
+}
+
+.relevance-hint {
+    font-size: 9px;
+    font-weight: 700;
+}
+
 .pro-check-dot {
     position: absolute;
     top: -3px;

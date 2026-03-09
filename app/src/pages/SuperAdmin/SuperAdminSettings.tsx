@@ -6,6 +6,7 @@ import { toast } from 'react-hot-toast';
 import { systemSettingsService } from '../../services/db';
 import { useSystemCategoriesStore } from '../../store';
 import { LISCORD_MODULES } from '../../config/modules';
+import { getModuleRelevance, RELEVANCE_ORDER, RELEVANCE_META, type RelevanceLevel } from '../../config/moduleRelevance';
 import * as Icons from 'lucide-react';
 import { SecurityModal } from '../../components/common/SecurityModal';
 import { db } from '../../services/firebase';
@@ -378,53 +379,82 @@ export function SuperAdminSettings() {
                                             </div>
                                         </div>
 
-                                        {/* Module Grid */}
-                                        <div className="pro-module-grid">
-                                            {LISCORD_MODULES.filter(m =>
+                                        {/* Module Grid — sorted by relevance */}
+                                        {(() => {
+                                            const filtered = LISCORD_MODULES.filter(m =>
                                                 m.name.toLowerCase().includes(moduleSearch.toLowerCase()) ||
                                                 m.id.toLowerCase().includes(moduleSearch.toLowerCase())
-                                            ).sort((a, b) => {
-                                                const aStatus = activeMods[a.id];
-                                                const bStatus = activeMods[b.id];
-                                                const aActive = !!aStatus;
-                                                const bActive = !!bStatus;
-
+                                            ).map(m => ({
+                                                ...m,
+                                                relevance: getModuleRelevance(key, m.id),
+                                            })).sort((a, b) => {
+                                                // Sort by relevance level first
+                                                const relDiff = RELEVANCE_ORDER[a.relevance] - RELEVANCE_ORDER[b.relevance];
+                                                if (relDiff !== 0) return relDiff;
+                                                // Within same relevance, active modules first
+                                                const aActive = !!activeMods[a.id];
+                                                const bActive = !!activeMods[b.id];
                                                 if (aActive !== bActive) return aActive ? -1 : 1;
                                                 if (aActive && bActive) {
-                                                    if (aStatus === bStatus) return 0;
-                                                    return aStatus === 'core' ? -1 : 1;
+                                                    const aStatus = activeMods[a.id];
+                                                    const bStatus = activeMods[b.id];
+                                                    if (aStatus !== bStatus) return aStatus === 'core' ? -1 : 1;
                                                 }
                                                 return 0;
-                                            }).map(module => {
-                                                const status = activeMods[module.id];
-                                                const isActive = !!status;
-                                                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                                                const Icon = (Icons as any)[module.icon] || Icons.Box;
+                                            });
 
-                                                return (
-                                                    <div
-                                                        key={module.id}
-                                                        onClick={() => handleToggle(key, module.id)}
-                                                        className={`pro-module-card ${isActive ? 'active' : ''} ${status || ''}`}
-                                                    >
-                                                        <div className="pro-module-icon">
-                                                            <Icon size={24} strokeWidth={1.5} />
-                                                        </div>
-                                                        <div className="flex-1 min-w-0">
-                                                            <span className="pro-module-name">{module.name}</span>
-                                                            <div className="pro-module-type">
-                                                                {status === 'core' ? '⭐ Үндсэн' : status === 'addon' ? '🧩 Нэмэлт' : 'Модуль'}
-                                                            </div>
-                                                        </div>
-                                                        <button
-                                                            className={`pro-status-btn ${isActive ? 'active' : 'inactive'}`}
-                                                        >
-                                                            {status === 'core' ? 'Core' : status === 'addon' ? 'Addon' : 'Нэмэх'}
-                                                        </button>
-                                                    </div>
-                                                );
-                                            })}
-                                        </div>
+                                            // Group by relevance level
+                                            let lastRelevance: RelevanceLevel | null = null;
+
+                                            return (
+                                                <div className="pro-module-grid">
+                                                    {filtered.map(module => {
+                                                        const status = activeMods[module.id];
+                                                        const isActive = !!status;
+                                                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                                                        const Icon = (Icons as any)[module.icon] || Icons.Box;
+                                                        const meta = RELEVANCE_META[module.relevance];
+                                                        const showHeader = module.relevance !== lastRelevance;
+                                                        lastRelevance = module.relevance;
+
+                                                        return (
+                                                            <>
+                                                                {showHeader && (
+                                                                    <div key={`header-${module.relevance}`} className={`relevance-group-header rel-${module.relevance}`}>
+                                                                        <span>{meta.icon} {meta.label}</span>
+                                                                        <span className="relevance-group-count">
+                                                                            {filtered.filter(m => m.relevance === module.relevance).length}
+                                                                        </span>
+                                                                    </div>
+                                                                )}
+                                                                <div
+                                                                    key={module.id}
+                                                                    onClick={() => handleToggle(key, module.id)}
+                                                                    className={`pro-module-card ${isActive ? 'active' : ''} ${status || ''} rel-${module.relevance}`}
+                                                                >
+                                                                    <div className="pro-module-icon">
+                                                                        <Icon size={24} strokeWidth={1.5} />
+                                                                    </div>
+                                                                    <div className="flex-1 min-w-0">
+                                                                        <span className="pro-module-name">{module.name}</span>
+                                                                        <div className="pro-module-type">
+                                                                            {status === 'core' ? '⭐ Үндсэн' : status === 'addon' ? '🧩 Нэмэлт' : (
+                                                                                <span className="relevance-hint" style={{ color: meta.color }}>{meta.label}</span>
+                                                                            )}
+                                                                        </div>
+                                                                    </div>
+                                                                    <button
+                                                                        className={`pro-status-btn ${isActive ? 'active' : 'inactive'}`}
+                                                                    >
+                                                                        {status === 'core' ? 'Core' : status === 'addon' ? 'Addon' : 'Нэмэх'}
+                                                                    </button>
+                                                                </div>
+                                                            </>
+                                                        );
+                                                    })}
+                                                </div>
+                                            );
+                                        })()}
 
                                         {/* Migration Tools */}
                                         <div className="ms-migration-section">
