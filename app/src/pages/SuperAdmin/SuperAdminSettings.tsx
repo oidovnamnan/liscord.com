@@ -29,9 +29,10 @@ export function SuperAdminSettings() {
     useEffect(() => {
         const init = async () => {
             try {
-                // refresh() force re-fetches categories (fetchCategories skips if cached)
-                await refresh();
-                const data = await systemSettingsService.getModuleDefaults();
+                const [data] = await Promise.all([
+                    systemSettingsService.getModuleDefaults(),
+                    fetchCategories()
+                ]);
                 setDefaults(data);
             } catch (error) {
                 console.error('Failed to fetch module settings:', error);
@@ -41,8 +42,7 @@ export function SuperAdminSettings() {
             }
         };
         init();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
+    }, [fetchCategories]);
 
     useEffect(() => {
         if (categories.length > 0 && !hasUnsavedChanges) {
