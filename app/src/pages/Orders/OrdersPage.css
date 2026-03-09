@@ -242,24 +242,26 @@
 /* View Toggle */
 .ot-view-toggle {
     display: flex;
+    align-items: center;
+    gap: 4px;
     background: var(--surface-2);
     border: 1.5px solid var(--border-primary);
-    border-radius: 10px;
-    overflow: hidden;
-    gap: 0;
+    border-radius: 14px;
+    padding: 4px;
 }
 
 .ot-view-btn {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 42px;
-    height: 42px;
+    width: 40px;
+    height: 40px;
     background: transparent;
     border: none;
-    color: var(--text-secondary);
+    border-radius: 10px;
+    color: var(--text-muted);
     cursor: pointer;
-    transition: all 0.2s;
+    transition: all 0.25s ease;
 }
 
 .ot-view-btn:hover {
@@ -270,6 +272,7 @@
 .ot-view-btn.active {
     background: var(--primary);
     color: white;
+    box-shadow: 0 2px 8px rgba(99, 102, 241, 0.35);
 }
 
 /* Responsive: hide less important columns on small screens */
@@ -316,7 +319,6 @@
 .orders-search {
     flex: 1;
     min-width: 160px;
-    max-width: 280px;
     position: relative;
 }
 
