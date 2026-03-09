@@ -7,7 +7,7 @@
     display: grid;
     grid-template-columns: repeat(4, 1fr);
     gap: 12px;
-    margin-bottom: 24px;
+    margin-bottom: 28px;
 }
 
 .appstore-hero-stat {
@@ -191,8 +191,8 @@
 .appstore-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-    gap: 16px;
-    padding-bottom: 40px;
+    gap: 20px;
+    padding: 4px 0 40px;
 }
 
 /* ─── Module Card (as-card) ─── */

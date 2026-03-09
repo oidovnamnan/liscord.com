@@ -265,7 +265,7 @@ export function AppStorePage() {
                 subtitle="Танай бизнест зориулсан модулиуд"
             />
 
-            <div className="page-content">
+            <div className="page-content" style={{ padding: '24px 24px 40px' }}>
                 {/* ═══ Hero Stats ═══ */}
                 <div className="appstore-hero">
                     <div className="appstore-hero-stat">
