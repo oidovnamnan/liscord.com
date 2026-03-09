@@ -379,38 +379,65 @@ export function SuperAdminSettings() {
                                             </div>
                                         </div>
 
-                                        {/* Module Grid — sorted by relevance */}
+                                        {/* Module Grid — active first, then inactive sorted by relevance */}
                                         {(() => {
-                                            const filtered = LISCORD_MODULES.filter(m =>
+                                            const all = LISCORD_MODULES.filter(m =>
                                                 m.name.toLowerCase().includes(moduleSearch.toLowerCase()) ||
                                                 m.id.toLowerCase().includes(moduleSearch.toLowerCase())
                                             ).map(m => ({
                                                 ...m,
                                                 relevance: getModuleRelevance(key, m.id),
-                                            })).sort((a, b) => {
-                                                // Sort by relevance level first
-                                                const relDiff = RELEVANCE_ORDER[a.relevance] - RELEVANCE_ORDER[b.relevance];
-                                                if (relDiff !== 0) return relDiff;
-                                                // Within same relevance, active modules first
-                                                const aActive = !!activeMods[a.id];
-                                                const bActive = !!activeMods[b.id];
-                                                if (aActive !== bActive) return aActive ? -1 : 1;
-                                                if (aActive && bActive) {
-                                                    const aStatus = activeMods[a.id];
-                                                    const bStatus = activeMods[b.id];
-                                                    if (aStatus !== bStatus) return aStatus === 'core' ? -1 : 1;
-                                                }
+                                            }));
+
+                                            const activeList = all.filter(m => !!activeMods[m.id]).sort((a, b) => {
+                                                const aS = activeMods[a.id]; const bS = activeMods[b.id];
+                                                if (aS !== bS) return aS === 'core' ? -1 : 1;
                                                 return 0;
                                             });
 
-                                            // Group by relevance level
+                                            const inactiveList = all.filter(m => !activeMods[m.id]).sort((a, b) => {
+                                                return RELEVANCE_ORDER[a.relevance] - RELEVANCE_ORDER[b.relevance];
+                                            });
+
                                             let lastRelevance: RelevanceLevel | null = null;
 
                                             return (
                                                 <div className="pro-module-grid">
-                                                    {filtered.map(module => {
+                                                    {/* ── Active modules (no relevance labels) ── */}
+                                                    {activeList.length > 0 && (
+                                                        <div className="relevance-group-header rel-active">
+                                                            <span>✅ Сонгогдсон</span>
+                                                            <span className="relevance-group-count">{activeList.length}</span>
+                                                        </div>
+                                                    )}
+                                                    {activeList.map(module => {
                                                         const status = activeMods[module.id];
-                                                        const isActive = !!status;
+                                                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                                                        const Icon = (Icons as any)[module.icon] || Icons.Box;
+                                                        return (
+                                                            <div
+                                                                key={module.id}
+                                                                onClick={() => handleToggle(key, module.id)}
+                                                                className={`pro-module-card active ${status || ''}`}
+                                                            >
+                                                                <div className="pro-module-icon">
+                                                                    <Icon size={24} strokeWidth={1.5} />
+                                                                </div>
+                                                                <div className="flex-1 min-w-0">
+                                                                    <span className="pro-module-name">{module.name}</span>
+                                                                    <div className="pro-module-type">
+                                                                        {status === 'core' ? '⭐ Үндсэн' : '🧩 Нэмэлт'}
+                                                                    </div>
+                                                                </div>
+                                                                <button className="pro-status-btn active">
+                                                                    {status === 'core' ? 'Core' : 'Addon'}
+                                                                </button>
+                                                            </div>
+                                                        );
+                                                    })}
+
+                                                    {/* ── Inactive modules (with relevance groups) ── */}
+                                                    {inactiveList.map(module => {
                                                         // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                                         const Icon = (Icons as any)[module.icon] || Icons.Box;
                                                         const meta = RELEVANCE_META[module.relevance];
@@ -423,14 +450,14 @@ export function SuperAdminSettings() {
                                                                     <div key={`header-${module.relevance}`} className={`relevance-group-header rel-${module.relevance}`}>
                                                                         <span>{meta.icon} {meta.label}</span>
                                                                         <span className="relevance-group-count">
-                                                                            {filtered.filter(m => m.relevance === module.relevance).length}
+                                                                            {inactiveList.filter(m => m.relevance === module.relevance).length}
                                                                         </span>
                                                                     </div>
                                                                 )}
                                                                 <div
                                                                     key={module.id}
                                                                     onClick={() => handleToggle(key, module.id)}
-                                                                    className={`pro-module-card ${isActive ? 'active' : ''} ${status || ''} rel-${module.relevance}`}
+                                                                    className={`pro-module-card rel-${module.relevance}`}
                                                                 >
                                                                     <div className="pro-module-icon">
                                                                         <Icon size={24} strokeWidth={1.5} />
@@ -438,15 +465,11 @@ export function SuperAdminSettings() {
                                                                     <div className="flex-1 min-w-0">
                                                                         <span className="pro-module-name">{module.name}</span>
                                                                         <div className="pro-module-type">
-                                                                            {status === 'core' ? '⭐ Үндсэн' : status === 'addon' ? '🧩 Нэмэлт' : (
-                                                                                <span className="relevance-hint" style={{ color: meta.color }}>{meta.label}</span>
-                                                                            )}
+                                                                            <span className="relevance-hint" style={{ color: meta.color }}>{meta.label}</span>
                                                                         </div>
                                                                     </div>
-                                                                    <button
-                                                                        className={`pro-status-btn ${isActive ? 'active' : 'inactive'}`}
-                                                                    >
-                                                                        {status === 'core' ? 'Core' : status === 'addon' ? 'Addon' : 'Нэмэх'}
+                                                                    <button className="pro-status-btn inactive">
+                                                                        Нэмэх
                                                                     </button>
                                                                 </div>
                                                             </>

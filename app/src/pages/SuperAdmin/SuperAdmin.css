@@ -1048,6 +1048,12 @@
     margin-top: 0;
 }
 
+.relevance-group-header.rel-active {
+    background: var(--green-tint);
+    color: var(--accent-green);
+    border: 1px solid rgba(16, 185, 129, 0.15);
+}
+
 .relevance-group-count {
     font-size: 10px;
     font-weight: 700;
