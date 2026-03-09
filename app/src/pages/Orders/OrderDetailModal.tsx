@@ -1,4 +1,4 @@
-import { X, Printer, Clock, User, Package, CreditCard, CheckCircle2, ChevronDown, Loader2 } from 'lucide-react';
+import { X, Printer, Clock, User, Package, CreditCard, CheckCircle2, ChevronDown, Loader2, ImageIcon } from 'lucide-react';
 import { useState } from 'react';
 import { createPortal } from 'react-dom';
 import type { Order, OrderStatusConfig } from '../../types';
@@ -65,7 +65,7 @@ export function OrderDetailModal({ bizId, order, onClose, statuses }: OrderDetai
             });
             setCurrentStatusId(newStatusId);
             toast.success('Төлөв шинэчлэгдлээ');
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
         } catch (_error) {
             toast.error('Алдаа гарлаа');
         } finally {
@@ -88,7 +88,7 @@ export function OrderDetailModal({ bizId, order, onClose, statuses }: OrderDetai
             // Note: In a real app we would save this to the order doc immediately
             // orderService.updateOrder(business.id, order.id, { ebarimt: response });
 
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
         } catch (_error) {
             toast.error('Баримт үүсгэхэд алдаа гарлаа');
         } finally {
@@ -188,11 +188,12 @@ export function OrderDetailModal({ bizId, order, onClose, statuses }: OrderDetai
                             </section>
 
                             <section className="info-section">
-                                <h3 className="section-title"><Package size={16} /> Бараанууд</h3>
+                                <h3 className="section-title"><Package size={16} /> Бараанууд <span style={{ fontWeight: 500, fontSize: '0.72rem', color: 'var(--text-muted)', textTransform: 'none', letterSpacing: 0, marginLeft: '4px' }}>({order.items.length})</span></h3>
                                 <div className="table-responsive-wrapper">
                                     <table className="items-table">
                                         <thead>
                                             <tr>
+                                                <th style={{ width: '44px' }}></th>
                                                 <th>Нэр</th>
                                                 <th className="text-right">Тоо</th>
                                                 <th className="text-right">Нэгж үнэ</th>
@@ -203,14 +204,23 @@ export function OrderDetailModal({ bizId, order, onClose, statuses }: OrderDetai
                                             {order.items.map((item, idx) => (
                                                 <tr key={idx}>
                                                     <td>
+                                                        <div className="item-thumb-cell">
+                                                            {item.image ? (
+                                                                <img src={item.image} alt="" />
+                                                            ) : (
+                                                                <ImageIcon size={14} />
+                                                            )}
+                                                        </div>
+                                                    </td>
+                                                    <td>
                                                         <div className="item-name-cell">
                                                             {item.name}
                                                             {item.variant && <span className="item-variant">{item.variant}</span>}
                                                         </div>
                                                     </td>
-                                                    <td className="text-right">{item.quantity}</td>
+                                                    <td className="text-right" style={{ fontWeight: 700 }}>{item.quantity}</td>
                                                     <td className="text-right">{fmt(item.unitPrice)}</td>
-                                                    <td className="text-right">{fmt(item.totalPrice)}</td>
+                                                    <td className="text-right" style={{ fontWeight: 700 }}>{fmt(item.totalPrice)}</td>
                                                 </tr>
                                             ))}
                                         </tbody>
