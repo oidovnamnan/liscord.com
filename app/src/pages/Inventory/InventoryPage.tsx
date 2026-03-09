@@ -342,6 +342,11 @@ function AddMovementModal({ products, onClose }: { products: Product[]; onClose:
     const [reason, setReason] = useState('');
     const [saving, setSaving] = useState(false);
 
+    // Type-specific optional fields
+    const [supplier, setSupplier] = useState('');
+    const [invoiceNo, setInvoiceNo] = useState('');
+    const [orderNo, setOrderNo] = useState('');
+
     const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
     const [selectedWarehouseId, setSelectedWarehouseId] = useState('');
     const [shelves, setShelves] = useState<Shelf[]>([]);
@@ -365,32 +370,84 @@ function AddMovementModal({ products, onClose }: { products: Product[]; onClose:
         return warehouseService.subscribeShelves(business.id, selectedWarehouseId, setShelves);
     }, [business?.id, selectedWarehouseId]);
 
+    // Reset quantity when type changes
+    useEffect(() => {
+        setQuantity('');
+    }, [type]);
+
     // Live preview
     const currentStock = selectedProduct?.stock?.quantity || 0;
     const qty = parseInt(quantity) || 0;
-    const previewStock = type === 'in' ? currentStock + qty : type === 'out' ? currentStock - qty : qty;
+    const previewStock = type === 'in' ? currentStock + qty
+        : type === 'out' ? currentStock - qty
+            : qty; // adjustment = direct set
+
+    // Type-specific labels and config
+    const qtyLabel = type === 'in' ? 'Нэмэх тоо' : type === 'out' ? 'Зарсан тоо' : 'Шинэ нөөцийн тоо';
+    const qtyPlaceholder = type === 'adjustment' ? `Одоо: ${currentStock}` : '10';
+    const qtyMin = type === 'adjustment' ? 0 : 1;
+
+    // Reason suggestions per type
+    const reasonSuggestions: Record<string, string> = {
+        in: 'Жишээ: Нийлүүлэгчээс бараа ирсэн',
+        out: 'Жишээ: Захиалгаар зарагдсан',
+        adjustment: 'Жишээ: Тооллого хийсэн, алдаа засах',
+    };
 
     async function handleSubmit(e: React.FormEvent) {
         e.preventDefault();
         if (!business || !user) return;
-        if (!productId || !qty || qty <= 0) {
-            toast.error('Бараа болон тоо ширхэг оруулна уу');
+        if (!productId) {
+            toast.error('Бараа сонгоно уу');
             return;
         }
+
+        // Validation per type
+        if (type === 'in' && qty <= 0) {
+            toast.error('Нэмэх тоо 1-ээс их байх ёстой');
+            return;
+        }
+        if (type === 'out') {
+            if (qty <= 0) {
+                toast.error('Зарсан тоо 1-ээс их байх ёстой');
+                return;
+            }
+            if (qty > currentStock) {
+                toast.error(`Нөөц хүрэлцэхгүй байна! Одоогийн нөөц: ${currentStock}`);
+                return;
+            }
+        }
+        if (type === 'adjustment' && quantity === '') {
+            toast.error('Шинэ нөөцийн тоо оруулна уу');
+            return;
+        }
+
+        // For adjustment, calculate the actual delta
+        const actualQty = type === 'adjustment' ? Math.abs(qty - currentStock) : qty;
+        const actualType = type === 'adjustment'
+            ? (qty >= currentStock ? 'adjustment' : 'adjustment')
+            : type;
 
         setSaving(true);
         try {
             await stockMovementService.createMovement(business.id, {
                 productId,
                 productName: selectedProduct?.name || 'Тодорхойгүй',
-                type,
-                quantity: qty,
+                type: actualType,
+                quantity: type === 'adjustment' ? qty : actualQty, // For adjustment, store the target number
                 reason: reason.trim() || typeConfig[type]?.label || '',
                 createdBy: user.displayName || user.email || 'System',
                 warehouseId: selectedWarehouseId || undefined,
-                shelfId: selectedShelfId || undefined
+                shelfId: selectedShelfId || undefined,
+                ...(type === 'in' && supplier ? { supplier } : {}),
+                ...(type === 'in' && invoiceNo ? { invoiceNo } : {}),
+                ...(type === 'out' && orderNo ? { orderNo } : {}),
             });
-            toast.success('Нөөцийн хөдөлгөөн амжилттай бүртгэгдлээ!');
+            toast.success(
+                type === 'in' ? 'Орлого амжилттай бүртгэгдлээ!'
+                    : type === 'out' ? 'Зарлага амжилттай бүртгэгдлээ!'
+                        : 'Тохируулга амжилттай хийгдлээ!'
+            );
             onClose();
         } catch (err) {
             console.error(err);
@@ -441,37 +498,70 @@ function AddMovementModal({ products, onClose }: { products: Product[]; onClose:
                             })}
                         </div>
 
+                        {/* Product + Quantity */}
                         <div className="grid grid-cols-2 gap-4">
                             <div className="input-group">
                                 <label className="input-label">Бараа <span className="required">*</span></label>
                                 <select className="input select" value={productId} onChange={e => setProductId(e.target.value)} required>
                                     {products.map(p => (
-                                        <option key={p.id} value={p.id}>{p.name} (Нийт: {p.stock?.quantity || 0})</option>
+                                        <option key={p.id} value={p.id}>{p.name} (Нөөц: {p.stock?.quantity || 0})</option>
                                     ))}
                                 </select>
                             </div>
                             <div className="input-group">
-                                <label className="input-label">Тоо ширхэг <span className="required">*</span></label>
-                                <input className="input" type="number" min="1" placeholder="10" value={quantity} onChange={e => setQuantity(e.target.value)} required />
+                                <label className="input-label">{qtyLabel} <span className="required">*</span></label>
+                                <input
+                                    className="input"
+                                    type="number"
+                                    min={qtyMin}
+                                    placeholder={qtyPlaceholder}
+                                    value={quantity}
+                                    onChange={e => setQuantity(e.target.value)}
+                                    required
+                                />
                             </div>
                         </div>
 
                         {/* Live Stock Preview */}
-                        {qty > 0 && selectedProduct && (
+                        {selectedProduct && quantity !== '' && (
                             <div style={{
                                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 16,
                                 padding: '12px 16px', borderRadius: 12,
-                                background: 'var(--surface-2)', border: '1px solid var(--border-primary)',
+                                background: previewStock < 0 ? 'var(--red-tint)' : 'var(--surface-2)',
+                                border: `1px solid ${previewStock < 0 ? 'var(--accent-red)' : 'var(--border-primary)'}`,
                                 fontSize: '0.85rem', fontWeight: 700
                             }}>
                                 <span style={{ color: 'var(--text-muted)' }}>Одоо: <strong style={{ color: 'var(--text-primary)' }}>{currentStock}</strong></span>
                                 <ArrowRight size={14} style={{ color: 'var(--text-muted)' }} />
                                 <span style={{ color: previewStock >= 0 ? 'var(--accent-green)' : 'var(--accent-red)' }}>
-                                    Дараа: <strong>{previewStock}</strong>
+                                    {type === 'adjustment' ? 'Тохируулга' : 'Дараа'}: <strong>{previewStock}</strong>
                                 </span>
+                                {previewStock < 0 && <span style={{ color: 'var(--accent-red)', fontSize: '0.75rem' }}>⚠ Нөөц сөрөг!</span>}
                             </div>
                         )}
 
+                        {/* Type-specific fields */}
+                        {type === 'in' && (
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="input-group">
+                                    <label className="input-label">Нийлүүлэгч</label>
+                                    <input className="input" placeholder="Нийлүүлэгчийн нэр..." value={supplier} onChange={e => setSupplier(e.target.value)} />
+                                </div>
+                                <div className="input-group">
+                                    <label className="input-label">Баримтын дугаар</label>
+                                    <input className="input" placeholder="INV-001..." value={invoiceNo} onChange={e => setInvoiceNo(e.target.value)} />
+                                </div>
+                            </div>
+                        )}
+
+                        {type === 'out' && (
+                            <div className="input-group">
+                                <label className="input-label">Захиалгын дугаар</label>
+                                <input className="input" placeholder="ORD-001..." value={orderNo} onChange={e => setOrderNo(e.target.value)} />
+                            </div>
+                        )}
+
+                        {/* Warehouse + Shelf */}
                         <div className="grid grid-cols-2 gap-4">
                             <div className="input-group">
                                 <label className="input-label">Агуулах</label>
@@ -493,9 +583,10 @@ function AddMovementModal({ products, onClose }: { products: Product[]; onClose:
                             </div>
                         </div>
 
+                        {/* Reason */}
                         <div className="input-group">
                             <label className="input-label">Шалтгаан</label>
-                            <input className="input" placeholder="Жишээ: Шинэ бараа ирсэн..." value={reason} onChange={e => setReason(e.target.value)} />
+                            <input className="input" placeholder={reasonSuggestions[type]} value={reason} onChange={e => setReason(e.target.value)} />
                         </div>
                     </div>
                     <div className="modal-footer">
