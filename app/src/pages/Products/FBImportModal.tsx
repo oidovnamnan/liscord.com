@@ -207,8 +207,15 @@ export function FBImportModal({ onClose }: FBImportModalProps) {
                 processed++;
                 setImportProgress({ current: processed, total: totalItems });
 
-                // Upload images to Firebase Storage
-                const uploadedImages = await uploadAllImages(product.images, business.id);
+                // Upload images to Firebase Storage (may fail due to CORS)
+                let finalImages: string[] = [];
+                try {
+                    const uploadedImages = await uploadAllImages(product.images, business.id);
+                    finalImages = uploadedImages.length > 0 ? uploadedImages : product.images;
+                } catch (imgErr) {
+                    console.warn('[FB Import] Image upload failed, using original URLs:', imgErr);
+                    finalImages = product.images;
+                }
 
                 // Find or create category
                 let categoryId = 'general';
@@ -222,6 +229,8 @@ export function FBImportModal({ onClose }: FBImportModalProps) {
                     });
                 }
 
+                console.log('[FB Import] Creating product:', product.name, 'images:', finalImages.length);
+
                 await productService.createProduct(business.id, {
                     name: product.name,
                     description: product.description,
@@ -229,7 +238,7 @@ export function FBImportModal({ onClose }: FBImportModalProps) {
                     categoryName: product.categoryName,
                     sku: product.sku || '',
                     barcode: '',
-                    images: uploadedImages,
+                    images: finalImages,
                     pricing: {
                         salePrice: product.salePrice,
                         costPrice: product.costPrice,
@@ -248,9 +257,10 @@ export function FBImportModal({ onClose }: FBImportModalProps) {
                     stats: { totalSold: 0, totalRevenue: 0 },
                     isDeleted: false
                 });
+                console.log('[FB Import] Product created successfully:', product.name);
                 success++;
             } catch (error) {
-                console.error('Import error:', error);
+                console.error('[FB Import] Product creation FAILED:', product.name, error);
                 failed++;
             }
         }
