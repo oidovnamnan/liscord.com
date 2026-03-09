@@ -321,13 +321,13 @@ export function OrdersPage() {
                                 className={`ot-view-btn ${viewMode === 'table' ? 'active' : ''}`}
                                 onClick={() => handleViewChange('table')}
                             >
-                                <List size={16} /> Жагсаалт
+                                <List size={18} />
                             </button>
                             <button
                                 className={`ot-view-btn ${viewMode === 'card' ? 'active' : ''}`}
                                 onClick={() => handleViewChange('card')}
                             >
-                                <LayoutGrid size={16} /> Карт
+                                <LayoutGrid size={18} />
                             </button>
                         </div>
                     </div>

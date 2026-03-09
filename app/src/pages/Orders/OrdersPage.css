@@ -253,17 +253,13 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 6px;
-    padding: 0 14px;
+    width: 42px;
     height: 42px;
     background: transparent;
     border: none;
     color: var(--text-secondary);
     cursor: pointer;
     transition: all 0.2s;
-    font-size: 0.78rem;
-    font-weight: 600;
-    white-space: nowrap;
 }
 
 .ot-view-btn:hover {
