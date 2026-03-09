@@ -11,6 +11,57 @@
     --glass-border: rgba(255, 255, 255, 0.1);
 }
 
+/* Compact Stat Chips */
+.products-stat-chip {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    border-radius: 10px;
+    background: var(--surface-1);
+    border: 1px solid var(--border-secondary);
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    transition: all 0.2s ease;
+}
+
+.products-stat-chip:hover {
+    border-color: var(--primary-light);
+    transform: translateY(-1px);
+}
+
+.products-stat-chip-label {
+    font-weight: 600;
+    color: var(--text-muted);
+}
+
+.products-stat-chip-value {
+    font-weight: 800;
+    color: var(--text-primary);
+}
+
+.products-stat-chip.chip-warning {
+    border-color: rgba(245, 158, 11, 0.25);
+    color: #f59e0b;
+}
+
+.products-stat-chip.chip-warning .products-stat-chip-value {
+    color: #f59e0b;
+}
+
+.products-stat-chip.chip-danger {
+    border-color: rgba(239, 68, 68, 0.25);
+    color: #ef4444;
+}
+
+.products-stat-chip.chip-danger .products-stat-chip-value {
+    color: #ef4444;
+}
+
+.products-stat-chip.chip-success .products-stat-chip-value {
+    color: #10b981;
+}
+
 .products-view-toggle {
     display: flex;
     gap: 4px;

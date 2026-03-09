@@ -170,46 +170,26 @@ export function ProductsPage() {
                     </div>
                 </div>
 
-                {/* Stats Grid — Inventory-style Glassmorphism */}
-                <div className="inv-stats-grid" style={{ marginBottom: 24 }}>
-                    <div className="inv-stat-card">
-                        <div className="inv-stat-content">
-                            <h4>Нийт бараа</h4>
-                            <div className="inv-stat-value">{stats.total} төрөл</div>
-                        </div>
-                        <div className="inv-stat-icon icon-primary">
-                            <Grid3X3 size={24} />
-                        </div>
+                {/* Compact Stats Chips */}
+                <div style={{ display: 'flex', gap: 10, marginBottom: 16, flexWrap: 'wrap' }}>
+                    <div className="products-stat-chip">
+                        <Grid3X3 size={14} />
+                        <span className="products-stat-chip-label">Нийт</span>
+                        <span className="products-stat-chip-value">{stats.total}</span>
                     </div>
-
-                    <div className="inv-stat-card" style={{ cursor: 'pointer' }} onClick={() => setSearch('нөөц бага')}>
-                        <div className="inv-stat-content">
-                            <h4>Нөөц бага</h4>
-                            <div className="inv-stat-value">{stats.low} ширхэг</div>
-                        </div>
-                        <div className="inv-stat-icon icon-red">
-                            <AlertTriangle size={24} />
-                        </div>
+                    <div className="products-stat-chip chip-warning" style={{ cursor: 'pointer' }} onClick={() => setSearch('нөөц бага')}>
+                        <AlertTriangle size={14} />
+                        <span className="products-stat-chip-label">Нөөц бага</span>
+                        <span className="products-stat-chip-value">{stats.low}</span>
                     </div>
-
-                    <div className="inv-stat-card" style={{ cursor: 'pointer' }} onClick={() => setSearch('дууссан')}>
-                        <div className="inv-stat-content">
-                            <h4>Дууссан</h4>
-                            <div className="inv-stat-value">{stats.out} ширхэг</div>
-                        </div>
-                        <div className="inv-stat-icon icon-red">
-                            <MoreVertical size={24} />
-                        </div>
+                    <div className="products-stat-chip chip-danger" style={{ cursor: 'pointer' }} onClick={() => setSearch('дууссан')}>
+                        <Package size={14} />
+                        <span className="products-stat-chip-label">Дууссан</span>
+                        <span className="products-stat-chip-value">{stats.out}</span>
                     </div>
-
-                    <div className="inv-stat-card">
-                        <div className="inv-stat-content">
-                            <h4>Нөөцийн үнэ</h4>
-                            <div className="inv-stat-value">{fmt(stats.value)}</div>
-                        </div>
-                        <div className="inv-stat-icon icon-green">
-                            <Plus size={24} />
-                        </div>
+                    <div className="products-stat-chip chip-success">
+                        <span className="products-stat-chip-label">Нөөц үнэ</span>
+                        <span className="products-stat-chip-value">{fmt(stats.value)}</span>
                     </div>
                 </div>
 
