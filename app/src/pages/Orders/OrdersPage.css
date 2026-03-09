@@ -248,6 +248,7 @@
     border: 1.5px solid var(--border-primary);
     border-radius: 14px;
     padding: 4px;
+    flex-shrink: 0;
 }
 
 .ot-view-btn {
@@ -311,14 +312,15 @@
 /* Orders page */
 .orders-toolbar {
     display: flex;
-    gap: var(--space-md);
+    gap: 12px;
     margin-bottom: var(--space-md);
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
+    align-items: center;
 }
 
 .orders-search {
-    flex: 1;
-    min-width: 160px;
+    flex: 1 1 0;
+    min-width: 0;
     position: relative;
 }
 
@@ -337,7 +339,9 @@
 
 .orders-filters {
     display: flex;
-    gap: var(--space-sm);
+    gap: 8px;
+    align-items: center;
+    flex-shrink: 0;
 }
 
 .orders-filter-select {
