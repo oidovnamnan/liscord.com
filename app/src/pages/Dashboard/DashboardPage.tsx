@@ -87,7 +87,7 @@ export function DashboardPage() {
     return (
         <>
             <Header title="Хянах самбар" />
-            <div className="page animate-fade-in">
+            <div className="page animate-fade-in" style={{ gap: 20 }}>
                 {/* Dashboard Hero */}
                 <div className="dashboard-hero stagger-item premium-glass-panel" style={{ '--index': 0 } as React.CSSProperties}>
                     <div className="dashboard-hero-content">
