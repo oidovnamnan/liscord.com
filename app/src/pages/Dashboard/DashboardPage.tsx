@@ -1,16 +1,20 @@
 import { useState, useEffect } from 'react';
 import { Header } from '../../components/layout/Header';
-import { ShoppingCart, Package, Loader2, ArrowRight, CheckCircle2, ScanLine, Truck as TruckIcon } from 'lucide-react';
+import {
+    ShoppingCart, Package, Loader2, ArrowRight, CheckCircle2, ScanLine,
+    Truck as TruckIcon, AlertTriangle, Users, FileText, TrendingDown,
+    Clock, CreditCard
+} from 'lucide-react';
 import { useBusinessStore, useAuthStore } from '../../store';
 import { dashboardService } from '../../services/db';
 import { auditService } from '../../services/audit';
+import { collection, query, where, getDocs, orderBy, limit, Timestamp } from 'firebase/firestore';
+import { db } from '../../services/firebase';
 import { KPICards } from './components/KPICards';
 import { OrderChart } from './components/OrderChart';
 import type { Order } from '../../types';
 import { fmt } from '../../utils/format';
 import './Dashboard.css';
-
-
 
 const statusLabels: Record<string, { label: string; class: string }> = {
     new: { label: 'Шинэ', class: 'badge-new' },
@@ -24,6 +28,37 @@ const statusLabels: Record<string, { label: string; class: string }> = {
     cancelled: { label: 'Цуцалсан', class: 'badge-cancelled' },
 };
 
+interface LowStockProduct {
+    id: string;
+    name: string;
+    stock: number;
+    lowStockThreshold: number;
+}
+
+interface TopProduct {
+    id: string;
+    name: string;
+    soldCount: number;
+    revenue: number;
+}
+
+interface RecentCustomer {
+    id: string;
+    name: string;
+    phone?: string;
+    totalOrders?: number;
+    createdAt?: Date;
+}
+
+interface UnpaidInvoice {
+    id: string;
+    invoiceNumber?: string;
+    customerName?: string;
+    totalAmount: number;
+    dueDate?: Date;
+    status: string;
+}
+
 export function DashboardPage() {
     const { business } = useBusinessStore();
     const { user } = useAuthStore();
@@ -33,6 +68,13 @@ export function DashboardPage() {
     const [loading, setLoading] = useState(true);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const [recentLogs, setRecentLogs] = useState<any[]>([]);
+
+    // New comprehensive data
+    const [lowStockProducts, setLowStockProducts] = useState<LowStockProduct[]>([]);
+    const [topProducts, setTopProducts] = useState<TopProduct[]>([]);
+    const [recentCustomers, setRecentCustomers] = useState<RecentCustomer[]>([]);
+    const [unpaidInvoices, setUnpaidInvoices] = useState<UnpaidInvoice[]>([]);
+    const [ordersByStatus, setOrdersByStatus] = useState<Record<string, number>>({});
 
     useEffect(() => {
         if (!business?.id) return;
@@ -54,7 +96,118 @@ export function DashboardPage() {
             }
         }
 
+        async function loadExtendedData() {
+            if (!business?.id) return;
+            const bizId = business.id;
+
+            try {
+                // 1. Low Stock Products
+                const productsSnap = await getDocs(collection(db, 'businesses', bizId, 'products'));
+                const lowStock: LowStockProduct[] = [];
+                productsSnap.docs.forEach(d => {
+                    const p = d.data();
+                    if (p.isDeleted) return;
+                    const stock = p.stock ?? p.quantity ?? 0;
+                    const threshold = p.lowStockThreshold ?? 5;
+                    if (stock <= threshold && !p.isPreorder) {
+                        lowStock.push({
+                            id: d.id,
+                            name: p.name || 'Нэргүй',
+                            stock,
+                            lowStockThreshold: threshold,
+                        });
+                    }
+                });
+                lowStock.sort((a, b) => a.stock - b.stock);
+                setLowStockProducts(lowStock.slice(0, 5));
+
+                // 2. Orders by Status
+                const ordersSnap = await getDocs(query(
+                    collection(db, 'businesses', bizId, 'orders'),
+                    where('isDeleted', '==', false)
+                ));
+                const statusMap: Record<string, number> = {};
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                const productSales: Record<string, { name: string; count: number; revenue: number }> = {};
+
+                ordersSnap.docs.forEach(d => {
+                    const o = d.data();
+                    const status = o.status || 'new';
+                    statusMap[status] = (statusMap[status] || 0) + 1;
+
+                    // Track product sales
+                    if (o.status !== 'cancelled' && o.items) {
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                        o.items.forEach((item: any) => {
+                            const pid = item.productId || item.name;
+                            if (!pid) return;
+                            if (!productSales[pid]) {
+                                productSales[pid] = { name: item.name || 'Нэргүй', count: 0, revenue: 0 };
+                            }
+                            productSales[pid].count += item.quantity || 1;
+                            productSales[pid].revenue += (item.price || 0) * (item.quantity || 1);
+                        });
+                    }
+                });
+                setOrdersByStatus(statusMap);
+
+                // 3. Top Products from order items
+                const topProds = Object.entries(productSales)
+                    .map(([id, data]) => ({ id, name: data.name, soldCount: data.count, revenue: data.revenue }))
+                    .sort((a, b) => b.soldCount - a.soldCount)
+                    .slice(0, 5);
+                setTopProducts(topProds);
+
+                // 4. Recent Customers
+                try {
+                    const custSnap = await getDocs(query(
+                        collection(db, 'businesses', bizId, 'customers'),
+                        orderBy('createdAt', 'desc'),
+                        limit(5)
+                    ));
+                    setRecentCustomers(custSnap.docs.map(d => {
+                        const c = d.data();
+                        return {
+                            id: d.id,
+                            name: c.name || 'Нэргүй',
+                            phone: c.phone,
+                            totalOrders: c.totalOrders || 0,
+                            createdAt: c.createdAt?.toDate?.() || new Date(),
+                        };
+                    }));
+                } catch {
+                    // If no index, silently fail
+                    setRecentCustomers([]);
+                }
+
+                // 5. Unpaid Invoices
+                try {
+                    const invSnap = await getDocs(query(
+                        collection(db, 'businesses', bizId, 'invoices'),
+                        where('status', '==', 'unpaid')
+                    ));
+                    setUnpaidInvoices(invSnap.docs.map(d => {
+                        const inv = d.data();
+                        return {
+                            id: d.id,
+                            invoiceNumber: inv.invoiceNumber,
+                            customerName: inv.customerName,
+                            totalAmount: inv.totalAmount || 0,
+                            dueDate: inv.dueDate?.toDate?.(),
+                            status: inv.status,
+                        };
+                    }).slice(0, 5));
+                } catch {
+                    setUnpaidInvoices([]);
+                }
+
+            } catch (error) {
+                console.error('Extended data load error:', error);
+            }
+        }
+
         loadDashboard();
+        loadExtendedData();
 
         // Recent orders subscription
         const unsubscribeOrders = dashboardService.subscribeRecentOrders(business.id!, (orders) => {
@@ -84,6 +237,11 @@ export function DashboardPage() {
 
     const isNewBusiness = (stats?.totalOrders || 0) === 0;
 
+    // Order status summary
+    const pendingOrders = (ordersByStatus['new'] || 0) + (ordersByStatus['confirmed'] || 0);
+    const preparingOrders = (ordersByStatus['preparing'] || 0) + (ordersByStatus['ready'] || 0);
+    const shippingOrders = ordersByStatus['shipping'] || 0;
+
     return (
         <>
             <Header title="Хянах самбар" />
@@ -110,6 +268,30 @@ export function DashboardPage() {
 
                 {/* KPI Cards */}
                 <KPICards stats={stats} category={business?.category} />
+
+                {/* Order Status Summary Bar */}
+                {(pendingOrders > 0 || preparingOrders > 0 || shippingOrders > 0) && (
+                    <div className="dash-status-bar">
+                        {pendingOrders > 0 && (
+                            <a href="/app/orders" className="dash-status-chip chip-pending">
+                                <Clock size={14} />
+                                <span>{pendingOrders} хүлээгдэж буй</span>
+                            </a>
+                        )}
+                        {preparingOrders > 0 && (
+                            <a href="/app/orders" className="dash-status-chip chip-preparing">
+                                <Package size={14} />
+                                <span>{preparingOrders} бэлтгэж буй</span>
+                            </a>
+                        )}
+                        {shippingOrders > 0 && (
+                            <a href="/app/orders" className="dash-status-chip chip-shipping">
+                                <TruckIcon size={14} />
+                                <span>{shippingOrders} хүргэлтэнд</span>
+                            </a>
+                        )}
+                    </div>
+                )}
 
                 {/* Chart — Full Width */}
                 <OrderChart />
@@ -155,7 +337,7 @@ export function DashboardPage() {
                     </div>
                 )}
 
-                {/* Recent Orders + Activity — Side by Side */}
+                {/* Row 1: Orders + Low Stock */}
                 <div className="dashboard-bottom-grid">
                     {/* Recent Orders */}
                     <div className="dashboard-section stagger-item glass-section" style={{ '--index': 6 } as React.CSSProperties}>
@@ -192,13 +374,144 @@ export function DashboardPage() {
                         </div>
                     </div>
 
-                    {/* Recent Activity Log */}
+                    {/* Low Stock Alert */}
                     <div className="dashboard-section stagger-item glass-section" style={{ '--index': 7 } as React.CSSProperties}>
+                        <div className="dashboard-section-header">
+                            <h3><AlertTriangle size={18} style={{ color: 'var(--accent-orange)', marginRight: 8 }} /> Нөөц дуусаж буй</h3>
+                            <a href="/app/inventory" className="text-primary text-sm hover-underline">Бүгд →</a>
+                        </div>
+                        <div className="dash-list">
+                            {lowStockProducts.length === 0 ? (
+                                <div className="empty-state-compact">
+                                    <CheckCircle2 size={24} style={{ color: 'var(--accent-green)', marginBottom: 8 }} />
+                                    <p className="text-muted">Бүх нөөц хангалттай 👍</p>
+                                </div>
+                            ) : (
+                                lowStockProducts.map(p => (
+                                    <div key={p.id} className="dash-list-item">
+                                        <div className="dash-list-left">
+                                            <span className="dash-list-name">{p.name}</span>
+                                        </div>
+                                        <div className="dash-list-right">
+                                            <span className={`dash-stock-badge ${p.stock === 0 ? 'stock-out' : 'stock-low'}`}>
+                                                {p.stock === 0 ? 'Дууссан' : `${p.stock} ширхэг`}
+                                            </span>
+                                        </div>
+                                    </div>
+                                ))
+                            )}
+                        </div>
+                    </div>
+                </div>
+
+                {/* Row 2: Top Products + Recent Customers */}
+                <div className="dashboard-bottom-grid">
+                    {/* Top Selling Products */}
+                    <div className="dashboard-section stagger-item glass-section" style={{ '--index': 8 } as React.CSSProperties}>
+                        <div className="dashboard-section-header">
+                            <h3><TrendingDown size={18} style={{ color: 'var(--accent-green)', marginRight: 8, transform: 'scaleY(-1)' }} /> Шилдэг бүтээгдэхүүн</h3>
+                        </div>
+                        <div className="dash-list">
+                            {topProducts.length === 0 ? (
+                                <div className="empty-state-compact">
+                                    <Package size={24} className="text-muted mb-2" />
+                                    <p className="text-muted">Борлуулалтын мэдээлэл байхгүй</p>
+                                </div>
+                            ) : (
+                                topProducts.map((p, i) => (
+                                    <div key={p.id} className="dash-list-item">
+                                        <div className="dash-list-left">
+                                            <span className="dash-rank">#{i + 1}</span>
+                                            <span className="dash-list-name">{p.name}</span>
+                                        </div>
+                                        <div className="dash-list-right">
+                                            <span className="dash-list-meta">{p.soldCount} ширхэг</span>
+                                            <span className="dash-list-amount">{fmt(p.revenue)}</span>
+                                        </div>
+                                    </div>
+                                ))
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Recent Customers */}
+                    <div className="dashboard-section stagger-item glass-section" style={{ '--index': 9 } as React.CSSProperties}>
+                        <div className="dashboard-section-header">
+                            <h3><Users size={18} style={{ color: 'var(--secondary)', marginRight: 8 }} /> Сүүлийн харилцагчид</h3>
+                            <a href="/app/customers" className="text-primary text-sm hover-underline">Бүгд →</a>
+                        </div>
+                        <div className="dash-list">
+                            {recentCustomers.length === 0 ? (
+                                <div className="empty-state-compact">
+                                    <Users size={24} className="text-muted mb-2" />
+                                    <p className="text-muted">Харилцагч байхгүй</p>
+                                </div>
+                            ) : (
+                                recentCustomers.map(c => (
+                                    <div key={c.id} className="dash-list-item">
+                                        <div className="dash-list-left">
+                                            <div className="dash-customer-avatar">
+                                                {c.name.charAt(0).toUpperCase()}
+                                            </div>
+                                            <div>
+                                                <span className="dash-list-name">{c.name}</span>
+                                                {c.phone && <span className="dash-list-sub">{c.phone}</span>}
+                                            </div>
+                                        </div>
+                                        {(c.totalOrders ?? 0) > 0 && (
+                                            <span className="dash-list-meta">{c.totalOrders} захиалга</span>
+                                        )}
+                                    </div>
+                                ))
+                            )}
+                        </div>
+                    </div>
+                </div>
+
+                {/* Row 3: Unpaid Invoices + Activity */}
+                <div className="dashboard-bottom-grid">
+                    {/* Unpaid Invoices */}
+                    <div className="dashboard-section stagger-item glass-section" style={{ '--index': 10 } as React.CSSProperties}>
+                        <div className="dashboard-section-header">
+                            <h3><CreditCard size={18} style={{ color: 'var(--accent-orange)', marginRight: 8 }} /> Төлөгдөөгүй нэхэмжлэл</h3>
+                            <a href="/app/finance" className="text-primary text-sm hover-underline">Бүгд →</a>
+                        </div>
+                        <div className="dash-list">
+                            {unpaidInvoices.length === 0 ? (
+                                <div className="empty-state-compact">
+                                    <CheckCircle2 size={24} style={{ color: 'var(--accent-green)', marginBottom: 8 }} />
+                                    <p className="text-muted">Тойрч гарах зүйлгүй 👍</p>
+                                </div>
+                            ) : (
+                                unpaidInvoices.map(inv => (
+                                    <div key={inv.id} className="dash-list-item">
+                                        <div className="dash-list-left">
+                                            <FileText size={16} style={{ color: 'var(--accent-orange)', flexShrink: 0 }} />
+                                            <div>
+                                                <span className="dash-list-name">{inv.customerName || inv.invoiceNumber || 'Нэхэмжлэл'}</span>
+                                                {inv.dueDate && (
+                                                    <span className="dash-list-sub">
+                                                        Хугацаа: {inv.dueDate.toLocaleDateString('mn-MN')}
+                                                    </span>
+                                                )}
+                                            </div>
+                                        </div>
+                                        <span className="dash-list-amount" style={{ color: 'var(--accent-orange)' }}>
+                                            {fmt(inv.totalAmount)}
+                                        </span>
+                                    </div>
+                                ))
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Recent Activity Log */}
+                    <div className="dashboard-section stagger-item glass-section" style={{ '--index': 11 } as React.CSSProperties}>
                         <div className="dashboard-section-header">
                             <h3>Сүүлийн үйлдлүүд</h3>
                             <a href="/app/settings?tab=activity" className="text-primary text-sm">Бүгд →</a>
                         </div>
-                        <div className="activity-stream" style={{ maxHeight: 360, overflowY: 'auto' }}>
+                        <div className="activity-stream" style={{ maxHeight: 300, overflowY: 'auto' }}>
                             {recentLogs.length === 0 ? (
                                 <div className="empty-state-compact">
                                     <p className="text-muted">Үйлдэл байхгүй</p>

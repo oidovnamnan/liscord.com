@@ -614,6 +614,158 @@
     transition: all 0.3s;
 }
 
+/* ═══ Order Status Summary Bar ═══ */
+.dash-status-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.dash-status-chip {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    border-radius: 100px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    text-decoration: none;
+    transition: all 0.3s;
+    border: 1.5px solid transparent;
+}
+
+.dash-status-chip:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.chip-pending {
+    background: var(--orange-tint);
+    color: var(--accent-orange);
+    border-color: rgba(255, 165, 0, 0.2);
+}
+
+.chip-preparing {
+    background: var(--primary-tint);
+    color: var(--primary);
+    border-color: rgba(108, 92, 231, 0.2);
+}
+
+.chip-shipping {
+    background: var(--cyan-tint);
+    color: var(--secondary);
+    border-color: rgba(0, 206, 209, 0.2);
+}
+
+/* ═══ Generic Dash List ═══ */
+.dash-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.dash-list-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px;
+    border-radius: 12px;
+    transition: background 0.2s;
+    gap: 12px;
+}
+
+.dash-list-item:hover {
+    background: var(--surface-2);
+}
+
+.dash-list-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1;
+    min-width: 0;
+}
+
+.dash-list-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.dash-list-name {
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: block;
+}
+
+.dash-list-sub {
+    font-size: 0.68rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    display: block;
+    margin-top: 1px;
+}
+
+.dash-list-meta {
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    white-space: nowrap;
+}
+
+.dash-list-amount {
+    font-size: 0.82rem;
+    font-weight: 800;
+    color: var(--text-primary);
+    white-space: nowrap;
+}
+
+/* Stock Badges */
+.dash-stock-badge {
+    font-size: 0.68rem;
+    font-weight: 800;
+    padding: 3px 10px;
+    border-radius: 100px;
+}
+
+.stock-out {
+    background: var(--red-tint);
+    color: var(--accent-red);
+}
+
+.stock-low {
+    background: var(--orange-tint);
+    color: var(--accent-orange);
+}
+
+/* Rank Number */
+.dash-rank {
+    font-size: 0.7rem;
+    font-weight: 900;
+    color: var(--primary);
+    min-width: 20px;
+}
+
+/* Customer Avatar */
+.dash-customer-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+    background: var(--gradient-primary);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    font-weight: 800;
+    flex-shrink: 0;
+}
+
 /* ═══ Responsive ═══ */
 @media (max-width: 1024px) {
     .grid-2-1 {
