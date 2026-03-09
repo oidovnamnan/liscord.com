@@ -160,7 +160,7 @@ export function BankSmsSyncPage() {
                 <div className="inv-stat-card">
                     <div className="inv-stat-content">
                         <h4>Нийт орлого</h4>
-                        <div className="inv-stat-value">{stats.total > 0 ? stats.total.toLocaleString() + '₮' : '0₮'}</div>
+                        <div className="inv-stat-value">{stats.total >= 1000000 ? (stats.total / 1000000).toFixed(1) + 'M₮' : stats.total > 0 ? (stats.total / 1000).toFixed(0) + 'K₮' : '0₮'}</div>
                     </div>
                     <div className="inv-stat-icon icon-green">
                         <TrendingUp size={24} />
