@@ -1113,6 +1113,122 @@
     font-weight: 700;
 }
 
+/* ═══════════ Bulk Module Selection ═══════════ */
+.module-bulk-check {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    z-index: 2;
+    cursor: pointer;
+}
+
+.pro-module-card {
+    position: relative;
+}
+
+.pro-module-card.bulk-selected {
+    outline: 2px solid var(--primary);
+    outline-offset: -2px;
+    background: rgba(var(--primary-rgb), 0.06) !important;
+}
+
+.bulk-module-bar {
+    grid-column: 1 / -1;
+    position: sticky;
+    bottom: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px 20px;
+    background: var(--surface-1);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid var(--border-primary);
+    border-radius: 16px;
+    box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.12);
+    z-index: 10;
+    animation: slideUp 0.2s ease-out;
+}
+
+@keyframes slideUp {
+    from {
+        transform: translateY(10px);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.bulk-bar-count {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--primary);
+    white-space: nowrap;
+}
+
+.bulk-bar-actions {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.bulk-bar-btn {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 6px 14px;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 700;
+    border: none;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+}
+
+.bulk-bar-btn.core {
+    background: var(--primary);
+    color: white;
+}
+
+.bulk-bar-btn.core:hover {
+    background: var(--primary-hover);
+    box-shadow: 0 0 12px var(--primary-light);
+}
+
+.bulk-bar-btn.addon {
+    background: #10b981;
+    color: white;
+}
+
+.bulk-bar-btn.addon:hover {
+    background: #059669;
+    box-shadow: 0 0 12px rgba(16, 185, 129, 0.3);
+}
+
+.bulk-bar-btn.remove {
+    background: var(--red-tint);
+    color: var(--accent-red);
+}
+
+.bulk-bar-btn.remove:hover {
+    background: rgba(239, 68, 68, 0.2);
+}
+
+.bulk-bar-btn.cancel {
+    background: var(--bg-soft);
+    color: var(--text-secondary);
+}
+
+.bulk-bar-btn.cancel:hover {
+    background: var(--bg-hover);
+}
+
 .pro-check-dot {
     position: absolute;
     top: -3px;

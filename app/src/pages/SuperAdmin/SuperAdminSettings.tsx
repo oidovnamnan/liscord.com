@@ -28,6 +28,7 @@ export function SuperAdminSettings() {
     const [selectedIds, setSelectedIds] = useState<string[]>([]);
     const [localCategories, setLocalCategories] = useState<BusinessCategoryConfig[]>([]);
     const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+    const [selectedModuleIds, setSelectedModuleIds] = useState<string[]>([]);
 
     useEffect(() => {
         const init = async () => {
@@ -94,6 +95,31 @@ export function SuperAdminSettings() {
             setHasUnsavedChanges(true);
             return { ...prev, [categoryKey]: newCategoryDefaults };
         });
+    };
+
+    // Bulk module actions
+    const toggleModuleSelect = (moduleId: string) => {
+        setSelectedModuleIds(prev =>
+            prev.includes(moduleId) ? prev.filter(id => id !== moduleId) : [...prev, moduleId]
+        );
+    };
+
+    const handleBulkModuleAction = (categoryKey: string, action: 'core' | 'addon' | 'remove') => {
+        if (selectedModuleIds.length === 0) return;
+        setDefaults(prev => {
+            const categoryDefaults = { ...prev[categoryKey] || {} };
+            selectedModuleIds.forEach(moduleId => {
+                if (action === 'remove') {
+                    delete categoryDefaults[moduleId];
+                } else {
+                    categoryDefaults[moduleId] = action;
+                }
+            });
+            setHasUnsavedChanges(true);
+            return { ...prev, [categoryKey]: categoryDefaults };
+        });
+        setSelectedModuleIds([]);
+        toast.success(`${selectedModuleIds.length} модуль ${action === 'core' ? 'Core' : action === 'addon' ? 'Addon' : 'хасагдлаа'}`);
     };
 
     const handleSaveClick = () => {
@@ -403,7 +429,7 @@ export function SuperAdminSettings() {
 
                                             return (
                                                 <div className="pro-module-grid">
-                                                    {/* ── Active modules (no relevance labels) ── */}
+                                                    {/* ── Active modules ── */}
                                                     {activeList.length > 0 && (
                                                         <div className="relevance-group-header rel-active">
                                                             <span>✅ Сонгогдсон</span>
@@ -414,22 +440,29 @@ export function SuperAdminSettings() {
                                                         const status = activeMods[module.id];
                                                         // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                                         const Icon = (Icons as any)[module.icon] || Icons.Box;
+                                                        const isChecked = selectedModuleIds.includes(module.id);
                                                         return (
                                                             <div
                                                                 key={module.id}
-                                                                onClick={() => handleToggle(key, module.id)}
-                                                                className={`pro-module-card active ${status || ''}`}
+                                                                className={`pro-module-card active ${status || ''} ${isChecked ? 'bulk-selected' : ''}`}
                                                             >
-                                                                <div className="pro-module-icon">
+                                                                <input
+                                                                    type="checkbox"
+                                                                    className="custom-checkbox module-bulk-check"
+                                                                    checked={isChecked}
+                                                                    onChange={() => toggleModuleSelect(module.id)}
+                                                                    onClick={e => e.stopPropagation()}
+                                                                />
+                                                                <div className="pro-module-icon" onClick={() => handleToggle(key, module.id)}>
                                                                     <Icon size={24} strokeWidth={1.5} />
                                                                 </div>
-                                                                <div className="flex-1 min-w-0">
+                                                                <div className="flex-1 min-w-0" onClick={() => handleToggle(key, module.id)}>
                                                                     <span className="pro-module-name">{module.name}</span>
                                                                     <div className="pro-module-type">
                                                                         {status === 'core' ? '⭐ Үндсэн' : '🧩 Нэмэлт'}
                                                                     </div>
                                                                 </div>
-                                                                <button className="pro-status-btn active">
+                                                                <button className="pro-status-btn active" onClick={() => handleToggle(key, module.id)}>
                                                                     {status === 'core' ? 'Core' : 'Addon'}
                                                                 </button>
                                                             </div>
@@ -443,6 +476,7 @@ export function SuperAdminSettings() {
                                                         const meta = RELEVANCE_META[module.relevance];
                                                         const showHeader = module.relevance !== lastRelevance;
                                                         lastRelevance = module.relevance;
+                                                        const isChecked = selectedModuleIds.includes(module.id);
 
                                                         return (
                                                             <>
@@ -456,25 +490,52 @@ export function SuperAdminSettings() {
                                                                 )}
                                                                 <div
                                                                     key={module.id}
-                                                                    onClick={() => handleToggle(key, module.id)}
-                                                                    className={`pro-module-card rel-${module.relevance}`}
+                                                                    className={`pro-module-card rel-${module.relevance} ${isChecked ? 'bulk-selected' : ''}`}
                                                                 >
-                                                                    <div className="pro-module-icon">
+                                                                    <input
+                                                                        type="checkbox"
+                                                                        className="custom-checkbox module-bulk-check"
+                                                                        checked={isChecked}
+                                                                        onChange={() => toggleModuleSelect(module.id)}
+                                                                        onClick={e => e.stopPropagation()}
+                                                                    />
+                                                                    <div className="pro-module-icon" onClick={() => handleToggle(key, module.id)}>
                                                                         <Icon size={24} strokeWidth={1.5} />
                                                                     </div>
-                                                                    <div className="flex-1 min-w-0">
+                                                                    <div className="flex-1 min-w-0" onClick={() => handleToggle(key, module.id)}>
                                                                         <span className="pro-module-name">{module.name}</span>
                                                                         <div className="pro-module-type">
                                                                             <span className="relevance-hint" style={{ color: meta.color }}>{meta.label}</span>
                                                                         </div>
                                                                     </div>
-                                                                    <button className="pro-status-btn inactive">
+                                                                    <button className="pro-status-btn inactive" onClick={() => handleToggle(key, module.id)}>
                                                                         Нэмэх
                                                                     </button>
                                                                 </div>
                                                             </>
                                                         );
                                                     })}
+
+                                                    {/* ── Floating Bulk Action Bar ── */}
+                                                    {selectedModuleIds.length > 0 && (
+                                                        <div className="bulk-module-bar">
+                                                            <span className="bulk-bar-count">{selectedModuleIds.length} модуль сонгогдсон</span>
+                                                            <div className="bulk-bar-actions">
+                                                                <button className="bulk-bar-btn core" onClick={() => handleBulkModuleAction(key, 'core')}>
+                                                                    <Icons.Star size={13} /> Core
+                                                                </button>
+                                                                <button className="bulk-bar-btn addon" onClick={() => handleBulkModuleAction(key, 'addon')}>
+                                                                    <Icons.Puzzle size={13} /> Addon
+                                                                </button>
+                                                                <button className="bulk-bar-btn remove" onClick={() => handleBulkModuleAction(key, 'remove')}>
+                                                                    <Icons.Trash2 size={13} /> Хасах
+                                                                </button>
+                                                                <button className="bulk-bar-btn cancel" onClick={() => setSelectedModuleIds([])}>
+                                                                    <Icons.X size={13} /> Болих
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    )}
                                                 </div>
                                             );
                                         })()}
