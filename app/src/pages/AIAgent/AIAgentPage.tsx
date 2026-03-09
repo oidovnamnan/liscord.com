@@ -109,6 +109,20 @@ export const AIAgentPage: React.FC = () => {
 
             const categories = [...new Set(products.map(p => p.categoryName).filter(Boolean))] as string[];
 
+            // Build full data tables for AI
+            const productTable = products.map(p =>
+                `• ${p.name} | Үнэ: ₮${(p.pricing?.salePrice || 0).toLocaleString()} | Өртөг: ₮${(p.pricing?.costPrice || 0).toLocaleString()} | Үлдэгдэл: ${p.stock?.quantity ?? 0}ш | Ангилал: ${p.categoryName || '—'} | Төрөл: ${p.productType === 'preorder' ? 'Урьдчилсан' : 'Бэлэн'} | Борлуулсан: ${p.stats?.totalSold ?? 0}ш`
+            ).join('\n');
+
+            const orderTable = orders.slice(0, 30).map(o => {
+                const items = o.items?.map(i => `${i.name}(${i.quantity}ш)`).join(', ') || '—';
+                return `• #${o.orderNumber} | Хэрэглэгч: ${o.customer?.name || '—'} (${o.customer?.phone || '—'}) | Бараа: ${items} | Дүн: ₮${(o.financials?.totalAmount || 0).toLocaleString()} | Төлбөр: ${o.paymentStatus} | Статус: ${o.status}`;
+            }).join('\n');
+
+            const customerTable = customers.slice(0, 50).map((c: Customer) =>
+                `• ${c.name} | Утас: ${c.phone || '—'} | Нийт захиалга: ${c.stats?.totalOrders ?? 0} | Нийт зарцуулсан: ₮${(c.stats?.totalSpent ?? 0).toLocaleString()} | Өр: ₮${(c.stats?.totalDebt ?? 0).toLocaleString()}`
+            ).join('\n');
+
             setBizContext({
                 businessName: business.name,
                 totalProducts: products.length,
@@ -121,6 +135,9 @@ export const AIAgentPage: React.FC = () => {
                 lowStockProducts,
                 topProducts,
                 productCategories: categories,
+                productTable,
+                orderTable,
+                customerTable,
             });
             setDataLoaded(true);
         };

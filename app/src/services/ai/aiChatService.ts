@@ -23,12 +23,16 @@ export interface BusinessContext {
     totalOrders?: number;
     totalRevenue?: number;
     totalCustomers?: number;
-    lowStockProducts?: string[];  // names of products with stock <= 5
-    topProducts?: string[];       // top selling product names
+    lowStockProducts?: string[];
+    topProducts?: string[];
     recentOrdersToday?: number;
     pendingOrders?: number;
     productCategories?: string[];
     averageOrderValue?: number;
+    // Full data tables
+    productTable?: string;    // "Нэр | Үнэ | Үлдэгдэл | Ангилал" rows
+    orderTable?: string;      // Recent orders detail
+    customerTable?: string;   // Customer detail
 }
 
 function buildSystemPrompt(ctx?: BusinessContext): string {
@@ -44,10 +48,25 @@ function buildSystemPrompt(ctx?: BusinessContext): string {
 • Дундаж сагс: ${ctx.averageOrderValue != null ? `₮${Math.round(ctx.averageOrderValue).toLocaleString()}` : '—'}
 • Өнөөдрийн захиалга: ${ctx.recentOrdersToday ?? '—'}
 • Хүлээгдэж буй захиалга: ${ctx.pendingOrders ?? '—'}
-${ctx.lowStockProducts?.length ? `• ⚠️ Үлдэгдэл бага бараа (≤5): ${ctx.lowStockProducts.join(', ')}` : ''}
-${ctx.topProducts?.length ? `• 🏆 Шилдэг борлуулалттай: ${ctx.topProducts.join(', ')}` : ''}
+${ctx.lowStockProducts?.length ? `• ⚠️ Үлдэгдэл бага (≤5): ${ctx.lowStockProducts.join(', ')}` : ''}
+${ctx.topProducts?.length ? `• 🏆 Шилдэг: ${ctx.topProducts.join(', ')}` : ''}
 ${ctx.productCategories?.length ? `• Ангилалууд: ${ctx.productCategories.join(', ')}` : ''}
 ━━━━━━━━━━━━━━━━━━━━━━━━` : '';
+
+    const productBlock = ctx?.productTable ? `
+
+📦 БАРАА МАТЕРИАЛЫН БҮРЭН ЖАГСААЛТ:
+${ctx.productTable}` : '';
+
+    const orderBlock = ctx?.orderTable ? `
+
+🛒 СҮҮЛИЙН ЗАХИАЛГУУД:
+${ctx.orderTable}` : '';
+
+    const customerBlock = ctx?.customerTable ? `
+
+👥 ХЭРЭГЛЭГЧДИЙН ЖАГСААЛТ:
+${ctx.customerTable}` : '';
 
     return `Та "Liscord Super Brain 🧠" — бизнесийн ухаалаг AI туслах.
 
@@ -61,21 +80,18 @@ ${ctx.productCategories?.length ? `• Ангилалууд: ${ctx.productCatego
 
 ДҮРЭМ:
 - Монгол хэлээр, найрсаг, мэргэжлийн өнгө аясаар
-- Тоо баримтыг exact-аар ашиглах (дээрх бодит мэдээллээс)
+- Доорх бодит дата-г ашиглаж хариулт бэлдэх (зохиохгүй!)
 - Зөвлөгөөг bullet point-аар, товч, ойлгомжтой
 - Emoji ашиглаж уншигчдад ойлгомжтой болгох
-- Хэрэв мэдэхгүй бол үнэнчээр хэлэх, зохиохгүй байх
-- Тоон утгыг ₮ форматаар харуулах (жишээ: ₮1,500,000)
-${bizBlock}
+- Хэрэв мэдэхгүй бол үнэнчээр хэлэх
+- Тоон утгыг ₮ форматаар (жишээ: ₮1,500,000)
+- Бараа нэр, үнэ, үлдэгдэл зэргийг exact-аар хэлэх
+${bizBlock}${productBlock}${orderBlock}${customerBlock}
 
 ЧАДВАР:
-📊 Борлуулалтын шинжилгээ хийх
-📦 Бараа материалын нөөц оновчлох
-💡 Маркетингийн стратеги санал болгох
-📝 Facebook пост, бараа тайлбар бичих
-👥 Хэрэглэгчийн сегментчилэл хийх
-💰 Санхүүгийн тайлан гаргах
-🎯 KPI зорилт тохируулахад туслах`;
+📊 Борлуулалтын шинжилгээ | 📦 Нөөц оновчлох | 💡 Маркетинг стратеги
+📝 Пост/тайлбар бичих | 👥 Хэрэглэгч сегментчилэх | 💰 Санхүүгийн тайлан
+🎯 KPI зорилт тохируулах | 🔔 Анхааруулга`;
 }
 
 /**
@@ -91,11 +107,9 @@ export async function sendChatMessage(
     const client = getClient(apiKey);
     const systemPrompt = buildSystemPrompt(businessContext);
 
-    // Build conversation with system context
     const contents = [
-        { role: 'user' as const, parts: [{ text: systemPrompt + '\n\nДээрх заавар бизнесийн мэдээллийг анхааралтай уншаж, бэлэн болоорой.' }] },
-        { role: 'model' as const, parts: [{ text: 'Ойлголоо! 🧠 Би Liscord Super Brain — бүх мэдээллийг хүлээн авлаа. Таны бизнесийн бодит дата дээр суурилж, мэргэжлийн зөвлөгөө, шинжилгээ өгөхөд бэлэн байна!' }] },
-        // Recent history for context (last 10 messages)
+        { role: 'user' as const, parts: [{ text: systemPrompt + '\n\nДээрх бизнесийн бүх мэдээллийг анхааралтай уншаж, бэлэн болоорой.' }] },
+        { role: 'model' as const, parts: [{ text: 'Ойлголоо! 🧠 Бүх мэдээллийг хүлээн авлаа — бараа, захиалга, хэрэглэгч бүрийг мэдэж байна. Бэлэн!' }] },
         ...history.slice(-10).map(msg => ({
             role: msg.role as 'user' | 'model',
             parts: [{ text: msg.text }]
