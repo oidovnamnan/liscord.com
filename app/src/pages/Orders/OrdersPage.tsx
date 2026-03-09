@@ -505,15 +505,15 @@ export function OrdersPage() {
                     <div className="orders-bulk-action-bar animate-fade-in">
                         <div className="bulk-selection-info">
                             <span className="bulk-count">{selectedOrderIds.size}</span>
-                            <span>сонгосон байна</span>
-                            <button className="btn-text btn-sm" onClick={() => setSelectedOrderIds(new Set())}>Цуцлах</button>
+                            <span>сонгосон</span>
+                            <button className="btn-text btn-sm" onClick={() => setSelectedOrderIds(new Set())}>✕</button>
                         </div>
                         <div className="bulk-actions">
                             <button className="btn btn-primary btn-sm gradient-btn" onClick={() => setShowSendToProviderModal(true)}>
-                                🚚 Нийлүүлэгч рүү илгээх ({selectedOrderIds.size})
+                                🚚 Илгээх
                             </button>
                             <button className="btn btn-secondary btn-sm" onClick={() => setShowBulkStatusModal(true)}>
-                                <Settings size={14} /> Төлөв өөрчлөх
+                                <Settings size={14} /> Төлөв
                             </button>
                             <button className="btn btn-danger btn-sm" onClick={handleBulkDelete}>
                                 <Trash2 size={14} /> Устгах
