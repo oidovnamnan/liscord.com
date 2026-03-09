@@ -2,14 +2,12 @@ import { useState, useEffect } from 'react';
 import { useBusinessStore } from '../../store';
 import { businessService, systemSettingsService } from '../../services/db';
 import { toast } from 'react-hot-toast';
-import { Trash2, Download, CheckCircle2, Palette, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { Header } from '../../components/layout/Header';
-
 import * as Icons from 'lucide-react';
+import { Download, Trash2, Loader2, CheckCircle2, Palette, Sparkles, Package, TrendingUp, Zap } from 'lucide-react';
+import { Header } from '../../components/layout/Header';
 import { LISCORD_MODULES } from '../../config/modules';
 import { STOREFRONT_THEMES } from '../../config/themes';
-
 import './AppStorePage.css';
 
 const CATEGORY_MAP: Record<string, string> = {
@@ -17,10 +15,6 @@ const CATEGORY_MAP: Record<string, string> = {
     'finance': 'Санхүү',
     'staff': 'Хүний нөөц',
     'sales': 'Борлуулалт',
-    'services': 'Үйлчилгээ',
-    'industry': 'Тусгай салбар',
-    'logistics': 'Логистик',
-    'manufacturing': 'Үйлдвэрлэл',
     'crm': 'Харилцагч',
     'marketing': 'Маркетинг',
     'ecommerce': 'Онлайн худалдаа',
@@ -34,8 +28,8 @@ const HUB_MAP: Record<string, string> = {
     'finance-hub': 'Санхүү Hub',
     'staff-hub': 'Хүний нөөц Hub',
     'crm-hub': 'Харилцагчийн Hub',
-    'retail-hub': 'ПОС / Дэлгүүр Hub',
-    'industry-hub': 'Тусгай салбар Hub',
+    'sales-hub': 'Борлуулалтын Hub',
+    'marketing-hub': 'Маркетинг Hub',
     'manufacturing-hub': 'Үйлдвэрлэл Hub',
     'logistics-hub': 'Логистик Hub',
     'workspace-hub': 'Ажлын талбар Hub',
@@ -85,6 +79,11 @@ export function AppStorePage() {
     const activeMods = business?.activeModules || [];
     const installedThemes = business?.settings?.storefront?.installedThemes || ['minimal'];
 
+    // Get the configured modules for this business's category
+    const businessCategory = business?.category || '';
+    const categoryConfig = moduleDefaults[businessCategory] || {};
+    const configuredModuleIds = Object.keys(categoryConfig);
+
     const handleInstallTheme = async (themeId: string, isPremium: boolean) => {
         if (!business || loading || installingId) return;
 
@@ -119,13 +118,10 @@ export function AppStorePage() {
 
             await businessService.updateBusiness(business.id, { settings: updatedSettings });
             setBusiness({ ...business, settings: updatedSettings });
-
-            setInstallProgress(100);
-            await new Promise(resolve => setTimeout(resolve, 200));
-            toast.success('Загвар амжилттай суулаа');
-            // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        } catch (_error) {
-            toast.error('Алдаа гарлаа');
+            toast.success(`"${themeId}" загвар амжилттай суулаа!`);
+        } catch (error) {
+            console.error('Theme install error:', error);
+            toast.error('Суулгахад алдаа гарлаа');
         } finally {
             setInstallingId(null);
             setInstallProgress(0);
@@ -133,87 +129,126 @@ export function AppStorePage() {
     };
 
     const handleUninstallModule = async (moduleId: string) => {
-        if (!business || loading || installingId) return;
-        if (!confirm('Энэ модулийг устгахдаа итгэлтэй байна уу?')) return;
+        if (!business) return;
+        const confirmed = confirm('Та энэ модулийг устгахдаа итгэлтэй байна уу?');
+        if (!confirmed) return;
 
-        setLoading(true);
         try {
-            const newModules = activeMods.filter(m => m !== moduleId);
-            await businessService.updateBusiness(business.id, { activeModules: newModules });
-            setBusiness({ ...business, activeModules: newModules });
-            toast.success('Модулийг устгалаа');
-            // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        } catch (_error) {
-            toast.error('Устгах үед алдаа гарлаа');
-        } finally {
-            setLoading(false);
+            const newMods = activeMods.filter(m => m !== moduleId);
+            await businessService.updateBusiness(business.id, { activeModules: newMods });
+            setBusiness({ ...business, activeModules: newMods });
+            toast.success('Модуль амжилттай устгагдлаа!');
+        } catch (error) {
+            console.error('Uninstall error:', error);
+            toast.error('Устгахад алдаа гарлаа');
         }
     };
 
     const handleInstallModule = async (moduleId: string, planId?: string) => {
         if (!business || loading || installingId) return;
 
+        if (activeMods.includes(moduleId)) {
+            toast.error('Энэ модуль хэдийнэ суусан байна');
+            return;
+        }
+
         setInstallingId(moduleId);
         setInstallProgress(0);
 
-        for (let i = 0; i <= 100; i += 10) {
+        for (let i = 0; i <= 100; i += 20) {
             await new Promise(resolve => setTimeout(resolve, 150));
-            setInstallProgress(Math.min(i + Math.random() * 15, 95));
+            setInstallProgress(i);
         }
 
         try {
-            const dynamicConfig = appStoreConfig[moduleId];
-            const mod = LISCORD_MODULES.find(m => m.id === moduleId);
+            if (planId) {
+                const mod = LISCORD_MODULES.find(m => m.id === moduleId);
+                const plan = mod?.plans?.find(p => p.id === planId);
+                if (plan) {
+                    const expiresAt = new Date();
+                    expiresAt.setDate(expiresAt.getDate() + plan.durationDays);
 
-            const isCoreForBusiness = business?.category && moduleDefaults[business.category]?.[moduleId] === 'core';
-            const isFree = isCoreForBusiness || dynamicConfig?.isFree || mod?.isFree;
+                    const subscriptions = business.subscriptions || {};
+                    subscriptions[moduleId] = {
+                        planId: plan.id,
+                        startedAt: new Date(),
+                        expiresAt: expiresAt,
+                        status: 'active'
+                    };
 
-            let durationDays = 30;
-            if (isFree) {
-                durationDays = 365;
-            } else if (planId && dynamicConfig?.plans) {
-
-                const selectedPlan = dynamicConfig.plans.find((p: any) => p.id === planId); // eslint-disable-line @typescript-eslint/no-explicit-any
-                durationDays = selectedPlan?.durationDays ?? 30;
-            } else if (mod?.plans) {
-                durationDays = mod.plans[0].durationDays || 30;
-            }
-
-            const expiresAt = new Date();
-            expiresAt.setDate(expiresAt.getDate() + (isFree ? 36500 : durationDays));
-
-            const newModules = Array.from(new Set([...activeMods, moduleId]));
-            const newSubscriptions = {
-                ...(business.moduleSubscriptions || {}),
-                [moduleId]: {
-                    subscribedAt: new Date(),
-                    expiresAt: expiresAt,
-                    status: 'active' as const
+                    const newMods = [...activeMods, moduleId];
+                    await businessService.updateBusiness(business.id, {
+                        activeModules: newMods,
+                        subscriptions
+                    });
+                    setBusiness({ ...business, activeModules: newMods, subscriptions });
+                    toast.success(`"${mod?.name}" модуль ${plan.name} хугацаатай идэвхжлээ!`);
                 }
-            };
-
-            await businessService.updateBusiness(business.id, {
-                activeModules: newModules,
-                moduleSubscriptions: newSubscriptions
-            });
-
-            setBusiness({
-                ...business,
-                activeModules: newModules,
-                moduleSubscriptions: newSubscriptions
-            });
-
-            setInstallProgress(100);
-            await new Promise(resolve => setTimeout(resolve, 300));
-            toast.success('Модуль амжилттай суулаа');
-            // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        } catch (_error) {
-            toast.error('Суулгах үед алдаа гарлаа');
+            } else {
+                const newMods = [...activeMods, moduleId];
+                await businessService.updateBusiness(business.id, { activeModules: newMods });
+                setBusiness({ ...business, activeModules: newMods });
+                const modName = LISCORD_MODULES.find(m => m.id === moduleId)?.name || moduleId;
+                toast.success(`"${modName}" модуль амжилттай суулаа!`);
+            }
+        } catch (error) {
+            console.error('Install error:', error);
+            toast.error('Суулгахад алдаа гарлаа');
         } finally {
             setInstallingId(null);
             setInstallProgress(0);
         }
     };
+
+    // ═══════ Filter modules — ONLY show SuperAdmin-configured modules ═══════
+    const getFilteredModules = () => {
+        return LISCORD_MODULES
+            .filter(mod => {
+                // CRITICAL: Only show modules configured by SuperAdmin for this business category
+                if (!configuredModuleIds.includes(mod.id)) return false;
+
+                const dynamic = appStoreConfig[mod.id];
+                const finalMod = dynamic ? { ...mod, ...dynamic } : mod;
+                const isCoreForBusiness = categoryConfig[finalMod.id] === 'core';
+                const isFree = isCoreForBusiness || finalMod.isFree;
+
+                if (searchQuery) {
+                    const query = searchQuery.toLowerCase();
+                    return finalMod.name.toLowerCase().includes(query) ||
+                        (finalMod.description || '').toLowerCase().includes(query);
+                }
+
+                if (selectedCategory !== 'all') {
+                    const modCats = [finalMod.category, ...(finalMod.categories || [])].filter(Boolean);
+                    if (!modCats.includes(selectedCategory)) return false;
+                }
+
+                if (selectedHub !== 'all' && finalMod.hubId !== selectedHub) return false;
+                if (priceFilter === 'free' && !isFree) return false;
+                if (priceFilter === 'premium' && isFree) return false;
+
+                return true;
+            })
+            .map(mod => {
+                const dynamic = appStoreConfig[mod.id];
+                const finalMod = dynamic ? { ...mod, ...dynamic } : mod;
+                const isCoreForBusiness = categoryConfig[finalMod.id] === 'core';
+                const isFree = isCoreForBusiness || finalMod.isFree;
+                const isInstalled = activeMods.includes(finalMod.id);
+                return { ...finalMod, isCoreForBusiness, isFree, isInstalled };
+            })
+            // Sort: installed first, then core, then addon
+            .sort((a, b) => {
+                if (a.isInstalled !== b.isInstalled) return a.isInstalled ? -1 : 1;
+                if (a.isCoreForBusiness !== b.isCoreForBusiness) return a.isCoreForBusiness ? -1 : 1;
+                return 0;
+            });
+    };
+
+    const filteredModules = getFilteredModules();
+    const installedCount = filteredModules.filter(m => m.isInstalled).length;
+    const coreCount = filteredModules.filter(m => m.isCoreForBusiness).length;
+    const addonCount = filteredModules.filter(m => !m.isCoreForBusiness).length;
 
     if (initialLoading) {
         return (
@@ -227,62 +262,81 @@ export function AppStorePage() {
     return (
         <div className="page-container animate-fade-in">
             <Header
-                title="Liscord App Store"
-                subtitle={activeStoreTab === 'modules' ? "Бизнесээ өргөжүүлэх удирдлагын нэмэлт боломжуудыг эндээс идэвхжүүлээрэй" : "Танай дэлгүүрийн өнгө төрхийг өөрчлөх мэргэжлийн загварууд"}
+                title="App Store"
+                subtitle="Танай бизнест зориулсан модулиуд"
             />
 
-            <div className="page-content" style={{ paddingTop: '24px' }}>
-                <div style={{
-                    position: 'sticky',
-                    top: '64px',
-                    zIndex: 190,
-                    background: 'var(--bg-primary)',
-                    display: 'flex',
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    gap: '12px',
-                    marginBottom: '32px',
-                    padding: '12px 0',
-                    margin: '0 0 32px 0',
-                    borderBottom: '1px solid var(--border-glass)',
-                    backdropFilter: 'blur(8px)',
-                    flexWrap: 'wrap'
-                }}>
-                    <div style={{ display: 'flex', gap: '4px', background: 'var(--surface-2)', padding: '4px', borderRadius: '14px', flexShrink: 0 }}>
+            <div className="page-content">
+                {/* ═══ Hero Stats ═══ */}
+                <div className="appstore-hero">
+                    <div className="appstore-hero-stat">
+                        <div className="appstore-hero-icon installed">
+                            <CheckCircle2 size={20} />
+                        </div>
+                        <div>
+                            <div className="appstore-hero-number">{installedCount}</div>
+                            <div className="appstore-hero-label">Суулгасан</div>
+                        </div>
+                    </div>
+                    <div className="appstore-hero-stat">
+                        <div className="appstore-hero-icon core">
+                            <Sparkles size={20} />
+                        </div>
+                        <div>
+                            <div className="appstore-hero-number">{coreCount}</div>
+                            <div className="appstore-hero-label">Үндсэн</div>
+                        </div>
+                    </div>
+                    <div className="appstore-hero-stat">
+                        <div className="appstore-hero-icon addon">
+                            <Package size={20} />
+                        </div>
+                        <div>
+                            <div className="appstore-hero-number">{addonCount}</div>
+                            <div className="appstore-hero-label">Нэмэлт</div>
+                        </div>
+                    </div>
+                    <div className="appstore-hero-stat">
+                        <div className="appstore-hero-icon total">
+                            <TrendingUp size={20} />
+                        </div>
+                        <div>
+                            <div className="appstore-hero-number">{configuredModuleIds.length}</div>
+                            <div className="appstore-hero-label">Нийт боломж</div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* ═══ Tab & Toolbar ═══ */}
+                <div className="appstore-toolbar">
+                    <div className="appstore-tabs">
                         <button
-                            className={`btn btn-sm ${activeStoreTab === 'modules' ? 'btn-primary gradient-btn' : 'btn-ghost'}`}
+                            className={`appstore-tab ${activeStoreTab === 'modules' ? 'active' : ''}`}
                             onClick={() => setActiveStoreTab('modules')}
-                            style={{ borderRadius: '10px', minWidth: '100px', height: '36px', fontSize: '0.85rem' }}
                         >
-                            Модулиуд
+                            <Zap size={15} /> Модулиуд
                         </button>
                         <button
-                            className={`btn btn-sm ${activeStoreTab === 'themes' ? 'btn-primary gradient-btn' : 'btn-ghost'}`}
+                            className={`appstore-tab ${activeStoreTab === 'themes' ? 'active' : ''}`}
                             onClick={() => setActiveStoreTab('themes')}
-                            style={{ borderRadius: '10px', minWidth: '100px', height: '36px', fontSize: '0.85rem' }}
                         >
-                            Загварууд
+                            <Palette size={15} /> Загварууд
                         </button>
                     </div>
 
                     {activeStoreTab === 'modules' && (
-                        <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap', flex: 1, justifyContent: 'flex-end' }}>
-                            <div className="search-input-wrapper" style={{ position: 'relative', flex: 1, minWidth: '200px', maxWidth: '400px' }}>
-                                <Icons.Search size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-secondary)' }} />
+                        <div className="appstore-filters">
+                            <div className="appstore-search">
+                                <Icons.Search size={15} />
                                 <input
                                     type="text"
-                                    className="input"
-                                    placeholder="Хайх..."
-                                    style={{ paddingLeft: '36px', height: '38px', width: '100%', borderRadius: '10px', background: 'var(--surface-2)', fontSize: '0.9rem' }}
+                                    placeholder="Модуль хайх..."
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
                                 />
                             </div>
-
                             <select
-                                className="select"
-                                style={{ height: '38px', borderRadius: '10px', width: '150px', background: 'var(--surface-2)', paddingLeft: '12px', fontSize: '0.85rem' }}
+                                className="appstore-select"
                                 value={selectedCategory}
                                 onChange={(e) => setSelectedCategory(e.target.value)}
                             >
@@ -291,10 +345,8 @@ export function AppStorePage() {
                                     <option key={key} value={key}>{label}</option>
                                 ))}
                             </select>
-
                             <select
-                                className="select"
-                                style={{ height: '38px', borderRadius: '10px', width: '140px', background: 'var(--surface-2)', paddingLeft: '12px', fontSize: '0.85rem' }}
+                                className="appstore-select hide-mobile"
                                 value={selectedHub}
                                 onChange={(e) => setSelectedHub(e.target.value)}
                             >
@@ -303,12 +355,10 @@ export function AppStorePage() {
                                     <option key={key} value={key}>{label}</option>
                                 ))}
                             </select>
-
                             <select
-                                className="select"
-                                style={{ height: '38px', borderRadius: '10px', width: '130px', background: 'var(--surface-2)', paddingLeft: '12px', fontSize: '0.85rem' }}
+                                className="appstore-select"
                                 value={priceFilter}
-                                onChange={(e) => setPriceFilter(e.target.value as any)}
+                                onChange={(e) => setPriceFilter(e.target.value as any)} // eslint-disable-line @typescript-eslint/no-explicit-any
                             >
                                 <option value="all">Бүх үнэ</option>
                                 <option value="free">Үнэгүй</option>
@@ -318,117 +368,99 @@ export function AppStorePage() {
                     )}
                 </div>
 
-                <div className="store-render-area" key={`render-${activeStoreTab}`} style={{ minHeight: '600px', width: '100%', paddingBottom: '60px' }}>
+                {/* ═══ Module Grid ═══ */}
+                <div className="store-render-area" key={`render-${activeStoreTab}`}>
                     {activeStoreTab === 'modules' ? (
-                        <div className="app-store-grid" id="grid-modules-dedicated">
-                            {LISCORD_MODULES
-                                .filter(mod => {
-                                    const dynamic = appStoreConfig[mod.id];
-                                    const finalMod = dynamic ? { ...mod, ...dynamic } : mod;
-                                    const isCoreForBusiness = business?.category && moduleDefaults[business.category]?.[finalMod.id] === 'core';
-                                    const isFree = isCoreForBusiness || finalMod.isFree;
+                        <>
+                            {filteredModules.length === 0 ? (
+                                <div className="appstore-empty">
+                                    <Icons.PackageSearch size={48} />
+                                    <h3>Модуль олдсонгүй</h3>
+                                    <p>Хайлтын шүүлтүүрээ өөрчилнө үү</p>
+                                </div>
+                            ) : (
+                                <div className="appstore-grid">
+                                    {filteredModules.map(mod => {
+                                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                                        const Icon = (Icons as any)[mod.icon || 'Box'] || Icons.Box;
+                                        const isInstalling = installingId === mod.id;
 
-                                    if (searchQuery) {
-                                        const query = searchQuery.toLowerCase();
-                                        return finalMod.name.toLowerCase().includes(query) ||
-                                            (finalMod.description || '').toLowerCase().includes(query);
-                                    }
-
-                                    if (selectedCategory !== 'all') {
-                                        const modCats = [finalMod.category, ...(finalMod.categories || [])].filter(Boolean);
-                                        if (!modCats.includes(selectedCategory)) return false;
-                                    }
-
-                                    if (selectedHub !== 'all' && finalMod.hubId !== selectedHub) return false;
-                                    if (priceFilter === 'free' && !isFree) return false;
-                                    if (priceFilter === 'premium' && isFree) return false;
-
-                                    return true;
-                                })
-                                .map(mod => {
-                                    const dynamic = appStoreConfig[mod.id];
-                                    const finalMod = dynamic ? { ...mod, ...dynamic } : mod;
-                                    const isCoreForBusiness = business?.category && moduleDefaults[business.category]?.[finalMod.id] === 'core';
-                                    const isFree = isCoreForBusiness || finalMod.isFree;
-                                    const Icon = (Icons as any)[finalMod.icon || 'Box'] || Icons.Box;
-                                    const isInstalled = activeMods.includes(finalMod.id);
-                                    const isInstalling = installingId === finalMod.id;
-                                    const isActive = isInstalled;
-
-                                    return (
-                                        <div key={`mod-card-${finalMod.id}`} className={`module-card-premium ${isActive ? 'active' : ''}`}>
-                                            <div className="module-card-header">
-                                                <div className="module-icon-box">
-                                                    <Icon size={32} strokeWidth={2.5} />
+                                        return (
+                                            <div key={mod.id} className={`as-card ${mod.isInstalled ? 'installed' : ''} ${mod.isCoreForBusiness ? 'core' : 'addon'}`}>
+                                                {/* Card top: icon + info */}
+                                                <div className="as-card-top">
+                                                    <div className={`as-icon ${mod.isInstalled ? 'active' : ''}`}>
+                                                        <Icon size={26} strokeWidth={1.8} />
+                                                    </div>
+                                                    <div className="as-info">
+                                                        <div className="as-title-row">
+                                                            <h3 className="as-name">{mod.name}</h3>
+                                                            <span className={`as-badge ${mod.isCoreForBusiness ? 'core' : 'addon'}`}>
+                                                                {mod.isCoreForBusiness ? 'CORE' : 'ADDON'}
+                                                            </span>
+                                                        </div>
+                                                        <p className="as-desc">{mod.description}</p>
+                                                    </div>
                                                 </div>
-                                                <div className="module-info">
-                                                    <div className="module-title-row">
-                                                        <h3 className="module-name">{finalMod.name}</h3>
-                                                        {isFree && <span className="badge-free">{isCoreForBusiness ? 'CORE' : 'ҮНЭГҮЙ'}</span>}
-                                                    </div>
-                                                    <p className="module-description">{finalMod.description}</p>
-                                                </div>
-                                            </div>
 
-                                            <div className="module-meta">
-                                                {isFree ? (
-                                                    <div className="price-badge">
-                                                        <div className="price-amount">Нээлттэй</div>
-                                                        <div className="price-duration">Хязгааргүй</div>
-                                                    </div>
-                                                ) : (
-                                                    <div className="price-stack" style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                                                        {(finalMod.plans || []).map((p: any) => (
-                                                            <div key={p.id} className="price-badge-mini">
-                                                                <span className="price-amount">{p.price?.toLocaleString()}₮</span>
-                                                                <span className="price-duration">/ {p.name}</span>
-                                                            </div>
-                                                        ))}
-                                                    </div>
-                                                )}
-                                            </div>
+                                                {/* Card bottom: price + action */}
+                                                <div className="as-card-bottom">
+                                                    {mod.isFree ? (
+                                                        <div className="as-price free">
+                                                            <Icons.ShieldCheck size={14} /> Нээлттэй
+                                                        </div>
+                                                    ) : (
+                                                        <div className="as-price-stack">
+                                                            {(mod.plans || []).map((p: any) => ( // eslint-disable-line @typescript-eslint/no-explicit-any
+                                                                <span key={p.id} className="as-price-tag">
+                                                                    {p.price?.toLocaleString()}₮ <small>/ {p.name}</small>
+                                                                </span>
+                                                            ))}
+                                                        </div>
+                                                    )}
 
-                                            <div className="module-actions">
-                                                {isInstalling ? (
-                                                    <button className="btn btn-primary" disabled style={{ position: 'relative', overflow: 'hidden', width: '100%' }}>
-                                                        <div style={{ position: 'absolute', left: 0, top: 0, height: '100%', width: `${installProgress}%`, background: 'rgba(255,255,255,0.2)' }} />
-                                                        {Math.round(installProgress)}%
-                                                    </button>
-                                                ) : isActive ? (
-                                                    <div style={{ display: 'flex', gap: '8px', width: '100%' }}>
-                                                        <button className="btn btn-primary gradient-btn" style={{ flex: 1 }} onClick={() => navigate(finalMod.route)}>Нээх</button>
-                                                        <button className="btn-uninstall-mini" onClick={() => handleUninstallModule(finalMod.id)}>
-                                                            <Trash2 size={18} />
-                                                        </button>
-                                                    </div>
-                                                ) : (
-                                                    <div style={{ display: 'flex', gap: '8px', width: '100%' }}>
-                                                        {isFree ? (
-                                                            <button className="btn btn-outline w-full" onClick={() => handleInstallModule(finalMod.id)}>
-                                                                <Download size={16} /> Суулгах
+                                                    <div className="as-actions">
+                                                        {isInstalling ? (
+                                                            <button className="as-btn installing" disabled>
+                                                                <div className="as-progress" style={{ width: `${installProgress}%` }} />
+                                                                {Math.round(installProgress)}%
+                                                            </button>
+                                                        ) : mod.isInstalled ? (
+                                                            <>
+                                                                <button className="as-btn open" onClick={() => navigate(mod.route)}>
+                                                                    <Icons.ExternalLink size={14} /> Нээх
+                                                                </button>
+                                                                <button className="as-btn remove" onClick={() => handleUninstallModule(mod.id)}>
+                                                                    <Trash2 size={14} />
+                                                                </button>
+                                                            </>
+                                                        ) : mod.isFree ? (
+                                                            <button className="as-btn install" onClick={() => handleInstallModule(mod.id)}>
+                                                                <Download size={14} /> Суулгах
                                                             </button>
                                                         ) : (
-                                                            (finalMod.plans || []).map((p: any) => (
-                                                                <button key={p.id} className="btn btn-primary gradient-btn btn-sm" style={{ flex: 1 }} onClick={() => handleInstallModule(finalMod.id, p.id)}>
-                                                                    {p.name} авах
+                                                            (mod.plans || []).map((p: any) => ( // eslint-disable-line @typescript-eslint/no-explicit-any
+                                                                <button key={p.id} className="as-btn buy" onClick={() => handleInstallModule(mod.id, p.id)}>
+                                                                    {p.name}
                                                                 </button>
                                                             ))
                                                         )}
                                                     </div>
-                                                )}
+                                                </div>
                                             </div>
-                                        </div>
-                                    );
-                                })}
-                        </div>
+                                        );
+                                    })}
+                                </div>
+                            )}
+                        </>
                     ) : (
-                        <div className="app-store-grid" id="grid-themes-dedicated">
+                        <div className="appstore-grid">
                             {STOREFRONT_THEMES.map(theme => {
                                 const isInstalled = installedThemes.includes(theme.id);
                                 const isInstalling = installingId === theme.id;
 
                                 return (
-                                    <div key={`theme-card-${theme.id}`} className="theme-card-premium">
+                                    <div key={theme.id} className="theme-card-premium">
                                         <div className="theme-preview-box" style={{ background: theme.color }}>
                                             <Palette size={48} color="rgba(0,0,0,0.1)" />
                                             {isInstalled && (
@@ -443,17 +475,17 @@ export function AppStorePage() {
                                             {theme.isPremium && !isInstalled && <span className="premium-badge-mini">PREMIUM</span>}
                                         </div>
 
-                                        <p className="theme-description" style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', margin: '0 0 20px 0', height: '40px', overflow: 'hidden', lineHeight: 1.5 }}>{theme.description}</p>
+                                        <p className="theme-description">{theme.description}</p>
 
-                                        <div className="theme-footer" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: 16, borderTop: '1px solid var(--border-primary)' }}>
+                                        <div className="theme-footer">
                                             <div style={{ fontWeight: 800, fontSize: '1.05rem', color: theme.isPremium && !isInstalled ? 'var(--primary)' : 'var(--text-primary)' }}>
                                                 {theme.price === 0 ? 'Үнэгүй' : `${theme.price.toLocaleString()}₮`}
                                             </div>
 
                                             {isInstalling ? (
-                                                <span style={{ fontSize: '0.9rem', fontWeight: 800, color: 'var(--primary)' }}>{Math.round(installProgress)}%</span>
+                                                <span className="install-progress">{Math.round(installProgress)}%</span>
                                             ) : isInstalled ? (
-                                                <span style={{ fontSize: '0.9rem', color: 'var(--success)', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                                <span className="installed-status">
                                                     <CheckCircle2 size={16} /> Суулгасан
                                                 </span>
                                             ) : (
