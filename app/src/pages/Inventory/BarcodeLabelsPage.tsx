@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { HubLayout } from '../../components/common/HubLayout';
 import { Tag, Hash, Layers, Printer, Eye, Download, Check, Maximize2 } from 'lucide-react';
 import { useBusinessStore } from '../../store';
@@ -76,7 +76,6 @@ export function BarcodeLabelsPage() {
     const [selectedTemplate, setSelectedTemplate] = useState('standard');
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const [previewItem, setPreviewItem] = useState<any>(null);
-    const printRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         if (!business?.id) return;
@@ -93,35 +92,182 @@ export function BarcodeLabelsPage() {
     const uniqueProducts = new Set(items.map(i => i.productName)).size;
 
     const handlePrint = () => {
-        if (!printRef.current) return;
+        const printItems = previewItem ? [previewItem] : items;
+        if (!printItems.length) return;
+
         const printWindow = window.open('', '_blank');
         if (!printWindow) return;
-        printWindow.document.write(`
-            <html><head><title>Шошго хэвлэх</title>
-            <style>
-                * { margin: 0; padding: 0; box-sizing: border-box; }
-                body { display: flex; flex-wrap: wrap; gap: 4px; padding: 8px; font-family: -apple-system, sans-serif; }
-                .label { border: 1px solid #ddd; padding: 8px; page-break-inside: avoid; }
-                .label-standard { width: 189px; height: 94px; }
-                .label-price { width: 378px; height: 144px; }
-                .label-qr { width: 189px; height: 189px; }
-                .label-shipping { width: 378px; height: 227px; }
-                .label-minimal { width: 113px; height: 76px; }
-                .label-jewelry { width: 83px; height: 38px; font-size: 6px; }
-                .product-name { font-weight: 800; font-size: 11px; margin-bottom: 4px; }
-                .barcode-text { font-family: monospace; font-size: 10px; letter-spacing: 1px; }
-                .price-text { font-weight: 900; font-size: 14px; margin-top: 4px; }
-                .price-big { font-size: 28px; font-weight: 900; }
-                @media print { body { gap: 2px; padding: 4px; } .label { border: 0.5px solid #ccc; } }
-            </style></head><body>
-            ${printRef.current.innerHTML}
-            </body></html>
-        `);
+
+        // Generate label HTML for each item × quantity
+        let labelsHtml = '';
+        for (const item of printItems) {
+            const qty = item.quantity || 1;
+            for (let i = 0; i < qty; i++) {
+                labelsHtml += generateLabelHtml(item, selectedTemplate);
+            }
+        }
+
+        printWindow.document.write(`<!DOCTYPE html>
+<html><head><title>Шошго хэвлэх</title>
+<style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { display: flex; flex-wrap: wrap; gap: 6px; padding: 10px; font-family: -apple-system, 'Helvetica Neue', sans-serif; }
+    
+    .label {
+        border: 1px solid #ccc;
+        border-radius: 6px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        page-break-inside: avoid;
+    }
+    
+    /* Template sizes */
+    .label-standard { width: 200px; height: 120px; padding: 10px; }
+    .label-price-tag { width: 380px; height: 150px; padding: 16px; flex-direction: row; justify-content: space-between; }
+    .label-qr-label { width: 200px; height: 200px; padding: 16px; }
+    .label-shipping { width: 380px; height: 230px; padding: 16px; }
+    .label-minimal { width: 140px; height: 80px; padding: 6px; }
+    .label-jewelry { width: 100px; height: 44px; padding: 4px; }
+    
+    .product-name { font-weight: 800; font-size: 11px; color: #111; text-transform: uppercase; letter-spacing: 1.5px; text-align: center; }
+    .barcode-code { font-family: 'Courier New', monospace; font-size: 9px; color: #444; letter-spacing: 2px; text-align: center; }
+    .price-text { font-weight: 900; font-size: 13px; color: #111; }
+    
+    /* CSS Barcode visual */
+    .barcode-bars {
+        display: flex;
+        align-items: stretch;
+        justify-content: center;
+        gap: 0;
+        height: 40px;
+    }
+    .barcode-bars .bar { background: #111; }
+    .barcode-bars .space { background: #fff; }
+    
+    /* Price tag specific */
+    .price-tag-left { flex: 1; display: flex; flex-direction: column; justify-content: center; }
+    .price-tag-right { display: flex; flex-direction: column; align-items: center; justify-content: center; }
+    .price-big { font-size: 32px; font-weight: 900; color: #111; line-height: 1; }
+    .price-currency { font-size: 14px; font-weight: 700; color: #666; }
+    
+    /* QR visual */
+    .qr-box { width: 80px; height: 80px; border: 2px solid #111; border-radius: 4px; display: grid; grid-template-columns: repeat(8, 1fr); grid-template-rows: repeat(8, 1fr); overflow: hidden; }
+    .qr-cell { background: #111; }
+    .qr-empty { background: #fff; }
+    
+    /* Shipping */
+    .ship-header { font-size: 8px; font-weight: 800; color: #888; letter-spacing: 3px; text-transform: uppercase; border-bottom: 1px dashed #ccc; padding-bottom: 6px; margin-bottom: 8px; width: 100%; text-align: center; }
+    
+    @media print {
+        body { gap: 3px; padding: 4px; }
+        .label { border: 0.5px solid #999; border-radius: 3px; }
+    }
+</style></head><body>${labelsHtml}</body></html>`);
         printWindow.document.close();
-        printWindow.print();
+        setTimeout(() => printWindow.print(), 300);
     };
 
-    // ═══ Render label preview based on template ═══
+    // Generate barcode bars from code string
+    const generateBarcodeHtml = (code: string, height = 40, width = 160) => {
+        // Create pseudo-random bar pattern from the barcode string
+        const bars: string[] = [];
+        const charCodes = (code || '0000000').split('').map(c => c.charCodeAt(0));
+
+        // Start guard
+        bars.push(`<div class="bar" style="width:2px;height:${height}px"></div>`);
+        bars.push(`<div class="space" style="width:1px;height:${height}px"></div>`);
+        bars.push(`<div class="bar" style="width:2px;height:${height}px"></div>`);
+        bars.push(`<div class="space" style="width:2px;height:${height}px"></div>`);
+
+        // Data bars
+        for (const cc of charCodes) {
+            const w1 = (cc % 3) + 1;
+            const w2 = (cc % 2) + 1;
+            const w3 = ((cc >> 1) % 3) + 1;
+            const w4 = ((cc >> 2) % 2) + 1;
+            bars.push(`<div class="bar" style="width:${w1}px;height:${height}px"></div>`);
+            bars.push(`<div class="space" style="width:${w2}px;height:${height}px"></div>`);
+            bars.push(`<div class="bar" style="width:${w3}px;height:${height}px"></div>`);
+            bars.push(`<div class="space" style="width:${w4}px;height:${height}px"></div>`);
+        }
+
+        // End guard
+        bars.push(`<div class="bar" style="width:2px;height:${height}px"></div>`);
+        bars.push(`<div class="space" style="width:1px;height:${height}px"></div>`);
+        bars.push(`<div class="bar" style="width:2px;height:${height}px"></div>`);
+
+        return `<div class="barcode-bars" style="height:${height}px;max-width:${width}px">${bars.join('')}</div>`;
+    };
+
+    // Generate QR-like visual
+    const generateQrHtml = () => {
+        const cells: string[] = [];
+        // Simple pseudo-QR pattern
+        const pattern = [1, 1, 1, 0, 0, 1, 1, 1, 1, 0, 1, 0, 1, 1, 0, 1, 1, 1, 1, 0, 1, 0, 1, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 1, 0, 0, 1, 0, 1, 1, 0, 0, 1, 0, 0, 1, 1, 1, 0, 1, 1, 0, 1, 0, 1, 1, 1, 1, 0, 0, 1, 1, 1];
+        for (const p of pattern) {
+            cells.push(`<div class="${p ? 'qr-cell' : 'qr-empty'}"></div>`);
+        }
+        return `<div class="qr-box">${cells.join('')}</div>`;
+    };
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const generateLabelHtml = (item: any, template: string): string => {
+        const name = item.productName || 'Бүтээгдэхүүн';
+        const code = item.barcode || '';
+        const price = item.price ? Number(item.price).toLocaleString() + '₮' : '';
+        const barcodeHtml = generateBarcodeHtml(code);
+
+        switch (template) {
+            case 'price-tag':
+                return `<div class="label label-price-tag">
+                    <div class="price-tag-left">
+                        <div class="product-name" style="text-align:left;font-size:10px;margin-bottom:8px">${name}</div>
+                        <div class="price-big">${price}</div>
+                        <div class="barcode-code" style="text-align:left;margin-top:8px">${code}</div>
+                    </div>
+                    <div class="price-tag-right">
+                        ${generateBarcodeHtml(code, 60, 60)}
+                    </div>
+                </div>`;
+            case 'qr-label':
+                return `<div class="label label-qr-label">
+                    ${generateQrHtml()}
+                    <div class="product-name" style="margin-top:12px;font-size:10px">${name}</div>
+                    <div class="price-text" style="margin-top:4px">${price}</div>
+                    <div class="barcode-code" style="margin-top:4px">${code}</div>
+                </div>`;
+            case 'shipping':
+                return `<div class="label label-shipping">
+                    <div class="ship-header">ХҮРГЭЛТИЙН ШОШГО</div>
+                    <div class="product-name" style="font-size:14px;margin-bottom:12px">${name}</div>
+                    ${generateBarcodeHtml(code, 50, 280)}
+                    <div class="barcode-code" style="margin-top:6px;font-size:11px">${code}</div>
+                    ${price ? `<div class="price-text" style="margin-top:8px">${price}</div>` : ''}
+                </div>`;
+            case 'minimal':
+                return `<div class="label label-minimal">
+                    ${generateBarcodeHtml(code, 35, 120)}
+                    <div class="barcode-code" style="margin-top:4px;font-size:8px">${code}</div>
+                </div>`;
+            case 'jewelry':
+                return `<div class="label label-jewelry">
+                    <div style="font-weight:900;font-size:10px;color:#111">${price}</div>
+                    <div style="font-size:6px;color:#888;font-family:monospace;margin-top:2px">${code.slice(-6)}</div>
+                </div>`;
+            default: // standard
+                return `<div class="label label-standard">
+                    <div class="product-name">${name}</div>
+                    ${barcodeHtml}
+                    <div class="barcode-code" style="margin-top:4px">${code}</div>
+                    ${price ? `<div class="price-text" style="margin-top:2px">${price}</div>` : ''}
+                </div>`;
+        }
+    };
+
+    // ═══ Render label preview for template cards (React JSX) ═══
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const renderLabelPreview = (item: any, template: string, isLarge = false) => {
         const scale = isLarge ? 1.5 : 1;
@@ -172,7 +318,7 @@ export function BarcodeLabelsPage() {
                         <div style={{ fontSize: 5 * scale, color: '#888', marginTop: 2 }}>{code.slice(-6)}</div>
                     </div>
                 );
-            default: // standard
+            default:
                 return (
                     <div className="label-mockup" style={{ width: 200 * scale, height: 130 * scale }}>
                         <div className="mockup-text" style={{ fontSize: 9 * scale }}>{name}</div>
@@ -181,26 +327,6 @@ export function BarcodeLabelsPage() {
                     </div>
                 );
         }
-    };
-
-    // ═══ Print labels HTML ═══
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const renderPrintLabels = (item: any) => {
-        const qty = item.quantity || 1;
-        const sizeClass = selectedTemplate === 'price-tag' ? 'label-price' :
-            selectedTemplate === 'qr-label' ? 'label-qr' :
-                selectedTemplate === 'shipping' ? 'label-shipping' :
-                    selectedTemplate === 'minimal' ? 'label-minimal' :
-                        selectedTemplate === 'jewelry' ? 'label-jewelry' : 'label-standard';
-
-        return Array.from({ length: qty }).map((_, i) => (
-            <div key={`${item.id}-${i}`} className={`label ${sizeClass}`}>
-                <div className="product-name">{item.productName}</div>
-                {selectedTemplate === 'price-tag' && <div className="price-big">{item.price?.toLocaleString()}₮</div>}
-                {selectedTemplate !== 'jewelry' && <div className="barcode-text">{item.barcode}</div>}
-                {selectedTemplate !== 'price-tag' && item.price && <div className="price-text">{item.price.toLocaleString()}₮</div>}
-            </div>
-        ));
     };
 
     return (
@@ -365,10 +491,7 @@ export function BarcodeLabelsPage() {
                     )}
                 </div>
 
-                {/* Hidden print area */}
-                <div ref={printRef} style={{ display: 'none' }}>
-                    {(previewItem ? [previewItem] : items).map(item => renderPrintLabels(item))}
-                </div>
+
             </div>
             {showModal && <GenericCrudModal title="Шошго" icon={<Tag size={20} />} collectionPath="businesses/{bizId}/barcodeLabels" fields={LABEL_FIELDS} editingItem={editingItem} onClose={() => setShowModal(false)} />}
         </HubLayout>
