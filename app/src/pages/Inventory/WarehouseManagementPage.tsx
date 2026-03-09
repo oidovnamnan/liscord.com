@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
-import { Header } from '../../components/layout/Header';
 import { HubLayout } from '../../components/common/HubLayout';
-import { Warehouse } from 'lucide-react';
+import { Warehouse, MapPin, Layers, ArrowLeftRight, ClipboardList } from 'lucide-react';
 import { useBusinessStore } from '../../store';
 import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
 import { db } from '../../services/firebase';
 import { GenericCrudModal, type CrudField } from '../../components/common/GenericCrudModal';
+import './InventoryPage.css';
+
 const WMS_FIELDS: CrudField[] = [
     { name: 'location', label: 'Байршил/Тавиур', type: 'text', required: true, placeholder: 'A-01-03' },
     { name: 'productName', label: 'Бараа', type: 'text', required: true },
@@ -23,6 +24,7 @@ const WMS_FIELDS: CrudField[] = [
     { name: 'date', label: 'Огноо', type: 'date' },
     { name: 'notes', label: 'Тэмдэглэл', type: 'textarea', span: 2 },
 ];
+
 export function WarehouseManagementPage() {
     const { business } = useBusinessStore();
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -31,11 +33,26 @@ export function WarehouseManagementPage() {
     const [showModal, setShowModal] = useState(false);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const [editingItem, setEditingItem] = useState<any>(null);
-    useEffect(() => { if (!business?.id) return; const q = query(collection(db, `businesses/${business.id}/warehouseOps`), orderBy('createdAt', 'desc')); const unsub = onSnapshot(q, (snap) => { setItems(snap.docs.map(d => ({ id: d.id, ...d.data() } as any))); setLoading(false); }); return () => unsub(); }, [business?.id]);
+
+    useEffect(() => {
+        if (!business?.id) return;
+        const q = query(collection(db, `businesses/${business.id}/warehouseOps`), orderBy('createdAt', 'desc'));
+        const unsub = onSnapshot(q, (snap) => {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            setItems(snap.docs.map(d => ({ id: d.id, ...d.data() } as any)));
+            setLoading(false);
+        });
+        return () => unsub();
+    }, [business?.id]);
+
+    const uniqueLocations = new Set(items.map(i => i.location)).size;
+    const uniqueProducts = new Set(items.map(i => i.productName)).size;
+    const totalQty = items.reduce((sum, i) => sum + (Number(i.quantity) || 0), 0);
+
     return (
         <HubLayout hubId="inventory-hub">
-            <div className="page animate-fade-in">
-                <div className="page-hero" style={{ marginBottom: 24 }}>
+            <div className="inventory-page animate-fade-in">
+                <div className="page-hero" style={{ marginBottom: 8 }}>
                     <div className="page-hero-left">
                         <div className="page-hero-icon">
                             <Warehouse size={24} />
@@ -49,6 +66,47 @@ export function WarehouseManagementPage() {
                         + Үйлдэл
                     </button>
                 </div>
+
+                {/* Stats Grid */}
+                <div className="inv-stats-grid" style={{ marginBottom: 24 }}>
+                    <div className="inv-stat-card">
+                        <div className="inv-stat-content">
+                            <h4>Нийт үйлдэл</h4>
+                            <div className="inv-stat-value">{items.length}</div>
+                        </div>
+                        <div className="inv-stat-icon icon-primary">
+                            <ClipboardList size={24} />
+                        </div>
+                    </div>
+                    <div className="inv-stat-card">
+                        <div className="inv-stat-content">
+                            <h4>Байршил</h4>
+                            <div className="inv-stat-value">{uniqueLocations}</div>
+                        </div>
+                        <div className="inv-stat-icon icon-green">
+                            <MapPin size={24} />
+                        </div>
+                    </div>
+                    <div className="inv-stat-card">
+                        <div className="inv-stat-content">
+                            <h4>Бараа төрөл</h4>
+                            <div className="inv-stat-value">{uniqueProducts}</div>
+                        </div>
+                        <div className="inv-stat-icon icon-red">
+                            <Layers size={24} />
+                        </div>
+                    </div>
+                    <div className="inv-stat-card">
+                        <div className="inv-stat-content">
+                            <h4>Нийт тоо</h4>
+                            <div className="inv-stat-value">{totalQty}</div>
+                        </div>
+                        <div className="inv-stat-icon icon-orange">
+                            <ArrowLeftRight size={24} />
+                        </div>
+                    </div>
+                </div>
+
                 <div className="card" style={{ padding: 0 }}>
                     {loading ? <div style={{ padding: 48, textAlign: 'center', color: 'var(--text-muted)' }}>Ачаалж байна...</div> : (
                         <table className="table"><thead><tr><th>Байршил</th><th>Бараа</th><th>Тоо</th><th>Бүс</th><th>Үйлдэл</th><th>Огноо</th></tr></thead>
