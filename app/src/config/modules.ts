@@ -49,7 +49,7 @@ export const LISCORD_MODULES: AppModule[] = [
     },
     {
         id: 'multi-warehouse',
-        name: 'Олон Агуулах',
+        name: 'Агуулах',
         description: 'Салбар хоорондын бараа шилжүүлэг',
         icon: 'Warehouse',
         route: '/app/multi-warehouse',

@@ -81,7 +81,7 @@ export function MultiWarehousePage() {
                             <Warehouse size={24} />
                         </div>
                         <div>
-                            <h2 className="page-hero-title">Олон Агуулах</h2>
+                            <h2 className="page-hero-title">Агуулах</h2>
                             <p className="page-hero-subtitle">Агуулахын удирдлага, бүртгэл, багтаамж</p>
                         </div>
                     </div>
