@@ -27,12 +27,11 @@ export function SuperAdminSettings() {
     const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
     useEffect(() => {
-        const fetchDefaults = async () => {
+        const init = async () => {
             try {
-                const [data] = await Promise.all([
-                    systemSettingsService.getModuleDefaults(),
-                    fetchCategories()
-                ]);
+                // refresh() force re-fetches categories (fetchCategories skips if cached)
+                await refresh();
+                const data = await systemSettingsService.getModuleDefaults();
                 setDefaults(data);
             } catch (error) {
                 console.error('Failed to fetch module settings:', error);
@@ -41,13 +40,16 @@ export function SuperAdminSettings() {
                 setLoading(false);
             }
         };
-        fetchDefaults();
-    }, [fetchCategories]);
+        init();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     useEffect(() => {
         if (categories.length > 0 && !hasUnsavedChanges) {
             setLocalCategories(categories);
         }
+        // On mount, if fetched but categories exist, sync immediately
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [categories, hasUnsavedChanges]);
 
     const handleBulkStatusChange = (isActive: boolean) => {
