@@ -243,7 +243,7 @@ export const AIAgentPage: React.FC = () => {
                                 </div>
                             </div>
                         </div>
-                        <button className="btn btn-secondary w-full" style={{ marginTop: 16, padding: '10px 0' }}>Дэлгэрэнгүй шинжилгээ</button>
+                        <button className="btn btn-secondary" style={{ marginTop: 16, padding: '10px 20px', width: '100%', whiteSpace: 'nowrap' }}>Дэлгэрэнгүй шинжилгээ</button>
                     </section>
 
                     <section className="widget-card action-widget">
