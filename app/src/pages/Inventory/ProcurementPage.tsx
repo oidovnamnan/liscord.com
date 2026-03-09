@@ -67,7 +67,7 @@ export function ProcurementPage() {
     return (
         <HubLayout hubId="inventory-hub">
             <div className="procurement-page animate-fade-in">
-                <div className="page-hero" style={{ marginBottom: 24 }}>
+                <div className="page-hero" style={{ marginBottom: 8 }}>
                     <div className="page-hero-left">
                         <div className="page-hero-icon">
                             <ShoppingCart size={24} />
@@ -82,19 +82,56 @@ export function ProcurementPage() {
                     </button>
                 </div>
 
-                <div className="proc-stats-grid">
-                    <div className="proc-stat-card"><div className="proc-stat-content"><h4>Нийт PO</h4><div className="proc-stat-value">{orders.length}</div></div><div className="proc-stat-icon icon-primary"><ShoppingCart size={28} /></div></div>
-                    <div className="proc-stat-card"><div className="proc-stat-content"><h4>Хүлээгдэж буй</h4><div className="proc-stat-value">{countPending}</div></div><div className="proc-stat-icon icon-orange"><Truck size={28} /></div></div>
-                    <div className="proc-stat-card"><div className="proc-stat-content"><h4>Хүлээн авсан</h4><div className="proc-stat-value">{countReceived}</div></div><div className="proc-stat-icon icon-green"><CheckCircle2 size={28} /></div></div>
-                    <div className="proc-stat-card"><div className="proc-stat-content"><h4>Нийт Дүн</h4><div className="proc-stat-value" style={{ fontSize: '1.4rem' }}>{totalAmount > 0 ? (totalAmount / 1000000).toFixed(1) + 'M ₮' : '0 ₮'}</div></div><div className="proc-stat-icon icon-cyan"><AlertCircle size={28} /></div></div>
+                <div className="inv-stats-grid" style={{ marginBottom: 24 }}>
+                    <div className="inv-stat-card">
+                        <div className="inv-stat-content">
+                            <h4>Нийт PO</h4>
+                            <div className="inv-stat-value">{orders.length}</div>
+                        </div>
+                        <div className="inv-stat-icon icon-primary">
+                            <ShoppingCart size={24} />
+                        </div>
+                    </div>
+                    <div className="inv-stat-card">
+                        <div className="inv-stat-content">
+                            <h4>Хүлээгдэж буй</h4>
+                            <div className="inv-stat-value">{countPending}</div>
+                        </div>
+                        <div className="inv-stat-icon icon-red">
+                            <Truck size={24} />
+                        </div>
+                    </div>
+                    <div className="inv-stat-card">
+                        <div className="inv-stat-content">
+                            <h4>Хүлээн авсан</h4>
+                            <div className="inv-stat-value">{countReceived}</div>
+                        </div>
+                        <div className="inv-stat-icon icon-green">
+                            <CheckCircle2 size={24} />
+                        </div>
+                    </div>
+                    <div className="inv-stat-card">
+                        <div className="inv-stat-content">
+                            <h4>Нийт Дүн</h4>
+                            <div className="inv-stat-value">{totalAmount > 0 ? (totalAmount / 1000000).toFixed(1) + 'M ₮' : '0 ₮'}</div>
+                        </div>
+                        <div className="inv-stat-icon icon-primary">
+                            <AlertCircle size={24} />
+                        </div>
+                    </div>
                 </div>
 
-                <div className="proc-toolbar">
-                    <div className="proc-search-wrap">
-                        <Search size={18} className="proc-search-icon" />
-                        <input className="proc-search-input" placeholder="Нийлүүлэгч эсвэл PO кодоор хайх..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
+                <div className="orders-toolbar">
+                    <div className="orders-search">
+                        <Search size={18} className="orders-search-icon" />
+                        <input className="input orders-search-input" placeholder="Нийлүүлэгч эсвэл PO кодоор хайх..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
                     </div>
-                    <select className="proc-filter-select" value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)}>
+                    <select
+                        className="input"
+                        value={filterStatus}
+                        onChange={(e) => setFilterStatus(e.target.value)}
+                        style={{ minWidth: 140, height: 42, borderRadius: 12, fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer', padding: '0 12px', background: 'var(--surface-1)', border: '1.5px solid var(--border-primary)', color: 'var(--text-primary)' }}
+                    >
                         <option value="all">Бүх төлөв</option><option value="draft">Ноорог</option><option value="pending">Хүлээгдэж буй</option><option value="received">Хүлээж авсан</option>
                     </select>
                 </div>
