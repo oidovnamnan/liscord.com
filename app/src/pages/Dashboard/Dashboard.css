@@ -406,22 +406,17 @@
     opacity: 0.5;
 }
 
-/* ═══ Grid Layout ═══ */
-.grid-2-1 {
+/* ═══ Bottom Grid (Orders + Activity) ═══ */
+.dashboard-bottom-grid {
     display: grid;
-    grid-template-columns: 2fr 1fr;
+    grid-template-columns: 1fr 1fr;
     gap: 20px;
 }
 
-.dashboard-main-col {
-    display: flex;
-    flex-direction: column;
-}
-
-.dashboard-side-col {
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
+@media (max-width: 768px) {
+    .dashboard-bottom-grid {
+        grid-template-columns: 1fr;
+    }
 }
 
 /* ═══ Section Cards ═══ */
