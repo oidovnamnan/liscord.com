@@ -24,6 +24,20 @@ import './SettingsPage.css';
 export function SettingsPage() {
     const { business } = useBusinessStore();
     const { theme, setTheme } = useUIStore();
+
+    // Auto-collapse main sidebar when settings page is active (has its own sub-sidebar)
+    useEffect(() => {
+        const store = useUIStore.getState();
+        const wasCollapsed = store.sidebarCollapsed;
+        if (!wasCollapsed) {
+            useUIStore.setState({ sidebarCollapsed: true });
+        }
+        return () => {
+            if (!wasCollapsed) {
+                useUIStore.setState({ sidebarCollapsed: false });
+            }
+        };
+    }, []);
     const [searchParams, setSearchParams] = useSearchParams();
     const activeTab = searchParams.get('tab') || 'general';
     const [language, setLanguage] = useState('mn');
