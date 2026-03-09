@@ -228,11 +228,13 @@
 
 .as-card.installed::before {
     background: linear-gradient(90deg, var(--primary), #10b981);
+    height: 4px;
 }
 
 .as-card.installed {
-    border-color: var(--primary-light);
-    background: linear-gradient(135deg, rgba(var(--primary-rgb), 0.03), transparent);
+    border-color: var(--primary);
+    background: linear-gradient(135deg, rgba(var(--primary-rgb), 0.07), rgba(16, 185, 129, 0.04));
+    box-shadow: 0 4px 16px -4px rgba(var(--primary-rgb), 0.15);
 }
 
 /* Top section: icon + info */
