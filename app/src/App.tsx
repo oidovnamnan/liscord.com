@@ -101,7 +101,7 @@ const SocialListeningPage = lazy(() => import('./pages/CRM/SocialListeningPage')
 const CustomerPortalPage = lazy(() => import('./pages/CRM/CustomerPortalPage').then(m => ({ default: m.CustomerPortalPage })));
 const FieldSalesPage = lazy(() => import('./pages/CRM/FieldSalesPage').then(m => ({ default: m.FieldSalesPage })));
 const POSPage = lazy(() => import('./pages/Retail/POSPage').then(m => ({ default: m.POSPage })));
-const EcommercePage = lazy(() => import('./pages/Retail/EcommercePage').then(m => ({ default: m.EcommercePage })));
+// EcommercePage removed — storefront config lives in Settings + App Store
 const DeliveryAppPage = lazy(() => import('./pages/Retail/DeliveryAppPage').then(m => ({ default: m.DeliveryAppPage })));
 const VouchersPage = lazy(() => import('./pages/Retail/VouchersPage').then(m => ({ default: m.VouchersPage })));
 const FranchisePage = lazy(() => import('./pages/Retail/FranchisePage').then(m => ({ default: m.FranchisePage })));
@@ -383,7 +383,7 @@ export default function App() {
             <Route path="customer-portal" element={<ModuleGuard moduleId="customer-portal"><CustomerPortalPage /></ModuleGuard>} />
             <Route path="field-sales" element={<ModuleGuard moduleId="field-sales"><FieldSalesPage /></ModuleGuard>} />
             <Route path="pos" element={<ModuleGuard moduleId="pos"><POSPage /></ModuleGuard>} />
-            <Route path="e-commerce" element={<ModuleGuard moduleId="e-commerce"><EcommercePage /></ModuleGuard>} />
+
             <Route path="delivery-app" element={<ModuleGuard moduleId="delivery-app"><DeliveryAppPage /></ModuleGuard>} />
             <Route path="vouchers" element={<ModuleGuard moduleId="vouchers"><VouchersPage /></ModuleGuard>} />
             <Route path="franchise" element={<ModuleGuard moduleId="franchise"><FranchisePage /></ModuleGuard>} />

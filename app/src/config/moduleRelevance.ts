@@ -60,7 +60,7 @@ const CATEGORY_RELEVANCE: Record<string, { essential?: string[]; important?: str
 
     // ─── Онлайн / Сошиал шоп ───
     online_shop: {
-        essential: ['inventory', 'delivery-app', 'e-commerce'],
+        essential: ['inventory', 'delivery-app'],
         important: ['barcodes', 'product-variants', 'messenger', 'campaigns', 'loyalty', 'facebook-shop', 'tiktok-shop', 'instagram-api'],
         optional: ['pricing-rules', 'drop-shipping', 'packaging', 'vouchers', 'affiliate', 'seo-tools', 'google-analytics'],
         'not-needed': ['rooms', 'vehicles', 'queue', 'appointments', 'hotel-mgt', 'karaoke', 'wms', 'customs'],
@@ -78,7 +78,7 @@ const CATEGORY_RELEVANCE: Record<string, { essential?: string[]; important?: str
     beauty_salon: {
         essential: ['appointments', 'queue', 'pos'],
         important: ['loyalty', 'messenger', 'campaigns', 'membership', 'shifts'],
-        optional: ['vouchers', 'e-commerce', 'instagram-api', 'salon'],
+        optional: ['vouchers', 'instagram-api', 'salon'],
         'not-needed': ['inventory', 'procurement', 'wms', 'barcodes', 'multi-warehouse', 'delivery-app', 'rooms', 'vehicles', 'customs', 'serial-tracking', 'b2b-portal', 'freight'],
     },
 
@@ -110,7 +110,7 @@ const CATEGORY_RELEVANCE: Record<string, { essential?: string[]; important?: str
     car_wash: {
         essential: ['appointments', 'queue', 'pos'],
         important: ['loyalty', 'membership', 'shifts', 'messenger'],
-        optional: ['campaigns', 'vouchers', 'e-commerce'],
+        optional: ['campaigns', 'vouchers'],
         'not-needed': ['inventory', 'procurement', 'wms', 'barcodes', 'multi-warehouse', 'delivery-app', 'rooms', 'vehicles', 'customs', 'serial-tracking', 'freight'],
     },
 
@@ -118,7 +118,7 @@ const CATEGORY_RELEVANCE: Record<string, { essential?: string[]; important?: str
     real_estate: {
         essential: ['rooms', 'contracts'],
         important: ['property-mgt', 'messenger', 'leads', 'pos'],
-        optional: ['campaigns', 'e-commerce', 'documents', 'maintenance'],
+        optional: ['campaigns', 'documents', 'maintenance'],
         'not-needed': ['inventory', 'procurement', 'wms', 'barcodes', 'multi-warehouse', 'delivery-app', 'customs', 'serial-tracking', 'vehicles', 'digital-menu', 'kds', 'queue'],
     },
 
@@ -142,7 +142,7 @@ const CATEGORY_RELEVANCE: Record<string, { essential?: string[]; important?: str
     pharmacy: {
         essential: ['inventory', 'barcodes', 'pos'],
         important: ['procurement', 'serial-tracking', 'product-variants', 'pricing-rules', 'audit-inventory'],
-        optional: ['delivery-app', 'multi-warehouse', 'quality-control', 'e-commerce', 'loyalty'],
+        optional: ['delivery-app', 'multi-warehouse', 'quality-control', 'loyalty'],
         'not-needed': ['rooms', 'vehicles', 'customs', 'hotel-mgt', 'appointments', 'queue', 'digital-menu', 'kds', 'wms'],
     },
 
@@ -150,7 +150,7 @@ const CATEGORY_RELEVANCE: Record<string, { essential?: string[]; important?: str
     fitness: {
         essential: ['appointments', 'membership', 'pos'],
         important: ['queue', 'shifts', 'loyalty', 'attendance', 'gym-fitness'],
-        optional: ['campaigns', 'vouchers', 'e-commerce', 'messenger', 'training'],
+        optional: ['campaigns', 'vouchers', 'messenger', 'training'],
         'not-needed': ['inventory', 'procurement', 'wms', 'barcodes', 'multi-warehouse', 'delivery-app', 'customs', 'rooms', 'vehicles', 'serial-tracking'],
     },
 
@@ -158,14 +158,14 @@ const CATEGORY_RELEVANCE: Record<string, { essential?: string[]; important?: str
     furniture: {
         essential: ['inventory', 'procurement', 'projects'],
         important: ['barcodes', 'product-variants', 'delivery-app', 'pricing-rules', 'wms'],
-        optional: ['multi-warehouse', 'audit-inventory', 'rma', 'warranty', 'e-commerce'],
+        optional: ['multi-warehouse', 'audit-inventory', 'rma', 'warranty'],
         'not-needed': ['rooms', 'vehicles', 'customs', 'queue', 'appointments', 'hotel-mgt', 'salon', 'digital-menu', 'kds'],
     },
 
     // ─── Цэцэг / Бэлэг ───
     flowers: {
         essential: ['delivery-app', 'pos'],
-        important: ['e-commerce', 'messenger', 'loyalty', 'campaigns', 'vouchers'],
+        important: ['messenger', 'loyalty', 'campaigns', 'vouchers'],
         optional: ['product-variants', 'pricing-rules', 'packaging', 'route-optimize'],
         'not-needed': ['rooms', 'vehicles', 'customs', 'wms', 'serial-tracking', 'warranty', 'appointments', 'hotel-mgt', 'queue'],
     },

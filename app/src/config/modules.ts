@@ -947,20 +947,6 @@ export const LISCORD_MODULES: AppModule[] = [
         ]
     },
     {
-        id: 'e-commerce',
-        name: 'Онлайн Дэлгүүр',
-        description: 'Кодгүй вэб дэлгүүр',
-        icon: 'Globe',
-        route: '/app/e-commerce',
-        isCore: false,
-        category: 'operations',
-        isFree: false,
-        plans: [
-            { id: 'monthly', name: '30 хоног', price: 20000, durationDays: 30 },
-            { id: 'yearly', name: '1 жил', price: 192000, durationDays: 365 }
-        ]
-    },
-    {
         id: 'delivery-app',
         name: 'Хүргэлтийн Апп',
         description: 'Жолоочийн апп',
