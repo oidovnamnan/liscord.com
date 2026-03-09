@@ -180,15 +180,8 @@ export function SuperAdminSettings() {
     return (
         <div className="super-admin-page animate-fade-in">
             <Header
-                title={
-                    <div className="flex items-center gap-3">
-                        <h1 className="text-base font-bold tracking-tight text-primary">Модуль Тохиргоо</h1>
-                        <div className="ms-header-stats">
-                            <span className="ms-stat-pill">{totalModules} модуль</span>
-                            <span className="ms-stat-pill active">{activeCategories}/{totalCategories} салбар</span>
-                        </div>
-                    </div>
-                }
+                title="Модуль Тохиргоо"
+                subtitle={`${totalModules} модуль · ${activeCategories}/${totalCategories} салбар идэвхтэй`}
                 extra={
                     <div className="flex items-center gap-2">
                         {hasUnsavedChanges && (
@@ -198,12 +191,12 @@ export function SuperAdminSettings() {
                             </span>
                         )}
                         <button
-                            className="btn-pro btn-pro-ghost"
+                            className="btn btn-sm btn-ghost"
                             onClick={() => navigate('/super/app-store')}
-                            style={{ fontSize: '0.75rem', gap: '4px' }}
+                            style={{ fontSize: '0.8rem', gap: '5px' }}
                         >
-                            <Icons.DollarSign size={13} />
-                            App Store Үнэ
+                            <Icons.DollarSign size={14} />
+                            <span className="hide-mobile">App Store Үнэ</span>
                         </button>
                         <button
                             className="btn-pro btn-pro-primary"
