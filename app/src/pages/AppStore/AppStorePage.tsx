@@ -168,20 +168,19 @@ export function AppStorePage() {
                     const expiresAt = new Date();
                     expiresAt.setDate(expiresAt.getDate() + plan.durationDays);
 
-                    const subscriptions = business.subscriptions || {};
-                    subscriptions[moduleId] = {
-                        planId: plan.id,
-                        startedAt: new Date(),
-                        expiresAt: expiresAt,
+                    const moduleSubscriptions = { ...(business.moduleSubscriptions || {}) };
+                    moduleSubscriptions[moduleId] = {
+                        subscribedAt: new Date() as any, // eslint-disable-line @typescript-eslint/no-explicit-any
+                        expiresAt: expiresAt as any, // eslint-disable-line @typescript-eslint/no-explicit-any
                         status: 'active'
                     };
 
                     const newMods = [...activeMods, moduleId];
                     await businessService.updateBusiness(business.id, {
                         activeModules: newMods,
-                        subscriptions
+                        moduleSubscriptions
                     });
-                    setBusiness({ ...business, activeModules: newMods, subscriptions });
+                    setBusiness({ ...business, activeModules: newMods, moduleSubscriptions });
                     toast.success(`"${mod?.name}" модуль ${plan.name} хугацаатай идэвхжлээ!`);
                 }
             } else {
