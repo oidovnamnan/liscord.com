@@ -29,7 +29,9 @@ export interface FBExtractedProduct {
     duplicateOfName?: string;
     duplicateAction?: 'skip' | 'update' | 'merge';
     isSelected: boolean;
-    confidence: number; // 0-100 AI confidence
+    confidence: number;
+    sku: string;
+    variations?: { name: string; sku: string; quantity: number }[];
 }
 
 export interface FBPost {
@@ -138,6 +140,26 @@ export function extractImagesFromPost(post: FBPost): string[] {
     return images;
 }
 
+// ============ SKU Generator ============
+
+const CATEGORY_PREFIXES: Record<string, string> = {
+    'электроник': 'ELK', 'хувцас': 'HVC', 'гоо сайхан': 'GOS',
+    'гэр ахуйн бараа': 'GAB', 'хүнс': 'HNS', 'спорт': 'SPR',
+    'тоглоом': 'TGL', 'эрүүл мэнд': 'ERM', 'ном': 'NOM',
+    'гар ахуйн бараа': 'GAB', 'гар ахуйн хэрэгсэл': 'GAH',
+    'хүүхдийн бараа': 'HHB', 'гутал': 'GTL', 'цүнх': 'TSN',
+};
+
+function generateSKU(categoryName: string): string {
+    const lower = categoryName.toLowerCase();
+    let prefix = 'LSC';
+    for (const [key, val] of Object.entries(CATEGORY_PREFIXES)) {
+        if (lower.includes(key)) { prefix = val; break; }
+    }
+    const rand = () => Math.random().toString(36).substring(2, 6).toUpperCase();
+    return `${prefix}-${rand()}`;
+}
+
 // ============ AI Product Extraction ============
 
 export async function extractProductFromPost(post: FBPost, apiKey: string): Promise<FBExtractedProduct | null> {
@@ -150,37 +172,52 @@ export async function extractProductFromPost(post: FBPost, apiKey: string): Prom
     const client = getClient(apiKey);
 
     const prompt = `
-Та Facebook page-ийн пост-оос бараа/бүтээгдэхүүний мэдээллийг задалж байна.
+Та Facebook page-ийн пост-оос бараа/бүтээгдэхүүний мэдээллийг задалж, ЦЭВЭРЛЭЖ байна.
 
 ПОСТ:
 """
 ${message}
 """
 
-ЗУРАГ ТОО: ${images.length}
+ZУРАГ ТОО: ${images.length}
 
 ДААЛГАВАР:
 1. Энэ пост нь бараа/бүтээгдэхүүний пост мөн эсэхийг тодорхойлох.
 2. Бараа мөн бол дараах мэдээллийг задлах:
-   - name: Барааны нэр (товч, тодорхой)
-   - description: Тайлбар (постын текстээс)
-   - salePrice: Зарах үнэ (тоо, 0 хэрэв олдохгүй бол)
-   - costPrice: Өртөг (тоо, 0 хэрэв олдохгүй бол)
-   - categoryName: Бүтээгдэхүүний ангилалын нэр (таамаглах, жишээ: "Хувцас", "Электроник", "Гоо сайхан")
-   - isProduct: true/false
 
-ТООН УТГЫГ ЗӨВХӨН ТООГООР бичнэ. Мөнгөн тэмдэг, таслал зэргийг оруулахгүй.
-Хэрэв үнэ "45,000₮" бол 45000 гэж бичнэ.
+НЭР (name):
+- Барааны нэрийг товч, тодорхой бичих
+- Код/артикул (жишээ: "#ABC123", "SKU-001") зэргийг АВАХГҮЙ, ХАСЧ хаях
+- Эможи, тусгай тэмдэгт (🔥✅💫🎉⭐️➡️ гм) БҮРЭН ХАСАХ
+
+ТАЙЛБАР (description):
+- Постын текстийг цэвэрлэж, зөвхөн барааны тайлбар болгох
+- Дараах зүйлсийг ЗААВАЛ ХАСАХ:
+  • Эможи, тусгай тэмдэгтүүд (🔥✅💫🎉⭐️➡️ гм)
+  • "Захиалга өгөх бол чат бичээрэй", "DM бичнэ үү", "Inbox-оор холбогдоорой" төрлийн үгс
+  • "Like, Share, Follow" төрлийн хүсэлтүүд
+  • Утасны дугаар, хаяг (хэрэв байвал)
+- Хэрэв тайлбар дэндүү богино бол, постын мэдээлэл дээр тулгуурлаж 1-2 өгүүлбэрээр өргөтгөж бичих
+- Мэргэжлийн, цэвэрхэн, дэлгүүрийн каталогт тохирсон хэл найруулгатай байх
+
+ХУВИЛБАРУУД (variations):
+- Хэрэв постонд өнгө, хэмжээ, багц зэрэг сонголт байвал тус тусад нь хувилбар үүсгэх
+- Жишээ: "S, M, L, XL" → variations: [{name: "S"}, {name: "M"}, {name: "L"}, {name: "XL"}]
+- Жишээ: "Хар, Цагаан, Улаан" → variations: [{name: "Хар"}, {name: "Цагаан"}, {name: "Улаан"}]
+- Хувилбар байхгүй бол хоосон array []
+
+ТООН УТГЫГ ЗӨВХӨН ТООГООР бичнэ. "45,000₮" → 45000
 
 JSON ХАРИУ:
 {
   "isProduct": true,
-  "name": "...",
-  "description": "...",
+  "name": "Цэвэрхэн барааны нэр",
+  "description": "Цэвэрлэгдсэн, мэргэжлийн тайлбар",
   "salePrice": 0,
   "costPrice": 0,
-  "categoryName": "...",
-  "confidence": 85
+  "categoryName": "Ангилал",
+  "confidence": 85,
+  "variations": [{"name": "S"}, {"name": "M"}]
 }
 
 Хэрэв бараа БИSH бол: {"isProduct": false, "confidence": 0}
@@ -204,19 +241,30 @@ JSON ХАРИУ:
 
         if (!parsed.isProduct) return null;
 
+        const categoryName = parsed.categoryName || 'Бусад';
+        const sku = generateSKU(categoryName);
+        const variations = (parsed.variations || []).map((v: any, i: number) => ({
+            id: Math.random().toString(36).substring(2, 9),
+            name: v.name || `Хувилбар ${i + 1}`,
+            sku: `${sku}-${(i + 1).toString().padStart(2, '0')}`,
+            quantity: 0
+        }));
+
         return {
             name: parsed.name || 'Нэргүй бараа',
             description: parsed.description || message.substring(0, 200),
             salePrice: Number(parsed.salePrice) || 0,
             costPrice: Number(parsed.costPrice) || 0,
-            categoryName: parsed.categoryName || 'Бусад',
+            categoryName,
             images,
             fbPostId: post.id,
             fbPostUrl: `https://facebook.com/${post.id}`,
             fbCreatedTime: new Date(post.created_time),
             status: 'new',
             isSelected: true,
-            confidence: parsed.confidence || 50
+            confidence: parsed.confidence || 50,
+            sku,
+            variations: variations.length > 0 ? variations : undefined
         };
     } catch (error: any) {
         console.warn('[FB Import] AI extraction failed for post:', post.id, error?.message || error);
@@ -238,7 +286,8 @@ JSON ХАРИУ:
                 fbCreatedTime: new Date(post.created_time),
                 status: 'new',
                 isSelected: true,
-                confidence: 30
+                confidence: 30,
+                sku: generateSKU('Бусад')
             };
         }
         return null;

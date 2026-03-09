@@ -227,7 +227,7 @@ export function FBImportModal({ onClose }: FBImportModalProps) {
                     description: product.description,
                     categoryId,
                     categoryName: product.categoryName,
-                    sku: '',
+                    sku: product.sku || '',
                     barcode: '',
                     images: uploadedImages,
                     pricing: {
@@ -236,7 +236,12 @@ export function FBImportModal({ onClose }: FBImportModalProps) {
                         wholesalePrice: product.salePrice
                     },
                     productType: 'ready',
-                    stock: { quantity: 0, lowStockThreshold: 3, trackInventory: true },
+                    stock: {
+                        quantity: product.variations?.length ? product.variations.reduce((s, v) => s + v.quantity, 0) : 0,
+                        lowStockThreshold: 3,
+                        trackInventory: true
+                    },
+                    variations: product.variations as any,
                     unitType: 'ш',
                     isActive: true,
                     isHidden: importAsHidden,
