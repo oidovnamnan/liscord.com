@@ -13,12 +13,24 @@ export const ModuleGuard: React.FC<ModuleGuardProps> = ({ children, moduleId }) 
     const { business } = useBusinessStore();
     const location = useLocation();
     const [moduleDefaults, setModuleDefaults] = useState<Record<string, Record<string, string>>>({});
+    const [defaultsLoaded, setDefaultsLoaded] = useState(false);
 
     useEffect(() => {
-        systemSettingsService.getModuleDefaults().then(setModuleDefaults).catch(console.error);
+        systemSettingsService.getModuleDefaults()
+            .then((data) => {
+                setModuleDefaults(data);
+                setDefaultsLoaded(true);
+            })
+            .catch((err) => {
+                console.error('Failed to load module defaults:', err);
+                setDefaultsLoaded(true); // Still mark as loaded to unblock
+            });
     }, []);
 
     if (!business) return null;
+
+    // Don't redirect until we've loaded defaults — prevents race condition
+    if (!defaultsLoaded) return null;
 
     const { accessible, reason } = isModuleAccessible(moduleId, business, moduleDefaults);
 
