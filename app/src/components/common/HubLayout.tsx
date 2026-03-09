@@ -1,9 +1,11 @@
 import { NavLink, useLocation } from 'react-router-dom';
+import { useState, useEffect } from 'react';
 import * as Icons from 'lucide-react';
 import { LISCORD_MODULES } from '../../config/modules';
-import { isSubscriptionExpired } from '../../utils/moduleUtils';
+import { isModuleAccessible } from '../../utils/moduleUtils';
 import './HubLayout.css';
 import { useBusinessStore } from '../../store';
+import { systemSettingsService } from '../../services/db';
 
 interface HubLayoutProps {
     hubId: string;
@@ -13,11 +15,16 @@ interface HubLayoutProps {
 export function HubLayout({ hubId, children }: HubLayoutProps) {
     const location = useLocation();
     const { business } = useBusinessStore();
+    const [moduleDefaults, setModuleDefaults] = useState<Record<string, Record<string, string>>>({});
 
-    // Find all modules belonging to this hub that are active and not expired
+    useEffect(() => {
+        systemSettingsService.getModuleDefaults().then(setModuleDefaults).catch(console.error);
+    }, []);
+
+    // Find all modules belonging to this hub that are accessible
+    // (includes activeModules AND category-core modules from SuperAdmin)
     const hubModules = LISCORD_MODULES.filter(m =>
-        m.hubId === hubId && business?.activeModules?.includes(m.id) &&
-        !isSubscriptionExpired(business, m.id)
+        m.hubId === hubId && isModuleAccessible(m.id, business, moduleDefaults).accessible
     );
 
     if (hubModules.length <= 1) {
