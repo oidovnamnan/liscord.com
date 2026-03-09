@@ -1,8 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Sparkles, Brain, Zap, BarChart3, Bot, ChevronDown, AlertTriangle, Send, Loader2, Target, ShieldCheck } from 'lucide-react';
+import { Sparkles, Brain, Zap, BarChart3, Bot, ChevronDown, AlertTriangle, Send, Loader2, Target, ShieldCheck, Package, TrendingUp, MessageSquare } from 'lucide-react';
 import { useAuthStore, useBusinessStore } from '../../store';
 import { globalSettingsService } from '../../services/adminService';
-import { sendChatMessage, type ChatMessage } from '../../services/ai/aiChatService';
+import { sendChatMessage, type ChatMessage, type BusinessContext } from '../../services/ai/aiChatService';
+import { productService, customerService } from '../../services/db';
+import { orderService } from '../../services/db';
+import type { Product, Order, Customer } from '../../types';
 import toast from 'react-hot-toast';
 import './AIAgentPage.css';
 import '../Inventory/InventoryPage.css';
@@ -14,6 +17,12 @@ interface Message {
     timestamp: Date;
 }
 
+const MODEL_MAP: Record<string, string> = {
+    'gemini-2.5': 'gemini-2.5-flash',
+    'gemini-2.0': 'gemini-2.0-flash',
+    'gemini-1.5': 'gemini-1.5-pro',
+};
+
 export const AIAgentPage: React.FC = () => {
     const { user } = useAuthStore();
     const { business } = useBusinessStore();
@@ -22,24 +31,88 @@ export const AIAgentPage: React.FC = () => {
     const [inputText, setInputText] = useState('');
     const [isTyping, setIsTyping] = useState(false);
     const [geminiApiKey, setGeminiApiKey] = useState('');
+    const [bizContext, setBizContext] = useState<BusinessContext>({});
+    const [dataLoaded, setDataLoaded] = useState(false);
     const [messages, setMessages] = useState<Message[]>([
         {
             id: '1',
             role: 'bot',
-            text: 'Сайн байна уу! 🧠 Би Liscord Super Brain — таны бизнесийн ухаалаг туслах. Борлуулалт, бараа, маркетинг, санхүү гэх мэт аливаа асуултад хариулахад бэлэн. Та надаас юу ч асууж болно!',
+            text: 'Сайн байна уу! 🧠 Би Liscord Super Brain — таны бизнесийн ухаалаг туслах. Бодит дата дээр суурилж шинжилгээ хийх, зөвлөгөө өгөхөд бэлэн. Та надаас юу ч асууж болно!',
             timestamp: new Date()
         }
     ]);
     const chatEndRef = useRef<HTMLDivElement>(null);
 
-    // Fetch Gemini API key from global settings
+    // Fetch Gemini API key
     useEffect(() => {
         globalSettingsService.getSettings().then(settings => {
-            if (settings.geminiApiKey) {
-                setGeminiApiKey(settings.geminiApiKey);
-            }
+            if (settings.geminiApiKey) setGeminiApiKey(settings.geminiApiKey);
         });
     }, []);
+
+    // Load real business data for AI context
+    useEffect(() => {
+        if (!business?.id) return;
+        const bizId = business.id;
+        let products: Product[] = [];
+        let orders: Order[] = [];
+        let customers: Customer[] = [];
+        let loaded = 0;
+
+        const buildContext = () => {
+            loaded++;
+            if (loaded < 3) return;
+
+            const activeOrders = orders.filter(o => o.status !== 'cancelled');
+            const totalRevenue = activeOrders.reduce((s, o) => s + (o.totalAmount || 0), 0);
+            const today = new Date().toDateString();
+            const recentOrdersToday = orders.filter(o => {
+                const d = o.createdAt instanceof Date ? o.createdAt : new Date();
+                return d.toDateString() === today;
+            }).length;
+            const pendingOrders = orders.filter(o => o.status === 'pending' || o.status === 'confirmed').length;
+            const lowStockProducts = products
+                .filter(p => !p.isPreorder && (p.stock ?? 0) <= 5 && (p.stock ?? 0) >= 0)
+                .slice(0, 10)
+                .map(p => `${p.name} (${p.stock ?? 0}ш)`);
+
+            const productSales: Record<string, number> = {};
+            orders.forEach(o => {
+                o.items?.forEach(item => {
+                    const name = item.productName || '';
+                    if (name) productSales[name] = (productSales[name] || 0) + (item.quantity || 1);
+                });
+            });
+            const topProducts = Object.entries(productSales)
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 5)
+                .map(([name, qty]) => `${name} (${qty}ш)`);
+
+            const categories = [...new Set(products.map(p => p.category).filter(Boolean))] as string[];
+
+            setBizContext({
+                businessName: business.name,
+                totalProducts: products.length,
+                totalCustomers: customers.length,
+                totalOrders: orders.length,
+                totalRevenue,
+                averageOrderValue: activeOrders.length > 0 ? totalRevenue / activeOrders.length : 0,
+                recentOrdersToday,
+                pendingOrders,
+                lowStockProducts,
+                topProducts,
+                productCategories: categories,
+            });
+            setDataLoaded(true);
+        };
+
+        const unsub1 = productService.subscribeProducts(bizId, (p) => { products = p; buildContext(); });
+        const unsub2 = orderService.subscribeOrders(bizId, (o) => { orders = o; buildContext(); });
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const unsub3 = customerService.subscribeCustomers(bizId, (c: any) => { customers = c; buildContext(); });
+
+        return () => { unsub1(); unsub2(); unsub3(); };
+    }, [business?.id, business?.name]);
 
     const scrollToBottom = () => {
         chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -51,7 +124,6 @@ export const AIAgentPage: React.FC = () => {
 
     const handleSendMessage = async (text: string = inputText) => {
         if (!text.trim()) return;
-
         if (!geminiApiKey) {
             toast.error('AI API Key тохируулаагүй байна. Super Admin → Тохиргоо хэсгээс нэмнэ үү.');
             return;
@@ -60,7 +132,7 @@ export const AIAgentPage: React.FC = () => {
         const userMsg: Message = {
             id: Date.now().toString(),
             role: 'user',
-            text: text,
+            text,
             timestamp: new Date()
         };
 
@@ -69,45 +141,31 @@ export const AIAgentPage: React.FC = () => {
         setIsTyping(true);
 
         try {
-            // Convert messages to chat history format
             const history: ChatMessage[] = messages
-                .filter(m => m.id !== '1') // skip initial greeting
+                .filter(m => m.id !== '1')
                 .map(m => ({
                     role: m.role === 'bot' ? 'model' as const : 'user' as const,
                     text: m.text
                 }));
 
-            const response = await sendChatMessage(
-                geminiApiKey,
-                text,
-                history,
-                {
-                    businessName: business?.name,
-                    totalProducts: undefined,
-                    totalOrders: undefined,
-                    totalRevenue: undefined
-                }
-            );
+            const modelId = MODEL_MAP[activeModel] || 'gemini-2.5-flash';
+            const response = await sendChatMessage(geminiApiKey, text, history, bizContext, modelId);
 
-            const botMsg: Message = {
+            setMessages(prev => [...prev, {
                 id: (Date.now() + 1).toString(),
                 role: 'bot',
                 text: response,
                 timestamp: new Date()
-            };
-
-            setMessages(prev => [...prev, botMsg]);
+            }]);
         } catch (error: unknown) {
-            const errorMessage = error instanceof Error ? error.message : 'AI хариулт авахад алдаа гарлаа.';
-            toast.error(errorMessage);
-            // Add error message as bot response
-            const errorMsg: Message = {
+            const msg = error instanceof Error ? error.message : 'AI хариулт авахад алдаа гарлаа.';
+            toast.error(msg);
+            setMessages(prev => [...prev, {
                 id: (Date.now() + 1).toString(),
                 role: 'bot',
-                text: `⚠️ ${errorMessage}`,
+                text: `⚠️ ${msg}`,
                 timestamp: new Date()
-            };
-            setMessages(prev => [...prev, errorMsg]);
+            }]);
         } finally {
             setIsTyping(false);
         }
@@ -135,16 +193,16 @@ export const AIAgentPage: React.FC = () => {
                 </div>
                 <div className="ai-header-stats">
                     <div className="stat-card">
-                        <div className="stat-value glow-text">99.9%</div>
-                        <div className="stat-label">Uptime</div>
+                        <div className="stat-value glow-text">{bizContext.totalProducts ?? '—'}</div>
+                        <div className="stat-label">Бараа</div>
                     </div>
                     <div className="stat-card">
-                        <div className="stat-value pulse-text">480+</div>
-                        <div className="stat-label">Мэдрэлийн зангилаа</div>
+                        <div className="stat-value pulse-text">{bizContext.totalOrders ?? '—'}</div>
+                        <div className="stat-label">Захиалга</div>
                     </div>
                     <div className="stat-card">
-                        <div className="stat-value" style={{ color: 'var(--primary)' }}>1.2ms</div>
-                        <div className="stat-label">Хариу үйлдэл</div>
+                        <div className="stat-value" style={{ color: 'var(--primary)' }}>{bizContext.totalCustomers ?? '—'}</div>
+                        <div className="stat-label">Хэрэглэгч</div>
                     </div>
                 </div>
             </header>
@@ -152,9 +210,11 @@ export const AIAgentPage: React.FC = () => {
             {/* Neural Activity Strip */}
             <div className="neural-strip">
                 <div className="neural-dot" />
-                <span style={{ fontWeight: 700, color: 'var(--success)' }}>LIVE</span>
+                <span style={{ fontWeight: 700, color: dataLoaded ? 'var(--success)' : 'var(--text-muted)' }}>
+                    {dataLoaded ? 'LIVE DATA' : 'LOADING...'}
+                </span>
                 <div className="neural-bar"><div className="neural-bar-fill" /></div>
-                <span>Neural Activity</span>
+                <span>{bizContext.businessName || 'Neural Activity'}</span>
                 <Brain size={14} style={{ color: 'var(--primary)' }} />
             </div>
 
@@ -177,7 +237,7 @@ export const AIAgentPage: React.FC = () => {
                             </div>
                             <div className="ai-compute-load">
                                 <Loader2 size={12} className="animate-spin text-primary" />
-                                <span>3.2ms Latency</span>
+                                <span>{dataLoaded ? `${bizContext.totalProducts} бараа уншсан` : 'Дата ачаалж байна...'}</span>
                             </div>
                         </div>
 
@@ -239,9 +299,12 @@ export const AIAgentPage: React.FC = () => {
                         </div>
                         <div className="chat-suggestions">
                             {[
-                                { t: 'Тайлан гаргах', i: <BarChart3 size={14} /> },
-                                { t: 'Барааны үлдэгдэл шалгах', i: <Target size={14} /> },
-                                { t: 'Шинэ пост бичүүлэх', i: <Sparkles size={14} /> }
+                                { t: 'Борлуулалтын тайлан гарга', i: <BarChart3 size={14} /> },
+                                { t: 'Үлдэгдэл бага барааг мэдэгд', i: <Package size={14} /> },
+                                { t: 'Маркетингийн зөвлөгөө өг', i: <TrendingUp size={14} /> },
+                                { t: 'Facebook пост бичүүл', i: <MessageSquare size={14} /> },
+                                { t: 'Шилдэг борлуулалттай бараа', i: <Target size={14} /> },
+                                { t: 'Бизнесийн зөвлөгөө өг', i: <Sparkles size={14} /> },
                             ].map((s, idx) => (
                                 <button key={idx} className="suggestion-chip" onClick={() => handleSendMessage(s.t)}>
                                     {s.i} {s.t}
@@ -255,33 +318,51 @@ export const AIAgentPage: React.FC = () => {
                     <section className="widget-card premium-card-glow">
                         <div className="widget-header">
                             <div className="header-icon-box"><Brain size={18} /></div>
-                            <h3>Ухаалаг Анализ</h3>
+                            <h3>Бодит Мэдээлэл</h3>
                         </div>
                         <div className="widget-body">
                             <div className="ai-task-premium">
                                 <div className="task-icon-box blue"><BarChart3 size={16} /></div>
                                 <div className="task-info">
                                     <div className="task-title-row">
-                                        <span className="task-name">Борлуулалтын таамаглал</span>
-                                        <span className="task-percent">+15.2%</span>
+                                        <span className="task-name">Нийт орлого</span>
+                                        <span className="task-percent">
+                                            {bizContext.totalRevenue != null ? `₮${Math.round(bizContext.totalRevenue).toLocaleString()}` : '—'}
+                                        </span>
                                     </div>
                                     <div className="task-progress-bar"><div className="progress-fill blue" style={{ width: '65%' }}></div></div>
-                                    <span className="task-meta">Борлуулалт ирэх сард өсөх хандлагатай</span>
+                                    <span className="task-meta">
+                                        Өнөөдөр: {bizContext.recentOrdersToday ?? 0} захиалга | Хүлээгдэж: {bizContext.pendingOrders ?? 0}
+                                    </span>
                                 </div>
                             </div>
                             <div className="ai-task-premium">
                                 <div className="task-icon-box orange"><Zap size={16} /></div>
                                 <div className="task-info">
                                     <div className="task-title-row">
-                                        <span className="task-name">Нөөцийн оновчлол</span>
-                                        <span className="task-tag">Critical</span>
+                                        <span className="task-name">Нөөцийн анхааруулга</span>
+                                        {(bizContext.lowStockProducts?.length ?? 0) > 0 && (
+                                            <span className="task-tag">Critical</span>
+                                        )}
                                     </div>
-                                    <div className="task-progress-bar"><div className="progress-fill orange" style={{ width: '90%' }}></div></div>
-                                    <span className="task-meta">3 барааны үлдэгдэл 5-аас доош орсон</span>
+                                    <div className="task-progress-bar">
+                                        <div className="progress-fill orange" style={{ width: `${Math.min((bizContext.lowStockProducts?.length ?? 0) * 15, 100)}%` }}></div>
+                                    </div>
+                                    <span className="task-meta">
+                                        {(bizContext.lowStockProducts?.length ?? 0) > 0
+                                            ? `${bizContext.lowStockProducts!.length} бараа үлдэгдэл бага`
+                                            : 'Бүх бараа хангалттай'}
+                                    </span>
                                 </div>
                             </div>
                         </div>
-                        <button className="btn btn-secondary" style={{ marginTop: 16, padding: '10px 20px', width: '100%', whiteSpace: 'nowrap' }}>Дэлгэрэнгүй шинжилгээ</button>
+                        <button
+                            className="btn btn-secondary"
+                            style={{ marginTop: 16, padding: '10px 20px', width: '100%', whiteSpace: 'nowrap' }}
+                            onClick={() => handleSendMessage('Миний бизнесийн бүрэн тойм шинжилгээ хий')}
+                        >
+                            Дэлгэрэнгүй шинжилгээ
+                        </button>
                     </section>
 
                     <section className="widget-card action-widget">
