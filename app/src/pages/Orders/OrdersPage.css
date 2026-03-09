@@ -1298,3 +1298,82 @@
     color: var(--primary);
     box-shadow: 0 2px 8px var(--shadow-sm);
 }
+
+/* ─── Bulk Action Bar ─── */
+.orders-bulk-action-bar {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 900;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 12px 20px;
+    background: var(--surface-1);
+    border: 1px solid var(--border-primary);
+    border-radius: 16px;
+    box-shadow: 0 12px 40px -8px rgba(0, 0, 0, 0.18),
+        0 4px 12px -2px rgba(0, 0, 0, 0.08);
+    backdrop-filter: blur(12px);
+}
+
+.bulk-selection-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    white-space: nowrap;
+    padding-right: 12px;
+    border-right: 1px solid var(--border-primary);
+}
+
+.bulk-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 26px;
+    height: 26px;
+    padding: 0 8px;
+    background: var(--primary);
+    color: white;
+    border-radius: 20px;
+    font-size: 0.82rem;
+    font-weight: 800;
+}
+
+.bulk-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+@media (max-width: 640px) {
+    .orders-bulk-action-bar {
+        bottom: 16px;
+        left: 12px;
+        right: 12px;
+        transform: none;
+        flex-direction: column;
+        gap: 10px;
+        padding: 14px 16px;
+        border-radius: 16px;
+    }
+
+    .bulk-selection-info {
+        border-right: none;
+        padding-right: 0;
+        padding-bottom: 8px;
+        border-bottom: 1px solid var(--border-primary);
+        width: 100%;
+        justify-content: center;
+    }
+
+    .bulk-actions {
+        width: 100%;
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+}
