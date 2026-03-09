@@ -215,6 +215,7 @@ export interface BusinessSettings {
         merchantId: string;
         username: string;
     };
+    autoLogoutMinutes?: number;
 }
 
 export interface OrderSource {

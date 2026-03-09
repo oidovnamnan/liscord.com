@@ -15,6 +15,7 @@ import { LISCORD_MODULES } from '../../config/modules';
 import { ActivityTab } from './components/ActivityTab';
 import { PaymentTab } from './components/PaymentTab';
 import { TeamSettings } from './components/TeamSettings';
+import { SecurityTab } from './components/SecurityTab';
 import { DevicesTab } from './components/DevicesTab';
 import { SettingsRegistry } from '../../config/settingsRegistry';
 import { type BusinessRequest } from '../../types';
@@ -168,19 +169,6 @@ export function SettingsPage() {
         } finally { setLoading(false); }
     };
 
-    const handleUpdatePIN = async (e: React.FormEvent<HTMLFormElement>) => {
-        e.preventDefault();
-        if (!business) return;
-        const pin = (new FormData(e.currentTarget)).get('pin') as string;
-        if (pin.length < 4) return toast.error('PIN код дутуу байна');
-        setLoading(true);
-        try {
-            await businessService.updateBusiness(business.id, { settings: { ...business.settings, pin } });
-            setIsDirty(false);
-            toast.success('PIN код шинэчлэгдлээ');
-            // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        } catch (_error) { toast.error('Алдаа гарлаа'); } finally { setLoading(false); }
-    };
 
     const handleUpdateStorefront = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
@@ -678,42 +666,7 @@ export function SettingsPage() {
                                 </div>
                             </div>
                         )}
-                        {activeTab === 'security' && (
-                            <div className="settings-section animate-fade-in">
-                                <h2>Аюулгүй байдал</h2>
-                                <div className="settings-card" style={{ maxWidth: 500 }}>
-                                    <div className="settings-card-header">
-                                        <div className="settings-card-icon" style={{ color: 'var(--danger)' }}><Shield size={20} /></div>
-                                        <h3>PIN код тохируулах</h3>
-                                    </div>
-                                    <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginBottom: 20 }}>
-                                        Захиалга устгах, бүртгэл өөрчлөх зэрэг чухал үйлдлүүдэд ашиглагдана.
-                                    </p>
-                                    <form className="settings-form" onSubmit={handleUpdatePIN} onChange={() => setIsDirty(true)}>
-                                        <div className="input-group">
-                                            <label className="settings-label">Шинэ PIN код</label>
-                                            <input
-                                                className="input text-center"
-                                                name="pin"
-                                                type="password"
-                                                maxLength={4}
-                                                pattern="[0-9]*"
-                                                inputMode="numeric"
-                                                defaultValue={business?.settings?.pin}
-                                                style={{ maxWidth: 200, fontSize: '2rem', letterSpacing: '0.4em' }}
-                                                required
-                                                placeholder="****"
-                                            />
-                                        </div>
-                                        <div style={{ display: 'flex', marginTop: 12 }}>
-                                            <button className="btn btn-primary gradient-btn" type="submit" disabled={loading || !isDirty} style={{ height: 48, padding: '0 32px' }}>
-                                                {loading ? <Loader2 size={18} className="animate-spin" /> : 'PIN шинэчлэх'}
-                                            </button>
-                                        </div>
-                                    </form>
-                                </div>
-                            </div>
-                        )}
+                        {activeTab === 'security' && <SecurityTab />}
                         {activeTab === 'team' && <TeamSettings bizId={business?.id || ''} />}
 
                         {activeTab === 'language' && (
