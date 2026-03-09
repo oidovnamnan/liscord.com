@@ -17,6 +17,25 @@ interface Message {
     timestamp: Date;
 }
 
+/** Lightweight markdown → HTML for chat bubbles */
+function renderMarkdown(text: string): string {
+    return text
+        // Headers
+        .replace(/^### (.+)$/gm, '<h4 style="margin:8px 0 4px;font-size:0.95rem">$1</h4>')
+        .replace(/^## (.+)$/gm, '<h3 style="margin:10px 0 4px;font-size:1rem">$1</h3>')
+        .replace(/^# (.+)$/gm, '<h3 style="margin:10px 0 6px;font-size:1.05rem">$1</h3>')
+        // Bold + Italic
+        .replace(/\*\*\*(.+?)\*\*\*/g, '<strong><em>$1</em></strong>')
+        .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+        .replace(/\*(.+?)\*/g, '<em>$1</em>')
+        // Bullet lists (- or • or *)
+        .replace(/^[\-\•\*] (.+)$/gm, '<li style="margin-left:16px;list-style:disc">$1</li>')
+        // Numbered lists
+        .replace(/^(\d+)\. (.+)$/gm, '<li style="margin-left:16px;list-style:decimal">$2</li>')
+        // Line breaks
+        .replace(/\n/g, '<br/>');
+}
+
 const MODEL_MAP: Record<string, string> = {
     'gemini-2.5': 'gemini-2.5-flash',
     'gemini-2.0': 'gemini-2.0-flash',
@@ -265,7 +284,10 @@ export const AIAgentPage: React.FC = () => {
                                 </div>
                                 <div className="bubble-content-wrap">
                                     <div className="bubble-content">
-                                        {m.text}
+                                        {m.role === 'bot'
+                                            ? <span dangerouslySetInnerHTML={{ __html: renderMarkdown(m.text) }} />
+                                            : m.text
+                                        }
                                         {m.role === 'bot' && m.id === '1' && autoFallback && (
                                             <div className="fallback-notice-mini">
                                                 <Zap size={10} /> Хамгаалалт идэвхтэй
