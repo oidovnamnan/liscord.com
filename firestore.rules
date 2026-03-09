@@ -40,6 +40,12 @@ service cloud.firestore {
       allow write: if false; // Admin SDK only
     }
 
+    // system_categories (snake_case — used by Module Settings page)
+    match /system_categories/{catId} {
+      allow read: if isAuth();
+      allow write: if isAuth(); // Super Admin writes category configs
+    }
+
     // === BUSINESS REQUESTS ===
     match /businessRequests/{reqId} {
       allow read: if isAuth();
