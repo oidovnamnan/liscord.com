@@ -1,58 +1,134 @@
+/* ===== Page Hero ===== */
+.settings-page-hero {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    padding: 16px 32px;
+    background: var(--surface-1);
+    border-bottom: 1px solid var(--border-primary);
+    position: sticky;
+    top: 0;
+    z-index: 50;
+}
+
+.settings-back-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    border-radius: 10px;
+    background: var(--surface-2);
+    border: 1px solid var(--border-primary);
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: inherit;
+    flex-shrink: 0;
+}
+
+.settings-back-btn:hover {
+    background: var(--primary-light);
+    color: var(--primary);
+    border-color: var(--primary);
+    transform: translateX(-2px);
+}
+
+.settings-hero-content {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.settings-hero-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, var(--primary), rgba(var(--primary-rgb), 0.7));
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 12px rgba(var(--primary-rgb), 0.25);
+}
+
+.settings-hero-title {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 900;
+    color: var(--text-primary);
+    letter-spacing: -0.02em;
+}
+
+.settings-hero-subtitle {
+    margin: 0;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    font-weight: 500;
+}
+
+/* ===== Layout ===== */
+.settings-page {
+    padding-top: 0 !important;
+}
+
 .settings-layout {
     display: grid;
-    grid-template-columns: 320px 1fr;
-    gap: 48px;
+    grid-template-columns: 260px 1fr;
+    gap: 32px;
     align-items: start;
-    max-width: 1300px;
+    max-width: 1200px;
     margin: 0 auto;
-    padding: 32px var(--space-xl);
+    padding: 24px var(--space-xl);
 }
 
 .settings-sidebar {
     display: flex;
     flex-direction: column;
-    gap: 32px;
+    gap: 24px;
     position: sticky;
-    top: 100px;
+    top: 80px;
     background: var(--surface-2);
-    padding: 24px;
-    border-radius: var(--radius-2xl);
+    padding: 16px;
+    border-radius: var(--radius-xl);
     border: 1px solid var(--border-primary);
     box-shadow: var(--shadow-sm);
 }
 
 .settings-sidebar-group-title {
     padding: 0 12px;
-    font-size: 0.75rem;
+    font-size: 0.7rem;
     font-weight: 800;
     color: var(--text-muted);
     text-transform: uppercase;
     letter-spacing: 0.1em;
-    margin-bottom: 12px;
+    margin-bottom: 8px;
     display: block;
 }
 
 .settings-tab {
     display: flex;
     align-items: center;
-    gap: 12px;
-    padding: 12px 16px;
+    gap: 10px;
+    padding: 10px 14px;
     border: 1px solid transparent;
     background: transparent;
     color: var(--text-secondary);
-    font-size: 0.95rem;
+    font-size: 0.88rem;
     font-weight: 600;
     border-radius: var(--radius-lg);
     cursor: pointer;
     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     text-align: left;
     width: 100%;
+    font-family: inherit;
 }
 
 .settings-tab:hover {
     background: var(--bg-hover);
     color: var(--text-primary);
-    transform: translateX(4px);
+    transform: translateX(3px);
 }
 
 .settings-tab.active {
@@ -66,6 +142,7 @@
 .settings-tab svg {
     color: var(--text-muted);
     transition: color 0.2s ease;
+    flex-shrink: 0;
 }
 
 .settings-tab.active svg {
@@ -78,9 +155,9 @@
 }
 
 .settings-section h2 {
-    font-size: 1.8rem;
+    font-size: 1.4rem;
     font-weight: 900;
-    margin-bottom: 32px;
+    margin-bottom: 24px;
     color: var(--text-primary);
     letter-spacing: -0.03em;
 }
@@ -518,7 +595,26 @@
 @media (max-width: 1024px) {
     .settings-layout {
         grid-template-columns: 240px 1fr;
-        gap: 24px;
+        gap: 20px;
+    }
+
+    .settings-page-hero {
+        padding: 12px 16px;
+        gap: 12px;
+    }
+
+    .settings-back-btn span {
+        display: none;
+    }
+
+    .settings-hero-title {
+        font-size: 1.05rem;
+    }
+
+    .settings-hero-icon {
+        width: 34px;
+        height: 34px;
+        border-radius: 10px;
     }
 }
 

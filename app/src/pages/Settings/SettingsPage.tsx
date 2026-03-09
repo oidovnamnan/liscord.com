@@ -1,8 +1,8 @@
 import { useState, useEffect, useMemo, Suspense } from 'react';
 import { createPortal } from 'react-dom';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { Header } from '../../components/layout/Header';
-import { Building2, Palette, Bell, Shield, Users, Globe, Loader2, Share2, X, CheckSquare, ListOrdered, ShoppingBag, CreditCard, Sun, Moon, Monitor, CheckCircle2, Smartphone } from 'lucide-react';
+import { Building2, Palette, Bell, Shield, Users, Globe, Loader2, Share2, X, CheckSquare, ListOrdered, ShoppingBag, CreditCard, Sun, Moon, Monitor, CheckCircle2, Smartphone, ArrowLeft, Settings as SettingsIcon } from 'lucide-react';
 import { useBusinessStore, useUIStore } from '../../store';
 import { businessService, businessRequestService, moduleSettingsService } from '../../services/db';
 import { eventBus, EVENTS } from '../../services/eventBus';
@@ -278,10 +278,29 @@ export function SettingsPage() {
         }
     };
 
+    const navigate = useNavigate();
+
+    // Tab label for hero subtitle
+    const activeTabLabel = [...tabs.core, ...tabs.plugins].find(t => t.id === activeTab)?.label || 'Ерөнхий';
+
     return (
         <>
-            <Header title="Тохиргоо" />
-            <div className="page">
+            <div className="settings-page-hero">
+                <button className="settings-back-btn" onClick={() => navigate('/app')}>
+                    <ArrowLeft size={18} />
+                    <span>Буцах</span>
+                </button>
+                <div className="settings-hero-content">
+                    <div className="settings-hero-icon">
+                        <SettingsIcon size={22} />
+                    </div>
+                    <div>
+                        <h1 className="settings-hero-title">Тохиргоо</h1>
+                        <p className="settings-hero-subtitle">{activeTabLabel} · {business?.name || ''}</p>
+                    </div>
+                </div>
+            </div>
+            <div className="page settings-page">
                 <div className="settings-layout">
                     <div className="settings-sidebar">
                         <div className="settings-sidebar-group">
