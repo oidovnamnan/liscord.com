@@ -6,7 +6,6 @@ import { format } from 'date-fns';
 import { GenericCrudModal, type CrudField } from '../../components/common/GenericCrudModal';
 import { HubLayout } from '../../components/common/HubLayout';
 import './InventoryPage.css';
-import '../Orders/OrdersPage.css';
 import './ProcurementPage.css';
 
 const PO_FIELDS: CrudField[] = [
@@ -68,7 +67,7 @@ export function ProcurementPage() {
 
     return (
         <HubLayout hubId="inventory-hub">
-            <div className="procurement-page animate-fade-in" style={{ padding: '0 4px' }}>
+            <div className="inventory-page animate-fade-in">
                 <div className="page-hero" style={{ marginBottom: 8 }}>
                     <div className="page-hero-left">
                         <div className="page-hero-icon">
@@ -123,16 +122,16 @@ export function ProcurementPage() {
                     </div>
                 </div>
 
-                <div className="orders-toolbar" style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                    <div className="orders-search">
-                        <Search size={18} className="orders-search-icon" />
-                        <input className="input orders-search-input" placeholder="Нийлүүлэгч эсвэл PO кодоор хайх..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
+                <div className="inv-toolbar">
+                    <div className="inv-search-wrap">
+                        <Search size={18} className="inv-search-icon" />
+                        <input className="inv-search-input" placeholder="Нийлүүлэгч эсвэл PO кодоор хайх..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
                     </div>
                     <select
-                        className="input"
+                        className="inv-chip"
                         value={filterStatus}
                         onChange={(e) => setFilterStatus(e.target.value)}
-                        style={{ minWidth: 140, height: 42, borderRadius: 12, fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer', padding: '0 12px', background: 'var(--surface-1)', border: '1.5px solid var(--border-primary)', color: 'var(--text-primary)' }}
+                        style={{ minWidth: 140, cursor: 'pointer', padding: '0 16px', appearance: 'auto' }}
                     >
                         <option value="all">Бүх төлөв</option><option value="draft">Ноорог</option><option value="pending">Хүлээгдэж буй</option><option value="received">Хүлээж авсан</option>
                     </select>
