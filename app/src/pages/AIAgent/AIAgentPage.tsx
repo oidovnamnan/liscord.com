@@ -1,6 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Sparkles, Brain, Zap, BarChart3, Bot, ChevronDown, AlertTriangle, Send, Loader2, Target, ShieldCheck } from 'lucide-react';
-import { useAuthStore } from '../../store';
+import { useAuthStore, useBusinessStore } from '../../store';
+import { globalSettingsService } from '../../services/adminService';
+import { sendChatMessage, type ChatMessage } from '../../services/ai/aiChatService';
 import toast from 'react-hot-toast';
 import './AIAgentPage.css';
 import '../Inventory/InventoryPage.css';
@@ -14,19 +16,30 @@ interface Message {
 
 export const AIAgentPage: React.FC = () => {
     const { user } = useAuthStore();
-    const [activeModel, setActiveModel] = useState('gpt-4');
+    const { business } = useBusinessStore();
+    const [activeModel, setActiveModel] = useState('gemini-2.5');
     const [autoFallback, setAutoFallback] = useState(true);
     const [inputText, setInputText] = useState('');
     const [isTyping, setIsTyping] = useState(false);
+    const [geminiApiKey, setGeminiApiKey] = useState('');
     const [messages, setMessages] = useState<Message[]>([
         {
             id: '1',
             role: 'bot',
-            text: 'Сайн байна уу? Би танай бизнесийн дата дээр шинжилгээ хийж, борлуулалтыг өсгөхөд бэлэн байна. Та надаас юу ч асууж болно.',
+            text: 'Сайн байна уу! 🧠 Би Liscord Super Brain — таны бизнесийн ухаалаг туслах. Борлуулалт, бараа, маркетинг, санхүү гэх мэт аливаа асуултад хариулахад бэлэн. Та надаас юу ч асууж болно!',
             timestamp: new Date()
         }
     ]);
     const chatEndRef = useRef<HTMLDivElement>(null);
+
+    // Fetch Gemini API key from global settings
+    useEffect(() => {
+        globalSettingsService.getSettings().then(settings => {
+            if (settings.geminiApiKey) {
+                setGeminiApiKey(settings.geminiApiKey);
+            }
+        });
+    }, []);
 
     const scrollToBottom = () => {
         chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -36,8 +49,13 @@ export const AIAgentPage: React.FC = () => {
         scrollToBottom();
     }, [messages, isTyping]);
 
-    const handleSendMessage = (text: string = inputText) => {
+    const handleSendMessage = async (text: string = inputText) => {
         if (!text.trim()) return;
+
+        if (!geminiApiKey) {
+            toast.error('AI API Key тохируулаагүй байна. Super Admin → Тохиргоо хэсгээс нэмнэ үү.');
+            return;
+        }
 
         const userMsg: Message = {
             id: Date.now().toString(),
@@ -50,18 +68,26 @@ export const AIAgentPage: React.FC = () => {
         setInputText('');
         setIsTyping(true);
 
-        // Mock AI Thinking
-        setTimeout(() => {
-            let response = '';
-            if (text.includes('орлого')) {
-                response = 'Энэ сарын нийт орлого өнгөрсөн сарын мөн үеэс 12%-иар өссөн байна. Хамгийн идэвхтэй борлуулалттай өдөр нь өнгөрсөн Баасан гараг байлаа.';
-            } else if (text.includes('үлдэгдэл') || text.includes('бараа')) {
-                response = 'Одоогоор 3 төрлийн бараа (iPhone 15 Case, USB-C Cable, Screen Protector) нөөц дуусаж байна. Автомат захиалга бэлдэх үү?';
-            } else if (text.includes('тайлан')) {
-                response = 'За, би сүүлийн 7 хоногийн борлуулалтын дэлгэрэнгүй тайланг бэлдлээ. Таны имэйл рүү илгээх үү?';
-            } else {
-                response = 'Ойлголлоо. Таны хүсэлтийн дагуу би өгөгдлийг шалгаж байна. Өөр туслах зүйл байна уу?';
-            }
+        try {
+            // Convert messages to chat history format
+            const history: ChatMessage[] = messages
+                .filter(m => m.id !== '1') // skip initial greeting
+                .map(m => ({
+                    role: m.role === 'bot' ? 'model' as const : 'user' as const,
+                    text: m.text
+                }));
+
+            const response = await sendChatMessage(
+                geminiApiKey,
+                text,
+                history,
+                {
+                    businessName: business?.name,
+                    totalProducts: undefined,
+                    totalOrders: undefined,
+                    totalRevenue: undefined
+                }
+            );
 
             const botMsg: Message = {
                 id: (Date.now() + 1).toString(),
@@ -71,8 +97,20 @@ export const AIAgentPage: React.FC = () => {
             };
 
             setMessages(prev => [...prev, botMsg]);
+        } catch (error: unknown) {
+            const errorMessage = error instanceof Error ? error.message : 'AI хариулт авахад алдаа гарлаа.';
+            toast.error(errorMessage);
+            // Add error message as bot response
+            const errorMsg: Message = {
+                id: (Date.now() + 1).toString(),
+                role: 'bot',
+                text: `⚠️ ${errorMessage}`,
+                timestamp: new Date()
+            };
+            setMessages(prev => [...prev, errorMsg]);
+        } finally {
             setIsTyping(false);
-        }, 1500);
+        }
     };
 
     const handleActionToggle = (name: string, value: boolean) => {
@@ -131,8 +169,8 @@ export const AIAgentPage: React.FC = () => {
                                     onChange={(e) => setActiveModel(e.target.value)}
                                     className="model-select-input"
                                 >
-                                    <option value="gpt-4">GPT-4 Turbo (Үндсэн)</option>
-                                    <option value="claude-3">Claude 3.5 Sonnet</option>
+                                    <option value="gemini-2.5">Gemini 2.5 Flash</option>
+                                    <option value="gemini-2.0">Gemini 2.0 Flash</option>
                                     <option value="gemini-1.5">Gemini 1.5 Pro</option>
                                 </select>
                                 <ChevronDown size={14} className="selector-icon" />
