@@ -320,16 +320,14 @@ export function OrdersPage() {
                             <button
                                 className={`ot-view-btn ${viewMode === 'table' ? 'active' : ''}`}
                                 onClick={() => handleViewChange('table')}
-                                title="Хүснэгт"
                             >
-                                <List size={16} />
+                                <List size={16} /> Жагсаалт
                             </button>
                             <button
                                 className={`ot-view-btn ${viewMode === 'card' ? 'active' : ''}`}
                                 onClick={() => handleViewChange('card')}
-                                title="Карт"
                             >
-                                <LayoutGrid size={16} />
+                                <LayoutGrid size={16} /> Карт
                             </button>
                         </div>
                     </div>

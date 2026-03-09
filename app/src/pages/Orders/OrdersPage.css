@@ -253,13 +253,17 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 42px;
+    gap: 6px;
+    padding: 0 14px;
     height: 42px;
     background: transparent;
     border: none;
     color: var(--text-secondary);
     cursor: pointer;
     transition: all 0.2s;
+    font-size: 0.78rem;
+    font-weight: 600;
+    white-space: nowrap;
 }
 
 .ot-view-btn:hover {
@@ -315,7 +319,8 @@
 
 .orders-search {
     flex: 1;
-    min-width: 220px;
+    min-width: 160px;
+    max-width: 280px;
     position: relative;
 }
 
