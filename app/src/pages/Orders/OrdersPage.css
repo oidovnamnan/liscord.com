@@ -243,24 +243,27 @@
 .ot-view-toggle {
     display: flex;
     background: var(--surface-2);
-    border: 1px solid var(--border-primary);
+    border: 1.5px solid var(--border-primary);
     border-radius: 10px;
     overflow: hidden;
+    gap: 0;
 }
 
 .ot-view-btn {
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 8px 10px;
+    width: 36px;
+    height: 36px;
     background: transparent;
     border: none;
-    color: var(--text-muted);
+    color: var(--text-secondary);
     cursor: pointer;
     transition: all 0.2s;
 }
 
 .ot-view-btn:hover {
+    background: var(--surface-1);
     color: var(--text-primary);
 }
 
