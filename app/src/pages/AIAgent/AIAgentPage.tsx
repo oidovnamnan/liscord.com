@@ -201,7 +201,7 @@ export const AIAgentPage: React.FC = () => {
                         <div className="stat-label">Захиалга</div>
                     </div>
                     <div className="stat-card">
-                        <div className="stat-value" style={{ color: 'var(--primary)' }}>{bizContext.totalCustomers ?? '—'}</div>
+                        <div className="stat-value">{bizContext.totalCustomers ?? '—'}</div>
                         <div className="stat-label">Хэрэглэгч</div>
                     </div>
                 </div>

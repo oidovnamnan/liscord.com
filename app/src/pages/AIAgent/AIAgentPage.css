@@ -106,13 +106,60 @@
 /* Stats */
 .ai-header-stats {
     display: flex;
-    gap: 32px;
+    gap: 12px;
     position: relative;
     z-index: 1;
 }
 
 .ai-header-stats .stat-card {
     text-align: center;
+    background: var(--surface-1);
+    border: 1px solid var(--border-primary);
+    border-radius: 14px;
+    padding: 12px 20px;
+    min-width: 90px;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.ai-header-stats .stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+}
+
+.ai-header-stats .stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    border-radius: 14px 14px 0 0;
+}
+
+.ai-header-stats .stat-card:nth-child(1)::before {
+    background: linear-gradient(90deg, #10b981, #34d399);
+}
+
+.ai-header-stats .stat-card:nth-child(2)::before {
+    background: linear-gradient(90deg, #6366f1, #818cf8);
+}
+
+.ai-header-stats .stat-card:nth-child(3)::before {
+    background: linear-gradient(90deg, #f59e0b, #fbbf24);
+}
+
+.ai-header-stats .stat-card:nth-child(1) .stat-value {
+    color: #10b981;
+}
+
+.ai-header-stats .stat-card:nth-child(2) .stat-value {
+    color: #6366f1;
+}
+
+.ai-header-stats .stat-card:nth-child(3) .stat-value {
+    color: #f59e0b;
 }
 
 .ai-header-stats .stat-value {
@@ -125,6 +172,7 @@
     font-size: 0.7rem;
     color: var(--text-muted);
     font-weight: 600;
+    margin-top: 2px;
 }
 
 .glow-text {
