@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { Header } from '../../components/layout/Header';
+import '../Inventory/InventoryPage.css';
 import { ImageUpload } from '../../components/common/ImageUpload';
 import {
     Grid3X3, List, Plus, Search, MoreVertical, AlertTriangle, Loader2,
@@ -139,9 +139,8 @@ export function ProductsPage() {
 
     return (
         <>
-            <Header title="" subtitle="" />
             <div className="page">
-                <div className="page-hero" style={{ marginBottom: 24 }}>
+                <div className="page-hero" style={{ marginBottom: 8 }}>
                     <div className="page-hero-left">
                         <div className="page-hero-icon">
                             <Package size={24} />
@@ -171,42 +170,45 @@ export function ProductsPage() {
                     </div>
                 </div>
 
-                {/* Stats Summary Section */}
-                <div className="orders-stats-summary animate-fade-in">
-                    <div className="stat-card">
-                        <div className="stat-icon purple">
+                {/* Stats Grid — Inventory-style Glassmorphism */}
+                <div className="inv-stats-grid" style={{ marginBottom: 24 }}>
+                    <div className="inv-stat-card">
+                        <div className="inv-stat-content">
+                            <h4>Нийт бараа</h4>
+                            <div className="inv-stat-value">{stats.total} төрөл</div>
+                        </div>
+                        <div className="inv-stat-icon icon-primary">
                             <Grid3X3 size={24} />
                         </div>
-                        <div className="stat-info">
-                            <span className="stat-label">Нийт бараа</span>
-                            <span className="stat-value">{stats.total} төрөл</span>
-                        </div>
                     </div>
-                    <div className="stat-card clickable" onClick={() => setSearch('нөөц бага')}>
-                        <div className="stat-icon orange">
+
+                    <div className="inv-stat-card" style={{ cursor: 'pointer' }} onClick={() => setSearch('нөөц бага')}>
+                        <div className="inv-stat-content">
+                            <h4>Нөөц бага</h4>
+                            <div className="inv-stat-value">{stats.low} ширхэг</div>
+                        </div>
+                        <div className="inv-stat-icon icon-red">
                             <AlertTriangle size={24} />
                         </div>
-                        <div className="stat-info">
-                            <span className="stat-label">Нөөц бага</span>
-                            <span className="stat-value">{stats.low} ширхэг</span>
-                        </div>
                     </div>
-                    <div className="stat-card clickable" onClick={() => setSearch('дууссан')}>
-                        <div className="stat-icon red">
+
+                    <div className="inv-stat-card" style={{ cursor: 'pointer' }} onClick={() => setSearch('дууссан')}>
+                        <div className="inv-stat-content">
+                            <h4>Дууссан</h4>
+                            <div className="inv-stat-value">{stats.out} ширхэг</div>
+                        </div>
+                        <div className="inv-stat-icon icon-red">
                             <MoreVertical size={24} />
                         </div>
-                        <div className="stat-info">
-                            <span className="stat-label">Дууссан</span>
-                            <span className="stat-value">{stats.out} ширхэг</span>
-                        </div>
                     </div>
-                    <div className="stat-card">
-                        <div className="stat-icon green">
-                            <Plus size={24} />
+
+                    <div className="inv-stat-card">
+                        <div className="inv-stat-content">
+                            <h4>Нөөцийн үнэ</h4>
+                            <div className="inv-stat-value">{fmt(stats.value)}</div>
                         </div>
-                        <div className="stat-info">
-                            <span className="stat-label">Нөөцийн үнэ</span>
-                            <span className="stat-value">{fmt(stats.value)}</span>
+                        <div className="inv-stat-icon icon-green">
+                            <Plus size={24} />
                         </div>
                     </div>
                 </div>
@@ -216,32 +218,26 @@ export function ProductsPage() {
                         <Search size={18} className="orders-search-icon" />
                         <input className="input orders-search-input" placeholder="Бараа, SKU хайх..." value={search} onChange={e => setSearch(e.target.value)} />
                     </div>
-                    <div className="products-view-toggle">
-                        <button className={`btn btn-ghost ${viewMode === 'grid' ? 'active' : ''}`} onClick={() => setViewMode('grid')}><Grid3X3 size={18} /></button>
-                        <button className={`btn btn-ghost ${viewMode === 'list' ? 'active' : ''}`} onClick={() => setViewMode('list')}><List size={18} /></button>
+                    <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                        {categories.length > 0 && (
+                            <select
+                                className="input"
+                                value={categoryFilter}
+                                onChange={(e) => setCategoryFilter(e.target.value)}
+                                style={{ minWidth: 140, height: 42, borderRadius: 12, fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer', padding: '0 12px', background: 'var(--surface-1)', border: '1.5px solid var(--border-primary)', color: 'var(--text-primary)' }}
+                            >
+                                <option value="all">Бүгд ангилал</option>
+                                {categories.map(cat => (
+                                    <option key={cat.id} value={cat.id}>{cat.name}</option>
+                                ))}
+                            </select>
+                        )}
+                        <div className="products-view-toggle">
+                            <button className={`btn btn-ghost ${viewMode === 'grid' ? 'active' : ''}`} onClick={() => setViewMode('grid')}><Grid3X3 size={18} /></button>
+                            <button className={`btn btn-ghost ${viewMode === 'list' ? 'active' : ''}`} onClick={() => setViewMode('list')}><List size={18} /></button>
+                        </div>
                     </div>
                 </div>
-
-                {/* Category Filter Chips */}
-                {categories.length > 0 && (
-                    <div className="category-chips-wrapper animate-fade-in" style={{ display: 'flex', gap: 8, overflowX: 'auto', padding: '4px 0 16px', scrollbarWidth: 'none' }}>
-                        <button
-                            className={`date-chip ${categoryFilter === 'all' ? 'active' : ''}`}
-                            onClick={() => setCategoryFilter('all')}
-                        >
-                            Бүгд
-                        </button>
-                        {categories.map(cat => (
-                            <button
-                                key={cat.id}
-                                className={`date-chip ${categoryFilter === cat.id ? 'active' : ''}`}
-                                onClick={() => setCategoryFilter(cat.id)}
-                            >
-                                {cat.name}
-                            </button>
-                        ))}
-                    </div>
-                )}
 
                 {loading ? (
                     <div className="loading-state">
