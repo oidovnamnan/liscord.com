@@ -315,39 +315,75 @@ export async function extractProductsFromPosts(
 
 // ============ Duplicate Detection ============
 
+// Tokenize name into meaningful words (remove noise)
+function tokenize(name: string): string[] {
+    return name
+        .toLowerCase()
+        .replace(/[^\u0400-\u04ffa-z0-9\s]/gi, ' ') // keep cyrillic + latin + numbers
+        .split(/\s+/)
+        .filter(w => w.length > 1); // skip single chars
+}
+
+// Calculate word overlap similarity (0-100)
+function wordSimilarity(a: string[], b: string[]): number {
+    if (a.length === 0 || b.length === 0) return 0;
+    const setA = new Set(a);
+    const setB = new Set(b);
+    let matches = 0;
+    for (const word of setA) {
+        if (setB.has(word)) matches++;
+        // Also check partial word matches (e.g. "витамин" matches "витамины")
+        else {
+            for (const bw of setB) {
+                if (word.length > 3 && bw.length > 3 && (word.includes(bw) || bw.includes(word))) {
+                    matches += 0.8;
+                    break;
+                }
+            }
+        }
+    }
+    const shorter = Math.min(setA.size, setB.size);
+    return (matches / shorter) * 100;
+}
+
 export function detectDuplicates(
     extracted: FBExtractedProduct[],
     existing: { id: string; name: string; sku: string; images: string[] }[]
 ): FBExtractedProduct[] {
     return extracted.map(product => {
         const nameLower = product.name.toLowerCase().trim();
+        const nameWords = tokenize(product.name);
+
+        let bestMatch: { id: string; name: string; score: number } | null = null;
 
         for (const ex of existing) {
             const exNameLower = ex.name.toLowerCase().trim();
 
-            // Exact name match
+            // Exact name match — instant duplicate
             if (nameLower === exNameLower) {
-                return {
-                    ...product,
-                    status: 'duplicate' as const,
-                    duplicateOf: ex.id,
-                    duplicateOfName: ex.name,
-                    duplicateAction: 'skip' as const
-                };
+                bestMatch = { id: ex.id, name: ex.name, score: 100 };
+                break;
             }
 
-            // Fuzzy name match (contains or similarity > 80%)
-            if (nameLower.includes(exNameLower) || exNameLower.includes(nameLower)) {
-                if (Math.min(nameLower.length, exNameLower.length) / Math.max(nameLower.length, exNameLower.length) > 0.7) {
-                    return {
-                        ...product,
-                        status: 'duplicate' as const,
-                        duplicateOf: ex.id,
-                        duplicateOfName: ex.name,
-                        duplicateAction: 'skip' as const
-                    };
-                }
+            // Word overlap similarity
+            const exWords = tokenize(ex.name);
+            const score = wordSimilarity(nameWords, exWords);
+
+            if (score > (bestMatch?.score || 0)) {
+                bestMatch = { id: ex.id, name: ex.name, score };
             }
+        }
+
+        // 40%+ word overlap = likely duplicate
+        if (bestMatch && bestMatch.score >= 40) {
+            console.log(`[FB Import] Duplicate found: "${product.name}" ≈ "${bestMatch.name}" (${bestMatch.score.toFixed(0)}%)`);
+            return {
+                ...product,
+                status: 'duplicate' as const,
+                duplicateOf: bestMatch.id,
+                duplicateOfName: bestMatch.name,
+                duplicateAction: 'skip' as const
+            };
         }
 
         return product;
