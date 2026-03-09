@@ -41,7 +41,6 @@ export const LISCORD_MODULES: AppModule[] = [
         isCore: true,
         category: 'operations',
         hasSettings: true,
-        hubId: 'inventory-hub',
         isFree: false,
         plans: [
             { id: 'monthly', name: '30 хоног', price: 20000, durationDays: 30 },
@@ -70,7 +69,6 @@ export const LISCORD_MODULES: AppModule[] = [
         route: '/app/barcodes',
         isCore: true,
         category: 'operations',
-        hubId: 'inventory-hub',
         isFree: false,
         plans: [
             { id: 'monthly', name: '30 хоног', price: 20000, durationDays: 30 },
@@ -85,7 +83,6 @@ export const LISCORD_MODULES: AppModule[] = [
         route: '/app/procurement',
         isCore: true,
         category: 'operations',
-        hubId: 'inventory-hub',
         isFree: false,
         plans: [
             { id: 'monthly', name: '30 хоног', price: 20000, durationDays: 30 },
@@ -142,7 +139,6 @@ export const LISCORD_MODULES: AppModule[] = [
         route: '/app/wms',
         isCore: true,
         category: 'operations',
-        hubId: 'inventory-hub',
         isFree: false,
         plans: [
             { id: 'monthly', name: '30 хоног', price: 20000, durationDays: 30 },
@@ -297,7 +293,6 @@ export const LISCORD_MODULES: AppModule[] = [
         route: '/app/finance',
         isCore: false,
         category: 'finance',
-        hubId: 'finance-hub',
         hasSettings: true,
         isFree: false,
         plans: [
@@ -313,7 +308,6 @@ export const LISCORD_MODULES: AppModule[] = [
         route: '/app/payments',
         isCore: false,
         category: 'finance',
-        hubId: 'finance-hub',
         isFree: false,
         plans: [
             { id: 'monthly', name: '30 хоног', price: 20000, durationDays: 30 },
@@ -328,7 +322,6 @@ export const LISCORD_MODULES: AppModule[] = [
         route: '/app/invoices',
         isCore: false,
         category: 'finance',
-        hubId: 'finance-hub',
         isFree: false,
         plans: [
             { id: 'monthly', name: '30 хоног', price: 20000, durationDays: 30 },
@@ -343,7 +336,6 @@ export const LISCORD_MODULES: AppModule[] = [
         route: '/app/ebarimt',
         isCore: false,
         category: 'finance',
-        hubId: 'finance-hub',
         isFree: false,
         plans: [
             { id: 'monthly', name: '30 хоног', price: 20000, durationDays: 30 },
@@ -358,7 +350,6 @@ export const LISCORD_MODULES: AppModule[] = [
         route: '/app/expenses',
         isCore: false,
         category: 'finance',
-        hubId: 'finance-hub',
         isFree: false,
         plans: [
             { id: 'monthly', name: '30 хоног', price: 20000, durationDays: 30 },
@@ -373,7 +364,6 @@ export const LISCORD_MODULES: AppModule[] = [
         route: '/app/assets',
         isCore: false,
         category: 'finance',
-        hubId: 'finance-hub',
         isFree: false,
         plans: [
             { id: 'monthly', name: '30 хоног', price: 20000, durationDays: 30 },
@@ -388,7 +378,6 @@ export const LISCORD_MODULES: AppModule[] = [
         route: '/app/loans',
         isCore: false,
         category: 'finance',
-        hubId: 'finance-hub',
         isFree: false,
         plans: [
             { id: 'monthly', name: '30 хоног', price: 20000, durationDays: 30 },
@@ -445,7 +434,6 @@ export const LISCORD_MODULES: AppModule[] = [
         route: '/app/sms-income-sync',
         isCore: false,
         category: 'finance',
-        hubId: 'finance-hub',
         hasSettings: true,
         isFree: false,
         plans: [
@@ -531,7 +519,6 @@ export const LISCORD_MODULES: AppModule[] = [
         route: '/app/employees',
         isCore: false,
         category: 'staff',
-        hubId: 'staff-hub',
         isFree: false,
         plans: [
             { id: 'monthly', name: '30 хоног', price: 20000, durationDays: 30 },
@@ -546,7 +533,6 @@ export const LISCORD_MODULES: AppModule[] = [
         route: '/app/attendance',
         isCore: false,
         category: 'staff',
-        hubId: 'staff-hub',
         isFree: false,
         plans: [
             { id: 'monthly', name: '30 хоног', price: 20000, durationDays: 30 },
@@ -561,7 +547,6 @@ export const LISCORD_MODULES: AppModule[] = [
         route: '/app/payroll',
         isCore: false,
         category: 'staff',
-        hubId: 'staff-hub',
         isFree: false,
         plans: [
             { id: 'monthly', name: '30 хоног', price: 20000, durationDays: 30 },
@@ -576,7 +561,6 @@ export const LISCORD_MODULES: AppModule[] = [
         route: '/app/recruitment',
         isCore: false,
         category: 'staff',
-        hubId: 'staff-hub',
         isFree: false,
         plans: [
             { id: 'monthly', name: '30 хоног', price: 20000, durationDays: 30 },
@@ -591,7 +575,6 @@ export const LISCORD_MODULES: AppModule[] = [
         route: '/app/leave',
         isCore: false,
         category: 'staff',
-        hubId: 'staff-hub',
         isFree: false,
         plans: [
             { id: 'monthly', name: '30 хоног', price: 20000, durationDays: 30 },
@@ -606,7 +589,6 @@ export const LISCORD_MODULES: AppModule[] = [
         route: '/app/performance',
         isCore: false,
         category: 'staff',
-        hubId: 'staff-hub',
         isFree: false,
         plans: [
             { id: 'monthly', name: '30 хоног', price: 20000, durationDays: 30 },
@@ -747,7 +729,6 @@ export const LISCORD_MODULES: AppModule[] = [
         route: '/app/customers',
         isCore: false,
         category: 'sales',
-        hubId: 'crm-hub',
         isFree: false,
         plans: [
             { id: 'monthly', name: '30 хоног', price: 20000, durationDays: 30 },
@@ -762,7 +743,6 @@ export const LISCORD_MODULES: AppModule[] = [
         route: '/app/messenger',
         isCore: false,
         category: 'sales',
-        hubId: 'crm-hub',
         isFree: false,
         plans: [
             { id: 'monthly', name: '30 хоног', price: 20000, durationDays: 30 },
@@ -834,7 +814,6 @@ export const LISCORD_MODULES: AppModule[] = [
         route: '/app/affiliate',
         isCore: false,
         category: 'sales',
-        hubId: 'crm-hub',
         isFree: false,
         plans: [
             { id: 'monthly', name: '30 хоног', price: 20000, durationDays: 30 },
@@ -849,7 +828,6 @@ export const LISCORD_MODULES: AppModule[] = [
         route: '/app/telemarketing',
         isCore: false,
         category: 'sales',
-        hubId: 'crm-hub',
         isFree: false,
         plans: [
             { id: 'monthly', name: '30 хоног', price: 20000, durationDays: 30 },
@@ -864,7 +842,6 @@ export const LISCORD_MODULES: AppModule[] = [
         route: '/app/helpdesk',
         isCore: false,
         category: 'sales',
-        hubId: 'crm-hub',
         isFree: false,
         plans: [
             { id: 'monthly', name: '30 хоног', price: 20000, durationDays: 30 },
@@ -879,7 +856,6 @@ export const LISCORD_MODULES: AppModule[] = [
         route: '/app/subscriptions',
         isCore: false,
         category: 'sales',
-        hubId: 'crm-hub',
         isFree: false,
         plans: [
             { id: 'monthly', name: '30 хоног', price: 20000, durationDays: 30 },
@@ -894,7 +870,6 @@ export const LISCORD_MODULES: AppModule[] = [
         route: '/app/sales-commissions',
         isCore: false,
         category: 'sales',
-        hubId: 'crm-hub',
         isFree: false,
         plans: [
             { id: 'monthly', name: '30 хоног', price: 20000, durationDays: 30 },
@@ -909,7 +884,6 @@ export const LISCORD_MODULES: AppModule[] = [
         route: '/app/email-builder',
         isCore: false,
         category: 'sales',
-        hubId: 'crm-hub',
         isFree: false,
         plans: [
             { id: 'monthly', name: '30 хоног', price: 20000, durationDays: 30 },
@@ -924,7 +898,6 @@ export const LISCORD_MODULES: AppModule[] = [
         route: '/app/social-listening',
         isCore: false,
         category: 'sales',
-        hubId: 'crm-hub',
         isFree: false,
         plans: [
             { id: 'monthly', name: '30 хоног', price: 20000, durationDays: 30 },
@@ -939,7 +912,6 @@ export const LISCORD_MODULES: AppModule[] = [
         route: '/app/customer-portal',
         isCore: false,
         category: 'sales',
-        hubId: 'crm-hub',
         isFree: false,
         plans: [
             { id: 'monthly', name: '30 хоног', price: 20000, durationDays: 30 },
@@ -954,7 +926,6 @@ export const LISCORD_MODULES: AppModule[] = [
         route: '/app/field-sales',
         isCore: false,
         category: 'sales',
-        hubId: 'crm-hub',
         isFree: false,
         plans: [
             { id: 'monthly', name: '30 хоног', price: 20000, durationDays: 30 },
@@ -969,7 +940,6 @@ export const LISCORD_MODULES: AppModule[] = [
         route: '/app/pos',
         isCore: false,
         category: 'operations',
-        hubId: 'retail-hub',
         isFree: false,
         plans: [
             { id: 'monthly', name: '30 хоног', price: 20000, durationDays: 30 },
@@ -984,7 +954,6 @@ export const LISCORD_MODULES: AppModule[] = [
         route: '/app/e-commerce',
         isCore: false,
         category: 'operations',
-        hubId: 'retail-hub',
         isFree: false,
         plans: [
             { id: 'monthly', name: '30 хоног', price: 20000, durationDays: 30 },
@@ -999,7 +968,6 @@ export const LISCORD_MODULES: AppModule[] = [
         route: '/app/delivery-app',
         isCore: false,
         category: 'operations',
-        hubId: 'retail-hub',
         isFree: false,
         plans: [
             { id: 'monthly', name: '30 хоног', price: 20000, durationDays: 30 },
@@ -1014,7 +982,6 @@ export const LISCORD_MODULES: AppModule[] = [
         route: '/app/vouchers',
         isCore: false,
         category: 'operations',
-        hubId: 'retail-hub',
         isFree: false,
         plans: [
             { id: 'monthly', name: '30 хоног', price: 20000, durationDays: 30 },
@@ -1029,7 +996,6 @@ export const LISCORD_MODULES: AppModule[] = [
         route: '/app/franchise',
         isCore: false,
         category: 'operations',
-        hubId: 'retail-hub',
         isFree: false,
         plans: [
             { id: 'monthly', name: '30 хоног', price: 20000, durationDays: 30 },
@@ -1044,7 +1010,6 @@ export const LISCORD_MODULES: AppModule[] = [
         route: '/app/restaurant-pos',
         isCore: false,
         category: 'operations',
-        hubId: 'industry-hub',
         isFree: false,
         plans: [
             { id: 'monthly', name: '30 хоног', price: 20000, durationDays: 30 },
@@ -1059,7 +1024,6 @@ export const LISCORD_MODULES: AppModule[] = [
         route: '/app/kds',
         isCore: false,
         category: 'operations',
-        hubId: 'industry-hub',
         isFree: false,
         plans: [
             { id: 'monthly', name: '30 хоног', price: 20000, durationDays: 30 },
@@ -1074,7 +1038,6 @@ export const LISCORD_MODULES: AppModule[] = [
         route: '/app/table-booking',
         isCore: false,
         category: 'operations',
-        hubId: 'industry-hub',
         isFree: false,
         plans: [
             { id: 'monthly', name: '30 хоног', price: 20000, durationDays: 30 },
@@ -1089,7 +1052,6 @@ export const LISCORD_MODULES: AppModule[] = [
         route: '/app/digital-menu',
         isCore: false,
         category: 'operations',
-        hubId: 'industry-hub',
         isFree: false,
         plans: [
             { id: 'monthly', name: '30 хоног', price: 20000, durationDays: 30 },
@@ -1104,7 +1066,6 @@ export const LISCORD_MODULES: AppModule[] = [
         route: '/app/food-costing',
         isCore: false,
         category: 'operations',
-        hubId: 'industry-hub',
         isFree: false,
         plans: [
             { id: 'monthly', name: '30 хоног', price: 20000, durationDays: 30 },
@@ -1119,7 +1080,6 @@ export const LISCORD_MODULES: AppModule[] = [
         route: '/app/self-checkout',
         isCore: false,
         category: 'operations',
-        hubId: 'industry-hub',
         isFree: false,
         plans: [
             { id: 'monthly', name: '30 хоног', price: 20000, durationDays: 30 },
@@ -1134,7 +1094,6 @@ export const LISCORD_MODULES: AppModule[] = [
         route: '/app/weight-scale',
         isCore: false,
         category: 'operations',
-        hubId: 'industry-hub',
         isFree: false,
         plans: [
             { id: 'monthly', name: '30 хоног', price: 20000, durationDays: 30 },
@@ -1149,7 +1108,6 @@ export const LISCORD_MODULES: AppModule[] = [
         route: '/app/vending-machine',
         isCore: false,
         category: 'operations',
-        hubId: 'industry-hub',
         isFree: false,
         plans: [
             { id: 'monthly', name: '30 хоног', price: 20000, durationDays: 30 },
@@ -1164,7 +1122,6 @@ export const LISCORD_MODULES: AppModule[] = [
         route: '/app/pole-display',
         isCore: false,
         category: 'operations',
-        hubId: 'industry-hub',
         isFree: false,
         plans: [
             { id: 'monthly', name: '30 хоног', price: 20000, durationDays: 30 },
@@ -1179,7 +1136,6 @@ export const LISCORD_MODULES: AppModule[] = [
         route: '/app/omni-sync',
         isCore: false,
         category: 'operations',
-        hubId: 'industry-hub',
         isFree: false,
         plans: [
             { id: 'monthly', name: '30 хоног', price: 20000, durationDays: 30 },
@@ -1194,7 +1150,6 @@ export const LISCORD_MODULES: AppModule[] = [
         route: '/app/appointments',
         isCore: false,
         category: 'services',
-        hubId: 'industry-hub',
         isFree: false,
         plans: [
             { id: 'monthly', name: '30 хоног', price: 20000, durationDays: 30 },
@@ -1237,7 +1192,6 @@ export const LISCORD_MODULES: AppModule[] = [
         route: '/app/rentals',
         isCore: false,
         category: 'services',
-        hubId: 'industry-hub',
         isFree: false,
         plans: [
             { id: 'monthly', name: '30 хоног', price: 20000, durationDays: 30 },
@@ -1280,7 +1234,6 @@ export const LISCORD_MODULES: AppModule[] = [
         route: '/app/salon',
         isCore: false,
         category: 'services',
-        hubId: 'industry-hub',
         isFree: false,
         plans: [
             { id: 'monthly', name: '30 хоног', price: 20000, durationDays: 30 },
@@ -1295,7 +1248,6 @@ export const LISCORD_MODULES: AppModule[] = [
         route: '/app/fitness',
         isCore: false,
         category: 'services',
-        hubId: 'industry-hub',
         isFree: false,
         plans: [
             { id: 'monthly', name: '30 хоног', price: 20000, durationDays: 30 },
@@ -1366,7 +1318,6 @@ export const LISCORD_MODULES: AppModule[] = [
         route: '/app/auto-repair',
         isCore: false,
         category: 'services',
-        hubId: 'industry-hub',
         isFree: false,
         plans: [
             { id: 'monthly', name: '30 хоног', price: 20000, durationDays: 30 },
@@ -1409,7 +1360,6 @@ export const LISCORD_MODULES: AppModule[] = [
         route: '/app/manufacturing',
         isCore: false,
         category: 'operations',
-        hubId: 'manufacturing-hub',
         isFree: false,
         plans: [
             { id: 'monthly', name: '30 хоног', price: 20000, durationDays: 30 },
@@ -1424,7 +1374,6 @@ export const LISCORD_MODULES: AppModule[] = [
         route: '/app/mrp',
         isCore: false,
         category: 'operations',
-        hubId: 'manufacturing-hub',
         isFree: false,
         plans: [
             { id: 'monthly', name: '30 хоног', price: 20000, durationDays: 30 },
@@ -1439,7 +1388,6 @@ export const LISCORD_MODULES: AppModule[] = [
         route: '/app/equipment',
         isCore: false,
         category: 'operations',
-        hubId: 'manufacturing-hub',
         isFree: false,
         plans: [
             { id: 'monthly', name: '30 хоног', price: 20000, durationDays: 30 },
@@ -1454,7 +1402,6 @@ export const LISCORD_MODULES: AppModule[] = [
         route: '/app/job-orders',
         isCore: false,
         category: 'operations',
-        hubId: 'manufacturing-hub',
         isFree: false,
         plans: [
             { id: 'monthly', name: '30 хоног', price: 20000, durationDays: 30 },
@@ -1469,7 +1416,6 @@ export const LISCORD_MODULES: AppModule[] = [
         route: '/app/projects',
         isCore: false,
         category: 'operations',
-        hubId: 'manufacturing-hub',
         isFree: false,
         plans: [
             { id: 'monthly', name: '30 хоног', price: 20000, durationDays: 30 },
@@ -1484,7 +1430,6 @@ export const LISCORD_MODULES: AppModule[] = [
         route: '/app/tasks',
         isCore: false,
         category: 'operations',
-        hubId: 'manufacturing-hub',
         isFree: false,
         plans: [
             { id: 'monthly', name: '30 хоног', price: 20000, durationDays: 30 },
@@ -1499,7 +1444,6 @@ export const LISCORD_MODULES: AppModule[] = [
         route: '/app/plm',
         isCore: false,
         category: 'operations',
-        hubId: 'manufacturing-hub',
         isFree: false,
         plans: [
             { id: 'monthly', name: '30 хоног', price: 20000, durationDays: 30 },
@@ -1514,7 +1458,6 @@ export const LISCORD_MODULES: AppModule[] = [
         route: '/app/sub-contracting',
         isCore: false,
         category: 'operations',
-        hubId: 'manufacturing-hub',
         isFree: false,
         plans: [
             { id: 'monthly', name: '30 хоног', price: 20000, durationDays: 30 },
@@ -1529,7 +1472,6 @@ export const LISCORD_MODULES: AppModule[] = [
         route: '/app/bom',
         isCore: false,
         category: 'operations',
-        hubId: 'manufacturing-hub',
         isFree: false,
         plans: [
             { id: 'monthly', name: '30 хоног', price: 20000, durationDays: 30 },
@@ -1544,7 +1486,6 @@ export const LISCORD_MODULES: AppModule[] = [
         route: '/app/qa',
         isCore: false,
         category: 'operations',
-        hubId: 'manufacturing-hub',
         isFree: false,
         plans: [
             { id: 'monthly', name: '30 хоног', price: 20000, durationDays: 30 },
@@ -1559,7 +1500,6 @@ export const LISCORD_MODULES: AppModule[] = [
         route: '/app/milestones',
         isCore: false,
         category: 'operations',
-        hubId: 'manufacturing-hub',
         isFree: false,
         plans: [
             { id: 'monthly', name: '30 хоног', price: 20000, durationDays: 30 },
@@ -1574,7 +1514,6 @@ export const LISCORD_MODULES: AppModule[] = [
         route: '/app/gantt-chart',
         isCore: false,
         category: 'operations',
-        hubId: 'manufacturing-hub',
         isFree: false,
         plans: [
             { id: 'monthly', name: '30 хоног', price: 20000, durationDays: 30 },
@@ -1589,7 +1528,6 @@ export const LISCORD_MODULES: AppModule[] = [
         route: '/app/timesheet-billing',
         isCore: false,
         category: 'operations',
-        hubId: 'manufacturing-hub',
         isFree: false,
         plans: [
             { id: 'monthly', name: '30 хоног', price: 20000, durationDays: 30 },
@@ -1604,7 +1542,6 @@ export const LISCORD_MODULES: AppModule[] = [
         route: '/app/construction',
         isCore: false,
         category: 'operations',
-        hubId: 'manufacturing-hub',
         isFree: false,
         plans: [
             { id: 'monthly', name: '30 хоног', price: 20000, durationDays: 30 },
@@ -1619,7 +1556,6 @@ export const LISCORD_MODULES: AppModule[] = [
         route: '/app/architecture-design',
         isCore: false,
         category: 'operations',
-        hubId: 'manufacturing-hub',
         isFree: false,
         plans: [
             { id: 'monthly', name: '30 хоног', price: 20000, durationDays: 30 },
@@ -1648,7 +1584,6 @@ export const LISCORD_MODULES: AppModule[] = [
         route: '/app/dental-clinic',
         isCore: false,
         category: 'services',
-        hubId: 'industry-hub',
         isFree: false,
         plans: [
             { id: 'monthly', name: '30 хоног', price: 20000, durationDays: 30 },
@@ -1663,7 +1598,6 @@ export const LISCORD_MODULES: AppModule[] = [
         route: '/app/pharmacy',
         isCore: false,
         category: 'services',
-        hubId: 'industry-hub',
         isFree: false,
         plans: [
             { id: 'monthly', name: '30 хоног', price: 20000, durationDays: 30 },
@@ -1692,7 +1626,6 @@ export const LISCORD_MODULES: AppModule[] = [
         route: '/app/real-estate',
         isCore: false,
         category: 'services',
-        hubId: 'industry-hub',
         isFree: false,
         plans: [
             { id: 'monthly', name: '30 хоног', price: 20000, durationDays: 30 },
@@ -1707,7 +1640,6 @@ export const LISCORD_MODULES: AppModule[] = [
         route: '/app/logistics-3pl',
         isCore: false,
         category: 'services',
-        hubId: 'industry-hub',
         isFree: false,
         plans: [
             { id: 'monthly', name: '30 хоног', price: 20000, durationDays: 30 },
@@ -1722,7 +1654,6 @@ export const LISCORD_MODULES: AppModule[] = [
         route: '/app/vehicles',
         isCore: false,
         category: 'services',
-        hubId: 'logistics-hub',
         isFree: false,
         plans: [
             { id: 'monthly', name: '30 хоног', price: 20000, durationDays: 30 },
@@ -1737,7 +1668,6 @@ export const LISCORD_MODULES: AppModule[] = [
         route: '/app/fleet-mgt',
         isCore: false,
         category: 'services',
-        hubId: 'industry-hub',
         isFree: false,
         plans: [
             { id: 'monthly', name: '30 хоног', price: 20000, durationDays: 30 },
@@ -1752,7 +1682,6 @@ export const LISCORD_MODULES: AppModule[] = [
         route: '/app/freight',
         isCore: false,
         category: 'services',
-        hubId: 'logistics-hub',
         isFree: false,
         plans: [
             { id: 'monthly', name: '30 хоног', price: 20000, durationDays: 30 },
@@ -1767,7 +1696,6 @@ export const LISCORD_MODULES: AppModule[] = [
         route: '/app/dispatch',
         isCore: false,
         category: 'services',
-        hubId: 'logistics-hub',
         isFree: false,
         plans: [
             { id: 'monthly', name: '30 хоног', price: 20000, durationDays: 30 },
@@ -1782,7 +1710,6 @@ export const LISCORD_MODULES: AppModule[] = [
         route: '/app/packing',
         isCore: false,
         category: 'services',
-        hubId: 'logistics-hub',
         isFree: false,
         plans: [
             { id: 'monthly', name: '30 хоног', price: 20000, durationDays: 30 },
@@ -1797,7 +1724,6 @@ export const LISCORD_MODULES: AppModule[] = [
         route: '/app/vendor-rating',
         isCore: false,
         category: 'services',
-        hubId: 'logistics-hub',
         isFree: false,
         plans: [
             { id: 'monthly', name: '30 хоног', price: 20000, durationDays: 30 },
@@ -1812,7 +1738,6 @@ export const LISCORD_MODULES: AppModule[] = [
         route: '/app/import-cost',
         isCore: false,
         category: 'services',
-        hubId: 'logistics-hub',
         isFree: false,
         plans: [
             { id: 'monthly', name: '30 хоног', price: 20000, durationDays: 30 },
@@ -1827,7 +1752,6 @@ export const LISCORD_MODULES: AppModule[] = [
         route: '/app/route-optimize',
         isCore: false,
         category: 'services',
-        hubId: 'logistics-hub',
         isFree: false,
         plans: [
             { id: 'monthly', name: '30 хоног', price: 20000, durationDays: 30 },
@@ -1996,7 +1920,6 @@ export const LISCORD_MODULES: AppModule[] = [
         route: '/app/documents',
         isCore: false,
         category: 'operations',
-        hubId: 'workspace-hub',
         isFree: false,
         plans: [
             { id: 'monthly', name: '30 хоног', price: 20000, durationDays: 30 },
@@ -2011,7 +1934,6 @@ export const LISCORD_MODULES: AppModule[] = [
         route: '/app/e-sign',
         isCore: false,
         category: 'operations',
-        hubId: 'workspace-hub',
         isFree: false,
         plans: [
             { id: 'monthly', name: '30 хоног', price: 20000, durationDays: 30 },
@@ -2026,7 +1948,6 @@ export const LISCORD_MODULES: AppModule[] = [
         route: '/app/internal-chat',
         isCore: false,
         category: 'operations',
-        hubId: 'workspace-hub',
         isFree: false,
         plans: [
             { id: 'monthly', name: '30 хоног', price: 20000, durationDays: 30 },
@@ -2041,7 +1962,6 @@ export const LISCORD_MODULES: AppModule[] = [
         route: '/app/approvals',
         isCore: false,
         category: 'operations',
-        hubId: 'workspace-hub',
         isFree: false,
         plans: [
             { id: 'monthly', name: '30 хоног', price: 20000, durationDays: 30 },
@@ -2056,7 +1976,6 @@ export const LISCORD_MODULES: AppModule[] = [
         route: '/app/calendar',
         isCore: false,
         category: 'operations',
-        hubId: 'workspace-hub',
         isFree: false,
         plans: [
             { id: 'monthly', name: '30 хоног', price: 20000, durationDays: 30 },
@@ -2071,7 +1990,6 @@ export const LISCORD_MODULES: AppModule[] = [
         route: '/app/notes',
         isCore: false,
         category: 'operations',
-        hubId: 'workspace-hub',
         isFree: false,
         plans: [
             { id: 'monthly', name: '30 хоног', price: 20000, durationDays: 30 },
@@ -2086,7 +2004,6 @@ export const LISCORD_MODULES: AppModule[] = [
         route: '/app/pass-manager',
         isCore: false,
         category: 'operations',
-        hubId: 'workspace-hub',
         isFree: false,
         plans: [
             { id: 'monthly', name: '30 хоног', price: 20000, durationDays: 30 },
@@ -2101,7 +2018,6 @@ export const LISCORD_MODULES: AppModule[] = [
         route: '/app/video-meetings',
         isCore: false,
         category: 'operations',
-        hubId: 'workspace-hub',
         isFree: false,
         plans: [
             { id: 'monthly', name: '30 хоног', price: 20000, durationDays: 30 },
@@ -2116,7 +2032,6 @@ export const LISCORD_MODULES: AppModule[] = [
         route: '/app/whiteboard',
         isCore: false,
         category: 'operations',
-        hubId: 'workspace-hub',
         isFree: false,
         plans: [
             { id: 'monthly', name: '30 хоног', price: 20000, durationDays: 30 },
@@ -2131,7 +2046,6 @@ export const LISCORD_MODULES: AppModule[] = [
         route: '/app/announcements',
         isCore: false,
         category: 'operations',
-        hubId: 'workspace-hub',
         isFree: false,
         plans: [
             { id: 'monthly', name: '30 хоног', price: 20000, durationDays: 30 },
@@ -2146,7 +2060,6 @@ export const LISCORD_MODULES: AppModule[] = [
         route: '/app/analytics',
         isCore: true,
         category: 'operations',
-        hubId: 'ai-hub',
         hasSettings: true,
         isFree: false,
         plans: [
@@ -2162,7 +2075,6 @@ export const LISCORD_MODULES: AppModule[] = [
         route: '/app/automations',
         isCore: false,
         category: 'operations',
-        hubId: 'ai-hub',
         isFree: false,
         plans: [
             { id: 'monthly', name: '30 хоног', price: 20000, durationDays: 30 },
@@ -2177,7 +2089,6 @@ export const LISCORD_MODULES: AppModule[] = [
         route: '/app/api-webhooks',
         isCore: false,
         category: 'operations',
-        hubId: 'ai-hub',
         isFree: false,
         plans: [
             { id: 'monthly', name: '30 хоног', price: 20000, durationDays: 30 },
@@ -2192,7 +2103,6 @@ export const LISCORD_MODULES: AppModule[] = [
         route: '/app/ocr-scanner',
         isCore: false,
         category: 'operations',
-        hubId: 'ai-hub',
         isFree: false,
         plans: [
             { id: 'monthly', name: '30 хоног', price: 20000, durationDays: 30 },
@@ -2207,7 +2117,6 @@ export const LISCORD_MODULES: AppModule[] = [
         route: '/app/audit-trail',
         isCore: false,
         category: 'operations',
-        hubId: 'ai-hub',
         isFree: false,
         plans: [
             { id: 'monthly', name: '30 хоног', price: 20000, durationDays: 30 },
@@ -2222,7 +2131,6 @@ export const LISCORD_MODULES: AppModule[] = [
         route: '/app/data-migration',
         isCore: false,
         category: 'operations',
-        hubId: 'ai-hub',
         isFree: false,
         plans: [
             { id: 'monthly', name: '30 хоног', price: 20000, durationDays: 30 },
@@ -2237,7 +2145,6 @@ export const LISCORD_MODULES: AppModule[] = [
         route: '/app/custom-reports',
         isCore: false,
         category: 'operations',
-        hubId: 'ai-hub',
         isFree: false,
         plans: [
             { id: 'monthly', name: '30 хоног', price: 20000, durationDays: 30 },
@@ -2252,7 +2159,6 @@ export const LISCORD_MODULES: AppModule[] = [
         route: '/app/cctv-sync',
         isCore: false,
         category: 'operations',
-        hubId: 'ai-hub',
         isFree: false,
         plans: [
             { id: 'monthly', name: '30 хоног', price: 20000, durationDays: 30 },
@@ -2267,7 +2173,6 @@ export const LISCORD_MODULES: AppModule[] = [
         route: '/app/ai-forecaster',
         isCore: false,
         category: 'operations',
-        hubId: 'ai-hub',
         isFree: false,
         plans: [
             { id: 'monthly', name: '30 хоног', price: 20000, durationDays: 30 },
@@ -2282,7 +2187,6 @@ export const LISCORD_MODULES: AppModule[] = [
         route: '/app/ai-chatbot',
         isCore: false,
         category: 'operations',
-        hubId: 'ai-hub',
         isFree: false,
         plans: [
             { id: 'monthly', name: '30 хоног', price: 20000, durationDays: 30 },
@@ -2297,7 +2201,6 @@ export const LISCORD_MODULES: AppModule[] = [
         route: '/app/ai-agent',
         isCore: true,
         category: 'operations',
-        hubId: 'ai-hub',
         hasSettings: true,
         settingsRoute: '/app/settings?tab=ai-agent',
         isFree: false,
@@ -2314,7 +2217,6 @@ export const LISCORD_MODULES: AppModule[] = [
         route: '/app/gdpr-compliance',
         isCore: false,
         category: 'operations',
-        hubId: 'compliance-hub',
         isFree: false,
         plans: [
             { id: 'monthly', name: '30 хоног', price: 20000, durationDays: 30 },
@@ -2329,7 +2231,6 @@ export const LISCORD_MODULES: AppModule[] = [
         route: '/app/data-backup',
         isCore: false,
         category: 'finance',
-        hubId: 'compliance-hub',
         isFree: false,
         plans: [
             { id: 'monthly', name: '30 хоног', price: 20000, durationDays: 30 },
@@ -2344,7 +2245,6 @@ export const LISCORD_MODULES: AppModule[] = [
         route: '/app/ip-whitelist',
         isCore: false,
         category: 'finance',
-        hubId: 'compliance-hub',
         isFree: false,
         plans: [
             { id: 'monthly', name: '30 хоног', price: 20000, durationDays: 30 },
@@ -2359,7 +2259,6 @@ export const LISCORD_MODULES: AppModule[] = [
         route: '/app/two-factor-auth',
         isCore: false,
         category: 'finance',
-        hubId: 'compliance-hub',
         isFree: false,
         plans: [
             { id: 'monthly', name: '30 хоног', price: 20000, durationDays: 30 },
@@ -2374,7 +2273,6 @@ export const LISCORD_MODULES: AppModule[] = [
         route: '/app/role-manager',
         isCore: false,
         category: 'finance',
-        hubId: 'compliance-hub',
         isFree: false,
         plans: [
             { id: 'monthly', name: '30 хоног', price: 20000, durationDays: 30 },
@@ -2389,7 +2287,6 @@ export const LISCORD_MODULES: AppModule[] = [
         route: '/app/session-manager',
         isCore: false,
         category: 'finance',
-        hubId: 'compliance-hub',
         isFree: false,
         plans: [
             { id: 'monthly', name: '30 хоног', price: 20000, durationDays: 30 },
@@ -2404,7 +2301,6 @@ export const LISCORD_MODULES: AppModule[] = [
         route: '/app/document-encryption',
         isCore: false,
         category: 'finance',
-        hubId: 'compliance-hub',
         isFree: false,
         plans: [
             { id: 'monthly', name: '30 хоног', price: 20000, durationDays: 30 },
@@ -2419,7 +2315,6 @@ export const LISCORD_MODULES: AppModule[] = [
         route: '/app/sso',
         isCore: false,
         category: 'finance',
-        hubId: 'compliance-hub',
         isFree: false,
         plans: [
             { id: 'monthly', name: '30 хоног', price: 20000, durationDays: 30 },
@@ -2434,7 +2329,6 @@ export const LISCORD_MODULES: AppModule[] = [
         route: '/app/access-policy',
         isCore: false,
         category: 'finance',
-        hubId: 'compliance-hub',
         isFree: false,
         plans: [
             { id: 'monthly', name: '30 хоног', price: 20000, durationDays: 30 },
@@ -2449,7 +2343,6 @@ export const LISCORD_MODULES: AppModule[] = [
         route: '/app/pen-test-report',
         isCore: false,
         category: 'finance',
-        hubId: 'compliance-hub',
         isFree: false,
         plans: [
             { id: 'monthly', name: '30 хоног', price: 20000, durationDays: 30 },
@@ -2464,7 +2357,6 @@ export const LISCORD_MODULES: AppModule[] = [
         route: '/app/tax-reporting',
         isCore: false,
         category: 'finance',
-        hubId: 'compliance-hub',
         isFree: false,
         plans: [
             { id: 'monthly', name: '30 хоног', price: 20000, durationDays: 30 },
@@ -2479,7 +2371,6 @@ export const LISCORD_MODULES: AppModule[] = [
         route: '/app/customs-declaration',
         isCore: false,
         category: 'finance',
-        hubId: 'logistics-hub',
         isFree: false,
         plans: [
             { id: 'monthly', name: '30 хоног', price: 20000, durationDays: 30 },
@@ -2494,7 +2385,6 @@ export const LISCORD_MODULES: AppModule[] = [
         route: '/app/labor-compliance',
         isCore: false,
         category: 'finance',
-        hubId: 'compliance-hub',
         isFree: false,
         plans: [
             { id: 'monthly', name: '30 хоног', price: 20000, durationDays: 30 },
@@ -2509,7 +2399,6 @@ export const LISCORD_MODULES: AppModule[] = [
         route: '/app/anti-fraud',
         isCore: false,
         category: 'finance',
-        hubId: 'compliance-hub',
         isFree: false,
         plans: [
             { id: 'monthly', name: '30 хоног', price: 20000, durationDays: 30 },
@@ -3028,7 +2917,6 @@ export const LISCORD_MODULES: AppModule[] = [
         route: '/app/dental-clinic',
         isCore: false,
         category: 'industry',
-        hubId: 'industry-hub',
         isFree: false,
         plans: [
             { id: 'monthly', name: '30 хоног', price: 20000, durationDays: 30 },
@@ -3043,7 +2931,6 @@ export const LISCORD_MODULES: AppModule[] = [
         route: '/app/pharmacy',
         isCore: false,
         category: 'industry',
-        hubId: 'industry-hub',
         isFree: false,
         plans: [
             { id: 'monthly', name: '30 хоног', price: 20000, durationDays: 30 },
@@ -3058,7 +2945,6 @@ export const LISCORD_MODULES: AppModule[] = [
         route: '/app/gym-fitness',
         isCore: false,
         category: 'industry',
-        hubId: 'industry-hub',
         isFree: false,
         plans: [
             { id: 'monthly', name: '30 хоног', price: 20000, durationDays: 30 },
@@ -3073,7 +2959,6 @@ export const LISCORD_MODULES: AppModule[] = [
         route: '/app/salon-spa',
         isCore: false,
         category: 'industry',
-        hubId: 'industry-hub',
         isFree: false,
         plans: [
             { id: 'monthly', name: '30 хоног', price: 20000, durationDays: 30 },
@@ -3088,7 +2973,6 @@ export const LISCORD_MODULES: AppModule[] = [
         route: '/app/real-estate',
         isCore: false,
         category: 'industry',
-        hubId: 'industry-hub',
         isFree: false,
         plans: [
             { id: 'monthly', name: '30 хоног', price: 20000, durationDays: 30 },
@@ -3117,7 +3001,6 @@ export const LISCORD_MODULES: AppModule[] = [
         route: '/app/auto-repair',
         isCore: false,
         category: 'industry',
-        hubId: 'industry-hub',
         isFree: false,
         plans: [
             { id: 'monthly', name: '30 хоног', price: 20000, durationDays: 30 },
@@ -3132,7 +3015,6 @@ export const LISCORD_MODULES: AppModule[] = [
         route: '/app/rental',
         isCore: false,
         category: 'industry',
-        hubId: 'industry-hub',
         isFree: false,
         plans: [
             { id: 'monthly', name: '30 хоног', price: 20000, durationDays: 30 },
@@ -3147,7 +3029,6 @@ export const LISCORD_MODULES: AppModule[] = [
         route: '/app/logistics-3pl',
         isCore: false,
         category: 'logistics',
-        hubId: 'industry-hub',
         isFree: false,
         plans: [
             { id: 'monthly', name: '30 хоног', price: 20000, durationDays: 30 },
@@ -3162,7 +3043,6 @@ export const LISCORD_MODULES: AppModule[] = [
         route: '/app/fleet-mgt',
         isCore: false,
         category: 'logistics',
-        hubId: 'industry-hub',
         isFree: false,
         plans: [
             { id: 'monthly', name: '30 хоног', price: 20000, durationDays: 30 },
