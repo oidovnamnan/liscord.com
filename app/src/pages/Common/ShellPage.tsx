@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Header } from '../../components/layout/Header';
+import '../Inventory/InventoryPage.css';
 import { Plus, Settings, Search, Edit2, Database, Loader2 } from 'lucide-react';
 import * as Icons from 'lucide-react';
 import { LISCORD_MODULES } from '../../config/modules';
@@ -516,44 +516,34 @@ export function ShellPage({ title, moduleId }: ShellPageProps) {
 
     return (
         <>
-            <Header title={title} />
-            <div className="page animate-fade-in">
-                {/* Stats Bar */}
-                <div style={{
-                    display: 'flex', alignItems: 'center', gap: 16, marginBottom: 20,
-                    flexWrap: 'wrap', justifyContent: 'space-between'
-                }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                        <div style={{
-                            width: 44, height: 44, borderRadius: 12,
-                            background: 'linear-gradient(135deg, rgba(var(--primary-rgb), 0.15), rgba(var(--primary-rgb), 0.05))',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            border: '1px solid rgba(var(--primary-rgb), 0.2)'
-                        }}>
-                            <ModuleIcon size={22} style={{ color: 'var(--primary)' }} />
+            <div className="inventory-page animate-fade-in">
+                <div className="page-hero" style={{ marginBottom: 8 }}>
+                    <div className="page-hero-left">
+                        <div className="page-hero-icon">
+                            <ModuleIcon size={24} />
                         </div>
                         <div>
-                            <h2 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 700 }}>{title}</h2>
-                            <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                            <h2 className="page-hero-title">{title}</h2>
+                            <p className="page-hero-subtitle">
                                 {loading ? 'Ачааллаж байна...' : `${filtered.length} бичлэг`}
-                            </span>
+                            </p>
                         </div>
                     </div>
+                    <button className="btn btn-primary btn-sm gradient-btn" onClick={() => { setEditingItem(null); setShowModal(true); }} style={{ gap: 6 }}>
+                        <Plus size={16} /> Нэмэх
+                    </button>
+                </div>
 
-                    <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                        <div style={{ position: 'relative' }}>
-                            <Search size={16} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
-                            <input
-                                className="input"
-                                placeholder="Хайх..."
-                                value={search}
-                                onChange={e => setSearch(e.target.value)}
-                                style={{ paddingLeft: 36, height: 40, minWidth: 200, borderRadius: 10 }}
-                            />
-                        </div>
-                        <button className="btn btn-primary gradient-btn" onClick={() => { setEditingItem(null); setShowModal(true); }} style={{ height: 40, borderRadius: 10, gap: 6 }}>
-                            <Plus size={16} /> Нэмэх
-                        </button>
+                {/* Toolbar */}
+                <div className="inv-toolbar" style={{ marginBottom: 24 }}>
+                    <div className="inv-search-wrap">
+                        <Search size={18} className="inv-search-icon" />
+                        <input
+                            className="inv-search-input"
+                            placeholder="Хайх..."
+                            value={search}
+                            onChange={e => setSearch(e.target.value)}
+                        />
                     </div>
                 </div>
 
