@@ -289,7 +289,7 @@ export function OrdersPage() {
                             className="input"
                             value={statusFilter}
                             onChange={(e) => setStatusFilter(e.target.value)}
-                            style={{ minWidth: 140, height: 42, borderRadius: 12, fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer', padding: '0 12px', background: 'var(--surface-1)', border: '1.5px solid var(--border-primary)', color: 'var(--text-primary)' }}
+                            style={{ minWidth: 140, height: 42, borderRadius: 12, fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer', padding: '0 32px 0 14px', background: 'var(--surface-1)', border: '1.5px solid var(--border-primary)', color: 'var(--text-primary)' }}
                         >
                             {statuses.filter(s => s.isActive || s.id === 'cancelled' || s.id === 'all').map(s => {
                                 const count = s.id === 'all'
@@ -309,7 +309,7 @@ export function OrdersPage() {
                             value={dateFilter}
                             // eslint-disable-next-line @typescript-eslint/no-explicit-any
                             onChange={(e) => setDateFilter(e.target.value as any)}
-                            style={{ minWidth: 120, height: 42, borderRadius: 12, fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer', padding: '0 12px', background: 'var(--surface-1)', border: '1.5px solid var(--border-primary)', color: 'var(--text-primary)' }}
+                            style={{ minWidth: 120, height: 42, borderRadius: 12, fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer', padding: '0 32px 0 14px', background: 'var(--surface-1)', border: '1.5px solid var(--border-primary)', color: 'var(--text-primary)' }}
                         >
                             <option value="all">Бүгд</option>
                             <option value="today">Өнөөдөр</option>
