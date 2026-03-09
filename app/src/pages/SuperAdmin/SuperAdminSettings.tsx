@@ -102,11 +102,9 @@ export function SuperAdminSettings() {
         try {
             const batch = writeBatch(db);
 
-            // 1. Update module defaults
             const defaultsRef = doc(db, 'system_settings', 'modules');
             batch.set(defaultsRef, defaults);
 
-            // 2. Update all category configurations to ensure they exist and persist in DB
             localCategories.forEach(cat => {
                 const catRef = doc(db, 'system_categories', cat.id);
                 batch.set(catRef, {
@@ -117,10 +115,7 @@ export function SuperAdminSettings() {
 
             await batch.commit();
             setHasUnsavedChanges(false);
-
-            // Critical: Reset store fetch state before calling refresh
             await refresh();
-
             toast.success('Бүх тохиргоо амжилттай хадгалагдлаа');
         } catch (error) {
             console.error('Failed to save settings:', error);
@@ -164,6 +159,11 @@ export function SuperAdminSettings() {
         }
     };
 
+    // Stats for header
+    const totalModules = LISCORD_MODULES.length;
+    const totalCategories = categoriesToDisplay.length;
+    const activeCategories = categoriesToDisplay.filter(c => c.isActive).length;
+
     if (loading) {
         return (
             <div className="loading-screen" style={{ height: 'calc(100vh - 64px)' }}>
@@ -179,28 +179,38 @@ export function SuperAdminSettings() {
                 title={
                     <div className="flex items-center gap-3">
                         <h1 className="text-base font-bold tracking-tight text-primary">Модуль Тохиргоо</h1>
+                        <div className="ms-header-stats">
+                            <span className="ms-stat-pill">{totalModules} модуль</span>
+                            <span className="ms-stat-pill active">{activeCategories}/{totalCategories} салбар</span>
+                        </div>
                     </div>
                 }
                 extra={
                     <div className="flex items-center gap-2">
+                        {hasUnsavedChanges && (
+                            <span className="ms-unsaved-indicator">
+                                <span className="ms-unsaved-dot" />
+                                Хадгалаагүй
+                            </span>
+                        )}
                         <button
                             className="btn-pro btn-pro-primary"
                             onClick={handleSaveClick}
                             disabled={saving}
                         >
                             {saving ? <Loader2 className="animate-spin" size={14} /> : <Icons.Save size={14} />}
-                            <span>{saving ? '...' : (hasUnsavedChanges ? 'Тохиргоог Хадгалах' : 'Хадгалах')}</span>
-                            {hasUnsavedChanges && <div className="unsaved-dot" />}
+                            <span>{saving ? 'Хадгалж байна...' : 'Хадгалах'}</span>
                         </button>
                     </div>
                 }
             />
 
             <div className="page-content-pro">
+                {/* ─── Sidebar ─── */}
                 <aside className="pro-sidebar">
                     <div className="pro-sidebar-header">
-                        <Icons.Filter size={14} className="opacity-50" />
-                        <span>САЛБАРУУД</span>
+                        <Icons.Layers size={12} />
+                        <span>БИЗНЕС САЛБАРУУД</span>
                     </div>
                     <nav className="pro-nav">
                         <button
@@ -208,11 +218,15 @@ export function SuperAdminSettings() {
                             onClick={() => setSelectedCategoryId('all')}
                         >
                             <Icons.LayoutGrid size={16} />
-                            <span>Ерөнхий дүр зураг</span>
+                            <span>Бүх салбарууд</span>
+                            <span className="ms-nav-count">{totalCategories}</span>
                         </button>
+
                         <div className="pro-nav-divider" />
-                        <div className="px-3 py-2 flex items-center justify-between bg-surface-2 mb-2 mx-2 rounded-xl border border-primary/5">
-                            <div className="flex items-center gap-3">
+
+                        {/* Bulk select controls */}
+                        <div className="ms-bulk-controls">
+                            <label className="ms-checkbox-label">
                                 <input
                                     type="checkbox"
                                     className="custom-checkbox"
@@ -222,45 +236,43 @@ export function SuperAdminSettings() {
                                         else setSelectedIds([]);
                                     }}
                                 />
-                                <span className="text-[10px] font-heavy opacity-40 uppercase tracking-wider">Бүгдийг</span>
-                            </div>
-                            <div className="flex items-center gap-3">
-                                <span className="text-[9px] font-bold opacity-30 uppercase">Toggle</span>
-                                <label className="ios-switch">
-                                    <input
-                                        type="checkbox"
-                                        disabled={selectedIds.length === 0}
-                                        checked={selectedIds.length > 0 && selectedIds.every(id => categoriesToDisplay.find(c => c.id === id)?.isActive)}
-                                        onChange={(e) => handleBulkStatusChange(e.target.checked)}
-                                    />
-                                    <span className="ios-slider"></span>
-                                </label>
-                            </div>
+                                <span>Бүгдийг сонгох</span>
+                            </label>
+                            {selectedIds.length > 0 && (
+                                <div className="ms-bulk-actions">
+                                    <button className="ms-bulk-btn on" onClick={() => handleBulkStatusChange(true)}>
+                                        <Icons.Eye size={10} /> Идэвхтэй
+                                    </button>
+                                    <button className="ms-bulk-btn off" onClick={() => handleBulkStatusChange(false)}>
+                                        <Icons.EyeOff size={10} /> Нуух
+                                    </button>
+                                </div>
+                            )}
                         </div>
 
-                        {categoriesToDisplay.map((category) => (
-                            <div key={category.id} className="flex items-center group pr-2">
-                                <div className="pl-4 pr-1">
+                        {/* Category items */}
+                        {categoriesToDisplay.map((category) => {
+                            const modCount = Object.keys(defaults[category.id] || {}).length;
+                            return (
+                                <div key={category.id} className="ms-cat-item-row">
                                     <input
                                         type="checkbox"
-                                        className="custom-checkbox"
+                                        className="custom-checkbox ms-cat-check"
                                         checked={selectedIds.includes(category.id)}
                                         onChange={(e) => {
                                             if (e.target.checked) setSelectedIds([...selectedIds, category.id]);
                                             else setSelectedIds(selectedIds.filter(id => id !== category.id));
                                         }}
                                     />
-                                </div>
-                                <button
-                                    className={`pro-nav-item flex-1 ${selectedCategoryId === category.id ? 'active' : ''} ${!category.isActive ? 'opacity-40 grayscale' : ''}`}
-                                    onClick={() => setSelectedCategoryId(category.id)}
-                                    style={{ marginLeft: 0, marginRight: 0 }}
-                                >
-                                    <span className="category-emoji">{category.icon}</span>
-                                    <span className="truncate">{category.label}</span>
-                                </button>
-                                <div className="category-item-toggle">
-                                    <label className="ios-switch">
+                                    <button
+                                        className={`pro-nav-item ms-cat-btn ${selectedCategoryId === category.id ? 'active' : ''} ${!category.isActive ? 'ms-disabled' : ''}`}
+                                        onClick={() => setSelectedCategoryId(category.id)}
+                                    >
+                                        <span className="ms-cat-emoji">{category.icon}</span>
+                                        <span className="ms-cat-name">{category.label}</span>
+                                        {modCount > 0 && <span className="ms-nav-count">{modCount}</span>}
+                                    </button>
+                                    <label className="ios-switch ms-cat-toggle" title={category.isActive ? 'Идэвхтэй' : 'Идэвхгүй'}>
                                         <input
                                             type="checkbox"
                                             checked={category.isActive}
@@ -269,64 +281,99 @@ export function SuperAdminSettings() {
                                         <span className="ios-slider"></span>
                                     </label>
                                 </div>
-                            </div>
-                        ))}
+                            );
+                        })}
                     </nav>
                 </aside>
 
+                {/* ─── Main Content ─── */}
                 <main className="pro-main-content">
                     {selectedCategoryId === 'all' ? (
-                        <div className="pro-summary-grid">
-                            {categoriesToDisplay.map((category) => {
-                                const activeCount = Object.keys(defaults[category.id] || {}).length;
-                                return (
-                                    <div
-                                        key={category.id}
-                                        className={`pro-summary-card ${!category.isActive ? 'is-disabled' : ''}`}
-                                        onClick={() => setSelectedCategoryId(category.id)}
-                                    >
-                                        <div className="pro-icon-md mb-4" style={{ position: 'relative', fontSize: '32px', width: '64px', height: '64px', borderRadius: '16px' }}>
-                                            {category.icon}
-                                            {!category.isActive && (
-                                                <div style={{ position: 'absolute', top: -4, right: -4, background: 'var(--danger)', color: 'white', fontSize: '10px', padding: '2px 6px', borderRadius: '8px', fontWeight: 800 }}>HIDDEN</div>
-                                            )}
+                        <>
+                            <div className="ms-section-header">
+                                <h2><Icons.Grid3X3 size={18} /> Бүх салбарууд</h2>
+                                <p>{activeCategories} идэвхтэй · {totalCategories - activeCategories} нуусан</p>
+                            </div>
+                            <div className="pro-summary-grid">
+                                {categoriesToDisplay.map((category) => {
+                                    const activeCount = Object.keys(defaults[category.id] || {}).length;
+                                    const coreCount = Object.values(defaults[category.id] || {}).filter(v => v === 'core').length;
+                                    const addonCount = activeCount - coreCount;
+                                    return (
+                                        <div
+                                            key={category.id}
+                                            className={`ms-summary-card ${!category.isActive ? 'ms-card-disabled' : ''}`}
+                                            onClick={() => setSelectedCategoryId(category.id)}
+                                        >
+                                            <div className="ms-card-top">
+                                                <div className="ms-card-icon">{category.icon}</div>
+                                                {!category.isActive && (
+                                                    <span className="ms-hidden-badge">
+                                                        <Icons.EyeOff size={10} /> НУУСАН
+                                                    </span>
+                                                )}
+                                            </div>
+                                            <h3 className="ms-card-title">{category.label}</h3>
+                                            {category.desc && <p className="ms-card-desc">{category.desc}</p>}
+                                            <div className="ms-card-footer">
+                                                <div className="ms-card-stats">
+                                                    {coreCount > 0 && <span className="ms-stat core">{coreCount} үндсэн</span>}
+                                                    {addonCount > 0 && <span className="ms-stat addon">{addonCount} нэмэлт</span>}
+                                                    {activeCount === 0 && <span className="ms-stat empty">Тохируулаагүй</span>}
+                                                </div>
+                                                <Icons.ChevronRight size={14} className="ms-card-arrow" />
+                                            </div>
                                         </div>
-                                        <h3 className="text-base font-bold text-primary mb-1">{category.label}</h3>
-                                        <div className="mt-auto flex items-center justify-between pt-4 border-top border-primary opacity-80">
-                                            <span className="text-[11px] font-bold text-secondary uppercase tracking-wider">{activeCount} modules</span>
-                                            <Icons.ArrowRight size={14} className="text-secondary" />
-                                        </div>
-                                    </div>
-                                );
-                            })}
-                        </div>
+                                    );
+                                })}
+                            </div>
+                        </>
                     ) : (
-                        <div className="pro-detail-wrapper">
+                        <div className="ms-detail-wrapper animate-slide-up">
                             {filteredCategories.map((category) => {
                                 const key = category.id;
                                 const activeMods = defaults[key] || {};
+                                const coreCount = Object.values(activeMods).filter(v => v === 'core').length;
+                                const addonCount = Object.values(activeMods).filter(v => v === 'addon').length;
 
                                 return (
-                                    <div key={key} className="animate-slide-up">
-                                        <div className="pro-detail-header">
-                                            <div className="flex items-center gap-3">
-                                                <div className="pro-icon-md">{category.icon}</div>
+                                    <div key={key}>
+                                        {/* Detail Header */}
+                                        <div className="ms-detail-header">
+                                            <div className="ms-detail-title-row">
+                                                <button className="ms-back-btn" onClick={() => setSelectedCategoryId('all')}>
+                                                    <Icons.ArrowLeft size={16} />
+                                                </button>
+                                                <div className="ms-detail-icon">{category.icon}</div>
                                                 <div>
-                                                    <h2 className="text-sm font-bold">{category.label}</h2>
-                                                    <p className="text-[10px] text-secondary opacity-70">{category.desc}</p>
+                                                    <h2 className="ms-detail-title">{category.label}</h2>
+                                                    {category.desc && <p className="ms-detail-desc">{category.desc}</p>}
                                                 </div>
                                             </div>
-                                            <div className="pro-search-box">
-                                                <Icons.Search size={14} className="opacity-40" />
-                                                <input
-                                                    type="text"
-                                                    placeholder="Модуль хайх..."
-                                                    value={moduleSearch}
-                                                    onChange={(e) => setModuleSearch(e.target.value)}
-                                                />
+                                            <div className="ms-detail-meta">
+                                                <div className="ms-detail-badges">
+                                                    <span className="ms-badge core"><Icons.Star size={10} /> {coreCount} Үндсэн</span>
+                                                    <span className="ms-badge addon"><Icons.Puzzle size={10} /> {addonCount} Нэмэлт</span>
+                                                    <span className="ms-badge total">{LISCORD_MODULES.length} нийт</span>
+                                                </div>
+                                                <div className="ms-search-box">
+                                                    <Icons.Search size={14} />
+                                                    <input
+                                                        type="text"
+                                                        placeholder="Модуль хайх..."
+                                                        value={moduleSearch}
+                                                        onChange={(e) => setModuleSearch(e.target.value)}
+                                                    />
+                                                    {moduleSearch && (
+                                                        <button className="search-clear-btn" onClick={() => setModuleSearch('')}>
+                                                            <Icons.X size={12} />
+                                                        </button>
+                                                    )}
+                                                </div>
                                             </div>
                                         </div>
 
+                                        {/* Module Grid */}
                                         <div className="pro-module-grid">
                                             {LISCORD_MODULES.filter(m =>
                                                 m.name.toLowerCase().includes(moduleSearch.toLowerCase()) ||
@@ -356,61 +403,67 @@ export function SuperAdminSettings() {
                                                         className={`pro-module-card ${isActive ? 'active' : ''} ${status || ''}`}
                                                     >
                                                         <div className="pro-module-icon">
-                                                            <Icon size={28} strokeWidth={1.5} />
+                                                            <Icon size={24} strokeWidth={1.5} />
                                                         </div>
                                                         <div className="flex-1 min-w-0">
                                                             <span className="pro-module-name">{module.name}</span>
                                                             <div className="pro-module-type">
-                                                                {status === 'core' ? 'Үндсэн' : status === 'addon' ? 'Нэмэлт' : 'Module'}
+                                                                {status === 'core' ? '⭐ Үндсэн' : status === 'addon' ? '🧩 Нэмэлт' : 'Модуль'}
                                                             </div>
                                                         </div>
                                                         <button
                                                             className={`pro-status-btn ${isActive ? 'active' : 'inactive'}`}
                                                         >
-                                                            {isActive ? 'Active' : 'Get'}
+                                                            {status === 'core' ? 'Core' : status === 'addon' ? 'Addon' : 'Нэмэх'}
                                                         </button>
                                                     </div>
                                                 );
                                             })}
                                         </div>
+
+                                        {/* Migration Tools */}
+                                        <div className="ms-migration-section">
+                                            <h4 className="ms-migration-title">
+                                                <Icons.Wrench size={14} /> Системийн хэрэгслүүд
+                                            </h4>
+                                            <div className="ms-migration-grid">
+                                                <div className="ms-migration-card warning">
+                                                    <div className="ms-mig-header">
+                                                        <Icons.AlertTriangle size={16} />
+                                                        <span>V1-V4: App Store Migration</span>
+                                                    </div>
+                                                    <p>Хуучин бизнесүүдийг шинэ App Store бүтэц рүү хөрвүүлэх.</p>
+                                                    <button
+                                                        className="btn btn-outline btn-xs"
+                                                        onClick={handleMigrateClick}
+                                                        disabled={migrating}
+                                                    >
+                                                        {migrating ? <Loader2 className="animate-spin" size={12} /> : 'Шилжүүлэг (V4)'}
+                                                    </button>
+                                                </div>
+                                                <div className="ms-migration-card primary">
+                                                    <div className="ms-mig-header">
+                                                        <Icons.Rocket size={16} />
+                                                        <span>V5: Subcollection Migration</span>
+                                                    </div>
+                                                    <p>200 модулийн даацтай болгохын тулд тохиргоог Subcollection руу шилжүүлэх.</p>
+                                                    <button
+                                                        className="btn btn-primary btn-xs"
+                                                        onClick={() => {
+                                                            if (!confirm('V5: MODULE SETTINGS MIGRATION\n\nБүх бизнесийн тохиргоог sub-collection руу шилжүүлэх үү?')) return;
+                                                            setPendingAction(() => handleMigrateV5);
+                                                            setShowSecurityModal(true);
+                                                        }}
+                                                        disabled={migrating}
+                                                    >
+                                                        {migrating ? <Loader2 className="animate-spin" size={12} /> : 'Шилжүүлэг (V5)'}
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
                                 );
                             })}
-
-                            <div className="card migration-card no-padding" style={{ marginTop: '32px', borderStyle: 'dashed', background: 'transparent' }}>
-                                <div className="migration-content" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', padding: '24px' }}>
-                                    <div style={{ paddingRight: '24px', borderRight: '1px solid var(--border-primary)' }}>
-                                        <h3 className="text-sm font-bold text-danger mb-2">🚨 V1-V4: App Store Migration</h3>
-                                        <p className="text-secondary text-[11px] mb-4">
-                                            Хуучин бизнесүүдийг шинэ App Store (activeModules) бүтэц рүү хөрвүүлэх.
-                                        </p>
-                                        <button
-                                            className="btn btn-outline btn-xs"
-                                            onClick={handleMigrateClick}
-                                            disabled={migrating}
-                                        >
-                                            {migrating ? <Loader2 className="animate-spin" size={12} /> : 'Шилжүүлэг (V4)'}
-                                        </button>
-                                    </div>
-                                    <div>
-                                        <h3 className="text-sm font-bold text-primary mb-2">🚀 V5: Subcollection Migration</h3>
-                                        <p className="text-secondary text-[11px] mb-4">
-                                            200 модулийн даацтай болгохын тулд тохиргоог Subcollection руу шилжүүлэх.
-                                        </p>
-                                        <button
-                                            className="btn btn-primary btn-xs"
-                                            onClick={() => {
-                                                if (!confirm('V5: MODULE SETTINGS MIGRATION\n\nБүх бизнесийн тохиргоог sub-collection руу шилжүүлэх үү?')) return;
-                                                setPendingAction(() => handleMigrateV5);
-                                                setShowSecurityModal(true);
-                                            }}
-                                            disabled={migrating}
-                                        >
-                                            {migrating ? <Loader2 className="animate-spin" size={12} /> : 'Шилжүүлэг (V5)'}
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
                         </div>
                     )}
                 </main>
