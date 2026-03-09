@@ -22,9 +22,10 @@ export default defineConfig({
         runtimeCaching: [
           {
             urlPattern: /\.(?:js|css)$/,
-            handler: 'StaleWhileRevalidate',
+            handler: 'NetworkFirst',
             options: {
               cacheName: 'static-assets',
+              networkTimeoutSeconds: 5,
               expiration: {
                 maxEntries: 200,
                 maxAgeSeconds: 60 * 60 * 24, // 1 day
