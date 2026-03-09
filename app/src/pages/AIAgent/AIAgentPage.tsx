@@ -64,7 +64,7 @@ export const AIAgentPage: React.FC = () => {
             if (loaded < 3) return;
 
             const activeOrders = orders.filter(o => o.status !== 'cancelled');
-            const totalRevenue = activeOrders.reduce((s, o) => s + (o.totalAmount || 0), 0);
+            const totalRevenue = activeOrders.reduce((s, o) => s + (o.financials?.totalAmount || 0), 0);
             const today = new Date().toDateString();
             const recentOrdersToday = orders.filter(o => {
                 const d = o.createdAt instanceof Date ? o.createdAt : new Date();
@@ -72,14 +72,14 @@ export const AIAgentPage: React.FC = () => {
             }).length;
             const pendingOrders = orders.filter(o => o.status === 'pending' || o.status === 'confirmed').length;
             const lowStockProducts = products
-                .filter(p => !p.isPreorder && (p.stock ?? 0) <= 5 && (p.stock ?? 0) >= 0)
+                .filter(p => p.productType !== 'preorder' && (p.stock?.quantity ?? 0) <= 5 && (p.stock?.quantity ?? 0) >= 0)
                 .slice(0, 10)
-                .map(p => `${p.name} (${p.stock ?? 0}ш)`);
+                .map(p => `${p.name} (${p.stock?.quantity ?? 0}ш)`);
 
             const productSales: Record<string, number> = {};
             orders.forEach(o => {
                 o.items?.forEach(item => {
-                    const name = item.productName || '';
+                    const name = item.name || '';
                     if (name) productSales[name] = (productSales[name] || 0) + (item.quantity || 1);
                 });
             });
@@ -88,7 +88,7 @@ export const AIAgentPage: React.FC = () => {
                 .slice(0, 5)
                 .map(([name, qty]) => `${name} (${qty}ш)`);
 
-            const categories = [...new Set(products.map(p => p.category).filter(Boolean))] as string[];
+            const categories = [...new Set(products.map(p => p.categoryName).filter(Boolean))] as string[];
 
             setBizContext({
                 businessName: business.name,
