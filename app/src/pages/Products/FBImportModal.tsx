@@ -250,7 +250,7 @@ export function FBImportModal({ onClose }: FBImportModalProps) {
                         lowStockThreshold: 3,
                         trackInventory: true
                     },
-                    variations: product.variations as any,
+                    variations: (product.variations && product.variations.length > 0) ? product.variations as any : [],
                     unitType: 'ш',
                     isActive: true,
                     isHidden: importAsHidden,
