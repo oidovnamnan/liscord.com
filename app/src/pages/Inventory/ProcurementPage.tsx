@@ -5,6 +5,8 @@ import { procurementService } from '../../services/db';
 import { format } from 'date-fns';
 import { GenericCrudModal, type CrudField } from '../../components/common/GenericCrudModal';
 import { HubLayout } from '../../components/common/HubLayout';
+import './InventoryPage.css';
+import '../Orders/OrdersPage.css';
 import './ProcurementPage.css';
 
 const PO_FIELDS: CrudField[] = [
