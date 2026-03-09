@@ -128,10 +128,24 @@ export function ProcurementPage() {
                         <input className="inv-search-input" placeholder="Нийлүүлэгч эсвэл PO кодоор хайх..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
                     </div>
                     <select
-                        className="inv-chip"
                         value={filterStatus}
                         onChange={(e) => setFilterStatus(e.target.value)}
-                        style={{ minWidth: 140, cursor: 'pointer', padding: '0 16px', appearance: 'auto' }}
+                        style={{
+                            minWidth: 140,
+                            height: 46,
+                            cursor: 'pointer',
+                            padding: '0 40px 0 16px',
+                            fontFamily: 'inherit',
+                            fontSize: '0.78rem',
+                            fontWeight: 700,
+                            color: 'var(--text-secondary)',
+                            background: `var(--surface-2) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2.5'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") no-repeat right 14px center`,
+                            border: '1.5px solid var(--border-primary)',
+                            borderRadius: 14,
+                            appearance: 'none' as const,
+                            WebkitAppearance: 'none' as const,
+                            outline: 'none',
+                        }}
                     >
                         <option value="all">Бүх төлөв</option><option value="draft">Ноорог</option><option value="pending">Хүлээгдэж буй</option><option value="received">Хүлээж авсан</option>
                     </select>
