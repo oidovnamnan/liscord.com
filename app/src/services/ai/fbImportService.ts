@@ -300,10 +300,25 @@ export async function extractProductsFromPosts(
     onProgress?: (current: number, total: number, product?: FBExtractedProduct) => void
 ): Promise<FBExtractedProduct[]> {
     const products: FBExtractedProduct[] = [];
+    const DELAY_MS = 3500; // 3.5s between requests to stay within free tier limits (~17/min)
 
     for (let i = 0; i < posts.length; i++) {
         onProgress?.(i + 1, posts.length);
-        const product = await extractProductFromPost(posts[i], apiKey);
+
+        // Rate limit delay (skip for first request)
+        if (i > 0) {
+            await new Promise(r => setTimeout(r, DELAY_MS));
+        }
+
+        let product = await extractProductFromPost(posts[i], apiKey);
+
+        // If rate limited (429), wait longer and retry once
+        if (!product && posts[i].message && posts[i].message!.length > 3) {
+            // Check if it was a rate limit by trying again after longer wait
+            await new Promise(r => setTimeout(r, 15000)); // wait 15s
+            product = await extractProductFromPost(posts[i], apiKey);
+        }
+
         if (product) {
             products.push(product);
             onProgress?.(i + 1, posts.length, product);
