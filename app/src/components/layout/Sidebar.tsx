@@ -226,10 +226,8 @@ export function Sidebar() {
                         // eslint-disable-next-line @typescript-eslint/no-explicit-any
                         const Icon = (Icons as any)[mod.icon] || Icons.Box;
 
-                        // Check if any module in the same hub is active
-                        const hubModules = mod.hubId ? LISCORD_MODULES.filter(m => m.hubId === mod.hubId) : [];
-                        const isAnyHubModuleActive = hubModules.some(m => location.pathname.startsWith(m.route));
-                        const isActive = isAnyHubModuleActive || location.pathname.startsWith(mod.route);
+                        // Only highlight the module whose route matches the current path
+                        const isActive = location.pathname.startsWith(mod.route);
 
                         // Better label for main inventory hub module
                         let displayName = mod.name;
