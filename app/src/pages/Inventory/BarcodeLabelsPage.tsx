@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
-import { Header } from '../../components/layout/Header';
 import { HubLayout } from '../../components/common/HubLayout';
-import { Tag, Printer } from 'lucide-react';
+import { Tag, Hash, Layers, Printer } from 'lucide-react';
 import { useBusinessStore } from '../../store';
 import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
 import { db } from '../../services/firebase';
 import { GenericCrudModal, type CrudField } from '../../components/common/GenericCrudModal';
+import './InventoryPage.css';
 
 const LABEL_FIELDS: CrudField[] = [
     { name: 'productName', label: 'Бүтээгдэхүүн', type: 'text', required: true },
@@ -39,10 +39,13 @@ export function BarcodeLabelsPage() {
         return () => unsub();
     }, [business?.id]);
 
+    const totalQty = items.reduce((sum, i) => sum + (i.quantity || 1), 0);
+    const uniqueProducts = new Set(items.map(i => i.productName)).size;
+
     return (
         <HubLayout hubId="inventory-hub">
             <div className="page animate-fade-in">
-                <div className="page-hero" style={{ marginBottom: 24 }}>
+                <div className="page-hero" style={{ marginBottom: 8 }}>
                     <div className="page-hero-left">
                         <div className="page-hero-icon">
                             <Tag size={24} />
@@ -56,6 +59,47 @@ export function BarcodeLabelsPage() {
                         + Шошго
                     </button>
                 </div>
+
+                {/* Stats Grid */}
+                <div className="inv-stats-grid" style={{ marginBottom: 24 }}>
+                    <div className="inv-stat-card">
+                        <div className="inv-stat-content">
+                            <h4>Нийт шошго</h4>
+                            <div className="inv-stat-value">{items.length}</div>
+                        </div>
+                        <div className="inv-stat-icon icon-primary">
+                            <Tag size={24} />
+                        </div>
+                    </div>
+                    <div className="inv-stat-card">
+                        <div className="inv-stat-content">
+                            <h4>Бүтээгдэхүүн</h4>
+                            <div className="inv-stat-value">{uniqueProducts}</div>
+                        </div>
+                        <div className="inv-stat-icon icon-green">
+                            <Layers size={24} />
+                        </div>
+                    </div>
+                    <div className="inv-stat-card">
+                        <div className="inv-stat-content">
+                            <h4>Хэвлэх тоо</h4>
+                            <div className="inv-stat-value">{totalQty}</div>
+                        </div>
+                        <div className="inv-stat-icon icon-red">
+                            <Printer size={24} />
+                        </div>
+                    </div>
+                    <div className="inv-stat-card">
+                        <div className="inv-stat-content">
+                            <h4>Баркодтой</h4>
+                            <div className="inv-stat-value">{items.filter(i => i.barcode).length}</div>
+                        </div>
+                        <div className="inv-stat-icon icon-primary">
+                            <Hash size={24} />
+                        </div>
+                    </div>
+                </div>
+
                 <div className="card" style={{ padding: 0 }}>
                     {loading ? <div style={{ padding: 48, textAlign: 'center', color: 'var(--text-muted)' }}>Ачаалж байна...</div> : (
                         <table className="table"><thead><tr><th>Бүтээгдэхүүн</th><th>Баркод</th><th>Үнэ</th><th>Тоо</th><th>Хэмжээ</th></tr></thead>
