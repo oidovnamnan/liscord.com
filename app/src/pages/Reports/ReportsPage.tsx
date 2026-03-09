@@ -136,7 +136,7 @@ export function ReportsPage() {
                 </div>
 
                 {/* Premium Stat Cards */}
-                <div className="inv-stats-grid" style={{ marginBottom: 24 }}>
+                <div className="inv-stats-grid" style={{ marginTop: 0, marginBottom: 16 }}>
                     <div className="inv-stat-card">
                         <div className="inv-stat-content">
                             <h4>Нийт орлого</h4>
