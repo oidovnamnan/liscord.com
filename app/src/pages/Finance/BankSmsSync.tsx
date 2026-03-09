@@ -228,7 +228,7 @@ export function BankSmsSyncPage() {
             ) : filteredLogs.length > 0 ? (
                 <>
                     {/* Table (desktop) */}
-                    <div className="sms-table-wrap">
+                    <div className="sms-table-wrap" style={{ marginTop: 24 }}>
                         <table className="sms-table">
                             <thead>
                                 <tr>
