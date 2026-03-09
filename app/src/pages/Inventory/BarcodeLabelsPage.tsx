@@ -1,10 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { HubLayout } from '../../components/common/HubLayout';
 import { Tag, Hash, Layers, Printer, Eye, Download, Check, Maximize2 } from 'lucide-react';
 import { useBusinessStore } from '../../store';
 import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
 import { db } from '../../services/firebase';
 import { GenericCrudModal, type CrudField } from '../../components/common/GenericCrudModal';
+import JsBarcode from 'jsbarcode';
 import './BarcodeLabelsPage.css';
 
 // ═══ Label Templates ═══
@@ -170,42 +171,30 @@ export function BarcodeLabelsPage() {
         setTimeout(() => printWindow.print(), 300);
     };
 
-    // Generate barcode bars from code string
-    const generateBarcodeHtml = (code: string, height = 40, width = 160) => {
-        // Create pseudo-random bar pattern from the barcode string
-        const bars: string[] = [];
-        const charCodes = (code || '0000000').split('').map(c => c.charCodeAt(0));
-
-        // Start guard
-        bars.push(`<div class="bar" style="width:2px;height:${height}px"></div>`);
-        bars.push(`<div class="space" style="width:1px;height:${height}px"></div>`);
-        bars.push(`<div class="bar" style="width:2px;height:${height}px"></div>`);
-        bars.push(`<div class="space" style="width:2px;height:${height}px"></div>`);
-
-        // Data bars
-        for (const cc of charCodes) {
-            const w1 = (cc % 3) + 1;
-            const w2 = (cc % 2) + 1;
-            const w3 = ((cc >> 1) % 3) + 1;
-            const w4 = ((cc >> 2) % 2) + 1;
-            bars.push(`<div class="bar" style="width:${w1}px;height:${height}px"></div>`);
-            bars.push(`<div class="space" style="width:${w2}px;height:${height}px"></div>`);
-            bars.push(`<div class="bar" style="width:${w3}px;height:${height}px"></div>`);
-            bars.push(`<div class="space" style="width:${w4}px;height:${height}px"></div>`);
+    // ═══ Generate real barcode SVG string using JsBarcode ═══
+    const generateBarcodeSvg = useCallback((code: string, opts?: { height?: number; width?: number; displayValue?: boolean; fontSize?: number }) => {
+        try {
+            const svgNs = 'http://www.w3.org/2000/svg';
+            const svg = document.createElementNS(svgNs, 'svg');
+            JsBarcode(svg, code || '0000', {
+                format: 'CODE128',
+                width: opts?.width || 2,
+                height: opts?.height || 40,
+                displayValue: opts?.displayValue ?? false,
+                fontSize: opts?.fontSize || 12,
+                margin: 0,
+                background: 'transparent',
+            });
+            return svg.outerHTML;
+        } catch {
+            // Fallback if code is invalid
+            return `<div style="font-family:monospace;font-size:10px;color:#999;padding:4px">${code || 'N/A'}</div>`;
         }
+    }, []);
 
-        // End guard
-        bars.push(`<div class="bar" style="width:2px;height:${height}px"></div>`);
-        bars.push(`<div class="space" style="width:1px;height:${height}px"></div>`);
-        bars.push(`<div class="bar" style="width:2px;height:${height}px"></div>`);
-
-        return `<div class="barcode-bars" style="height:${height}px;max-width:${width}px">${bars.join('')}</div>`;
-    };
-
-    // Generate QR-like visual
+    // Generate QR-like visual (placeholder — real QR would need a QR library)
     const generateQrHtml = () => {
         const cells: string[] = [];
-        // Simple pseudo-QR pattern
         const pattern = [1, 1, 1, 0, 0, 1, 1, 1, 1, 0, 1, 0, 1, 1, 0, 1, 1, 1, 1, 0, 1, 0, 1, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 1, 0, 0, 1, 0, 1, 1, 0, 0, 1, 0, 0, 1, 1, 1, 0, 1, 1, 0, 1, 0, 1, 1, 1, 1, 0, 0, 1, 1, 1];
         for (const p of pattern) {
             cells.push(`<div class="${p ? 'qr-cell' : 'qr-empty'}"></div>`);
@@ -218,7 +207,7 @@ export function BarcodeLabelsPage() {
         const name = item.productName || 'Бүтээгдэхүүн';
         const code = item.barcode || '';
         const price = item.price ? Number(item.price).toLocaleString() + '₮' : '';
-        const barcodeHtml = generateBarcodeHtml(code);
+        const barcodeSvg = generateBarcodeSvg(code);
 
         switch (template) {
             case 'price-tag':
@@ -229,7 +218,7 @@ export function BarcodeLabelsPage() {
                         <div class="barcode-code" style="text-align:left;margin-top:8px">${code}</div>
                     </div>
                     <div class="price-tag-right">
-                        ${generateBarcodeHtml(code, 60, 60)}
+                        ${generateBarcodeSvg(code, { height: 60, width: 1 })}
                     </div>
                 </div>`;
             case 'qr-label':
@@ -243,13 +232,13 @@ export function BarcodeLabelsPage() {
                 return `<div class="label label-shipping">
                     <div class="ship-header">ХҮРГЭЛТИЙН ШОШГО</div>
                     <div class="product-name" style="font-size:14px;margin-bottom:12px">${name}</div>
-                    ${generateBarcodeHtml(code, 50, 280)}
+                    ${generateBarcodeSvg(code, { height: 50, width: 2 })}
                     <div class="barcode-code" style="margin-top:6px;font-size:11px">${code}</div>
                     ${price ? `<div class="price-text" style="margin-top:8px">${price}</div>` : ''}
                 </div>`;
             case 'minimal':
                 return `<div class="label label-minimal">
-                    ${generateBarcodeHtml(code, 35, 120)}
+                    ${generateBarcodeSvg(code, { height: 35, width: 1.5 })}
                     <div class="barcode-code" style="margin-top:4px;font-size:8px">${code}</div>
                 </div>`;
             case 'jewelry':
@@ -260,11 +249,33 @@ export function BarcodeLabelsPage() {
             default: // standard
                 return `<div class="label label-standard">
                     <div class="product-name">${name}</div>
-                    ${barcodeHtml}
+                    ${barcodeSvg}
                     <div class="barcode-code" style="margin-top:4px">${code}</div>
                     ${price ? `<div class="price-text" style="margin-top:2px">${price}</div>` : ''}
                 </div>`;
         }
+    };
+
+    // ═══ Barcode SVG Preview Component (React) ═══
+    const BarcodeSvgPreview = ({ code, height = 40, barWidth = 2, style }: { code: string; height?: number; barWidth?: number; style?: React.CSSProperties }) => {
+        const svgRef = useRef<SVGSVGElement>(null);
+        useEffect(() => {
+            if (svgRef.current && code) {
+                try {
+                    JsBarcode(svgRef.current, code, {
+                        format: 'CODE128',
+                        width: barWidth,
+                        height,
+                        displayValue: false,
+                        margin: 0,
+                        background: 'transparent',
+                    });
+                } catch {
+                    // Invalid barcode
+                }
+            }
+        }, [code, height, barWidth]);
+        return <svg ref={svgRef} style={style} />;
     };
 
     // ═══ Render label preview for template cards (React JSX) ═══
@@ -284,7 +295,7 @@ export function BarcodeLabelsPage() {
                             <div style={{ fontSize: 22 * scale, fontWeight: 900, color: '#111' }}>{price}</div>
                             <div style={{ fontSize: 7 * scale, color: '#999', fontFamily: 'monospace', marginTop: 4 }}>{code}</div>
                         </div>
-                        <div className="barcode-visual" style={{ width: 40 * scale, height: 60 * scale, flexShrink: 0 }} />
+                        <BarcodeSvgPreview code={code} height={Math.round(60 * scale)} barWidth={1} style={{ flexShrink: 0, maxWidth: 50 * scale }} />
                     </div>
                 );
             case 'qr-label':
@@ -300,14 +311,14 @@ export function BarcodeLabelsPage() {
                     <div className="label-mockup shipping-mockup" style={{ width: 220 * scale, height: 140 * scale, padding: 12 * scale }}>
                         <div style={{ fontSize: 7 * scale, fontWeight: 800, color: '#999', letterSpacing: 2, textTransform: 'uppercase' }}>ХҮРГЭЛТ</div>
                         <div style={{ fontSize: 10 * scale, fontWeight: 800, color: '#222', marginTop: 6 }}>{name}</div>
-                        <div className="barcode-visual" style={{ width: '80%', height: 30 * scale, marginTop: 8 }} />
+                        <BarcodeSvgPreview code={code} height={Math.round(30 * scale)} barWidth={1.5} style={{ width: '80%', marginTop: 8 }} />
                         <div style={{ fontSize: 8 * scale, fontFamily: 'monospace', color: '#555', marginTop: 4 }}>{code}</div>
                     </div>
                 );
             case 'minimal':
                 return (
                     <div className="label-mockup" style={{ width: 120 * scale, height: 70 * scale, padding: 8 }}>
-                        <div className="barcode-visual" style={{ width: '100%', height: 35 * scale }} />
+                        <BarcodeSvgPreview code={code} height={Math.round(35 * scale)} barWidth={1} style={{ width: '100%' }} />
                         <div style={{ fontSize: 7 * scale, fontFamily: 'monospace', color: '#333', marginTop: 4, letterSpacing: 1.5 }}>{code}</div>
                     </div>
                 );
@@ -322,7 +333,7 @@ export function BarcodeLabelsPage() {
                 return (
                     <div className="label-mockup" style={{ width: 200 * scale, height: 130 * scale }}>
                         <div className="mockup-text" style={{ fontSize: 9 * scale }}>{name}</div>
-                        <div className="barcode-visual" style={{ width: '90%', height: 50 * scale, marginTop: 8 }} />
+                        <BarcodeSvgPreview code={code} height={Math.round(50 * scale)} barWidth={2} style={{ width: '90%', marginTop: 8 }} />
                         <div className="mockup-text-sm" style={{ fontSize: 7 * scale, marginTop: 6 }}>{code} · {price}</div>
                     </div>
                 );
@@ -378,7 +389,7 @@ export function BarcodeLabelsPage() {
                     {LABEL_TEMPLATES.map(tmpl => (
                         <div
                             key={tmpl.id}
-                            className={`template-card-premium ${selectedTemplate === tmpl.id ? 'selected' : ''}`}
+                            className={`template - card - premium ${selectedTemplate === tmpl.id ? 'selected' : ''} `}
                             onClick={() => setSelectedTemplate(tmpl.id)}
                             style={selectedTemplate === tmpl.id ? { borderColor: 'var(--primary)', boxShadow: '0 0 0 2px var(--primary-light)' } : {}}
                         >
