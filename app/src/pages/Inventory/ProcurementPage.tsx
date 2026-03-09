@@ -68,7 +68,7 @@ export function ProcurementPage() {
 
     return (
         <HubLayout hubId="inventory-hub">
-            <div className="procurement-page animate-fade-in">
+            <div className="procurement-page animate-fade-in" style={{ padding: '0 4px' }}>
                 <div className="page-hero" style={{ marginBottom: 8 }}>
                     <div className="page-hero-left">
                         <div className="page-hero-icon">
@@ -123,7 +123,7 @@ export function ProcurementPage() {
                     </div>
                 </div>
 
-                <div className="orders-toolbar">
+                <div className="orders-toolbar" style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                     <div className="orders-search">
                         <Search size={18} className="orders-search-icon" />
                         <input className="input orders-search-input" placeholder="Нийлүүлэгч эсвэл PO кодоор хайх..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
