@@ -205,12 +205,22 @@ export function SettingsPage() {
                 }
             }
 
-            // Update business core fields
+            // Update business core fields + storefront settings on main doc
             await businessService.updateBusiness(business.id, {
                 slug: slug !== undefined ? (slug || business.slug || '') : (business.slug || ''),
+                settings: {
+                    ...business.settings,
+                    storefront: {
+                        ...business.settings?.storefront,
+                        enabled: enabled ?? false,
+                        showFooter: showFooter ?? true,
+                        theme: newTheme || business.settings?.storefront?.theme || 'minimal',
+                        name: storefrontName !== undefined ? storefrontName : (business.settings?.storefront?.name || '')
+                    }
+                }
             });
 
-            // Update storefront module settings (V5 subcollection)
+            // Also sync to V5 subcollection for backwards compat
             const sfSettings = {
                 ...business.settings?.storefront,
                 enabled: enabled ?? false,
