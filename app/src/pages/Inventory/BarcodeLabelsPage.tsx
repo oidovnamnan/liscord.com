@@ -8,51 +8,212 @@ import { GenericCrudModal, type CrudField } from '../../components/common/Generi
 import JsBarcode from 'jsbarcode';
 import './BarcodeLabelsPage.css';
 
-// ═══ Label Templates ═══
+// ═══ Label Templates — Industry Standard Sizes ═══
 const LABEL_TEMPLATES = [
+    // ── Retail & Price Tags ──
     {
         id: 'standard',
         name: 'Стандарт шошго',
-        description: 'Бүтээгдэхүүний нэр, баркод, үнэтэй энгийн загвар',
+        description: 'Бүтээгдэхүүний нэр, баркод, үнэ — хамгийн түгээмэл',
         size: '50×25мм',
         type: 'barcode',
+        category: 'retail',
     },
     {
         id: 'price-tag',
-        name: 'Үнийн шошго',
+        name: 'Үнийн шошго (Том)',
         description: 'Үнэ тод харагдах том загвар, дэлгүүрийн тавиурт',
         size: '100×38мм',
         type: 'price',
+        category: 'retail',
     },
     {
-        id: 'qr-label',
-        name: 'QR код шошго',
-        description: 'QR код + мэдээлэл, бүтээгдэхүүний дэлгэрэнгүй',
-        size: '50×50мм',
-        type: 'qr',
+        id: 'price-tag-small',
+        name: 'Үнийн шошго (Жижиг)',
+        description: 'Жижиг тавиурын үнийн шошго',
+        size: '60×30мм',
+        type: 'price',
+        category: 'retail',
     },
+    {
+        id: 'shelf-label',
+        name: 'Тавиурын шошго',
+        description: 'Дэлгүүрийн тавиурт зориулсан нарийн загвар',
+        size: '105×30мм',
+        type: 'barcode',
+        category: 'retail',
+    },
+    {
+        id: 'hang-tag',
+        name: 'Өлгүүрийн шошго',
+        description: 'Хувцас, бүтээгдэхүүнд өлгөх загвар',
+        size: '40×80мм',
+        type: 'barcode',
+        category: 'retail',
+    },
+    // ── Shipping & Logistics ──
     {
         id: 'shipping',
         name: 'Хүргэлтийн шошго',
-        description: 'Хүргэлтийн хаяг, захиалгын дугаар, баркод',
+        description: 'Хаяг, захиалгын дугаар, баркод — хүргэлтэнд',
+        size: '100×150мм',
+        type: 'shipping',
+        category: 'logistics',
+    },
+    {
+        id: 'shipping-a6',
+        name: 'Хүргэлтийн шошго (A6)',
+        description: 'A6 хэмжээний том хүргэлтийн шошго',
+        size: '105×148мм',
+        type: 'shipping',
+        category: 'logistics',
+    },
+    {
+        id: 'packing-slip',
+        name: 'Савлалтын шошго',
+        description: 'Савлалтын хайрцагны шошго,  агуулга жагсаалт',
         size: '100×60мм',
         type: 'shipping',
+        category: 'logistics',
     },
+    {
+        id: 'pallet-label',
+        name: 'Паллет / хайрцаг шошго',
+        description: 'Том хайрцаг, паллетэнд зориулсан том шошго',
+        size: '105×210мм',
+        type: 'shipping',
+        category: 'logistics',
+    },
+    // ── Barcode Only ──
     {
         id: 'minimal',
-        name: 'Энгийн баркод',
-        description: 'Зөвхөн баркод, код — хамгийн бага зайн загвар',
+        name: 'Энгийн баркод (Жижиг)',
+        description: 'Зөвхөн баркод — хамгийн бага зайн загвар',
         size: '30×20мм',
         type: 'barcode-only',
+        category: 'barcode',
     },
     {
+        id: 'barcode-medium',
+        name: 'Энгийн баркод (Дунд)',
+        description: 'Баркод + нэр, дунд хэмжээний загвар',
+        size: '50×25мм',
+        type: 'barcode-only',
+        category: 'barcode',
+    },
+    {
+        id: 'barcode-large',
+        name: 'Энгийн баркод (Том)',
+        description: 'Том баркод, алсаас сканнердах',
+        size: '80×40мм',
+        type: 'barcode-only',
+        category: 'barcode',
+    },
+    // ── QR Code ──
+    {
+        id: 'qr-label',
+        name: 'QR код шошго',
+        description: 'QR код + мэдээлэл, сканнердаж дэлгэрэнгүй',
+        size: '50×50мм',
+        type: 'qr',
+        category: 'qr',
+    },
+    {
+        id: 'qr-price',
+        name: 'QR + Үнийн шошго',
+        description: 'QR код + үнэ + баркод нэг шошгонд',
+        size: '60×40мм',
+        type: 'qr',
+        category: 'qr',
+    },
+    // ── Specialty ──
+    {
         id: 'jewelry',
-        name: 'Үнэ засах шошго',
-        description: 'Эрдэнийн чулуу, үнэт зүйлсийн загвар',
+        name: 'Үнэт эдлэлийн шошго',
+        description: 'Эрдэнийн чулуу, цаг, үнэт зүйлсэд',
         size: '22×10мм',
         type: 'mini',
+        category: 'specialty',
+    },
+    {
+        id: 'food-label',
+        name: 'Хүнсний шошго',
+        description: 'Хүнсний бүтээгдэхүүн — нэр,  үнэ, хадгалах хугацаа',
+        size: '60×40мм',
+        type: 'barcode',
+        category: 'specialty',
+    },
+    {
+        id: 'cosmetic-label',
+        name: 'Гоо сайхан шошго',
+        description: 'Гоо сайхны бүтээгдэхүүнд, нэр + баркод',
+        size: '50×30мм',
+        type: 'barcode',
+        category: 'specialty',
+    },
+    {
+        id: 'cable-flag',
+        name: 'Кабелийн шошго',
+        description: 'Утас, кабельд ороох загвар',
+        size: '25×60мм',
+        type: 'barcode',
+        category: 'specialty',
+    },
+    {
+        id: 'round-label',
+        name: 'Дугуй шошго',
+        description: 'Лонх, сав, бүтээгдэхүүний тэмдэг',
+        size: 'Ø40мм',
+        type: 'barcode',
+        category: 'specialty',
+    },
+    // ── Dymo / Zebra Compatible ──
+    {
+        id: 'dymo-standard',
+        name: 'Dymo стандарт (11354)',
+        description: 'Dymo LabelWriter-д тохирсон хэмжээ',
+        size: '57×32мм',
+        type: 'barcode',
+        category: 'printer',
+    },
+    {
+        id: 'dymo-large',
+        name: 'Dymo том (11356)',
+        description: 'Dymo LabelWriter том шошго',
+        size: '89×41мм',
+        type: 'barcode',
+        category: 'printer',
+    },
+    {
+        id: 'zebra-small',
+        name: 'Zebra жижиг (2"×1")',
+        description: 'Zebra thermal printer — жижиг',
+        size: '51×25мм',
+        type: 'barcode',
+        category: 'printer',
+    },
+    {
+        id: 'zebra-medium',
+        name: 'Zebra дунд (4"×2")',
+        description: 'Zebra thermal printer — дунд',
+        size: '102×51мм',
+        type: 'barcode',
+        category: 'printer',
+    },
+    {
+        id: 'zebra-shipping',
+        name: 'Zebra хүргэлт (4"×6")',
+        description: 'Zebra thermal printer — хүргэлтийн шошго',
+        size: '102×152мм',
+        type: 'shipping',
+        category: 'printer',
     },
 ];
+
+const TEMPLATE_OPTIONS = LABEL_TEMPLATES.map(t => ({
+    value: t.id,
+    label: `${t.name} (${t.size})`,
+}));
 
 const LABEL_FIELDS: CrudField[] = [
     { name: 'productName', label: 'Бүтээгдэхүүн', type: 'text', required: true },
@@ -60,9 +221,7 @@ const LABEL_FIELDS: CrudField[] = [
     { name: 'price', label: 'Үнэ', type: 'currency' },
     { name: 'quantity', label: 'Хэвлэх тоо', type: 'number', defaultValue: '1' },
     {
-        name: 'size', label: 'Хэмжээ', type: 'select', defaultValue: 'medium', options: [
-            { value: 'small', label: 'Жижиг (30x20)' }, { value: 'medium', label: 'Дунд (50x25)' }, { value: 'large', label: 'Том (100x38)' },
-        ]
+        name: 'template', label: 'Загвар', type: 'select', defaultValue: 'standard', span: 2, options: TEMPLATE_OPTIONS,
     },
 ];
 
@@ -434,7 +593,7 @@ export function BarcodeLabelsPage() {
                         {loading ? <div style={{ padding: 48, textAlign: 'center', color: 'var(--text-muted)' }}>Ачаалж байна...</div> : (
                             <table className="table">
                                 <thead><tr>
-                                    <th>Бүтээгдэхүүн</th><th>Баркод</th><th>Үнэ</th><th>Тоо</th><th>Хэмжээ</th><th style={{ width: 80 }}>Үйлдэл</th>
+                                    <th>Бүтээгдэхүүн</th><th>Баркод</th><th>Үнэ</th><th>Тоо</th><th>Загвар</th><th style={{ width: 80 }}>Үйлдэл</th>
                                 </tr></thead>
                                 <tbody>
                                     {items.length === 0 ? (
@@ -445,7 +604,7 @@ export function BarcodeLabelsPage() {
                                             <td style={{ fontFamily: 'monospace' }}>{i.barcode}</td>
                                             <td>{i.price ? i.price.toLocaleString() + ' ₮' : '-'}</td>
                                             <td>{i.quantity || 1}</td>
-                                            <td>{i.size === 'small' ? 'Жижиг' : i.size === 'large' ? 'Том' : 'Дунд'}</td>
+                                            <td>{LABEL_TEMPLATES.find(t => t.id === (i.template || 'standard'))?.name || i.template || 'Стандарт'}</td>
                                             <td>
                                                 <div style={{ display: 'flex', gap: 4 }}>
                                                     <button className="btn-download" style={{ padding: '6px 10px', borderRadius: 10, fontSize: '0.7rem' }} onClick={(e) => { e.stopPropagation(); setPreviewItem(previewItem?.id === i.id ? null : i); }}>
