@@ -125,12 +125,29 @@ export const dashboardService = {
         if (!bizDoc.exists()) return null;
 
         const data = bizDoc.data() as Business;
+
+        // Count directly from collections for accuracy
+        const [ordersSnap, productsSnap, customersSnap] = await Promise.all([
+            getDocs(query(collection(db, 'businesses', bizId, 'orders'), where('isDeleted', '==', false))),
+            getDocs(collection(db, 'businesses', bizId, 'products')),
+            getDocs(collection(db, 'businesses', bizId, 'customers')),
+        ]);
+
+        // Sum revenue from orders
+        let totalRevenue = 0;
+        ordersSnap.docs.forEach(d => {
+            const order = d.data();
+            if (order.status !== 'cancelled') {
+                totalRevenue += order.financials?.totalAmount || order.totalAmount || 0;
+            }
+        });
+
         const stats: BusinessStats = {
-            totalOrders: data.stats.totalOrders || 0,
-            totalRevenue: data.stats.totalRevenue || 0,
-            totalCustomers: data.stats.totalCustomers || 0,
-            totalProducts: data.stats.totalProducts || 0,
-            totalEmployees: data.stats.totalEmployees || 0,
+            totalOrders: ordersSnap.size,
+            totalRevenue,
+            totalCustomers: customersSnap.size,
+            totalProducts: productsSnap.size,
+            totalEmployees: data.stats?.totalEmployees || 0,
         };
 
         if (data.category === 'cargo') {
