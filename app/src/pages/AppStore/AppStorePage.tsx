@@ -203,8 +203,10 @@ export function AppStorePage() {
     const getFilteredModules = () => {
         return LISCORD_MODULES
             .filter(mod => {
-                // CRITICAL: Only show modules configured by SuperAdmin for this business category
-                if (!configuredModuleIds.includes(mod.id)) return false;
+                // Show modules configured by SuperAdmin OR already installed (activeModules)
+                const isConfigured = configuredModuleIds.includes(mod.id);
+                const isActive = activeMods.includes(mod.id);
+                if (!isConfigured && !isActive) return false;
 
                 const dynamic = appStoreConfig[mod.id];
                 const finalMod = dynamic ? { ...mod, ...dynamic } : mod;
@@ -427,14 +429,9 @@ export function AppStorePage() {
                                                                 {Math.round(installProgress)}%
                                                             </button>
                                                         ) : mod.isInstalled ? (
-                                                            <>
-                                                                <button className="as-btn open" onClick={() => navigate(mod.route)}>
-                                                                    <Icons.ExternalLink size={14} /> Нээх
-                                                                </button>
-                                                                <button className="as-btn remove" onClick={() => handleUninstallModule(mod.id)}>
-                                                                    <Trash2 size={14} />
-                                                                </button>
-                                                            </>
+                                                            <button className="as-btn open" onClick={() => navigate(mod.route)}>
+                                                                <Icons.ExternalLink size={14} /> Нээх
+                                                            </button>
                                                         ) : mod.isFree ? (
                                                             <button className="as-btn install" onClick={() => handleInstallModule(mod.id)}>
                                                                 <Download size={14} /> Суулгах
