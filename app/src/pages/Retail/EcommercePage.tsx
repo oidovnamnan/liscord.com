@@ -168,6 +168,36 @@ export function EcommercePage() {
                     </div>
                 </div>
 
+                {/* ═══ Quick Actions — Compact Row ═══ */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
+                    {[
+                        { icon: Palette, label: 'Дизайн', desc: 'Өнгө, фонт, layout', color: '#8b5cf6', tint: 'rgba(139,92,246,0.08)', cat: 'theme' },
+                        { icon: CreditCard, label: 'Төлбөр', desc: 'QPay, банк, карт', color: 'var(--accent-green)', tint: 'var(--green-tint)', cat: 'payment' },
+                        { icon: Truck, label: 'Хүргэлт', desc: 'Бүс, үнэ, нөхцөл', color: 'var(--accent-orange, #f59e0b)', tint: 'rgba(245,158,11,0.08)', cat: 'delivery' },
+                        { icon: Package, label: 'Бүтээгдэхүүн', desc: 'Харагдац, эрэмбэ', color: 'var(--primary)', tint: 'var(--primary-tint)', cat: 'general' },
+                    ].map((a, i) => (
+                        <button key={i} onClick={() => setCatFilter(catFilter === a.cat ? 'all' : a.cat)} style={{
+                            display: 'flex', alignItems: 'center', gap: 12,
+                            padding: '14px 16px', borderRadius: 14, cursor: 'pointer',
+                            background: catFilter === a.cat ? a.tint : 'var(--surface-1)',
+                            border: `1.5px solid ${catFilter === a.cat ? a.color : 'var(--border-primary)'}`,
+                            transition: 'all 0.2s', fontFamily: 'inherit', textAlign: 'left',
+                        }}>
+                            <div style={{
+                                width: 38, height: 38, borderRadius: 10, flexShrink: 0,
+                                background: a.tint, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                color: a.color,
+                            }}>
+                                <a.icon size={18} />
+                            </div>
+                            <div>
+                                <div style={{ fontSize: '0.82rem', fontWeight: 700, color: catFilter === a.cat ? a.color : 'var(--text-primary)' }}>{a.label}</div>
+                                <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginTop: 1 }}>{a.desc}</div>
+                            </div>
+                        </button>
+                    ))}
+                </div>
+
                 {/* ═══ Search & Filter ═══ */}
                 <div className="inv-toolbar">
                     <div className="inv-search-wrap">
