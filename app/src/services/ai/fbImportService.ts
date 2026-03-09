@@ -142,12 +142,12 @@ export function extractImagesFromPost(post: FBPost): string[] {
 
 export async function extractProductFromPost(post: FBPost, apiKey: string): Promise<FBExtractedProduct | null> {
     const message = post.message || '';
+    const images = extractImagesFromPost(post);
 
-    // Skip posts without meaningful text
-    if (!message || message.trim().length < 10) return null;
+    // Skip posts without any text AND no images
+    if ((!message || message.trim().length < 3) && images.length === 0) return null;
 
     const client = getClient(apiKey);
-    const images = extractImagesFromPost(post);
 
     const prompt = `
 Та Facebook page-ийн пост-оос бараа/бүтээгдэхүүний мэдээллийг задалж байна.
@@ -218,8 +218,29 @@ JSON ХАРИУ:
             isSelected: true,
             confidence: parsed.confidence || 50
         };
-    } catch (error) {
-        console.error('AI extraction error for post:', post.id, error);
+    } catch (error: any) {
+        console.warn('[FB Import] AI extraction failed for post:', post.id, error?.message || error);
+
+        // Fallback: if post has images and some text, create a basic product
+        if (images.length > 0 && message.length > 5) {
+            const priceMatch = message.match(/(\d[\d,.']+)\s*[₮₹$€¥]/)?.[1] || message.match(/[₮₹$€¥]\s*(\d[\d,.']+)/)?.[1];
+            const price = priceMatch ? Number(priceMatch.replace(/[,.'+]/g, '')) : 0;
+
+            return {
+                name: message.substring(0, 80).split('\n')[0] || 'Нэргүй бараа',
+                description: message.substring(0, 200),
+                salePrice: price,
+                costPrice: 0,
+                categoryName: 'Бусад',
+                images,
+                fbPostId: post.id,
+                fbPostUrl: `https://facebook.com/${post.id}`,
+                fbCreatedTime: new Date(post.created_time),
+                status: 'new',
+                isSelected: true,
+                confidence: 30
+            };
+        }
         return null;
     }
 }
