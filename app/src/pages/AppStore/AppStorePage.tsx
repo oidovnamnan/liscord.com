@@ -233,7 +233,9 @@ export function AppStorePage() {
                 const finalMod = dynamic ? { ...mod, ...dynamic } : mod;
                 const isCoreForBusiness = categoryConfig[finalMod.id] === 'core';
                 const isFree = isCoreForBusiness || finalMod.isFree;
-                const isInstalled = activeMods.includes(finalMod.id);
+                // A module is "installed" if in activeModules OR if it's core for this business category
+                // (core modules auto-appear in sidebar via getVisibleModules/isModuleAccessible)
+                const isInstalled = activeMods.includes(finalMod.id) || isCoreForBusiness;
                 return { ...finalMod, isCoreForBusiness, isFree, isInstalled };
             })
             // Sort: installed first, then core, then addon
