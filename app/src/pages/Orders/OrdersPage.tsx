@@ -372,7 +372,7 @@ export function OrdersPage() {
                                         <div className="header-actions-group">
                                             <span className="pro-date">
                                                 {order.createdAt instanceof Date
-                                                    ? order.createdAt.toLocaleDateString('mn-MN')
+                                                    ? `${order.createdAt.toLocaleDateString('mn-MN')} ${order.createdAt.toLocaleTimeString('mn-MN', { hour: '2-digit', minute: '2-digit' })}`
                                                     : 'Саяхан'}
                                             </span>
                                             <div className="order-actions-dropdown" ref={openMenuId === order.id ? menuRef : null}>
@@ -414,7 +414,7 @@ export function OrdersPage() {
                                     {/* Main Content: Product(s) Focus */}
                                     <div className="pro-card-main">
                                         <div className="pro-product-listing">
-                                            {order.items.map((item, idx) => (
+                                            {order.items.slice(0, 2).map((item, idx) => (
                                                 <div key={idx} className="pro-item-row">
                                                     <div className="pro-item-thumb">
                                                         {item.image ? (
@@ -435,6 +435,12 @@ export function OrdersPage() {
                                                     </div>
                                                 </div>
                                             ))}
+                                            {order.items.length > 2 && (
+                                                <div className="pro-items-overflow">
+                                                    <Package size={12} />
+                                                    +{order.items.length - 2} бараа
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
 
@@ -443,7 +449,7 @@ export function OrdersPage() {
                                         <div className="pro-meta-item">
                                             <User size={12} className="meta-icon" />
                                             <span className="pro-customer-name">{order.customer.name}</span>
-                                            {order.customer.phone && <span className="pro-customer-phone">{order.customer.phone}</span>}
+                                            {order.customer.phone && <span className="pro-customer-phone">· {order.customer.phone}</span>}
                                         </div>
                                         <div className="pro-meta-divider"></div>
                                         <div className="pro-meta-item">
@@ -457,13 +463,6 @@ export function OrdersPage() {
                                                 {sourceIcons[order.source] || '📦'} {order.source}
                                             </div>
                                         )}
-                                        <div className="pro-meta-divider"></div>
-                                        <div className="pro-meta-item" title={`Үүсгэсэн: ${order.createdByName || 'Систем'}`}>
-                                            <div className="pro-assignee-mark creator">
-                                                {order.createdByName?.charAt(0) || '?'}
-                                            </div>
-                                            <span className="pro-assignee-name">{order.createdByName?.split(' ')[0] || 'Систем'}</span>
-                                        </div>
                                     </div>
 
                                     {/* Footer: Financials Summary */}
@@ -474,7 +473,7 @@ export function OrdersPage() {
                                         </div>
                                         <div className="pro-payment-indicator">
                                             <span className={`pro-payment-badge ${order.paymentStatus}`}>
-                                                <CreditCard size={12} /> {paymentConfig[order.paymentStatus]?.label}
+                                                {paymentConfig[order.paymentStatus]?.label}
                                             </span>
                                         </div>
                                     </div>
