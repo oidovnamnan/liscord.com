@@ -1,3 +1,277 @@
+/* ═══════════════════════════════════════
+   ORDERS TABLE — PREMIUM DESIGN
+   ═══════════════════════════════════════ */
+
+/* Container */
+.ot-container {
+    background: var(--surface-1);
+    border: 1px solid var(--border-primary);
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 2px 12px -4px rgba(0, 0, 0, 0.06);
+}
+
+/* Table */
+.ot-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.82rem;
+}
+
+/* Header */
+.ot-table thead {
+    background: var(--surface-2);
+    border-bottom: 1.5px solid var(--border-primary);
+    position: sticky;
+    top: 0;
+    z-index: 5;
+}
+
+.ot-table th {
+    padding: 10px 14px;
+    font-size: 0.68rem;
+    font-weight: 800;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    text-align: left;
+    white-space: nowrap;
+    user-select: none;
+}
+
+.ot-th-check {
+    width: 40px;
+    text-align: center !important;
+    padding-left: 14px !important;
+}
+
+.ot-th-right {
+    text-align: right !important;
+}
+
+.ot-th-actions {
+    width: 44px;
+}
+
+/* Rows */
+.ot-row {
+    border-bottom: 1px solid var(--border-primary);
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.ot-row:last-child {
+    border-bottom: none;
+}
+
+.ot-row:hover {
+    background: var(--surface-2);
+}
+
+.ot-row-selected {
+    background: rgba(108, 92, 231, 0.06) !important;
+}
+
+.ot-row-selected:hover {
+    background: rgba(108, 92, 231, 0.1) !important;
+}
+
+.ot-row-deleted {
+    opacity: 0.6;
+}
+
+.ot-row-deleted:hover {
+    opacity: 0.8;
+}
+
+/* Cells */
+.ot-row td {
+    padding: 10px 14px;
+    vertical-align: middle;
+    white-space: nowrap;
+}
+
+.ot-td-check {
+    width: 40px;
+    text-align: center;
+    padding-left: 14px !important;
+}
+
+.ot-td-right {
+    text-align: right;
+}
+
+.ot-td-actions {
+    width: 44px;
+    text-align: center;
+}
+
+/* Checkbox */
+.ot-checkbox {
+    width: 16px;
+    height: 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    accent-color: var(--primary);
+}
+
+/* Order Number */
+.ot-order-number {
+    font-weight: 800;
+    font-size: 0.78rem;
+    color: var(--primary);
+    font-variant-numeric: tabular-nums;
+}
+
+/* Status Badge */
+.ot-status-badge {
+    display: inline-block;
+    font-size: 0.68rem;
+    font-weight: 700;
+    padding: 3px 10px;
+    border-radius: 6px;
+    letter-spacing: 0.2px;
+    white-space: nowrap;
+}
+
+/* Customer */
+.ot-customer {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+}
+
+.ot-customer-name {
+    font-weight: 700;
+    color: var(--text-primary);
+    font-size: 0.82rem;
+}
+
+.ot-customer-phone {
+    font-size: 0.68rem;
+    color: var(--text-muted);
+    font-weight: 500;
+}
+
+/* Items Summary */
+.ot-items-summary {
+    font-size: 0.78rem;
+    color: var(--text-secondary);
+    font-weight: 500;
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: block;
+}
+
+/* Amount */
+.ot-amount {
+    font-weight: 800;
+    font-size: 0.85rem;
+    color: var(--text-primary);
+    font-variant-numeric: tabular-nums;
+}
+
+/* Payment Badge (reuses pro-payment colors) */
+.ot-payment-badge {
+    display: inline-block;
+    font-size: 0.68rem;
+    font-weight: 700;
+    padding: 3px 10px;
+    border-radius: 100px;
+    white-space: nowrap;
+}
+
+.ot-payment-badge.paid {
+    background: #f0fdf4;
+    color: #16a34a;
+    border: 1px solid #bbf7d0;
+}
+
+.ot-payment-badge.unpaid {
+    background: #fef2f2;
+    color: #ef4444;
+    border: 1px solid #fecaca;
+}
+
+.ot-payment-badge.pending {
+    background: #fefce8;
+    color: #ca8a04;
+    border: 1px solid #fef08a;
+}
+
+.ot-payment-badge.partial {
+    background: #eff6ff;
+    color: #2563eb;
+    border: 1px solid #bfdbfe;
+}
+
+/* Date */
+.ot-date {
+    font-size: 0.72rem;
+    color: var(--text-secondary);
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+}
+
+.ot-source {
+    margin-left: 6px;
+    font-size: 0.75rem;
+}
+
+/* Action Button */
+.ot-action-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    padding: 6px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.ot-action-btn:hover,
+.ot-action-btn.active {
+    background: var(--surface-2);
+    color: var(--text-primary);
+}
+
+/* Responsive: hide less important columns on small screens */
+@media (max-width: 900px) {
+
+    .ot-table th:nth-child(5),
+    .ot-table td:nth-child(5) {
+        display: none;
+        /* Hide items column */
+    }
+
+    .ot-table th:nth-child(7),
+    .ot-table td:nth-child(7) {
+        display: none;
+        /* Hide payment column */
+    }
+}
+
+@media (max-width: 640px) {
+
+    .ot-table th:nth-child(8),
+    .ot-table td:nth-child(8) {
+        display: none;
+        /* Hide date column */
+    }
+
+    .ot-row td {
+        padding: 8px 10px;
+    }
+
+    .ot-table th {
+        padding: 8px 10px;
+    }
+}
+
 /* Orders page */
 .orders-toolbar {
     display: flex;

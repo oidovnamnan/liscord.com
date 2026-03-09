@@ -225,7 +225,7 @@ export function OrdersPage() {
                     </button>
                 </div>
 
-                {/* Stats Grid — Inventory-style Glassmorphism */}
+                {/* Stats Grid */}
                 <div className="inv-stats-grid" style={{ marginBottom: 24 }}>
                     <div className="inv-stat-card">
                         <div className="inv-stat-content">
@@ -236,7 +236,6 @@ export function OrdersPage() {
                             <CreditCard size={24} />
                         </div>
                     </div>
-
                     <div className="inv-stat-card">
                         <div className="inv-stat-content">
                             <h4>Шинэ захиалга</h4>
@@ -246,7 +245,6 @@ export function OrdersPage() {
                             <Plus size={24} />
                         </div>
                     </div>
-
                     <div className="inv-stat-card">
                         <div className="inv-stat-content">
                             <h4>Боловсруулагдаж буй</h4>
@@ -256,7 +254,6 @@ export function OrdersPage() {
                             <Loader2 size={24} />
                         </div>
                     </div>
-
                     <div className="inv-stat-card">
                         <div className="inv-stat-content">
                             <h4>Хүргэгдсэн</h4>
@@ -268,6 +265,7 @@ export function OrdersPage() {
                     </div>
                 </div>
 
+                {/* Toolbar: Search + Filters */}
                 <div className="orders-toolbar animate-fade-in">
                     <div className="orders-search">
                         <Search size={18} className="orders-search-icon" />
@@ -301,6 +299,7 @@ export function OrdersPage() {
                         <select
                             className="input"
                             value={dateFilter}
+                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
                             onChange={(e) => setDateFilter(e.target.value as any)}
                             style={{ minWidth: 120, height: 42, borderRadius: 12, fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer', padding: '0 12px', background: 'var(--surface-1)', border: '1.5px solid var(--border-primary)', color: 'var(--text-primary)' }}
                         >
@@ -309,13 +308,11 @@ export function OrdersPage() {
                             <option value="yesterday">Өчигдөр</option>
                             <option value="week">7 хоног</option>
                         </select>
-                        <button className="btn-secondary btn-sm" onClick={toggleAll} style={{ borderRadius: '10px' }}>
-                            {selectedOrderIds.size === filtered.length && filtered.length > 0 ? 'Сонголт арилгах' : 'Бүгдийг сонгох'}
-                        </button>
                     </div>
                 </div>
 
-                <div className="orders-list stagger-children">
+                {/* Table */}
+                <div className="ot-container animate-fade-in">
                     {loading ? (
                         <div className="loading-state">
                             <Loader2 size={32} className="animate-spin" />
@@ -328,179 +325,155 @@ export function OrdersPage() {
                             <p>Хайлтын нөхцөлөө өөрчилнө үү</p>
                         </div>
                     ) : (
-                        filtered.map(order => (
-                            <div
-                                key={order.id}
-                                className={`order-card pro-layout ${order.isDeleted ? 'is-deleted' : ''} stagger-item`}
-                                style={{
-                                    '--status-color': order.isDeleted ? '#ef4444' : (statuses.find(s => s.id.toLowerCase() === order.status?.toLowerCase())?.color || '#3b82f6')
-                                } as React.CSSProperties}
-                                onClick={() => setSelectedOrder(order)}
-                            >
-                                {/* Status Indicator (Slim) */}
-                                <div className="pro-status-border"></div>
+                        <table className="ot-table">
+                            <thead>
+                                <tr>
+                                    <th className="ot-th-check">
+                                        <input
+                                            type="checkbox"
+                                            checked={selectedOrderIds.size === filtered.length && filtered.length > 0}
+                                            onChange={toggleAll}
+                                            className="ot-checkbox"
+                                        />
+                                    </th>
+                                    <th>Захиалга</th>
+                                    <th>Статус</th>
+                                    <th>Харилцагч</th>
+                                    <th>Бараа</th>
+                                    <th className="ot-th-right">Дүн</th>
+                                    <th>Төлбөр</th>
+                                    <th>Огноо</th>
+                                    <th className="ot-th-actions"></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {filtered.map(order => {
+                                    const statusConf = statuses.find(s => s.id.toLowerCase() === order.status?.toLowerCase());
+                                    const statusColor = order.isDeleted ? '#ef4444' : (statusConf?.color || '#3b82f6');
+                                    const statusLabel = order.isDeleted ? 'Цуцлагдсан' : (statusConf?.label || order.status);
+                                    const itemSummary = order.items.length > 0
+                                        ? order.items[0].name + (order.items.length > 1 ? ` +${order.items.length - 1}` : '')
+                                        : '—';
+                                    const createdAt = order.createdAt instanceof Date ? order.createdAt : null;
 
-                                <div className="order-card-inner">
-                                    {/* Header Row: ID, Date, Actions */}
-                                    <div className="pro-card-header">
-                                        <div className="header-id-group">
-                                            <input
-                                                type="checkbox"
-                                                className="order-checkbox"
-                                                checked={selectedOrderIds.has(order.id)}
-                                                onChange={() => { }}
-                                                onClick={(e) => toggleSelection(e, order.id)}
-                                            />
-                                            <span className="order-id">#{order.orderNumber}</span>
-                                            {order.isDeleted ? (
-                                                <span className="pro-badge status-cancelled">
-                                                    Цуцлагдсан
-                                                </span>
-                                            ) : (
+                                    return (
+                                        <tr
+                                            key={order.id}
+                                            className={`ot-row ${selectedOrderIds.has(order.id) ? 'ot-row-selected' : ''} ${order.isDeleted ? 'ot-row-deleted' : ''}`}
+                                            onClick={() => setSelectedOrder(order)}
+                                        >
+                                            <td className="ot-td-check">
+                                                <input
+                                                    type="checkbox"
+                                                    className="ot-checkbox"
+                                                    checked={selectedOrderIds.has(order.id)}
+                                                    onChange={() => { }}
+                                                    onClick={(e) => toggleSelection(e, order.id)}
+                                                />
+                                            </td>
+                                            <td>
+                                                <span className="ot-order-number">#{order.orderNumber}</span>
+                                            </td>
+                                            <td>
                                                 <span
-                                                    className="pro-badge"
+                                                    className="ot-status-badge"
                                                     style={{
-                                                        background: (statuses.find(s => s.id.toLowerCase() === order.status?.toLowerCase())?.color || '#3b82f6') + '20',
-                                                        color: statuses.find(s => s.id.toLowerCase() === order.status?.toLowerCase())?.color || '#3b82f6',
-                                                        border: `1px solid ${statuses.find(s => s.id.toLowerCase() === order.status?.toLowerCase())?.color || '#3b82f6'}40`
+                                                        background: statusColor + '18',
+                                                        color: statusColor,
+                                                        border: `1px solid ${statusColor}30`
                                                     }}
                                                 >
-                                                    {statuses.find(s => s.id.toLowerCase() === order.status?.toLowerCase())?.label || order.status}
+                                                    {statusLabel}
                                                 </span>
-                                            )}
-                                        </div>
-                                        <div className="header-actions-group">
-                                            <span className="pro-date">
-                                                {order.createdAt instanceof Date
-                                                    ? `${order.createdAt.toLocaleDateString('mn-MN')} ${order.createdAt.toLocaleTimeString('mn-MN', { hour: '2-digit', minute: '2-digit' })}`
-                                                    : 'Саяхан'}
-                                            </span>
-                                            <div className="order-actions-dropdown" ref={openMenuId === order.id ? menuRef : null}>
-                                                <button
-                                                    className={`pro-btn-ghost btn-icon ${openMenuId === order.id ? 'active' : ''}`}
-                                                    onClick={e => {
-                                                        e.stopPropagation();
-                                                        setOpenMenuId(openMenuId === order.id ? null : order.id);
-                                                    }}
-                                                >
-                                                    <MoreVertical size={14} />
-                                                </button>
-                                                {openMenuId === order.id && (
-                                                    <div className="pro-dropdown-menu" onClick={e => e.stopPropagation()}>
-                                                        <button className="pro-dropdown-item" onClick={() => { setSelectedOrder(order); setOpenMenuId(null); }}>
-                                                            <Package size={14} /> Дэлгэрэнгүй
-                                                        </button>
-                                                        <button className="pro-dropdown-item" onClick={() => { /* Status change logic */ setOpenMenuId(null); }}>
-                                                            <CheckSquare size={14} /> Статус солих
-                                                        </button>
-                                                        <hr />
-                                                        <button
-                                                            className="pro-dropdown-item text-danger"
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                setDeleteOrderId(order.id);
-                                                                setShowDeleteModal(true);
-                                                                setOpenMenuId(null);
-                                                            }}
-                                                        >
-                                                            <Trash2 size={14} /> Устгах
-                                                        </button>
-                                                    </div>
+                                            </td>
+                                            <td>
+                                                <div className="ot-customer">
+                                                    <span className="ot-customer-name">{order.customer.name}</span>
+                                                    {order.customer.phone && (
+                                                        <span className="ot-customer-phone">{order.customer.phone}</span>
+                                                    )}
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <span className="ot-items-summary" title={order.items.map(i => i.name).join(', ')}>
+                                                    {itemSummary}
+                                                </span>
+                                            </td>
+                                            <td className="ot-td-right">
+                                                <span className="ot-amount">{fmt(order.financials.totalAmount)}</span>
+                                            </td>
+                                            <td>
+                                                <span className={`ot-payment-badge ${order.paymentStatus}`}>
+                                                    {paymentConfig[order.paymentStatus]?.label || order.paymentStatus}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <span className="ot-date">
+                                                    {createdAt
+                                                        ? `${createdAt.getMonth() + 1}/${createdAt.getDate()} ${createdAt.toLocaleTimeString('mn-MN', { hour: '2-digit', minute: '2-digit' })}`
+                                                        : '—'}
+                                                </span>
+                                                {order.source && (
+                                                    <span className="ot-source">{sourceIcons[order.source] || '📦'}</span>
                                                 )}
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    {/* Main Content: Product(s) Focus */}
-                                    <div className="pro-card-main">
-                                        <div className="pro-product-listing">
-                                            {order.items.slice(0, 2).map((item, idx) => (
-                                                <div key={idx} className="pro-item-row">
-                                                    <div className="pro-item-thumb">
-                                                        {item.image ? (
-                                                            <img src={item.image} alt="" />
-                                                        ) : (
-                                                            <Package size={16} />
-                                                        )}
-                                                    </div>
-                                                    <div className="pro-item-info">
-                                                        <span className="pro-item-name">{item.name}</span>
-                                                        <div className="pro-item-meta">
-                                                            {item.variant && <span className="pro-variant">{item.variant}</span>}
-                                                            <span className="pro-qty">x{item.quantity}</span>
+                                            </td>
+                                            <td className="ot-td-actions">
+                                                <div className="order-actions-dropdown" ref={openMenuId === order.id ? menuRef : null}>
+                                                    <button
+                                                        className={`ot-action-btn ${openMenuId === order.id ? 'active' : ''}`}
+                                                        onClick={e => {
+                                                            e.stopPropagation();
+                                                            setOpenMenuId(openMenuId === order.id ? null : order.id);
+                                                        }}
+                                                    >
+                                                        <MoreVertical size={14} />
+                                                    </button>
+                                                    {openMenuId === order.id && (
+                                                        <div className="pro-dropdown-menu" onClick={e => e.stopPropagation()}>
+                                                            <button className="pro-dropdown-item" onClick={() => { setSelectedOrder(order); setOpenMenuId(null); }}>
+                                                                <Package size={14} /> Дэлгэрэнгүй
+                                                            </button>
+                                                            <button className="pro-dropdown-item" onClick={() => { setOpenMenuId(null); }}>
+                                                                <CheckSquare size={14} /> Статус солих
+                                                            </button>
+                                                            <hr />
+                                                            <button
+                                                                className="pro-dropdown-item text-danger"
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    setDeleteOrderId(order.id);
+                                                                    setShowDeleteModal(true);
+                                                                    setOpenMenuId(null);
+                                                                }}
+                                                            >
+                                                                <Trash2 size={14} /> Устгах
+                                                            </button>
                                                         </div>
-                                                    </div>
-                                                    <div className="pro-item-price">
-                                                        {fmt(item.totalPrice)}
-                                                    </div>
+                                                    )}
                                                 </div>
-                                            ))}
-                                            {order.items.length > 2 && (
-                                                <div className="pro-items-overflow">
-                                                    <Package size={12} />
-                                                    +{order.items.length - 2} бараа
-                                                </div>
-                                            )}
-                                        </div>
-                                    </div>
-
-                                    {/* Interaction Bar: Customer & Assignee */}
-                                    <div className="pro-card-meta-bar">
-                                        <div className="pro-meta-item">
-                                            <User size={12} className="meta-icon" />
-                                            <span className="pro-customer-name">{order.customer.name}</span>
-                                            {order.customer.phone && <span className="pro-customer-phone">· {order.customer.phone}</span>}
-                                        </div>
-                                        <div className="pro-meta-divider"></div>
-                                        <div className="pro-meta-item">
-                                            <div className="pro-assignee-mark">
-                                                {order.assignedToName?.charAt(0) || <User size={10} />}
-                                            </div>
-                                            <span className="pro-assignee-name">{order.assignedToName || 'Хувиарлаагүй'}</span>
-                                        </div>
-                                        {order.source && (
-                                            <div className="pro-source-tag">
-                                                {sourceIcons[order.source] || '📦'} {order.source}
-                                            </div>
-                                        )}
-                                    </div>
-
-                                    {/* Footer: Financials Summary */}
-                                    <div className="pro-card-footer">
-                                        <div className="pro-financial-summary">
-                                            <div className="pro-total-label">НИЙТ ДҮН</div>
-                                            <div className="pro-total-value">{fmt(order.financials.totalAmount)}</div>
-                                        </div>
-                                        <div className="pro-payment-indicator">
-                                            <span className={`pro-payment-badge ${order.paymentStatus}`}>
-                                                {paymentConfig[order.paymentStatus]?.label}
-                                            </span>
-                                        </div>
-                                    </div>
-                                </div>
-                                {order.isDeleted && order.cancelReason && (
-                                    <div className="order-cancel-reason-hint" title={order.cancelReason}>
-                                        🔒 {order.cancelReason}
-                                    </div>
-                                )}
-                            </div>
-                        ))
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
+                            </tbody>
+                        </table>
                     )}
                 </div>
 
                 {hasMore && orders.length > 0 && (
-                    <div className="flex justify-center py-6 mt-4">
+                    <div style={{ textAlign: 'center', marginTop: 16 }}>
                         <button
                             className="btn btn-secondary"
-                            style={{ minWidth: '200px', margin: '20px auto', display: 'block' }}
+                            style={{ minWidth: '200px' }}
                             onClick={() => setOrdersLimit(prev => prev + 50)}
                             disabled={loading}
                         >
-                            {loading ? <Loader2 className="animate-spin" size={20} /> : `Дараагийн 50 захиалга (Одоо ${orders.length})`}
+                            {loading ? <Loader2 className="animate-spin" size={20} /> : `Дараагийн 50 (Одоо ${orders.length})`}
                         </button>
                     </div>
                 )}
 
+                {/* Bulk Action Bar */}
                 {selectedOrderIds.size > 0 && (
                     <div className="orders-bulk-action-bar animate-fade-in">
                         <div className="bulk-selection-info">
