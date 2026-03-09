@@ -210,7 +210,7 @@ export function BankSmsSyncPage() {
                     className="inv-chip"
                     value={statusFilter}
                     onChange={(e) => setStatusFilter(e.target.value as any)}
-                    style={{ minWidth: 150, cursor: 'pointer', padding: '0 16px', appearance: 'auto' }}
+                    style={{ minWidth: 150, cursor: 'pointer', padding: '0 32px 0 16px', appearance: 'auto' }}
                 >
                     <option value="all">Бүгд</option>
                     <option value="matched">Холбогдсон</option>
