@@ -1,9 +1,9 @@
 import { useEffect, useState, useMemo } from 'react';
-import { Header } from '../../components/layout/Header';
-import { DollarSign, ShoppingCart, Users, BarChart3 } from 'lucide-react';
+import { DollarSign, ShoppingCart, TrendingUp, BarChart3 } from 'lucide-react';
 import { useBusinessStore } from '../../store';
 import { orderService } from '../../services/db';
 import type { Order } from '../../types';
+import '../Inventory/InventoryPage.css';
 import './ReportsPage.css';
 
 function fmt(n: number) { return '₮' + n.toLocaleString('mn-MN'); }
@@ -102,9 +102,8 @@ export function ReportsPage() {
 
     return (
         <>
-            <Header title="" subtitle="" />
-            <div className="page" style={{ padding: '0 var(--space-xl) var(--space-2xl)' }}>
-                <div className="page-hero" style={{ marginBottom: 24 }}>
+            <div className="inventory-page animate-fade-in">
+                <div className="page-hero" style={{ marginBottom: 8 }}>
                     <div className="page-hero-left">
                         <div className="page-hero-icon">
                             <BarChart3 size={24} />
@@ -137,44 +136,41 @@ export function ReportsPage() {
                 </div>
 
                 {/* Premium Stat Cards */}
-                <div className="grid-4 stagger-children" style={{ marginBottom: 'var(--space-2xl)' }}>
-                    <div className="report-stat-card" style={{ '--card-glow': 'rgba(108, 92, 231, 0.4)' } as any}>
-                        <div className="report-stat-icon-wrap" style={{ '--icon-bg': 'rgba(108, 92, 231, 0.1)', '--icon-color': '#6c5ce7', '--icon-shadow': 'rgba(108, 92, 231, 0.2)' } as any}>
-                            <DollarSign size={22} />
+                <div className="inv-stats-grid" style={{ marginBottom: 24 }}>
+                    <div className="inv-stat-card">
+                        <div className="inv-stat-content">
+                            <h4>Нийт орлого</h4>
+                            <div className="inv-stat-value">{fmt(totalRevenue)}</div>
                         </div>
-                        <div className="report-stat-info">
-                            <span className="report-stat-label">Нийт орлого</span>
-                            <span className="report-stat-value">{fmt(totalRevenue)}</span>
-                        </div>
-                    </div>
-
-                    <div className="report-stat-card" style={{ '--card-glow': 'rgba(13, 191, 240, 0.4)' } as any}>
-                        <div className="report-stat-icon-wrap" style={{ '--icon-bg': 'rgba(13, 191, 240, 0.1)', '--icon-color': '#0dbff0', '--icon-shadow': 'rgba(13, 191, 240, 0.2)' } as any}>
-                            <ShoppingCart size={22} />
-                        </div>
-                        <div className="report-stat-info">
-                            <span className="report-stat-label">Нийт захиалга</span>
-                            <span className="report-stat-value">{totalOrders}</span>
+                        <div className="inv-stat-icon icon-primary">
+                            <DollarSign size={24} />
                         </div>
                     </div>
-
-                    <div className="report-stat-card" style={{ '--card-glow': 'rgba(11, 232, 129, 0.4)' } as any}>
-                        <div className="report-stat-icon-wrap" style={{ '--icon-bg': 'rgba(11, 232, 129, 0.1)', '--icon-color': '#0be881', '--icon-shadow': 'rgba(11, 232, 129, 0.2)' } as any}>
-                            <DollarSign size={22} strokeWidth={3} />
+                    <div className="inv-stat-card">
+                        <div className="inv-stat-content">
+                            <h4>Нийт захиалга</h4>
+                            <div className="inv-stat-value">{totalOrders}</div>
                         </div>
-                        <div className="report-stat-info">
-                            <span className="report-stat-label">Цэвэр ашиг (тооцоолсон)</span>
-                            <span className="report-stat-value" style={{ color: 'var(--success)' }}>{fmt(totalRevenue * 0.85)}</span>
+                        <div className="inv-stat-icon icon-green">
+                            <ShoppingCart size={24} />
                         </div>
                     </div>
-
-                    <div className="report-stat-card" style={{ '--card-glow': 'rgba(255, 107, 157, 0.4)' } as any}>
-                        <div className="report-stat-icon-wrap" style={{ '--icon-bg': 'rgba(255, 107, 157, 0.1)', '--icon-color': '#ff6b9d', '--icon-shadow': 'rgba(255, 107, 157, 0.2)' } as any}>
-                            <Users size={22} />
+                    <div className="inv-stat-card">
+                        <div className="inv-stat-content">
+                            <h4>Цэвэр ашиг (тооцоолсон)</h4>
+                            <div className="inv-stat-value">{fmt(totalRevenue * 0.85)}</div>
                         </div>
-                        <div className="report-stat-info">
-                            <span className="report-stat-label">Дундаж сагс</span>
-                            <span className="report-stat-value">{fmt(avgOrderValue)}</span>
+                        <div className="inv-stat-icon icon-orange">
+                            <TrendingUp size={24} />
+                        </div>
+                    </div>
+                    <div className="inv-stat-card">
+                        <div className="inv-stat-content">
+                            <h4>Дундаж сагс</h4>
+                            <div className="inv-stat-value">{fmt(avgOrderValue)}</div>
+                        </div>
+                        <div className="inv-stat-icon icon-red">
+                            <BarChart3 size={24} />
                         </div>
                     </div>
                 </div>
