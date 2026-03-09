@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Loader2 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { Header } from '../../components/layout/Header';
 import { toast } from 'react-hot-toast';
 import { systemSettingsService } from '../../services/db';
@@ -13,6 +14,7 @@ import type { BusinessCategoryConfig } from '../../types';
 import './SuperAdmin.css';
 
 export function SuperAdminSettings() {
+    const navigate = useNavigate();
     const { categories, fetchCategories, refresh } = useSystemCategoriesStore();
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
@@ -195,6 +197,14 @@ export function SuperAdminSettings() {
                                 Хадгалаагүй
                             </span>
                         )}
+                        <button
+                            className="btn-pro btn-pro-ghost"
+                            onClick={() => navigate('/super/app-store')}
+                            style={{ fontSize: '0.75rem', gap: '4px' }}
+                        >
+                            <Icons.DollarSign size={13} />
+                            App Store Үнэ
+                        </button>
                         <button
                             className="btn-pro btn-pro-primary"
                             onClick={handleSaveClick}

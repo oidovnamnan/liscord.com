@@ -17,6 +17,7 @@ import { businessService, systemSettingsService } from '../../services/db';
 import { toast } from 'react-hot-toast';
 import * as Icons from 'lucide-react';
 import { LISCORD_MODULES } from '../../config/modules';
+import { getVisibleModules } from '../../utils/moduleUtils';
 import './Sidebar.css';
 
 export function Sidebar() {
@@ -100,44 +101,7 @@ export function Sidebar() {
     }, []);
 
     const filteredNavItems = useMemo(() => {
-        return LISCORD_MODULES.filter((mod, index, self) => {
-            // Core modules (like Dashboard, Reports, Settings) are always visible
-            if (mod.isCore) {
-                return true;
-            }
-
-            // Hide modules that are purely for Settings page
-            const placement = mod.placement || 'sidebar';
-            if (placement === 'settings') {
-                return false;
-            }
-
-            // Check explicit enablement (App Store purchase/installation)
-            const isExplicitlyEnabled = business?.activeModules?.includes(mod.id);
-
-            // If completely disabled for this business category by Super Admin AND not explicitly enabled, hide it
-            if (!isExplicitlyEnabled && business?.category && moduleDefaults[business.category]) {
-                const status = moduleDefaults[business.category][mod.id];
-                if (status !== 'core') return false; // Hide if not core and not explicitly enabled
-            } else if (!isExplicitlyEnabled) {
-                // Not enabled and no category defaults to fall back on
-                return false;
-            }
-
-            const subscription = business?.moduleSubscriptions?.[mod.id];
-            if (subscription) {
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                const expiryDate = subscription.expiresAt ? (typeof (subscription.expiresAt as any).toDate === 'function' ? (subscription.expiresAt as any).toDate() : new Date(subscription.expiresAt as any)) : null;
-                if (expiryDate && expiryDate < new Date()) return false;
-            }
-
-            // If it belongs to a hub, only show the FIRST enabled module of that hub in the sidebar
-            if (mod.hubId) {
-                return self.findIndex(m => m.hubId === mod.hubId && business?.activeModules?.includes(m.id)) === index;
-            }
-
-            return true;
-        });
+        return getVisibleModules(business, moduleDefaults);
     }, [business?.activeModules, business?.moduleSubscriptions, business?.category, moduleDefaults]);
 
 

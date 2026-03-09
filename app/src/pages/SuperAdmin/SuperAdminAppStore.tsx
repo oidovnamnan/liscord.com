@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Header } from '../../components/layout/Header';
-import { Loader2, Save, DollarSign, Clock } from 'lucide-react';
+import { Loader2, Save, DollarSign, Clock, ArrowRight } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import { LISCORD_MODULES } from '../../config/modules';
 import { systemSettingsService } from '../../services/db';
@@ -9,10 +10,12 @@ import type { AppModule } from '../../types';
 import { SecurityModal } from '../../components/common/SecurityModal';
 
 export function SuperAdminAppStore() {
+    const navigate = useNavigate();
     const [modules, setModules] = useState<AppModule[]>(LISCORD_MODULES);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [showSecurityModal, setShowSecurityModal] = useState(false);
+    const [moduleDefaults, setModuleDefaults] = useState<Record<string, Record<string, string>>>({});
 
     useEffect(() => {
         const fetchConfig = async () => {
@@ -34,7 +37,16 @@ export function SuperAdminAppStore() {
                 setLoading(false);
             }
         };
+        const fetchDefaults = async () => {
+            try {
+                const data = await systemSettingsService.getModuleDefaults();
+                setModuleDefaults(data);
+            } catch (e) {
+                console.error('Failed to fetch module defaults:', e);
+            }
+        };
         fetchConfig();
+        fetchDefaults();
     }, []);
 
     const handleToggleFree = (id: string) => {
@@ -85,7 +97,7 @@ export function SuperAdminAppStore() {
 
             await systemSettingsService.updateAppStoreConfig(config);
             toast.success('App Store-ын тохиргоо хадгалагдлаа');
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
         } catch (_error) {
             toast.error('Хадгалахад алдаа гарлаа');
         } finally {
@@ -117,10 +129,20 @@ export function SuperAdminAppStore() {
                         </div>
                         <h2 className="text-lg font-bold">Модулийн үнийн тохиргоо</h2>
                     </div>
-                    <button className="btn btn-primary gradient-btn" onClick={handleSaveClick} disabled={saving}>
-                        {saving ? <Loader2 className="animate-spin" size={18} /> : <Save size={18} />}
-                        Тохиргоог хадгалах
-                    </button>
+                    <div className="flex items-center gap-2">
+                        <button
+                            className="btn btn-ghost"
+                            onClick={() => navigate('/super/settings')}
+                            style={{ fontSize: '0.8rem', gap: '6px' }}
+                        >
+                            Модуль Тохиргоо
+                            <ArrowRight size={14} />
+                        </button>
+                        <button className="btn btn-primary gradient-btn" onClick={handleSaveClick} disabled={saving}>
+                            {saving ? <Loader2 className="animate-spin" size={18} /> : <Save size={18} />}
+                            Тохиргоог хадгалах
+                        </button>
+                    </div>
                 </div>
 
                 <div className="card no-padding overflow-hidden border-glass shadow-lg">
@@ -203,7 +225,20 @@ export function SuperAdminAppStore() {
                                             </div>
                                             <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                                                 <div className="font-bold text-[0.95rem]" style={{ color: 'var(--text-primary)', lineHeight: 1.2 }}>{mod.name}</div>
-                                                <div className="text-[0.7rem] text-tertiary font-mono" style={{ letterSpacing: '0.02em', opacity: 0.6 }}>{mod.id}</div>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                                    <span className="text-[0.7rem] text-tertiary font-mono" style={{ letterSpacing: '0.02em', opacity: 0.6 }}>{mod.id}</span>
+                                                    {(() => {
+                                                        const coreCount = Object.values(moduleDefaults).filter(catDefs => catDefs[mod.id] === 'core').length;
+                                                        if (coreCount > 0) return (
+                                                            <span style={{
+                                                                fontSize: '0.6rem', fontWeight: 700,
+                                                                background: 'var(--success-light)', color: 'var(--success)',
+                                                                padding: '1px 6px', borderRadius: '8px',
+                                                            }}>{coreCount} салбарт core</span>
+                                                        );
+                                                        return null;
+                                                    })()}
+                                                </div>
                                             </div>
                                         </div>
                                     </td>

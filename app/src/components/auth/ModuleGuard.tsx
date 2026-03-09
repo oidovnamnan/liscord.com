@@ -1,7 +1,7 @@
 import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useBusinessStore } from '../../store';
-import { LISCORD_MODULES } from '../../config/modules';
+import { isModuleAccessible } from '../../utils/moduleUtils';
 
 interface ModuleGuardProps {
     children: React.ReactNode;
@@ -14,11 +14,14 @@ export const ModuleGuard: React.FC<ModuleGuardProps> = ({ children, moduleId }) 
 
     if (!business) return null;
 
-    const isModuleActive = business.activeModules?.includes(moduleId);
-    const isCore = LISCORD_MODULES.find(m => m.id === moduleId)?.isCore;
+    const { accessible, reason } = isModuleAccessible(moduleId, business);
 
-    if (!isModuleActive && !isCore) {
-        console.warn(`Access denied to module: ${moduleId}. Redirecting to dashboard.`);
+    if (!accessible) {
+        if (reason === 'expired') {
+            console.warn(`Module expired: ${moduleId}. Redirecting to App Store.`);
+            return <Navigate to="/app/app-store" state={{ expired: moduleId, from: location }} replace />;
+        }
+        console.warn(`Access denied to module: ${moduleId} (${reason}). Redirecting to dashboard.`);
         return <Navigate to="/app" state={{ from: location }} replace />;
     }
 

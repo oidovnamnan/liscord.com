@@ -186,13 +186,12 @@ export const businessService = {
         let defaultModules = ['orders', 'products', 'customers', 'inventory'];
 
         if (business.category && defaultsConfig[business.category]) {
+            // Use SuperAdmin-configured defaults: include both 'core' and 'addon' modules
             const configuredModules = Object.keys(defaultsConfig[business.category]);
             defaultModules = Array.from(new Set([...defaultModules, ...configuredModules]));
-        } else {
-            if (business.category === 'cargo') defaultModules.push('packages', 'delivery');
-            if (business.category === 'hotel') defaultModules.push('rooms');
-            if (business.category === 'car_rental') defaultModules.push('vehicles');
-            if (business.category === 'beauty_salon' || business.category === 'car_wash') defaultModules.push('queue', 'appointments');
+        } else if (business.category) {
+            // No SuperAdmin defaults configured for this category — warn but continue with base modules
+            console.warn(`[createBusiness] No module defaults configured for category: "${business.category}". Using base modules only. Configure defaults in SuperAdmin → Модуль Тохиргоо.`);
         }
 
         const fullBusiness = {

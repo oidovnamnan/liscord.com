@@ -11,6 +11,7 @@ import { toast } from 'react-hot-toast';
 import { ImageUpload } from '../../components/common/ImageUpload';
 import * as Icons from 'lucide-react';
 import { LISCORD_MODULES } from '../../config/modules';
+import { isSubscriptionExpired } from '../../utils/moduleUtils';
 
 import { ActivityTab } from './components/ActivityTab';
 import { PaymentTab } from './components/PaymentTab';
@@ -113,7 +114,8 @@ export function SettingsPage() {
             .filter(mod => {
                 const placement = mod.placement || 'sidebar';
                 const isSettingsMod = placement === 'settings' || placement === 'both' || mod.hasSettings;
-                return isSettingsMod && business?.activeModules?.includes(mod.id);
+                return isSettingsMod && business?.activeModules?.includes(mod.id) &&
+                    !isSubscriptionExpired(business, mod.id);
             })
             .map(mod => ({
                 id: mod.id === 'orders' ? 'statuses' : mod.id, // Legacy compatibility for 'statuses' tab
@@ -126,7 +128,8 @@ export function SettingsPage() {
         // Additional legacy tabs if needed
         const extraTabs = [
             { id: 'sources', label: 'Эх сурвалж', icon: Share2, moduleId: 'orders' },
-        ].filter(t => business?.activeModules?.includes(t.moduleId));
+        ].filter(t => business?.activeModules?.includes(t.moduleId) &&
+            !isSubscriptionExpired(business, t.moduleId));
 
         return { core: coreTabs, plugins: [...pluginTabs, ...extraTabs] };
     }, [business?.activeModules, isStorefrontEnabled]);
