@@ -3,6 +3,7 @@ import { Sparkles, Brain, Zap, BarChart3, Bot, ChevronDown, AlertTriangle, Send,
 import { useAuthStore } from '../../store';
 import toast from 'react-hot-toast';
 import './AIAgentPage.css';
+import '../Inventory/InventoryPage.css';
 
 interface Message {
     id: string;
@@ -87,25 +88,37 @@ export const AIAgentPage: React.FC = () => {
     };
 
     return (
-        <div className="ai-agent-container page">
+        <div className="inventory-page ai-agent-container animate-fade-in">
             <header className="ai-agent-header">
                 <div className="ai-header-content">
-                    <div className="ai-badge-premium"><Sparkles size={14} /> Liscord Brain v2.5 Premium</div>
-                    <h1 className="text-gradient-ai">Antigravity AI Agent</h1>
-                    <p>Таны бизнесийн ухаалаг тархи, ко-пилот туслах</p>
+                    <div className="ai-badge-premium"><Sparkles size={12} /> Liscord Brain v3.0 Super</div>
+                    <h1 className="ai-brain-title">🧠 Super Brain</h1>
+                    <p className="ai-brain-subtitle">Таны бизнесийн ухаалаг тархи, ко-пилот туслах</p>
                 </div>
                 <div className="ai-header-stats">
                     <div className="stat-card">
-                        <div className="stat-value text-success glow-text">99.9%</div>
+                        <div className="stat-value glow-text">99.9%</div>
                         <div className="stat-label">Uptime</div>
                     </div>
                     <div className="stat-card">
-                        <div className="stat-value pulse-text">240+</div>
+                        <div className="stat-value pulse-text">480+</div>
                         <div className="stat-label">Мэдрэлийн зангилаа</div>
                     </div>
+                    <div className="stat-card">
+                        <div className="stat-value" style={{ color: 'var(--primary)' }}>1.2ms</div>
+                        <div className="stat-label">Хариу үйлдэл</div>
+                    </div>
                 </div>
-                <div className="header-decoration"></div>
             </header>
+
+            {/* Neural Activity Strip */}
+            <div className="neural-strip">
+                <div className="neural-dot" />
+                <span style={{ fontWeight: 700, color: 'var(--success)' }}>LIVE</span>
+                <div className="neural-bar"><div className="neural-bar-fill" /></div>
+                <span>Neural Activity</span>
+                <Brain size={14} style={{ color: 'var(--primary)' }} />
+            </div>
 
             <div className="ai-layout-grid">
                 <section className="ai-main-chat-window">
