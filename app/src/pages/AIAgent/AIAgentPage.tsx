@@ -236,8 +236,11 @@ export const AIAgentPage: React.FC = () => {
                                 <ChevronDown size={14} className="selector-icon" />
                             </div>
                             <div className="ai-compute-load">
-                                <Loader2 size={12} className="animate-spin text-primary" />
-                                <span>{dataLoaded ? `${bizContext.totalProducts} бараа уншсан` : 'Дата ачаалж байна...'}</span>
+                                {dataLoaded
+                                    ? <ShieldCheck size={12} style={{ color: 'var(--success)' }} />
+                                    : <Loader2 size={12} className="animate-spin text-primary" />
+                                }
+                                <span>{dataLoaded ? `✓ ${bizContext.totalProducts} бараа · Бэлэн` : 'Дата ачаалж байна...'}</span>
                             </div>
                         </div>
 
