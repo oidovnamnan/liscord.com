@@ -300,7 +300,7 @@ export async function extractProductsFromPosts(
     onProgress?: (current: number, total: number, product?: FBExtractedProduct) => void
 ): Promise<FBExtractedProduct[]> {
     const products: FBExtractedProduct[] = [];
-    const DELAY_MS = 3500; // 3.5s between requests to stay within free tier limits (~17/min)
+    const DELAY_MS = 500; // 0.5s between requests (paid tier has high limits)
 
     for (let i = 0; i < posts.length; i++) {
         onProgress?.(i + 1, posts.length);
