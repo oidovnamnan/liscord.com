@@ -36,6 +36,7 @@ export function FBImportModal({ onClose }: FBImportModalProps) {
     const [startDate, setStartDate] = useState(localStorage.getItem('fb_import_start') || '');
     const [endDate, setEndDate] = useState(localStorage.getItem('fb_import_end') || '');
     const [importAsHidden, setImportAsHidden] = useState(false);
+    const [importProductType, setImportProductType] = useState<'preorder' | 'ready'>('preorder');
 
     // Processing
     const [_, setPosts] = useState<FBPost[]>([]);
@@ -260,11 +261,11 @@ export function FBImportModal({ onClose }: FBImportModalProps) {
                         costPrice: product.costPrice,
                         wholesalePrice: product.salePrice
                     },
-                    productType: 'ready',
+                    productType: importProductType,
                     stock: {
-                        quantity: product.variations?.length ? product.variations.reduce((s, v) => s + v.quantity, 0) : 0,
+                        quantity: importProductType === 'ready' ? (product.variations?.length ? product.variations.reduce((s, v) => s + v.quantity, 0) : 0) : 0,
                         lowStockThreshold: 3,
-                        trackInventory: true
+                        trackInventory: importProductType === 'ready'
                     },
                     variations: (product.variations && product.variations.length > 0) ? product.variations as any : [],
                     unitType: 'ш',
@@ -442,6 +443,38 @@ export function FBImportModal({ onClose }: FBImportModalProps) {
                                     >
                                         <div className="toggle" />
                                     </div>
+                                </div>
+                            </div>
+
+                            <div className="modal-section-card">
+                                <div className="modal-section-title">Барааны төрөл</div>
+                                <div style={{ display: 'flex', gap: 8 }}>
+                                    <button
+                                        type="button"
+                                        onClick={() => setImportProductType('preorder')}
+                                        style={{
+                                            flex: 1, padding: '12px 16px', borderRadius: 12,
+                                            border: `2px solid ${importProductType === 'preorder' ? 'var(--primary)' : 'var(--border)'}`,
+                                            background: importProductType === 'preorder' ? 'var(--primary-soft, rgba(99,102,241,0.08))' : 'transparent',
+                                            cursor: 'pointer', textAlign: 'left'
+                                        }}
+                                    >
+                                        <div style={{ fontWeight: 700, fontSize: '0.85rem', color: importProductType === 'preorder' ? 'var(--primary)' : 'var(--text)' }}>📦 Захиалгын бараа</div>
+                                        <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: 2 }}>Захиалгаар авах боломжтой</div>
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setImportProductType('ready')}
+                                        style={{
+                                            flex: 1, padding: '12px 16px', borderRadius: 12,
+                                            border: `2px solid ${importProductType === 'ready' ? 'var(--primary)' : 'var(--border)'}`,
+                                            background: importProductType === 'ready' ? 'var(--primary-soft, rgba(99,102,241,0.08))' : 'transparent',
+                                            cursor: 'pointer', textAlign: 'left'
+                                        }}
+                                    >
+                                        <div style={{ fontWeight: 700, fontSize: '0.85rem', color: importProductType === 'ready' ? 'var(--primary)' : 'var(--text)' }}>✅ Бэлэн бараа</div>
+                                        <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: 2 }}>Нөөцөд байгаа, шууд борлуулна</div>
+                                    </button>
                                 </div>
                             </div>
 
