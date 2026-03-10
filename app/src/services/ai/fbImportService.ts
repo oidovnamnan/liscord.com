@@ -405,11 +405,11 @@ export function detectDuplicates(
             const crossScore = wordSimilarity(allWords, ex.allWords);
             totalScore += crossScore * 0.4;
 
-            // Signal 3: Image overlap (weight: 20%)
+            // Signal 3: Image overlap (weight: 70%)
             if (product.images.length > 0 && ex.images.length > 0) {
                 const sharedImages = product.images.filter(img => ex.images.includes(img));
                 if (sharedImages.length > 0) {
-                    totalScore += 20; // Any shared image = strong signal
+                    totalScore += 70; // Any shared image = very strong signal
                 }
             }
 
@@ -418,8 +418,8 @@ export function detectDuplicates(
             }
         }
 
-        // 30%+ combined score = duplicate (lower than before since it's multi-signal)
-        if (dbMatch && dbMatch.score >= 30) {
+        // 55%+ combined score = duplicate
+        if (dbMatch && dbMatch.score >= 55) {
             console.log(`[FB Import] DB duplicate: "${product.name}" ≈ "${dbMatch.name}" (${dbMatch.score.toFixed(0)}%)`);
             result.push({
                 ...product,
@@ -447,14 +447,14 @@ export function detectDuplicates(
 
             // Image overlap
             const sharedImgs = product.images.filter(img => seen.images.includes(img));
-            if (sharedImgs.length > 0) totalScore += 20;
+            if (sharedImgs.length > 0) totalScore += 70;
 
             if (totalScore > (batchMatch?.score || 0)) {
                 batchMatch = { index: seen.index, name: seen.name, score: totalScore };
             }
         }
 
-        if (batchMatch && batchMatch.score >= 40) {
+        if (batchMatch && batchMatch.score >= 55) {
             console.log(`[FB Import] Batch duplicate: "${product.name}" ≈ "${batchMatch.name}" (${batchMatch.score.toFixed(0)}%) — skipping`);
             const firstProduct = result[batchMatch.index];
             if (firstProduct) {
