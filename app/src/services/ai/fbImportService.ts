@@ -365,44 +365,81 @@ export function detectDuplicates(
     extracted: FBExtractedProduct[],
     existing: { id: string; name: string; sku: string; images: string[] }[]
 ): FBExtractedProduct[] {
-    return extracted.map(product => {
+    const result: FBExtractedProduct[] = [];
+    // Track already-seen products within this batch (fbPostId → index in result)
+    const seenInBatch: { name: string; words: string[]; index: number }[] = [];
+
+    for (const product of extracted) {
         const nameLower = product.name.toLowerCase().trim();
         const nameWords = tokenize(product.name);
 
-        let bestMatch: { id: string; name: string; score: number } | null = null;
+        // === CHECK 1: Against existing DB products ===
+        let dbMatch: { id: string; name: string; score: number } | null = null;
 
         for (const ex of existing) {
             const exNameLower = ex.name.toLowerCase().trim();
 
-            // Exact name match — instant duplicate
             if (nameLower === exNameLower) {
-                bestMatch = { id: ex.id, name: ex.name, score: 100 };
+                dbMatch = { id: ex.id, name: ex.name, score: 100 };
                 break;
             }
 
-            // Word overlap similarity
             const exWords = tokenize(ex.name);
             const score = wordSimilarity(nameWords, exWords);
-
-            if (score > (bestMatch?.score || 0)) {
-                bestMatch = { id: ex.id, name: ex.name, score };
+            if (score > (dbMatch?.score || 0)) {
+                dbMatch = { id: ex.id, name: ex.name, score };
             }
         }
 
-        // 40%+ word overlap = likely duplicate
-        if (bestMatch && bestMatch.score >= 40) {
-            console.log(`[FB Import] Duplicate found: "${product.name}" ≈ "${bestMatch.name}" (${bestMatch.score.toFixed(0)}%)`);
-            return {
+        if (dbMatch && dbMatch.score >= 40) {
+            console.log(`[FB Import] DB duplicate: "${product.name}" ≈ "${dbMatch.name}" (${dbMatch.score.toFixed(0)}%)`);
+            result.push({
                 ...product,
                 status: 'duplicate' as const,
-                duplicateOf: bestMatch.id,
-                duplicateOfName: bestMatch.name,
+                duplicateOf: dbMatch.id,
+                duplicateOfName: dbMatch.name,
                 duplicateAction: 'skip' as const
-            };
+            });
+            continue;
         }
 
-        return product;
-    });
+        // === CHECK 2: Against already-extracted products in this batch ===
+        let batchMatch: { index: number; name: string; score: number } | null = null;
+
+        for (const seen of seenInBatch) {
+            if (nameLower === seen.name) {
+                batchMatch = { index: seen.index, name: seen.name, score: 100 };
+                break;
+            }
+
+            const score = wordSimilarity(nameWords, seen.words);
+            if (score > (batchMatch?.score || 0)) {
+                batchMatch = { index: seen.index, name: seen.name, score };
+            }
+        }
+
+        if (batchMatch && batchMatch.score >= 50) {
+            // This is a duplicate within the batch — skip it (keep the first one)
+            console.log(`[FB Import] Batch duplicate: "${product.name}" ≈ "${batchMatch.name}" (${batchMatch.score.toFixed(0)}%) — skipping`);
+            // Merge images from the duplicate into the first occurrence
+            const firstProduct = result[batchMatch.index];
+            if (firstProduct) {
+                const mergedImages = [...firstProduct.images];
+                for (const img of product.images) {
+                    if (!mergedImages.includes(img)) mergedImages.push(img);
+                }
+                result[batchMatch.index] = { ...firstProduct, images: mergedImages };
+            }
+            // Don't add this product — it's a batch duplicate
+            continue;
+        }
+
+        // === NEW: Add to results and track ===
+        seenInBatch.push({ name: nameLower, words: nameWords, index: result.length });
+        result.push(product);
+    }
+
+    return result;
 }
 
 // ============ Image Upload Helper ============
