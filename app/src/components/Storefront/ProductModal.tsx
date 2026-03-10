@@ -14,6 +14,8 @@ export function ProductModal({ product, onClose }: ProductModalProps) {
     const [added, setAdded] = useState(false);
     const [activeImage, setActiveImage] = useState(0);
     const [isTransitioning, setIsTransitioning] = useState(false);
+    const [showTerms, setShowTerms] = useState(false);
+    const [termsAccepted, setTermsAccepted] = useState(false);
     const touchRef = useRef<{ startX: number; startY: number } | null>(null);
 
     // Lock body scroll
@@ -193,53 +195,94 @@ export function ProductModal({ product, onClose }: ProductModalProps) {
 
                     {/* Product Info */}
                     <div className="sf-modal-info">
-                        {(brand || product.categoryName) && (
-                            <span className="sf-modal-category">
-                                {brand || product.categoryName}
-                            </span>
-                        )}
-
-                        <h2 className="sf-modal-title">{product.name}</h2>
-
-                        <div className="sf-modal-price">
-                            <span>{salePrice.toLocaleString()} ₮</span>
-                            {hasDiscount && (
-                                <>
-                                    <span className="sf-modal-compare-price">
-                                        {comparePrice.toLocaleString()} ₮
-                                    </span>
-                                    <span style={{
-                                        fontSize: '0.75rem', fontWeight: 700,
-                                        background: '#fef2f2', color: '#dc2626',
-                                        padding: '3px 8px', borderRadius: 100,
-                                    }}>
-                                        -{discountPercent}%
-                                    </span>
-                                </>
+                        {/* Sticky Header: Category + Name + Price */}
+                        <div className="sf-modal-info-header">
+                            {(brand || product.categoryName) && (
+                                <span className="sf-modal-category">
+                                    {brand || product.categoryName}
+                                </span>
                             )}
+
+                            <h2 className="sf-modal-title">{product.name}</h2>
+
+                            <div className="sf-modal-price">
+                                <span>{salePrice.toLocaleString()} ₮</span>
+                                {hasDiscount && (
+                                    <>
+                                        <span className="sf-modal-compare-price">
+                                            {comparePrice.toLocaleString()} ₮
+                                        </span>
+                                        <span style={{
+                                            fontSize: '0.75rem', fontWeight: 700,
+                                            background: '#fef2f2', color: '#dc2626',
+                                            padding: '3px 8px', borderRadius: 100,
+                                        }}>
+                                            -{discountPercent}%
+                                        </span>
+                                    </>
+                                )}
+                            </div>
                         </div>
 
-                        <hr className="sf-modal-divider" />
+                        {/* Scrollable content below sticky header */}
+                        <div className="sf-modal-info-body">
+                            <hr className="sf-modal-divider" />
 
-                        {/* Stock / Preorder indicator */}
-                        {isPreorder ? (
-                            <div className="sf-modal-stock" style={{ color: 'var(--sf-brand-color, #6366f1)' }}>
-                                <Package size={15} />
-                                Захиалгаар авах боломжтой
-                            </div>
-                        ) : (
-                            <div className="sf-modal-stock" style={!hasStock ? { color: '#dc2626' } : undefined}>
-                                <span className="sf-modal-stock-dot" style={!hasStock ? { background: '#dc2626', animation: 'none' } : undefined} />
-                                {hasStock ? 'Нөөцөд байгаа' : 'Дууссан'}
-                            </div>
-                        )}
+                            {/* Stock / Preorder indicator */}
+                            {isPreorder ? (
+                                <div className="sf-modal-preorder-badge">
+                                    <Package size={16} />
+                                    <div>
+                                        <div style={{ fontWeight: 700, fontSize: '0.85rem' }}>Урьдчилсан захиалга</div>
+                                        <div style={{ fontSize: '0.72rem', opacity: 0.7 }}>Захиалга өгсөнөөс хойш 3-14 хоногт хүргэнэ</div>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="sf-modal-stock" style={!hasStock ? { color: '#dc2626' } : undefined}>
+                                    <span className="sf-modal-stock-dot" style={!hasStock ? { background: '#dc2626', animation: 'none' } : undefined} />
+                                    {hasStock ? 'Нөөцөд байгаа' : 'Дууссан'}
+                                </div>
+                            )}
 
-                        {/* Description */}
-                        {product.description && (
-                            <div className="sf-modal-desc">
-                                {product.description}
-                            </div>
-                        )}
+                            {/* Description */}
+                            {product.description && (
+                                <div className="sf-modal-desc">
+                                    {product.description}
+                                </div>
+                            )}
+
+                            {/* Preorder Terms */}
+                            {isPreorder && (
+                                <div className="sf-modal-terms">
+                                    <div
+                                        className="sf-modal-terms-header"
+                                        onClick={() => setShowTerms(!showTerms)}
+                                    >
+                                        <span style={{ fontWeight: 700, fontSize: '0.82rem' }}>📋 Захиалгын нөхцөл</span>
+                                        <ChevronRight size={16} style={{ transform: showTerms ? 'rotate(90deg)' : 'none', transition: 'transform 0.2s' }} />
+                                    </div>
+                                    {showTerms && (
+                                        <div className="sf-modal-terms-body">
+                                            <ul>
+                                                <li>Урьдчилсан захиалга нь бараа ирсний дараа хүргэгдэнэ</li>
+                                                <li>Хүргэлтийн хугацаа 3-14 хоног</li>
+                                                <li>Захиалга цуцлах боломжгүй, буцаалт хийгдэхгүй</li>
+                                                <li>Бараа ирсэн даруй утсаар мэдэгдэнэ</li>
+                                                <li>Төлбөрийг захиалга өгөх үед бүрэн төлнө</li>
+                                            </ul>
+                                        </div>
+                                    )}
+                                    <label className="sf-modal-terms-check">
+                                        <input
+                                            type="checkbox"
+                                            checked={termsAccepted}
+                                            onChange={e => setTermsAccepted(e.target.checked)}
+                                        />
+                                        <span>Захиалгын нөхцөлтэй танилцаж, зөвшөөрч байна</span>
+                                    </label>
+                                </div>
+                            )}
+                        </div>
 
                         {/* Add to cart */}
                         <div className="sf-modal-actions">
@@ -262,13 +305,13 @@ export function ProductModal({ product, onClose }: ProductModalProps) {
                             <button
                                 className="sf-modal-add-btn"
                                 onClick={handleAddToCart}
-                                disabled={added}
-                                style={added ? { background: '#16a34a' } : undefined}
+                                disabled={added || (isPreorder && !termsAccepted)}
+                                style={added ? { background: '#16a34a' } : (isPreorder && !termsAccepted) ? { opacity: 0.5, cursor: 'not-allowed' } : undefined}
                             >
                                 {added ? (
                                     <><Check size={18} /> Нэмэгдлээ!</>
                                 ) : (
-                                    <><ShoppingBag size={18} /> Сагсанд нэмэх</>
+                                    <><ShoppingBag size={18} /> {isPreorder ? 'Захиалга өгөх' : 'Сагсанд нэмэх'}</>
                                 )}
                             </button>
                         </div>
