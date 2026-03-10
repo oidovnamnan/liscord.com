@@ -226,8 +226,10 @@ ${existingCategories.map(c => `- ${c}`).join('\n')}
   • "Захиалга өгөх бол чат бичээрэй", "DM бичнэ үү", "Inbox-оор холбогдоорой" төрлийн үгс
   • "Like, Share, Follow" төрлийн хүсэлтүүд
   • Утасны дугаар, хаяг (хэрэв байвал)
-- Хэрэв тайлбар дэндүү богино бол, постын мэдээлэл дээр тулгуурлаж 1-2 өгүүлбэрээр өргөтгөж бичих
+- Хэрэв тайлбар дэндүү богино бол, постын мэдээлэл дээр тулгуурлаж 3-5 өгүүлбэрээр дэлгэрэнгүй тайлбар бичих
+- Бүтээгдэхүүний онцлог, давуу тал, хэрэглээний зориулалтыг тусгах
 - Мэргэжлийн, цэвэрхэн, дэлгүүрийн каталогт тохирсон хэл найруулгатай байх
+- Тайлбар нь хамгийн багадаа 100 тэмдэгтээс дээш урттай байх ЁСТОЙ
 
 ХУВИЛБАРУУД (variations):
 - Хэрэв постонд өнгө, хэмжээ, багц зэрэг сонголт байвал тус тусад нь хувилбар үүсгэх
@@ -281,7 +283,7 @@ JSON ХАРИУ:
 
         return {
             name: parsed.name || 'Нэргүй бараа',
-            description: parsed.description || message.substring(0, 200),
+            description: parsed.description || message,
             salePrice: Number(parsed.salePrice) || 0,
             costPrice: Number(parsed.costPrice) || 0,
             categoryName,
@@ -305,7 +307,7 @@ JSON ХАРИУ:
 
             return {
                 name: message.substring(0, 80).split('\n')[0] || 'Нэргүй бараа',
-                description: message.substring(0, 200),
+                description: message,
                 salePrice: price,
                 costPrice: 0,
                 categoryName: 'Бусад',
