@@ -115,22 +115,43 @@ export async function fetchFBPosts(
 
 export function extractImagesFromPost(post: FBPost): string[] {
     const images: string[] = [];
+    const seenKeys = new Set<string>();
+
+    // Extract a stable key from FB image URL (ignore CDN/size params)
+    const getImageKey = (url: string): string => {
+        try {
+            const u = new URL(url);
+            // Get filename without query params
+            const path = u.pathname;
+            // Extract just the file ID part (e.g., "123456789_987654321_n.jpg")
+            const match = path.match(/\d{5,}_\d{5,}[^/]*/);
+            return match ? match[0] : path;
+        } catch {
+            return url;
+        }
+    };
+
+    const addImage = (src: string) => {
+        const key = getImageKey(src);
+        if (!seenKeys.has(key)) {
+            seenKeys.add(key);
+            images.push(src);
+        }
+    };
 
     if (post.full_picture) {
-        images.push(post.full_picture);
+        addImage(post.full_picture);
     }
 
     if (post.attachments?.data) {
         for (const attachment of post.attachments.data) {
             if (attachment.media?.image?.src) {
-                const src = attachment.media.image.src;
-                if (!images.includes(src)) images.push(src);
+                addImage(attachment.media.image.src);
             }
             if (attachment.subattachments?.data) {
                 for (const sub of attachment.subattachments.data) {
                     if (sub.media?.image?.src) {
-                        const src = sub.media.image.src;
-                        if (!images.includes(src)) images.push(src);
+                        addImage(sub.media.image.src);
                     }
                 }
             }
