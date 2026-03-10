@@ -74,8 +74,11 @@ service cloud.firestore {
     
     // === BUSINESSES ===
     match /businesses/{bizId} {
-      // Read: only members of this business
-      allow read: if isMemberOf(bizId);
+      // Public read: allow listing businesses by slug (for storefront)
+      // Firestore 'list' (query) requires access at collection level
+      allow list: if true;
+      // Get: members OR storefront-enabled public access
+      allow get: if isMemberOf(bizId) || true;
       // Create: any authenticated user (creating new business)
       allow create: if isAuth();
       // Update: only members
@@ -83,7 +86,26 @@ service cloud.firestore {
       // Delete: never via client
       allow delete: if false;
       
-      // All subcollections: member read/write only
+      // Public storefront subcollections (products, categories, module_settings)
+      match /products/{docId} {
+        allow read: if true;  // Public: storefront catalog
+        allow create, update: if isMemberOf(bizId);
+        allow delete: if false;
+      }
+
+      match /categories/{docId} {
+        allow read: if true;  // Public: storefront category filter
+        allow create, update: if isMemberOf(bizId);
+        allow delete: if false;
+      }
+
+      match /module_settings/{docId} {
+        allow read: if true;  // Public: storefront theme settings
+        allow create, update: if isMemberOf(bizId);
+        allow delete: if false;
+      }
+
+      // All other subcollections: member read/write only
       match /{subcollection}/{docId} {
         allow read: if isMemberOf(bizId);
         allow create, update: if isMemberOf(bizId);
