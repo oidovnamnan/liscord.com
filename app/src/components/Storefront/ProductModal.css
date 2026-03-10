@@ -286,7 +286,7 @@
 
 /* Sticky Header: Category + Name + Price */
 .sf-modal-info-header {
-    padding: 40px 36px 16px;
+    padding: 24px 36px 10px;
     background: #fff;
     position: sticky;
     top: 0;
@@ -382,13 +382,13 @@
 /* Category / Brand */
 .sf-modal-category {
     display: inline-block;
-    font-size: 0.72rem;
+    font-size: 0.68rem;
     font-weight: 700;
     text-transform: uppercase;
     color: var(--sf-brand-color, #666);
     letter-spacing: 0.12em;
-    margin-bottom: 12px;
-    padding: 4px 12px;
+    margin-bottom: 8px;
+    padding: 3px 10px;
     background: var(--sf-brand-color-soft, rgba(0, 0, 0, 0.04));
     border-radius: 100px;
     width: fit-content;
@@ -397,23 +397,23 @@
 /* Title */
 .sf-modal-title {
     font-family: 'Plus Jakarta Sans', 'Inter', system-ui, sans-serif;
-    font-size: 1.6rem;
+    font-size: 1.35rem;
     font-weight: 800;
     letter-spacing: -0.03em;
     line-height: 1.25;
-    margin: 0 0 20px 0;
+    margin: 0 0 10px 0;
     color: #111;
 }
 
 /* Price */
 .sf-modal-price {
     font-family: 'Plus Jakarta Sans', 'Inter', system-ui, sans-serif;
-    font-size: 1.5rem;
+    font-size: 1.25rem;
     font-weight: 800;
-    margin-bottom: 24px;
+    margin-bottom: 0;
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 10px;
     color: var(--sf-brand-color, #111);
 }
 
