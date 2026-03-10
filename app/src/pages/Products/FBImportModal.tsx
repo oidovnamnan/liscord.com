@@ -148,7 +148,7 @@ export function FBImportModal({ onClose }: FBImportModalProps) {
             // Detect duplicates
             const withDuplicates = detectDuplicates(
                 extracted,
-                existingProducts.map(p => ({ id: p.id, name: p.name, sku: p.sku, images: p.images }))
+                existingProducts.map(p => ({ id: p.id, name: p.name, description: p.description, sku: p.sku, images: p.images }))
             );
 
             setProducts(withDuplicates);

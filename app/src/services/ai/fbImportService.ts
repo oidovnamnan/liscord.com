@@ -372,35 +372,54 @@ function wordSimilarity(a: string[], b: string[]): number {
 
 export function detectDuplicates(
     extracted: FBExtractedProduct[],
-    existing: { id: string; name: string; sku: string; images: string[] }[]
+    existing: { id: string; name: string; description?: string; sku: string; images: string[] }[]
 ): FBExtractedProduct[] {
     const result: FBExtractedProduct[] = [];
-    // Track already-seen products within this batch (fbPostId → index in result)
-    const seenInBatch: { name: string; words: string[]; index: number }[] = [];
+    const seenInBatch: { name: string; words: string[]; descWords: string[]; images: string[]; index: number }[] = [];
+
+    // Pre-tokenize existing products (name + description combined)
+    const existingTokenized = existing.map(ex => ({
+        ...ex,
+        nameWords: tokenize(ex.name),
+        allWords: [...tokenize(ex.name), ...tokenize(ex.description || '')],
+    }));
 
     for (const product of extracted) {
         const nameLower = product.name.toLowerCase().trim();
         const nameWords = tokenize(product.name);
+        const descWords = tokenize(product.description);
+        const allWords = [...nameWords, ...descWords]; // combine name + desc
 
-        // === CHECK 1: Against existing DB products ===
+        // === CHECK 1: Against existing DB products (multi-signal) ===
         let dbMatch: { id: string; name: string; score: number } | null = null;
 
-        for (const ex of existing) {
-            const exNameLower = ex.name.toLowerCase().trim();
+        for (const ex of existingTokenized) {
+            let totalScore = 0;
 
-            if (nameLower === exNameLower) {
-                dbMatch = { id: ex.id, name: ex.name, score: 100 };
-                break;
+            // Signal 1: Name-to-name word similarity (weight: 40%)
+            const nameScore = wordSimilarity(nameWords, ex.nameWords);
+            totalScore += nameScore * 0.4;
+
+            // Signal 2: All words cross-match (extracted name+desc vs existing name+desc)
+            // This catches: old raw FB name text appears in new product's description
+            const crossScore = wordSimilarity(allWords, ex.allWords);
+            totalScore += crossScore * 0.4;
+
+            // Signal 3: Image overlap (weight: 20%)
+            if (product.images.length > 0 && ex.images.length > 0) {
+                const sharedImages = product.images.filter(img => ex.images.includes(img));
+                if (sharedImages.length > 0) {
+                    totalScore += 20; // Any shared image = strong signal
+                }
             }
 
-            const exWords = tokenize(ex.name);
-            const score = wordSimilarity(nameWords, exWords);
-            if (score > (dbMatch?.score || 0)) {
-                dbMatch = { id: ex.id, name: ex.name, score };
+            if (totalScore > (dbMatch?.score || 0)) {
+                dbMatch = { id: ex.id, name: ex.name, score: totalScore };
             }
         }
 
-        if (dbMatch && dbMatch.score >= 40) {
+        // 30%+ combined score = duplicate (lower than before since it's multi-signal)
+        if (dbMatch && dbMatch.score >= 30) {
             console.log(`[FB Import] DB duplicate: "${product.name}" ≈ "${dbMatch.name}" (${dbMatch.score.toFixed(0)}%)`);
             result.push({
                 ...product,
@@ -416,21 +435,27 @@ export function detectDuplicates(
         let batchMatch: { index: number; name: string; score: number } | null = null;
 
         for (const seen of seenInBatch) {
-            if (nameLower === seen.name) {
-                batchMatch = { index: seen.index, name: seen.name, score: 100 };
-                break;
-            }
+            let totalScore = 0;
 
-            const score = wordSimilarity(nameWords, seen.words);
-            if (score > (batchMatch?.score || 0)) {
-                batchMatch = { index: seen.index, name: seen.name, score };
+            // Name similarity
+            const nameScore = wordSimilarity(nameWords, seen.words);
+            totalScore += nameScore * 0.5;
+
+            // Desc cross-match
+            const descScore = wordSimilarity(allWords, [...seen.words, ...seen.descWords]);
+            totalScore += descScore * 0.3;
+
+            // Image overlap
+            const sharedImgs = product.images.filter(img => seen.images.includes(img));
+            if (sharedImgs.length > 0) totalScore += 20;
+
+            if (totalScore > (batchMatch?.score || 0)) {
+                batchMatch = { index: seen.index, name: seen.name, score: totalScore };
             }
         }
 
-        if (batchMatch && batchMatch.score >= 50) {
-            // This is a duplicate within the batch — skip it (keep the first one)
+        if (batchMatch && batchMatch.score >= 40) {
             console.log(`[FB Import] Batch duplicate: "${product.name}" ≈ "${batchMatch.name}" (${batchMatch.score.toFixed(0)}%) — skipping`);
-            // Merge images from the duplicate into the first occurrence
             const firstProduct = result[batchMatch.index];
             if (firstProduct) {
                 const mergedImages = [...firstProduct.images];
@@ -439,12 +464,11 @@ export function detectDuplicates(
                 }
                 result[batchMatch.index] = { ...firstProduct, images: mergedImages };
             }
-            // Don't add this product — it's a batch duplicate
             continue;
         }
 
         // === NEW: Add to results and track ===
-        seenInBatch.push({ name: nameLower, words: nameWords, index: result.length });
+        seenInBatch.push({ name: nameLower, words: nameWords, descWords, images: product.images, index: result.length });
         result.push(product);
     }
 
