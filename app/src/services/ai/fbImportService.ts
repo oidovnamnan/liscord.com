@@ -162,7 +162,11 @@ function generateSKU(categoryName: string): string {
 
 // ============ AI Product Extraction ============
 
-export async function extractProductFromPost(post: FBPost, apiKey: string): Promise<FBExtractedProduct | null> {
+export async function extractProductFromPost(
+    post: FBPost,
+    apiKey: string,
+    existingCategories: string[] = []
+): Promise<FBExtractedProduct | null> {
     const message = post.message || '';
     const images = extractImagesFromPost(post);
 
@@ -181,6 +185,10 @@ ${message}
 
 ZУРАГ ТОО: ${images.length}
 
+${existingCategories.length > 0 ? `ОДОО БАЙГАА АНГИЛАЛУУД (эдгээрээс сонгох нь илүүд үзнэ):
+${existingCategories.map(c => `- ${c}`).join('\n')}
+Эдгээрт таарахгүй бол шинэ ангилал нэрлэж болно.
+` : ''}
 ДААЛГАВАР:
 1. Энэ пост нь бараа/бүтээгдэхүүний пост мөн эсэхийг тодорхойлох.
 2. Бараа мөн бол дараах мэдээллийг задлах:
@@ -297,7 +305,8 @@ JSON ХАРИУ:
 export async function extractProductsFromPosts(
     posts: FBPost[],
     apiKey: string,
-    onProgress?: (current: number, total: number, product?: FBExtractedProduct) => void
+    onProgress?: (current: number, total: number, product?: FBExtractedProduct) => void,
+    existingCategories: string[] = []
 ): Promise<FBExtractedProduct[]> {
     const products: FBExtractedProduct[] = [];
     const DELAY_MS = 500; // 0.5s between requests (paid tier has high limits)
@@ -310,13 +319,13 @@ export async function extractProductsFromPosts(
             await new Promise(r => setTimeout(r, DELAY_MS));
         }
 
-        let product = await extractProductFromPost(posts[i], apiKey);
+        let product = await extractProductFromPost(posts[i], apiKey, existingCategories);
 
         // If rate limited (429), wait longer and retry once
         if (!product && posts[i].message && posts[i].message!.length > 3) {
             // Check if it was a rate limit by trying again after longer wait
             await new Promise(r => setTimeout(r, 15000)); // wait 15s
-            product = await extractProductFromPost(posts[i], apiKey);
+            product = await extractProductFromPost(posts[i], apiKey, existingCategories);
         }
 
         if (product) {

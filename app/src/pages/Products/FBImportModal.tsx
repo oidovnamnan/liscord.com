@@ -128,6 +128,7 @@ export function FBImportModal({ onClose }: FBImportModalProps) {
 
             // Start AI processing
             setStep('processing');
+            const categoryNames = categories.map(c => c.name);
             const extracted = await extractProductsFromPosts(fetchedPosts, geminiApiKey, (current, total, product) => {
                 setProgress({
                     current,
@@ -136,7 +137,7 @@ export function FBImportModal({ onClose }: FBImportModalProps) {
                         ? `${current}/${total} — "${product.name}" олдлоо`
                         : `${current}/${total} пост задалж байна...`
                 });
-            });
+            }, categoryNames);
 
             if (extracted.length === 0) {
                 toast.error('Барааны мэдээлэл бүхий пост олдсонгүй');
@@ -217,16 +218,31 @@ export function FBImportModal({ onClose }: FBImportModalProps) {
                     finalImages = product.images;
                 }
 
-                // Find or create category
-                let categoryId = 'general';
-                const existingCat = categories.find(c => c.name.toLowerCase() === product.categoryName.toLowerCase());
-                if (existingCat) {
-                    categoryId = existingCat.id;
-                } else if (product.categoryName && product.categoryName !== 'Бусад') {
-                    categoryId = await categoryService.createCategory(business.id, {
-                        name: product.categoryName,
-                        description: ''
-                    });
+                // Find or create category (fuzzy match)
+                let categoryId = '';
+                let matchedCatName = product.categoryName || 'Бусад';
+
+                // Exact match first
+                const exactCat = categories.find(c => c.name.toLowerCase() === matchedCatName.toLowerCase());
+                if (exactCat) {
+                    categoryId = exactCat.id;
+                    matchedCatName = exactCat.name;
+                } else {
+                    // Fuzzy: check if category name contains or is contained
+                    const fuzzyCat = categories.find(c =>
+                        c.name.toLowerCase().includes(matchedCatName.toLowerCase()) ||
+                        matchedCatName.toLowerCase().includes(c.name.toLowerCase())
+                    );
+                    if (fuzzyCat) {
+                        categoryId = fuzzyCat.id;
+                        matchedCatName = fuzzyCat.name;
+                    } else {
+                        // Create new category
+                        categoryId = await categoryService.createCategory(business.id, {
+                            name: matchedCatName,
+                            description: ''
+                        });
+                    }
                 }
 
                 console.log('[FB Import] Creating product:', product.name, 'images:', finalImages.length);
@@ -235,7 +251,7 @@ export function FBImportModal({ onClose }: FBImportModalProps) {
                     name: product.name,
                     description: product.description,
                     categoryId,
-                    categoryName: product.categoryName,
+                    categoryName: matchedCatName,
                     sku: product.sku || '',
                     barcode: '',
                     images: finalImages,
