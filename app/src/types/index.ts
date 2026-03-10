@@ -202,6 +202,7 @@ export interface BusinessSettings {
         name?: string;
         installedThemes?: string[]; // IDs of installed/purchased themes
         showFooter?: boolean;
+        preorderTerms?: string; // newline-separated terms for preorder products
     };
     ebarimt?: {
         enabled: boolean;

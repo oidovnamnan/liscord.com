@@ -119,6 +119,7 @@ export function ThemeCommerce({ business }: { business: Business }) {
                 <ProductModal
                     product={selectedProduct}
                     onClose={() => setSelectedProduct(null)}
+                    preorderTerms={business.settings?.storefront?.preorderTerms}
                 />
             )}
         </div>

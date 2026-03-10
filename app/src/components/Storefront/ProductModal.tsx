@@ -7,9 +7,10 @@ import './ProductModal.css';
 interface ProductModalProps {
     product: Product;
     onClose: () => void;
+    preorderTerms?: string;
 }
 
-export function ProductModal({ product, onClose }: ProductModalProps) {
+export function ProductModal({ product, onClose, preorderTerms }: ProductModalProps) {
     const [quantity, setQuantity] = useState(1);
     const [added, setAdded] = useState(false);
     const [activeImage, setActiveImage] = useState(0);
@@ -264,11 +265,10 @@ export function ProductModal({ product, onClose }: ProductModalProps) {
                                     {showTerms && (
                                         <div className="sf-modal-terms-body">
                                             <ul>
-                                                <li>Урьдчилсан захиалга нь бараа ирсний дараа хүргэгдэнэ</li>
-                                                <li>Хүргэлтийн хугацаа 3-14 хоног</li>
-                                                <li>Захиалга цуцлах боломжгүй, буцаалт хийгдэхгүй</li>
-                                                <li>Бараа ирсэн даруй утсаар мэдэгдэнэ</li>
-                                                <li>Төлбөрийг захиалга өгөх үед бүрэн төлнө</li>
+                                                {(preorderTerms || 'Урьдчилсан захиалга нь бараа ирсний дараа хүргэгдэнэ\nХүргэлтийн хугацаа 3-14 хоног\nЗахиалга цуцлах боломжгүй, буцаалт хийгдэхгүй\nБараа ирсэн даруй утсаар мэдэгдэнэ\nТөлбөрийг захиалга өгөх үед бүрэн төлнө')
+                                                    .split('\n')
+                                                    .filter(line => line.trim())
+                                                    .map((term, i) => <li key={i}>{term.trim()}</li>)}
                                             </ul>
                                         </div>
                                     )}

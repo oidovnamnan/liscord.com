@@ -181,6 +181,7 @@ export function SettingsPage() {
         const storefrontName = fd.has('storefrontName') ? (fd.get('storefrontName') as string)?.trim() : undefined;
         const enabled = fd.has('storefrontEnabled') ? fd.get('storefrontEnabled') === 'on' : business.settings?.storefront?.enabled;
         const showFooter = fd.has('showFooter') ? fd.get('showFooter') === 'on' : business.settings?.storefront?.showFooter;
+        const preorderTerms = fd.has('preorderTerms') ? (fd.get('preorderTerms') as string) : business.settings?.storefront?.preorderTerms;
         const newTheme = fd.get('storefrontTheme') as string;
 
         setLoading(true);
@@ -220,7 +221,8 @@ export function SettingsPage() {
                         enabled: enabled ?? false,
                         showFooter: showFooter ?? true,
                         theme: newTheme || business.settings?.storefront?.theme || 'minimal',
-                        name: storefrontName !== undefined ? storefrontName : (business.settings?.storefront?.name || '')
+                        name: storefrontName !== undefined ? storefrontName : (business.settings?.storefront?.name || ''),
+                        preorderTerms: preorderTerms ?? business.settings?.storefront?.preorderTerms
                     }
                 }
             });
@@ -231,7 +233,8 @@ export function SettingsPage() {
                 enabled: enabled ?? false,
                 showFooter: showFooter ?? true,
                 theme: newTheme || business.settings?.storefront?.theme || 'minimal',
-                name: storefrontName !== undefined ? storefrontName : (business.settings?.storefront?.name || '')
+                name: storefrontName !== undefined ? storefrontName : (business.settings?.storefront?.name || ''),
+                preorderTerms: preorderTerms ?? business.settings?.storefront?.preorderTerms
             };
             await moduleSettingsService.updateSettings(business.id, 'storefront', sfSettings);
 
@@ -493,6 +496,19 @@ export function SettingsPage() {
                                                 />
                                                 <span className="toggle-slider" />
                                             </label>
+                                        </div>
+
+                                        <div className="input-group" style={{ marginTop: 24 }}>
+                                            <label className="settings-label">Захиалгын нөхцөл (Preorder)</label>
+                                            <textarea
+                                                className="input"
+                                                name="preorderTerms"
+                                                rows={5}
+                                                defaultValue={business?.settings?.storefront?.preorderTerms || 'Урьдчилсан захиалга нь бараа ирсний дараа хүргэгдэнэ\nХүргэлтийн хугацаа 3-14 хоног\nЗахиалга цуцлах боломжгүй, буцаалт хийгдэхгүй\nБараа ирсэн даруй утсаар мэдэгдэнэ\nТөлбөрийг захиалга өгөх үед бүрэн төлнө'}
+                                                placeholder="Мөр бүр нэг нөхцөл. Жнь:&#10;Хүргэлт 3-7 хоног&#10;Буцаалт хийгдэхгүй"
+                                                style={{ resize: 'vertical', minHeight: 100 }}
+                                            />
+                                            <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: '8px 0 0 0' }}>Мөр бүрд нэг нөхцөл бичнэ. Захиалгын бараа-д харагдана.</p>
                                         </div>
 
                                         <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 24 }}>
