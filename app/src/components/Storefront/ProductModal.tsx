@@ -258,7 +258,7 @@ export function ProductModal({ product, onClose }: ProductModalProps) {
                                         className="sf-modal-terms-header"
                                         onClick={() => setShowTerms(!showTerms)}
                                     >
-                                        <span style={{ fontWeight: 700, fontSize: '0.82rem' }}>📋 Захиалгын нөхцөл</span>
+                                        <span style={{ fontWeight: 700, fontSize: '0.82rem' }}>⚠️ Захиалгын нөхцөл</span>
                                         <ChevronRight size={16} style={{ transform: showTerms ? 'rotate(90deg)' : 'none', transition: 'transform 0.2s' }} />
                                     </div>
                                     {showTerms && (
