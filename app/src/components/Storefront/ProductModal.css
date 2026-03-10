@@ -349,8 +349,6 @@
     white-space: pre-wrap;
     font-weight: 400;
     flex: 1;
-    overflow-y: auto;
-    max-height: 260px;
     padding-right: 8px;
 }
 
@@ -529,7 +527,6 @@
     }
 
     .sf-modal-desc {
-        max-height: 200px;
         font-size: 0.85rem;
     }
 
