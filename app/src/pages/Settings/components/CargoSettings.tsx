@@ -1,9 +1,19 @@
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { Globe, Plus, MoreVertical, Trash2, Loader2 } from 'lucide-react';
+import { Globe, Plus, MoreVertical, Trash2, Loader2, Zap } from 'lucide-react';
 import { cargoService } from '../../../services/db';
 import { toast } from 'react-hot-toast';
 import { type CargoType } from '../../../types';
+
+const DEFAULT_CARGO_TYPES = [
+    { name: 'Жижиг бараа', fee: 3000, unit: 'ш' },
+    { name: 'Жижгэвтэр бараа', fee: 5000, unit: 'ш' },
+    { name: 'Дунд бараа', fee: 7500, unit: 'ш' },
+    { name: 'Томовтор бараа', fee: 10000, unit: 'ш' },
+    { name: 'Том бараа', fee: 15000, unit: 'ш' },
+    { name: 'Их том бараа', fee: 50000, unit: 'ш' },
+    { name: 'Алкоголь (1л)', fee: 9000, unit: 'л' },
+];
 
 export function CargoSettings({ bizId }: { bizId: string }) {
     const [cargoTypes, setCargoTypes] = useState<CargoType[]>([]);
@@ -21,7 +31,7 @@ export function CargoSettings({ bizId }: { bizId: string }) {
         try {
             await cargoService.updateCargoType(bizId, id, { isDeleted: true });
             toast.success('Устгагдлаа');
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
         } catch (_e) { toast.error('Алдаа гарлаа'); }
     };
 
@@ -62,7 +72,21 @@ export function CargoSettings({ bizId }: { bizId: string }) {
                     {cargoTypes.length === 0 && (
                         <div className="empty-state-mini" style={{ gridColumn: '1/-1', textAlign: 'center', padding: '40px', background: 'var(--bg-soft)', borderRadius: 12, border: '1px dashed var(--border-color)' }}>
                             <Globe size={32} style={{ color: 'var(--text-muted)', marginBottom: 12, opacity: 0.5 }} />
-                            <div style={{ color: 'var(--text-muted)' }}>Каргоны төрөл бүртгэгдээгүй байна</div>
+                            <div style={{ color: 'var(--text-muted)', marginBottom: 16 }}>Каргоны төрөл бүртгэгдээгүй байна</div>
+                            <button
+                                className="btn btn-primary btn-sm gradient-btn"
+                                style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
+                                onClick={async () => {
+                                    try {
+                                        for (const ct of DEFAULT_CARGO_TYPES) {
+                                            await cargoService.createCargoType(bizId, ct);
+                                        }
+                                        toast.success(`${DEFAULT_CARGO_TYPES.length} каргоны төрөл нэмэгдлээ`);
+                                    } catch { toast.error('Алдаа гарлаа'); }
+                                }}
+                            >
+                                <Zap size={14} /> Стандарт төлбөрүүд нэмэх
+                            </button>
                         </div>
                     )}
                 </div>
@@ -100,7 +124,7 @@ function CargoTypeModal({ bizId, onClose, editingType }: { bizId: string; onClos
             }
             toast.success('Амжилттай');
             onClose();
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
         } catch (_e) { toast.error('Алдаа гарлаа'); } finally { setLoading(false); }
     };
 

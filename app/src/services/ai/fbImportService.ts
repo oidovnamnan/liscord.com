@@ -32,6 +32,9 @@ export interface FBExtractedProduct {
     confidence: number;
     sku: string;
     variations?: { name: string; sku: string; quantity: number }[];
+    cargoSizeCategory?: string;
+    cargoFee?: number;
+    cargoTypeId?: string;
 }
 
 export interface FBPost {
@@ -186,7 +189,8 @@ function generateSKU(categoryName: string): string {
 export async function extractProductFromPost(
     post: FBPost,
     apiKey: string,
-    existingCategories: string[] = []
+    existingCategories: string[] = [],
+    cargoTypes: { id: string; name: string; fee: number }[] = []
 ): Promise<FBExtractedProduct | null> {
     const message = post.message || '';
     const images = extractImagesFromPost(post);
@@ -255,6 +259,21 @@ ${existingCategories.map(c => `- ${c}`).join('\n')}
 
 ТООН УТГЫГ ЗӨВХӨН ТООГООР бичнэ. "45,000₮" → 45000
 
+ӨРТӨГ ТООЦООЛОХ:
+- salePrice нь FB постонд байгаа зарах үнэ
+- costPrice нь ӨРТӨГ ҮНЭ - зарах үнийн 50-70% хооронд тооцоол (импорт бараанд)
+- Хэрэв зарах үнэ байхгүй бол costPrice = 0
+
+КАРГО ХЭМЖЭЭ АНГИЛАЛ (cargoSizeCategory):
+Барааны хэмжээ, жинг харгалзан дараах ангилалаас сонго:
+${cargoTypes.length > 0 ? cargoTypes.map(ct => `- "${ct.name}" (${ct.fee.toLocaleString()}₮)`).join('\n') : `- "Жижиг бараа" (3,000₮) - гоо сайхны бараа, жижиг хэрэгсэл
+- "Жижгэвтэр бараа" (5,000₮) - витамин, жижиг цахилгаан бараа
+- "Дунд бараа" (7,500₮) - гар утас, дунд хэмжээний бараа  
+- "Томовтор бараа" (10,000₮) - чанамал, дунд хэрэгсэл
+- "Том бараа" (15,000₮) - тоглоом, цүнх, кофе машин
+- "Их том бараа" (50,000₮) - агаар цэвэршүүлэгч, том тоног төхөөрөмж
+- "Алкоголь (1л)" (9,000₮) - архи, дарс, виски`}
+
 JSON ХАРИУ:
 {
   "isProduct": true,
@@ -264,7 +283,8 @@ JSON ХАРИУ:
   "costPrice": 0,
   "categoryName": "Ангилал",
   "confidence": 85,
-  "variations": [{"name": "S"}, {"name": "M"}]
+  "variations": [{"name": "S"}, {"name": "M"}],
+  "cargoSizeCategory": "Жижиг бараа"
 }
 
 Хэрэв бараа БИSH бол: {"isProduct": false, "confidence": 0}
@@ -311,7 +331,26 @@ JSON ХАРИУ:
             isSelected: true,
             confidence: parsed.confidence || 50,
             sku,
-            variations: variations.length > 0 ? variations : undefined
+            variations: variations.length > 0 ? variations : undefined,
+            cargoSizeCategory: parsed.cargoSizeCategory || undefined,
+            cargoFee: (() => {
+                if (parsed.cargoSizeCategory && cargoTypes.length > 0) {
+                    const matched = cargoTypes.find(ct =>
+                        ct.name.toLowerCase() === parsed.cargoSizeCategory.toLowerCase()
+                    );
+                    return matched?.fee || 0;
+                }
+                return 0;
+            })(),
+            cargoTypeId: (() => {
+                if (parsed.cargoSizeCategory && cargoTypes.length > 0) {
+                    const matched = cargoTypes.find(ct =>
+                        ct.name.toLowerCase() === parsed.cargoSizeCategory.toLowerCase()
+                    );
+                    return matched?.id || undefined;
+                }
+                return undefined;
+            })(),
         };
     } catch (error: any) {
         console.warn('[FB Import] AI extraction failed for post:', post.id, error?.message || error);
@@ -345,7 +384,8 @@ export async function extractProductsFromPosts(
     posts: FBPost[],
     apiKey: string,
     onProgress?: (current: number, total: number, product?: FBExtractedProduct) => void,
-    existingCategories: string[] = []
+    existingCategories: string[] = [],
+    cargoTypes: { id: string; name: string; fee: number }[] = []
 ): Promise<FBExtractedProduct[]> {
     const products: FBExtractedProduct[] = [];
     const DELAY_MS = 500; // 0.5s between requests (paid tier has high limits)
@@ -358,13 +398,13 @@ export async function extractProductsFromPosts(
             await new Promise(r => setTimeout(r, DELAY_MS));
         }
 
-        let product = await extractProductFromPost(posts[i], apiKey, existingCategories);
+        let product = await extractProductFromPost(posts[i], apiKey, existingCategories, cargoTypes);
 
         // If rate limited (429), wait longer and retry once
         if (!product && posts[i].message && posts[i].message!.length > 3) {
             // Check if it was a rate limit by trying again after longer wait
             await new Promise(r => setTimeout(r, 15000)); // wait 15s
-            product = await extractProductFromPost(posts[i], apiKey, existingCategories);
+            product = await extractProductFromPost(posts[i], apiKey, existingCategories, cargoTypes);
         }
 
         if (product) {

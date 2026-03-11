@@ -3,17 +3,17 @@ import { createPortal } from 'react-dom';
 import {
     Facebook, Calendar, Loader2, CheckCircle2, AlertTriangle,
     ChevronRight, Download, ImageIcon, Sparkles, X, RefreshCw, ArrowLeft,
-    SkipForward, Merge, Replace
+    Edit3, Package, SkipForward, Replace, Merge
 } from 'lucide-react';
 import { useBusinessStore, useAuthStore } from '../../store';
-import { productService, categoryService } from '../../services/db';
+import { productService, categoryService, cargoService } from '../../services/db';
 import {
     fetchFBPageId, fetchFBPosts, extractProductsFromPosts,
     detectDuplicates, uploadAllImages,
     type FBExtractedProduct, type FBPost
 } from '../../services/ai/fbImportService';
 import { globalSettingsService } from '../../services/db';
-import type { Product, Category } from '../../types';
+import type { Product, Category, CargoType } from '../../types';
 import { toast } from 'react-hot-toast';
 
 type ImportStep = 'setup' | 'fetching' | 'processing' | 'review' | 'importing' | 'done';
@@ -52,6 +52,9 @@ export function FBImportModal({ onClose }: FBImportModalProps) {
     const [importProgress, setImportProgress] = useState({ current: 0, total: 0 });
     const [importResults, setImportResults] = useState({ success: 0, failed: 0 });
 
+    // Cargo types
+    const [cargoTypes, setCargoTypes] = useState<CargoType[]>([]);
+
     const isFetching = step === 'fetching' || step === 'processing';
 
     // Load data
@@ -59,6 +62,7 @@ export function FBImportModal({ onClose }: FBImportModalProps) {
         if (!business?.id) return;
         const u1 = productService.subscribeProducts(business.id, setExistingProducts);
         const u2 = categoryService.subscribeCategories(business.id, setCategories);
+        const u3 = cargoService.subscribeCargoTypes(business.id, setCargoTypes);
 
         // Fetch global Gemini API key
         globalSettingsService.getSettings().then(settings => {
@@ -67,7 +71,7 @@ export function FBImportModal({ onClose }: FBImportModalProps) {
             }
         });
 
-        return () => { u1(); u2(); };
+        return () => { u1(); u2(); u3(); };
     }, [business?.id]);
 
     // Set default dates if not in storage
@@ -130,6 +134,7 @@ export function FBImportModal({ onClose }: FBImportModalProps) {
             // Start AI processing
             setStep('processing');
             const categoryNames = categories.map(c => c.name);
+            const cargoForAI = cargoTypes.map(ct => ({ id: ct.id, name: ct.name, fee: ct.fee }));
             const extracted = await extractProductsFromPosts(fetchedPosts, geminiApiKey, (current, total, product) => {
                 setProgress({
                     current,
@@ -138,7 +143,7 @@ export function FBImportModal({ onClose }: FBImportModalProps) {
                         ? `${current}/${total} — "${product.name}" олдлоо`
                         : `${current}/${total} пост задалж байна...`
                 });
-            }, categoryNames);
+            }, categoryNames, cargoForAI);
 
             if (extracted.length === 0) {
                 toast.error('Барааны мэдээлэл бүхий пост олдсонгүй');
@@ -178,8 +183,25 @@ export function FBImportModal({ onClose }: FBImportModalProps) {
 
     const setDuplicateAction = (fbPostId: string, action: 'skip' | 'update' | 'merge') => {
         setProducts(prev => prev.map(p =>
-            p.fbPostId === fbPostId ? { ...p, duplicateAction: action, isSelected: action !== 'skip' } : p
+            p.fbPostId === fbPostId ? { ...p, duplicateAction: action } : p
         ));
+    };
+
+    // Update individual product field
+    const updateProduct = (fbPostId: string, field: keyof FBExtractedProduct, value: any) => {
+        setProducts(prev => prev.map(p => {
+            if (p.fbPostId !== fbPostId) return p;
+            const updated = { ...p, [field]: value };
+            // Auto-recalculate cargoFee if cargoTypeId changes
+            if (field === 'cargoTypeId') {
+                const ct = cargoTypes.find(c => c.id === value);
+                if (ct) {
+                    updated.cargoFee = ct.fee;
+                    updated.cargoSizeCategory = ct.name;
+                }
+            }
+            return updated;
+        }));
     };
 
     // ===== STEP 3: IMPORT =====
@@ -267,6 +289,12 @@ export function FBImportModal({ onClose }: FBImportModalProps) {
                         lowStockThreshold: 3,
                         trackInventory: importProductType === 'ready'
                     },
+                    cargoFee: product.cargoFee ? {
+                        amount: product.cargoFee,
+                        isIncluded: false,
+                        cargoTypeId: product.cargoTypeId,
+                        cargoValue: product.cargoFee,
+                    } : undefined,
                     variations: (product.variations && product.variations.length > 0) ? product.variations as any : [],
                     unitType: 'ш',
                     isActive: true,
@@ -586,6 +614,8 @@ export function FBImportModal({ onClose }: FBImportModalProps) {
                                                 key={product.fbPostId}
                                                 product={product}
                                                 onToggle={() => toggleProduct(product.fbPostId)}
+                                                onUpdate={(field, val) => updateProduct(product.fbPostId, field, val)}
+                                                cargoTypes={cargoTypes}
                                             />
                                         ))}
                                     </div>
@@ -710,60 +740,99 @@ export function FBImportModal({ onClose }: FBImportModalProps) {
 }
 
 // ===== Product Review Card =====
-function ProductCard({ product, onToggle }: { product: FBExtractedProduct; onToggle: () => void }) {
+function ProductCard({ product, onToggle, onUpdate, cargoTypes }: {
+    product: FBExtractedProduct;
+    onToggle: () => void;
+    onUpdate: (field: keyof FBExtractedProduct, value: any) => void;
+    cargoTypes: CargoType[];
+}) {
+    const [expanded, setExpanded] = useState(false);
+    const profit = product.salePrice - (product.costPrice || 0) - (product.cargoFee || 0);
+    const profitPercent = product.salePrice > 0 ? Math.round((profit / product.salePrice) * 100) : 0;
+
     return (
         <div
             className="modal-section-card"
             style={{
-                padding: 12, display: 'flex', gap: 12, alignItems: 'flex-start', cursor: 'pointer',
+                padding: 12, display: 'flex', flexDirection: 'column', gap: 0,
                 opacity: product.isSelected ? 1 : 0.5,
                 border: product.isSelected ? '2px solid var(--primary)' : '2px solid transparent',
                 transition: 'all 0.2s ease'
             }}
-            onClick={onToggle}
         >
-            {/* Image */}
-            <div style={{
-                width: 64, height: 64, borderRadius: 10, overflow: 'hidden',
-                background: 'var(--bg-soft)', flexShrink: 0
-            }}>
-                {product.images[0] ? (
-                    <img src={product.images[0]} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                ) : (
-                    <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <ImageIcon size={24} style={{ color: 'var(--text-muted)' }} />
+            {/* Main Row */}
+            <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start', cursor: 'pointer' }} onClick={onToggle}>
+                {/* Image */}
+                <div style={{ width: 56, height: 56, borderRadius: 10, overflow: 'hidden', background: 'var(--bg-soft)', flexShrink: 0 }}>
+                    {product.images[0] ? (
+                        <img src={product.images[0]} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    ) : (
+                        <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><ImageIcon size={20} style={{ color: 'var(--text-muted)' }} /></div>
+                    )}
+                </div>
+
+                {/* Info */}
+                <div style={{ flex: 1, minWidth: 0, overflow: 'hidden' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>
+                        <div style={{ fontWeight: 700, fontSize: '0.88rem', lineHeight: 1.3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{product.name}</div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+                            <button type="button" className="btn btn-ghost btn-sm btn-icon" onClick={(e) => { e.stopPropagation(); setExpanded(!expanded); }} title="Засах" style={{ width: 28, height: 28 }}>
+                                <Edit3 size={14} />
+                            </button>
+                            <input type="checkbox" checked={product.isSelected} onChange={onToggle} onClick={e => e.stopPropagation()} style={{ accentColor: 'var(--primary)' }} />
+                        </div>
                     </div>
-                )}
+                    <div style={{ fontSize: '0.73rem', color: 'var(--text-muted)', marginTop: 2, display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
+                        <span className="badge badge-soft" style={{ fontSize: '0.62rem' }}>{product.categoryName}</span>
+                        {product.salePrice > 0 && <span style={{ fontWeight: 800, color: 'var(--text-main)' }}>₮{product.salePrice.toLocaleString()}</span>}
+                        {product.costPrice > 0 && <span style={{ color: 'var(--text-muted)' }}>Өртөг: ₮{product.costPrice.toLocaleString()}</span>}
+                        {product.cargoFee && product.cargoFee > 0 && <span style={{ color: 'var(--accent-orange)', display: 'flex', alignItems: 'center', gap: 2 }}><Package size={10} />₮{product.cargoFee.toLocaleString()}</span>}
+                        {product.salePrice > 0 && <span style={{ fontWeight: 700, color: profit > 0 ? '#10b981' : '#ef4444' }}>Ашиг: {profit > 0 ? '+' : ''}₮{profit.toLocaleString()} ({profitPercent}%)</span>}
+                        <span style={{ fontSize: '0.62rem', color: product.confidence > 70 ? '#10b981' : 'var(--accent-orange)' }}>AI {product.confidence}%</span>
+                    </div>
+                </div>
             </div>
 
-            {/* Info */}
-            <div style={{ flex: 1, minWidth: 0, overflow: 'hidden' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>
-                    <div style={{ fontWeight: 700, fontSize: '0.9rem', lineHeight: 1.3, overflow: 'hidden', textOverflow: 'ellipsis', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' as const, wordBreak: 'break-word' as const }}>{product.name}</div>
-                    <input
-                        type="checkbox"
-                        checked={product.isSelected}
-                        onChange={onToggle}
-                        onClick={e => e.stopPropagation()}
-                        style={{ accentColor: 'var(--primary)', marginLeft: 8 }}
-                    />
+            {/* Expanded Edit Fields */}
+            {expanded && product.isSelected && (
+                <div className="animate-fade-in" style={{ marginTop: 10, paddingTop: 10, borderTop: '1px dashed var(--border-color)', display: 'flex', flexDirection: 'column', gap: 8 }} onClick={e => e.stopPropagation()}>
+                    <div className="input-group">
+                        <label className="input-label" style={{ fontSize: '0.7rem' }}>Нэр</label>
+                        <input className="input" value={product.name} onChange={e => onUpdate('name', e.target.value)} style={{ height: 36, fontSize: '0.85rem' }} />
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
+                        <div className="input-group">
+                            <label className="input-label" style={{ fontSize: '0.7rem' }}>Зарах үнэ (₮)</label>
+                            <input className="input" type="number" value={product.salePrice} onChange={e => onUpdate('salePrice', Number(e.target.value))} style={{ height: 36, fontSize: '0.85rem' }} />
+                        </div>
+                        <div className="input-group">
+                            <label className="input-label" style={{ fontSize: '0.7rem' }}>Өртөг (₮)</label>
+                            <input className="input" type="number" value={product.costPrice} onChange={e => onUpdate('costPrice', Number(e.target.value))} style={{ height: 36, fontSize: '0.85rem' }} />
+                        </div>
+                        <div className="input-group">
+                            <label className="input-label" style={{ fontSize: '0.7rem' }}>Карго (₮)</label>
+                            <input className="input" type="number" value={product.cargoFee || 0} onChange={e => onUpdate('cargoFee', Number(e.target.value))} style={{ height: 36, fontSize: '0.85rem' }} />
+                        </div>
+                    </div>
+                    {cargoTypes.length > 0 && (
+                        <div className="input-group">
+                            <label className="input-label" style={{ fontSize: '0.7rem' }}>Карго төрөл</label>
+                            <select className="input select" value={product.cargoTypeId || ''} onChange={e => onUpdate('cargoTypeId', e.target.value)} style={{ height: 36, fontSize: '0.85rem' }}>
+                                <option value="">Сонгох...</option>
+                                {cargoTypes.map(ct => <option key={ct.id} value={ct.id}>{ct.name} (₮{ct.fee.toLocaleString()})</option>)}
+                            </select>
+                        </div>
+                    )}
+                    {product.salePrice > 0 && (
+                        <div style={{ padding: '8px 12px', borderRadius: 10, background: profit > 0 ? 'rgba(16, 185, 129, 0.08)' : 'rgba(239, 68, 68, 0.08)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.82rem' }}>
+                            <span style={{ fontWeight: 600, color: 'var(--text-secondary)' }}>Цэвэр ашиг:</span>
+                            <span style={{ fontWeight: 800, color: profit > 0 ? '#10b981' : '#ef4444' }}>
+                                {profit > 0 ? '+' : ''}₮{profit.toLocaleString()} ({profitPercent}%)
+                            </span>
+                        </div>
+                    )}
                 </div>
-                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 2, display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
-                    <span className="badge badge-soft" style={{ fontSize: '0.65rem' }}>{product.categoryName}</span>
-                    {product.salePrice > 0 && <span style={{ fontWeight: 800, color: 'var(--text-main)' }}>₮{product.salePrice.toLocaleString()}</span>}
-                    <span style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
-                        <ImageIcon size={10} /> {product.images.length}
-                    </span>
-                    <span style={{ fontSize: '0.65rem', color: product.confidence > 70 ? '#10b981' : 'var(--accent-orange)' }}>
-                        AI {product.confidence}%
-                    </span>
-                </div>
-                {product.description && (
-                    <p style={{ margin: '4px 0 0', fontSize: '0.72rem', color: 'var(--text-muted)', lineHeight: 1.4, overflow: 'hidden', textOverflow: 'ellipsis', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' as const, wordBreak: 'break-word' as const }}>
-                        {product.description}
-                    </p>
-                )}
-            </div>
+            )}
         </div>
     );
 }
