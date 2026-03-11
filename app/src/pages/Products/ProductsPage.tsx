@@ -634,7 +634,7 @@ function CreateProductModal({ onClose }: { onClose: () => void }) {
                     lowStockThreshold: 3,
                     trackInventory: productType === 'ready'
                 },
-                variations: variations.length > 0 ? variations : undefined,
+                variations: variations.length > 0 ? variations : [],
                 ...(productType === 'preorder' ? {
                     cargoFee: {
                         amount: Number(cargoFee) || 0,
@@ -1197,7 +1197,7 @@ function EditProductModal({ product, onClose }: { product: Product; onClose: () 
                     lowStockThreshold: 3,
                     trackInventory: productType === 'ready'
                 },
-                variations: variations.length > 0 ? variations : undefined,
+                variations: variations.length > 0 ? variations : [],
                 ...(productType === 'preorder' ? {
                     cargoFee: {
                         amount: Number(cargoFee) || 0,
