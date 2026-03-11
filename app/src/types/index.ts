@@ -220,6 +220,7 @@ export interface BusinessSettings {
         id: string;
         bankName: string;
         accountNumber: string;
+        iban: string;
         accountName: string;
         enabled: boolean;
     }>;

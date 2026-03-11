@@ -29,6 +29,7 @@ export function StoreCheckout() {
     const [customerName, setCustomerName] = useState('');
     const [customerPhone, setCustomerPhone] = useState('');
     const [copied, setCopied] = useState(false);
+    const [savedTotal, setSavedTotal] = useState(0);
 
     // Payment method
     const [paymentMethod, setPaymentMethod] = useState<'bank_transfer' | 'qpay' | 'social_pay'>('bank_transfer');
@@ -158,6 +159,7 @@ export function StoreCheckout() {
             };
 
             const newId = await orderService.createOrder(business.id, orderPayload);
+            setSavedTotal(finalTotal);
             setSuccessId(newId);
             clearCart();
 
@@ -226,13 +228,19 @@ export function StoreCheckout() {
                                         <span style={{ color: 'var(--text-muted)', fontWeight: 500 }}>Данс:</span>
                                         <span style={{ fontWeight: 700, letterSpacing: '0.05em' }}>{selectedBank.accountNumber}</span>
                                     </div>
+                                    {selectedBank.iban && (
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem' }}>
+                                            <span style={{ color: 'var(--text-muted)', fontWeight: 500 }}>IBAN:</span>
+                                            <span style={{ fontWeight: 700, letterSpacing: '0.03em', fontSize: '0.82rem' }}>{selectedBank.iban}</span>
+                                        </div>
+                                    )}
                                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem' }}>
                                         <span style={{ color: 'var(--text-muted)', fontWeight: 500 }}>Хүлээн авагч:</span>
                                         <span style={{ fontWeight: 700 }}>{selectedBank.accountName}</span>
                                     </div>
                                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem' }}>
                                         <span style={{ color: 'var(--text-muted)', fontWeight: 500 }}>Дүн:</span>
-                                        <span style={{ fontWeight: 800, color: 'var(--primary)' }}>{finalTotal.toLocaleString()} ₮</span>
+                                        <span style={{ fontWeight: 800, color: 'var(--primary)' }}>{savedTotal.toLocaleString()} ₮</span>
                                     </div>
                                 </div>
 
@@ -560,6 +568,12 @@ export function StoreCheckout() {
                                                     <span style={{ color: 'var(--text-muted)', fontWeight: 500 }}>Данс:</span>
                                                     <span style={{ fontWeight: 700, letterSpacing: '0.05em' }}>{selectedBank.accountNumber}</span>
                                                 </div>
+                                                {selectedBank.iban && (
+                                                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.88rem' }}>
+                                                        <span style={{ color: 'var(--text-muted)', fontWeight: 500 }}>IBAN:</span>
+                                                        <span style={{ fontWeight: 700, letterSpacing: '0.03em', fontSize: '0.82rem' }}>{selectedBank.iban}</span>
+                                                    </div>
+                                                )}
                                                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.88rem' }}>
                                                     <span style={{ color: 'var(--text-muted)', fontWeight: 500 }}>Хүлээн авагч:</span>
                                                     <span style={{ fontWeight: 700 }}>{selectedBank.accountName}</span>

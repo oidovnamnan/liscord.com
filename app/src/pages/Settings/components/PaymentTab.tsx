@@ -8,6 +8,7 @@ interface BankAccountEntry {
     id: string;
     bankName: string;
     accountNumber: string;
+    iban: string;
     accountName: string;
     enabled: boolean;
 }
@@ -61,6 +62,7 @@ export function PaymentTab() {
             id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
             bankName: '',
             accountNumber: '',
+            iban: '',
             accountName: '',
             enabled: true,
         }]);
@@ -173,8 +175,7 @@ export function PaymentTab() {
                             <div style={{ display: 'flex', flexDirection: 'column', gap: 16, marginBottom: 20 }}>
                                 {bankAccounts.map((account) => (
                                     <div key={account.id} style={{
-                                        padding: 20,
-                                        borderRadius: 16,
+                                        padding: 20, borderRadius: 16,
                                         border: `1.5px solid ${account.enabled ? 'var(--primary)' : 'var(--border-color)'}`,
                                         background: account.enabled ? 'rgba(var(--primary-rgb), 0.03)' : 'var(--bg-soft)',
                                         transition: 'all 0.2s ease',
@@ -188,23 +189,10 @@ export function PaymentTab() {
                                             </div>
                                             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                                                 <label className="toggle" onClick={e => e.stopPropagation()}>
-                                                    <input
-                                                        type="checkbox"
-                                                        checked={account.enabled}
-                                                        onChange={e => updateBankAccount(account.id, 'enabled', e.target.checked)}
-                                                    />
+                                                    <input type="checkbox" checked={account.enabled} onChange={e => updateBankAccount(account.id, 'enabled', e.target.checked)} />
                                                     <span className="toggle-slider" />
                                                 </label>
-                                                <button
-                                                    type="button"
-                                                    onClick={() => removeBankAccount(account.id)}
-                                                    style={{
-                                                        background: 'none', border: 'none', cursor: 'pointer',
-                                                        color: 'var(--text-muted)', padding: 4, borderRadius: 8,
-                                                        display: 'flex', alignItems: 'center',
-                                                    }}
-                                                    title="Устгах"
-                                                >
+                                                <button type="button" onClick={() => removeBankAccount(account.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: 4, borderRadius: 8, display: 'flex', alignItems: 'center' }} title="Устгах">
                                                     <Trash2 size={16} />
                                                 </button>
                                             </div>
@@ -212,46 +200,29 @@ export function PaymentTab() {
                                         <div className="grid-2-gap" style={{ gap: 12 }}>
                                             <div className="input-group">
                                                 <label className="input-label">Банкны нэр</label>
-                                                <input
-                                                    className="input"
-                                                    value={account.bankName}
-                                                    onChange={e => updateBankAccount(account.id, 'bankName', e.target.value)}
-                                                    placeholder="Жнь: Хаан банк"
-                                                    style={{ height: 42 }}
-                                                />
+                                                <input className="input" value={account.bankName} onChange={e => updateBankAccount(account.id, 'bankName', e.target.value)} placeholder="Жнь: Хаан банк" style={{ height: 42 }} />
                                             </div>
                                             <div className="input-group">
-                                                <label className="input-label">Дансны дугаар</label>
-                                                <input
-                                                    className="input"
-                                                    value={account.accountNumber}
-                                                    onChange={e => updateBankAccount(account.id, 'accountNumber', e.target.value)}
-                                                    placeholder="Жнь: 5000123456"
-                                                    style={{ height: 42 }}
-                                                />
+                                                <label className="input-label">IBAN дугаар</label>
+                                                <input className="input" value={account.iban} onChange={e => updateBankAccount(account.id, 'iban', e.target.value)} placeholder="Жнь: MN12KHAN..." style={{ height: 42 }} />
                                             </div>
                                         </div>
-                                        <div className="input-group" style={{ marginTop: 12 }}>
-                                            <label className="input-label">Хүлээн авагчийн нэр</label>
-                                            <input
-                                                className="input"
-                                                value={account.accountName}
-                                                onChange={e => updateBankAccount(account.id, 'accountName', e.target.value)}
-                                                placeholder="Жнь: Ганзориг"
-                                                style={{ height: 42 }}
-                                            />
+                                        <div className="grid-2-gap" style={{ gap: 12, marginTop: 12 }}>
+                                            <div className="input-group">
+                                                <label className="input-label">Дансны дугаар</label>
+                                                <input className="input" value={account.accountNumber} onChange={e => updateBankAccount(account.id, 'accountNumber', e.target.value)} placeholder="Жнь: 5000123456" style={{ height: 42 }} />
+                                            </div>
+                                            <div className="input-group">
+                                                <label className="input-label">Хүлээн авагчийн нэр</label>
+                                                <input className="input" value={account.accountName} onChange={e => updateBankAccount(account.id, 'accountName', e.target.value)} placeholder="Жнь: Ганзориг" style={{ height: 42 }} />
+                                            </div>
                                         </div>
                                     </div>
                                 ))}
                             </div>
                         )}
 
-                        <button
-                            type="button"
-                            onClick={addBankAccount}
-                            className="btn btn-outline btn-sm"
-                            style={{ display: 'flex', alignItems: 'center', gap: 8, borderRadius: 12, fontWeight: 700 }}
-                        >
+                        <button type="button" onClick={addBankAccount} className="btn btn-outline btn-sm" style={{ display: 'flex', alignItems: 'center', gap: 8, borderRadius: 12, fontWeight: 700 }}>
                             <Plus size={16} /> Данс нэмэх
                         </button>
                     </div>
