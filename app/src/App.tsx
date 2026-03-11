@@ -246,7 +246,21 @@ export default function App() {
                   businessService.getEmployeeProfile(profile.activeBusiness, firebaseUser.uid)
                 ]);
                 setBusiness(biz);
-                setEmployee(emp);
+                
+                // Load position permissions for the employee
+                let empWithPerms = emp;
+                if (emp?.positionId && biz) {
+                  try {
+                    const { doc: docRef, getDoc: getDocSnap } = await import('firebase/firestore');
+                    const posSnap = await getDocSnap(docRef(db, 'businesses', biz.id, 'positions', emp.positionId));
+                    if (posSnap.exists()) {
+                      empWithPerms = { ...emp, permissions: posSnap.data().permissions || [] } as typeof emp;
+                    }
+                  } catch (e) {
+                    console.warn('[Auth] loadPositionPermissions failed (non-critical):', e);
+                  }
+                }
+                setEmployee(empWithPerms);
 
                 // Load switchable employees for role switching
                 if (emp && biz) {

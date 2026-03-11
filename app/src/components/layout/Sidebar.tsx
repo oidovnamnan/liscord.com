@@ -206,31 +206,48 @@ export function Sidebar() {
         'crm': 'customers.',
         'inventory': 'products.',
         'procurement': 'orders.purchase',
+        'sourcing': 'sourcing.',
         'team': 'team.',
         'barcode': 'products.',
         'logistics': 'orders.manage_delivery',
+        'sms-income-sync': 'finance.',
         'sms-bank': 'finance.',
         'reports': 'reports.',
         'finance': 'finance.',
+        'cargo_fee': 'orders.',
+        'b2b': 'orders.',
+        'loyalty': 'customers.',
+        'leads': 'customers.',
+        'quotes': 'orders.',
+        'campaigns': 'customers.',
+        'employees': 'team.',
+        'chat': 'team.',
+        'ai-agent': 'orders.',
+        '3pl-cargo': 'orders.',
     };
+
+    // Check if user is owner (sees everything)
+    const isOwner = user?.uid === business?.ownerId || employee?.role === 'owner';
 
     const filteredNavItems = useMemo(() => {
         let items = getVisibleModules(business, moduleDefaults);
 
-        // When impersonating, filter by employee's permissions
-        if (isImpersonating && employee) {
+        // Non-owner employees: filter by permissions
+        if (!isOwner && employee) {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const empPerms: string[] = (employee as any).permissions || [];
-            items = items.filter(mod => {
-                if (mod.isCore) return true; // Dashboard always visible
-                const permPrefix = modulePermissionMap[mod.id];
-                if (!permPrefix) return false; // No mapping = HIDE during impersonation
-                return empPerms.some(p => p.startsWith(permPrefix));
-            });
+            if (empPerms.length > 0) {
+                items = items.filter(mod => {
+                    if (mod.id === 'dashboard') return true; // Dashboard always visible
+                    const permPrefix = modulePermissionMap[mod.id];
+                    if (!permPrefix) return true; // No mapping = show by default
+                    return empPerms.some(p => p.startsWith(permPrefix));
+                });
+            }
         }
 
         return items;
-    }, [business?.activeModules, business?.moduleSubscriptions, business?.category, moduleDefaults, isImpersonating, employee]);
+    }, [business?.activeModules, business?.moduleSubscriptions, business?.category, moduleDefaults, isOwner, employee]);
 
     const hasMultipleBusinesses = (userBusinesses.length > 1);
 
