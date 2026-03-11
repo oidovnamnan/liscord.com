@@ -16,6 +16,8 @@ export function StoreCheckout() {
     const [successId, setSuccessId] = useState<string | null>(null);
     const [qpayInvoice, setQpayInvoice] = useState<QPayInvoiceResponse | null>(null);
     const [phoneError, setPhoneError] = useState(false);
+    const [customerName, setCustomerName] = useState('');
+    const [customerPhone, setCustomerPhone] = useState('');
 
     const hasReadyItems = items.some(item => item.product.productType === 'ready');
     const hasPreorderItems = items.some(item => item.product.productType === 'preorder');
@@ -248,7 +250,7 @@ export function StoreCheckout() {
                             <div className="grid-2-gap" style={{ marginBottom: 20 }}>
                                 <div className="input-group">
                                     <label className="input-label" style={{ fontSize: '0.8rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Хүлээн авагчийн нэр *</label>
-                                    <input className="input" name="name" required style={{ height: 48, borderRadius: 12, background: 'var(--bg-soft)', border: '1px solid var(--border-primary)' }} />
+                                    <input className="input" name="name" required value={customerName} onChange={e => setCustomerName(e.target.value)} style={{ height: 48, borderRadius: 12, background: 'var(--bg-soft)', border: '1px solid var(--border-primary)' }} />
                                 </div>
                                 <div className="input-group">
                                     <label className="input-label" style={{ fontSize: '0.8rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Утасны дугаар *</label>
@@ -258,6 +260,8 @@ export function StoreCheckout() {
                                         required
                                         type="tel"
                                         maxLength={8}
+                                        value={customerPhone}
+                                        onChange={e => setCustomerPhone(e.target.value.replace(/\D/g, ''))}
                                         onFocus={() => setPhoneError(false)}
                                         style={{
                                             height: 48,
@@ -415,7 +419,7 @@ export function StoreCheckout() {
                         </div>
 
                         <div style={{ padding: '24px 32px', background: 'var(--surface-1)' }}>
-                            <button type="submit" className="btn btn-primary gradient-btn premium-btn" style={{ width: '100%', height: 56, fontSize: '1.1rem', borderRadius: 16, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, transition: 'all 0.3s ease' }} disabled={loading}>
+                            <button type="submit" className="btn btn-primary gradient-btn premium-btn" style={{ width: '100%', height: 56, fontSize: '1.1rem', borderRadius: 16, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, transition: 'all 0.3s ease', opacity: (!customerName.trim() || customerPhone.length < 8) ? 0.5 : 1 }} disabled={loading || !customerName.trim() || customerPhone.length < 8}>
                                 {loading ? 'Уншиж байна...' : (
                                     <>
                                         <ShieldCheck size={20} />
