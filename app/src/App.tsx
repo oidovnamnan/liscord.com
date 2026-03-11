@@ -31,6 +31,7 @@ const PaymentsPage = lazy(() => import('./pages/Payments/PaymentsPage').then(m =
 const PackagesPage = lazy(() => import('./pages/Cargo/Packages/PackagesPage').then(m => ({ default: m.PackagesPage })));
 const InventoryPage = lazy(() => import('./pages/Inventory/InventoryPage').then(m => ({ default: m.InventoryPage })));
 const ProcurementPage = lazy(() => import('./pages/Inventory/ProcurementPage').then(m => ({ default: m.ProcurementPage })));
+const SourcingPage = lazy(() => import('./pages/Sourcing/SourcingPage').then(m => ({ default: m.SourcingPage })));
 const LeadsPage = lazy(() => import('./pages/CRM/LeadsPage').then(m => ({ default: m.LeadsPage })));
 const QuotesPage = lazy(() => import('./pages/CRM/QuotesPage').then(m => ({ default: m.QuotesPage })));
 const CampaignsPage = lazy(() => import('./pages/Marketing/CampaignsPage').then(m => ({ default: m.CampaignsPage })));
@@ -429,6 +430,7 @@ export default function App() {
             <Route path="multi-currency" element={<ModuleGuard moduleId="multi-currency"><MultiCurrencyPage /></ModuleGuard>} />
             <Route path="bank-sync" element={<ModuleGuard moduleId="bank-sync"><BankSyncPage /></ModuleGuard>} />
             <Route path="sms-income-sync" element={<ModuleGuard moduleId="sms-income-sync"><BankSmsSyncPage /></ModuleGuard>} />
+            <Route path="sourcing" element={<ModuleGuard moduleId="sourcing"><SourcingPage /></ModuleGuard>} />
             <Route path="factoring" element={<ModuleGuard moduleId="factoring"><FactoringPage /></ModuleGuard>} />
             <Route path="petty-cash" element={<ModuleGuard moduleId="petty-cash"><PettyCashPage /></ModuleGuard>} />
             <Route path="inter-company" element={<ModuleGuard moduleId="inter-company"><InterCompanyPage /></ModuleGuard>} />

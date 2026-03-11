@@ -128,6 +128,15 @@ export const MODULE_PERMISSIONS: Record<string, ModulePermission[]> = {
         { id: 'procurement.manage_vendors', label: 'Нийлүүлэгч удирдах' },
     ],
 
+    'sourcing': [
+        { id: 'sourcing.view', label: 'Сорсинг харах' },
+        { id: 'sourcing.update_status', label: 'Статус шинэчлэх' },
+        { id: 'sourcing.add_tracking', label: 'Tracking нэмэх' },
+        { id: 'sourcing.view_cost', label: 'Сорсинг өртөг харах' },
+        { id: 'sourcing.mark_fulfilled', label: 'Биелсэн тэмдэглэх' },
+        { id: 'sourcing.configure', label: 'Сорсинг тохиргоо' },
+    ],
+
     'branches': [
         { id: 'branches.view', label: 'Салбар харах' },
         { id: 'branches.create', label: 'Салбар нэмэх' },

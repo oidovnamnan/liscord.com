@@ -55,6 +55,16 @@ export function Sidebar() {
         );
         unsubs.push(onSnapshot(ordersQ, (snap) => {
             setModuleBadges(prev => ({ ...prev, orders: snap.size }));
+            // Also count sourcing: paid orders with pre-order items and no sourcing done
+            let sourcingPending = 0;
+            snap.docs.forEach(d => {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                const data = d.data() as any;
+                const hasPreorder = (data.items || []).some((it: { isPreorder?: boolean }) => it.isPreorder);
+                const sourcingStatus = data.sourcing?.status || 'pending';
+                if (hasPreorder && sourcingStatus === 'pending') sourcingPending++;
+            });
+            setModuleBadges(prev => ({ ...prev, sourcing: sourcingPending }));
         }, () => {}));
 
         // 2. Pending SMS income (unmatched payments)

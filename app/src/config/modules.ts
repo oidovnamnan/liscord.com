@@ -90,6 +90,21 @@ export const LISCORD_MODULES: AppModule[] = [
         ]
     },
     {
+        id: 'sourcing',
+        name: 'Сорсинг Агент',
+        description: 'Хятадаас бараа захиалах, мөрдөх',
+        icon: 'Globe',
+        route: '/app/sourcing',
+        isCore: false,
+        category: 'operations',
+        hasSettings: true,
+        isFree: false,
+        plans: [
+            { id: 'monthly', name: '30 хоног', price: 15000, durationDays: 30 },
+            { id: 'yearly', name: '1 жил', price: 150000, durationDays: 365 }
+        ]
+    },
+    {
         id: 'branches',
         name: 'Салбар Удирдлага',
         description: 'Олон салбарын нэгдсэн хяналт',
