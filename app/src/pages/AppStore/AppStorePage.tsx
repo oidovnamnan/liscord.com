@@ -441,9 +441,11 @@ export function AppStorePage() {
                                                                 <button className="as-btn open" onClick={() => navigate(mod.route)}>
                                                                     <Icons.ExternalLink size={14} /> Нээх
                                                                 </button>
-                                                                <button className="as-btn remove" onClick={() => handleUninstallModule(mod.id)}>
-                                                                    <Trash2 size={14} />
-                                                                </button>
+                                                                {!mod.isCoreForBusiness && (
+                                                                    <button className="as-btn remove" onClick={() => handleUninstallModule(mod.id)}>
+                                                                        <Trash2 size={14} />
+                                                                    </button>
+                                                                )}
                                                             </>
                                                         ) : mod.isFree ? (
                                                             <button className="as-btn install" onClick={() => handleInstallModule(mod.id)}>
