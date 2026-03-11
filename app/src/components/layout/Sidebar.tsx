@@ -25,7 +25,7 @@ export function Sidebar() {
     const location = useLocation();
     const navigate = useNavigate();
     const { sidebarOpen, sidebarCollapsed, toggleSidebar, toggleSidebarCollapsed } = useUIStore();
-    const { business, setBusiness, setEmployee, setLinkedEmployees, linkedEmployees, employee, originalEmployee, switchToEmployee, switchBack } = useBusinessStore();
+    const { business, setBusiness, setEmployee, setLinkedEmployees, linkedEmployees, employee, isImpersonating, switchToEmployee, switchBack } = useBusinessStore();
     const { user } = useAuthStore();
     const [switching, setSwitching] = useState(false);
     const [showSwitcher, setShowSwitcher] = useState(false);
@@ -61,7 +61,7 @@ export function Sidebar() {
                 // Owner: load ALL non-deleted employees
                 const allEmps = await businessService.getAllEmployees(business.id);
                 console.log('[Sidebar] allEmps loaded:', allEmps.length);
-                const currentEmpId = originalEmployee?.id || employee?.id;
+                const currentEmpId = employee?.id;
                 setLinkedEmployees(currentEmpId ? allEmps.filter(e => e.id !== currentEmpId) : allEmps);
             } else if (employee?.linkedEmployeeIds?.length) {
                 const linked = await businessService.getLinkedEmployees(business.id, employee.linkedEmployeeIds);
@@ -173,9 +173,15 @@ export function Sidebar() {
                             </div>
                             <div className="sidebar-business-info">
                                 <div className="sidebar-business-name">{business.name}</div>
-                                <div className="sidebar-business-plan badge badge-primary">
-                                    {business.subscription.plan.toUpperCase()}
-                                </div>
+                                {isImpersonating && employee ? (
+                                    <div style={{ fontSize: '0.68rem', color: 'var(--warning)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 3 }}>
+                                        <Shield size={9} /> {employee.name}
+                                    </div>
+                                ) : (
+                                    <div className="sidebar-business-plan badge badge-primary">
+                                        {business.subscription.plan.toUpperCase()}
+                                    </div>
+                                )}
                             </div>
                             <ChevronDown size={16} className={`switcher-arrow ${showSwitcher ? 'open' : ''}`} />
                         </div>
@@ -210,7 +216,7 @@ export function Sidebar() {
                                 )}
 
                                 {/* Back to own account (when impersonating) */}
-                                {originalEmployee && (
+                                {isImpersonating && (
                                     <>
                                         {hasMultipleBusinesses && <div className="switcher-divider" />}
                                         <button className="switcher-item switcher-back" onClick={handleSwitchBack}>
@@ -218,7 +224,7 @@ export function Sidebar() {
                                                 <CornerDownLeft size={14} />
                                             </div>
                                             <div className="sidebar-business-info">
-                                                <div className="sidebar-business-name">{originalEmployee.name}</div>
+                                                <div className="sidebar-business-name">Эзэн</div>
                                                 <div style={{ fontSize: '0.65rem', color: 'var(--success)' }}>← Буцах</div>
                                             </div>
                                         </button>
@@ -228,7 +234,7 @@ export function Sidebar() {
                                 {/* Employee switching */}
                                 {linkedEmployees.length > 0 && (
                                     <>
-                                        {(hasMultipleBusinesses || originalEmployee) && <div className="switcher-divider" />}
+                                        {(hasMultipleBusinesses || isImpersonating) && <div className="switcher-divider" />}
                                         <div className="switcher-label" style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
                                             <ArrowRightLeft size={10} /> Ажилтан солих
                                         </div>
@@ -250,13 +256,6 @@ export function Sidebar() {
                                             </button>
                                         ))}
                                     </>
-                                )}
-
-                                {/* Current impersonation banner */}
-                                {originalEmployee && employee && (
-                                    <div style={{ padding: '6px 10px', fontSize: '0.68rem', color: 'var(--warning)', background: 'rgba(255,193,7,0.08)', borderRadius: 'var(--radius-sm)', margin: '4px', textAlign: 'center' }}>
-                                        ⚡ {employee.name} ({employee.positionName || 'Ажилтан'}) эрхээр ажиллаж байна
-                                    </div>
                                 )}
                             </div>
                         )}

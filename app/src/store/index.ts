@@ -28,7 +28,8 @@ export type { CartItem } from './cartStore';
 interface BusinessState {
     business: Business | null;
     employee: Employee | null;
-    originalEmployee: Employee | null; // Owner's own profile when impersonating another employee
+    originalEmployee: Employee | null;
+    isImpersonating: boolean;
     linkedEmployees: Employee[];
     loading: boolean;
     setBusiness: (business: Business | null) => void;
@@ -44,33 +45,46 @@ export const useBusinessStore = create<BusinessState>((set, get) => ({
     business: null,
     employee: null,
     originalEmployee: null,
+    isImpersonating: false,
     linkedEmployees: [],
     loading: false,
     setBusiness: (business) => set({ business }),
     setEmployee: (employee) => set({ employee }),
     setLinkedEmployees: (employees) => set({ linkedEmployees: employees }),
     switchToEmployee: (targetEmployee) => {
-        const { employee, originalEmployee, linkedEmployees } = get();
-        if (!employee) return;
-        // Save original employee on first switch (for "back to own account")
-        const original = originalEmployee || employee;
-        // Move current employee back into linked list, remove target from linked list
-        const newLinked = linkedEmployees
-            .filter(e => e.id !== targetEmployee.id)
-            .concat(employee);
-        set({ employee: targetEmployee, originalEmployee: original, linkedEmployees: newLinked });
+        const { employee, isImpersonating, linkedEmployees } = get();
+        // On first switch, save current employee as original
+        if (!isImpersonating) {
+            // Remove target from linked list, add current (if exists) back
+            const newLinked = linkedEmployees.filter(e => e.id !== targetEmployee.id);
+            if (employee) newLinked.push(employee);
+            set({
+                employee: targetEmployee,
+                originalEmployee: employee, // can be null for owner
+                isImpersonating: true,
+                linkedEmployees: newLinked,
+            });
+        } else {
+            // Already impersonating — switch to another
+            const newLinked = linkedEmployees.filter(e => e.id !== targetEmployee.id);
+            if (employee) newLinked.push(employee);
+            set({ employee: targetEmployee, linkedEmployees: newLinked });
+        }
     },
     switchBack: () => {
-        const { originalEmployee, employee, linkedEmployees } = get();
-        if (!originalEmployee) return;
-        // Remove original from linked list (it becomes active), add current back
-        const newLinked = linkedEmployees
-            .filter(e => e.id !== originalEmployee.id)
-            .concat(employee!);
-        set({ employee: originalEmployee, originalEmployee: null, linkedEmployees: newLinked });
+        const { originalEmployee, employee, linkedEmployees, isImpersonating } = get();
+        if (!isImpersonating) return;
+        const newLinked = linkedEmployees.filter(e => e.id !== originalEmployee?.id);
+        if (employee) newLinked.push(employee);
+        set({
+            employee: originalEmployee,
+            originalEmployee: null,
+            isImpersonating: false,
+            linkedEmployees: newLinked,
+        });
     },
     setLoading: (loading) => set({ loading }),
-    clear: () => set({ business: null, employee: null, originalEmployee: null, linkedEmployees: [], loading: false }),
+    clear: () => set({ business: null, employee: null, originalEmployee: null, isImpersonating: false, linkedEmployees: [], loading: false }),
 }));
 
 // ============ UI STORE ============
