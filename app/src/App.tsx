@@ -217,7 +217,7 @@ const AppStorePage = lazy(() => import('./pages/AppStore/AppStorePage').then(m =
 
 export default function App() {
   const { setUser, setLoading } = useAuthStore();
-  const { setBusiness, setEmployee, clear } = useBusinessStore();
+  const { setBusiness, setEmployee, setLinkedEmployees, clear } = useBusinessStore();
 
   useEffect(() => {
     let unsubscribeDevice: (() => void) | undefined;
@@ -245,6 +245,16 @@ export default function App() {
                 ]);
                 setBusiness(biz);
                 setEmployee(emp);
+
+                // Load linked employees for role switching
+                if (emp?.linkedEmployeeIds?.length && biz) {
+                  try {
+                    const linked = await businessService.getLinkedEmployees(biz.id, emp.linkedEmployeeIds);
+                    setLinkedEmployees(linked);
+                  } catch (e) {
+                    console.warn('[Auth] getLinkedEmployees failed (non-critical):', e);
+                  }
+                }
               } catch (e) {
                 console.error('[Auth] getBusiness/getEmployee failed:', e);
               }
@@ -290,7 +300,7 @@ export default function App() {
       unsubscribeAuth();
       if (unsubscribeDevice) unsubscribeDevice();
     };
-  }, [setUser, setLoading, setBusiness, setEmployee, clear]);
+  }, [setUser, setLoading, setBusiness, setEmployee, setLinkedEmployees, clear]);
 
   return (
     <BrowserRouter>

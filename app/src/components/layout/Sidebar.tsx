@@ -18,13 +18,14 @@ import { toast } from 'react-hot-toast';
 import * as Icons from 'lucide-react';
 import { LISCORD_MODULES } from '../../config/modules';
 import { getVisibleModules } from '../../utils/moduleUtils';
+import { EmployeeSwitcher } from '../common/EmployeeSwitcher';
 import './Sidebar.css';
 
 export function Sidebar() {
     const location = useLocation();
     const navigate = useNavigate();
     const { sidebarOpen, sidebarCollapsed, toggleSidebar, toggleSidebarCollapsed } = useUIStore();
-    const { business, setBusiness, setEmployee } = useBusinessStore();
+    const { business, setBusiness, setEmployee, setLinkedEmployees } = useBusinessStore();
     const { user, setUser } = useAuthStore();
     const [switching, setSwitching] = useState(false);
     const [showSwitcher, setShowSwitcher] = useState(false);
@@ -61,6 +62,18 @@ export function Sidebar() {
             ]);
             setBusiness(biz);
             setEmployee(emp);
+            // Load linked employees for role switching
+            if (emp?.linkedEmployeeIds?.length && biz) {
+                try {
+                    const linked = await businessService.getLinkedEmployees(biz.id, emp.linkedEmployeeIds);
+                    setLinkedEmployees(linked);
+                } catch (e) {
+                    console.warn('[Sidebar] getLinkedEmployees failed:', e);
+                    setLinkedEmployees([]);
+                }
+            } else {
+                setLinkedEmployees([]);
+            }
             setShowSwitcher(false);
             navigate('/app');
             toast.success(`${biz?.name} руу шилжлээ`);
@@ -171,6 +184,9 @@ export function Sidebar() {
                         )}
                     </div>
                 )}
+
+                {/* Employee Role Switcher */}
+                <EmployeeSwitcher />
 
                 {/* Navigation */}
                 <nav className="sidebar-nav">

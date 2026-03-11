@@ -28,21 +28,35 @@ export type { CartItem } from './cartStore';
 interface BusinessState {
     business: Business | null;
     employee: Employee | null;
+    linkedEmployees: Employee[];
     loading: boolean;
     setBusiness: (business: Business | null) => void;
     setEmployee: (employee: Employee | null) => void;
+    setLinkedEmployees: (employees: Employee[]) => void;
+    switchToEmployee: (targetEmployee: Employee) => void;
     setLoading: (loading: boolean) => void;
     clear: () => void;
 }
 
-export const useBusinessStore = create<BusinessState>((set) => ({
+export const useBusinessStore = create<BusinessState>((set, get) => ({
     business: null,
     employee: null,
+    linkedEmployees: [],
     loading: false,
     setBusiness: (business) => set({ business }),
     setEmployee: (employee) => set({ employee }),
+    setLinkedEmployees: (employees) => set({ linkedEmployees: employees }),
+    switchToEmployee: (targetEmployee) => {
+        const { employee, linkedEmployees } = get();
+        if (!employee) return;
+        // Move current employee back into linked list, remove target from linked list
+        const newLinked = linkedEmployees
+            .filter(e => e.id !== targetEmployee.id)
+            .concat(employee);
+        set({ employee: targetEmployee, linkedEmployees: newLinked });
+    },
     setLoading: (loading) => set({ loading }),
-    clear: () => set({ business: null, employee: null, loading: false }),
+    clear: () => set({ business: null, employee: null, linkedEmployees: [], loading: false }),
 }));
 
 // ============ UI STORE ============

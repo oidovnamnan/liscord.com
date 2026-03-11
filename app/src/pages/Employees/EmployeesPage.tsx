@@ -146,7 +146,24 @@ function EditEmployeeModal({ employee, positions, onClose }: { employee: Employe
     const [positionId, setPositionId] = useState(employee.positionId || '');
     const [saving, setSaving] = useState(false);
 
+    // Linked employees state
+    const [allEmployees, setAllEmployees] = useState<Employee[]>([]);
+    const [linkedIds, setLinkedIds] = useState<string[]>(employee.linkedEmployeeIds || []);
+    const [linkTarget, setLinkTarget] = useState('');
+    const [linking, setLinking] = useState(false);
+
     const selectedPosition = positions.find(p => p.id === positionId);
+
+    useEffect(() => {
+        if (!business) return;
+        const unsub = teamService.subscribeEmployees(business.id, (data) => {
+            setAllEmployees(data.filter(e => !e.isDeleted && e.id !== employee.id));
+        });
+        return () => unsub();
+    }, [business, employee.id]);
+
+    const linkedEmployees = allEmployees.filter(e => linkedIds.includes(e.id));
+    const availableToLink = allEmployees.filter(e => !linkedIds.includes(e.id) && e.status === 'active');
 
     async function handleSubmit(e: React.FormEvent) {
         e.preventDefault();
@@ -165,6 +182,35 @@ function EditEmployeeModal({ employee, positions, onClose }: { employee: Employe
             toast.error('Алдаа гарлаа');
         } finally {
             setSaving(false);
+        }
+    }
+
+    async function handleLink() {
+        if (!business || !linkTarget) return;
+        setLinking(true);
+        try {
+            await teamService.linkEmployee(business.id, employee.id, linkTarget);
+            setLinkedIds(prev => [...prev, linkTarget]);
+            setLinkTarget('');
+            toast.success('Давхар эрх холбогдлоо');
+        } catch {
+            toast.error('Холбоход алдаа гарлаа');
+        } finally {
+            setLinking(false);
+        }
+    }
+
+    async function handleUnlink(targetId: string) {
+        if (!business) return;
+        setLinking(true);
+        try {
+            await teamService.unlinkEmployee(business.id, employee.id, targetId);
+            setLinkedIds(prev => prev.filter(id => id !== targetId));
+            toast.success('Давхар эрх салгагдлаа');
+        } catch {
+            toast.error('Салгахад алдаа гарлаа');
+        } finally {
+            setLinking(false);
         }
     }
 
@@ -193,6 +239,66 @@ function EditEmployeeModal({ employee, positions, onClose }: { employee: Employe
                                     <option key={p.id} value={p.id}>{p.name}</option>
                                 ))}
                             </select>
+                        </div>
+
+                        {/* Linked Employees Section */}
+                        <div style={{ borderTop: '1px solid var(--border-primary)', paddingTop: 16 }}>
+                            <label className="input-label" style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 10 }}>
+                                <Users size={14} />
+                                Давхар эрх холбох
+                            </label>
+                            <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', margin: '0 0 10px 0' }}>
+                                Энэ ажилтанд бусад ажилтны эрхийг давхар хариуцуулах. Тухайн хүн аккаунт дотроосоо нөгөө ажилтны эрх рүү шилжиж ажиллах боломжтой.
+                            </p>
+
+                            {/* Currently linked */}
+                            {linkedEmployees.length > 0 && (
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 10 }}>
+                                    {linkedEmployees.map(le => (
+                                        <div key={le.id} style={{
+                                            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                                            padding: '8px 10px', background: 'var(--surface-2)', borderRadius: 'var(--radius-sm)',
+                                            border: '1px solid var(--border-secondary)'
+                                        }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                                <div style={{
+                                                    width: 24, height: 24, borderRadius: '50%',
+                                                    background: 'linear-gradient(135deg, var(--primary), #6c5ce7)',
+                                                    color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                    fontSize: '0.65rem', fontWeight: 700
+                                                }}>
+                                                    {le.name?.charAt(0)?.toUpperCase() || '?'}
+                                                </div>
+                                                <div>
+                                                    <div style={{ fontSize: '0.8rem', fontWeight: 600 }}>{le.name}</div>
+                                                    <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{le.positionName || 'Ажилтан'}</div>
+                                                </div>
+                                            </div>
+                                            <button type="button" className="btn btn-ghost btn-sm" disabled={linking}
+                                                style={{ color: 'var(--danger)', fontSize: '0.75rem' }}
+                                                onClick={() => handleUnlink(le.id)}>
+                                                Салгах
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+
+                            {/* Add new link */}
+                            {availableToLink.length > 0 && (
+                                <div style={{ display: 'flex', gap: 8 }}>
+                                    <select className="input select" value={linkTarget} onChange={e => setLinkTarget(e.target.value)} style={{ flex: 1 }}>
+                                        <option value="">Ажилтан сонгох...</option>
+                                        {availableToLink.map(e => (
+                                            <option key={e.id} value={e.id}>{e.name} — {e.positionName || 'Ажилтан'}</option>
+                                        ))}
+                                    </select>
+                                    <button type="button" className="btn btn-primary btn-sm" disabled={!linkTarget || linking} onClick={handleLink}
+                                        style={{ whiteSpace: 'nowrap', gap: 4 }}>
+                                        {linking ? <Loader2 size={14} className="spin" /> : <Plus size={14} />} Холбох
+                                    </button>
+                                </div>
+                            )}
                         </div>
                     </div>
                     <div className="modal-footer">

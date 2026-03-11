@@ -106,6 +106,28 @@ export const teamService = {
             status: 'inactive',
             updatedAt: serverTimestamp()
         });
+    },
+
+    async linkEmployee(bizId: string, sourceEmpId: string, targetEmpId: string) {
+        const { writeBatch, arrayUnion } = await import('firebase/firestore');
+        const batch = writeBatch(db);
+        const sourceRef = doc(db, 'businesses', bizId, 'employees', sourceEmpId);
+        const targetRef = doc(db, 'businesses', bizId, 'employees', targetEmpId);
+        // Bidirectional link
+        batch.update(sourceRef, { linkedEmployeeIds: arrayUnion(targetEmpId), updatedAt: serverTimestamp() });
+        batch.update(targetRef, { linkedEmployeeIds: arrayUnion(sourceEmpId), updatedAt: serverTimestamp() });
+        await batch.commit();
+    },
+
+    async unlinkEmployee(bizId: string, sourceEmpId: string, targetEmpId: string) {
+        const { writeBatch, arrayRemove } = await import('firebase/firestore');
+        const batch = writeBatch(db);
+        const sourceRef = doc(db, 'businesses', bizId, 'employees', sourceEmpId);
+        const targetRef = doc(db, 'businesses', bizId, 'employees', targetEmpId);
+        // Remove bidirectional link
+        batch.update(sourceRef, { linkedEmployeeIds: arrayRemove(targetEmpId), updatedAt: serverTimestamp() });
+        batch.update(targetRef, { linkedEmployeeIds: arrayRemove(sourceEmpId), updatedAt: serverTimestamp() });
+        await batch.commit();
     }
 };
 

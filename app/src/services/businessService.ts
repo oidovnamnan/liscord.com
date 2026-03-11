@@ -232,6 +232,22 @@ export const businessService = {
             ...data,
             updatedAt: serverTimestamp()
         });
+    },
+
+    async getLinkedEmployees(bizId: string, employeeIds: string[]): Promise<Employee[]> {
+        if (!employeeIds.length) return [];
+        const results: Employee[] = [];
+        for (const empId of employeeIds) {
+            const docRef = doc(db, 'businesses', bizId, 'employees', empId);
+            const docSnap = await getDoc(docRef);
+            if (docSnap.exists()) {
+                const emp = convertTimestamps({ id: docSnap.id, ...docSnap.data() }) as Employee;
+                if (emp.status === 'active' && !emp.isDeleted) {
+                    results.push(emp);
+                }
+            }
+        }
+        return results;
     }
 };
 

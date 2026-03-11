@@ -390,6 +390,7 @@ export interface Employee {
     positionName: string;
     role: 'owner' | 'employee';
     status: EmployeeStatus;
+    linkedEmployeeIds?: string[];  // IDs of other employee records this person can switch to
     isDeleted?: boolean;
     joinedAt: Date;
     lastActiveAt: Date | null;
