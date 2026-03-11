@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
     Search,
@@ -13,7 +13,7 @@ import {
     Loader2,
     Banknote,
 } from 'lucide-react';
-import { collection, query, where, orderBy, onSnapshot, doc, getDoc } from 'firebase/firestore';
+import { collection, query, where, orderBy, onSnapshot, doc, getDoc, getDocs, updateDoc } from 'firebase/firestore';
 import { db } from '../../services/firebase';
 import { useBusinessStore } from '../../store';
 import '../Inventory/InventoryPage.css';
@@ -103,12 +103,76 @@ export function BankSmsSyncPage() {
             });
             setLogs(items);
             setLoading(false);
+
+            // Auto-match pending SMS with orders by refCode
+            if (business?.id) {
+                autoMatchPendingSms(items);
+            }
         }, (error) => {
             console.error('SMS inbox subscription error:', error);
             setLoading(false);
         });
         return () => unsubscribe();
-    }, [pairingKey]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [pairingKey, business?.id]);
+
+    const matchedRef = useRef<Set<string>>(new Set());
+
+    const autoMatchPendingSms = useCallback(async (items: SmsLog[]) => {
+        if (!business?.id) return;
+        const pending = items.filter(s => s.status === 'pending' && s.amount > 0 && s.note && !matchedRef.current.has(s.id));
+        if (pending.length === 0) return;
+
+        for (const sms of pending) {
+            matchedRef.current.add(sms.id);
+            try {
+                // Search orders by paymentRefCode (case-insensitive match)
+                const refCode = sms.note.trim().toLowerCase();
+                const ordersRef = collection(db, `businesses/${business.id}/orders`);
+                const ordersQ = query(ordersRef, where('paymentRefCode', '==', refCode));
+                const snap = await getDocs(ordersQ);
+
+                // Also try uppercase
+                let matchedOrder = snap.docs[0];
+                if (!matchedOrder) {
+                    const ordersQ2 = query(ordersRef, where('paymentRefCode', '==', sms.note.trim().toUpperCase()));
+                    const snap2 = await getDocs(ordersQ2);
+                    matchedOrder = snap2.docs[0];
+                }
+
+                // Also try raw note
+                if (!matchedOrder) {
+                    const ordersQ3 = query(ordersRef, where('paymentRefCode', '==', sms.note.trim()));
+                    const snap3 = await getDocs(ordersQ3);
+                    matchedOrder = snap3.docs[0];
+                }
+
+                if (matchedOrder) {
+                    // Match found! Update SMS status
+                    const smsRef = doc(db, 'sms_inbox', sms.id);
+                    await updateDoc(smsRef, {
+                        status: 'matched',
+                        orderId: matchedOrder.id,
+                        matchedAt: new Date(),
+                        autoMatched: true,
+                    });
+
+                    // Update order payment status
+                    const orderRef = doc(db, `businesses/${business.id}/orders`, matchedOrder.id);
+                    await updateDoc(orderRef, {
+                        paymentStatus: 'paid',
+                        paymentVerifiedAt: new Date(),
+                        paymentVerifiedBy: 'auto-match',
+                        paymentSmsId: sms.id,
+                    });
+
+                    console.log(`Auto-matched SMS ${sms.id} → Order ${matchedOrder.id} (refCode: ${sms.note})`);
+                }
+            } catch (err) {
+                console.error('Auto-match error for SMS:', sms.id, err);
+            }
+        }
+    }, [business?.id]);
 
     const filteredLogs = logs.filter(log => {
         const matchSearch = !search ||

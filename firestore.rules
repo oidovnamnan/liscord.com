@@ -105,6 +105,20 @@ service cloud.firestore {
         allow delete: if false;
       }
 
+      // Orders: public create (storefront checkout), member read/update
+      match /orders/{docId} {
+        allow create: if true;  // Public: storefront checkout
+        allow read, update: if isMemberOf(bizId);
+        allow delete: if false;
+      }
+
+      // Payment settings: public read (checkout needs bank details)
+      match /payment_settings/{docId} {
+        allow read: if true;
+        allow create, update: if isMemberOf(bizId);
+        allow delete: if false;
+      }
+
       // All other subcollections: member read/write only
       match /{subcollection}/{docId} {
         allow read: if isMemberOf(bizId);

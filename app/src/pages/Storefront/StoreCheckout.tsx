@@ -125,7 +125,7 @@ export function StoreCheckout() {
                 },
                 source: 'website',
                 selectedPaymentMethod: paymentMethod,
-                paymentRefCode: paymentMethod === 'bank_transfer' ? refCode : undefined,
+                paymentRefCode: paymentMethod === 'bank_transfer' ? refCode : '',
                 items: items.map(item => ({
                     productId: item.product.id,
                     name: item.product.name,
