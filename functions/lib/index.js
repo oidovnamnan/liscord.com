@@ -384,7 +384,7 @@ exports.onSmsIncome = functions
                 title: `💰 Шинэ орлого ₮${smsAmount.toLocaleString()}`,
                 body: `${smsData.bank || smsData.sender || 'Банк'} — ${smsData.utga || 'Утга байхгүй'}`,
                 icon: '💰',
-                link: '/app/sms-income',
+                link: '/app/sms-income-sync',
                 referenceId: snap.id,
                 readBy: {},
                 priority: 'normal',
@@ -403,7 +403,7 @@ exports.onSmsIncome = functions
                                 title: `💰 Шинэ орлого ₮${smsAmount.toLocaleString()}`,
                                 body: `${smsData.bank || 'Банк'} — Холбогдоогүй`,
                             },
-                            data: { type: 'sms_income', bizId, link: '/app/sms-income' },
+                            data: { type: 'sms_income', bizId, link: '/app/sms-income-sync' },
                             tokens,
                         });
                     }
