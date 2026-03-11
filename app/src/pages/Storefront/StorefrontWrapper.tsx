@@ -42,6 +42,18 @@ export function StorefrontWrapper() {
         loadBusiness();
     }, [slug]);
 
+    // Force light theme on storefront pages (restore admin theme on unmount)
+    useEffect(() => {
+        const root = document.documentElement;
+        const prevTheme = root.getAttribute('data-theme') || 'dark';
+        root.setAttribute('data-theme', 'light');
+        document.body.style.background = '#ffffff';
+        return () => {
+            root.setAttribute('data-theme', prevTheme);
+            document.body.style.background = '';
+        };
+    }, []);
+
     useEffect(() => {
         if (!business) return;
 
