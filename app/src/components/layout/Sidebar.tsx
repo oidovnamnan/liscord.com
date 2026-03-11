@@ -19,6 +19,7 @@ import { businessService, systemSettingsService } from '../../services/db';
 import { toast } from 'react-hot-toast';
 import * as Icons from 'lucide-react';
 import { getVisibleModules } from '../../utils/moduleUtils';
+import { MODULE_PERMISSIONS } from '../../config/modulePermissions';
 import './Sidebar.css';
 
 export function Sidebar() {
@@ -198,33 +199,27 @@ export function Sidebar() {
         fetchDefaults();
     }, []);
 
-    // Module ID → required permission prefix mapping
-    const modulePermissionMap: Record<string, string> = {
-        'orders': 'orders.',
-        'products': 'products.',
-        'customers': 'customers.',
-        'crm': 'customers.',
-        'inventory': 'products.',
-        'procurement': 'orders.purchase',
-        'sourcing': 'sourcing.',
-        'team': 'team.',
-        'barcode': 'products.',
-        'logistics': 'orders.manage_delivery',
-        'sms-income-sync': 'finance.',
-        'sms-bank': 'finance.',
-        'reports': 'reports.',
-        'finance': 'finance.',
-        'cargo_fee': 'orders.',
-        'b2b': 'orders.',
-        'loyalty': 'customers.',
-        'leads': 'customers.',
-        'quotes': 'orders.',
-        'campaigns': 'customers.',
-        'employees': 'team.',
-        'chat': 'team.',
-        'ai-agent': 'orders.',
-        '3pl-cargo': 'orders.',
-    };
+    // Auto-generate module → permission prefix map from MODULE_PERMISSIONS
+    // Each module's permissions share the same prefix (e.g. 'sourcing.view' → prefix 'sourcing.')
+    const modulePermissionMap = useMemo(() => {
+        const map: Record<string, string[]> = {};
+        for (const [moduleId, perms] of Object.entries(MODULE_PERMISSIONS)) {
+            // Collect unique prefixes from all permission IDs of this module
+            const prefixes = new Set<string>();
+            for (const p of perms) {
+                const dotIdx = p.id.indexOf('.');
+                if (dotIdx > 0) {
+                    prefixes.add(p.id.substring(0, dotIdx + 1)); // e.g. 'sourcing.'
+                }
+            }
+            if (prefixes.size > 0) {
+                map[moduleId] = [...prefixes];
+            }
+        }
+        // Core permissions (always available modules)
+        map['dashboard'] = ['reports.'];
+        return map;
+    }, []);
 
     // Check if user is owner — when impersonating, treat as non-owner to apply permissions
     const isOwner = !isImpersonating && (user?.uid === business?.ownerId || employee?.role === 'owner');
@@ -238,26 +233,25 @@ export function Sidebar() {
         console.log('[Sidebar] permission filter', {
             isOwner,
             isImpersonating,
-            employeeId: employee?.id,
             employeeName: employee?.name,
             permCount: empPerms.length,
             permissions: empPerms,
-            totalModules: items.length,
         });
 
         // Non-owner employees: filter by permissions
         if (!isOwner && employee) {
             items = items.filter(mod => {
                 if (mod.id === 'dashboard') return true; // Dashboard always visible
-                const permPrefix = modulePermissionMap[mod.id];
-                if (!permPrefix) return true; // No mapping = show by default
-                return empPerms.some(p => p.startsWith(permPrefix));
+                const prefixes = modulePermissionMap[mod.id];
+                if (!prefixes || prefixes.length === 0) return false; // No mapping = HIDE
+                // Check if employee has ANY permission matching this module's prefixes
+                return prefixes.some(prefix => empPerms.some(p => p.startsWith(prefix)));
             });
             console.log('[Sidebar] filtered to', items.length, 'modules:', items.map(m => m.id));
         }
 
         return items;
-    }, [business?.activeModules, business?.moduleSubscriptions, business?.category, moduleDefaults, isOwner, isImpersonating, employee]);
+    }, [business?.activeModules, business?.moduleSubscriptions, business?.category, moduleDefaults, isOwner, isImpersonating, employee, modulePermissionMap]);
 
     const hasMultipleBusinesses = (userBusinesses.length > 1);
 
