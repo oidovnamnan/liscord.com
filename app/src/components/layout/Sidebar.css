@@ -202,9 +202,14 @@
     border-radius: 50%;
 }
 
-.switcher-item.add-new {
-    border-top: 1px solid var(--border-primary);
-    color: var(--primary);
+.switcher-divider {
+    height: 1px;
+    background: var(--border-primary);
+    margin: 4px 12px;
+}
+
+.switcher-back:hover {
+    background: rgba(16, 185, 129, 0.08) !important;
 }
 
 @keyframes slideDown {

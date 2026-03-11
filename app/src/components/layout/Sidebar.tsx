@@ -8,7 +8,9 @@ import {
     UserCog,
     X,
     ChevronDown,
-    Plus,
+    ArrowRightLeft,
+    CornerDownLeft,
+    Shield,
 } from 'lucide-react';
 import { useUIStore, useBusinessStore, useAuthStore } from '../../store';
 import { doc, updateDoc } from 'firebase/firestore';
@@ -16,17 +18,15 @@ import { db } from '../../services/firebase';
 import { businessService, systemSettingsService } from '../../services/db';
 import { toast } from 'react-hot-toast';
 import * as Icons from 'lucide-react';
-import { LISCORD_MODULES } from '../../config/modules';
 import { getVisibleModules } from '../../utils/moduleUtils';
-import { EmployeeSwitcher } from '../common/EmployeeSwitcher';
 import './Sidebar.css';
 
 export function Sidebar() {
     const location = useLocation();
     const navigate = useNavigate();
     const { sidebarOpen, sidebarCollapsed, toggleSidebar, toggleSidebarCollapsed } = useUIStore();
-    const { business, setBusiness, setEmployee, setLinkedEmployees } = useBusinessStore();
-    const { user, setUser } = useAuthStore();
+    const { business, setBusiness, setEmployee, setLinkedEmployees, linkedEmployees, employee, originalEmployee, switchToEmployee, switchBack } = useBusinessStore();
+    const { user } = useAuthStore();
     const [switching, setSwitching] = useState(false);
     const [showSwitcher, setShowSwitcher] = useState(false);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -62,17 +62,23 @@ export function Sidebar() {
             ]);
             setBusiness(biz);
             setEmployee(emp);
-            // Load linked employees for role switching
-            if (emp?.linkedEmployeeIds?.length && biz) {
+            // Load switchable employees
+            if (emp && biz) {
                 try {
-                    const linked = await businessService.getLinkedEmployees(biz.id, emp.linkedEmployeeIds);
-                    setLinkedEmployees(linked);
+                    const isOwner = user.uid === biz.ownerId || emp.role === 'owner';
+                    if (isOwner) {
+                        const allEmps = await businessService.getEmployees(biz.id);
+                        setLinkedEmployees(allEmps.filter(e => e.id !== emp.id));
+                    } else if (emp.linkedEmployeeIds?.length) {
+                        const linked = await businessService.getLinkedEmployees(biz.id, emp.linkedEmployeeIds);
+                        setLinkedEmployees(linked);
+                    } else {
+                        setLinkedEmployees([]);
+                    }
                 } catch (e) {
-                    console.warn('[Sidebar] getLinkedEmployees failed:', e);
+                    console.warn('[Sidebar] loadSwitchableEmployees failed:', e);
                     setLinkedEmployees([]);
                 }
-            } else {
-                setLinkedEmployees([]);
             }
             setShowSwitcher(false);
             navigate('/app');
@@ -85,18 +91,17 @@ export function Sidebar() {
         }
     };
 
-    const handleAddNew = async () => {
-        if (!user) return;
-        try {
-            await updateDoc(doc(db, 'users', user.uid), { activeBusiness: null });
-            // Update local state to trigger BusinessWizard in ProtectedRoute
-            setUser({ ...user, activeBusiness: null });
-            setBusiness(null);
-            navigate('/app');
-        } catch (error) {
-            console.error('Failed to clear active business:', error);
-            toast.error('Алдаа гарлаа');
-        }
+    const handleSwitchEmployee = (emp: typeof employee) => {
+        if (!emp) return;
+        switchToEmployee(emp);
+        setShowSwitcher(false);
+        toast.success(`${emp.name} эрх рүү шилжлээ`);
+    };
+
+    const handleSwitchBack = () => {
+        switchBack();
+        setShowSwitcher(false);
+        toast.success('Өөрийн эрх рүү буцлаа');
     };
 
     const [moduleDefaults, setModuleDefaults] = useState<Record<string, Record<string, string>>>({});
@@ -117,6 +122,7 @@ export function Sidebar() {
         return getVisibleModules(business, moduleDefaults);
     }, [business?.activeModules, business?.moduleSubscriptions, business?.category, moduleDefaults]);
 
+    const hasMultipleBusinesses = (userBusinesses.length > 1);
 
     return (
         <>
@@ -133,7 +139,7 @@ export function Sidebar() {
                     </button>
                 </div>
 
-                {/* Business Info */}
+                {/* Business Info + Switcher */}
                 {business && !sidebarCollapsed && (
                     <div className="sidebar-business-container">
                         <div className="sidebar-business" onClick={() => setShowSwitcher(!showSwitcher)}>
@@ -155,38 +161,86 @@ export function Sidebar() {
 
                         {showSwitcher && (
                             <div className="business-switcher-dropdown">
-                                <div className="switcher-label">Миний бизнесүүд</div>
-                                {userBusinesses.map(biz => (
-                                    <button
-                                        key={biz.id}
-                                        className={`switcher-item ${biz.id === business.id ? 'active' : ''}`}
-                                        onClick={() => handleSwitch(biz.id)}
-                                        disabled={switching}
-                                    >
-                                        <div className="switcher-item-icon">
-                                            {biz.logo ? (
-                                                <img src={biz.logo} alt={biz.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                                            ) : (
-                                                biz.name.charAt(0)
-                                            )}
+                                {/* Business switching (only when multiple businesses) */}
+                                {hasMultipleBusinesses && (
+                                    <>
+                                        <div className="switcher-label">Миний бизнесүүд</div>
+                                        {userBusinesses.map(biz => (
+                                            <button
+                                                key={biz.id}
+                                                className={`switcher-item ${biz.id === business.id ? 'active' : ''}`}
+                                                onClick={() => handleSwitch(biz.id)}
+                                                disabled={switching}
+                                            >
+                                                <div className="switcher-item-icon">
+                                                    {biz.logo ? (
+                                                        <img src={biz.logo} alt={biz.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                                    ) : (
+                                                        biz.name.charAt(0)
+                                                    )}
+                                                </div>
+                                                <div className="sidebar-business-info">
+                                                    <div className="sidebar-business-name">{biz.name}</div>
+                                                    {biz.id === business.id && <div className="switcher-active-dot" />}
+                                                </div>
+                                            </button>
+                                        ))}
+                                    </>
+                                )}
+
+                                {/* Back to own account (when impersonating) */}
+                                {originalEmployee && (
+                                    <>
+                                        {hasMultipleBusinesses && <div className="switcher-divider" />}
+                                        <button className="switcher-item switcher-back" onClick={handleSwitchBack}>
+                                            <div className="switcher-item-icon" style={{ background: 'var(--success)', color: 'white' }}>
+                                                <CornerDownLeft size={14} />
+                                            </div>
+                                            <div className="sidebar-business-info">
+                                                <div className="sidebar-business-name">{originalEmployee.name}</div>
+                                                <div style={{ fontSize: '0.65rem', color: 'var(--success)' }}>← Буцах</div>
+                                            </div>
+                                        </button>
+                                    </>
+                                )}
+
+                                {/* Employee switching */}
+                                {linkedEmployees.length > 0 && (
+                                    <>
+                                        {(hasMultipleBusinesses || originalEmployee) && <div className="switcher-divider" />}
+                                        <div className="switcher-label" style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                                            <ArrowRightLeft size={10} /> Ажилтан солих
                                         </div>
-                                        <div className="sidebar-business-info">
-                                            <div className="sidebar-business-name">{biz.name}</div>
-                                            {biz.id === business.id && <div className="switcher-active-dot" />}
-                                        </div>
-                                    </button>
-                                ))}
-                                <button className="switcher-item add-new" onClick={handleAddNew}>
-                                    <div className="switcher-item-icon"><Plus size={14} /></div>
-                                    <div className="switcher-item-name">Шинэ бизнес нэмэх</div>
-                                </button>
+                                        {linkedEmployees.map(emp => (
+                                            <button
+                                                key={emp.id}
+                                                className="switcher-item"
+                                                onClick={() => handleSwitchEmployee(emp)}
+                                            >
+                                                <div className="switcher-item-icon" style={{ background: 'linear-gradient(135deg, var(--primary), #6c5ce7)', color: 'white', fontSize: '0.6rem', fontWeight: 700 }}>
+                                                    {(emp.name || '?').charAt(0).toUpperCase()}
+                                                </div>
+                                                <div className="sidebar-business-info">
+                                                    <div className="sidebar-business-name">{emp.name}</div>
+                                                    <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 3 }}>
+                                                        <Shield size={8} /> {emp.positionName || 'Ажилтан'}
+                                                    </div>
+                                                </div>
+                                            </button>
+                                        ))}
+                                    </>
+                                )}
+
+                                {/* Current impersonation banner */}
+                                {originalEmployee && employee && (
+                                    <div style={{ padding: '6px 10px', fontSize: '0.68rem', color: 'var(--warning)', background: 'rgba(255,193,7,0.08)', borderRadius: 'var(--radius-sm)', margin: '4px', textAlign: 'center' }}>
+                                        ⚡ {employee.name} ({employee.positionName || 'Ажилтан'}) эрхээр ажиллаж байна
+                                    </div>
+                                )}
                             </div>
                         )}
                     </div>
                 )}
-
-                {/* Employee Role Switcher */}
-                <EmployeeSwitcher />
 
                 {/* Navigation */}
                 <nav className="sidebar-nav">

@@ -246,13 +246,21 @@ export default function App() {
                 setBusiness(biz);
                 setEmployee(emp);
 
-                // Load linked employees for role switching
-                if (emp?.linkedEmployeeIds?.length && biz) {
+                // Load switchable employees for role switching
+                if (emp && biz) {
                   try {
-                    const linked = await businessService.getLinkedEmployees(biz.id, emp.linkedEmployeeIds);
-                    setLinkedEmployees(linked);
+                    const isOwner = firebaseUser.uid === biz.ownerId || emp.role === 'owner';
+                    if (isOwner) {
+                      // Owner can switch to ANY employee
+                      const allEmps = await businessService.getEmployees(biz.id);
+                      setLinkedEmployees(allEmps.filter(e => e.id !== emp.id));
+                    } else if (emp.linkedEmployeeIds?.length) {
+                      // Non-owner: only linked employees
+                      const linked = await businessService.getLinkedEmployees(biz.id, emp.linkedEmployeeIds);
+                      setLinkedEmployees(linked);
+                    }
                   } catch (e) {
-                    console.warn('[Auth] getLinkedEmployees failed (non-critical):', e);
+                    console.warn('[Auth] loadSwitchableEmployees failed (non-critical):', e);
                   }
                 }
               } catch (e) {

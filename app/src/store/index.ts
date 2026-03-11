@@ -28,12 +28,14 @@ export type { CartItem } from './cartStore';
 interface BusinessState {
     business: Business | null;
     employee: Employee | null;
+    originalEmployee: Employee | null; // Owner's own profile when impersonating another employee
     linkedEmployees: Employee[];
     loading: boolean;
     setBusiness: (business: Business | null) => void;
     setEmployee: (employee: Employee | null) => void;
     setLinkedEmployees: (employees: Employee[]) => void;
     switchToEmployee: (targetEmployee: Employee) => void;
+    switchBack: () => void;
     setLoading: (loading: boolean) => void;
     clear: () => void;
 }
@@ -41,22 +43,34 @@ interface BusinessState {
 export const useBusinessStore = create<BusinessState>((set, get) => ({
     business: null,
     employee: null,
+    originalEmployee: null,
     linkedEmployees: [],
     loading: false,
     setBusiness: (business) => set({ business }),
     setEmployee: (employee) => set({ employee }),
     setLinkedEmployees: (employees) => set({ linkedEmployees: employees }),
     switchToEmployee: (targetEmployee) => {
-        const { employee, linkedEmployees } = get();
+        const { employee, originalEmployee, linkedEmployees } = get();
         if (!employee) return;
+        // Save original employee on first switch (for "back to own account")
+        const original = originalEmployee || employee;
         // Move current employee back into linked list, remove target from linked list
         const newLinked = linkedEmployees
             .filter(e => e.id !== targetEmployee.id)
             .concat(employee);
-        set({ employee: targetEmployee, linkedEmployees: newLinked });
+        set({ employee: targetEmployee, originalEmployee: original, linkedEmployees: newLinked });
+    },
+    switchBack: () => {
+        const { originalEmployee, employee, linkedEmployees } = get();
+        if (!originalEmployee) return;
+        // Remove original from linked list (it becomes active), add current back
+        const newLinked = linkedEmployees
+            .filter(e => e.id !== originalEmployee.id)
+            .concat(employee!);
+        set({ employee: originalEmployee, originalEmployee: null, linkedEmployees: newLinked });
     },
     setLoading: (loading) => set({ loading }),
-    clear: () => set({ business: null, employee: null, linkedEmployees: [], loading: false }),
+    clear: () => set({ business: null, employee: null, originalEmployee: null, linkedEmployees: [], loading: false }),
 }));
 
 // ============ UI STORE ============
