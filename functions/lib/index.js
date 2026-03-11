@@ -242,25 +242,32 @@ exports.scheduledCleanup = functions
     return null;
 });
 /**
- * SMS Income Auto-Matching
- * When a new bank SMS arrives via the bridge app, check if the transaction
- * note contains a payment reference code. If it matches an unpaid order
- * with the same amount, auto-mark the order as paid.
+ * SMS Income Auto-Matching (REALTIME)
+ * Triggers server-side when a new SMS arrives — no page needs to be open.
+ *
+ * Matching rules:
+ * 1. Amount must match exactly (±1₮ tolerance)
+ * 2. SMS утга/body must CONTAIN either:
+ *    - The order's paymentRefCode (case-insensitive), OR
+ *    - The customer's phone number
+ * 3. Only matches unpaid orders
  */
 exports.onSmsIncome = functions
     .firestore
     .document("sms_inbox/{smsId}")
     .onCreate(async (snap) => {
-    var _a;
+    var _a, _b;
     const smsData = snap.data();
     if (!smsData)
         return null;
     const pairingKey = smsData.pairingKey;
     const smsAmount = smsData.amount || 0;
-    const smsBody = smsData.body || '';
-    const smsNote = smsData.utga || '';
+    const smsBody = (smsData.body || '').toLowerCase();
+    const smsNote = (smsData.utga || '').toLowerCase();
     if (smsAmount <= 0 || !pairingKey)
         return null;
+    // Combine note + body for searching
+    const searchText = `${smsNote} ${smsBody}`;
     try {
         // 1. Find business by pairingKey (smsBridgeKey)
         const bizQuery = await db.collection('businesses')
@@ -273,58 +280,68 @@ exports.onSmsIncome = functions
         }
         const bizDoc = bizQuery.docs[0];
         const bizId = bizDoc.id;
-        // 2. Extract reference code (5 uppercase alphanumeric chars) from note or body
-        const textToSearch = `${smsNote} ${smsBody}`;
-        const refCodeMatch = textToSearch.match(/\b([A-HJ-NP-Z2-9]{5})\b/);
-        if (!refCodeMatch) {
-            console.log(`No ref code found in SMS: ${smsNote || smsBody.substring(0, 50)}`);
-            return null;
-        }
-        const refCode = refCodeMatch[1];
-        console.log(`Found ref code: ${refCode}, amount: ${smsAmount}, bizId: ${bizId}`);
-        // 3. Find matching unpaid order
-        const ordersQuery = await db.collection(`businesses/${bizId}/orders`)
-            .where('paymentRefCode', '==', refCode)
+        // 2. Load all unpaid orders for this business
+        const ordersSnap = await db.collection(`businesses/${bizId}/orders`)
             .where('paymentStatus', '==', 'unpaid')
-            .where('isDeleted', '==', false)
-            .limit(1)
             .get();
-        if (ordersQuery.empty) {
-            console.log(`No unpaid order found with refCode: ${refCode}`);
+        if (ordersSnap.empty) {
+            console.log(`No unpaid orders for business: ${bizId}`);
             return null;
         }
-        const orderDoc = ordersQuery.docs[0];
-        const orderData = orderDoc.data();
-        const orderTotal = ((_a = orderData.financials) === null || _a === void 0 ? void 0 : _a.totalAmount) || 0;
-        // 4. Verify amount matches (allow small tolerance for bank fees)
-        if (Math.abs(smsAmount - orderTotal) > 1) {
-            console.log(`Amount mismatch: SMS=${smsAmount}, Order=${orderTotal}, refCode=${refCode}`);
+        // 3. Find matching order: amount + (refCode OR phone) in утга
+        let matchedOrderDoc = null;
+        for (const orderDoc of ordersSnap.docs) {
+            const order = orderDoc.data();
+            // Skip deleted/cancelled
+            if (order.isDeleted || order.status === 'cancelled')
+                continue;
+            // Amount must match exactly (±1₮ tolerance)
+            const orderTotal = ((_a = order.financials) === null || _a === void 0 ? void 0 : _a.totalAmount) || 0;
+            if (Math.abs(smsAmount - orderTotal) > 1)
+                continue;
+            // Check if searchText contains refCode or phone
+            const refCode = (order.paymentRefCode || '').toLowerCase();
+            const phone = (((_b = order.customer) === null || _b === void 0 ? void 0 : _b.phone) || '');
+            const hasRefCode = refCode && refCode.length >= 4 && searchText.includes(refCode);
+            const hasPhone = phone && phone.length >= 8 && searchText.includes(phone);
+            if (hasRefCode || hasPhone) {
+                matchedOrderDoc = orderDoc;
+                console.log(`Match found: refCode=${hasRefCode}, phone=${hasPhone}, order=${orderDoc.id}`);
+                break;
+            }
+        }
+        if (!matchedOrderDoc) {
+            console.log(`No matching order: amount=${smsAmount}, note=${smsNote || smsBody.substring(0, 50)}`);
             return null;
         }
-        // 5. Auto-match: Update order as paid
+        // 4. Auto-match: Update order as paid
         const now = admin.firestore.FieldValue.serverTimestamp();
         const paymentEntry = {
             id: `sms_${snap.id}`,
             amount: smsAmount,
             method: 'bank',
-            note: `Банкны шилжүүлэг (автомат) - ${smsData.bank || 'Unknown'}`,
+            note: `Банкны шилжүүлэг (автомат) - ${smsData.bank || smsData.sender || 'Unknown'}`,
             paidAt: now,
             recordedBy: 'system_auto',
         };
-        await orderDoc.ref.update({
+        await matchedOrderDoc.ref.update({
             paymentStatus: 'paid',
+            paymentVerifiedAt: now,
+            paymentVerifiedBy: 'auto-match',
+            paymentSmsId: snap.id,
             'financials.paidAmount': smsAmount,
             'financials.balanceDue': 0,
             'financials.payments': admin.firestore.FieldValue.arrayUnion(paymentEntry),
             updatedAt: now,
         });
-        // 6. Update SMS doc as matched
+        // 5. Update SMS doc as matched
         await snap.ref.update({
             status: 'matched',
-            orderId: orderDoc.id,
+            orderId: matchedOrderDoc.id,
             matchedAt: now,
+            autoMatched: true,
         });
-        console.log(`AUTO-MATCHED: SMS ${snap.id} → Order ${orderDoc.id} (${refCode}, ${smsAmount}₮)`);
+        console.log(`✅ AUTO-MATCHED: SMS ${snap.id} → Order ${matchedOrderDoc.id} (₮${smsAmount})`);
         return null;
     }
     catch (err) {
