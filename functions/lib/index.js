@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.onQrLoginUpdate = exports.onOrderCreate = void 0;
+exports.onSmsIncome = exports.scheduledCleanup = exports.lowStockAlert = exports.sendOrderNotification = exports.onQrLoginUpdate = exports.onOrderCreate = void 0;
 const functions = require("firebase-functions/v1");
 const admin = require("firebase-admin");
 admin.initializeApp();
@@ -83,7 +83,8 @@ exports.onQrLoginUpdate = functions
                 authenticatedAt: admin.firestore.FieldValue.serverTimestamp()
             });
         }
-        catch (error) {
+        catch (err) {
+            const error = err;
             console.error("Error generating custom token:", error);
             return change.after.ref.update({
                 status: 'error',
@@ -92,5 +93,243 @@ exports.onQrLoginUpdate = functions
         }
     }
     return null;
+});
+/**
+ * Push Notification on New Order
+ * Sends FCM notification to business owner when a new order is created
+ */
+exports.sendOrderNotification = functions
+    .firestore
+    .document("businesses/{bizId}/orders/{orderId}")
+    .onCreate(async (snap, context) => {
+    var _a, _b;
+    const orderData = snap.data();
+    const bizId = context.params.bizId;
+    if (!orderData || orderData.isDeleted)
+        return null;
+    try {
+        // Get business info
+        const bizSnap = await db.doc(`businesses/${bizId}`).get();
+        const bizData = bizSnap.data();
+        if (!bizData)
+            return null;
+        // Get owner's FCM tokens
+        const ownerId = bizData.ownerId;
+        if (!ownerId)
+            return null;
+        const userSnap = await db.doc(`users/${ownerId}`).get();
+        const userData = userSnap.data();
+        const fcmTokens = (userData === null || userData === void 0 ? void 0 : userData.fcmTokens) || [];
+        if (fcmTokens.length === 0)
+            return null;
+        const customerName = ((_a = orderData.customer) === null || _a === void 0 ? void 0 : _a.name) || 'Зочин';
+        const totalAmount = ((_b = orderData.financials) === null || _b === void 0 ? void 0 : _b.totalAmount) || 0;
+        const orderNumber = orderData.orderNumber || snap.id.slice(0, 6);
+        const message = {
+            notification: {
+                title: `🛒 Шинэ захиалга #${orderNumber}`,
+                body: `${customerName} - ₮${totalAmount.toLocaleString()}`,
+            },
+            data: {
+                type: 'new_order',
+                orderId: snap.id,
+                bizId: bizId,
+            },
+            tokens: fcmTokens,
+        };
+        const response = await admin.messaging().sendEachForMulticast(message);
+        // Clean up invalid tokens
+        const tokensToRemove = [];
+        response.responses.forEach((resp, idx) => {
+            var _a;
+            if (!resp.success && ((_a = resp.error) === null || _a === void 0 ? void 0 : _a.code) === 'messaging/registration-token-not-registered') {
+                tokensToRemove.push(fcmTokens[idx]);
+            }
+        });
+        if (tokensToRemove.length > 0) {
+            await db.doc(`users/${ownerId}`).update({
+                fcmTokens: admin.firestore.FieldValue.arrayRemove(...tokensToRemove),
+            });
+        }
+        return null;
+    }
+    catch (err) {
+        console.error("Failed to send order notification:", err);
+        return null;
+    }
+});
+/**
+ * Low Stock Alert
+ * Checks for low stock products when stock is updated
+ */
+exports.lowStockAlert = functions
+    .firestore
+    .document("businesses/{bizId}/products/{productId}")
+    .onUpdate(async (change, context) => {
+    var _a, _b, _c, _d, _e, _f, _g;
+    const after = change.after.data();
+    const before = change.before.data();
+    const bizId = context.params.bizId;
+    if (!after || !((_a = after.stock) === null || _a === void 0 ? void 0 : _a.trackInventory))
+        return null;
+    const currentQty = (_c = (_b = after.stock) === null || _b === void 0 ? void 0 : _b.quantity) !== null && _c !== void 0 ? _c : 0;
+    const previousQty = (_e = (_d = before === null || before === void 0 ? void 0 : before.stock) === null || _d === void 0 ? void 0 : _d.quantity) !== null && _e !== void 0 ? _e : 0;
+    const lowStockThreshold = (_g = (_f = after.stock) === null || _f === void 0 ? void 0 : _f.lowStockThreshold) !== null && _g !== void 0 ? _g : 5;
+    // Only trigger when stock drops below threshold (not on every update)
+    if (currentQty < lowStockThreshold && previousQty >= lowStockThreshold) {
+        try {
+            // Create a notification record
+            await db.collection(`businesses/${bizId}/notifications`).add({
+                type: 'low_stock',
+                title: 'Бараа дуусах дөхлөө',
+                message: `"${after.name}" барааны үлдэгдэл ${currentQty} болж буурлаа (босго: ${lowStockThreshold})`,
+                productId: context.params.productId,
+                productName: after.name,
+                currentStock: currentQty,
+                threshold: lowStockThreshold,
+                isRead: false,
+                createdAt: admin.firestore.FieldValue.serverTimestamp(),
+            });
+        }
+        catch (err) {
+            console.error("Failed to create low stock notification:", err);
+        }
+    }
+    return null;
+});
+/**
+ * Scheduled Cleanup - Runs daily at 3:00 AM UTC
+ * Archives old soft-deleted records (older than 30 days)
+ */
+exports.scheduledCleanup = functions
+    .pubsub
+    .schedule("every 24 hours")
+    .timeZone("Asia/Ulaanbaatar")
+    .onRun(async () => {
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    const collectionsToClean = ['orders', 'products', 'invoices', 'expenses'];
+    let totalCleaned = 0;
+    try {
+        // Get all businesses
+        const bizsSnap = await db.collection('businesses').get();
+        for (const bizDoc of bizsSnap.docs) {
+            for (const colName of collectionsToClean) {
+                const deletedDocs = await db
+                    .collection(`businesses/${bizDoc.id}/${colName}`)
+                    .where('isDeleted', '==', true)
+                    .where('deletedAt', '<=', thirtyDaysAgo)
+                    .limit(100)
+                    .get();
+                if (deletedDocs.empty)
+                    continue;
+                const batch = db.batch();
+                deletedDocs.docs.forEach(doc => {
+                    batch.update(doc.ref, {
+                        isArchived: true,
+                        archivedAt: admin.firestore.FieldValue.serverTimestamp(),
+                    });
+                });
+                await batch.commit();
+                totalCleaned += deletedDocs.size;
+            }
+        }
+        console.log(`Scheduled cleanup completed. Archived ${totalCleaned} records.`);
+    }
+    catch (err) {
+        console.error("Scheduled cleanup failed:", err);
+    }
+    return null;
+});
+/**
+ * SMS Income Auto-Matching
+ * When a new bank SMS arrives via the bridge app, check if the transaction
+ * note contains a payment reference code. If it matches an unpaid order
+ * with the same amount, auto-mark the order as paid.
+ */
+exports.onSmsIncome = functions
+    .firestore
+    .document("sms_inbox/{smsId}")
+    .onCreate(async (snap) => {
+    var _a;
+    const smsData = snap.data();
+    if (!smsData)
+        return null;
+    const pairingKey = smsData.pairingKey;
+    const smsAmount = smsData.amount || 0;
+    const smsBody = smsData.body || '';
+    const smsNote = smsData.utga || '';
+    if (smsAmount <= 0 || !pairingKey)
+        return null;
+    try {
+        // 1. Find business by pairingKey (smsBridgeKey)
+        const bizQuery = await db.collection('businesses')
+            .where('smsBridgeKey', '==', pairingKey)
+            .limit(1)
+            .get();
+        if (bizQuery.empty) {
+            console.log(`No business found for pairingKey: ${pairingKey}`);
+            return null;
+        }
+        const bizDoc = bizQuery.docs[0];
+        const bizId = bizDoc.id;
+        // 2. Extract reference code (5 uppercase alphanumeric chars) from note or body
+        const textToSearch = `${smsNote} ${smsBody}`;
+        const refCodeMatch = textToSearch.match(/\b([A-HJ-NP-Z2-9]{5})\b/);
+        if (!refCodeMatch) {
+            console.log(`No ref code found in SMS: ${smsNote || smsBody.substring(0, 50)}`);
+            return null;
+        }
+        const refCode = refCodeMatch[1];
+        console.log(`Found ref code: ${refCode}, amount: ${smsAmount}, bizId: ${bizId}`);
+        // 3. Find matching unpaid order
+        const ordersQuery = await db.collection(`businesses/${bizId}/orders`)
+            .where('paymentRefCode', '==', refCode)
+            .where('paymentStatus', '==', 'unpaid')
+            .where('isDeleted', '==', false)
+            .limit(1)
+            .get();
+        if (ordersQuery.empty) {
+            console.log(`No unpaid order found with refCode: ${refCode}`);
+            return null;
+        }
+        const orderDoc = ordersQuery.docs[0];
+        const orderData = orderDoc.data();
+        const orderTotal = ((_a = orderData.financials) === null || _a === void 0 ? void 0 : _a.totalAmount) || 0;
+        // 4. Verify amount matches (allow small tolerance for bank fees)
+        if (Math.abs(smsAmount - orderTotal) > 1) {
+            console.log(`Amount mismatch: SMS=${smsAmount}, Order=${orderTotal}, refCode=${refCode}`);
+            return null;
+        }
+        // 5. Auto-match: Update order as paid
+        const now = admin.firestore.FieldValue.serverTimestamp();
+        const paymentEntry = {
+            id: `sms_${snap.id}`,
+            amount: smsAmount,
+            method: 'bank',
+            note: `Банкны шилжүүлэг (автомат) - ${smsData.bank || 'Unknown'}`,
+            paidAt: now,
+            recordedBy: 'system_auto',
+        };
+        await orderDoc.ref.update({
+            paymentStatus: 'paid',
+            'financials.paidAmount': smsAmount,
+            'financials.balanceDue': 0,
+            'financials.payments': admin.firestore.FieldValue.arrayUnion(paymentEntry),
+            updatedAt: now,
+        });
+        // 6. Update SMS doc as matched
+        await snap.ref.update({
+            status: 'matched',
+            orderId: orderDoc.id,
+            matchedAt: now,
+        });
+        console.log(`AUTO-MATCHED: SMS ${snap.id} → Order ${orderDoc.id} (${refCode}, ${smsAmount}₮)`);
+        return null;
+    }
+    catch (err) {
+        console.error("SMS auto-matching failed:", err);
+        return null;
+    }
 });
 //# sourceMappingURL=index.js.map

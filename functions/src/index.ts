@@ -260,3 +260,108 @@ export const scheduledCleanup = functions
 
         return null;
     });
+
+/**
+ * SMS Income Auto-Matching
+ * When a new bank SMS arrives via the bridge app, check if the transaction
+ * note contains a payment reference code. If it matches an unpaid order
+ * with the same amount, auto-mark the order as paid.
+ */
+export const onSmsIncome = functions
+    .firestore
+    .document("sms_inbox/{smsId}")
+    .onCreate(async (snap) => {
+        const smsData = snap.data();
+        if (!smsData) return null;
+
+        const pairingKey = smsData.pairingKey;
+        const smsAmount = smsData.amount || 0;
+        const smsBody = smsData.body || '';
+        const smsNote = smsData.utga || '';
+
+        if (smsAmount <= 0 || !pairingKey) return null;
+
+        try {
+            // 1. Find business by pairingKey (smsBridgeKey)
+            const bizQuery = await db.collection('businesses')
+                .where('smsBridgeKey', '==', pairingKey)
+                .limit(1)
+                .get();
+
+            if (bizQuery.empty) {
+                console.log(`No business found for pairingKey: ${pairingKey}`);
+                return null;
+            }
+
+            const bizDoc = bizQuery.docs[0];
+            const bizId = bizDoc.id;
+
+            // 2. Extract reference code (5 uppercase alphanumeric chars) from note or body
+            const textToSearch = `${smsNote} ${smsBody}`;
+            const refCodeMatch = textToSearch.match(/\b([A-HJ-NP-Z2-9]{5})\b/);
+
+            if (!refCodeMatch) {
+                console.log(`No ref code found in SMS: ${smsNote || smsBody.substring(0, 50)}`);
+                return null;
+            }
+
+            const refCode = refCodeMatch[1];
+            console.log(`Found ref code: ${refCode}, amount: ${smsAmount}, bizId: ${bizId}`);
+
+            // 3. Find matching unpaid order
+            const ordersQuery = await db.collection(`businesses/${bizId}/orders`)
+                .where('paymentRefCode', '==', refCode)
+                .where('paymentStatus', '==', 'unpaid')
+                .where('isDeleted', '==', false)
+                .limit(1)
+                .get();
+
+            if (ordersQuery.empty) {
+                console.log(`No unpaid order found with refCode: ${refCode}`);
+                return null;
+            }
+
+            const orderDoc = ordersQuery.docs[0];
+            const orderData = orderDoc.data();
+            const orderTotal = orderData.financials?.totalAmount || 0;
+
+            // 4. Verify amount matches (allow small tolerance for bank fees)
+            if (Math.abs(smsAmount - orderTotal) > 1) {
+                console.log(`Amount mismatch: SMS=${smsAmount}, Order=${orderTotal}, refCode=${refCode}`);
+                return null;
+            }
+
+            // 5. Auto-match: Update order as paid
+            const now = admin.firestore.FieldValue.serverTimestamp();
+            const paymentEntry = {
+                id: `sms_${snap.id}`,
+                amount: smsAmount,
+                method: 'bank',
+                note: `Банкны шилжүүлэг (автомат) - ${smsData.bank || 'Unknown'}`,
+                paidAt: now,
+                recordedBy: 'system_auto',
+            };
+
+            await orderDoc.ref.update({
+                paymentStatus: 'paid',
+                'financials.paidAmount': smsAmount,
+                'financials.balanceDue': 0,
+                'financials.payments': admin.firestore.FieldValue.arrayUnion(paymentEntry),
+                updatedAt: now,
+            });
+
+            // 6. Update SMS doc as matched
+            await snap.ref.update({
+                status: 'matched',
+                orderId: orderDoc.id,
+                matchedAt: now,
+            });
+
+            console.log(`AUTO-MATCHED: SMS ${snap.id} → Order ${orderDoc.id} (${refCode}, ${smsAmount}₮)`);
+            return null;
+
+        } catch (err) {
+            console.error("SMS auto-matching failed:", err);
+            return null;
+        }
+    });

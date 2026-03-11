@@ -2,12 +2,23 @@ import { useState } from 'react';
 import { useBusinessStore } from '../../../store';
 import { businessService } from '../../../services/db';
 import { toast } from 'react-hot-toast';
-import { QrCode, FileText, Loader2 } from 'lucide-react';
+import { QrCode, FileText, Loader2, Landmark, Plus, Trash2 } from 'lucide-react';
+
+interface BankAccountEntry {
+    id: string;
+    bankName: string;
+    accountNumber: string;
+    accountName: string;
+    enabled: boolean;
+}
 
 export function PaymentTab() {
     const { business } = useBusinessStore();
     const [loading, setLoading] = useState(false);
     const [isDirty, setIsDirty] = useState(false);
+    const [bankAccounts, setBankAccounts] = useState<BankAccountEntry[]>(
+        business?.settings?.bankTransferAccounts || []
+    );
 
     const handleSave = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
@@ -31,17 +42,39 @@ export function PaymentTab() {
                         enabled: fd.get('qpayEnabled') === 'on',
                         merchantId: (fd.get('qpayMerchantId') as string)?.trim() || '',
                         username: (fd.get('qpayUsername') as string)?.trim() || '',
-                    }
+                    },
+                    bankTransferAccounts: bankAccounts,
                 }
             });
             setIsDirty(false);
             toast.success('Төлбөр болон НӨАТ-ын тохиргоо хадгалагдлаа');
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
         } catch (_error) {
             toast.error('Алдаа гарлаа');
         } finally {
             setLoading(false);
         }
+    };
+
+    const addBankAccount = () => {
+        setBankAccounts(prev => [...prev, {
+            id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+            bankName: '',
+            accountNumber: '',
+            accountName: '',
+            enabled: true,
+        }]);
+        setIsDirty(true);
+    };
+
+    const removeBankAccount = (id: string) => {
+        setBankAccounts(prev => prev.filter(a => a.id !== id));
+        setIsDirty(true);
+    };
+
+    const updateBankAccount = (id: string, field: keyof BankAccountEntry, value: string | boolean) => {
+        setBankAccounts(prev => prev.map(a => a.id === id ? { ...a, [field]: value } : a));
+        setIsDirty(true);
     };
 
     const ebarimt = business?.settings?.ebarimt;
@@ -95,7 +128,7 @@ export function PaymentTab() {
                 </div>
 
                 {/* QPAY CONFIG */}
-                <div className="settings-card">
+                <div className="settings-card mb-lg">
                     <div className="settings-card-header">
                         <div className="settings-card-icon"><QrCode size={20} /></div>
                         <h3>QPay v2 Интеграци</h3>
@@ -122,6 +155,105 @@ export function PaymentTab() {
                                 <input className="input" name="qpayUsername" defaultValue={qpay?.username} placeholder="Qpay username" />
                             </div>
                         </div>
+                    </div>
+                </div>
+
+                {/* BANK TRANSFER ACCOUNTS */}
+                <div className="settings-card mb-lg">
+                    <div className="settings-card-header">
+                        <div className="settings-card-icon"><Landmark size={20} /></div>
+                        <h3>Банкны шилжүүлгийн данснууд</h3>
+                    </div>
+                    <div style={{ padding: 'var(--space-md) var(--space-lg)' }}>
+                        <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: 20 }}>
+                            Онлайн дэлгүүрийн checkout хуудсанд харагдах банкны данснуудыг удирдана. Захиалагч шилжүүлэг хийхэд эдгээр дансны мэдээлэл харагдана.
+                        </p>
+
+                        {bankAccounts.length > 0 && (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 16, marginBottom: 20 }}>
+                                {bankAccounts.map((account) => (
+                                    <div key={account.id} style={{
+                                        padding: 20,
+                                        borderRadius: 16,
+                                        border: `1.5px solid ${account.enabled ? 'var(--primary)' : 'var(--border-color)'}`,
+                                        background: account.enabled ? 'rgba(var(--primary-rgb), 0.03)' : 'var(--bg-soft)',
+                                        transition: 'all 0.2s ease',
+                                    }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                                                <Landmark size={18} style={{ color: account.enabled ? 'var(--primary)' : 'var(--text-muted)' }} />
+                                                <span style={{ fontWeight: 700, fontSize: '0.95rem', color: account.enabled ? 'var(--text-primary)' : 'var(--text-muted)' }}>
+                                                    {account.bankName || 'Шинэ данс'}
+                                                </span>
+                                            </div>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                                                <label className="toggle" onClick={e => e.stopPropagation()}>
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={account.enabled}
+                                                        onChange={e => updateBankAccount(account.id, 'enabled', e.target.checked)}
+                                                    />
+                                                    <span className="toggle-slider" />
+                                                </label>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => removeBankAccount(account.id)}
+                                                    style={{
+                                                        background: 'none', border: 'none', cursor: 'pointer',
+                                                        color: 'var(--text-muted)', padding: 4, borderRadius: 8,
+                                                        display: 'flex', alignItems: 'center',
+                                                    }}
+                                                    title="Устгах"
+                                                >
+                                                    <Trash2 size={16} />
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <div className="grid-2-gap" style={{ gap: 12 }}>
+                                            <div className="input-group">
+                                                <label className="input-label">Банкны нэр</label>
+                                                <input
+                                                    className="input"
+                                                    value={account.bankName}
+                                                    onChange={e => updateBankAccount(account.id, 'bankName', e.target.value)}
+                                                    placeholder="Жнь: Хаан банк"
+                                                    style={{ height: 42 }}
+                                                />
+                                            </div>
+                                            <div className="input-group">
+                                                <label className="input-label">Дансны дугаар</label>
+                                                <input
+                                                    className="input"
+                                                    value={account.accountNumber}
+                                                    onChange={e => updateBankAccount(account.id, 'accountNumber', e.target.value)}
+                                                    placeholder="Жнь: 5000123456"
+                                                    style={{ height: 42 }}
+                                                />
+                                            </div>
+                                        </div>
+                                        <div className="input-group" style={{ marginTop: 12 }}>
+                                            <label className="input-label">Хүлээн авагчийн нэр</label>
+                                            <input
+                                                className="input"
+                                                value={account.accountName}
+                                                onChange={e => updateBankAccount(account.id, 'accountName', e.target.value)}
+                                                placeholder="Жнь: Ганзориг"
+                                                style={{ height: 42 }}
+                                            />
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+
+                        <button
+                            type="button"
+                            onClick={addBankAccount}
+                            className="btn btn-outline btn-sm"
+                            style={{ display: 'flex', alignItems: 'center', gap: 8, borderRadius: 12, fontWeight: 700 }}
+                        >
+                            <Plus size={16} /> Данс нэмэх
+                        </button>
                     </div>
                 </div>
 

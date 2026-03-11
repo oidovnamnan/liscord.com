@@ -1,10 +1,20 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useNavigate, useParams, useOutletContext } from 'react-router-dom';
 import { useCartStore } from '../../store';
 import { orderService } from '../../services/db';
 import { qpayService, type QPayInvoiceResponse } from '../../services/qpay';
-import { ChevronLeft, CheckCircle, MapPin, Truck, ImageIcon, ShieldCheck, CreditCard } from 'lucide-react';
+import { ChevronLeft, CheckCircle, MapPin, Truck, ImageIcon, ShieldCheck, CreditCard, QrCode, Landmark, Copy, Check, Smartphone } from 'lucide-react';
 import type { Business, Order } from '../../types';
+import { toast } from 'react-hot-toast';
+
+function generateRefCode(): string {
+    const chars = 'ABCDEFGHJKMNPQRSTVWXYZ23456789';
+    let code = '';
+    for (let i = 0; i < 5; i++) {
+        code += chars[Math.floor(Math.random() * chars.length)];
+    }
+    return code;
+}
 
 export function StoreCheckout() {
     const { slug } = useParams();
@@ -18,15 +28,18 @@ export function StoreCheckout() {
     const [phoneError, setPhoneError] = useState(false);
     const [customerName, setCustomerName] = useState('');
     const [customerPhone, setCustomerPhone] = useState('');
+    const [copied, setCopied] = useState(false);
+
+    // Payment method
+    const [paymentMethod, setPaymentMethod] = useState<'bank_transfer' | 'qpay' | 'social_pay'>('bank_transfer');
+    const [selectedBankId, setSelectedBankId] = useState<string>('');
 
     const hasReadyItems = items.some(item => item.product.productType === 'ready');
     const hasPreorderItems = items.some(item => item.product.productType === 'preorder');
 
-    // Default to delivery for ready items, but let user toggle
     const [isDeliveryRequested, setIsDeliveryRequested] = useState(hasReadyItems);
     const [deliveryZone, setDeliveryZone] = useState('ub_center');
 
-    // Hardcoded simple delivery fees
     const deliveryFees: Record<string, { label: string, fee: number }> = {
         'ub_center': { label: 'Улаанбаатар (А бүс)', fee: 5000 },
         'ub_far': { label: 'Улаанбаатар (Б бүс)', fee: 8000 },
@@ -36,9 +49,20 @@ export function StoreCheckout() {
     const currentFee = isDeliveryRequested ? deliveryFees[deliveryZone].fee : 0;
     const finalTotal = totalAmount() + currentFee;
 
+    // Bank accounts
+    const enabledBanks = useMemo(() =>
+        (business.settings?.bankTransferAccounts || []).filter(a => a.enabled),
+        [business.settings?.bankTransferAccounts]
+    );
+
+    // Auto-select first bank
+    const selectedBank = enabledBanks.find(b => b.id === selectedBankId) || enabledBanks[0] || null;
+
+    // Generate ref code once per session
+    const refCode = useMemo(() => generateRefCode(), []);
+
     const handleAddressChange = (val: string) => {
         const lower = val.toLowerCase();
-        // Simple heuristic for UB zones
         const bZoneKeywords = ['сонгинохайрхан', 'схд', 'хан-уул', 'худ', 'яармаг', 'нисэх', 'амгалан', 'баянхошуу', 'хайлааст', 'чсд', 'зуслан'];
         if (bZoneKeywords.some(k => lower.includes(k))) {
             setDeliveryZone('ub_far');
@@ -49,20 +73,39 @@ export function StoreCheckout() {
         }
     };
 
+    const copyRefCode = async () => {
+        try {
+            await navigator.clipboard.writeText(refCode);
+            setCopied(true);
+            toast.success('Код хуулагдлаа');
+            setTimeout(() => setCopied(false), 2000);
+        } catch {
+            // Fallback for mobile
+            const textarea = document.createElement('textarea');
+            textarea.value = refCode;
+            document.body.appendChild(textarea);
+            textarea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textarea);
+            setCopied(true);
+            toast.success('Код хуулагдлаа');
+            setTimeout(() => setCopied(false), 2000);
+        }
+    };
+
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         if (items.length === 0) return;
 
         const fd = new FormData(e.currentTarget);
-        const name = fd.get('name') as string;
-        const rawPhone = fd.get('phone') as string;
+        const name = fd.get('name') as string || customerName;
+        const rawPhone = fd.get('phone') as string || customerPhone;
         const address = fd.get('address') as string;
 
-        // Phone validation (8 digits numeric)
         const phone = rawPhone.replace(/\D/g, '');
         if (phone.length !== 8) {
             setPhoneError(true);
-            alert('Утасны дугаар 8 оронтой тоо байх ёстой (Жишээ: 88111010)');
+            toast.error('Утасны дугаар 8 оронтой тоо байх ёстой');
             return;
         }
         setPhoneError(false);
@@ -72,7 +115,7 @@ export function StoreCheckout() {
         try {
             const orderPayload: Partial<Order> = {
                 orderNumber: `${business.settings?.orderPrefix || 'ORD-'}${Date.now().toString().slice(-6)}`,
-                status: 'new', // Assuming 'new' is the default first status
+                status: 'new',
                 paymentStatus: 'unpaid',
                 customer: {
                     id: null,
@@ -80,6 +123,8 @@ export function StoreCheckout() {
                     phone,
                 },
                 source: 'website',
+                selectedPaymentMethod: paymentMethod,
+                paymentRefCode: paymentMethod === 'bank_transfer' ? refCode : undefined,
                 items: items.map(item => ({
                     productId: item.product.id,
                     name: item.product.name,
@@ -104,7 +149,7 @@ export function StoreCheckout() {
                     balanceDue: finalTotal
                 },
                 deliveryAddress: isDeliveryRequested ? `${deliveryFees[deliveryZone].label} - ${address}` : 'Дэлгүүрээс очиж авах',
-                notes: `Онлайн дэлгүүрээр өгсөн захиалга`,
+                notes: `Онлайн дэлгүүрээр өгсөн захиалга${paymentMethod === 'bank_transfer' && selectedBank ? ` | Шилжүүлэг: ${selectedBank.bankName} ${selectedBank.accountNumber} | Код: ${refCode}` : ''}`,
                 internalNotes: '',
                 tags: ['online'],
                 statusHistory: [],
@@ -117,7 +162,7 @@ export function StoreCheckout() {
             clearCart();
 
             // Generate QPay QR if enabled
-            if (business.settings?.qpay?.enabled) {
+            if (business.settings?.qpay?.enabled && paymentMethod === 'qpay') {
                 try {
                     const invoice = await qpayService.mockCreateInvoice({
                         invoice_code: business.settings.qpay.merchantId,
@@ -133,17 +178,17 @@ export function StoreCheckout() {
             }
         } catch (error) {
             console.error('Failed to create order', error);
-            alert('Захиалга үүсгэхэд алдаа гарлаа. Та дахин оролдоно уу.');
+            toast.error('Захиалга үүсгэхэд алдаа гарлаа');
         } finally {
             setLoading(false);
         }
     };
 
+    // ──────── SUCCESS SCREEN ────────
     if (successId) {
         return (
             <div className="store-bg" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', padding: '60px 20px' }}>
                 <div style={{ maxWidth: 800, margin: '0 auto', width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-
                     <div className="animate-slide-up" style={{
                         background: 'var(--surface-1)',
                         padding: '60px 40px',
@@ -157,11 +202,7 @@ export function StoreCheckout() {
                         overflow: 'hidden'
                     }}>
                         <div style={{
-                            position: 'absolute',
-                            top: 0,
-                            left: 0,
-                            width: '100%',
-                            height: 6,
+                            position: 'absolute', top: 0, left: 0, width: '100%', height: 6,
                             background: 'linear-gradient(90deg, #4BB543, #85e085)'
                         }} />
 
@@ -171,22 +212,71 @@ export function StoreCheckout() {
 
                         <h2 style={{ marginBottom: 16, fontSize: '1.8rem', fontWeight: 900, color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>Захиалга амжилттай!</h2>
 
+                        {/* Bank Transfer Info on Success */}
+                        {paymentMethod === 'bank_transfer' && selectedBank && (
+                            <div className="animate-fade-in" style={{ margin: '32px 0', background: 'var(--bg-soft)', padding: 28, borderRadius: 24, border: '1px solid var(--border-primary)', textAlign: 'left' }}>
+                                <p style={{ fontWeight: 800, marginBottom: 16, fontSize: '0.9rem', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'center' }}>Шилжүүлэг хийх мэдээлэл</p>
+
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 20 }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem' }}>
+                                        <span style={{ color: 'var(--text-muted)', fontWeight: 500 }}>Банк:</span>
+                                        <span style={{ fontWeight: 700 }}>{selectedBank.bankName}</span>
+                                    </div>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem' }}>
+                                        <span style={{ color: 'var(--text-muted)', fontWeight: 500 }}>Данс:</span>
+                                        <span style={{ fontWeight: 700, letterSpacing: '0.05em' }}>{selectedBank.accountNumber}</span>
+                                    </div>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem' }}>
+                                        <span style={{ color: 'var(--text-muted)', fontWeight: 500 }}>Хүлээн авагч:</span>
+                                        <span style={{ fontWeight: 700 }}>{selectedBank.accountName}</span>
+                                    </div>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem' }}>
+                                        <span style={{ color: 'var(--text-muted)', fontWeight: 500 }}>Дүн:</span>
+                                        <span style={{ fontWeight: 800, color: 'var(--primary)' }}>{finalTotal.toLocaleString()} ₮</span>
+                                    </div>
+                                </div>
+
+                                <div style={{
+                                    background: 'var(--surface-1)', borderRadius: 16, padding: 20, textAlign: 'center',
+                                    border: '2px dashed var(--primary)', position: 'relative'
+                                }}>
+                                    <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 600, marginBottom: 8 }}>ГҮЙЛГЭЭНИЙ УТГА</p>
+                                    <div style={{ fontSize: '2rem', fontWeight: 900, letterSpacing: '0.15em', color: 'var(--primary)', fontFamily: 'monospace' }}>
+                                        {refCode}
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={copyRefCode}
+                                        style={{
+                                            marginTop: 12, background: copied ? '#4BB543' : 'var(--primary)', color: '#fff',
+                                            border: 'none', borderRadius: 10, padding: '8px 20px', fontWeight: 700,
+                                            fontSize: '0.85rem', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6,
+                                            transition: 'all 0.2s'
+                                        }}
+                                    >
+                                        {copied ? <><Check size={14} /> Хуулагдсан</> : <><Copy size={14} /> Код хуулах</>}
+                                    </button>
+                                </div>
+
+                                <p style={{ textAlign: 'center', fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: 12, lineHeight: 1.5 }}>
+                                    Шилжүүлэг хийхдээ дээрх кодыг гүйлгээний утга дээр заавал бичнэ үү. Төлбөр автоматаар баталгаажна.
+                                </p>
+                            </div>
+                        )}
+
                         {qpayInvoice ? (
                             <div className="animate-fade-in" style={{ margin: '32px 0', background: 'var(--bg-soft)', padding: 32, borderRadius: 24, border: '1px solid var(--border-primary)' }}>
                                 <p style={{ fontWeight: 800, marginBottom: 20, fontSize: '0.95rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Төлбөр төлөх (QPay)</p>
-
                                 <div style={{
                                     width: 200, height: 200, margin: '0 auto',
                                     background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                    border: '2px solid var(--primary-light)', borderRadius: 20, boxShadow: 'var(--shadow-md)',
-                                    padding: 10
+                                    border: '2px solid var(--primary-light)', borderRadius: 20, boxShadow: 'var(--shadow-md)', padding: 10
                                 }}>
                                     <div style={{ textAlign: 'center' }}>
                                         <div style={{ fontSize: '2.5rem', marginBottom: 12 }}>📲</div>
                                         <div style={{ color: 'var(--text-muted)', fontSize: '0.8rem', fontWeight: 600, lineHeight: 1.4 }}>QPay QR<br />энд харагдана</div>
                                     </div>
                                 </div>
-
                                 <div className="custom-scrollbar" style={{ display: 'flex', gap: 12, marginTop: 24, overflowX: 'auto', paddingBottom: 12, justifyContent: 'center' }}>
                                     {qpayInvoice.urls.map(url => (
                                         <a key={url.name} href={url.link} className="btn btn-outline btn-sm" style={{ flexShrink: 0, textDecoration: 'none', borderRadius: 10, fontWeight: 700, padding: '8px 16px' }}>
@@ -194,9 +284,8 @@ export function StoreCheckout() {
                                         </a>
                                     ))}
                                 </div>
-                                <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem', marginTop: 16, fontWeight: 500 }}>Төлбөр төлснөөр захиалга баталгаажихыг анхаарна уу.</p>
                             </div>
-                        ) : (
+                        ) : paymentMethod !== 'bank_transfer' && (
                             <div style={{ margin: '24px 0 40px' }}>
                                 <p style={{ color: 'var(--text-muted)', fontSize: '1rem', lineHeight: 1.6, fontWeight: 500 }}>
                                     Таны захиалга хүлээн авлаа. Манай менежер тун удахгүй тантай холбогдож захиалгыг баталгаажуулна.
@@ -213,6 +302,7 @@ export function StoreCheckout() {
         );
     }
 
+    // ──────── EMPTY CART ────────
     if (items.length === 0) {
         return (
             <div className="store-bg" style={{ minHeight: '100vh', padding: 40, textAlign: 'center' }}>
@@ -222,6 +312,9 @@ export function StoreCheckout() {
         );
     }
 
+    const isFormValid = customerName.trim() && customerPhone.length === 8;
+
+    // ──────── CHECKOUT FORM ────────
     return (
         <div className="store-bg" style={{ minHeight: '100vh', paddingBottom: 60 }}>
             <nav className="store-nav" style={{ borderBottom: '1px solid var(--border-color)', background: 'var(--surface-1)', padding: 0 }}>
@@ -237,8 +330,9 @@ export function StoreCheckout() {
             <main className="store-container" style={{ maxWidth: 1100, marginTop: 40, margin: '40px auto 0' }}>
                 <form onSubmit={handleSubmit} style={{ display: 'grid', gridTemplateColumns: '1fr 420px', gap: 40, alignItems: 'start' }} className="checkout-grid">
 
-                    {/* Left Column: Forms */}
+                    {/* Left Column */}
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+                        {/* Delivery Info */}
                         <div className="settings-card animate-slide-up" style={{ padding: 32, borderRadius: 24, boxShadow: 'var(--shadow-sm)', border: '1px solid var(--border-color)', background: 'var(--surface-1)' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24 }}>
                                 <div style={{ width: 44, height: 44, borderRadius: 12, background: 'rgba(var(--primary-rgb), 0.1)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -264,9 +358,7 @@ export function StoreCheckout() {
                                         onChange={e => setCustomerPhone(e.target.value.replace(/\D/g, ''))}
                                         onFocus={() => setPhoneError(false)}
                                         style={{
-                                            height: 48,
-                                            borderRadius: 12,
-                                            background: 'var(--bg-soft)',
+                                            height: 48, borderRadius: 12, background: 'var(--bg-soft)',
                                             border: `1px solid ${phoneError ? '#ff4d4f' : 'var(--border-primary)'}`,
                                             boxShadow: phoneError ? '0 0 0 2px rgba(255, 77, 79, 0.1)' : 'none'
                                         }}
@@ -275,32 +367,22 @@ export function StoreCheckout() {
                                 </div>
                             </div>
 
-                            {/* Delivery Options logic */}
+                            {/* Delivery Options */}
                             {hasReadyItems ? (
                                 <>
                                     <div style={{
-                                        padding: '16px 20px',
-                                        borderRadius: 16,
+                                        padding: '16px 20px', borderRadius: 16,
                                         background: isDeliveryRequested ? 'rgba(var(--primary-rgb), 0.05)' : 'var(--bg-soft)',
                                         border: `1px solid ${isDeliveryRequested ? 'var(--primary)' : 'var(--border-color)'}`,
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'space-between',
-                                        marginBottom: 24,
-                                        cursor: 'pointer',
-                                        transition: 'all 0.2s ease'
+                                        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                                        marginBottom: 24, cursor: 'pointer', transition: 'all 0.2s ease'
                                     }} onClick={() => setIsDeliveryRequested(!isDeliveryRequested)}>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                                             <div style={{
-                                                width: 20,
-                                                height: 20,
-                                                borderRadius: 4,
+                                                width: 20, height: 20, borderRadius: 4,
                                                 border: `2px solid ${isDeliveryRequested ? 'var(--primary)' : 'var(--text-muted)'}`,
                                                 background: isDeliveryRequested ? 'var(--primary)' : 'transparent',
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                justifyContent: 'center',
-                                                color: 'white'
+                                                display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white'
                                             }}>
                                                 {isDeliveryRequested && <CheckCircle size={14} />}
                                             </div>
@@ -350,20 +432,186 @@ export function StoreCheckout() {
                             ) : null}
                         </div>
 
+                        {/* ──────── PAYMENT METHOD ──────── */}
                         <div className="settings-card animate-slide-up" style={{ padding: 32, borderRadius: 24, boxShadow: 'var(--shadow-sm)', border: '1px solid var(--border-color)', background: 'var(--surface-1)', animationDelay: '0.1s' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
                                 <div style={{ width: 44, height: 44, borderRadius: 12, background: 'rgba(var(--primary-rgb), 0.1)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                                     <CreditCard size={22} />
                                 </div>
-                                <h2 style={{ fontSize: '1.25rem', fontWeight: 800, margin: 0 }}>Төлбөрийн нөхцөл</h2>
+                                <h2 style={{ fontSize: '1.25rem', fontWeight: 800, margin: 0 }}>Төлбөрийн хэлбэр</h2>
                             </div>
-                            <div style={{ padding: 20, borderRadius: 16, border: '2px solid var(--primary)', background: 'rgba(var(--primary-rgb), 0.05)', display: 'flex', alignItems: 'center', gap: 12 }}>
-                                <div style={{ width: 24, height: 24, borderRadius: '50%', background: 'var(--primary)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                    <CheckCircle size={14} />
+
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                                {/* Bank Transfer - Active */}
+                                <div
+                                    onClick={() => setPaymentMethod('bank_transfer')}
+                                    style={{
+                                        padding: '16px 20px', borderRadius: 16, cursor: 'pointer',
+                                        border: `2px solid ${paymentMethod === 'bank_transfer' ? 'var(--primary)' : 'var(--border-color)'}`,
+                                        background: paymentMethod === 'bank_transfer' ? 'rgba(var(--primary-rgb), 0.05)' : 'var(--surface-1)',
+                                        display: 'flex', alignItems: 'center', gap: 14, transition: 'all 0.2s ease',
+                                    }}
+                                >
+                                    <div style={{
+                                        width: 42, height: 42, borderRadius: 12,
+                                        background: paymentMethod === 'bank_transfer' ? 'var(--primary)' : 'var(--bg-soft)',
+                                        color: paymentMethod === 'bank_transfer' ? '#fff' : 'var(--text-muted)',
+                                        display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0
+                                    }}>
+                                        <Landmark size={20} />
+                                    </div>
+                                    <div style={{ flex: 1 }}>
+                                        <div style={{ fontWeight: 700, fontSize: '1rem', color: 'var(--text-primary)' }}>Банкны шилжүүлэг</div>
+                                        <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 500, marginTop: 2 }}>Дансаар шилжүүлэг хийх</div>
+                                    </div>
+                                    <div style={{
+                                        width: 20, height: 20, borderRadius: '50%',
+                                        border: `2px solid ${paymentMethod === 'bank_transfer' ? 'var(--primary)' : 'var(--border-color)'}`,
+                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                    }}>
+                                        {paymentMethod === 'bank_transfer' && <div style={{ width: 10, height: 10, borderRadius: '50%', background: 'var(--primary)' }} />}
+                                    </div>
                                 </div>
-                                <div style={{ fontWeight: 600, color: 'var(--primary-dark)', fontSize: '1.05rem' }}>Цахим төлбөр</div>
+
+                                {/* QPay - Coming Soon */}
+                                <div style={{
+                                    padding: '16px 20px', borderRadius: 16,
+                                    border: '1px solid var(--border-color)',
+                                    background: 'var(--bg-soft)',
+                                    display: 'flex', alignItems: 'center', gap: 14,
+                                    opacity: 0.5, cursor: 'not-allowed',
+                                }}>
+                                    <div style={{
+                                        width: 42, height: 42, borderRadius: 12,
+                                        background: 'var(--bg-secondary)', color: 'var(--text-muted)',
+                                        display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0
+                                    }}>
+                                        <QrCode size={20} />
+                                    </div>
+                                    <div style={{ flex: 1 }}>
+                                        <div style={{ fontWeight: 700, fontSize: '1rem', color: 'var(--text-secondary)' }}>QPay</div>
+                                        <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 500, marginTop: 2 }}>QR кодоор төлөх</div>
+                                    </div>
+                                    <span style={{
+                                        fontSize: '0.7rem', fontWeight: 700, padding: '4px 10px', borderRadius: 100,
+                                        background: 'var(--bg-secondary)', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em'
+                                    }}>Тун удахгүй</span>
+                                </div>
+
+                                {/* Social Pay - Coming Soon */}
+                                <div style={{
+                                    padding: '16px 20px', borderRadius: 16,
+                                    border: '1px solid var(--border-color)',
+                                    background: 'var(--bg-soft)',
+                                    display: 'flex', alignItems: 'center', gap: 14,
+                                    opacity: 0.5, cursor: 'not-allowed',
+                                }}>
+                                    <div style={{
+                                        width: 42, height: 42, borderRadius: 12,
+                                        background: 'var(--bg-secondary)', color: 'var(--text-muted)',
+                                        display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0
+                                    }}>
+                                        <Smartphone size={20} />
+                                    </div>
+                                    <div style={{ flex: 1 }}>
+                                        <div style={{ fontWeight: 700, fontSize: '1rem', color: 'var(--text-secondary)' }}>Social Pay</div>
+                                        <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 500, marginTop: 2 }}>Аппликейшнээр төлөх</div>
+                                    </div>
+                                    <span style={{
+                                        fontSize: '0.7rem', fontWeight: 700, padding: '4px 10px', borderRadius: 100,
+                                        background: 'var(--bg-secondary)', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em'
+                                    }}>Тун удахгүй</span>
+                                </div>
                             </div>
-                            <p style={{ marginTop: 12, fontSize: '0.85rem', color: 'var(--text-muted)' }}>Захиалгыг баталгаажуулсны дараа QPay/Шилжүүлэх дансны мэдээлэл харагдана.</p>
+
+                            {/* Bank Transfer Details */}
+                            {paymentMethod === 'bank_transfer' && enabledBanks.length > 0 && (
+                                <div className="animate-fade-in" style={{ marginTop: 20 }}>
+                                    {/* Bank selector */}
+                                    {enabledBanks.length > 1 && (
+                                        <div className="input-group" style={{ marginBottom: 16 }}>
+                                            <label className="input-label" style={{ fontSize: '0.8rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Банк сонгох</label>
+                                            <select
+                                                className="input"
+                                                value={selectedBank?.id || ''}
+                                                onChange={e => setSelectedBankId(e.target.value)}
+                                                style={{ height: 48, borderRadius: 12, background: 'var(--bg-soft)', border: '1px solid var(--border-primary)' }}
+                                            >
+                                                {enabledBanks.map(b => (
+                                                    <option key={b.id} value={b.id}>{b.bankName} - {b.accountNumber}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                    )}
+
+                                    {/* Selected bank details card */}
+                                    {selectedBank && (
+                                        <div style={{
+                                            padding: 20, borderRadius: 16,
+                                            background: 'var(--bg-soft)',
+                                            border: '1px solid var(--border-primary)',
+                                        }}>
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                                                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.88rem' }}>
+                                                    <span style={{ color: 'var(--text-muted)', fontWeight: 500 }}>Банк:</span>
+                                                    <span style={{ fontWeight: 700 }}>{selectedBank.bankName}</span>
+                                                </div>
+                                                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.88rem' }}>
+                                                    <span style={{ color: 'var(--text-muted)', fontWeight: 500 }}>Данс:</span>
+                                                    <span style={{ fontWeight: 700, letterSpacing: '0.05em' }}>{selectedBank.accountNumber}</span>
+                                                </div>
+                                                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.88rem' }}>
+                                                    <span style={{ color: 'var(--text-muted)', fontWeight: 500 }}>Хүлээн авагч:</span>
+                                                    <span style={{ fontWeight: 700 }}>{selectedBank.accountName}</span>
+                                                </div>
+                                            </div>
+
+                                            {/* Reference Code */}
+                                            <div style={{
+                                                marginTop: 16, paddingTop: 16,
+                                                borderTop: '1px dashed var(--border-color)',
+                                                textAlign: 'center',
+                                            }}>
+                                                <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 600, marginBottom: 8 }}>
+                                                    ГҮЙЛГЭЭНИЙ УТГА ДЭЭР БИЧНЭ ҮҮ
+                                                </p>
+                                                <div style={{
+                                                    display: 'inline-flex', alignItems: 'center', gap: 10,
+                                                    background: 'var(--surface-1)', borderRadius: 12, padding: '10px 20px',
+                                                    border: '2px dashed var(--primary)',
+                                                }}>
+                                                    <span style={{
+                                                        fontSize: '1.6rem', fontWeight: 900,
+                                                        letterSpacing: '0.15em', color: 'var(--primary)',
+                                                        fontFamily: 'monospace',
+                                                    }}>
+                                                        {refCode}
+                                                    </span>
+                                                    <button
+                                                        type="button"
+                                                        onClick={copyRefCode}
+                                                        style={{
+                                                            background: copied ? '#4BB543' : 'var(--primary)',
+                                                            color: '#fff', border: 'none', borderRadius: 8,
+                                                            padding: '6px 12px', fontWeight: 700, fontSize: '0.8rem',
+                                                            cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4,
+                                                            transition: 'all 0.2s',
+                                                        }}
+                                                    >
+                                                        {copied ? <Check size={14} /> : <Copy size={14} />}
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+
+                            {paymentMethod === 'bank_transfer' && enabledBanks.length === 0 && (
+                                <div style={{ marginTop: 16, padding: 20, borderRadius: 16, background: 'var(--bg-soft)', textAlign: 'center', border: '1px dashed var(--border-color)' }}>
+                                    <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', margin: 0 }}>Банкны данс тохируулаагүй байна.</p>
+                                </div>
+                            )}
                         </div>
                     </div>
 
@@ -419,7 +667,7 @@ export function StoreCheckout() {
                         </div>
 
                         <div style={{ padding: '24px 32px', background: 'var(--surface-1)' }}>
-                            <button type="submit" className="btn btn-primary gradient-btn premium-btn" style={{ width: '100%', height: 56, fontSize: '1.1rem', borderRadius: 16, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, transition: 'all 0.3s ease', opacity: (!customerName.trim() || customerPhone.length < 8) ? 0.5 : 1 }} disabled={loading || !customerName.trim() || customerPhone.length < 8}>
+                            <button type="submit" className="btn btn-primary gradient-btn premium-btn" style={{ width: '100%', height: 56, fontSize: '1.1rem', borderRadius: 16, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, transition: 'all 0.3s ease', opacity: !isFormValid ? 0.5 : 1 }} disabled={loading || !isFormValid}>
                                 {loading ? 'Уншиж байна...' : (
                                     <>
                                         <ShieldCheck size={20} />
@@ -457,7 +705,8 @@ export function StoreCheckout() {
                     :root[data-theme="dark"] .custom-scrollbar::-webkit-scrollbar-thumb {
                         background: rgba(255,255,255,0.1);
                     }
-                `}</style>
+                `}
+                </style>
             </main>
         </div>
     );

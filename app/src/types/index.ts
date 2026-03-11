@@ -216,6 +216,13 @@ export interface BusinessSettings {
         merchantId: string;
         username: string;
     };
+    bankTransferAccounts?: Array<{
+        id: string;
+        bankName: string;
+        accountNumber: string;
+        accountName: string;
+        enabled: boolean;
+    }>;
     autoLogoutMinutes?: number;
 }
 
@@ -503,6 +510,8 @@ export interface Order {
     sourceId?: string;
     accountId?: string;
     paymentScreenshot?: string;
+    paymentRefCode?: string;
+    selectedPaymentMethod?: 'bank_transfer' | 'qpay' | 'social_pay';
 
     items: OrderItem[];
 
