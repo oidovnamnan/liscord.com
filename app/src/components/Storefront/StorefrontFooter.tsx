@@ -1,6 +1,6 @@
 import type { Business } from '../../types';
 import './StorefrontFooter.css';
-import { Phone, Mail, MapPin } from 'lucide-react';
+import { Phone, MapPin } from 'lucide-react';
 
 export function StorefrontFooter({ business }: { business: Business }) {
     const showFooter = business.settings?.storefront?.showFooter ?? true;
@@ -19,11 +19,6 @@ export function StorefrontFooter({ business }: { business: Business }) {
                         {business.phone && (
                             <div className="sf-footer-item">
                                 <Phone size={16} /> {business.phone}
-                            </div>
-                        )}
-                        {business.email && (
-                            <div className="sf-footer-item">
-                                <Mail size={16} /> {business.email}
                             </div>
                         )}
                         {business.address && (

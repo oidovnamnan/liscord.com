@@ -6,6 +6,7 @@ import { doc, getDoc } from 'firebase/firestore';
 import type { Business } from '../../types';
 import { CartDrawer } from '../../components/Storefront/CartDrawer';
 import { StorefrontFooter } from '../../components/Storefront/StorefrontFooter';
+import './Storefront.css';
 
 export function StorefrontWrapper() {
     const { slug } = useParams<{ slug: string }>();
