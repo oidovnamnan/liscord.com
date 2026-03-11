@@ -252,7 +252,7 @@ export default function App() {
                     const isOwner = firebaseUser.uid === biz.ownerId || emp.role === 'owner';
                     if (isOwner) {
                       // Owner can switch to ANY employee
-                      const allEmps = await businessService.getEmployees(biz.id);
+                      const allEmps = await businessService.getAllEmployees(biz.id);
                       setLinkedEmployees(allEmps.filter(e => e.id !== emp.id));
                     } else if (emp.linkedEmployeeIds?.length) {
                       // Non-owner: only linked employees

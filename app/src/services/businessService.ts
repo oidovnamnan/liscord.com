@@ -227,6 +227,14 @@ export const businessService = {
         return querySnapshot.docs.map(doc => convertTimestamps({ id: doc.id, ...doc.data() })) as Employee[];
     },
 
+    async getAllEmployees(bizId: string): Promise<Employee[]> {
+        const q = query(collection(db, 'businesses', bizId, 'employees'));
+        const querySnapshot = await getDocs(q);
+        return querySnapshot.docs
+            .map(doc => convertTimestamps({ id: doc.id, ...doc.data() }) as Employee)
+            .filter(e => !e.isDeleted);
+    },
+
     async updateBusiness(bizId: string, data: Partial<Business>) {
         await updateDoc(doc(db, 'businesses', bizId), {
             ...data,

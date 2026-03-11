@@ -33,11 +33,12 @@ export function Sidebar() {
     const [userBusinesses, setUserBusinesses] = useState<any[]>([]);
 
     useEffect(() => {
-        if (user?.businessIds?.length && showSwitcher) {
-            loadBusinesses();
+        if (showSwitcher) {
+            if (user?.businessIds?.length) loadBusinesses();
+            loadSwitchableEmployees();
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [user?.businessIds, showSwitcher]);
+    }, [showSwitcher]);
 
     const loadBusinesses = async () => {
         if (!user) return;
@@ -48,6 +49,24 @@ export function Sidebar() {
             setUserBusinesses(bizs.filter(Boolean));
         } catch (error) {
             console.error('Failed to load businesses:', error);
+        }
+    };
+
+    const loadSwitchableEmployees = async () => {
+        if (!user || !business || !employee) return;
+        try {
+            const isOwner = user.uid === business.ownerId || employee.role === 'owner';
+            if (isOwner) {
+                // Owner: load ALL non-deleted employees
+                const allEmps = await businessService.getAllEmployees(business.id);
+                const currentEmpId = originalEmployee?.id || employee.id;
+                setLinkedEmployees(allEmps.filter(e => e.id !== currentEmpId));
+            } else if (employee.linkedEmployeeIds?.length) {
+                const linked = await businessService.getLinkedEmployees(business.id, employee.linkedEmployeeIds);
+                setLinkedEmployees(linked);
+            }
+        } catch (e) {
+            console.warn('[Sidebar] loadSwitchableEmployees failed:', e);
         }
     };
 
