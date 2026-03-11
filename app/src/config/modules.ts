@@ -1633,6 +1633,19 @@ export const LISCORD_MODULES: AppModule[] = [
         ]
     },
     {
+        id: 'cargo_fee',
+        name: 'Карго Төлбөр',
+        description: 'Импорт барааны каргоны төлбөрийн тохиргоо',
+        icon: 'Package',
+        route: '/app/settings?tab=cargo_fee',
+        isCore: true,
+        category: 'operations',
+        placement: 'settings',
+        hasSettings: true,
+        isFree: true,
+        plans: []
+    },
+    {
         id: 'vehicles',
         name: 'Авто Парк',
         description: 'Даатгал, татвар, гүйлт',

@@ -15,4 +15,5 @@ export const SettingsRegistry: Record<string, React.LazyExoticComponent<any>> = 
     'ai-agent': lazy(() => import('../pages/Common/ShellPage').then(m => ({ default: m.ShellPage }))),
     'sms-income-sync': lazy(() => import('../pages/Settings/components/SmsBridgeSettings').then(m => ({ default: m.SmsBridgeSettings }))),
     'sms-templates': lazy(() => import('../pages/Settings/components/SmsTemplateSettings').then(m => ({ default: m.SmsTemplateSettings }))),
+    'cargo_fee': lazy(() => import('../pages/Settings/components/CargoSettings').then(m => ({ default: m.CargoSettings }))),
 };
