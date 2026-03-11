@@ -1619,20 +1619,6 @@ export const LISCORD_MODULES: AppModule[] = [
         ]
     },
     {
-        id: 'cargo',
-        name: 'Карго (3PL)',
-        description: 'Илгээмж, ачаа хяналт',
-        icon: 'Truck',
-        route: '/app/logistics-3pl',
-        isCore: false,
-        category: 'services',
-        isFree: false,
-        plans: [
-            { id: 'monthly', name: '30 хоног', price: 20000, durationDays: 30 },
-            { id: 'yearly', name: '1 жил', price: 192000, durationDays: 365 }
-        ]
-    },
-    {
         id: 'cargo_fee',
         name: 'Карго Төлбөр',
         description: 'Импорт барааны каргоны төлбөрийн тохиргоо',

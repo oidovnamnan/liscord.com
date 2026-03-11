@@ -72,12 +72,12 @@ export function getVisibleModules(
     if (!business) return LISCORD_MODULES.filter(m => m.isCore);
 
     return LISCORD_MODULES.filter((mod, index, self) => {
-        // Core modules always visible
-        if (mod.isCore) return true;
-
-        // Hide modules that are purely for Settings page
+        // Hide modules that are purely for Settings page (check first, before isCore)
         const placement = mod.placement || 'sidebar';
         if (placement === 'settings') return false;
+
+        // Core modules always visible
+        if (mod.isCore) return true;
 
         // Check accessibility (includes activeModules, category core, and expiry)
         const { accessible } = isModuleAccessible(mod.id, business, moduleDefaults);
