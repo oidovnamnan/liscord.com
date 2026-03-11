@@ -139,9 +139,41 @@ export function Sidebar() {
         fetchDefaults();
     }, []);
 
+    // Module ID → required permission prefix mapping
+    const modulePermissionMap: Record<string, string> = {
+        'orders': 'orders.',
+        'products': 'products.',
+        'customers': 'customers.',
+        'crm': 'customers.',
+        'inventory': 'products.',
+        'procurement': 'orders.purchase',
+        'team': 'team.',
+        'barcode': 'products.',
+        'logistics': 'orders.manage_delivery',
+        'sms-bank': 'finance.',
+        'reports': 'reports.',
+        'finance': 'finance.',
+    };
+
     const filteredNavItems = useMemo(() => {
-        return getVisibleModules(business, moduleDefaults);
-    }, [business?.activeModules, business?.moduleSubscriptions, business?.category, moduleDefaults]);
+        let items = getVisibleModules(business, moduleDefaults);
+
+        // When impersonating, filter by employee's permissions
+        if (isImpersonating && employee) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const empPerms: string[] = (employee as any).permissions || [];
+            if (empPerms.length > 0) {
+                items = items.filter(mod => {
+                    if (mod.isCore) return true; // Dashboard always visible
+                    const permPrefix = modulePermissionMap[mod.id];
+                    if (!permPrefix) return true; // No mapping = show by default
+                    return empPerms.some(p => p.startsWith(permPrefix));
+                });
+            }
+        }
+
+        return items;
+    }, [business?.activeModules, business?.moduleSubscriptions, business?.category, moduleDefaults, isImpersonating, employee]);
 
     const hasMultipleBusinesses = (userBusinesses.length > 1);
 
