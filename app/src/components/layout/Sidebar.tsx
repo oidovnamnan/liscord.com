@@ -226,28 +226,38 @@ export function Sidebar() {
         '3pl-cargo': 'orders.',
     };
 
-    // Check if user is owner (sees everything)
-    const isOwner = user?.uid === business?.ownerId || employee?.role === 'owner';
+    // Check if user is owner — when impersonating, treat as non-owner to apply permissions
+    const isOwner = !isImpersonating && (user?.uid === business?.ownerId || employee?.role === 'owner');
 
     const filteredNavItems = useMemo(() => {
         let items = getVisibleModules(business, moduleDefaults);
 
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const empPerms: string[] = (employee as any)?.permissions || [];
+        
+        console.log('[Sidebar] permission filter', {
+            isOwner,
+            isImpersonating,
+            employeeId: employee?.id,
+            employeeName: employee?.name,
+            permCount: empPerms.length,
+            permissions: empPerms,
+            totalModules: items.length,
+        });
+
         // Non-owner employees: filter by permissions
         if (!isOwner && employee) {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const empPerms: string[] = (employee as any).permissions || [];
-            if (empPerms.length > 0) {
-                items = items.filter(mod => {
-                    if (mod.id === 'dashboard') return true; // Dashboard always visible
-                    const permPrefix = modulePermissionMap[mod.id];
-                    if (!permPrefix) return true; // No mapping = show by default
-                    return empPerms.some(p => p.startsWith(permPrefix));
-                });
-            }
+            items = items.filter(mod => {
+                if (mod.id === 'dashboard') return true; // Dashboard always visible
+                const permPrefix = modulePermissionMap[mod.id];
+                if (!permPrefix) return true; // No mapping = show by default
+                return empPerms.some(p => p.startsWith(permPrefix));
+            });
+            console.log('[Sidebar] filtered to', items.length, 'modules:', items.map(m => m.id));
         }
 
         return items;
-    }, [business?.activeModules, business?.moduleSubscriptions, business?.category, moduleDefaults, isOwner, employee]);
+    }, [business?.activeModules, business?.moduleSubscriptions, business?.category, moduleDefaults, isOwner, isImpersonating, employee]);
 
     const hasMultipleBusinesses = (userBusinesses.length > 1);
 
