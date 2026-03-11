@@ -1,9 +1,11 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { Menu, Bell, Search, Plus, Zap, ShoppingBag } from 'lucide-react';
 import { useUIStore, useAuthStore, useBusinessStore } from '../../store';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { V2UpgradeModal } from '../common/V2UpgradeModal';
 import { userService } from '../../services/db';
+import { db } from '../../services/firebase';
+import { collection, query, orderBy, limit, onSnapshot, doc, updateDoc, writeBatch, serverTimestamp } from 'firebase/firestore';
 import './Header.css';
 
 interface HeaderProps {
@@ -16,6 +18,36 @@ interface HeaderProps {
     extra?: React.ReactNode;
 }
 
+interface NotifItem {
+    id: string;
+    templateId?: string;
+    type?: string;
+    title: string;
+    body?: string;
+    message?: string;
+    icon?: string;
+    link?: string;
+    readBy?: Record<string, unknown>;
+    isRead?: boolean;
+    priority?: string;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    createdAt?: any;
+}
+
+function timeAgo(date: Date | undefined): string {
+    if (!date) return '';
+    const now = new Date();
+    const diff = now.getTime() - date.getTime();
+    const mins = Math.floor(diff / 60000);
+    if (mins < 1) return 'Дөнгөж сая';
+    if (mins < 60) return `${mins} мин`;
+    const hours = Math.floor(mins / 60);
+    if (hours < 24) return `${hours} цагийн өмнө`;
+    const days = Math.floor(hours / 24);
+    if (days === 1) return 'Өчигдөр';
+    return `${days} өдрийн өмнө`;
+}
+
 export function Header({ title, subtitle, action, extra }: HeaderProps) {
     const { toggleSidebar } = useUIStore();
     const { user, setUser } = useAuthStore();
@@ -26,7 +58,9 @@ export function Header({ title, subtitle, action, extra }: HeaderProps) {
     const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(false);
     const [isNotifOpen, setIsNotifOpen] = useState(false);
     const notifRef = useRef<HTMLDivElement>(null);
+    const [notifications, setNotifications] = useState<NotifItem[]>([]);
 
+    // Click outside to close
     useEffect(() => {
         function handleClickOutside(event: MouseEvent) {
             if (notifRef.current && !notifRef.current.contains(event.target as Node)) {
@@ -37,27 +71,100 @@ export function Header({ title, subtitle, action, extra }: HeaderProps) {
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
-    // TODO: Replace with real notification subscription from Firestore
-    // e.g., onSnapshot(query(collection(db, 'businesses', bizId, 'notifications'), where('read', '==', false), limit(10)))
-    const dummyNotifications = [
-        { id: 1, text: "Шинэ захиалга ирлээ (#1024)", time: "10 минутын өмнө", unread: true },
-        { id: 2, text: "Каргоны төлбөр төлөгдсөн (#1022)", time: "1 цагийн өмнө", unread: true },
-        { id: 3, text: "Системийн шинэчлэл амжилттай хийгдлээ", time: "Өчигдөр", unread: false },
-    ];
-    const unreadCount = dummyNotifications.filter(n => n.unread).length;
+    // Real-time Firestore notification subscription
+    useEffect(() => {
+        if (!business?.id || !user?.uid) return;
+
+        const q = query(
+            collection(db, 'businesses', business.id, 'notifications'),
+            orderBy('createdAt', 'desc'),
+            limit(20)
+        );
+
+        const unsub = onSnapshot(q, (snap) => {
+            const items: NotifItem[] = snap.docs.map(d => ({
+                id: d.id,
+                ...d.data(),
+            })) as NotifItem[];
+            setNotifications(items);
+        }, (err) => {
+            console.warn('[Notifications] subscription error:', err);
+        });
+
+        return () => unsub();
+    }, [business?.id, user?.uid]);
+
+    // Check if notification is unread for current user
+    const isUnread = useCallback((notif: NotifItem): boolean => {
+        if (!user?.uid) return false;
+        if (notif.readBy && notif.readBy[user.uid]) return false;
+        if (notif.isRead === true) return false;
+        return true;
+    }, [user?.uid]);
+
+    const unreadCount = notifications.filter(isUnread).length;
+
+    // Mark single notification as read
+    const markAsRead = async (notif: NotifItem) => {
+        if (!business?.id || !user?.uid || !isUnread(notif)) return;
+        try {
+            const ref = doc(db, 'businesses', business.id, 'notifications', notif.id);
+            await updateDoc(ref, {
+                [`readBy.${user.uid}`]: serverTimestamp(),
+            });
+        } catch (e) {
+            console.warn('[Notifications] markAsRead failed:', e);
+        }
+    };
+
+    // Mark all as read
+    const markAllAsRead = async () => {
+        if (!business?.id || !user?.uid) return;
+        const unread = notifications.filter(isUnread);
+        if (unread.length === 0) return;
+        try {
+            const batch = writeBatch(db);
+            unread.forEach(notif => {
+                const ref = doc(db, 'businesses', business.id, 'notifications', notif.id);
+                batch.update(ref, { [`readBy.${user.uid}`]: serverTimestamp() });
+            });
+            await batch.commit();
+        } catch (e) {
+            console.warn('[Notifications] markAllAsRead failed:', e);
+        }
+    };
+
+    // Handle notification click
+    const handleNotifClick = (notif: NotifItem) => {
+        markAsRead(notif);
+        if (notif.link) {
+            navigate(notif.link);
+            setIsNotifOpen(false);
+        }
+    };
+
+    // Get icon for notification
+    const getNotifIcon = (notif: NotifItem): string => {
+        if (notif.icon) return notif.icon;
+        const t = notif.templateId || notif.type || '';
+        if (t.includes('order')) return '📥';
+        if (t.includes('payment')) return '💰';
+        if (t.includes('stock') || t.includes('low_stock')) return '⚠️';
+        if (t.includes('team')) return '👤';
+        if (t.includes('chat')) return '💬';
+        if (t.includes('delivery')) return '🚚';
+        if (t.includes('system')) return '🔔';
+        return '📋';
+    };
 
     const handleToggleV2 = async () => {
         if (!user) return;
-
-        // Super admins OR businesses that paid for V2 can switch freely
         const isAuthorized = user.isSuperAdmin || business?.subscription?.hasV2Access;
-
         if (isAuthorized) {
             const nextVersion = user.uiVersion === 'v2' ? 'v1' : 'v2';
             await userService.updateProfile(user.uid, { uiVersion: nextVersion });
             setUser({ ...user, uiVersion: nextVersion });
         } else {
-            // Unpaid normal user -> Show Paywall
             setIsUpgradeModalOpen(true);
         }
     };
@@ -85,48 +192,94 @@ export function Header({ title, subtitle, action, extra }: HeaderProps) {
                 <div className="header-notif-container" ref={notifRef} style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
                     <button className="header-icon-btn header-notif-btn" title="Мэдэгдэл" onClick={() => setIsNotifOpen(!isNotifOpen)}>
                         <Bell size={20} />
-                        {unreadCount > 0 && <span className="header-notif-badge">{unreadCount}</span>}
+                        {unreadCount > 0 && <span className="header-notif-badge">{unreadCount > 9 ? '9+' : unreadCount}</span>}
                     </button>
 
                     {isNotifOpen && (
                         <div className="notif-dropdown shadow-lg animate-slide-up" style={{
                             position: 'absolute', top: '100%', right: 0, marginTop: '8px',
-                            width: '320px', background: 'var(--surface-1)', borderRadius: '12px',
+                            width: '360px', background: 'var(--surface-1)', borderRadius: '12px',
                             border: '1px solid var(--border-color)',
                             zIndex: 1000, display: 'flex', flexDirection: 'column'
                         }}>
                             <div style={{ padding: '16px', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 600 }}>Мэдэгдэл</h3>
-                                <span style={{ fontSize: '0.8rem', color: 'var(--primary)', cursor: 'pointer', fontWeight: 500 }}>Бүгдийг уншсан</span>
-                            </div>
-                            <div style={{ maxHeight: '360px', overflowY: 'auto' }}>
-                                {dummyNotifications.length > 0 ? dummyNotifications.map(n => (
-                                    <div key={n.id} className="notif-item" style={{
-                                        padding: '12px 16px', borderBottom: '1px solid var(--border-color)',
-                                        background: n.unread ? 'var(--bg-hover)' : 'transparent',
-                                        cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: '4px',
-                                        transition: 'background 0.2s',
-                                        position: 'relative'
-                                    }}
-                                        onMouseEnter={e => e.currentTarget.style.background = 'var(--bg-input)'}
-                                        onMouseLeave={e => e.currentTarget.style.background = n.unread ? 'var(--bg-hover)' : 'transparent'}
+                                <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 600 }}>
+                                    Мэдэгдэл {unreadCount > 0 && <span style={{ fontSize: '0.75rem', color: 'var(--primary)', marginLeft: 6 }}>({unreadCount})</span>}
+                                </h3>
+                                {unreadCount > 0 && (
+                                    <span
+                                        style={{ fontSize: '0.8rem', color: 'var(--primary)', cursor: 'pointer', fontWeight: 500 }}
+                                        onClick={markAllAsRead}
                                     >
-                                        {n.unread && <div style={{ position: 'absolute', left: '6px', top: '18px', width: '6px', height: '6px', borderRadius: '50%', background: 'var(--primary)' }} />}
-                                        <div style={{ fontSize: '0.9rem', color: 'var(--text-primary)', fontWeight: n.unread ? 600 : 400, marginLeft: n.unread ? '8px' : '0' }}>{n.text}</div>
-                                        <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginLeft: n.unread ? '8px' : '0' }}>{n.time}</div>
-                                    </div>
-                                )) : (
-                                    <div style={{ padding: '32px 16px', textAlign: 'center', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-                                        <Bell size={32} style={{ opacity: 0.2, marginBottom: '12px', display: 'inline-block' }} />
+                                        Бүгдийг уншсан
+                                    </span>
+                                )}
+                            </div>
+                            <div style={{ maxHeight: '400px', overflowY: 'auto' }}>
+                                {notifications.length > 0 ? notifications.map(n => {
+                                    const unread = isUnread(n);
+                                    const createdAt = n.createdAt?.toDate?.() instanceof Date
+                                        ? n.createdAt.toDate()
+                                        : n.createdAt instanceof Date ? n.createdAt : undefined;
+
+                                    return (
+                                        <div
+                                            key={n.id}
+                                            className="notif-item"
+                                            style={{
+                                                padding: '12px 16px', borderBottom: '1px solid var(--border-color)',
+                                                background: unread ? 'var(--bg-hover)' : 'transparent',
+                                                cursor: n.link ? 'pointer' : 'default',
+                                                display: 'flex', gap: '10px', alignItems: 'flex-start',
+                                                transition: 'background 0.2s',
+                                            }}
+                                            onClick={() => handleNotifClick(n)}
+                                            onMouseEnter={e => e.currentTarget.style.background = 'var(--bg-input)'}
+                                            onMouseLeave={e => e.currentTarget.style.background = unread ? 'var(--bg-hover)' : 'transparent'}
+                                        >
+                                            <div style={{ fontSize: '1.2rem', flexShrink: 0, marginTop: 2 }}>
+                                                {getNotifIcon(n)}
+                                            </div>
+                                            <div style={{ flex: 1, minWidth: 0 }}>
+                                                <div style={{
+                                                    fontSize: '0.88rem',
+                                                    color: 'var(--text-primary)',
+                                                    fontWeight: unread ? 600 : 400,
+                                                    lineHeight: 1.35,
+                                                    marginBottom: 2,
+                                                }}>
+                                                    {n.title}
+                                                </div>
+                                                {(n.body || n.message) && (
+                                                    <div style={{
+                                                        fontSize: '0.8rem',
+                                                        color: 'var(--text-secondary)',
+                                                        lineHeight: 1.3,
+                                                        whiteSpace: 'nowrap',
+                                                        overflow: 'hidden',
+                                                        textOverflow: 'ellipsis',
+                                                    }}>
+                                                        {n.body || n.message}
+                                                    </div>
+                                                )}
+                                                <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: 4 }}>
+                                                    {timeAgo(createdAt)}
+                                                </div>
+                                            </div>
+                                            {unread && (
+                                                <div style={{
+                                                    width: '8px', height: '8px', borderRadius: '50%',
+                                                    background: 'var(--primary)', flexShrink: 0, marginTop: 6,
+                                                }} />
+                                            )}
+                                        </div>
+                                    );
+                                }) : (
+                                    <div style={{ padding: '40px 16px', textAlign: 'center', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
+                                        <Bell size={32} style={{ opacity: 0.15, marginBottom: '12px', display: 'inline-block' }} />
                                         <br />Шинэ мэдэгдэл алга байна
                                     </div>
                                 )}
-                            </div>
-                            <div style={{ padding: '12px', textAlign: 'center', cursor: 'pointer', color: 'var(--text-secondary)', fontSize: '0.85rem', fontWeight: 500 }}
-                                onMouseEnter={e => e.currentTarget.style.color = 'var(--primary)'}
-                                onMouseLeave={e => e.currentTarget.style.color = 'var(--text-secondary)'}
-                            >
-                                Бүх мэдэгдлийг харах
                             </div>
                         </div>
                     )}

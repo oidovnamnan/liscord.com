@@ -1,8 +1,9 @@
 import { useEffect, lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { auth, db } from './services/firebase';
+import { auth, db, messaging } from './services/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
-import { doc, onSnapshot } from 'firebase/firestore';
+import { doc, onSnapshot, updateDoc, arrayUnion, serverTimestamp } from 'firebase/firestore';
+import { getToken } from 'firebase/messaging';
 import { Toaster } from 'react-hot-toast';
 import { userService, businessService } from './services/db';
 import { useAuthStore, useBusinessStore } from './store';
@@ -325,6 +326,28 @@ export default function App() {
             });
           } catch (deviceErr) {
             console.warn('[Auth] Device tracking failed (non-critical):', deviceErr);
+          }
+
+          // 3. FCM Push Token Registration (non-blocking)
+          try {
+            if ('Notification' in window && Notification.permission !== 'denied') {
+              const permission = await Notification.requestPermission();
+              if (permission === 'granted' && messaging) {
+                const fcmToken = await getToken(messaging, {
+                  vapidKey: import.meta.env.VITE_FIREBASE_VAPID_KEY || 'BKagOny0KF_2pCJQ3m....oAdLdoc2VPoQs'
+                });
+                if (fcmToken) {
+                  const userRef = doc(db, 'users', firebaseUser.uid);
+                  await updateDoc(userRef, {
+                    fcmTokens: arrayUnion(fcmToken),
+                    fcmLastRegistered: serverTimestamp(),
+                  });
+                  console.log('[FCM] Token registered successfully');
+                }
+              }
+            }
+          } catch (fcmErr) {
+            console.warn('[FCM] Token registration failed (non-critical):', fcmErr);
           }
 
         } else {
