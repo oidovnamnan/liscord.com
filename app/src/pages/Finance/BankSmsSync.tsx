@@ -123,42 +123,55 @@ export function BankSmsSyncPage() {
         const pending = items.filter(s => s.status === 'pending' && s.amount > 0 && s.note && !matchedRef.current.has(s.id));
         if (pending.length === 0) return;
 
+        // Load all unpaid orders once for matching
+        const ordersRef = collection(db, `businesses/${business.id}/orders`);
+        const ordersQ = query(ordersRef, where('paymentStatus', '==', 'unpaid'));
+        let ordersSnap;
+        try {
+            ordersSnap = await getDocs(ordersQ);
+        } catch (err) {
+            console.error('Failed to load orders for auto-match:', err);
+            return;
+        }
+        if (ordersSnap.empty) return;
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const unpaidOrders = ordersSnap.docs.map(d => ({ id: d.id, ...d.data() } as any));
+
         for (const sms of pending) {
             matchedRef.current.add(sms.id);
             try {
-                // Search orders by paymentRefCode (case-insensitive match)
-                const refCode = sms.note.trim().toLowerCase();
-                const ordersRef = collection(db, `businesses/${business.id}/orders`);
-                const ordersQ = query(ordersRef, where('paymentRefCode', '==', refCode));
-                const snap = await getDocs(ordersQ);
+                const smsNote = sms.note.trim().toLowerCase();
+                const smsAmount = sms.amount;
 
-                // Also try uppercase
-                let matchedOrder = snap.docs[0];
-                if (!matchedOrder) {
-                    const ordersQ2 = query(ordersRef, where('paymentRefCode', '==', sms.note.trim().toUpperCase()));
-                    const snap2 = await getDocs(ordersQ2);
-                    matchedOrder = snap2.docs[0];
-                }
+                // Find matching order: amount must match exactly + утга must contain refCode or phone
+                const matched = unpaidOrders.find(order => {
+                    const orderTotal = order.financials?.totalAmount || 0;
+                    // 1) Amount must match exactly
+                    if (Math.abs(smsAmount - orderTotal) > 1) return false;
 
-                // Also try raw note
-                if (!matchedOrder) {
-                    const ordersQ3 = query(ordersRef, where('paymentRefCode', '==', sms.note.trim()));
-                    const snap3 = await getDocs(ordersQ3);
-                    matchedOrder = snap3.docs[0];
-                }
+                    // 2) Check if утга contains refCode or phone (at least one)
+                    const refCode = (order.paymentRefCode || '').toLowerCase();
+                    const phone = (order.customer?.phone || '').toLowerCase();
 
-                if (matchedOrder) {
+                    const hasRefCode = refCode && smsNote.includes(refCode);
+                    const hasPhone = phone && phone.length >= 8 && smsNote.includes(phone);
+
+                    return hasRefCode || hasPhone;
+                });
+
+                if (matched) {
                     // Match found! Update SMS status
                     const smsRef = doc(db, 'sms_inbox', sms.id);
                     await updateDoc(smsRef, {
                         status: 'matched',
-                        orderId: matchedOrder.id,
+                        orderId: matched.id,
                         matchedAt: new Date(),
                         autoMatched: true,
                     });
 
                     // Update order payment status
-                    const orderRef = doc(db, `businesses/${business.id}/orders`, matchedOrder.id);
+                    const orderRef = doc(db, `businesses/${business.id}/orders`, matched.id);
                     await updateDoc(orderRef, {
                         paymentStatus: 'paid',
                         paymentVerifiedAt: new Date(),
@@ -166,7 +179,11 @@ export function BankSmsSyncPage() {
                         paymentSmsId: sms.id,
                     });
 
-                    console.log(`Auto-matched SMS ${sms.id} → Order ${matchedOrder.id} (refCode: ${sms.note})`);
+                    // Remove from unpaid list so it can't double-match
+                    const idx = unpaidOrders.indexOf(matched);
+                    if (idx > -1) unpaidOrders.splice(idx, 1);
+
+                    console.log(`Auto-matched SMS ${sms.id} → Order ${matched.id} (amount: ${smsAmount}, note: ${sms.note})`);
                 }
             } catch (err) {
                 console.error('Auto-match error for SMS:', sms.id, err);
