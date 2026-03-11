@@ -114,7 +114,10 @@ export function SettingsPage() {
             .filter(mod => {
                 const placement = mod.placement || 'sidebar';
                 const isSettingsMod = placement === 'settings' || placement === 'both' || mod.hasSettings;
-                return isSettingsMod && business?.activeModules?.includes(mod.id) &&
+                if (!isSettingsMod) return false;
+                // Core free modules always show, others need activeModules
+                if (mod.isCore && mod.isFree) return true;
+                return business?.activeModules?.includes(mod.id) &&
                     !isSubscriptionExpired(business, mod.id);
             })
             .map(mod => ({
