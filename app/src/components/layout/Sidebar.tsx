@@ -181,7 +181,7 @@ export function Sidebar() {
             items = items.filter(mod => {
                 if (mod.isCore) return true; // Dashboard always visible
                 const permPrefix = modulePermissionMap[mod.id];
-                if (!permPrefix) return true; // No mapping = show by default
+                if (!permPrefix) return false; // No mapping = HIDE during impersonation
                 return empPerms.some(p => p.startsWith(permPrefix));
             });
         }
@@ -351,19 +351,22 @@ export function Sidebar() {
                     })}
 
 
-                    {/* Settings Always at Bottom */}
-                    <NavLink
-                        to="/app/settings"
-                        className={`sidebar-link ${location.pathname.startsWith('/app/settings') ? 'active' : ''}`}
-                        onClick={() => sidebarOpen && toggleSidebar()}
-                        title={sidebarCollapsed ? 'Тохиргоо' : undefined}
-                    >
-                        <Settings size={20} />
-                        {!sidebarCollapsed && <span>Тохиргоо</span>}
-                        {location.pathname.startsWith('/app/settings') && <div className="sidebar-link-indicator" />}
-                    </NavLink>
+                    {/* Settings - hidden during impersonation unless has settings permission */}
+                    {(!isImpersonating || ((employee as any)?.permissions || []).some((p: string) => p.startsWith('settings.'))) && (
+                        <NavLink
+                            to="/app/settings"
+                            className={`sidebar-link ${location.pathname.startsWith('/app/settings') ? 'active' : ''}`}
+                            onClick={() => sidebarOpen && toggleSidebar()}
+                            title={sidebarCollapsed ? 'Тохиргоо' : undefined}
+                        >
+                            <Settings size={20} />
+                            {!sidebarCollapsed && <span>Тохиргоо</span>}
+                            {location.pathname.startsWith('/app/settings') && <div className="sidebar-link-indicator" />}
+                        </NavLink>
+                    )}
 
-                    {user?.isSuperAdmin && (
+                    {/* Super Admin - never show during impersonation */}
+                    {user?.isSuperAdmin && !isImpersonating && (
                         <NavLink
                             to="/super"
                             className={`sidebar-link platform-admin-link ${location.pathname.startsWith('/super') ? 'active' : ''}`}
