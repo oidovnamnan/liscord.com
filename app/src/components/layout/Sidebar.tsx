@@ -53,15 +53,17 @@ export function Sidebar() {
     };
 
     const loadSwitchableEmployees = async () => {
-        if (!user || !business || !employee) return;
+        if (!user || !business) return;
         try {
-            const isOwner = user.uid === business.ownerId || employee.role === 'owner';
+            const isOwner = user.uid === business.ownerId || employee?.role === 'owner';
+            console.log('[Sidebar] loadSwitchableEmployees', { isOwner, userId: user.uid, ownerId: business.ownerId, employeeId: employee?.id });
             if (isOwner) {
                 // Owner: load ALL non-deleted employees
                 const allEmps = await businessService.getAllEmployees(business.id);
-                const currentEmpId = originalEmployee?.id || employee.id;
-                setLinkedEmployees(allEmps.filter(e => e.id !== currentEmpId));
-            } else if (employee.linkedEmployeeIds?.length) {
+                console.log('[Sidebar] allEmps loaded:', allEmps.length);
+                const currentEmpId = originalEmployee?.id || employee?.id;
+                setLinkedEmployees(currentEmpId ? allEmps.filter(e => e.id !== currentEmpId) : allEmps);
+            } else if (employee?.linkedEmployeeIds?.length) {
                 const linked = await businessService.getLinkedEmployees(business.id, employee.linkedEmployeeIds);
                 setLinkedEmployees(linked);
             }
