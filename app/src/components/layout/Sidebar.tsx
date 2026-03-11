@@ -112,11 +112,27 @@ export function Sidebar() {
         }
     };
 
-    const handleSwitchEmployee = (emp: typeof employee) => {
-        if (!emp) return;
-        switchToEmployee(emp);
-        setShowSwitcher(false);
-        toast.success(`${emp.name} эрх рүү шилжлээ`);
+    const handleSwitchEmployee = async (emp: typeof employee) => {
+        if (!emp || !business) return;
+        try {
+            // Fetch position permissions for this employee
+            let empWithPerms = { ...emp };
+            if (emp.positionId) {
+                const posDoc = await import('firebase/firestore').then(({ doc, getDoc }) =>
+                    getDoc(doc(db, 'businesses', business.id, 'positions', emp.positionId!))
+                );
+                if (posDoc.exists()) {
+                    empWithPerms = { ...emp, permissions: posDoc.data().permissions || [] } as typeof emp;
+                }
+            }
+            switchToEmployee(empWithPerms);
+            setShowSwitcher(false);
+            navigate('/app');
+            toast.success(`${emp.name} эрх рүү шилжлээ`);
+        } catch (e) {
+            console.error('[Sidebar] switchEmployee failed:', e);
+            toast.error('Шилжихэд алдаа гарлаа');
+        }
     };
 
     const handleSwitchBack = () => {

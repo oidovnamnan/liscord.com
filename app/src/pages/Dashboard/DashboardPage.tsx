@@ -60,7 +60,7 @@ interface UnpaidInvoice {
 }
 
 export function DashboardPage() {
-    const { business } = useBusinessStore();
+    const { business, employee, isImpersonating } = useBusinessStore();
     const { user } = useAuthStore();
     const [recentOrders, setRecentOrders] = useState<Order[]>([]);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -250,7 +250,7 @@ export function DashboardPage() {
                 <div className="dashboard-hero stagger-item premium-glass-panel" style={{ '--index': 0 } as React.CSSProperties}>
                     <div className="dashboard-hero-content">
                         <div className="hero-badge">Эхлэх Цэг</div>
-                        <h1>Сайн байна уу, <span className="text-gradient">{user?.displayName || 'Эзэн'}</span>! 👋</h1>
+                        <h1>Сайн байна уу, <span className="text-gradient">{isImpersonating && employee ? employee.name : (user?.displayName || 'Эзэн')}</span>! 👋</h1>
                         <p className="text-secondary">{business?.name} бизнесийн өнөөдрийн тойм болон шуурхай үйлдлүүд.</p>
                     </div>
                     <div className="dashboard-hero-action hide-mobile">
