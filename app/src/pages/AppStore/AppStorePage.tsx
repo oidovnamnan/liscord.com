@@ -135,8 +135,15 @@ export function AppStorePage() {
 
         try {
             const newMods = activeMods.filter(m => m !== moduleId);
-            await businessService.updateBusiness(business.id, { activeModules: newMods });
-            setBusiness({ ...business, activeModules: newMods });
+            // Also remove from moduleSubscriptions if exists
+            const moduleSubscriptions = { ...(business.moduleSubscriptions || {}) };
+            delete moduleSubscriptions[moduleId];
+
+            await businessService.updateBusiness(business.id, {
+                activeModules: newMods,
+                moduleSubscriptions,
+            });
+            setBusiness({ ...business, activeModules: newMods, moduleSubscriptions });
             toast.success('Модуль амжилттай устгагдлаа!');
         } catch (error) {
             console.error('Uninstall error:', error);
@@ -235,9 +242,10 @@ export function AppStorePage() {
                 const finalMod = dynamic ? { ...mod, ...dynamic } : mod;
                 const isCoreForBusiness = categoryConfig[finalMod.id] === 'core';
                 const isFree = isCoreForBusiness || finalMod.isFree;
-                // A module is "installed" if in activeModules OR if it's core for this business category
-                // (core modules auto-appear in sidebar via getVisibleModules/isModuleAccessible)
-                const isInstalled = activeMods.includes(finalMod.id) || isCoreForBusiness;
+                // A module is "installed" if in activeModules, moduleSubscriptions, OR if it's core for this business category
+                const isInstalled = activeMods.includes(finalMod.id) ||
+                    !!(business?.moduleSubscriptions?.[finalMod.id]) ||
+                    isCoreForBusiness;
                 return { ...finalMod, isCoreForBusiness, isFree, isInstalled };
             })
             // Sort: installed first, then core, then addon
