@@ -59,7 +59,6 @@ export function Sidebar() {
         'chat': 'chat',
         'chat.new_message': 'chat',
         'sms_income': 'sms-income',
-        'payment.received': 'sms-income',
     }), []);
 
     // Real-time badge counts from notifications
@@ -78,8 +77,8 @@ export function Sidebar() {
                 const readBy = data.readBy || {};
                 const isRead = readBy[user!.uid] || data.isRead === true;
                 if (isRead) return;
-                const type = data.templateId || data.type || '';
-                const moduleId = notifTypeToModule[type];
+                const type = data.type || data.templateId || '';
+                const moduleId = notifTypeToModule[type] || notifTypeToModule[data.templateId || ''];
                 if (moduleId) {
                     counts[moduleId] = (counts[moduleId] || 0) + 1;
                 }
