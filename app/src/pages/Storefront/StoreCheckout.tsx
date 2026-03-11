@@ -1,9 +1,11 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useNavigate, useParams, useOutletContext } from 'react-router-dom';
 import { useCartStore } from '../../store';
 import { orderService } from '../../services/db';
 import { qpayService, type QPayInvoiceResponse } from '../../services/qpay';
-import { ChevronLeft, CheckCircle, MapPin, Truck, ImageIcon, ShieldCheck, CreditCard, QrCode, Landmark, Copy, Check, Smartphone } from 'lucide-react';
+import { ChevronLeft, CheckCircle, MapPin, Truck, ImageIcon, ShieldCheck, CreditCard, QrCode, Landmark, Copy, Check, Smartphone, PartyPopper } from 'lucide-react';
+import { doc, onSnapshot } from 'firebase/firestore';
+import { db } from '../../services/firebase';
 import type { Business, Order } from '../../types';
 import { toast } from 'react-hot-toast';
 
@@ -30,6 +32,7 @@ export function StoreCheckout() {
     const [customerPhone, setCustomerPhone] = useState('');
     const [copied, setCopied] = useState(false);
     const [savedTotal, setSavedTotal] = useState(0);
+    const [paymentConfirmed, setPaymentConfirmed] = useState(false);
 
     // Payment method
     const [paymentMethod, setPaymentMethod] = useState<'bank_transfer' | 'qpay' | 'social_pay'>('bank_transfer');
@@ -186,6 +189,21 @@ export function StoreCheckout() {
         }
     };
 
+    // ──────── LISTEN FOR PAYMENT CONFIRMATION ────────
+    useEffect(() => {
+        if (!successId || !business?.id) return;
+        const orderRef = doc(db, `businesses/${business.id}/orders`, successId);
+        const unsub = onSnapshot(orderRef, (snap) => {
+            const data = snap.data();
+            if (data?.paymentStatus === 'paid' && !paymentConfirmed) {
+                setPaymentConfirmed(true);
+                toast.success('Төлбөр баталгаажлаа! 🎉');
+            }
+        });
+        return () => unsub();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [successId, business?.id]);
+
     // ──────── SUCCESS SCREEN ────────
     if (successId) {
         return (
@@ -199,20 +217,42 @@ export function StoreCheckout() {
                         maxWidth: 500,
                         width: '100%',
                         boxShadow: 'var(--shadow-xl)',
-                        border: '1px solid var(--border-color)',
+                        border: `1px solid ${paymentConfirmed ? '#4BB543' : 'var(--border-color)'}`,
                         position: 'relative',
-                        overflow: 'hidden'
+                        overflow: 'hidden',
+                        transition: 'border-color 0.5s ease'
                     }}>
                         <div style={{
                             position: 'absolute', top: 0, left: 0, width: '100%', height: 6,
-                            background: 'linear-gradient(90deg, #4BB543, #85e085)'
+                            background: paymentConfirmed
+                                ? 'linear-gradient(90deg, #4BB543, #2ecc71, #4BB543)'
+                                : 'linear-gradient(90deg, #4BB543, #85e085)',
+                            backgroundSize: paymentConfirmed ? '200% 100%' : 'auto',
+                            animation: paymentConfirmed ? 'shimmer 2s ease infinite' : 'none'
                         }} />
 
-                        <div style={{ width: 80, height: 80, borderRadius: '50%', background: 'rgba(75, 181, 67, 0.1)', color: '#4BB543', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px' }}>
-                            <CheckCircle size={40} />
-                        </div>
-
-                        <h2 style={{ marginBottom: 16, fontSize: '1.8rem', fontWeight: 900, color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>Захиалга амжилттай!</h2>
+                        {paymentConfirmed ? (
+                            <>
+                                <div style={{
+                                    width: 90, height: 90, borderRadius: '50%',
+                                    background: 'linear-gradient(135deg, #4BB543, #2ecc71)',
+                                    color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                    margin: '0 auto 24px', boxShadow: '0 8px 32px rgba(75, 181, 67, 0.3)',
+                                    animation: 'popIn 0.5s cubic-bezier(0.16, 1, 0.3, 1)'
+                                }}>
+                                    <PartyPopper size={40} />
+                                </div>
+                                <h2 style={{ marginBottom: 8, fontSize: '1.8rem', fontWeight: 900, color: '#4BB543', letterSpacing: '-0.02em' }}>Төлбөр баталгаажлаа!</h2>
+                                <p style={{ color: 'var(--text-muted)', fontSize: '0.95rem', fontWeight: 500, marginBottom: 16 }}>Таны шилжүүлэг амжилттай хүлээн авлаа. Захиалга боловсруулагдаж эхэлнэ.</p>
+                            </>
+                        ) : (
+                            <>
+                                <div style={{ width: 80, height: 80, borderRadius: '50%', background: 'rgba(75, 181, 67, 0.1)', color: '#4BB543', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px' }}>
+                                    <CheckCircle size={40} />
+                                </div>
+                                <h2 style={{ marginBottom: 16, fontSize: '1.8rem', fontWeight: 900, color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>Захиалга амжилттай!</h2>
+                            </>
+                        )}
 
                         {/* Bank Transfer Info on Success */}
                         {paymentMethod === 'bank_transfer' && selectedBank && (
@@ -306,6 +346,18 @@ export function StoreCheckout() {
                         </button>
                     </div>
                 </div>
+
+                <style>{`
+                    @keyframes shimmer {
+                        0% { background-position: 0% 0%; }
+                        100% { background-position: 200% 0%; }
+                    }
+                    @keyframes popIn {
+                        0% { transform: scale(0.3); opacity: 0; }
+                        50% { transform: scale(1.1); }
+                        100% { transform: scale(1); opacity: 1; }
+                    }
+                `}</style>
             </div>
         );
     }
