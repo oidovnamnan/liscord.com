@@ -162,14 +162,12 @@ export function Sidebar() {
         if (isImpersonating && employee) {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const empPerms: string[] = (employee as any).permissions || [];
-            if (empPerms.length > 0) {
-                items = items.filter(mod => {
-                    if (mod.isCore) return true; // Dashboard always visible
-                    const permPrefix = modulePermissionMap[mod.id];
-                    if (!permPrefix) return true; // No mapping = show by default
-                    return empPerms.some(p => p.startsWith(permPrefix));
-                });
-            }
+            items = items.filter(mod => {
+                if (mod.isCore) return true; // Dashboard always visible
+                const permPrefix = modulePermissionMap[mod.id];
+                if (!permPrefix) return true; // No mapping = show by default
+                return empPerms.some(p => p.startsWith(permPrefix));
+            });
         }
 
         return items;
