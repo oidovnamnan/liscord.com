@@ -405,7 +405,7 @@ export default function App() {
             <Route path="real-estate" element={<ModuleGuard moduleId="real-estate"><RealEstatePage /></ModuleGuard>} />
             <Route path="auto-repair" element={<ModuleGuard moduleId="repair-shop"><AutoRepairPage /></ModuleGuard>} />
             <Route path="rental" element={<ModuleGuard moduleId="rentals"><RentalPage /></ModuleGuard>} />
-            <Route path="logistics-3pl" element={<ModuleGuard moduleId="cargo"><Logistics3PLPage /></ModuleGuard>} />
+            <Route path="logistics-3pl" element={<ModuleGuard moduleId="logistics-3pl"><Logistics3PLPage /></ModuleGuard>} />
             <Route path="fleet-mgt" element={<ModuleGuard moduleId="fleet"><FleetPage /></ModuleGuard>} />
             <Route path="packing" element={<ModuleGuard moduleId="packing"><PackingPage /></ModuleGuard>} />
             <Route path="dispatch" element={<ModuleGuard moduleId="dispatch"><DispatchPage /></ModuleGuard>} />
