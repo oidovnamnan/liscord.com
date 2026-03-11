@@ -58,6 +58,8 @@ export function Sidebar() {
         'delivery.assigned': 'logistics',
         'chat': 'chat',
         'chat.new_message': 'chat',
+        'sms_income': 'sms-income',
+        'payment.received': 'sms-income',
     }), []);
 
     // Real-time badge counts from notifications

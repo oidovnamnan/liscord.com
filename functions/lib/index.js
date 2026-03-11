@@ -321,7 +321,7 @@ exports.onSmsIncome = functions
     .firestore
     .document("sms_inbox/{smsId}")
     .onCreate(async (snap) => {
-    var _a, _b;
+    var _a, _b, _c, _d, _e, _f, _g, _h;
     const smsData = snap.data();
     if (!smsData)
         return null;
@@ -377,6 +377,41 @@ exports.onSmsIncome = functions
         }
         if (!matchedOrderDoc) {
             console.log(`No matching order: amount=${smsAmount}, note=${smsNote || smsBody.substring(0, 50)}`);
+            // Create "new income" notification (unmatched)
+            await db.collection(`businesses/${bizId}/notifications`).add({
+                templateId: 'payment.received',
+                type: 'sms_income',
+                title: `💰 Шинэ орлого ₮${smsAmount.toLocaleString()}`,
+                body: `${smsData.bank || smsData.sender || 'Банк'} — ${smsData.utga || 'Утга байхгүй'}`,
+                icon: '💰',
+                link: '/app/sms-income',
+                referenceId: snap.id,
+                readBy: {},
+                priority: 'normal',
+                createdAt: admin.firestore.FieldValue.serverTimestamp(),
+                createdBy: 'system',
+            });
+            // FCM push to owner
+            try {
+                const ownerId = (_c = bizDoc.data()) === null || _c === void 0 ? void 0 : _c.ownerId;
+                if (ownerId) {
+                    const userSnap = await db.doc(`users/${ownerId}`).get();
+                    const tokens = ((_d = userSnap.data()) === null || _d === void 0 ? void 0 : _d.fcmTokens) || [];
+                    if (tokens.length > 0) {
+                        await admin.messaging().sendEachForMulticast({
+                            notification: {
+                                title: `💰 Шинэ орлого ₮${smsAmount.toLocaleString()}`,
+                                body: `${smsData.bank || 'Банк'} — Холбогдоогүй`,
+                            },
+                            data: { type: 'sms_income', bizId, link: '/app/sms-income' },
+                            tokens,
+                        });
+                    }
+                }
+            }
+            catch (pushErr) {
+                console.warn('FCM push failed (non-critical):', pushErr);
+            }
             return null;
         }
         // 4. Auto-match: Update order as paid
@@ -406,6 +441,43 @@ exports.onSmsIncome = functions
             matchedAt: now,
             autoMatched: true,
         });
+        // 6. Create notification for successful auto-match
+        const matchedOrder = matchedOrderDoc.data();
+        const orderNumber = matchedOrder.orderNumber || matchedOrderDoc.id.slice(0, 6);
+        await db.collection(`businesses/${bizId}/notifications`).add({
+            templateId: 'payment.received',
+            type: 'sms_income',
+            title: `✅ Төлбөр автомат холбогдлоо #${orderNumber}`,
+            body: `₮${smsAmount.toLocaleString()} — ${((_e = matchedOrder.customer) === null || _e === void 0 ? void 0 : _e.name) || 'Зочин'} — ${smsData.bank || 'Банк'}`,
+            icon: '✅',
+            link: '/app/orders',
+            referenceId: matchedOrderDoc.id,
+            readBy: {},
+            priority: 'high',
+            createdAt: now,
+            createdBy: 'system',
+        });
+        // FCM push for successful match
+        try {
+            const ownerId = (_f = bizDoc.data()) === null || _f === void 0 ? void 0 : _f.ownerId;
+            if (ownerId) {
+                const userSnap = await db.doc(`users/${ownerId}`).get();
+                const tokens = ((_g = userSnap.data()) === null || _g === void 0 ? void 0 : _g.fcmTokens) || [];
+                if (tokens.length > 0) {
+                    await admin.messaging().sendEachForMulticast({
+                        notification: {
+                            title: `✅ Төлбөр автомат холбогдлоо #${orderNumber}`,
+                            body: `₮${smsAmount.toLocaleString()} — ${((_h = matchedOrder.customer) === null || _h === void 0 ? void 0 : _h.name) || 'Зочин'}`,
+                        },
+                        data: { type: 'sms_income', bizId, link: '/app/orders' },
+                        tokens,
+                    });
+                }
+            }
+        }
+        catch (pushErr) {
+            console.warn('FCM push failed (non-critical):', pushErr);
+        }
         console.log(`✅ AUTO-MATCHED: SMS ${snap.id} → Order ${matchedOrderDoc.id} (₮${smsAmount})`);
         return null;
     }
