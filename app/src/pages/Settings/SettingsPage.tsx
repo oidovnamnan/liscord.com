@@ -95,6 +95,12 @@ export function SettingsPage() {
 
 
     const tabs = useMemo(() => {
+        // Merge all module sources (same logic as permissions)
+        const allModuleIds = new Set<string>(business?.activeModules || []);
+        if (business?.moduleSubscriptions) {
+            Object.keys(business.moduleSubscriptions).forEach(id => allModuleIds.add(id));
+        }
+
         const coreTabs = [
             { id: 'general', label: 'Ерөнхий', icon: Building2 },
             { id: 'team', label: 'Баг', icon: Users },
@@ -115,9 +121,9 @@ export function SettingsPage() {
                 const placement = mod.placement || 'sidebar';
                 const isSettingsMod = placement === 'settings' || placement === 'both' || mod.hasSettings;
                 if (!isSettingsMod) return false;
-                // Core free modules always show, others need activeModules
+                // Core free modules always show, others need activeModules or subscriptions
                 if (mod.isCore && mod.isFree) return true;
-                return business?.activeModules?.includes(mod.id) &&
+                return allModuleIds.has(mod.id) &&
                     !isSubscriptionExpired(business, mod.id);
             })
             .map(mod => ({
@@ -131,11 +137,11 @@ export function SettingsPage() {
         // Additional legacy tabs if needed
         const extraTabs = [
             { id: 'sources', label: 'Эх сурвалж', icon: Share2, moduleId: 'orders' },
-        ].filter(t => business?.activeModules?.includes(t.moduleId) &&
+        ].filter(t => allModuleIds.has(t.moduleId) &&
             !isSubscriptionExpired(business, t.moduleId));
 
         return { core: coreTabs, plugins: [...pluginTabs, ...extraTabs] };
-    }, [business?.activeModules, isStorefrontEnabled]);
+    }, [business?.activeModules, business?.moduleSubscriptions, isStorefrontEnabled]);
 
     const handleUpdateBusiness = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
