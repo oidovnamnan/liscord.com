@@ -96,35 +96,78 @@ exports.onQrLoginUpdate = functions
 });
 /**
  * Push Notification on New Order
- * Sends FCM notification to business owner when a new order is created
+ * Creates in-app notification + sends FCM push to owner AND employees with orders.* permission
  */
 exports.sendOrderNotification = functions
     .firestore
     .document("businesses/{bizId}/orders/{orderId}")
     .onCreate(async (snap, context) => {
-    var _a, _b;
+    var _a, _b, _c, _d, _e;
     const orderData = snap.data();
     const bizId = context.params.bizId;
     if (!orderData || orderData.isDeleted)
         return null;
     try {
-        // Get business info
         const bizSnap = await db.doc(`businesses/${bizId}`).get();
         const bizData = bizSnap.data();
         if (!bizData)
             return null;
-        // Get owner's FCM tokens
-        const ownerId = bizData.ownerId;
-        if (!ownerId)
-            return null;
-        const userSnap = await db.doc(`users/${ownerId}`).get();
-        const userData = userSnap.data();
-        const fcmTokens = (userData === null || userData === void 0 ? void 0 : userData.fcmTokens) || [];
-        if (fcmTokens.length === 0)
-            return null;
         const customerName = ((_a = orderData.customer) === null || _a === void 0 ? void 0 : _a.name) || 'Зочин';
         const totalAmount = ((_b = orderData.financials) === null || _b === void 0 ? void 0 : _b.totalAmount) || 0;
         const orderNumber = orderData.orderNumber || snap.id.slice(0, 6);
+        // 1. Create in-app notification document
+        await db.collection(`businesses/${bizId}/notifications`).add({
+            templateId: 'order.new',
+            type: 'order',
+            title: `Шинэ захиалга #${orderNumber}`,
+            body: `${customerName} — ₮${totalAmount.toLocaleString()}`,
+            icon: '📥',
+            link: `/app/orders`,
+            referenceId: snap.id,
+            readBy: {},
+            priority: 'high',
+            createdAt: admin.firestore.FieldValue.serverTimestamp(),
+            createdBy: 'system',
+        });
+        // 2. Collect FCM tokens from owner + employees with orders.* permission
+        const tokensToSend = [];
+        // Owner tokens
+        const ownerId = bizData.ownerId;
+        if (ownerId) {
+            const ownerSnap = await db.doc(`users/${ownerId}`).get();
+            const ownerTokens = ((_c = ownerSnap.data()) === null || _c === void 0 ? void 0 : _c.fcmTokens) || [];
+            ownerTokens.forEach(t => tokensToSend.push({ token: t, userId: ownerId }));
+        }
+        // Employee tokens — find employees with orders.* permission via their Position
+        try {
+            const empsSnap = await db.collection(`businesses/${bizId}/employees`).get();
+            for (const empDoc of empsSnap.docs) {
+                const empData = empDoc.data();
+                if (!empData.userId || empData.userId === ownerId)
+                    continue;
+                // Check position permissions
+                if (empData.positionId) {
+                    const posSnap = await db.doc(`businesses/${bizId}/positions/${empData.positionId}`).get();
+                    const perms = ((_d = posSnap.data()) === null || _d === void 0 ? void 0 : _d.permissions) || [];
+                    const hasOrderPerm = perms.some(p => p.startsWith('orders.'));
+                    if (!hasOrderPerm)
+                        continue;
+                }
+                else {
+                    continue; // No position = no order permission
+                }
+                const userSnap = await db.doc(`users/${empData.userId}`).get();
+                const userTokens = ((_e = userSnap.data()) === null || _e === void 0 ? void 0 : _e.fcmTokens) || [];
+                userTokens.forEach(t => tokensToSend.push({ token: t, userId: empData.userId }));
+            }
+        }
+        catch (empErr) {
+            console.warn("Employee token fetch failed (non-critical):", empErr);
+        }
+        if (tokensToSend.length === 0)
+            return null;
+        // 3. Send FCM push
+        const uniqueTokens = [...new Set(tokensToSend.map(t => t.token))];
         const message = {
             notification: {
                 title: `🛒 Шинэ захиалга #${orderNumber}`,
@@ -134,8 +177,9 @@ exports.sendOrderNotification = functions
                 type: 'new_order',
                 orderId: snap.id,
                 bizId: bizId,
+                link: `/app/orders`,
             },
-            tokens: fcmTokens,
+            tokens: uniqueTokens,
         };
         const response = await admin.messaging().sendEachForMulticast(message);
         // Clean up invalid tokens
@@ -143,14 +187,17 @@ exports.sendOrderNotification = functions
         response.responses.forEach((resp, idx) => {
             var _a;
             if (!resp.success && ((_a = resp.error) === null || _a === void 0 ? void 0 : _a.code) === 'messaging/registration-token-not-registered') {
-                tokensToRemove.push(fcmTokens[idx]);
+                const orig = tokensToSend.find(t => t.token === uniqueTokens[idx]);
+                if (orig)
+                    tokensToRemove.push(orig);
             }
         });
-        if (tokensToRemove.length > 0) {
-            await db.doc(`users/${ownerId}`).update({
-                fcmTokens: admin.firestore.FieldValue.arrayRemove(...tokensToRemove),
+        for (const { token, userId } of tokensToRemove) {
+            await db.doc(`users/${userId}`).update({
+                fcmTokens: admin.firestore.FieldValue.arrayRemove(token),
             });
         }
+        console.log(`📬 Order notification sent to ${uniqueTokens.length} devices`);
         return null;
     }
     catch (err) {
@@ -160,13 +207,13 @@ exports.sendOrderNotification = functions
 });
 /**
  * Low Stock Alert
- * Checks for low stock products when stock is updated
+ * Creates in-app notification + sends FCM push to owner when stock drops below threshold
  */
 exports.lowStockAlert = functions
     .firestore
     .document("businesses/{bizId}/products/{productId}")
     .onUpdate(async (change, context) => {
-    var _a, _b, _c, _d, _e, _f, _g;
+    var _a, _b, _c, _d, _e, _f, _g, _h, _j;
     const after = change.after.data();
     const before = change.before.data();
     const bizId = context.params.bizId;
@@ -175,21 +222,39 @@ exports.lowStockAlert = functions
     const currentQty = (_c = (_b = after.stock) === null || _b === void 0 ? void 0 : _b.quantity) !== null && _c !== void 0 ? _c : 0;
     const previousQty = (_e = (_d = before === null || before === void 0 ? void 0 : before.stock) === null || _d === void 0 ? void 0 : _d.quantity) !== null && _e !== void 0 ? _e : 0;
     const lowStockThreshold = (_g = (_f = after.stock) === null || _f === void 0 ? void 0 : _f.lowStockThreshold) !== null && _g !== void 0 ? _g : 5;
-    // Only trigger when stock drops below threshold (not on every update)
     if (currentQty < lowStockThreshold && previousQty >= lowStockThreshold) {
         try {
-            // Create a notification record
+            // 1. Create notification doc
             await db.collection(`businesses/${bizId}/notifications`).add({
+                templateId: 'stock.low',
                 type: 'low_stock',
-                title: 'Бараа дуусах дөхлөө',
-                message: `"${after.name}" барааны үлдэгдэл ${currentQty} болж буурлаа (босго: ${lowStockThreshold})`,
-                productId: context.params.productId,
-                productName: after.name,
-                currentStock: currentQty,
-                threshold: lowStockThreshold,
-                isRead: false,
+                title: `⚠️ ${after.name} нөөц бага`,
+                body: `Үлдэгдэл ${currentQty} ширхэг (босго: ${lowStockThreshold})`,
+                icon: '⚠️',
+                link: '/app/products',
+                referenceId: context.params.productId,
+                readBy: {},
+                priority: 'high',
                 createdAt: admin.firestore.FieldValue.serverTimestamp(),
+                createdBy: 'system',
             });
+            // 2. Send FCM push to owner
+            const bizSnap = await db.doc(`businesses/${bizId}`).get();
+            const ownerId = (_h = bizSnap.data()) === null || _h === void 0 ? void 0 : _h.ownerId;
+            if (ownerId) {
+                const userSnap = await db.doc(`users/${ownerId}`).get();
+                const tokens = ((_j = userSnap.data()) === null || _j === void 0 ? void 0 : _j.fcmTokens) || [];
+                if (tokens.length > 0) {
+                    await admin.messaging().sendEachForMulticast({
+                        notification: {
+                            title: `⚠️ ${after.name} нөөц бага`,
+                            body: `Үлдэгдэл: ${currentQty} ширхэг`,
+                        },
+                        data: { type: 'low_stock', bizId, link: '/app/products' },
+                        tokens,
+                    });
+                }
+            }
         }
         catch (err) {
             console.error("Failed to create low stock notification:", err);
