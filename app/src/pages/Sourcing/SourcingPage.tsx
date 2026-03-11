@@ -216,7 +216,11 @@ export function SourcingPage() {
                 {loading ? (
                     <div className="proc-loading"><Loader2 size={36} className="animate-spin" /><p className="proc-loading-text">Ачаалж байна...</p></div>
                 ) : filtered.length === 0 ? (
-                    <div className="proc-empty-state"><div className="proc-empty-icon"><Globe size={40} /></div><div className="proc-empty-title">Сорсинг захиалга олдсонгүй</div></div>
+                    <div className="proc-empty-state" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: 300, textAlign: 'center' }}>
+                        <div className="proc-empty-icon"><Globe size={48} /></div>
+                        <div className="proc-empty-title" style={{ marginTop: 16 }}>Сорсинг захиалга олдсонгүй</div>
+                        <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginTop: 8 }}>Төлбөр төлөгдсөн pre-order захиалга ирэхэд энд харагдана</p>
+                    </div>
                 ) : (
                     <table className="proc-table">
                         <thead>
