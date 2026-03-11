@@ -46,9 +46,10 @@ export function Sidebar() {
         if (!business?.id) return;
         const unsubs: (() => void)[] = [];
 
-        // 1. New orders count (status === 'new')
+        // 1. Orders: paid but still unprocessed (status='new')
         const ordersQ = query(
             collection(db, 'businesses', business.id, 'orders'),
+            where('paymentStatus', '==', 'paid'),
             where('status', '==', 'new'),
             where('isDeleted', '==', false),
         );
@@ -56,9 +57,7 @@ export function Sidebar() {
             setModuleBadges(prev => ({ ...prev, orders: snap.size }));
         }, () => {}));
 
-        // 2. Pending SMS income (status !== 'matched')
-        // We query all sms_inbox for this business's pairingKey and count non-matched
-        // Since sms_inbox is a top-level collection, we subscribe and filter
+        // 2. Pending SMS income (unmatched payments)
         if ((business as any).smsBridgeKey) {
             const smsQ = query(
                 collection(db, 'sms_inbox'),
@@ -70,26 +69,6 @@ export function Sidebar() {
                 setModuleBadges(prev => ({ ...prev, 'sms-income-sync': snap.size }));
             }, () => {}));
         }
-
-        // 3. Low-stock products
-        // Products where stock.quantity < stock.lowStockThreshold
-        // Firestore doesn't support cross-field comparison in queries,
-        // so we listen to all tracked products and filter client-side
-        const productsQ = query(
-            collection(db, 'businesses', business.id, 'products'),
-            where('stock.trackInventory', '==', true),
-            limit(200),
-        );
-        unsubs.push(onSnapshot(productsQ, (snap) => {
-            let lowCount = 0;
-            snap.docs.forEach(d => {
-                const data = d.data();
-                const qty = data.stock?.quantity ?? 0;
-                const threshold = data.stock?.lowStockThreshold ?? 5;
-                if (qty <= threshold && !data.isPreorder) lowCount++;
-            });
-            setModuleBadges(prev => ({ ...prev, products: lowCount }));
-        }, () => {}));
 
         return () => unsubs.forEach(u => u());
     }, [business?.id]);
