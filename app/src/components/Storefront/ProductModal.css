@@ -454,6 +454,17 @@
     border-radius: 3px;
 }
 
+.sf-modal-desc-detail {
+    margin-top: 2px;
+    color: #444;
+    font-size: 0.85rem;
+}
+
+.sf-modal-desc-detail strong {
+    color: #222;
+    font-weight: 700;
+}
+
 /* Stock indicator */
 .sf-modal-stock {
     display: flex;

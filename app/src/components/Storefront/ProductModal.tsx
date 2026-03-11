@@ -248,7 +248,16 @@ export function ProductModal({ product, onClose, preorderTerms }: ProductModalPr
                             {/* Description */}
                             {product.description && (
                                 <div className="sf-modal-desc">
-                                    {product.description}
+                                    {product.description.split('\n').map((line, i) => {
+                                        if (!line.trim()) return <br key={i} />;
+                                        // Bold label pattern: "Label: value"
+                                        const labelMatch = line.match(/^([^:]{2,20}):\s*(.+)/);
+                                        const knownLabels = ['Хэмжээ', 'Хадгалах нөхцөл', 'Хадгалах хугацаа', 'Гарал үүсэл', 'Найрлага', 'Хэрэглэх заавар', 'Жин', 'Эзлэхүүн', 'Багц', 'Материал', 'Өнгө', 'Брэнд', 'Загвар'];
+                                        if (labelMatch && knownLabels.some(l => labelMatch[1].trim().includes(l))) {
+                                            return <div key={i} className="sf-modal-desc-detail"><strong>{labelMatch[1].trim()}:</strong> {labelMatch[2]}</div>;
+                                        }
+                                        return <span key={i}>{line}{i < product.description.split('\n').length - 1 ? ' ' : ''}</span>;
+                                    })}
                                 </div>
                             )}
 
