@@ -262,6 +262,44 @@ export default function App() {
                   } catch (e) {
                     console.warn('[Auth] loadSwitchableEmployees failed (non-critical):', e);
                   }
+                } else if (!emp && biz) {
+                  // Owner without employee record
+                  const isOwner = firebaseUser.uid === biz.ownerId;
+                  if (isOwner) {
+                    try {
+                      const allEmps = await businessService.getAllEmployees(biz.id);
+                      setLinkedEmployees(allEmps);
+                    } catch (e) {
+                      console.warn('[Auth] loadSwitchableEmployees failed (non-critical):', e);
+                    }
+                  }
+                }
+
+                // Restore impersonation from sessionStorage (survives refresh)
+                try {
+                  const impersonatingId = sessionStorage.getItem('impersonatingEmployeeId');
+                  if (impersonatingId && biz) {
+                    const { doc, getDoc } = await import('firebase/firestore');
+                    const empDoc = await getDoc(doc(db, 'businesses', biz.id, 'employees', impersonatingId));
+                    if (empDoc.exists()) {
+                      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                      let impEmployee = { id: empDoc.id, ...empDoc.data() } as any;
+                      // Fetch position permissions
+                      if (impEmployee.positionId) {
+                        const posDoc = await getDoc(doc(db, 'businesses', biz.id, 'positions', impEmployee.positionId));
+                        if (posDoc.exists()) {
+                          impEmployee = { ...impEmployee, permissions: posDoc.data().permissions || [] };
+                        }
+                      }
+                      const { switchToEmployee } = useBusinessStore.getState();
+                      switchToEmployee(impEmployee);
+                    } else {
+                      sessionStorage.removeItem('impersonatingEmployeeId');
+                    }
+                  }
+                } catch (e) {
+                  console.warn('[Auth] restore impersonation failed (non-critical):', e);
+                  sessionStorage.removeItem('impersonatingEmployeeId');
                 }
               } catch (e) {
                 console.error('[Auth] getBusiness/getEmployee failed:', e);

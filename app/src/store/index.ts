@@ -53,19 +53,19 @@ export const useBusinessStore = create<BusinessState>((set, get) => ({
     setLinkedEmployees: (employees) => set({ linkedEmployees: employees }),
     switchToEmployee: (targetEmployee) => {
         const { employee, isImpersonating, linkedEmployees } = get();
+        // Persist impersonation to sessionStorage for refresh survival
+        try { sessionStorage.setItem('impersonatingEmployeeId', targetEmployee.id); } catch {}
         // On first switch, save current employee as original
         if (!isImpersonating) {
-            // Remove target from linked list, add current (if exists) back
             const newLinked = linkedEmployees.filter(e => e.id !== targetEmployee.id);
             if (employee) newLinked.push(employee);
             set({
                 employee: targetEmployee,
-                originalEmployee: employee, // can be null for owner
+                originalEmployee: employee,
                 isImpersonating: true,
                 linkedEmployees: newLinked,
             });
         } else {
-            // Already impersonating — switch to another
             const newLinked = linkedEmployees.filter(e => e.id !== targetEmployee.id);
             if (employee) newLinked.push(employee);
             set({ employee: targetEmployee, linkedEmployees: newLinked });
@@ -74,6 +74,8 @@ export const useBusinessStore = create<BusinessState>((set, get) => ({
     switchBack: () => {
         const { originalEmployee, employee, linkedEmployees, isImpersonating } = get();
         if (!isImpersonating) return;
+        // Clear persisted impersonation
+        try { sessionStorage.removeItem('impersonatingEmployeeId'); } catch {}
         const newLinked = linkedEmployees.filter(e => e.id !== originalEmployee?.id);
         if (employee) newLinked.push(employee);
         set({
@@ -84,7 +86,10 @@ export const useBusinessStore = create<BusinessState>((set, get) => ({
         });
     },
     setLoading: (loading) => set({ loading }),
-    clear: () => set({ business: null, employee: null, originalEmployee: null, isImpersonating: false, linkedEmployees: [], loading: false }),
+    clear: () => {
+        try { sessionStorage.removeItem('impersonatingEmployeeId'); } catch {}
+        set({ business: null, employee: null, originalEmployee: null, isImpersonating: false, linkedEmployees: [], loading: false });
+    },
 }));
 
 // ============ UI STORE ============
