@@ -19,6 +19,20 @@
 
 <body>
   <div id="root"></div>
+  <script>
+    // Stale chunk recovery: auto-reload when old JS chunks fail to load after deploy
+    window.addEventListener('error', function (e) {
+      if (e.message && e.message.includes('Failed to fetch dynamically imported module') ||
+        e.target && e.target.tagName === 'SCRIPT') {
+        var key = 'liscord_chunk_reload';
+        var last = sessionStorage.getItem(key);
+        if (!last || Date.now() - Number(last) > 10000) {
+          sessionStorage.setItem(key, Date.now().toString());
+          window.location.reload();
+        }
+      }
+    }, true);
+  </script>
   <script type="module" src="/src/main.tsx"></script>
 </body>
 
