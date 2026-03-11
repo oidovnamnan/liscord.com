@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import {
     LayoutDashboard,
@@ -13,7 +13,7 @@ import {
     Shield,
 } from 'lucide-react';
 import { useUIStore, useBusinessStore, useAuthStore } from '../../store';
-import { doc, updateDoc } from 'firebase/firestore';
+import { doc, updateDoc, collection, query, orderBy, limit, onSnapshot } from 'firebase/firestore';
 import { db } from '../../services/firebase';
 import { businessService, systemSettingsService } from '../../services/db';
 import { toast } from 'react-hot-toast';
@@ -31,6 +31,7 @@ export function Sidebar() {
     const [showSwitcher, setShowSwitcher] = useState(false);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const [userBusinesses, setUserBusinesses] = useState<any[]>([]);
+    const [moduleBadges, setModuleBadges] = useState<Record<string, number>>({});
 
     useEffect(() => {
         if (showSwitcher) {
@@ -39,6 +40,54 @@ export function Sidebar() {
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [showSwitcher]);
+
+    // Map notification types to module IDs
+    const notifTypeToModule: Record<string, string> = useMemo(() => ({
+        'order': 'orders',
+        'order.new': 'orders',
+        'order.status_changed': 'orders',
+        'order.assigned': 'orders',
+        'payment': 'orders',
+        'payment.received': 'orders',
+        'low_stock': 'products',
+        'stock.low': 'products',
+        'stock.out': 'products',
+        'team': 'employees',
+        'team.member_joined': 'employees',
+        'delivery': 'logistics',
+        'delivery.assigned': 'logistics',
+        'chat': 'chat',
+        'chat.new_message': 'chat',
+    }), []);
+
+    // Real-time badge counts from notifications
+    useEffect(() => {
+        if (!business?.id || !user?.uid) return;
+        const q = query(
+            collection(db, 'businesses', business.id, 'notifications'),
+            orderBy('createdAt', 'desc'),
+            limit(50)
+        );
+        const unsub = onSnapshot(q, (snap) => {
+            const counts: Record<string, number> = {};
+            snap.docs.forEach(d => {
+                const data = d.data();
+                // Check if unread for this user
+                const readBy = data.readBy || {};
+                const isRead = readBy[user!.uid] || data.isRead === true;
+                if (isRead) return;
+                const type = data.templateId || data.type || '';
+                const moduleId = notifTypeToModule[type];
+                if (moduleId) {
+                    counts[moduleId] = (counts[moduleId] || 0) + 1;
+                }
+            });
+            setModuleBadges(counts);
+        }, (err) => {
+            console.warn('[Sidebar] Badge subscription error:', err);
+        });
+        return () => unsub();
+    }, [business?.id, user?.uid, notifTypeToModule]);
 
     const loadBusinesses = async () => {
         if (!user) return;
@@ -345,6 +394,9 @@ export function Sidebar() {
                             >
                                 <Icon size={20} />
                                 {!sidebarCollapsed && <span>{displayName}</span>}
+                                {moduleBadges[mod.id] > 0 && (
+                                    <span className="sidebar-badge">{moduleBadges[mod.id] > 9 ? '9+' : moduleBadges[mod.id]}</span>
+                                )}
                                 {isActive && <div className="sidebar-link-indicator" />}
                             </NavLink>
                         );
