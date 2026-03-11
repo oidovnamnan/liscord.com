@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import {
     LayoutDashboard,
@@ -13,7 +13,7 @@ import {
     Shield,
 } from 'lucide-react';
 import { useUIStore, useBusinessStore, useAuthStore } from '../../store';
-import { doc, updateDoc, collection, query, orderBy, limit, onSnapshot } from 'firebase/firestore';
+import { doc, updateDoc, collection, query, where, limit, onSnapshot } from 'firebase/firestore';
 import { db } from '../../services/firebase';
 import { businessService, systemSettingsService } from '../../services/db';
 import { toast } from 'react-hot-toast';
@@ -41,54 +41,58 @@ export function Sidebar() {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [showSwitcher]);
 
-    // Map notification types to module IDs
-    const notifTypeToModule: Record<string, string> = useMemo(() => ({
-        'order': 'orders',
-        'order.new': 'orders',
-        'order.status_changed': 'orders',
-        'order.assigned': 'orders',
-        'payment': 'orders',
-        'payment.received': 'orders',
-        'low_stock': 'products',
-        'stock.low': 'products',
-        'stock.out': 'products',
-        'team': 'employees',
-        'team.member_joined': 'employees',
-        'delivery': 'logistics',
-        'delivery.assigned': 'logistics',
-        'chat': 'chat',
-        'chat.new_message': 'chat',
-        'sms_income': 'sms-income-sync',
-    }), []);
-
-    // Real-time badge counts from notifications
+    // Real-time badge counts from actual business data
     useEffect(() => {
-        if (!business?.id || !user?.uid) return;
-        const q = query(
-            collection(db, 'businesses', business.id, 'notifications'),
-            orderBy('createdAt', 'desc'),
-            limit(50)
+        if (!business?.id) return;
+        const unsubs: (() => void)[] = [];
+
+        // 1. New orders count (status === 'new')
+        const ordersQ = query(
+            collection(db, 'businesses', business.id, 'orders'),
+            where('status', '==', 'new'),
+            where('isDeleted', '==', false),
         );
-        const unsub = onSnapshot(q, (snap) => {
-            const counts: Record<string, number> = {};
+        unsubs.push(onSnapshot(ordersQ, (snap) => {
+            setModuleBadges(prev => ({ ...prev, orders: snap.size }));
+        }, () => {}));
+
+        // 2. Pending SMS income (status !== 'matched')
+        // We query all sms_inbox for this business's pairingKey and count non-matched
+        // Since sms_inbox is a top-level collection, we subscribe and filter
+        if ((business as any).smsBridgeKey) {
+            const smsQ = query(
+                collection(db, 'sms_inbox'),
+                where('pairingKey', '==', (business as any).smsBridgeKey),
+                where('status', '==', 'pending'),
+                limit(50),
+            );
+            unsubs.push(onSnapshot(smsQ, (snap) => {
+                setModuleBadges(prev => ({ ...prev, 'sms-income-sync': snap.size }));
+            }, () => {}));
+        }
+
+        // 3. Low-stock products
+        // Products where stock.quantity < stock.lowStockThreshold
+        // Firestore doesn't support cross-field comparison in queries,
+        // so we listen to all tracked products and filter client-side
+        const productsQ = query(
+            collection(db, 'businesses', business.id, 'products'),
+            where('stock.trackInventory', '==', true),
+            limit(200),
+        );
+        unsubs.push(onSnapshot(productsQ, (snap) => {
+            let lowCount = 0;
             snap.docs.forEach(d => {
                 const data = d.data();
-                // Check if unread for this user
-                const readBy = data.readBy || {};
-                const isRead = readBy[user!.uid] || data.isRead === true;
-                if (isRead) return;
-                const type = data.type || data.templateId || '';
-                const moduleId = notifTypeToModule[type] || notifTypeToModule[data.templateId || ''];
-                if (moduleId) {
-                    counts[moduleId] = (counts[moduleId] || 0) + 1;
-                }
+                const qty = data.stock?.quantity ?? 0;
+                const threshold = data.stock?.lowStockThreshold ?? 5;
+                if (qty <= threshold && !data.isPreorder) lowCount++;
             });
-            setModuleBadges(counts);
-        }, (err) => {
-            console.warn('[Sidebar] Badge subscription error:', err);
-        });
-        return () => unsub();
-    }, [business?.id, user?.uid, notifTypeToModule]);
+            setModuleBadges(prev => ({ ...prev, products: lowCount }));
+        }, () => {}));
+
+        return () => unsubs.forEach(u => u());
+    }, [business?.id]);
 
     const loadBusinesses = async () => {
         if (!user) return;
