@@ -685,17 +685,27 @@ function CreatePositionModal({ bizId, editingPosition, onClose }: { bizId: strin
         } catch (_e) { toast.error('Алдаа гарлаа'); } finally { setLoading(false); }
     };
 
-    // Dynamic permissions based on active modules
+    // Dynamic permissions based on ALL accessible modules
     const { business } = useBusinessStore();
-    const activeModuleIds = business?.activeModules || [];
     const permissionGroups = useMemo(() => {
-        const groups = getActivePermissions(activeModuleIds);
+        // Merge all module sources: activeModules + moduleSubscriptions + category defaults
+        const allModuleIds = new Set<string>(business?.activeModules || []);
+        // Add modules that have subscriptions (purchased via App Store)
+        if (business?.moduleSubscriptions) {
+            Object.keys(business.moduleSubscriptions).forEach(id => allModuleIds.add(id));
+        }
+        // Also include category-core modules from LISCORD_MODULES
+        LISCORD_MODULES.forEach(mod => {
+            if (mod.isCore) allModuleIds.add(mod.id);
+        });
+
+        const groups = getActivePermissions(Array.from(allModuleIds));
         // Resolve module IDs to display names
         return groups.map(g => {
             const mod = LISCORD_MODULES.find(m => m.id === g.group);
             return { ...g, group: mod?.name || g.group };
         });
-    }, [activeModuleIds]);
+    }, [business?.activeModules, business?.moduleSubscriptions]);
 
     return createPortal(
         <div className="modal-backdrop" onClick={onClose}>
