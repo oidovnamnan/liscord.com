@@ -20,7 +20,7 @@ import { Camera, useCameraDevice, useCodeScanner } from 'react-native-vision-cam
 
 // Firestore REST API base URL for direct document creation
 const FIRESTORE_BASE = 'https://firestore.googleapis.com/v1/projects/liscord-2b529/databases/(default)/documents';
-const APP_VERSION = '1.3';
+const APP_VERSION = '1.4';
 
 const sleep = (time: number) => new Promise<void>((resolve) => setTimeout(() => resolve(), time));
 
@@ -402,6 +402,81 @@ const App = () => {
       _pairingKey = key;
       // Sync to native SharedPreferences for BroadcastReceiver
       try { NativeModules.PairingKeyModule?.setPairingKey(key); } catch (_e) { }
+      // Sync SMS templates from Firestore
+      syncSmsConfigFromFirestore(key);
+    }
+  };
+
+  // Fetch SMS templates from Firestore and sync keywords/senders to native
+  const syncSmsConfigFromFirestore = async (key: string) => {
+    try {
+      // 1. Find business by pairingKey
+      const bizUrl = `${FIRESTORE_BASE}:runQuery`;
+      const bizRes = await fetch(bizUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          structuredQuery: {
+            from: [{ collectionId: 'businesses' }],
+            where: {
+              fieldFilter: {
+                field: { fieldPath: 'smsBridgeKey' },
+                op: 'EQUAL',
+                value: { stringValue: key },
+              },
+            },
+            limit: 1,
+          },
+        }),
+      });
+      const bizData = await bizRes.json();
+      if (!bizData?.[0]?.document?.name) return;
+
+      const bizPath = bizData[0].document.name;
+      const bizId = bizPath.split('/').pop();
+
+      // 2. Fetch all smsTemplates for this business
+      const tmplUrl = `${FIRESTORE_BASE}/businesses/${bizId}/smsTemplates`;
+      const tmplRes = await fetch(tmplUrl);
+      const tmplData = await tmplRes.json();
+
+      if (!tmplData?.documents?.length) return;
+
+      // 3. Extract all keywords and sender numbers
+      const allKeywords: string[] = [];
+      const allSenders: string[] = [];
+
+      for (const doc of tmplData.documents) {
+        const fields = doc.fields;
+        // Check isActive
+        if (fields?.isActive?.booleanValue === false) continue;
+
+        // Keywords
+        if (fields?.incomeKeywords?.arrayValue?.values) {
+          for (const v of fields.incomeKeywords.arrayValue.values) {
+            if (v.stringValue) allKeywords.push(v.stringValue);
+          }
+        }
+        // Sender numbers
+        if (fields?.senderNumbers?.arrayValue?.values) {
+          for (const v of fields.senderNumbers.arrayValue.values) {
+            if (v.stringValue) allSenders.push(v.stringValue);
+          }
+        }
+      }
+
+      // 4. Sync to native SharedPreferences
+      if (allKeywords.length > 0 || allSenders.length > 0) {
+        const keywordsStr = [...new Set(allKeywords)].join(',');
+        const sendersStr = [...new Set(allSenders)].join(',');
+        try {
+          NativeModules.PairingKeyModule?.setSmsConfig(keywordsStr, sendersStr);
+        } catch (_e) { }
+        addLog(`🔄 ${allKeywords.length} keyword, ${allSenders.length} sender синк хийгдлээ`);
+      }
+    } catch (err) {
+      // Silent fail — fallback to hardcoded keywords
+      console.log('SMS config sync failed:', err);
     }
   };
 

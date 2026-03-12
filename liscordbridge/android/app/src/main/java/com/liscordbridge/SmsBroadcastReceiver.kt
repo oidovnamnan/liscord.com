@@ -27,15 +27,20 @@ class SmsBroadcastReceiver : BroadcastReceiver() {
         private const val TAG = "LiscordSMS"
         private const val FIRESTORE_BASE = "https://firestore.googleapis.com/v1/projects/liscord-2b529/databases/(default)/documents"
         
-        // Bank SMS keywords — covers all known Mongolian bank formats
-        private val INCOME_KEYWORDS = listOf(
-            // Standard income words
+        // Fallback keywords — used if no dynamic config from Firestore
+        private val DEFAULT_KEYWORDS = listOf(
             "orlogo", "орлого", "орсон", "credited", "received",
-            // Golomt-style keywords
-            "dungeer", "дүнгээр", "dansand", "данс руу", "guilgee", "гүйлгээ",
-            // Generic bank transaction words  
-            "hiigdlee", "хийгдлээ", "husnegtiin", "шилжүүлэг",
-            "залгамжлуулсан", "кредит", "орлогын"
+            "dungeer", "дүнгээр", "dansand", "guilgee", "гүйлгээ",
+            "hiigdlee", "хийгдлээ", "шилжүүлэг", "орлогын"
+        )
+        
+        private val DEFAULT_BANK_SENDERS = listOf(
+            "1900", "19001917", "19001918",  // Khan Bank
+            "1800", "18001800", "132525",    // Golomt
+            "1500", "15001500",              // TDB
+            "7575",                          // XacBank
+            "1234",                          // Төрийн
+            "2525"                           // Bogd
         )
     }
 
@@ -65,14 +70,25 @@ class SmsBroadcastReceiver : BroadcastReceiver() {
             
             Log.d(TAG, "SMS received from: $sender")
 
-            // Check if this is an income/bank SMS
-            if (!isIncomeSms(body)) {
-                Log.d(TAG, "Not an income SMS, skipping")
+            // Read dynamic config from SharedPreferences (synced from Firestore)
+            val prefs = context.getSharedPreferences("LiscordBridge", Context.MODE_PRIVATE)
+            val dynamicKeywords = prefs.getString("smsKeywords", null)
+                ?.split(",")?.map { it.trim() }?.filter { it.isNotEmpty() }
+            val dynamicSenders = prefs.getString("smsSenders", null)
+                ?.split(",")?.map { it.trim() }?.filter { it.isNotEmpty() }
+            
+            val keywords = dynamicKeywords ?: DEFAULT_KEYWORDS
+            val bankSenders = dynamicSenders ?: DEFAULT_BANK_SENDERS
+
+            // Check if SMS is from a known bank sender OR has income keyword
+            val isFromBank = bankSenders.any { sender.contains(it) || it.contains(sender) }
+            val hasKeyword = isIncomeSms(body, keywords)
+            
+            if (!isFromBank && !hasKeyword) {
+                Log.d(TAG, "Not a bank SMS, skipping")
                 continue
             }
 
-            // Read pairing key from SharedPreferences (AsyncStorage backend)
-            val prefs = context.getSharedPreferences("LiscordBridge", Context.MODE_PRIVATE)
             val pairingKey = prefs.getString("pairingKey", null)
 
             if (pairingKey.isNullOrEmpty()) {
@@ -93,13 +109,10 @@ class SmsBroadcastReceiver : BroadcastReceiver() {
         }
     }
 
-    private fun isIncomeSms(body: String): Boolean {
+    private fun isIncomeSms(body: String, keywords: List<String>): Boolean {
         val lower = body.lowercase()
-        // Content-based: check for any bank transaction keywords
-        val hasKeyword = INCOME_KEYWORDS.any { lower.contains(it.lowercase()) }
-        // Accept with keyword alone (no MNT required — Golomt doesn't use MNT)
-        // Also accept if it has both a number and MNT  
-        val hasAmount = Regex("\\d[\\d,.]*", RegexOption.IGNORE_CASE).containsMatchIn(body)
+        val hasKeyword = keywords.any { lower.contains(it.lowercase()) }
+        val hasAmount = Regex("\\d[\\d,.]*").containsMatchIn(body)
         return hasKeyword && hasAmount
     }
 

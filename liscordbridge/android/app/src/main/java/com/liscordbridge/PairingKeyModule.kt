@@ -5,7 +5,7 @@ import com.facebook.react.bridge.ReactContextBaseJavaModule
 import com.facebook.react.bridge.ReactMethod
 
 /**
- * Simple native module to sync pairing key from React Native to
+ * Native module to sync pairing key + SMS config from React Native to
  * SharedPreferences, where the SmsBroadcastReceiver can read it.
  */
 class PairingKeyModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaModule(reactContext) {
@@ -22,5 +22,20 @@ class PairingKeyModule(reactContext: ReactApplicationContext) : ReactContextBase
     fun clearPairingKey() {
         val prefs = reactApplicationContext.getSharedPreferences("LiscordBridge", ReactApplicationContext.MODE_PRIVATE)
         prefs.edit().remove("pairingKey").apply()
+    }
+
+    /**
+     * Sync SMS config from Firestore templates to SharedPreferences.
+     * Called from App.tsx after fetching business smsTemplates.
+     * @param keywords Comma-separated income keywords (e.g., "orlogo,dungeer,guilgee")
+     * @param senders Comma-separated bank sender numbers (e.g., "1900,132525,1800")
+     */
+    @ReactMethod
+    fun setSmsConfig(keywords: String, senders: String) {
+        val prefs = reactApplicationContext.getSharedPreferences("LiscordBridge", ReactApplicationContext.MODE_PRIVATE)
+        prefs.edit()
+            .putString("smsKeywords", keywords)
+            .putString("smsSenders", senders)
+            .apply()
     }
 }
