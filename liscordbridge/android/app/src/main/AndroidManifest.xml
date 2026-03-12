@@ -37,6 +37,12 @@
         android:foregroundServiceType="dataSync"
         android:exported="false" />
 
+      <!-- Boot foreground service — briefly wakes app after reboot to keep SMS receiver alive -->
+      <service
+        android:name=".BootForegroundService"
+        android:foregroundServiceType="dataSync"
+        android:exported="false" />
+
       <!-- Native SMS receiver — triggered by Android when SMS arrives (works in background/killed) -->
       <receiver
         android:name=".SmsBroadcastReceiver"
