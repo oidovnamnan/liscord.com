@@ -253,6 +253,22 @@ export function Sidebar() {
         return items;
     }, [business?.activeModules, business?.moduleSubscriptions, business?.category, moduleDefaults, isOwner, isImpersonating, employee, modulePermissionMap]);
 
+    // Sort modules by admin-configured order
+    const sortedNavItems = useMemo(() => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const moduleOrder: string[] = (business as any)?.moduleOrder || [];
+        if (moduleOrder.length === 0) return filteredNavItems;
+        
+        return [...filteredNavItems].sort((a, b) => {
+            const idxA = moduleOrder.indexOf(a.id);
+            const idxB = moduleOrder.indexOf(b.id);
+            // Items not in order go to the end, preserving their original relative order
+            const posA = idxA >= 0 ? idxA : moduleOrder.length + filteredNavItems.indexOf(a);
+            const posB = idxB >= 0 ? idxB : moduleOrder.length + filteredNavItems.indexOf(b);
+            return posA - posB;
+        });
+    }, [filteredNavItems, (business as any)?.moduleOrder]);
+
     const hasMultipleBusinesses = (userBusinesses.length > 1);
 
     return (
@@ -386,7 +402,7 @@ export function Sidebar() {
                         {location.pathname === '/app' && <div className="sidebar-link-indicator" />}
                     </NavLink>
 
-                    {filteredNavItems.map((mod) => {
+                    {sortedNavItems.map((mod) => {
                         // eslint-disable-next-line @typescript-eslint/no-explicit-any
                         const Icon = (Icons as any)[mod.icon] || Icons.Box;
 

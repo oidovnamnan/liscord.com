@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, Suspense } from 'react';
 import { createPortal } from 'react-dom';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { Header } from '../../components/layout/Header';
-import { Building2, Palette, Bell, Shield, Users, Globe, Loader2, Share2, X, CheckSquare, ListOrdered, ShoppingBag, CreditCard, Sun, Moon, Monitor, CheckCircle2, Smartphone, ArrowLeft, Settings as SettingsIcon } from 'lucide-react';
+import { Building2, Palette, Bell, Shield, Users, Globe, Loader2, Share2, X, CheckSquare, ListOrdered, ShoppingBag, CreditCard, Sun, Moon, Monitor, CheckCircle2, Smartphone, ArrowLeft, Settings as SettingsIcon, GripVertical, ArrowUp, ArrowDown } from 'lucide-react';
 import { useBusinessStore, useUIStore } from '../../store';
 import { businessService, businessRequestService, moduleSettingsService } from '../../services/db';
 import { eventBus, EVENTS } from '../../services/eventBus';
@@ -112,6 +112,7 @@ export function SettingsPage() {
             { id: 'notifications', label: 'Мэдэгдэл', icon: Bell },
             { id: 'security', label: 'Аюулгүй байдал', icon: Shield },
             { id: 'activity', label: 'Ажиллагсдын үйлдэл', icon: ListOrdered },
+            { id: 'module-order', label: 'Модулийн байрлал', icon: GripVertical },
             { id: 'language', label: 'Хэл', icon: Globe },
         ];
 
@@ -785,6 +786,10 @@ export function SettingsPage() {
 
                         {activeTab === 'activity' && <ActivityTab />}
 
+                        {activeTab === 'module-order' && (
+                            <ModuleOrderTab />
+                        )}
+
                         {activeTab === 'qr-login' && (
                             <DevicesTab />
                         )}
@@ -867,4 +872,123 @@ export function SettingsPage() {
     );
 }
 
+function ModuleOrderTab() {
+    const { business, setBusiness } = useBusinessStore();
+    const [saving, setSaving] = useState(false);
 
+    const activeModules = useMemo(() => {
+        const allIds = new Set<string>(business?.activeModules || []);
+        if (business?.moduleSubscriptions) {
+            Object.keys(business.moduleSubscriptions).forEach(id => allIds.add(id));
+        }
+        return LISCORD_MODULES.filter(m => allIds.has(m.id) && m.placement !== 'settings');
+    }, [business?.activeModules, business?.moduleSubscriptions]);
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const [moduleOrder, setModuleOrder] = useState<string[]>(() => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const saved = (business as any)?.moduleOrder || [];
+        if (saved.length > 0) return saved;
+        return activeModules.map(m => m.id);
+    });
+
+    const sortedModules = useMemo(() => {
+        return [...activeModules].sort((a, b) => {
+            const idxA = moduleOrder.indexOf(a.id);
+            const idxB = moduleOrder.indexOf(b.id);
+            const posA = idxA >= 0 ? idxA : moduleOrder.length + activeModules.indexOf(a);
+            const posB = idxB >= 0 ? idxB : moduleOrder.length + activeModules.indexOf(b);
+            return posA - posB;
+        });
+    }, [activeModules, moduleOrder]);
+
+    const moveUp = (index: number) => {
+        if (index <= 0) return;
+        const ids = sortedModules.map(m => m.id);
+        [ids[index - 1], ids[index]] = [ids[index], ids[index - 1]];
+        setModuleOrder(ids);
+    };
+
+    const moveDown = (index: number) => {
+        if (index >= sortedModules.length - 1) return;
+        const ids = sortedModules.map(m => m.id);
+        [ids[index], ids[index + 1]] = [ids[index + 1], ids[index]];
+        setModuleOrder(ids);
+    };
+
+    const handleSave = async () => {
+        if (!business) return;
+        setSaving(true);
+        try {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            await businessService.updateBusiness(business.id, { moduleOrder } as any);
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            setBusiness({ ...business, moduleOrder } as any);
+            toast.success('Модулийн байрлал хадгалагдлаа');
+        } catch {
+            toast.error('Хадгалахад алдаа гарлаа');
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    return (
+        <div className="settings-section">
+            <div className="settings-section-header">
+                <div className="settings-section-icon" style={{ background: 'var(--primary-tint)', color: 'var(--primary)' }}>
+                    <GripVertical size={20} />
+                </div>
+                <div>
+                    <h3 className="settings-section-title">Модулийн байрлал</h3>
+                    <p className="settings-section-desc">Сайдбар дахь модулиудын дарааллыг тохируулна</p>
+                </div>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 20 }}>
+                {sortedModules.map((mod, i) => {
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    const ModIcon = (Icons as any)[mod.icon] || Icons.Box;
+                    return (
+                        <div key={mod.id} style={{
+                            display: 'flex', alignItems: 'center', gap: 14,
+                            padding: '12px 16px', borderRadius: 14,
+                            background: 'var(--surface-1)', border: '1.5px solid var(--border-soft)',
+                            transition: 'all 0.2s',
+                        }}>
+                            <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem', fontWeight: 700, width: 20, textAlign: 'center' }}>{i + 1}</span>
+                            <div style={{ width: 36, height: 36, borderRadius: 10, background: 'var(--primary-tint)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                <ModIcon size={18} />
+                            </div>
+                            <span style={{ flex: 1, fontWeight: 700, fontSize: '0.9rem', color: 'var(--text-primary)' }}>{mod.name}</span>
+                            <div style={{ display: 'flex', gap: 4 }}>
+                                <button
+                                    className="btn btn-ghost btn-icon"
+                                    onClick={() => moveUp(i)}
+                                    disabled={i === 0}
+                                    style={{ opacity: i === 0 ? 0.3 : 1, width: 32, height: 32 }}
+                                >
+                                    <ArrowUp size={16} />
+                                </button>
+                                <button
+                                    className="btn btn-ghost btn-icon"
+                                    onClick={() => moveDown(i)}
+                                    disabled={i === sortedModules.length - 1}
+                                    style={{ opacity: i === sortedModules.length - 1 ? 0.3 : 1, width: 32, height: 32 }}
+                                >
+                                    <ArrowDown size={16} />
+                                </button>
+                            </div>
+                        </div>
+                    );
+                })}
+            </div>
+
+            <div style={{ marginTop: 24, display: 'flex', justifyContent: 'flex-end' }}>
+                <button className="btn btn-primary gradient-btn" onClick={handleSave} disabled={saving} style={{ gap: 6 }}>
+                    {saving ? <Loader2 size={16} className="animate-spin" /> : <CheckCircle2 size={16} />}
+                    Хадгалах
+                </button>
+            </div>
+        </div>
+    );
+}
