@@ -5,6 +5,7 @@ import { Header } from '../../components/layout/Header';
 import { Building2, Palette, Bell, Shield, Users, Globe, Loader2, Share2, X, CheckSquare, ListOrdered, ShoppingBag, CreditCard, Sun, Moon, Monitor, CheckCircle2, Smartphone, ArrowLeft, Settings as SettingsIcon, GripVertical, ArrowUp, ArrowDown } from 'lucide-react';
 import { useBusinessStore, useUIStore } from '../../store';
 import { businessService, businessRequestService, moduleSettingsService } from '../../services/db';
+import { teamService } from '../../services/db';
 import { eventBus, EVENTS } from '../../services/eventBus';
 import { storageService as storage } from '../../services/storage';
 import { toast } from 'react-hot-toast';
@@ -884,11 +885,13 @@ function ModuleOrderTab() {
     const [moduleOrder, setModuleOrder] = useState<string[]>([]);
     const [saving, setSaving] = useState(false);
 
+    // Load employees using teamService (reliable, no composite index)
     useEffect(() => {
         if (!business?.id) return;
-        const qry = query(collection(db, 'businesses', business.id, 'employees'), where('isDeleted', '==', false), where('status', '==', 'active'));
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        return onSnapshot(qry, (s) => setEmployees(s.docs.map((d) => ({ id: d.id, ...d.data() } as any))));
+        return teamService.subscribeEmployees(business.id, (emps) => {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            setEmployees((emps as any[]).filter(e => !e.isDeleted && e.status === 'active'));
+        });
     }, [business?.id]);
 
     const allModules = useMemo(() => {
@@ -900,6 +903,7 @@ function ModuleOrderTab() {
     const empModules = useMemo(() => {
         if (!selectedEmp) return allModules;
         const empPerms: string[] = selectedEmp.permissions || [];
+        if (empPerms.length === 0) return allModules; // No permissions set = show all
         const modulePermMap: Record<string, string[]> = {};
         for (const [moduleId, perms] of Object.entries(MODULE_PERMISSIONS)) {
             const prefixes = new Set<string>();
@@ -936,8 +940,7 @@ function ModuleOrderTab() {
         if (!business || !selectedEmp) return;
         setSaving(true);
         try {
-            const { doc: docRef, updateDoc: upDoc } = await import('firebase/firestore');
-            await upDoc(docRef(db, 'businesses', business.id, 'employees', selectedEmp.id), { moduleOrder: sortedModules.map(m => m.id) });
+            await teamService.updateEmployee(business.id, selectedEmp.id, { moduleOrder: sortedModules.map(m => m.id) } as any);
             toast.success(`${selectedEmp.name} модулийн байрлал хадгалагдлаа`);
         } catch { toast.error('Хадгалахад алдаа гарлаа'); }
         finally { setSaving(false); }
@@ -945,56 +948,121 @@ function ModuleOrderTab() {
 
     return (
         <div className="settings-section">
-            <div className="settings-section-header">
-                <div className="settings-section-icon" style={{ background: 'var(--primary-tint)', color: 'var(--primary)' }}><GripVertical size={20} /></div>
-                <div>
-                    <h3 className="settings-section-title">Модулийн байрлал</h3>
-                    <p className="settings-section-desc">Ажилтан бүрийн сайдбар дахь модулиудын дарааллыг тохируулна</p>
+            {/* Premium Header */}
+            <div style={{
+                background: 'linear-gradient(135deg, rgba(108,92,231,0.08) 0%, rgba(0,206,158,0.08) 100%)',
+                borderRadius: 16, padding: '24px 28px', marginBottom: 24,
+                border: '1px solid rgba(108,92,231,0.15)',
+            }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                    <div style={{
+                        width: 48, height: 48, borderRadius: 14,
+                        background: 'linear-gradient(135deg, var(--primary) 0%, #00ce9e 100%)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        boxShadow: '0 4px 14px rgba(108,92,231,0.3)',
+                    }}>
+                        <GripVertical size={24} color="white" />
+                    </div>
+                    <div>
+                        <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 800, color: 'var(--text-primary)' }}>Модулийн байрлал</h3>
+                        <p style={{ margin: '4px 0 0', fontSize: '0.82rem', color: 'var(--text-muted)', fontWeight: 500 }}>Ажилтан бүрийн сайдбар модулийн дарааллыг тохируулна</p>
+                    </div>
                 </div>
             </div>
-            <div style={{ marginTop: 20, marginBottom: 20 }}>
-                <label className="input-label">Ажилтан сонгох</label>
-                <select className="input select" value={selectedEmp?.id || ''} onChange={e => setSelectedEmp(employees.find(em => em.id === e.target.value) || null)} style={{ height: 46 }}>
-                    <option value="">— Ажилтан сонгоно уу —</option>
-                    {employees.map(emp => <option key={emp.id} value={emp.id}>{emp.name} ({emp.role || 'Ажилтан'})</option>)}
-                </select>
+
+            {/* Employee Cards */}
+            <div style={{ marginBottom: 24 }}>
+                <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: 10, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                    👤 Ажилтан сонгох ({employees.length})
+                </label>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(155px, 1fr))', gap: 10 }}>
+                    {employees.map(emp => {
+                        const isSelected = selectedEmp?.id === emp.id;
+                        return (
+                            <div key={emp.id} onClick={() => setSelectedEmp(isSelected ? null : emp)} style={{
+                                padding: '14px', borderRadius: 14, cursor: 'pointer',
+                                background: isSelected ? 'linear-gradient(135deg, rgba(108,92,231,0.1) 0%, rgba(0,206,158,0.1) 100%)' : 'var(--surface-1)',
+                                border: `2px solid ${isSelected ? 'var(--primary)' : 'var(--border-soft)'}`,
+                                transition: 'all 0.25s ease',
+                                transform: isSelected ? 'scale(1.02)' : 'scale(1)',
+                                boxShadow: isSelected ? '0 4px 16px rgba(108,92,231,0.15)' : 'none',
+                            }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                                    <div style={{
+                                        width: 38, height: 38, borderRadius: 12,
+                                        background: isSelected ? 'linear-gradient(135deg, var(--primary), #00ce9e)' : 'var(--primary-tint)',
+                                        color: isSelected ? 'white' : 'var(--primary)',
+                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                        fontWeight: 800, fontSize: '0.85rem',
+                                    }}>{emp.name?.charAt(0) || '?'}</div>
+                                    <div style={{ minWidth: 0 }}>
+                                        <div style={{ fontWeight: 700, fontSize: '0.85rem', color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{emp.name}</div>
+                                        <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 600 }}>{emp.role || 'Ажилтан'}</div>
+                                    </div>
+                                </div>
+                                {isSelected && <div style={{ marginTop: 8, display: 'flex', alignItems: 'center', gap: 4, fontSize: '0.7rem', color: 'var(--primary)', fontWeight: 700 }}><CheckCircle2 size={12} /> Сонгогдсон</div>}
+                            </div>
+                        );
+                    })}
+                    {employees.length === 0 && (
+                        <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '24px', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+                            <Loader2 size={20} className="animate-spin" style={{ margin: '0 auto 10px', display: 'block', opacity: 0.5 }} />
+                            Ачаалж байна...
+                        </div>
+                    )}
+                </div>
             </div>
+
+            {/* Module Order List */}
             {selectedEmp ? (
                 <>
-                    <div style={{ padding: '10px 14px', background: 'var(--surface-2)', borderRadius: 12, marginBottom: 16, fontSize: '0.82rem', color: 'var(--text-secondary)', fontWeight: 600 }}>
-                        🔑 {selectedEmp.name}-ийн эрхээр харагдах {sortedModules.length} модуль
+                    <div style={{
+                        padding: '12px 18px', borderRadius: 12, marginBottom: 16,
+                        background: 'linear-gradient(135deg, rgba(108,92,231,0.06) 0%, rgba(0,206,158,0.06) 100%)',
+                        border: '1px dashed rgba(108,92,231,0.2)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                    }}>
+                        <span style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', fontWeight: 700 }}>
+                            🔑 {selectedEmp.name} — {sortedModules.length} модуль
+                        </span>
+                        <span style={{ padding: '3px 10px', borderRadius: 20, fontSize: '0.7rem', fontWeight: 700, background: 'var(--primary)', color: 'white' }}>
+                            {selectedEmp.moduleOrder?.length > 0 ? 'Тохируулсан' : 'Анхдагч'}
+                        </span>
                     </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                         {sortedModules.map((mod, i) => {
                             // eslint-disable-next-line @typescript-eslint/no-explicit-any
                             const ModIcon = (Icons as any)[mod.icon] || Icons.Box;
                             return (
-                                <div key={mod.id} style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '12px 16px', borderRadius: 14, background: 'var(--surface-1)', border: '1.5px solid var(--border-soft)', transition: 'all 0.2s' }}>
-                                    <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem', fontWeight: 700, width: 20, textAlign: 'center' }}>{i + 1}</span>
-                                    <div style={{ width: 36, height: 36, borderRadius: 10, background: 'var(--primary-tint)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><ModIcon size={18} /></div>
+                                <div key={mod.id} style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px 18px', borderRadius: 14, background: 'var(--surface-1)', border: '1.5px solid var(--border-soft)', transition: 'all 0.2s' }}>
+                                    <GripVertical size={14} style={{ color: 'var(--border-primary)', flexShrink: 0 }} />
+                                    <span style={{ width: 26, height: 26, borderRadius: 8, flexShrink: 0, background: 'var(--primary-tint)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '0.72rem' }}>{i + 1}</span>
+                                    <div style={{ width: 38, height: 38, borderRadius: 12, flexShrink: 0, background: 'linear-gradient(135deg, rgba(108,92,231,0.1) 0%, rgba(0,206,158,0.1) 100%)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><ModIcon size={18} /></div>
                                     <span style={{ flex: 1, fontWeight: 700, fontSize: '0.9rem', color: 'var(--text-primary)' }}>{mod.name}</span>
                                     <div style={{ display: 'flex', gap: 4 }}>
-                                        <button className="btn btn-ghost btn-icon" onClick={() => moveUp(i)} disabled={i === 0} style={{ opacity: i === 0 ? 0.3 : 1, width: 32, height: 32 }}><ArrowUp size={16} /></button>
-                                        <button className="btn btn-ghost btn-icon" onClick={() => moveDown(i)} disabled={i === sortedModules.length - 1} style={{ opacity: i === sortedModules.length - 1 ? 0.3 : 1, width: 32, height: 32 }}><ArrowDown size={16} /></button>
+                                        <button className="btn btn-ghost btn-icon" onClick={() => moveUp(i)} disabled={i === 0} style={{ opacity: i === 0 ? 0.25 : 1, width: 34, height: 34, borderRadius: 10, background: i > 0 ? 'var(--surface-2)' : 'transparent' }}><ArrowUp size={15} /></button>
+                                        <button className="btn btn-ghost btn-icon" onClick={() => moveDown(i)} disabled={i === sortedModules.length - 1} style={{ opacity: i === sortedModules.length - 1 ? 0.25 : 1, width: 34, height: 34, borderRadius: 10, background: i < sortedModules.length - 1 ? 'var(--surface-2)' : 'transparent' }}><ArrowDown size={15} /></button>
                                     </div>
                                 </div>
                             );
                         })}
                     </div>
                     <div style={{ marginTop: 24, display: 'flex', justifyContent: 'flex-end' }}>
-                        <button className="btn btn-primary gradient-btn" onClick={handleSave} disabled={saving} style={{ gap: 6 }}>
+                        <button className="btn btn-primary gradient-btn" onClick={handleSave} disabled={saving} style={{ gap: 8, padding: '12px 28px', borderRadius: 14, fontSize: '0.9rem', fontWeight: 700 }}>
                             {saving ? <Loader2 size={16} className="animate-spin" /> : <CheckCircle2 size={16} />}
                             Хадгалах
                         </button>
                     </div>
                 </>
-            ) : (
-                <div style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--text-muted)' }}>
-                    <Users size={48} style={{ opacity: 0.3, marginBottom: 12 }} />
-                    <p style={{ fontWeight: 600, fontSize: '0.9rem' }}>Ажилтан сонгоно уу</p>
-                    <p style={{ fontSize: '0.82rem' }}>Сонгосон ажилтны сайдбарын модулийн дарааллыг тохируулна</p>
+            ) : employees.length > 0 ? (
+                <div style={{ textAlign: 'center', padding: '50px 20px', color: 'var(--text-muted)', background: 'var(--surface-1)', borderRadius: 16, border: '2px dashed var(--border-soft)' }}>
+                    <div style={{ width: 64, height: 64, borderRadius: 20, margin: '0 auto 16px', background: 'var(--primary-tint)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <Users size={28} />
+                    </div>
+                    <p style={{ fontWeight: 700, fontSize: '0.95rem', color: 'var(--text-primary)', marginBottom: 4 }}>Ажилтан сонгоно уу</p>
+                    <p style={{ fontSize: '0.82rem' }}>Дээрх ажилтнуудаас нэгийг сонгоод модулийн дарааллыг тохируулна</p>
                 </div>
-            )}
+            ) : null}
         </div>
     );
 }
