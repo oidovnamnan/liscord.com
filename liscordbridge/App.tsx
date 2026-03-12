@@ -20,6 +20,7 @@ import { Camera, useCameraDevice, useCodeScanner } from 'react-native-vision-cam
 
 // Firestore REST API base URL for direct document creation
 const FIRESTORE_BASE = 'https://firestore.googleapis.com/v1/projects/liscord-2b529/databases/(default)/documents';
+const APP_VERSION = '1.1';
 
 const sleep = (time: number) => new Promise<void>((resolve) => setTimeout(() => resolve(), time));
 
@@ -663,7 +664,7 @@ const App = () => {
       <StatusBar barStyle="light-content" backgroundColor="#0f0f14" />
       <View style={styles.header}>
         <Text style={styles.title}>Liscord Bridge</Text>
-        <Text style={styles.subtitle}>SMS Forwarder</Text>
+        <Text style={styles.subtitle}>SMS Forwarder v{APP_VERSION}</Text>
       </View>
 
       <ScrollView style={styles.content} contentContainerStyle={{ paddingBottom: 40 }}>
@@ -736,6 +737,8 @@ const App = () => {
             ⚠️ "Дамжуулалтыг ЭХЛҮҮЛЭХ" дарсны дараа утсаа хааж болно — арын горимд автоматаар ажиллана.
           </Text>
         </View>
+
+        <Text style={{ textAlign: 'center', color: 'rgba(255,255,255,0.2)', fontSize: 11, marginTop: 8 }}>v{APP_VERSION} (build 2)</Text>
       </ScrollView>
     </SafeAreaView>
   );
