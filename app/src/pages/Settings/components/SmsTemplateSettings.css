@@ -49,8 +49,8 @@
 }
 
 .sms-tmpl-card-icon.test {
-    background: rgba(16, 185, 129, 0.1);
-    color: #10b981;
+    background: rgba(139, 92, 246, 0.1);
+    color: #8b5cf6;
 }
 
 .sms-tmpl-card-icon.templates {
@@ -60,7 +60,46 @@
 
 /* Test SMS */
 .sms-tmpl-test-card {
-    border-color: rgba(16, 185, 129, 0.2);
+    border-color: rgba(139, 92, 246, 0.2);
+}
+
+/* AI Test Button */
+.sms-ai-test-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    padding: 12px;
+    margin-top: 12px;
+    background: linear-gradient(135deg, #8b5cf6, #6366f1);
+    color: white;
+    border: none;
+    border-radius: var(--radius-lg);
+    font-size: 0.88rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.sms-ai-test-btn:hover:not(:disabled) {
+    opacity: 0.9;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 16px rgba(139, 92, 246, 0.3);
+}
+
+.sms-ai-test-btn:disabled {
+    opacity: 0.7;
+    cursor: wait;
+}
+
+.spin {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
 }
 
 .sms-tmpl-test-input {

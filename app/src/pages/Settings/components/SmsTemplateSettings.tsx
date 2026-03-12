@@ -1,11 +1,12 @@
-import { useState, useEffect, useMemo } from 'react';
-import { collection, doc, getDocs, setDoc, updateDoc, deleteDoc } from 'firebase/firestore';
+import { useState, useEffect, useMemo, useCallback } from 'react';
+import { collection, doc, getDocs, setDoc, updateDoc, deleteDoc, getDoc } from 'firebase/firestore';
 import { db } from '../../../services/firebase';
 import { toast } from 'react-hot-toast';
 import {
     MessageSquare, Plus, Trash2, Edit3, TestTube,
-    Check, X, ToggleLeft, ToggleRight, Banknote, Search, Sparkles
+    Check, X, ToggleLeft, ToggleRight, Banknote, Sparkles, Zap, Loader2
 } from 'lucide-react';
+import { parseSmsWithAi, type AiSmsParseResult } from '../../../services/ai/aiSmsParser';
 import './SmsTemplateSettings.css';
 
 interface SmsTemplate {
@@ -146,6 +147,21 @@ export function SmsTemplateSettings({ bizId }: { bizId: string }) {
     const [editingId, setEditingId] = useState<string | null>(null);
     const [editForm, setEditForm] = useState<Partial<SmsTemplate>>({});
     const [showAddForm, setShowAddForm] = useState(false);
+    const [geminiApiKey, setGeminiApiKey] = useState('');
+    const [aiTestResult, setAiTestResult] = useState<AiSmsParseResult | null>(null);
+    const [aiTesting, setAiTesting] = useState(false);
+
+    // Load Gemini API key from global settings
+    useEffect(() => {
+        const loadApiKey = async () => {
+            try {
+                const snap = await getDoc(doc(db, 'settings', 'global'));
+                const data = snap.data();
+                if (data?.geminiApiKey) setGeminiApiKey(data.geminiApiKey);
+            } catch (_e) { /* ignore */ }
+        };
+        loadApiKey();
+    }, []);
 
     // Load templates
     useEffect(() => {
@@ -179,32 +195,25 @@ export function SmsTemplateSettings({ bizId }: { bizId: string }) {
         }
     };
 
-    // Test SMS against all active templates
-    const testResult = useMemo(() => {
-        if (!testSms.trim()) return null;
-        const activeTemplates = templates.filter(t => t.isActive);
-        for (const tmpl of activeTemplates) {
-            const result = tryParseWithTemplate(tmpl, testSms);
-            if (result.matched) return result;
+    // AI-powered SMS test
+    const handleAiTest = useCallback(async () => {
+        if (!testSms.trim()) return;
+        if (!geminiApiKey) {
+            toast.error('Gemini API Key тохируулаагүй байна. Super Admin → Тохиргоо хэсгээс нэмнэ үү.');
+            return;
         }
-        // Fallback generic parse
-        const amountMatch = testSms.match(/(\d[\d,]*(?:\.\d{1,2})?)\s*(?:MNT|₮|mnt)/i);
-        let fallbackAmount = amountMatch ? parseFloat(amountMatch[1].replace(/,/g, '')) : 0;
-        // If no MNT match, try largest number > 100
-        if (!fallbackAmount) {
-            const numbers = testSms.match(/\d[\d,]*(?:\.\d{1,2})?/g);
-            if (numbers) {
-                const parsed = numbers.map(n => parseFloat(n.replace(/,/g, ''))).filter(n => n > 100);
-                fallbackAmount = parsed.length > 0 ? Math.max(...parsed) : 0;
-            }
+        setAiTesting(true);
+        setAiTestResult(null);
+        try {
+            const result = await parseSmsWithAi(geminiApiKey, testSms);
+            setAiTestResult(result);
+        } catch (err) {
+            console.error('AI test error:', err);
+            toast.error('AI задлалт амжилтгүй');
+        } finally {
+            setAiTesting(false);
         }
-        return {
-            amount: fallbackAmount,
-            utga: '',
-            bank: 'Тодорхойгүй',
-            matched: false,
-        };
-    }, [testSms, templates]);
+    }, [testSms, geminiApiKey]);
 
     const toggleTemplate = async (tmpl: SmsTemplate) => {
         try {
@@ -301,46 +310,83 @@ export function SmsTemplateSettings({ bizId }: { bizId: string }) {
 
     return (
         <div className="sms-tmpl-container">
-            {/* Test SMS Section */}
+            {/* AI SMS Test Section */}
             <div className="sms-tmpl-card sms-tmpl-test-card">
                 <div className="sms-tmpl-card-header">
                     <div className="sms-tmpl-card-icon test">
-                        <TestTube size={18} />
+                        <Zap size={18} />
                     </div>
                     <div>
-                        <h3>SMS тест</h3>
-                        <p>Банкны мессежийг хуулж paste хийгээд, зөв танигдаж байгаа эсэхийг шалгана уу</p>
+                        <h3>AI SMS Задлалт</h3>
+                        <p>Банкны мессежийг хуулж paste хийнэ үү — AI автоматаар танина</p>
                     </div>
                 </div>
                 <textarea
                     className="sms-tmpl-test-input"
                     placeholder="Банкнаас ирсэн SMS мессежийг энд paste хийнэ үү..."
                     value={testSms}
-                    onChange={e => setTestSms(e.target.value)}
+                    onChange={e => { setTestSms(e.target.value); setAiTestResult(null); }}
                     rows={3}
                 />
-                {testResult && (
-                    <div className={`sms-tmpl-test-result ${testResult.matched ? 'matched' : 'unmatched'}`}>
+                {testSms.trim() && (
+                    <button
+                        className="sms-ai-test-btn"
+                        onClick={handleAiTest}
+                        disabled={aiTesting}
+                    >
+                        {aiTesting ? (
+                            <><Loader2 size={16} className="spin" /> AI задалж байна...</>
+                        ) : (
+                            <><Sparkles size={16} /> AI-аар задлах</>
+                        )}
+                    </button>
+                )}
+                {aiTestResult && (
+                    <div className={`sms-tmpl-test-result ${aiTestResult.confidence !== 'low' ? 'matched' : 'unmatched'}`}>
                         <div className="sms-tmpl-test-result-header">
-                            {testResult.matched ? (
-                                <><Sparkles size={14} /> <span>Амжилттай таниллаа</span></>
+                            {aiTestResult.confidence !== 'low' ? (
+                                <><Sparkles size={14} /> <span>AI амжилттай таниллаа ({aiTestResult.confidence === 'high' ? '🟢 Өндөр' : '🟡 Дунд'} итгэлтэй)</span></>
                             ) : (
-                                <><Search size={14} /> <span>Таниагүй — загвар нэмээрэй</span></>
+                                <><Zap size={14} /> <span>Банкны SMS биш байх магадлалтай</span></>
                             )}
                         </div>
                         <div className="sms-tmpl-test-fields">
                             <div className="sms-tmpl-test-field">
                                 <label>Банк</label>
-                                <span>{testResult.bank}</span>
+                                <span>{aiTestResult.bank}</span>
                             </div>
                             <div className="sms-tmpl-test-field">
                                 <label>Дүн</label>
-                                <span className="amount">{testResult.amount ? testResult.amount.toLocaleString() + '₮' : '—'}</span>
+                                <span className="amount">{aiTestResult.amount ? aiTestResult.amount.toLocaleString() + '₮' : '—'}</span>
                             </div>
                             <div className="sms-tmpl-test-field">
                                 <label>Утга</label>
-                                <span>{testResult.utga || '—'}</span>
+                                <span>{aiTestResult.utga || '—'}</span>
                             </div>
+                            <div className="sms-tmpl-test-field">
+                                <label>Төрөл</label>
+                                <span style={{ color: aiTestResult.isIncome ? '#10b981' : '#ef4444', fontWeight: 700 }}>
+                                    {aiTestResult.isIncome ? '📥 Орлого' : '📤 Зарлага'}
+                                </span>
+                            </div>
+                            {aiTestResult.accountNumber && (
+                                <div className="sms-tmpl-test-field">
+                                    <label>Данс</label>
+                                    <span>{aiTestResult.accountNumber}</span>
+                                </div>
+                            )}
+                            {aiTestResult.balance && (
+                                <div className="sms-tmpl-test-field">
+                                    <label>Үлдэгдэл</label>
+                                    <span>{aiTestResult.balance}</span>
+                                </div>
+                            )}
+                            {aiTestResult.date && (
+                                <div className="sms-tmpl-test-field">
+                                    <label>Огноо</label>
+                                    <span>{aiTestResult.date}</span>
+                                </div>
+                            )}
                         </div>
                     </div>
                 )}
