@@ -155,7 +155,7 @@ export function SmsTemplateSettings({ bizId }: { bizId: string }) {
     useEffect(() => {
         const loadApiKey = async () => {
             try {
-                const snap = await getDoc(doc(db, 'settings', 'global'));
+                const snap = await getDoc(doc(db, 'system_settings', 'global'));
                 const data = snap.data();
                 if (data?.geminiApiKey) setGeminiApiKey(data.geminiApiKey);
             } catch (_e) { /* ignore */ }
