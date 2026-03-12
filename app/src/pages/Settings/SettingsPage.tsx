@@ -882,6 +882,7 @@ function ModuleOrderTab() {
     const [employees, setEmployees] = useState<any[]>([]);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const [selectedEmp, setSelectedEmp] = useState<any>(null);
+    const [empPerms, setEmpPerms] = useState<string[]>([]);
     const [moduleOrder, setModuleOrder] = useState<string[]>([]);
     const [saving, setSaving] = useState(false);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -895,6 +896,26 @@ function ModuleOrderTab() {
             setEmployees((emps as any[]).filter(e => !e.isDeleted));
         });
     }, [business?.id]);
+
+    // When employee selected, fetch their position permissions (like sidebar does)
+    useEffect(() => {
+        if (!selectedEmp || !business?.id) { setEmpPerms([]); return; }
+        const fetchPerms = async () => {
+            if (selectedEmp.positionId) {
+                try {
+                    const { doc: docRef, getDoc } = await import('firebase/firestore');
+                    const posDoc = await getDoc(docRef(db, 'businesses', business!.id, 'positions', selectedEmp.positionId));
+                    if (posDoc.exists()) {
+                        setEmpPerms(posDoc.data().permissions || []);
+                        return;
+                    }
+                } catch (e) { console.warn('[ModuleOrder] fetch position failed:', e); }
+            }
+            // No position or fetch failed — treat as full access
+            setEmpPerms(selectedEmp.permissions || []);
+        };
+        fetchPerms();
+    }, [selectedEmp?.id, selectedEmp?.positionId, business?.id]);
 
     // Load module defaults (same as sidebar)
     useEffect(() => {
@@ -921,7 +942,6 @@ function ModuleOrderTab() {
     // Filter modules per employee — exact same logic as sidebar's filteredNavItems
     const empModules = useMemo(() => {
         if (!selectedEmp) return allModules;
-        const empPerms: string[] = selectedEmp.permissions || [];
         if (empPerms.length === 0) return allModules; // No permissions set = show all (owner-like)
         return allModules.filter(mod => {
             if (mod.id === 'dashboard') return true;
@@ -929,7 +949,7 @@ function ModuleOrderTab() {
             if (!prefixes || prefixes.length === 0) return false;
             return prefixes.some(prefix => empPerms.some((p: string) => p.startsWith(prefix)));
         });
-    }, [selectedEmp, allModules, modulePermissionMap]);
+    }, [selectedEmp, empPerms, allModules, modulePermissionMap]);
 
     useEffect(() => {
         if (!selectedEmp) { setModuleOrder([]); return; }
