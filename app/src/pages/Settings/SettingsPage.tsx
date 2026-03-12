@@ -889,8 +889,9 @@ function ModuleOrderTab() {
     useEffect(() => {
         if (!business?.id) return;
         return teamService.subscribeEmployees(business.id, (emps) => {
+            console.log('[ModuleOrder] raw employees:', emps.length, emps.map(e => ({ name: e.name, status: e.status, isDeleted: e.isDeleted })));
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            setEmployees((emps as any[]).filter(e => !e.isDeleted && e.status === 'active'));
+            setEmployees((emps as any[]).filter(e => !e.isDeleted));
         });
     }, [business?.id]);
 
