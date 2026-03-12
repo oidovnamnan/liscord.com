@@ -382,7 +382,7 @@ function SourcingDetailModal({ order, businessId, settings, onClose, onUpdate }:
 
     // Auto-calculate status based on items
     const computedStatus: SourcingStatus = (() => {
-        if (statusOverride === 'arrived' || statusOverride === 'picked_up' || statusOverride === 'delivered' || statusOverride === 'fulfilled') return statusOverride;
+        if (statusOverride === 'ordered' || statusOverride === 'arrived' || statusOverride === 'picked_up' || statusOverride === 'delivered' || statusOverride === 'fulfilled') return statusOverride;
         if (allItemsOrdered) return 'ordered';
         return 'pending';
     })();
