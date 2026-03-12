@@ -99,6 +99,9 @@ export function SourcingPage() {
                     ...data,
                     id: d.id,
                     items: displayItems,
+                    customerName: data.customer?.name || data.customerName || '',
+                    customerPhone: data.customer?.phone || data.customerPhone || '',
+                    total: data.financials?.totalAmount || data.total || 0,
                     createdAt,
                     sourcing: data.sourcing ? {
                         ...data.sourcing,
