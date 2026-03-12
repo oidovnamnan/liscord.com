@@ -301,7 +301,7 @@ export function DashboardPage() {
                                 <ScanLine size={18} /> Ачаа бүртгэх
                             </a>
                         ) : (
-                            hasModule('orders') && <a href="/app/orders" className="btn btn-primary btn-lg shine-effect">
+                            hasModule('orders') && (isOwner || (employee as any)?.permissions?.includes('orders.create')) && <a href="/app/orders" className="btn btn-primary btn-lg shine-effect">
                                 <ShoppingCart size={18} /> Шинэ захиалга
                             </a>
                         )}
