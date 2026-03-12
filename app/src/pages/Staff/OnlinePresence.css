@@ -1,0 +1,217 @@
+/* ====================================
+   ONLINE PRESENCE PAGE
+   ==================================== */
+
+.online-presence-page {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    padding: 24px;
+    max-width: 1000px;
+    margin: 0 auto;
+}
+
+/* Summary Stats */
+.presence-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+}
+
+.presence-stat-card {
+    background: var(--surface-1);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-lg);
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    position: relative;
+    overflow: hidden;
+}
+
+.presence-stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+}
+
+.presence-stat-card.online::before { background: linear-gradient(90deg, #10b981, #34d399); }
+.presence-stat-card.idle::before { background: linear-gradient(90deg, #f59e0b, #fbbf24); }
+.presence-stat-card.offline::before { background: linear-gradient(90deg, #6b7280, #9ca3af); }
+
+.presence-stat-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.presence-stat-card.online .presence-stat-icon { background: rgba(16, 185, 129, 0.12); color: #10b981; }
+.presence-stat-card.idle .presence-stat-icon { background: rgba(245, 158, 11, 0.12); color: #f59e0b; }
+.presence-stat-card.offline .presence-stat-icon { background: rgba(107, 114, 128, 0.12); color: #6b7280; }
+
+.presence-stat-info { display: flex; flex-direction: column; }
+.presence-stat-value { font-size: 1.6rem; font-weight: 800; color: var(--text-primary); }
+.presence-stat-label { font-size: 0.82rem; color: var(--text-muted); font-weight: 500; }
+
+/* Employee List */
+.presence-employee-list {
+    background: var(--surface-1);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+}
+
+.presence-list-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border-primary);
+}
+
+.presence-list-title {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.presence-list-count {
+    font-size: 0.82rem;
+    color: var(--text-muted);
+    font-weight: 500;
+}
+
+.presence-employee-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--border-primary);
+    transition: background var(--transition-fast);
+}
+
+.presence-employee-row:last-child { border-bottom: none; }
+.presence-employee-row:hover { background: var(--bg-hover); }
+
+/* Avatar with status dot */
+.presence-avatar-wrap {
+    position: relative;
+    flex-shrink: 0;
+}
+
+.presence-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: var(--gradient-primary);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.85rem;
+    font-weight: 700;
+}
+
+.presence-dot {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    border: 2px solid var(--surface-1);
+}
+
+.presence-dot.online { background: #10b981; }
+.presence-dot.idle { background: #f59e0b; }
+.presence-dot.offline { background: #6b7280; }
+
+.presence-dot.online {
+    animation: presencePulse 2s infinite;
+}
+
+@keyframes presencePulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); }
+    50% { box-shadow: 0 0 0 4px rgba(16, 185, 129, 0); }
+}
+
+.presence-emp-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.presence-emp-name {
+    font-size: 0.92rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.presence-emp-position {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    margin-top: 2px;
+}
+
+.presence-emp-status {
+    text-align: right;
+    flex-shrink: 0;
+}
+
+.presence-status-label {
+    font-size: 0.82rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    justify-content: flex-end;
+}
+
+.presence-status-label.online { color: #10b981; }
+.presence-status-label.idle { color: #f59e0b; }
+.presence-status-label.offline { color: #6b7280; }
+
+.presence-last-seen {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    margin-top: 2px;
+}
+
+/* Search / Filter */
+.presence-search {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    background: var(--surface-2);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-md);
+    color: var(--text-muted);
+}
+
+.presence-search input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: var(--text-primary);
+    font-size: 0.9rem;
+    font-family: inherit;
+}
+
+.presence-search input::placeholder { color: var(--text-muted); }
+
+/* Responsive */
+@media (max-width: 768px) {
+    .online-presence-page { padding: 16px; }
+    .presence-stats { grid-template-columns: repeat(3, 1fr); gap: 10px; }
+    .presence-stat-card { padding: 14px; flex-direction: column; text-align: center; gap: 8px; }
+    .presence-stat-value { font-size: 1.3rem; }
+}

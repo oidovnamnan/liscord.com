@@ -709,6 +709,16 @@ export const LISCORD_MODULES: AppModule[] = [
         ]
     },
     {
+        id: 'online-presence',
+        name: 'Онлайн Хяналт',
+        description: 'Ажилтнуудын онлайн төлөв, идэвхжилт',
+        icon: 'Radio',
+        route: '/app/online-presence',
+        isCore: false,
+        category: 'staff',
+        isFree: true,
+    },
+    {
         id: 'expenses-claim',
         name: 'Зардлын Нэхэмжлэл',
         description: 'Ажилтны жижиг зардал',

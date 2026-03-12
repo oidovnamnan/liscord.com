@@ -444,6 +444,11 @@ export const MODULE_PERMISSIONS: Record<string, ModulePermission[]> = {
         { id: 'freelancer.pay', label: 'Төлбөр хийх' },
     ],
 
+    'online-presence': [
+        { id: 'online.view', label: 'Онлайн төлөв харах' },
+        { id: 'online.view_history', label: 'Идэвхжилтийн түүх харах' },
+    ],
+
     // ═══════════════════════════════════════
     // SALES/CRM (52-55)
     // ═══════════════════════════════════════

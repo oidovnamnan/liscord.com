@@ -158,6 +158,7 @@ const TimesheetsPage = lazy(() => import('./pages/HR/TimesheetsPage').then(m => 
 const RemoteTrackerPage = lazy(() => import('./pages/HR/RemoteTrackerPage').then(m => ({ default: m.RemoteTrackerPage })));
 const ExpensesClaimPage = lazy(() => import('./pages/HR/ExpensesClaimPage').then(m => ({ default: m.ExpensesClaimPage })));
 const FreelancerMgtPage = lazy(() => import('./pages/HR/FreelancerMgtPage').then(m => ({ default: m.FreelancerMgtPage })));
+const OnlinePresencePage = lazy(() => import('./pages/Staff/OnlinePresencePage').then(m => ({ default: m.OnlinePresencePage })));
 
 const SuperAdminDashboard = lazy(() => import('./pages/SuperAdmin/SuperAdminDashboard').then(m => ({ default: m.SuperAdminDashboard })));
 const SuperAdminBusinesses = lazy(() => import('./pages/SuperAdmin/SuperAdminBusinesses').then(m => ({ default: m.SuperAdminBusinesses })));
@@ -464,6 +465,7 @@ export default function App() {
             <Route path="remote-tracker" element={<ModuleGuard moduleId="remote-tracker"><RemoteTrackerPage /></ModuleGuard>} />
             <Route path="expenses-claim" element={<ModuleGuard moduleId="expenses-claim"><ExpensesClaimPage /></ModuleGuard>} />
             <Route path="freelancer-mgt" element={<ModuleGuard moduleId="freelancer-mgt"><FreelancerMgtPage /></ModuleGuard>} />
+            <Route path="online-presence" element={<ModuleGuard moduleId="online-presence"><OnlinePresencePage /></ModuleGuard>} />
             <Route path="campaigns" element={<ModuleGuard moduleId="campaigns"><CampaignsPage /></ModuleGuard>} />
             <Route path="loyalty" element={<ModuleGuard moduleId="loyalty"><LoyaltyPage /></ModuleGuard>} />
             <Route path="leads" element={<ModuleGuard moduleId="leads"><LeadsPage /></ModuleGuard>} />

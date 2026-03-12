@@ -3,7 +3,7 @@ import { Header } from '../../components/layout/Header';
 import {
     ShoppingCart, Package, Loader2, ArrowRight, CheckCircle2, ScanLine,
     Truck as TruckIcon, AlertTriangle, Users, FileText, TrendingDown,
-    Clock, CreditCard
+    Clock, CreditCard, Radio, Wifi
 } from 'lucide-react';
 import { useBusinessStore, useAuthStore } from '../../store';
 import { dashboardService, systemSettingsService } from '../../services/db';
@@ -77,6 +77,7 @@ export function DashboardPage() {
     const [recentCustomers, setRecentCustomers] = useState<RecentCustomer[]>([]);
     const [unpaidInvoices, setUnpaidInvoices] = useState<UnpaidInvoice[]>([]);
     const [ordersByStatus, setOrdersByStatus] = useState<Record<string, number>>({});
+    const [onlineEmployees, setOnlineEmployees] = useState<{ id: string; name: string; position?: string }[]>([]);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const [moduleDefaults, setModuleDefaults] = useState<any>({});
 
@@ -222,6 +223,21 @@ export function DashboardPage() {
                             return { id: d.id, invoiceNumber: inv.invoiceNumber, customerName: inv.customerName, totalAmount: inv.totalAmount || 0, dueDate: inv.dueDate?.toDate?.(), status: inv.status };
                         }).slice(0, 5));
                     } catch { setUnpaidInvoices([]); }
+                }
+
+                // 5. Online Employees — only if online-presence module
+                if (visibleModuleIds.has('online-presence')) {
+                    try {
+                        const twoMinAgo = Timestamp.fromDate(new Date(Date.now() - 2 * 60 * 1000));
+                        const empSnap = await getDocs(query(
+                            collection(db, 'businesses', bizId, 'employees'),
+                            where('lastActiveAt', '>=', twoMinAgo)
+                        ));
+                        setOnlineEmployees(empSnap.docs.map(d => {
+                            const data = d.data();
+                            return { id: d.id, name: data.name || 'Нэргүй', position: data.positionName || '' };
+                        }));
+                    } catch { setOnlineEmployees([]); }
                 }
 
             } catch (error) {
@@ -545,8 +561,33 @@ export function DashboardPage() {
                     </div>
                     )}
 
-                    {/* Recent Activity Log */}
+                    {/* Online Employees — only with online-presence module */}
+                    {hasModule('online-presence') && onlineEmployees.length > 0 && (
                     <div className="dashboard-section stagger-item glass-section" style={{ '--index': 11 } as React.CSSProperties}>
+                        <div className="dashboard-section-header">
+                            <h3><Radio size={16} style={{ marginRight: 6 }} />Онлайн ажилтнууд</h3>
+                            <a href="/app/online-presence" className="text-primary text-sm">Бүгд →</a>
+                        </div>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, padding: '12px 16px' }}>
+                            {onlineEmployees.map(emp => (
+                                <div key={emp.id} style={{
+                                    display: 'flex', alignItems: 'center', gap: 8,
+                                    padding: '8px 14px', borderRadius: 12,
+                                    background: 'rgba(16, 185, 129, 0.08)',
+                                    border: '1px solid rgba(16, 185, 129, 0.15)',
+                                    fontSize: '0.85rem'
+                                }}>
+                                    <Wifi size={14} style={{ color: '#10b981' }} />
+                                    <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{emp.name}</span>
+                                    {emp.position && <span style={{ color: 'var(--text-muted)', fontSize: '0.78rem' }}>· {emp.position}</span>}
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                    )}
+
+                    {/* Recent Activity Log */}
+                    <div className="dashboard-section stagger-item glass-section" style={{ '--index': 12 } as React.CSSProperties}>
                         <div className="dashboard-section-header">
                             <h3>Сүүлийн үйлдлүүд</h3>
                             <a href="/app/settings?tab=activity" className="text-primary text-sm">Бүгд →</a>
