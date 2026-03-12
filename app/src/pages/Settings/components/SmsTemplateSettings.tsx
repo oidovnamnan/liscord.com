@@ -94,7 +94,7 @@ function tryParseWithTemplate(template: SmsTemplate, smsBody: string): { amount:
     );
     if (!hasKeyword) return { amount, utga, bank: template.bankName, matched: false };
 
-    // Parse amount
+    // Parse amount — try template pattern first
     try {
         const amountRegex = new RegExp(template.amountPattern, 'i');
         const amountMatch = smsBody.match(amountRegex);
@@ -113,12 +113,26 @@ function tryParseWithTemplate(template: SmsTemplate, smsBody: string): { amount:
         }
     } catch (_e) { /* invalid regex */ }
 
-    // Fallback amount: find largest number > 100 with MNT
+    // Fallback 1: try standard MNT/₮ amount pattern
     if (!matched) {
-        const fallback = smsBody.match(/(\d[\d,]*(?:\.\d{1,2})?)\s*(?:MNT|₮|mnt)/i);
-        if (fallback) {
-            amount = parseFloat(fallback[1].replace(/,/g, ''));
+        const mntFallback = smsBody.match(/(\d[\d,]*(?:\.\d{1,2})?)\s*(?:MNT|₮|mnt)/i);
+        if (mntFallback) {
+            amount = parseFloat(mntFallback[1].replace(/,/g, ''));
             matched = amount > 0;
+        }
+    }
+
+    // Fallback 2: keyword matched but no MNT — find largest number > 100 in SMS
+    if (!matched && hasKeyword) {
+        const numbers = smsBody.match(/\d[\d,]*(?:\.\d{1,2})?/g);
+        if (numbers) {
+            const parsed = numbers
+                .map(n => parseFloat(n.replace(/,/g, '')))
+                .filter(n => n > 100);
+            if (parsed.length > 0) {
+                amount = Math.max(...parsed);
+                matched = true;
+            }
         }
     }
 
@@ -175,8 +189,17 @@ export function SmsTemplateSettings({ bizId }: { bizId: string }) {
         }
         // Fallback generic parse
         const amountMatch = testSms.match(/(\d[\d,]*(?:\.\d{1,2})?)\s*(?:MNT|₮|mnt)/i);
+        let fallbackAmount = amountMatch ? parseFloat(amountMatch[1].replace(/,/g, '')) : 0;
+        // If no MNT match, try largest number > 100
+        if (!fallbackAmount) {
+            const numbers = testSms.match(/\d[\d,]*(?:\.\d{1,2})?/g);
+            if (numbers) {
+                const parsed = numbers.map(n => parseFloat(n.replace(/,/g, ''))).filter(n => n > 100);
+                fallbackAmount = parsed.length > 0 ? Math.max(...parsed) : 0;
+            }
+        }
         return {
-            amount: amountMatch ? parseFloat(amountMatch[1].replace(/,/g, '')) : 0,
+            amount: fallbackAmount,
             utga: '',
             bank: 'Тодорхойгүй',
             matched: false,
