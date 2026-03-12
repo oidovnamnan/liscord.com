@@ -137,9 +137,15 @@ export function Header({ title, subtitle, action, extra }: HeaderProps) {
     // Handle notification click
     const handleNotifClick = (notif: NotifItem) => {
         markAsRead(notif);
-        if (notif.link) {
-            navigate(notif.link);
-            setIsNotifOpen(false);
+        setIsNotifOpen(false);
+        const link = notif.link;
+        if (link) {
+            // Full URL → use window.location, relative path → use navigate
+            if (link.startsWith('http')) {
+                window.location.href = link;
+            } else {
+                navigate(link);
+            }
         }
     };
 
