@@ -8,6 +8,7 @@ import { collection, query, where, onSnapshot, doc, updateDoc, Timestamp } from 
 import { db } from '../../services/firebase';
 import { toast } from 'react-hot-toast';
 import { format } from 'date-fns';
+import { usePermissions } from '../../hooks/usePermissions';
 import './SourcingPage.css';
 
 type SourcingStatus = 'pending' | 'ordered' | 'arrived' | 'picked_up' | 'delivered' | 'fulfilled';
@@ -286,6 +287,7 @@ function SourcingDetailModal({ order, businessId, settings, onClose, onUpdate }:
     onClose: () => void;
     onUpdate: (o: SourcingOrder) => void;
 }) {
+    const { hasPermission } = usePermissions();
     const [saving, setSaving] = useState(false);
     const [trackingNumber, setTrackingNumber] = useState(order.sourcing?.trackingNumber || '');
     const [sourceUrl, setSourceUrl] = useState(order.sourcing?.sourceUrl || '');
@@ -482,6 +484,7 @@ function SourcingDetailModal({ order, businessId, settings, onClose, onUpdate }:
                                         value={statusOverride}
                                         onChange={e => setStatusOverride(e.target.value as SourcingStatus)}
                                         style={{ height: 44 }}
+                                        disabled={!hasPermission('sourcing.update_status')}
                                     >
                                         <option value="pending">Хүлээгдэж буй</option>
                                         <option value="ordered">Захиалсан</option>
@@ -495,17 +498,17 @@ function SourcingDetailModal({ order, businessId, settings, onClose, onUpdate }:
                             </div>
                             <div className="input-group">
                                 <label className="input-label">Tracking №</label>
-                                <input className="input" value={trackingNumber} onChange={e => setTrackingNumber(e.target.value)} placeholder="Илгээмжийн дугаар" style={{ height: 44 }} />
+                                <input className="input" value={trackingNumber} onChange={e => setTrackingNumber(e.target.value)} placeholder="Илгээмжийн дугаар" style={{ height: 44 }} disabled={!hasPermission('sourcing.add_tracking')} />
                             </div>
                         </div>
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
                             <div className="input-group">
                                 <label className="input-label">Source URL</label>
-                                <input className="input" value={sourceUrl} onChange={e => setSourceUrl(e.target.value)} placeholder="Taobao/1688 link" style={{ height: 44 }} />
+                                <input className="input" value={sourceUrl} onChange={e => setSourceUrl(e.target.value)} placeholder="Taobao/1688 link" style={{ height: 44 }} disabled={!hasPermission('sourcing.add_tracking')} />
                             </div>
                             <div className="input-group">
                                 <label className="input-label">Бодит өртөг (¥)</label>
-                                <input className="input" type="number" value={sourceCost || ''} onChange={e => setSourceCost(Number(e.target.value))} placeholder="0" style={{ height: 44 }} />
+                                <input className="input" type="number" value={sourceCost || ''} onChange={e => setSourceCost(Number(e.target.value))} placeholder="0" style={{ height: 44 }} disabled={!hasPermission('sourcing.view_cost')} />
                             </div>
                         </div>
                         <div className="input-group">
@@ -517,7 +520,7 @@ function SourcingDetailModal({ order, businessId, settings, onClose, onUpdate }:
 
                 <div className="modal-footer" style={{ padding: '16px 28px' }}>
                     <button className="btn btn-secondary" onClick={onClose}>Болих</button>
-                    <button className="btn btn-primary gradient-btn" onClick={handleSave} disabled={saving}>
+                    <button className="btn btn-primary gradient-btn" onClick={handleSave} disabled={saving || !hasPermission('sourcing.update_status')}>
                         {saving ? 'Хадгалж байна...' : '💾 Хадгалах'}
                     </button>
                 </div>

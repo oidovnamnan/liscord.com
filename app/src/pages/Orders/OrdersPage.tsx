@@ -17,6 +17,8 @@ import { OrderDetailModal } from './OrderDetailModal';
 import { SendToProviderModal } from './SendToProviderModal';
 import type { Order } from '../../types';
 import { fmt } from '../../utils/format';
+import { usePermissions } from '../../hooks/usePermissions';
+import { PermissionGate } from '../../components/common/PermissionGate';
 import './OrdersPage.css';
 
 
@@ -38,6 +40,7 @@ const sourceIcons: Record<string, string> = {
 
 export function OrdersPage() {
     const { business } = useBusinessStore();
+    const { hasPermission } = usePermissions();
     const [search, setSearch] = useState('');
     const [statusFilter, setStatusFilter] = useState<string>('new');
     const [showCreate, setShowCreate] = useState(false);
@@ -223,14 +226,16 @@ export function OrdersPage() {
                             <p className="page-hero-subtitle">{loading ? 'Уншиж байна...' : `Нийт ${orders.length} захиалга`}</p>
                         </div>
                     </div>
-                    <button
-                        className="btn btn-primary gradient-btn"
-                        onClick={() => setShowCreate(true)}
-                        style={{ height: '42px', padding: '0 20px', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}
-                    >
-                        <Plus size={18} />
-                        <span style={{ fontWeight: 700 }}>Шинэ захиалга</span>
-                    </button>
+                    <PermissionGate permission="orders.create">
+                        <button
+                            className="btn btn-primary gradient-btn"
+                            onClick={() => setShowCreate(true)}
+                            style={{ height: '42px', padding: '0 20px', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}
+                        >
+                            <Plus size={18} />
+                            <span style={{ fontWeight: 700 }}>Шинэ захиалга</span>
+                        </button>
+                    </PermissionGate>
                 </div>
 
                 {/* Stats Grid */}
@@ -456,21 +461,27 @@ export function OrdersPage() {
                                                             <button className="pro-dropdown-item" onClick={() => { setSelectedOrder(order); setOpenMenuId(null); }}>
                                                                 <Package size={14} /> Дэлгэрэнгүй
                                                             </button>
-                                                            <button className="pro-dropdown-item" onClick={() => { setOpenMenuId(null); }}>
-                                                                <CheckSquare size={14} /> Статус солих
-                                                            </button>
-                                                            <hr />
-                                                            <button
-                                                                className="pro-dropdown-item text-danger"
-                                                                onClick={(e) => {
-                                                                    e.stopPropagation();
-                                                                    setDeleteOrderId(order.id);
-                                                                    setShowDeleteModal(true);
-                                                                    setOpenMenuId(null);
-                                                                }}
-                                                            >
-                                                                <Trash2 size={14} /> Устгах
-                                                            </button>
+                                                            {hasPermission('orders.change_status') && (
+                                                                <button className="pro-dropdown-item" onClick={() => { setOpenMenuId(null); }}>
+                                                                    <CheckSquare size={14} /> Статус солих
+                                                                </button>
+                                                            )}
+                                                            {hasPermission('orders.delete') && (
+                                                                <>
+                                                                    <hr />
+                                                                    <button
+                                                                        className="pro-dropdown-item text-danger"
+                                                                        onClick={(e) => {
+                                                                            e.stopPropagation();
+                                                                            setDeleteOrderId(order.id);
+                                                                            setShowDeleteModal(true);
+                                                                            setOpenMenuId(null);
+                                                                        }}
+                                                                    >
+                                                                        <Trash2 size={14} /> Устгах
+                                                                    </button>
+                                                                </>
+                                                            )}
                                                         </div>
                                                     )}
                                                 </div>
@@ -541,21 +552,27 @@ export function OrdersPage() {
                                                             <button className="pro-dropdown-item" onClick={() => { setSelectedOrder(order); setOpenMenuId(null); }}>
                                                                 <Package size={14} /> Дэлгэрэнгүй
                                                             </button>
-                                                            <button className="pro-dropdown-item" onClick={() => { setOpenMenuId(null); }}>
-                                                                <CheckSquare size={14} /> Статус солих
-                                                            </button>
-                                                            <hr />
-                                                            <button
-                                                                className="pro-dropdown-item text-danger"
-                                                                onClick={(e) => {
-                                                                    e.stopPropagation();
-                                                                    setDeleteOrderId(order.id);
-                                                                    setShowDeleteModal(true);
-                                                                    setOpenMenuId(null);
-                                                                }}
-                                                            >
-                                                                <Trash2 size={14} /> Устгах
-                                                            </button>
+                                                            {hasPermission('orders.change_status') && (
+                                                                <button className="pro-dropdown-item" onClick={() => { setOpenMenuId(null); }}>
+                                                                    <CheckSquare size={14} /> Статус солих
+                                                                </button>
+                                                            )}
+                                                            {hasPermission('orders.delete') && (
+                                                                <>
+                                                                    <hr />
+                                                                    <button
+                                                                        className="pro-dropdown-item text-danger"
+                                                                        onClick={(e) => {
+                                                                            e.stopPropagation();
+                                                                            setDeleteOrderId(order.id);
+                                                                            setShowDeleteModal(true);
+                                                                            setOpenMenuId(null);
+                                                                        }}
+                                                                    >
+                                                                        <Trash2 size={14} /> Устгах
+                                                                    </button>
+                                                                </>
+                                                            )}
                                                         </div>
                                                     )}
                                                 </div>
@@ -646,15 +663,21 @@ export function OrdersPage() {
                             <button className="btn-text btn-sm" onClick={() => setSelectedOrderIds(new Set())}>✕</button>
                         </div>
                         <div className="bulk-actions">
-                            <button className="btn btn-primary btn-sm gradient-btn" onClick={() => setShowSendToProviderModal(true)}>
-                                🚚 Илгээх
-                            </button>
-                            <button className="btn btn-secondary btn-sm" onClick={() => setShowBulkStatusModal(true)}>
-                                <Settings size={14} /> Төлөв
-                            </button>
-                            <button className="btn btn-danger btn-sm" onClick={handleBulkDelete}>
-                                <Trash2 size={14} /> Устгах
-                            </button>
+                            {hasPermission('orders.manage_delivery') && (
+                                <button className="btn btn-primary btn-sm gradient-btn" onClick={() => setShowSendToProviderModal(true)}>
+                                    🚚 Илгээх
+                                </button>
+                            )}
+                            {hasPermission('orders.change_status') && (
+                                <button className="btn btn-secondary btn-sm" onClick={() => setShowBulkStatusModal(true)}>
+                                    <Settings size={14} /> Төлөв
+                                </button>
+                            )}
+                            {hasPermission('orders.delete') && (
+                                <button className="btn btn-danger btn-sm" onClick={handleBulkDelete}>
+                                    <Trash2 size={14} /> Устгах
+                                </button>
+                            )}
                         </div>
                     </div>
                 )}

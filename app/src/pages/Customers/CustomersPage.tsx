@@ -8,12 +8,15 @@ import type { Customer } from '../../types';
 import { toast } from 'react-hot-toast';
 import { HubLayout } from '../../components/common/HubLayout';
 import { fmt } from '../../utils/format';
+import { usePermissions } from '../../hooks/usePermissions';
+import { PermissionGate } from '../../components/common/PermissionGate';
 import './CustomersPage.css';
 
 
 
 export function CustomersPage() {
     const { business } = useBusinessStore();
+    const { hasPermission } = usePermissions();
     const [search, setSearch] = useState('');
     const [showCreate, setShowCreate] = useState(false);
     const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
@@ -78,9 +81,11 @@ export function CustomersPage() {
                             <p className="page-hero-subtitle">{loading ? 'Уншиж байна...' : `Нийт ${customers.length} харилцагч`}</p>
                         </div>
                     </div>
-                    <button className="btn btn-primary btn-sm gradient-btn" onClick={() => setShowCreate(true)} style={{ gap: 6 }}>
-                        <Plus size={16} /> Шинэ харилцагч
-                    </button>
+                    <PermissionGate permission="customers.create">
+                        <button className="btn btn-primary btn-sm gradient-btn" onClick={() => setShowCreate(true)} style={{ gap: 6 }}>
+                            <Plus size={16} /> Шинэ харилцагч
+                        </button>
+                    </PermissionGate>
                 </div>
                 <div className="orders-toolbar">
                     <div className="orders-search">
@@ -145,8 +150,12 @@ export function CustomersPage() {
                                         <button className="btn btn-ghost btn-sm btn-icon" onClick={e => { e.stopPropagation(); setMenuId(menuId === c.id ? null : c.id); }}><MoreVertical size={16} /></button>
                                         {menuId === c.id && (
                                             <div ref={menuRef} className="context-menu" style={{ position: 'absolute', right: 0, top: '100%', zIndex: 50, background: 'var(--surface-1)', border: '1px solid var(--border-secondary)', borderRadius: 'var(--radius-md)', padding: 4, minWidth: 140, boxShadow: '0 8px 24px var(--shadow-color)' }}>
-                                                <button className="context-item" style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '8px 12px', border: 'none', background: 'none', color: 'var(--text-primary)', borderRadius: 'var(--radius-sm)', cursor: 'pointer', fontSize: '0.85rem' }} onClick={e => { e.stopPropagation(); setMenuId(null); setEditingCustomer(c); }}><Pencil size={14} /> Засах</button>
-                                                <button className="context-item" style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '8px 12px', border: 'none', background: 'none', color: 'var(--danger)', borderRadius: 'var(--radius-sm)', cursor: 'pointer', fontSize: '0.85rem' }} onClick={e => { e.stopPropagation(); handleDelete(c); }}><Trash2 size={14} /> Устгах</button>
+                                                {hasPermission('customers.edit') && (
+                                                    <button className="context-item" style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '8px 12px', border: 'none', background: 'none', color: 'var(--text-primary)', borderRadius: 'var(--radius-sm)', cursor: 'pointer', fontSize: '0.85rem' }} onClick={e => { e.stopPropagation(); setMenuId(null); setEditingCustomer(c); }}><Pencil size={14} /> Засах</button>
+                                                )}
+                                                {hasPermission('customers.delete') && (
+                                                    <button className="context-item" style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '8px 12px', border: 'none', background: 'none', color: 'var(--danger)', borderRadius: 'var(--radius-sm)', cursor: 'pointer', fontSize: '0.85rem' }} onClick={e => { e.stopPropagation(); handleDelete(c); }}><Trash2 size={14} /> Устгах</button>
+                                                )}
                                             </div>
                                         )}
                                     </div>

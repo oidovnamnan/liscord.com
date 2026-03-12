@@ -2,11 +2,11 @@ import { useBusinessStore, useAuthStore } from '../store';
 import { ALL_PERMISSIONS } from '../types';
 
 export function usePermissions() {
-    const { business, employee } = useBusinessStore();
+    const { business, employee, isImpersonating } = useBusinessStore();
     const { user } = useAuthStore();
 
-    // Owner has all permissions
-    const isOwner = user?.uid === business?.ownerId || employee?.role === 'owner';
+    // Owner has all permissions — but during impersonation, treat as non-owner
+    const isOwner = !isImpersonating && (user?.uid === business?.ownerId || employee?.role === 'owner');
 
     const hasPermission = (permission: string): boolean => {
         if (!user) return false;

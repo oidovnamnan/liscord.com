@@ -9,6 +9,7 @@ import { productService, stockMovementService, warehouseService } from '../../se
 import type { Product, Warehouse, Shelf } from '../../types';
 import { HubLayout } from '../../components/common/HubLayout';
 import { toast } from 'react-hot-toast';
+import { PermissionGate } from '../../components/common/PermissionGate';
 import './InventoryPage.css';
 
 interface StockMovement {
@@ -130,9 +131,11 @@ export function InventoryPage() {
                             <p className="page-hero-subtitle">Барааны орлого, зарлага, нөөцийн түүх</p>
                         </div>
                     </div>
-                    <button className="btn btn-primary btn-sm gradient-btn" onClick={() => setShowAdd(true)} style={{ gap: 6 }}>
-                        <Plus size={16} /> Нөөц нэмэх
-                    </button>
+                    <PermissionGate permission="inventory.adjust">
+                        <button className="btn btn-primary btn-sm gradient-btn" onClick={() => setShowAdd(true)} style={{ gap: 6 }}>
+                            <Plus size={16} /> Нөөц нэмэх
+                        </button>
+                    </PermissionGate>
                 </div>
 
                 {/* ====== Stats Grid — Glassmorphism ====== */}
@@ -266,9 +269,11 @@ export function InventoryPage() {
                             </div>
                             <div className="inv-empty-title">Түүх олдсонгүй</div>
                             <div className="inv-empty-desc">Нөөцийн хөдөлгөөн бүртгэгдээгүй байна</div>
-                            <button className="btn btn-primary btn-sm gradient-btn inv-empty-btn" onClick={() => setShowAdd(true)}>
-                                <Plus size={14} /> Эхний бичлэг нэмэх
-                            </button>
+                            <PermissionGate permission="inventory.adjust">
+                                <button className="btn btn-primary btn-sm gradient-btn inv-empty-btn" onClick={() => setShowAdd(true)}>
+                                    <Plus size={14} /> Эхний бичлэг нэмэх
+                                </button>
+                            </PermissionGate>
                         </div>
                     ) : (
                         filtered.map(m => {

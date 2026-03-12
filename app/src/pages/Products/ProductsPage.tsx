@@ -13,6 +13,8 @@ import { storageService as storage } from '../../services/storage';
 import type { Product, Category, CargoType, ProductVariation } from '../../types';
 import { FBImportModal } from './FBImportModal';
 import { toast } from 'react-hot-toast';
+import { usePermissions } from '../../hooks/usePermissions';
+import { PermissionGate } from '../../components/common/PermissionGate';
 import './ProductsPage.css';
 
 function fmt(n: number) { return '₮' + n.toLocaleString('mn-MN'); }
@@ -21,6 +23,7 @@ export function ProductsPage() {
 
 
     const { business } = useBusinessStore();
+    const { hasPermission } = usePermissions();
     const [search, setSearch] = useState('');
     const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
     const [showCreate, setShowCreate] = useState(false);
@@ -151,22 +154,26 @@ export function ProductsPage() {
                         </div>
                     </div>
                     <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                        <button
-                            className="btn btn-secondary"
-                            onClick={() => setShowFBImport(true)}
-                            style={{ height: '42px', padding: '0 16px', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '8px', background: 'rgba(24, 119, 242, 0.1)', border: '1px solid rgba(24, 119, 242, 0.2)', color: '#1877f2' }}
-                        >
-                            <Facebook size={18} />
-                            <span style={{ fontWeight: 700, fontSize: '0.85rem' }}>FB</span>
-                        </button>
-                        <button
-                            className="btn btn-primary gradient-btn"
-                            onClick={() => setShowCreate(true)}
-                            style={{ height: '42px', padding: '0 20px', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}
-                        >
-                            <Plus size={18} />
-                            <span style={{ fontWeight: 700 }}>Шинэ бараа</span>
-                        </button>
+                        <PermissionGate permission="products.create">
+                            <button
+                                className="btn btn-secondary"
+                                onClick={() => setShowFBImport(true)}
+                                style={{ height: '42px', padding: '0 16px', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '8px', background: 'rgba(24, 119, 242, 0.1)', border: '1px solid rgba(24, 119, 242, 0.2)', color: '#1877f2' }}
+                            >
+                                <Facebook size={18} />
+                                <span style={{ fontWeight: 700, fontSize: '0.85rem' }}>FB</span>
+                            </button>
+                        </PermissionGate>
+                        <PermissionGate permission="products.create">
+                            <button
+                                className="btn btn-primary gradient-btn"
+                                onClick={() => setShowCreate(true)}
+                                style={{ height: '42px', padding: '0 20px', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}
+                            >
+                                <Plus size={18} />
+                                <span style={{ fontWeight: 700 }}>Шинэ бараа</span>
+                            </button>
+                        </PermissionGate>
                     </div>
                 </div>
 
@@ -253,7 +260,7 @@ export function ProductsPage() {
                                 <div className="empty-state-icon">📦</div>
                                 <h3>{products.length === 0 ? 'Одоогоор бараа үүсгээгүй байна' : 'Бараа олдсонгүй'}</h3>
                                 <p>{products.length === 0 ? 'Та "Шинэ бараа" товч дээр дарж анхны бараагаа нэмнэ үү.' : 'Хайлтын нөхцөлөө өөрчилнө үү'}</p>
-                                {products.length === 0 && (
+                                {products.length === 0 && hasPermission('products.create') && (
                                     <button className="btn btn-primary" style={{ marginTop: 20 }} onClick={() => setShowCreate(true)}>
                                         <Plus size={18} /> Шинэ бараа нэмэх
                                     </button>
@@ -289,9 +296,11 @@ export function ProductsPage() {
                                                 <Clock size={16} /> <span className="hide-mobile">Захиалга</span>
                                             </button>
                                             <div className="bulk-divider" />
-                                            <button className="btn btn-secondary btn-sm text-danger" onClick={handleBulkDelete} title="Устгах" disabled={isBulkUpdating}>
-                                                <Trash2 size={16} /> <span className="hide-mobile">Устгах</span>
-                                            </button>
+                                            {hasPermission('products.delete') && (
+                                                <button className="btn btn-secondary btn-sm text-danger" onClick={handleBulkDelete} title="Устгах" disabled={isBulkUpdating}>
+                                                    <Trash2 size={16} /> <span className="hide-mobile">Устгах</span>
+                                                </button>
+                                            )}
                                         </div>
                                     </div>
                                 )}
@@ -351,12 +360,16 @@ export function ProductsPage() {
 
                                                 {openDropdownId === p.id && (
                                                     <div className="product-card-dropdown" onClick={e => e.stopPropagation()}>
-                                                        <div className="dropdown-action-item" onClick={() => { setEditingProduct(p); setOpenDropdownId(null); }}>
-                                                            <Plus size={14} style={{ transform: 'rotate(45deg)' }} /> Засах
-                                                        </div>
-                                                        <div className="dropdown-action-item danger" onClick={() => { handleDelete(p.id); setOpenDropdownId(null); }}>
-                                                            <AlertTriangle size={14} /> Устгах
-                                                        </div>
+                                                        {hasPermission('products.edit') && (
+                                                            <div className="dropdown-action-item" onClick={() => { setEditingProduct(p); setOpenDropdownId(null); }}>
+                                                                <Plus size={14} style={{ transform: 'rotate(45deg)' }} /> Засах
+                                                            </div>
+                                                        )}
+                                                        {hasPermission('products.delete') && (
+                                                            <div className="dropdown-action-item danger" onClick={() => { handleDelete(p.id); setOpenDropdownId(null); }}>
+                                                                <AlertTriangle size={14} /> Устгах
+                                                            </div>
+                                                        )}
                                                     </div>
                                                 )}
                                             </div>
