@@ -8,7 +8,7 @@ import {
 import { useBusinessStore, useAuthStore } from '../../store';
 import { dashboardService, systemSettingsService } from '../../services/db';
 import { auditService } from '../../services/audit';
-import { collection, query, where, getDocs, orderBy, limit, Timestamp } from 'firebase/firestore';
+import { collection, query, where, getDocs, orderBy, limit, Timestamp, onSnapshot } from 'firebase/firestore';
 import { db } from '../../services/firebase';
 import { KPICards } from './components/KPICards';
 import { OrderChart } from './components/OrderChart';
@@ -225,20 +225,7 @@ export function DashboardPage() {
                     } catch { setUnpaidInvoices([]); }
                 }
 
-                // 5. Online Employees — only if online-presence module
-                if (visibleModuleIds.has('online-presence')) {
-                    try {
-                        const twoMinAgo = Timestamp.fromDate(new Date(Date.now() - 2 * 60 * 1000));
-                        const empSnap = await getDocs(query(
-                            collection(db, 'businesses', bizId, 'employees'),
-                            where('lastActiveAt', '>=', twoMinAgo)
-                        ));
-                        setOnlineEmployees(empSnap.docs.map(d => {
-                            const data = d.data();
-                            return { id: d.id, name: data.name || 'Нэргүй', position: data.positionName || '' };
-                        }));
-                    } catch { setOnlineEmployees([]); }
-                }
+                // 5. Online Employees — moved to real-time subscription below
 
             } catch (error) {
                 console.error('Extended data load error:', error);
@@ -261,9 +248,26 @@ export function DashboardPage() {
             setRecentLogs(logs);
         });
 
+        // Online Employees — real-time subscription (updates every heartbeat)
+        let unsubscribeOnline: (() => void) | undefined;
+        if (visibleModuleIds.has('online-presence')) {
+            const twoMinAgo = Timestamp.fromDate(new Date(Date.now() - 2 * 60 * 1000));
+            const onlineQ = query(
+                collection(db, 'businesses', business.id!, 'employees'),
+                where('lastActiveAt', '>=', twoMinAgo)
+            );
+            unsubscribeOnline = onSnapshot(onlineQ, (snap) => {
+                setOnlineEmployees(snap.docs.map(d => {
+                    const data = d.data();
+                    return { id: d.id, name: data.name || 'Нэргүй', position: data.positionName || '' };
+                }));
+            }, () => setOnlineEmployees([]));
+        }
+
         return () => {
             unsubscribeOrders?.();
             unsubscribeLogs();
+            unsubscribeOnline?.();
         };
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [business?.id, visibleModuleIds]);
@@ -562,27 +566,35 @@ export function DashboardPage() {
                     )}
 
                     {/* Online Employees — only with online-presence module */}
-                    {hasModule('online-presence') && onlineEmployees.length > 0 && (
+                    {/* Online Employees — always show when module installed */}
+                    {hasModule('online-presence') && (
                     <div className="dashboard-section stagger-item glass-section" style={{ '--index': 11 } as React.CSSProperties}>
                         <div className="dashboard-section-header">
-                            <h3><Radio size={16} style={{ marginRight: 6 }} />Онлайн ажилтнууд</h3>
+                            <h3><Radio size={16} style={{ marginRight: 6 }} />Онлайн ажилтнууд <span style={{ fontSize: '0.8rem', color: onlineEmployees.length > 0 ? '#10b981' : 'var(--text-muted)', fontWeight: 700, marginLeft: 4 }}>{onlineEmployees.length} онлайн</span></h3>
                             <a href="/app/online-presence" className="text-primary text-sm">Бүгд →</a>
                         </div>
-                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, padding: '12px 16px' }}>
-                            {onlineEmployees.map(emp => (
-                                <div key={emp.id} style={{
-                                    display: 'flex', alignItems: 'center', gap: 8,
-                                    padding: '8px 14px', borderRadius: 12,
-                                    background: 'rgba(16, 185, 129, 0.08)',
-                                    border: '1px solid rgba(16, 185, 129, 0.15)',
-                                    fontSize: '0.85rem'
-                                }}>
-                                    <Wifi size={14} style={{ color: '#10b981' }} />
-                                    <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{emp.name}</span>
-                                    {emp.position && <span style={{ color: 'var(--text-muted)', fontSize: '0.78rem' }}>· {emp.position}</span>}
-                                </div>
-                            ))}
-                        </div>
+                        {onlineEmployees.length > 0 ? (
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, padding: '12px 16px' }}>
+                                {onlineEmployees.map(emp => (
+                                    <div key={emp.id} style={{
+                                        display: 'flex', alignItems: 'center', gap: 8,
+                                        padding: '8px 14px', borderRadius: 12,
+                                        background: 'rgba(16, 185, 129, 0.08)',
+                                        border: '1px solid rgba(16, 185, 129, 0.15)',
+                                        fontSize: '0.85rem'
+                                    }}>
+                                        <Wifi size={14} style={{ color: '#10b981' }} />
+                                        <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{emp.name}</span>
+                                        {emp.position && <span style={{ color: 'var(--text-muted)', fontSize: '0.78rem' }}>· {emp.position}</span>}
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <div style={{ padding: '20px 16px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.88rem' }}>
+                                <Wifi size={20} style={{ opacity: 0.2, marginBottom: 6, display: 'inline-block' }} />
+                                <br />Одоогоор онлайн ажилтан байхгүй
+                            </div>
+                        )}
                     </div>
                     )}
 
