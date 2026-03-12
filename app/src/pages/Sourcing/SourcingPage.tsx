@@ -523,7 +523,7 @@ function SourcingDetailModal({ order, businessId, settings, onClose, onUpdate }:
                                         value={statusOverride}
                                         onChange={e => setStatusOverride(e.target.value as SourcingStatus)}
                                         style={{ height: 44 }}
-                                        disabled={!hasPermission('sourcing.update_status')}
+
                                     >
                                         <option value="pending">Хүлээгдэж буй</option>
                                         <option value="ordered">Захиалсан</option>
@@ -537,17 +537,17 @@ function SourcingDetailModal({ order, businessId, settings, onClose, onUpdate }:
                             </div>
                             <div className="input-group">
                                 <label className="input-label">Tracking №</label>
-                                <input className="input" value={trackingNumber} onChange={e => setTrackingNumber(e.target.value)} placeholder="Илгээмжийн дугаар" style={{ height: 44 }} disabled={!hasPermission('sourcing.add_tracking')} />
+                                <input className="input" value={trackingNumber} onChange={e => setTrackingNumber(e.target.value)} placeholder="Илгээмжийн дугаар" style={{ height: 44 }} />
                             </div>
                         </div>
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
                             <div className="input-group">
                                 <label className="input-label">Source URL</label>
-                                <input className="input" value={sourceUrl} onChange={e => setSourceUrl(e.target.value)} placeholder="Taobao/1688 link" style={{ height: 44 }} disabled={!hasPermission('sourcing.add_tracking')} />
+                                <input className="input" value={sourceUrl} onChange={e => setSourceUrl(e.target.value)} placeholder="Taobao/1688 link" style={{ height: 44 }} />
                             </div>
                             <div className="input-group">
                                 <label className="input-label">Бодит өртөг (¥)</label>
-                                <input className="input" type="number" value={sourceCost || ''} onChange={e => setSourceCost(Number(e.target.value))} placeholder="0" style={{ height: 44 }} disabled={!hasPermission('sourcing.view_cost')} />
+                                <input className="input" type="number" value={sourceCost || ''} onChange={e => setSourceCost(Number(e.target.value))} placeholder="0" style={{ height: 44 }} />
                             </div>
                         </div>
                         <div className="input-group">
@@ -559,7 +559,7 @@ function SourcingDetailModal({ order, businessId, settings, onClose, onUpdate }:
 
                 <div className="modal-footer" style={{ padding: '16px 28px' }}>
                     <button className="btn btn-secondary" onClick={onClose}>Болих</button>
-                    <button className="btn btn-primary gradient-btn" onClick={handleSave} disabled={saving || !hasPermission('sourcing.update_status')}>
+                    <button className="btn btn-primary gradient-btn" onClick={handleSave} disabled={saving}>
                         {saving ? 'Хадгалж байна...' : '💾 Хадгалах'}
                     </button>
                 </div>
