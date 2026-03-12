@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Header } from '../../components/layout/Header';
 import {
     ShoppingCart, Package, Loader2, ArrowRight, CheckCircle2, ScanLine,
@@ -6,7 +6,7 @@ import {
     Clock, CreditCard
 } from 'lucide-react';
 import { useBusinessStore, useAuthStore } from '../../store';
-import { dashboardService } from '../../services/db';
+import { dashboardService, systemSettingsService } from '../../services/db';
 import { auditService } from '../../services/audit';
 import { collection, query, where, getDocs, orderBy, limit, Timestamp } from 'firebase/firestore';
 import { db } from '../../services/firebase';
@@ -14,6 +14,8 @@ import { KPICards } from './components/KPICards';
 import { OrderChart } from './components/OrderChart';
 import type { Order } from '../../types';
 import { fmt } from '../../utils/format';
+import { getVisibleModules } from '../../utils/moduleUtils';
+import { MODULE_PERMISSIONS } from '../../config/modulePermissions';
 import './Dashboard.css';
 
 const statusLabels: Record<string, { label: string; class: string }> = {
@@ -75,6 +77,44 @@ export function DashboardPage() {
     const [recentCustomers, setRecentCustomers] = useState<RecentCustomer[]>([]);
     const [unpaidInvoices, setUnpaidInvoices] = useState<UnpaidInvoice[]>([]);
     const [ordersByStatus, setOrdersByStatus] = useState<Record<string, number>>({});
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const [moduleDefaults, setModuleDefaults] = useState<any>({});
+
+    // Fetch module defaults for permission filtering
+    useEffect(() => {
+        systemSettingsService.getModuleDefaults().then(setModuleDefaults).catch(() => {});
+    }, []);
+
+    // Permission-based module visibility — same logic as Sidebar
+    const isOwner = !isImpersonating && (user?.uid === business?.ownerId || employee?.role === 'owner');
+
+    const modulePermissionMap = useMemo(() => {
+        const map: Record<string, string[]> = {};
+        for (const [moduleId, perms] of Object.entries(MODULE_PERMISSIONS)) {
+            const prefixes = new Set<string>();
+            for (const p of perms) { const d = p.id.indexOf('.'); if (d > 0) prefixes.add(p.id.substring(0, d + 1)); }
+            if (prefixes.size > 0) map[moduleId] = [...prefixes];
+        }
+        map['dashboard'] = ['reports.'];
+        return map;
+    }, []);
+
+    const visibleModuleIds = useMemo(() => {
+        const allModules = getVisibleModules(business, moduleDefaults);
+        if (isOwner) return new Set(allModules.map(m => m.id));
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const empPerms: string[] = (employee as any)?.permissions || [];
+        if (empPerms.length === 0) return new Set(allModules.map(m => m.id));
+        const visible = allModules.filter(mod => {
+            if (mod.id === 'dashboard') return true;
+            const prefixes = modulePermissionMap[mod.id];
+            if (!prefixes || prefixes.length === 0) return false;
+            return prefixes.some(prefix => empPerms.some(p => p.startsWith(prefix)));
+        });
+        return new Set(visible.map(m => m.id));
+    }, [business, moduleDefaults, isOwner, employee, modulePermissionMap]);
+
+    const hasModule = (id: string) => visibleModuleIds.has(id);
 
     useEffect(() => {
         if (!business?.id) return;
@@ -101,104 +141,84 @@ export function DashboardPage() {
             const bizId = business.id;
 
             try {
-                // 1. Low Stock Products
-                const productsSnap = await getDocs(collection(db, 'businesses', bizId, 'products'));
-                const lowStock: LowStockProduct[] = [];
-                productsSnap.docs.forEach(d => {
-                    const p = d.data();
-                    if (p.isDeleted) return;
-                    const stock = p.stock ?? p.quantity ?? 0;
-                    const threshold = p.lowStockThreshold ?? 5;
-                    if (stock <= threshold && !p.isPreorder) {
-                        lowStock.push({
-                            id: d.id,
-                            name: p.name || 'Нэргүй',
-                            stock,
-                            lowStockThreshold: threshold,
-                        });
-                    }
-                });
-                lowStock.sort((a, b) => a.stock - b.stock);
-                setLowStockProducts(lowStock.slice(0, 5));
-
-                // 2. Orders by Status
-                const ordersSnap = await getDocs(query(
-                    collection(db, 'businesses', bizId, 'orders'),
-                    where('isDeleted', '==', false)
-                ));
-                const statusMap: Record<string, number> = {};
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                const productSales: Record<string, { name: string; count: number; revenue: number }> = {};
-
-                ordersSnap.docs.forEach(d => {
-                    const o = d.data();
-                    const status = o.status || 'new';
-                    statusMap[status] = (statusMap[status] || 0) + 1;
-
-                    // Track product sales
-                    if (o.status !== 'cancelled' && o.items) {
-                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                        o.items.forEach((item: any) => {
-                            const pid = item.productId || item.name;
-                            if (!pid) return;
-                            if (!productSales[pid]) {
-                                productSales[pid] = { name: item.name || 'Нэргүй', count: 0, revenue: 0 };
-                            }
-                            productSales[pid].count += item.quantity || 1;
-                            productSales[pid].revenue += (item.price || 0) * (item.quantity || 1);
-                        });
-                    }
-                });
-                setOrdersByStatus(statusMap);
-
-                // 3. Top Products from order items
-                const topProds = Object.entries(productSales)
-                    .map(([id, data]) => ({ id, name: data.name, soldCount: data.count, revenue: data.revenue }))
-                    .sort((a, b) => b.soldCount - a.soldCount)
-                    .slice(0, 5);
-                setTopProducts(topProds);
-
-                // 4. Recent Customers
-                try {
-                    const custSnap = await getDocs(query(
-                        collection(db, 'businesses', bizId, 'customers'),
-                        orderBy('createdAt', 'desc'),
-                        limit(5)
-                    ));
-                    setRecentCustomers(custSnap.docs.map(d => {
-                        const c = d.data();
-                        return {
-                            id: d.id,
-                            name: c.name || 'Нэргүй',
-                            phone: c.phone,
-                            totalOrders: c.totalOrders || 0,
-                            createdAt: c.createdAt?.toDate?.() || new Date(),
-                        };
-                    }));
-                } catch {
-                    // If no index, silently fail
-                    setRecentCustomers([]);
+                // 1. Low Stock Products — only if products/inventory module available
+                if (visibleModuleIds.has('products') || visibleModuleIds.has('inventory')) {
+                    const productsSnap = await getDocs(collection(db, 'businesses', bizId, 'products'));
+                    const lowStock: LowStockProduct[] = [];
+                    productsSnap.docs.forEach(d => {
+                        const p = d.data();
+                        if (p.isDeleted) return;
+                        const stock = p.stock ?? p.quantity ?? 0;
+                        const threshold = p.lowStockThreshold ?? 5;
+                        if (stock <= threshold && !p.isPreorder) {
+                            lowStock.push({ id: d.id, name: p.name || 'Нэргүй', stock, lowStockThreshold: threshold });
+                        }
+                    });
+                    lowStock.sort((a, b) => a.stock - b.stock);
+                    setLowStockProducts(lowStock.slice(0, 5));
                 }
 
-                // 5. Unpaid Invoices
-                try {
-                    const invSnap = await getDocs(query(
-                        collection(db, 'businesses', bizId, 'invoices'),
-                        where('status', '==', 'unpaid')
+                // 2. Orders by Status + Top Products — only if orders module available
+                if (visibleModuleIds.has('orders')) {
+                    const ordersSnap = await getDocs(query(
+                        collection(db, 'businesses', bizId, 'orders'),
+                        where('isDeleted', '==', false)
                     ));
-                    setUnpaidInvoices(invSnap.docs.map(d => {
-                        const inv = d.data();
-                        return {
-                            id: d.id,
-                            invoiceNumber: inv.invoiceNumber,
-                            customerName: inv.customerName,
-                            totalAmount: inv.totalAmount || 0,
-                            dueDate: inv.dueDate?.toDate?.(),
-                            status: inv.status,
-                        };
-                    }).slice(0, 5));
-                } catch {
-                    setUnpaidInvoices([]);
+                    const statusMap: Record<string, number> = {};
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    const productSales: Record<string, { name: string; count: number; revenue: number }> = {};
+
+                    ordersSnap.docs.forEach(d => {
+                        const o = d.data();
+                        const status = o.status || 'new';
+                        statusMap[status] = (statusMap[status] || 0) + 1;
+                        if (o.status !== 'cancelled' && o.items) {
+                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                            o.items.forEach((item: any) => {
+                                const pid = item.productId || item.name;
+                                if (!pid) return;
+                                if (!productSales[pid]) productSales[pid] = { name: item.name || 'Нэргүй', count: 0, revenue: 0 };
+                                productSales[pid].count += item.quantity || 1;
+                                productSales[pid].revenue += (item.price || 0) * (item.quantity || 1);
+                            });
+                        }
+                    });
+                    setOrdersByStatus(statusMap);
+
+                    const topProds = Object.entries(productSales)
+                        .map(([id, data]) => ({ id, name: data.name, soldCount: data.count, revenue: data.revenue }))
+                        .sort((a, b) => b.soldCount - a.soldCount)
+                        .slice(0, 5);
+                    setTopProducts(topProds);
+                }
+
+                // 3. Recent Customers — only if customers module
+                if (visibleModuleIds.has('customers')) {
+                    try {
+                        const custSnap = await getDocs(query(
+                            collection(db, 'businesses', bizId, 'customers'),
+                            orderBy('createdAt', 'desc'),
+                            limit(5)
+                        ));
+                        setRecentCustomers(custSnap.docs.map(d => {
+                            const c = d.data();
+                            return { id: d.id, name: c.name || 'Нэргүй', phone: c.phone, totalOrders: c.totalOrders || 0, createdAt: c.createdAt?.toDate?.() || new Date() };
+                        }));
+                    } catch { setRecentCustomers([]); }
+                }
+
+                // 4. Unpaid Invoices — only if finance module
+                if (visibleModuleIds.has('finance')) {
+                    try {
+                        const invSnap = await getDocs(query(
+                            collection(db, 'businesses', bizId, 'invoices'),
+                            where('status', '==', 'unpaid')
+                        ));
+                        setUnpaidInvoices(invSnap.docs.map(d => {
+                            const inv = d.data();
+                            return { id: d.id, invoiceNumber: inv.invoiceNumber, customerName: inv.customerName, totalAmount: inv.totalAmount || 0, dueDate: inv.dueDate?.toDate?.(), status: inv.status };
+                        }).slice(0, 5));
+                    } catch { setUnpaidInvoices([]); }
                 }
 
             } catch (error) {
@@ -209,22 +229,28 @@ export function DashboardPage() {
         loadDashboard();
         loadExtendedData();
 
-        // Recent orders subscription
-        const unsubscribeOrders = dashboardService.subscribeRecentOrders(business.id!, (orders) => {
-            setRecentOrders(orders);
+        // Recent orders subscription — only if orders module
+        let unsubscribeOrders: (() => void) | undefined;
+        if (visibleModuleIds.has('orders')) {
+            unsubscribeOrders = dashboardService.subscribeRecentOrders(business.id!, (orders) => {
+                setRecentOrders(orders);
+                setLoading(false);
+            });
+        } else {
             setLoading(false);
-        });
+        }
 
-        // Recent activity logs subscription
+        // Recent activity logs subscription — always visible
         const unsubscribeLogs = auditService.subscribeAuditLogs(business.id!, 10, (logs) => {
             setRecentLogs(logs);
         });
 
         return () => {
-            unsubscribeOrders();
+            unsubscribeOrders?.();
             unsubscribeLogs();
         };
-    }, [business?.id]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [business?.id, visibleModuleIds]);
 
     if (loading || !stats) {
         return (
@@ -255,22 +281,22 @@ export function DashboardPage() {
                     </div>
                     <div className="dashboard-hero-action hide-mobile">
                         {business?.category === 'cargo' ? (
-                            <a href="/app/packages" className="btn btn-primary btn-lg shine-effect">
+                            hasModule('packages') && <a href="/app/packages" className="btn btn-primary btn-lg shine-effect">
                                 <ScanLine size={18} /> Ачаа бүртгэх
                             </a>
                         ) : (
-                            <a href="/app/orders" className="btn btn-primary btn-lg shine-effect">
+                            hasModule('orders') && <a href="/app/orders" className="btn btn-primary btn-lg shine-effect">
                                 <ShoppingCart size={18} /> Шинэ захиалга
                             </a>
                         )}
                     </div>
                 </div>
 
-                {/* KPI Cards */}
-                <KPICards stats={stats} category={business?.category} />
+                {/* KPI Cards — filtered by permissions */}
+                <KPICards stats={stats} category={business?.category} visibleModuleIds={visibleModuleIds} />
 
-                {/* Order Status Summary Bar */}
-                {(pendingOrders > 0 || preparingOrders > 0 || shippingOrders > 0) && (
+                {/* Order Status Summary Bar — only with orders module */}
+                {hasModule('orders') && (pendingOrders > 0 || preparingOrders > 0 || shippingOrders > 0) && (
                     <div className="dash-status-bar">
                         {pendingOrders > 0 && (
                             <a href="/app/orders" className="dash-status-chip chip-pending">
@@ -293,8 +319,8 @@ export function DashboardPage() {
                     </div>
                 )}
 
-                {/* Chart — Full Width */}
-                <OrderChart />
+                {/* Chart — only with orders module */}
+                {hasModule('orders') && <OrderChart />}
 
                 {/* Getting Started for New Businesses */}
                 {isNewBusiness && (
@@ -337,9 +363,11 @@ export function DashboardPage() {
                     </div>
                 )}
 
-                {/* Row 1: Orders + Low Stock */}
+                {/* Row 1: Orders + Low Stock — guarded by module permissions */}
+                {(hasModule('orders') || hasModule('products') || hasModule('inventory')) && (
                 <div className="dashboard-bottom-grid">
                     {/* Recent Orders */}
+                    {hasModule('orders') && (
                     <div className="dashboard-section stagger-item glass-section" style={{ '--index': 6 } as React.CSSProperties}>
                         <div className="dashboard-section-header">
                             <h3><ShoppingCart size={18} className="text-primary inline-mr" /> Сүүлийн захиалгууд</h3>
@@ -373,8 +401,10 @@ export function DashboardPage() {
                             )}
                         </div>
                     </div>
+                    )}
 
-                    {/* Low Stock Alert */}
+                    {/* Low Stock Alert — requires products or inventory module */}
+                    {(hasModule('products') || hasModule('inventory')) && (
                     <div className="dashboard-section stagger-item glass-section" style={{ '--index': 7 } as React.CSSProperties}>
                         <div className="dashboard-section-header">
                             <h3><AlertTriangle size={18} style={{ color: 'var(--accent-orange)', marginRight: 8 }} /> Нөөц дуусаж буй</h3>
@@ -402,11 +432,15 @@ export function DashboardPage() {
                             )}
                         </div>
                     </div>
+                    )}
                 </div>
+                )}
 
-                {/* Row 2: Top Products + Recent Customers */}
+                {/* Row 2: Top Products + Recent Customers — guarded */}
+                {(hasModule('orders') || hasModule('customers')) && (
                 <div className="dashboard-bottom-grid">
-                    {/* Top Selling Products */}
+                    {/* Top Selling Products — requires orders module */}
+                    {hasModule('orders') && (
                     <div className="dashboard-section stagger-item glass-section" style={{ '--index': 8 } as React.CSSProperties}>
                         <div className="dashboard-section-header">
                             <h3><TrendingDown size={18} style={{ color: 'var(--accent-green)', marginRight: 8, transform: 'scaleY(-1)' }} /> Шилдэг бүтээгдэхүүн</h3>
@@ -433,8 +467,10 @@ export function DashboardPage() {
                             )}
                         </div>
                     </div>
+                    )}
 
-                    {/* Recent Customers */}
+                    {/* Recent Customers — requires customers module */}
+                    {hasModule('customers') && (
                     <div className="dashboard-section stagger-item glass-section" style={{ '--index': 9 } as React.CSSProperties}>
                         <div className="dashboard-section-header">
                             <h3><Users size={18} style={{ color: 'var(--secondary)', marginRight: 8 }} /> Сүүлийн харилцагчид</h3>
@@ -466,11 +502,14 @@ export function DashboardPage() {
                             )}
                         </div>
                     </div>
+                    )}
                 </div>
+                )}
 
                 {/* Row 3: Unpaid Invoices + Activity */}
                 <div className="dashboard-bottom-grid">
-                    {/* Unpaid Invoices */}
+                    {/* Unpaid Invoices — requires finance module */}
+                    {hasModule('finance') && (
                     <div className="dashboard-section stagger-item glass-section" style={{ '--index': 10 } as React.CSSProperties}>
                         <div className="dashboard-section-header">
                             <h3><CreditCard size={18} style={{ color: 'var(--accent-orange)', marginRight: 8 }} /> Төлөгдөөгүй нэхэмжлэл</h3>
@@ -504,6 +543,7 @@ export function DashboardPage() {
                             )}
                         </div>
                     </div>
+                    )}
 
                     {/* Recent Activity Log */}
                     <div className="dashboard-section stagger-item glass-section" style={{ '--index': 11 } as React.CSSProperties}>
