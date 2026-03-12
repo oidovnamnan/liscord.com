@@ -270,7 +270,8 @@ export function FBImportModal({ onClose }: FBImportModalProps) {
 
                 console.log('[FB Import] Creating product:', product.name, 'images:', finalImages.length);
 
-                await productService.createProduct(business.id, {
+                // Build product data, removing undefined values (Firestore rejects them)
+                const productData: Record<string, any> = {
                     name: product.name,
                     description: product.description,
                     categoryId,
@@ -279,9 +280,9 @@ export function FBImportModal({ onClose }: FBImportModalProps) {
                     barcode: '',
                     images: finalImages,
                     pricing: {
-                        salePrice: product.salePrice,
-                        costPrice: product.costPrice,
-                        wholesalePrice: product.salePrice
+                        salePrice: product.salePrice || 0,
+                        costPrice: product.costPrice || 0,
+                        wholesalePrice: product.salePrice || 0
                     },
                     productType: importProductType,
                     stock: {
@@ -289,23 +290,33 @@ export function FBImportModal({ onClose }: FBImportModalProps) {
                         lowStockThreshold: 3,
                         trackInventory: importProductType === 'ready'
                     },
-                    cargoFee: product.cargoFee ? {
-                        amount: product.cargoFee,
-                        isIncluded: false,
-                        cargoTypeId: product.cargoTypeId,
-                        cargoValue: product.cargoFee,
-                    } : undefined,
-                    variations: (product.variations && product.variations.length > 0) ? product.variations as any : [],
+                    variations: (product.variations && product.variations.length > 0) ? product.variations : [],
                     unitType: 'ш',
                     isActive: true,
                     isHidden: importAsHidden,
                     stats: { totalSold: 0, totalRevenue: 0 },
                     isDeleted: false
-                });
+                };
+
+                // Only add cargoFee if it exists (avoid undefined in Firestore)
+                if (product.cargoFee && product.cargoFee > 0) {
+                    productData.cargoFee = {
+                        amount: product.cargoFee,
+                        isIncluded: false,
+                        cargoTypeId: product.cargoTypeId || '',
+                        cargoValue: product.cargoFee,
+                    };
+                }
+
+                await productService.createProduct(business.id, productData);
                 console.log('[FB Import] Product created successfully:', product.name);
                 success++;
-            } catch (error) {
+            } catch (error: any) {
                 console.error('[FB Import] Product creation FAILED:', product.name, error);
+                if (failed === 0) {
+                    // Capture first error for display
+                    toast.error(`Алдаа: ${error?.message || error}`);
+                }
                 failed++;
             }
         }
