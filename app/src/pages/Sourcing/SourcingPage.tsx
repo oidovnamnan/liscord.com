@@ -217,53 +217,76 @@ export function SourcingPage() {
                 </select>
             </div>
 
-            {/* Table */}
-            <div className="proc-table-container">
+            {/* Orders List — Premium Cards */}
+            <div className="sourcing-orders-list">
                 {loading ? (
-                    <div className="proc-loading"><Loader2 size={36} className="animate-spin" /><p className="proc-loading-text">Ачаалж байна...</p></div>
+                    <div className="sourcing-loading"><Loader2 size={36} className="animate-spin" /><p>Ачаалж байна...</p></div>
                 ) : filtered.length === 0 ? (
-                    <div className="proc-empty-state" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: 300, textAlign: 'center' }}>
-                        <div className="proc-empty-icon"><Globe size={48} /></div>
-                        <div className="proc-empty-title" style={{ marginTop: 16 }}>Сорсинг захиалга олдсонгүй</div>
-                        <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginTop: 8 }}>Төлбөр төлөгдсөн pre-order захиалга ирэхэд энд харагдана</p>
+                    <div className="sourcing-empty">
+                        <div className="sourcing-empty-icon"><Globe size={48} /></div>
+                        <h3>Сорсинг захиалга олдсонгүй</h3>
+                        <p>Төлбөр баталгаажсан захиалга ирэхэд энд харагдана</p>
                     </div>
                 ) : (
-                    <table className="proc-table">
-                        <thead>
-                            <tr>
-                                <th>Захиалга</th>
-                                <th>Огноо</th>
-                                <th>Харилцагч</th>
-                                <th>Бараа</th>
-                                <th>Нийт тоо</th>
-                                <th>Дүн</th>
-                                <th>Явц</th>
-                                <th>Статус</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {filtered.map(order => {
-                                const s = getSourcingStatus(order);
-                                const statusInfo = STATUS_LABELS[s];
-                                return (
-                                    <tr key={order.id} style={{ cursor: 'pointer' }} onClick={() => setSelectedOrder(order)}>
-                                        <td><span className="proc-po-code">#{(order.orderNumber || order.id.slice(0, 6)).toUpperCase()}</span></td>
-                                        <td>{order.createdAt ? format(order.createdAt, 'MM/dd HH:mm') : '—'}</td>
-                                        <td className="proc-supplier">{order.customerName || 'Тодорхойгүй'}</td>
-                                        <td>{order.items.length} төрөл</td>
-                                        <td><strong>{getTotalQty(order)}ш</strong></td>
-                                        <td className="proc-amount">₮{(order.total || 0).toLocaleString()}</td>
-                                        <td><span className="sourcing-progress">{getItemProgress(order)}</span></td>
-                                        <td>
-                                            <span className="proc-status" style={{ background: statusInfo.color + '18', color: statusInfo.color, borderColor: statusInfo.color + '30' }}>
-                                                {statusInfo.label}
-                                            </span>
-                                        </td>
-                                    </tr>
-                                );
-                            })}
-                        </tbody>
-                    </table>
+                    filtered.map(order => {
+                        const s = getSourcingStatus(order);
+                        const statusInfo = STATUS_LABELS[s];
+                        const StatusIcon = statusInfo.icon;
+                        const progress = getItemProgress(order);
+                        const [done, total] = progress.split('/').map(Number);
+                        const progressPercent = total > 0 ? (done / total) * 100 : 0;
+                        const totalQty = getTotalQty(order);
+
+                        return (
+                            <div
+                                key={order.id}
+                                className={`sourcing-order-card ${s}`}
+                                onClick={() => setSelectedOrder(order)}
+                            >
+                                <div className="sourcing-card-left">
+                                    <div className="sourcing-card-avatar" style={{ background: statusInfo.color + '18', color: statusInfo.color }}>
+                                        <StatusIcon size={18} />
+                                    </div>
+                                    <div className="sourcing-card-info">
+                                        <div className="sourcing-card-top">
+                                            <span className="sourcing-card-order">#{(order.orderNumber || order.id.slice(0, 6)).toUpperCase()}</span>
+                                            <span className="sourcing-card-date">{order.createdAt ? format(order.createdAt, 'MM/dd HH:mm') : '—'}</span>
+                                        </div>
+                                        <div className="sourcing-card-customer">{order.customerName || 'Тодорхойгүй'}</div>
+                                        {order.customerPhone && <div className="sourcing-card-phone">{order.customerPhone}</div>}
+                                    </div>
+                                </div>
+
+                                <div className="sourcing-card-meta">
+                                    <div className="sourcing-card-items">
+                                        <Package size={13} />
+                                        <span>{order.items.length} төрөл · {totalQty}ш</span>
+                                    </div>
+                                    <div className="sourcing-card-amount">₮{(order.total || 0).toLocaleString()}</div>
+                                </div>
+
+                                <div className="sourcing-card-progress-section">
+                                    <div className="sourcing-card-progress-header">
+                                        <span className="sourcing-card-progress-label">Явц</span>
+                                        <span className="sourcing-card-progress-value">{progress}</span>
+                                    </div>
+                                    <div className="sourcing-card-progress-bar">
+                                        <div
+                                            className="sourcing-card-progress-fill"
+                                            style={{ width: `${progressPercent}%`, background: progressPercent === 100 ? 'var(--accent-green)' : statusInfo.color }}
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="sourcing-card-status">
+                                    <span className="sourcing-card-badge" style={{ background: statusInfo.color + '14', color: statusInfo.color, borderColor: statusInfo.color + '30' }}>
+                                        <StatusIcon size={12} />
+                                        {statusInfo.label}
+                                    </span>
+                                </div>
+                            </div>
+                        );
+                    })
                 )}
             </div>
 
