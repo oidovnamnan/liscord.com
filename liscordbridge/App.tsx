@@ -20,7 +20,7 @@ import { Camera, useCameraDevice, useCodeScanner } from 'react-native-vision-cam
 
 // Firestore REST API base URL for direct document creation
 const FIRESTORE_BASE = 'https://firestore.googleapis.com/v1/projects/liscord-2b529/databases/(default)/documents';
-const APP_VERSION = '1.1';
+const APP_VERSION = '1.2';
 
 const sleep = (time: number) => new Promise<void>((resolve) => setTimeout(() => resolve(), time));
 
@@ -334,17 +334,26 @@ const App = () => {
     loadPairingKey();
     loadSettings();
     loadForwardCount();
-    // Restore running state from actual background service
-    const checkServiceStatus = async () => {
+    // Auto-start: if pairing key exists but background service isn't running, start it
+    const autoStartService = async () => {
       try {
         const running = BackgroundService.isRunning();
         if (running) {
           setIsRunning(true);
           addLog('🔄 Дамжуулалт ажиллаж байна (сэргээгдлээ)');
+        } else {
+          // Check if we have a pairing key — if so, auto-start
+          const key = await AsyncStorage.getItem('LiscordPairingKey');
+          if (key) {
+            addLog('🚀 Автомат эхлүүлж байна...');
+            await BackgroundService.start(backgroundTask, backgroundTaskOptions);
+            setIsRunning(true);
+            addLog('✅ Дамжуулалт автоматаар эхэллээ');
+          }
         }
       } catch (_e) { /* ignore */ }
     };
-    checkServiceStatus();
+    autoStartService();
   }, []);
 
   // Keep refs AND module-level vars in sync
