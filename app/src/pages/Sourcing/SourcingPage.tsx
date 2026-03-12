@@ -459,6 +459,14 @@ function SourcingDetailModal({ order, businessId, settings, onClose, onUpdate }:
                                     {copiedField === 'recipient' ? 'Хуулсан!' : 'Хуулах'}
                                 </button>
                             </div>
+                            <div className="sourcing-copy-block" style={{ background: 'linear-gradient(135deg, rgba(108,92,231,0.06) 0%, rgba(0,206,158,0.06) 100%)', borderColor: 'var(--primary)', borderStyle: 'dashed' }}>
+                                <div className="sourcing-copy-label">🏷️ Таних код</div>
+                                <div className="sourcing-copy-value" style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--primary)', letterSpacing: '0.5px' }}>{autoLabel}</div>
+                                <button className="sourcing-copy-btn" onClick={() => handleCopy(autoLabel, 'label')}>
+                                    {copiedField === 'label' ? <Check size={14} /> : <Copy size={14} />}
+                                    {copiedField === 'label' ? 'Хуулсан!' : 'Хуулах'}
+                                </button>
+                            </div>
                             <div className="sourcing-copy-block">
                                 <div className="sourcing-copy-label">📋 Хаяг (карго шошго)</div>
                                 <div className="sourcing-copy-value">{addressText}</div>
