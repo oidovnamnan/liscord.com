@@ -390,7 +390,8 @@ function SourcingDetailModal({ order, businessId, settings, onClose, onUpdate }:
     const handleSave = async () => {
         setSaving(true);
         try {
-            const finalStatus = computedStatus;
+            // Use the status the admin selected directly
+            const finalStatus = statusOverride;
             const sourcingData = {
                 status: finalStatus,
                 items: Object.fromEntries(
