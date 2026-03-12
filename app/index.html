@@ -20,18 +20,62 @@
 <body>
   <div id="root"></div>
   <script>
-    // Stale chunk recovery: auto-reload when old JS chunks fail to load after deploy
-    window.addEventListener('error', function (e) {
-      if (e.message && e.message.includes('Failed to fetch dynamically imported module') ||
-        e.target && e.target.tagName === 'SCRIPT') {
-        var key = 'liscord_chunk_reload';
-        var last = sessionStorage.getItem(key);
-        if (!last || Date.now() - Number(last) > 10000) {
-          sessionStorage.setItem(key, Date.now().toString());
+    // ═══ Stale Chunk Recovery (Pre-React) ═══
+    // After Vercel deploys new code, old hashed JS chunks are deleted.
+    // If a user has a stale tab, the entry-point module script fails to load.
+    // This inline script detects that failure and auto-reloads ONCE.
+    (function() {
+      var RELOAD_KEY = 'liscord_chunk_reload';
+      var COOLDOWN_MS = 10000; // 10 seconds between reloads
+
+      function shouldReload() {
+        var last = sessionStorage.getItem(RELOAD_KEY);
+        return !last || (Date.now() - Number(last)) > COOLDOWN_MS;
+      }
+
+      function doReload() {
+        if (shouldReload()) {
+          sessionStorage.setItem(RELOAD_KEY, Date.now().toString());
           window.location.reload();
         }
       }
-    }, true);
+
+      // 1. Catch module script load errors (capture phase)
+      window.addEventListener('error', function(e) {
+        var el = e.target || e.srcElement;
+        // Script/link element failed to load
+        if (el && (el.tagName === 'SCRIPT' || el.tagName === 'LINK')) {
+          doReload();
+        }
+        // Error message about dynamic imports
+        if (e.message && (
+          e.message.indexOf('Failed to fetch dynamically imported module') !== -1 ||
+          e.message.indexOf('Loading chunk') !== -1 ||
+          e.message.indexOf('text/html') !== -1 ||
+          e.message.indexOf('Failed to load module script') !== -1
+        )) {
+          doReload();
+        }
+      }, true); // ← capture phase = catches script load errors
+
+      // 2. Catch dynamic import() rejections (lazy-loaded routes)
+      window.addEventListener('unhandledrejection', function(e) {
+        var reason = (e.reason && e.reason.message) ? e.reason.message : String(e.reason || '');
+        if (
+          reason.indexOf('Failed to fetch dynamically imported module') !== -1 ||
+          reason.indexOf('Loading chunk') !== -1 ||
+          reason.indexOf('text/html') !== -1 ||
+          reason.indexOf('Load failed') !== -1
+        ) {
+          doReload();
+        }
+      });
+
+      // 3. Vite-specific preload error
+      window.addEventListener('vite:preloadError', function() {
+        doReload();
+      });
+    })();
   </script>
   <script type="module" src="/src/main.tsx"></script>
 </body>
