@@ -32,7 +32,7 @@ const UNIVERSAL_OPTIONAL = [
     'analytics', 'custom-reports', 'notes', 'documents', 'data-backup',
     'announcements', 'internal-chat', 'email-smtp', 'push-notifications',
     'audit-trail', 'role-manager', 'access-policy', 'two-factor-auth',
-    'sso', 'pass-manager', 'ip-whitelist',
+    'sso', 'pass-manager', 'ip-whitelist', 'online-presence',
 ];
 
 // ═══════════════════════════════════════════════════════════════
