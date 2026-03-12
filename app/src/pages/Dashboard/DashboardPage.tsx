@@ -119,7 +119,7 @@ export function DashboardPage() {
     useEffect(() => {
         if (!business?.id) return;
 
-        setTimeout(() => setLoading(true), 0);
+        setLoading(true);
 
         async function loadDashboard() {
             if (!business?.id) return;
@@ -133,6 +133,9 @@ export function DashboardPage() {
                 });
             } catch (error) {
                 console.error('Stats load error:', error);
+                setStats({ totalOrders: 0, totalRevenue: 0, totalCustomers: 0, totalProducts: 0 });
+            } finally {
+                setLoading(false);
             }
         }
 
@@ -234,10 +237,7 @@ export function DashboardPage() {
         if (visibleModuleIds.has('orders')) {
             unsubscribeOrders = dashboardService.subscribeRecentOrders(business.id!, (orders) => {
                 setRecentOrders(orders);
-                setLoading(false);
             });
-        } else {
-            setLoading(false);
         }
 
         // Recent activity logs subscription — always visible
