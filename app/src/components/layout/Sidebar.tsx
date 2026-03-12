@@ -253,10 +253,13 @@ export function Sidebar() {
         return items;
     }, [business?.activeModules, business?.moduleSubscriptions, business?.category, moduleDefaults, isOwner, isImpersonating, employee, modulePermissionMap]);
 
-    // Sort modules by admin-configured order
+    // Sort modules by admin-configured order (per-employee first, then global fallback)
     const sortedNavItems = useMemo(() => {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const moduleOrder: string[] = (business as any)?.moduleOrder || [];
+        const empOrder: string[] = (employee as any)?.moduleOrder || [];
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const bizOrder: string[] = (business as any)?.moduleOrder || [];
+        const moduleOrder = empOrder.length > 0 ? empOrder : bizOrder;
         if (moduleOrder.length === 0) return filteredNavItems;
         
         return [...filteredNavItems].sort((a, b) => {
@@ -267,7 +270,7 @@ export function Sidebar() {
             const posB = idxB >= 0 ? idxB : moduleOrder.length + filteredNavItems.indexOf(b);
             return posA - posB;
         });
-    }, [filteredNavItems, (business as any)?.moduleOrder]);
+    }, [filteredNavItems, (employee as any)?.moduleOrder, (business as any)?.moduleOrder]);
 
     const hasMultipleBusinesses = (userBusinesses.length > 1);
 

@@ -12,6 +12,8 @@ import { ImageUpload } from '../../components/common/ImageUpload';
 import * as Icons from 'lucide-react';
 import { LISCORD_MODULES } from '../../config/modules';
 import { isSubscriptionExpired } from '../../utils/moduleUtils';
+import { MODULE_PERMISSIONS } from '../../config/modulePermissions';
+import { db } from '../../services/firebase';
 
 import { ActivityTab } from './components/ActivityTab';
 import { PaymentTab } from './components/PaymentTab';
@@ -873,122 +875,125 @@ export function SettingsPage() {
 }
 
 function ModuleOrderTab() {
-    const { business, setBusiness } = useBusinessStore();
+    const { business } = useBusinessStore();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const [employees, setEmployees] = useState<any[]>([]);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const [selectedEmp, setSelectedEmp] = useState<any>(null);
+    const [moduleOrder, setModuleOrder] = useState<string[]>([]);
     const [saving, setSaving] = useState(false);
 
-    const activeModules = useMemo(() => {
+    useEffect(() => {
+        if (!business?.id) return;
+        const { collection: col, query: q, where: w, onSnapshot: snap } = require('firebase/firestore');
+        const qry = q(col(db, 'businesses', business.id, 'employees'), w('isDeleted', '==', false), w('status', '==', 'active'));
+        return snap(qry, (s: any) => setEmployees(s.docs.map((d: any) => ({ id: d.id, ...d.data() }))));
+    }, [business?.id]);
+
+    const allModules = useMemo(() => {
         const allIds = new Set<string>(business?.activeModules || []);
-        if (business?.moduleSubscriptions) {
-            Object.keys(business.moduleSubscriptions).forEach(id => allIds.add(id));
-        }
+        if (business?.moduleSubscriptions) Object.keys(business.moduleSubscriptions).forEach(id => allIds.add(id));
         return LISCORD_MODULES.filter(m => allIds.has(m.id) && m.placement !== 'settings');
     }, [business?.activeModules, business?.moduleSubscriptions]);
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const [moduleOrder, setModuleOrder] = useState<string[]>(() => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const saved = (business as any)?.moduleOrder || [];
-        if (saved.length > 0) return saved;
-        return activeModules.map(m => m.id);
-    });
+    const empModules = useMemo(() => {
+        if (!selectedEmp) return allModules;
+        const empPerms: string[] = selectedEmp.permissions || [];
+        const modulePermMap: Record<string, string[]> = {};
+        for (const [moduleId, perms] of Object.entries(MODULE_PERMISSIONS)) {
+            const prefixes = new Set<string>();
+            for (const p of perms) { const d = p.id.indexOf('.'); if (d > 0) prefixes.add(p.id.substring(0, d + 1)); }
+            if (prefixes.size > 0) modulePermMap[moduleId] = [...prefixes];
+        }
+        modulePermMap['dashboard'] = ['reports.'];
+        return allModules.filter(mod => {
+            if (mod.id === 'dashboard') return true;
+            const prefixes = modulePermMap[mod.id];
+            if (!prefixes) return false;
+            return prefixes.some(prefix => empPerms.some(p => p.startsWith(prefix)));
+        });
+    }, [selectedEmp, allModules]);
+
+    useEffect(() => {
+        if (!selectedEmp) { setModuleOrder([]); return; }
+        const saved: string[] = selectedEmp.moduleOrder || [];
+        setModuleOrder(saved.length > 0 ? saved : empModules.map(m => m.id));
+    }, [selectedEmp?.id, empModules]);
 
     const sortedModules = useMemo(() => {
-        return [...activeModules].sort((a, b) => {
+        return [...empModules].sort((a, b) => {
             const idxA = moduleOrder.indexOf(a.id);
             const idxB = moduleOrder.indexOf(b.id);
-            const posA = idxA >= 0 ? idxA : moduleOrder.length + activeModules.indexOf(a);
-            const posB = idxB >= 0 ? idxB : moduleOrder.length + activeModules.indexOf(b);
-            return posA - posB;
+            return (idxA >= 0 ? idxA : 999) - (idxB >= 0 ? idxB : 999);
         });
-    }, [activeModules, moduleOrder]);
+    }, [empModules, moduleOrder]);
 
-    const moveUp = (index: number) => {
-        if (index <= 0) return;
-        const ids = sortedModules.map(m => m.id);
-        [ids[index - 1], ids[index]] = [ids[index], ids[index - 1]];
-        setModuleOrder(ids);
-    };
-
-    const moveDown = (index: number) => {
-        if (index >= sortedModules.length - 1) return;
-        const ids = sortedModules.map(m => m.id);
-        [ids[index], ids[index + 1]] = [ids[index + 1], ids[index]];
-        setModuleOrder(ids);
-    };
+    const moveUp = (i: number) => { if (i <= 0) return; const ids = sortedModules.map(m => m.id); [ids[i - 1], ids[i]] = [ids[i], ids[i - 1]]; setModuleOrder(ids); };
+    const moveDown = (i: number) => { if (i >= sortedModules.length - 1) return; const ids = sortedModules.map(m => m.id); [ids[i], ids[i + 1]] = [ids[i + 1], ids[i]]; setModuleOrder(ids); };
 
     const handleSave = async () => {
-        if (!business) return;
+        if (!business || !selectedEmp) return;
         setSaving(true);
         try {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            await businessService.updateBusiness(business.id, { moduleOrder } as any);
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            setBusiness({ ...business, moduleOrder } as any);
-            toast.success('Модулийн байрлал хадгалагдлаа');
-        } catch {
-            toast.error('Хадгалахад алдаа гарлаа');
-        } finally {
-            setSaving(false);
-        }
+            const { doc: docRef, updateDoc: upDoc } = await import('firebase/firestore');
+            await upDoc(docRef(db, 'businesses', business.id, 'employees', selectedEmp.id), { moduleOrder: sortedModules.map(m => m.id) });
+            toast.success(`${selectedEmp.name} модулийн байрлал хадгалагдлаа`);
+        } catch { toast.error('Хадгалахад алдаа гарлаа'); }
+        finally { setSaving(false); }
     };
 
     return (
         <div className="settings-section">
             <div className="settings-section-header">
-                <div className="settings-section-icon" style={{ background: 'var(--primary-tint)', color: 'var(--primary)' }}>
-                    <GripVertical size={20} />
-                </div>
+                <div className="settings-section-icon" style={{ background: 'var(--primary-tint)', color: 'var(--primary)' }}><GripVertical size={20} /></div>
                 <div>
                     <h3 className="settings-section-title">Модулийн байрлал</h3>
-                    <p className="settings-section-desc">Сайдбар дахь модулиудын дарааллыг тохируулна</p>
+                    <p className="settings-section-desc">Ажилтан бүрийн сайдбар дахь модулиудын дарааллыг тохируулна</p>
                 </div>
             </div>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 20 }}>
-                {sortedModules.map((mod, i) => {
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    const ModIcon = (Icons as any)[mod.icon] || Icons.Box;
-                    return (
-                        <div key={mod.id} style={{
-                            display: 'flex', alignItems: 'center', gap: 14,
-                            padding: '12px 16px', borderRadius: 14,
-                            background: 'var(--surface-1)', border: '1.5px solid var(--border-soft)',
-                            transition: 'all 0.2s',
-                        }}>
-                            <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem', fontWeight: 700, width: 20, textAlign: 'center' }}>{i + 1}</span>
-                            <div style={{ width: 36, height: 36, borderRadius: 10, background: 'var(--primary-tint)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                <ModIcon size={18} />
-                            </div>
-                            <span style={{ flex: 1, fontWeight: 700, fontSize: '0.9rem', color: 'var(--text-primary)' }}>{mod.name}</span>
-                            <div style={{ display: 'flex', gap: 4 }}>
-                                <button
-                                    className="btn btn-ghost btn-icon"
-                                    onClick={() => moveUp(i)}
-                                    disabled={i === 0}
-                                    style={{ opacity: i === 0 ? 0.3 : 1, width: 32, height: 32 }}
-                                >
-                                    <ArrowUp size={16} />
-                                </button>
-                                <button
-                                    className="btn btn-ghost btn-icon"
-                                    onClick={() => moveDown(i)}
-                                    disabled={i === sortedModules.length - 1}
-                                    style={{ opacity: i === sortedModules.length - 1 ? 0.3 : 1, width: 32, height: 32 }}
-                                >
-                                    <ArrowDown size={16} />
-                                </button>
-                            </div>
-                        </div>
-                    );
-                })}
+            <div style={{ marginTop: 20, marginBottom: 20 }}>
+                <label className="input-label">Ажилтан сонгох</label>
+                <select className="input select" value={selectedEmp?.id || ''} onChange={e => setSelectedEmp(employees.find(em => em.id === e.target.value) || null)} style={{ height: 46 }}>
+                    <option value="">— Ажилтан сонгоно уу —</option>
+                    {employees.map(emp => <option key={emp.id} value={emp.id}>{emp.name} ({emp.role || 'Ажилтан'})</option>)}
+                </select>
             </div>
-
-            <div style={{ marginTop: 24, display: 'flex', justifyContent: 'flex-end' }}>
-                <button className="btn btn-primary gradient-btn" onClick={handleSave} disabled={saving} style={{ gap: 6 }}>
-                    {saving ? <Loader2 size={16} className="animate-spin" /> : <CheckCircle2 size={16} />}
-                    Хадгалах
-                </button>
-            </div>
+            {selectedEmp ? (
+                <>
+                    <div style={{ padding: '10px 14px', background: 'var(--surface-2)', borderRadius: 12, marginBottom: 16, fontSize: '0.82rem', color: 'var(--text-secondary)', fontWeight: 600 }}>
+                        🔑 {selectedEmp.name}-ийн эрхээр харагдах {sortedModules.length} модуль
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                        {sortedModules.map((mod, i) => {
+                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                            const ModIcon = (Icons as any)[mod.icon] || Icons.Box;
+                            return (
+                                <div key={mod.id} style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '12px 16px', borderRadius: 14, background: 'var(--surface-1)', border: '1.5px solid var(--border-soft)', transition: 'all 0.2s' }}>
+                                    <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem', fontWeight: 700, width: 20, textAlign: 'center' }}>{i + 1}</span>
+                                    <div style={{ width: 36, height: 36, borderRadius: 10, background: 'var(--primary-tint)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><ModIcon size={18} /></div>
+                                    <span style={{ flex: 1, fontWeight: 700, fontSize: '0.9rem', color: 'var(--text-primary)' }}>{mod.name}</span>
+                                    <div style={{ display: 'flex', gap: 4 }}>
+                                        <button className="btn btn-ghost btn-icon" onClick={() => moveUp(i)} disabled={i === 0} style={{ opacity: i === 0 ? 0.3 : 1, width: 32, height: 32 }}><ArrowUp size={16} /></button>
+                                        <button className="btn btn-ghost btn-icon" onClick={() => moveDown(i)} disabled={i === sortedModules.length - 1} style={{ opacity: i === sortedModules.length - 1 ? 0.3 : 1, width: 32, height: 32 }}><ArrowDown size={16} /></button>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                    <div style={{ marginTop: 24, display: 'flex', justifyContent: 'flex-end' }}>
+                        <button className="btn btn-primary gradient-btn" onClick={handleSave} disabled={saving} style={{ gap: 6 }}>
+                            {saving ? <Loader2 size={16} className="animate-spin" /> : <CheckCircle2 size={16} />}
+                            Хадгалах
+                        </button>
+                    </div>
+                </>
+            ) : (
+                <div style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--text-muted)' }}>
+                    <Users size={48} style={{ opacity: 0.3, marginBottom: 12 }} />
+                    <p style={{ fontWeight: 600, fontSize: '0.9rem' }}>Ажилтан сонгоно уу</p>
+                    <p style={{ fontSize: '0.82rem' }}>Сонгосон ажилтны сайдбарын модулийн дарааллыг тохируулна</p>
+                </div>
+            )}
         </div>
     );
 }
