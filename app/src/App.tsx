@@ -23,6 +23,7 @@ const OrdersPage = lazy(() => import('./pages/Orders/OrdersPage').then(m => ({ d
 const CustomersPage = lazy(() => import('./pages/Customers/CustomersPage').then(m => ({ default: m.CustomersPage })));
 const ProductsPage = lazy(() => import('./pages/Products/ProductsPage').then(m => ({ default: m.ProductsPage })));
 const SettingsPage = lazy(() => import('./pages/Settings/SettingsPage').then(m => ({ default: m.SettingsPage })));
+const ProfilePage = lazy(() => import('./pages/Profile/ProfilePage').then(m => ({ default: m.ProfilePage })));
 const EmployeesPage = lazy(() => import('./pages/Employees/EmployeesPage').then(m => ({ default: m.EmployeesPage })));
 const ReportsPage = lazy(() => import('./pages/Reports/ReportsPage').then(m => ({ default: m.ReportsPage })));
 const PaymentsPage = lazy(() => import('./pages/Payments/PaymentsPage').then(m => ({ default: m.PaymentsPage })));
@@ -404,6 +405,7 @@ export default function App() {
             <Route path="inventory" element={<InventoryPage />} />
             <Route path="customers" element={<CustomersPage />} />
             <Route path="settings" element={<SettingsPage />} />
+            <Route path="profile" element={<ProfilePage />} />
             <Route path="employees" element={<EmployeesPage />} />
             <Route path="payments" element={<PaymentsPage />} />
             <Route path="app-store" element={<AppStorePage />} />

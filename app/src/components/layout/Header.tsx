@@ -298,7 +298,7 @@ export function Header({ title, subtitle, action, extra }: HeaderProps) {
                     </button>
                 )}
 
-                <div className="header-avatar" title={user?.displayName || 'Хэрэглэгч'} onClick={() => navigate('/app/settings')} style={{ cursor: 'pointer' }}>
+                <div className="header-avatar" title={user?.displayName || 'Хэрэглэгч'} onClick={() => navigate('/app/profile')} style={{ cursor: 'pointer' }}>
                     {user?.displayName?.charAt(0) || '?'}
                 </div>
             </div>
