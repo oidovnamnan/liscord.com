@@ -37,7 +37,7 @@
         android:foregroundServiceType="dataSync"
         android:exported="false" />
 
-      <!-- Boot foreground service — briefly wakes app after reboot to keep SMS receiver alive -->
+      <!-- Persistent SMS monitor service — keeps process alive after boot -->
       <service
         android:name=".BootForegroundService"
         android:foregroundServiceType="dataSync"
@@ -54,17 +54,19 @@
         </intent-filter>
       </receiver>
 
-      <!-- Boot receiver — auto-start app after device reboot to keep SMS receiver alive -->
+      <!-- Boot receiver — auto-start foreground service after device reboot -->
       <receiver
         android:name=".BootReceiver"
         android:enabled="true"
-        android:exported="true">
+        android:exported="true"
+        android:directBootAware="true">
         <intent-filter>
           <action android:name="android.intent.action.BOOT_COMPLETED" />
+          <action android:name="android.intent.action.LOCKED_BOOT_COMPLETED" />
           <action android:name="android.intent.action.QUICKBOOT_POWERON" />
           <action android:name="com.htc.intent.action.QUICKBOOT_POWERON" />
+          <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
         </intent-filter>
       </receiver>
     </application>
 </manifest>
-

@@ -7,12 +7,16 @@ import android.os.Build
 import android.util.Log
 
 /**
- * BootReceiver — triggered after device reboot.
+ * BootReceiver — triggered after device reboot or app update.
  *
- * Starts a foreground service to keep the process alive on aggressive OEMs
- * (Xiaomi, Huawei, Oppo, Samsung) that kill broadcast receivers of "cold" apps.
- * 
- * Activity-based launch is blocked by many OEMs, so we use a foreground service instead.
+ * Starts a persistent foreground service to keep the process alive on Samsung OneUI,
+ * Xiaomi MIUI, Huawei EMUI, and other aggressive battery-optimizing OEMs.
+ *
+ * Handles:
+ * - BOOT_COMPLETED (normal boot)
+ * - LOCKED_BOOT_COMPLETED (direct boot, before user unlocks)
+ * - QUICKBOOT_POWERON (vendor-specific quick boot)
+ * - MY_PACKAGE_REPLACED (after app update)
  */
 class BootReceiver : BroadcastReceiver() {
 
@@ -21,11 +25,15 @@ class BootReceiver : BroadcastReceiver() {
     }
 
     override fun onReceive(context: Context, intent: Intent) {
-        if (intent.action == Intent.ACTION_BOOT_COMPLETED ||
-            intent.action == "android.intent.action.QUICKBOOT_POWERON" ||
-            intent.action == "com.htc.intent.action.QUICKBOOT_POWERON") {
+        val action = intent.action ?: return
 
-            Log.i(TAG, "✅ Device booted — starting Liscord Bridge foreground service")
+        if (action == Intent.ACTION_BOOT_COMPLETED ||
+            action == Intent.ACTION_LOCKED_BOOT_COMPLETED ||
+            action == "android.intent.action.QUICKBOOT_POWERON" ||
+            action == "com.htc.intent.action.QUICKBOOT_POWERON" ||
+            action == Intent.ACTION_MY_PACKAGE_REPLACED) {
+
+            Log.i(TAG, "✅ Received: $action — starting SMS monitor service")
 
             try {
                 val serviceIntent = Intent(context, BootForegroundService::class.java)
@@ -34,9 +42,9 @@ class BootReceiver : BroadcastReceiver() {
                 } else {
                     context.startService(serviceIntent)
                 }
-                Log.i(TAG, "✅ Foreground service started after boot")
+                Log.i(TAG, "✅ SMS monitor service started successfully")
             } catch (e: Exception) {
-                Log.e(TAG, "❌ Failed to start foreground service: ${e.message}", e)
+                Log.e(TAG, "❌ Service start failed: ${e.message}", e)
                 // Fallback: try launching activity
                 try {
                     val launchIntent = context.packageManager.getLaunchIntentForPackage(context.packageName)
@@ -46,7 +54,7 @@ class BootReceiver : BroadcastReceiver() {
                         Log.i(TAG, "✅ Fallback: activity launched")
                     }
                 } catch (e2: Exception) {
-                    Log.e(TAG, "❌ Fallback also failed: ${e2.message}", e2)
+                    Log.e(TAG, "❌ All start methods failed: ${e2.message}", e2)
                 }
             }
         }

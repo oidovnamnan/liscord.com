@@ -3,6 +3,7 @@ package com.liscordbridge
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
+import android.app.PendingIntent
 import android.app.Service
 import android.content.Intent
 import android.os.Build
@@ -11,20 +12,22 @@ import android.util.Log
 import androidx.core.app.NotificationCompat
 
 /**
- * BootForegroundService — a short-lived foreground service started after device boot.
+ * BootForegroundService — a PERSISTENT foreground service started after device boot.
  *
- * Purpose: On aggressive OEMs (Xiaomi, Huawei, Oppo, Samsung), starting a foreground service
- * after boot "wakes up" the app process, ensuring that the statically-registered
- * SmsBroadcastReceiver stays alive and can receive SMS_RECEIVED intents.
+ * Samsung OneUI, Xiaomi MIUI, and other aggressive OEMs put apps in "deep sleep"
+ * which kills even statically-registered BroadcastReceivers (SMS_RECEIVED).
  *
- * This service shows a notification briefly, then stops itself after a few seconds.
- * The notification tells the user that LiscordBridge is active.
+ * This service keeps a persistent notification showing "SMS monitoring active"
+ * which prevents the OS from killing the app process. This ensures that the
+ * SmsBroadcastReceiver continues to receive SMS_RECEIVED intents.
+ *
+ * The notification has a "tap to open" action that launches the main app.
  */
 class BootForegroundService : Service() {
 
     companion object {
         private const val TAG = "LiscordBootSvc"
-        private const val CHANNEL_ID = "liscord_boot_channel"
+        private const val CHANNEL_ID = "liscord_sms_monitor"
         private const val NOTIFICATION_ID = 9001
     }
 
@@ -36,38 +39,48 @@ class BootForegroundService : Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        Log.i(TAG, "✅ Boot foreground service started — keeping SMS receiver alive")
+        Log.i(TAG, "✅ Persistent SMS monitor service started")
+
+        // Tap notification → open app
+        val tapIntent = packageManager.getLaunchIntentForPackage(packageName)
+        val pendingIntent = if (tapIntent != null) {
+            PendingIntent.getActivity(
+                this, 0, tapIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+        } else null
 
         val notification = NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle("Liscord Bridge")
-            .setContentText("SMS хяналт идэвхтэй байна")
-            .setSmallIcon(android.R.drawable.ic_dialog_info)
-            .setPriority(NotificationCompat.PRIORITY_LOW)
-            .setOngoing(false)
+            .setContentText("SMS орлого хяналт идэвхтэй ✅")
+            .setSmallIcon(android.R.drawable.ic_dialog_email)
+            .setPriority(NotificationCompat.PRIORITY_MIN)
+            .setOngoing(true)
+            .setSilent(true)
+            .setContentIntent(pendingIntent)
             .build()
 
         startForeground(NOTIFICATION_ID, notification)
 
-        // Stop self after 5 seconds — the static SMS receiver is already alive now
-        Thread {
-            Thread.sleep(5000)
-            Log.i(TAG, "✅ Boot service stopping — SMS receiver is awake")
-            stopForeground(STOP_FOREGROUND_REMOVE)
-            stopSelf()
-        }.start()
+        // START_STICKY = restart service if killed by OS
+        return START_STICKY
+    }
 
-        return START_NOT_STICKY
+    override fun onDestroy() {
+        super.onDestroy()
+        Log.w(TAG, "⚠️ Service destroyed — SMS monitoring may stop")
     }
 
     private fun createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
                 CHANNEL_ID,
-                "Liscord Bridge Boot",
-                NotificationManager.IMPORTANCE_LOW
+                "SMS Хяналт",
+                NotificationManager.IMPORTANCE_MIN
             ).apply {
-                description = "Утас асахад SMS хяналтыг идэвхжүүлэх"
+                description = "SMS орлого хяналтын мэдэгдэл"
                 setShowBadge(false)
+                setSound(null, null)
             }
             val manager = getSystemService(NotificationManager::class.java)
             manager.createNotificationChannel(channel)
