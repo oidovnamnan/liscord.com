@@ -272,6 +272,18 @@ export function DashboardPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [business?.id, visibleModuleIds]);
 
+    // Today's revenue from recent orders (must be before early return - hooks rule)
+    const todayRevenue = useMemo(() => {
+        const todayStart = new Date();
+        todayStart.setHours(0, 0, 0, 0);
+        return recentOrders
+            .filter(o => {
+                const d = o.createdAt instanceof Date ? o.createdAt : (o.createdAt as any)?.toDate?.();
+                return d && d >= todayStart && o.paymentStatus === 'paid';
+            })
+            .reduce((sum, o) => sum + (o.financials?.totalAmount || 0), 0);
+    }, [recentOrders]);
+
     if (loading || !stats) {
         return (
             <div className="loading-screen">
@@ -287,18 +299,6 @@ export function DashboardPage() {
     const pendingOrders = (ordersByStatus['new'] || 0) + (ordersByStatus['confirmed'] || 0);
     const preparingOrders = (ordersByStatus['preparing'] || 0) + (ordersByStatus['ready'] || 0);
     const shippingOrders = ordersByStatus['shipping'] || 0;
-
-    // Today's revenue from recent orders
-    const todayRevenue = useMemo(() => {
-        const todayStart = new Date();
-        todayStart.setHours(0, 0, 0, 0);
-        return recentOrders
-            .filter(o => {
-                const d = o.createdAt instanceof Date ? o.createdAt : (o.createdAt as any)?.toDate?.();
-                return d && d >= todayStart && o.paymentStatus === 'paid';
-            })
-            .reduce((sum, o) => sum + (o.financials?.totalAmount || 0), 0);
-    }, [recentOrders]);
 
     return (
         <>
