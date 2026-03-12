@@ -3,7 +3,7 @@ import { Header } from '../../components/layout/Header';
 import {
     ShoppingCart, Package, Loader2, ArrowRight, CheckCircle2, ScanLine,
     Truck as TruckIcon, AlertTriangle, Users, FileText, TrendingDown,
-    Clock, CreditCard, Radio, Wifi, Activity
+    Clock, CreditCard, Radio, Wifi, Activity, Eye
 } from 'lucide-react';
 import { useBusinessStore, useAuthStore } from '../../store';
 import { dashboardService, systemSettingsService } from '../../services/db';
@@ -78,6 +78,7 @@ export function DashboardPage() {
     const [unpaidInvoices, setUnpaidInvoices] = useState<UnpaidInvoice[]>([]);
     const [ordersByStatus, setOrdersByStatus] = useState<Record<string, number>>({});
     const [onlineEmployees, setOnlineEmployees] = useState<{ id: string; name: string; position?: string }[]>([]);
+    const [visitorCount, setVisitorCount] = useState(0);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const [moduleDefaults, setModuleDefaults] = useState<any>({});
 
@@ -264,10 +265,24 @@ export function DashboardPage() {
             }, () => setOnlineEmployees([]));
         }
 
+        // Visitor count — real-time subscription
+        let unsubscribeVisitors: (() => void) | undefined;
+        if (visibleModuleIds.has('online-presence')) {
+            const twoMinAgo = Timestamp.fromDate(new Date(Date.now() - 2 * 60 * 1000));
+            const visitorQ = query(
+                collection(db, 'businesses', business.id!, 'visitors'),
+                where('lastActiveAt', '>=', twoMinAgo)
+            );
+            unsubscribeVisitors = onSnapshot(visitorQ, (snap) => {
+                setVisitorCount(snap.size);
+            }, () => setVisitorCount(0));
+        }
+
         return () => {
             unsubscribeOrders?.();
             unsubscribeLogs();
             unsubscribeOnline?.();
+            unsubscribeVisitors?.();
         };
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [business?.id, visibleModuleIds]);
@@ -338,10 +353,13 @@ export function DashboardPage() {
                         {hasModule('online-presence') && (
                             <div className="hero-stat-card">
                                 <div className="hero-stat-value">
-                                    {onlineEmployees.length}
-                                    {onlineEmployees.length > 0 && <span className="hero-stat-indicator pulse"></span>}
+                                    {onlineEmployees.length + visitorCount}
+                                    {(onlineEmployees.length + visitorCount) > 0 && <span className="hero-stat-indicator pulse"></span>}
                                 </div>
-                                <div className="hero-stat-label">Онлайн ажилтан</div>
+                                <div className="hero-stat-label">
+                                    <Wifi size={10} style={{ opacity: 0.6 }} /> {onlineEmployees.length} ажилтан
+                                    {visitorCount > 0 && <> · <Eye size={10} style={{ opacity: 0.6 }} /> {visitorCount} зочин</>}
+                                </div>
                             </div>
                         )}
                     </div>

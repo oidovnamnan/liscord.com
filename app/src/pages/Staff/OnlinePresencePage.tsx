@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Radio, Search, Wifi, WifiOff, Clock, Users } from 'lucide-react';
-import { collection, getDocs } from 'firebase/firestore';
+import { Radio, Search, Wifi, WifiOff, Clock, Users, Eye } from 'lucide-react';
+import { collection, getDocs, query, where, onSnapshot, Timestamp } from 'firebase/firestore';
 import { db } from '../../services/firebase';
 import { useBusinessStore } from '../../store';
 import './OnlinePresence.css';
@@ -12,6 +12,13 @@ interface EmployeePresence {
     photoURL?: string;
     lastActiveAt: Date | null;
     status: 'online' | 'idle' | 'offline';
+}
+
+interface Visitor {
+    id: string;
+    lastActiveAt: Date | null;
+    page?: string;
+    userAgent?: string;
 }
 
 function getStatus(lastActiveAt: Date | null): 'online' | 'idle' | 'offline' {
@@ -45,6 +52,14 @@ function getInitials(name: string): string {
         .toUpperCase();
 }
 
+function getDeviceType(ua?: string): string {
+    if (!ua) return '🖥️';
+    const lower = ua.toLowerCase();
+    if (lower.includes('mobile') || lower.includes('android') || lower.includes('iphone')) return '📱';
+    if (lower.includes('tablet') || lower.includes('ipad')) return '📱';
+    return '🖥️';
+}
+
 const STATUS_LABEL: Record<string, string> = {
     online: 'Онлайн',
     idle: 'Идэвхгүй',
@@ -54,6 +69,7 @@ const STATUS_LABEL: Record<string, string> = {
 export function OnlinePresencePage() {
     const { business } = useBusinessStore();
     const [employees, setEmployees] = useState<EmployeePresence[]>([]);
+    const [visitors, setVisitors] = useState<Visitor[]>([]);
     const [search, setSearch] = useState('');
     const [loading, setLoading] = useState(true);
 
@@ -86,12 +102,36 @@ export function OnlinePresencePage() {
         }
 
         load();
-        // Refresh every 30s
         const interval = setInterval(load, 30000);
         return () => { cancelled = true; clearInterval(interval); };
     }, [business?.id]);
 
-    // Filter + sort: online first, then idle, then offline
+    // Real-time visitor subscription
+    useEffect(() => {
+        if (!business?.id) return;
+
+        const twoMinAgo = Timestamp.fromDate(new Date(Date.now() - 2 * 60 * 1000));
+        const visitorQ = query(
+            collection(db, 'businesses', business.id, 'visitors'),
+            where('lastActiveAt', '>=', twoMinAgo)
+        );
+
+        const unsub = onSnapshot(visitorQ, (snap) => {
+            setVisitors(snap.docs.map(d => {
+                const data = d.data();
+                return {
+                    id: d.id,
+                    lastActiveAt: data.lastActiveAt?.toDate?.() || null,
+                    page: data.page,
+                    userAgent: data.userAgent,
+                };
+            }));
+        }, () => setVisitors([]));
+
+        return () => unsub();
+    }, [business?.id]);
+
+    // Filter + sort
     const filtered = useMemo(() => {
         let list = employees;
         if (search.trim()) {
@@ -125,7 +165,7 @@ export function OnlinePresencePage() {
                     <div className="page-hero-icon"><Radio size={24} /></div>
                     <div>
                         <h1 className="page-hero-title">Онлайн Хяналт</h1>
-                        <p className="page-hero-subtitle">Ажилтнуудын одоогийн идэвхжилт</p>
+                        <p className="page-hero-subtitle">Ажилтнууд & зочдын одоогийн идэвхжилт</p>
                     </div>
                 </div>
             </div>
@@ -136,7 +176,14 @@ export function OnlinePresencePage() {
                     <div className="presence-stat-icon"><Wifi size={20} /></div>
                     <div className="presence-stat-info">
                         <div className="presence-stat-value">{counts.online}</div>
-                        <div className="presence-stat-label">Онлайн</div>
+                        <div className="presence-stat-label">Ажилтан</div>
+                    </div>
+                </div>
+                <div className="presence-stat-card" style={{ background: 'rgba(59, 130, 246, 0.08)', borderColor: 'rgba(59, 130, 246, 0.15)' }}>
+                    <div className="presence-stat-icon" style={{ background: 'rgba(59, 130, 246, 0.15)', color: '#3b82f6' }}><Eye size={20} /></div>
+                    <div className="presence-stat-info">
+                        <div className="presence-stat-value">{visitors.length}</div>
+                        <div className="presence-stat-label">Зочид</div>
                     </div>
                 </div>
                 <div className="presence-stat-card idle">
@@ -154,6 +201,37 @@ export function OnlinePresencePage() {
                     </div>
                 </div>
             </div>
+
+            {/* Visitors Section */}
+            {visitors.length > 0 && (
+                <div className="presence-employee-list" style={{ marginBottom: 16 }}>
+                    <div className="presence-list-header">
+                        <div className="presence-list-title"><Eye size={16} style={{ marginRight: 6, verticalAlign: 'middle' }} />Зочид (Storefront)</div>
+                        <div className="presence-list-count" style={{ color: '#3b82f6' }}>{visitors.length} онлайн</div>
+                    </div>
+                    {visitors.map(v => (
+                        <div key={v.id} className="presence-employee-row">
+                            <div className="presence-avatar-wrap">
+                                <div className="presence-avatar" style={{ background: 'linear-gradient(135deg, #3b82f6, #60a5fa)', fontSize: '0.9rem' }}>
+                                    {getDeviceType(v.userAgent)}
+                                </div>
+                                <div className="presence-dot online" />
+                            </div>
+                            <div className="presence-emp-info">
+                                <div className="presence-emp-name">Зочин</div>
+                                <div className="presence-emp-position">{v.page || '/s/...'}</div>
+                            </div>
+                            <div className="presence-emp-status">
+                                <div className="presence-status-label online">
+                                    <Eye size={14} />
+                                    Үзэж байна
+                                </div>
+                                <div className="presence-last-seen">{timeAgo(v.lastActiveAt)}</div>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            )}
 
             {/* Search + List */}
             <div className="presence-employee-list">

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams, Outlet, Navigate } from 'react-router-dom';
 import { businessService } from '../../services/db';
 import { db } from '../../services/firebase';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, deleteDoc, serverTimestamp } from 'firebase/firestore';
 import type { Business } from '../../types';
 import { CartDrawer } from '../../components/Storefront/CartDrawer';
 import { StorefrontFooter } from '../../components/Storefront/StorefrontFooter';
@@ -85,6 +85,40 @@ export function StorefrontWrapper() {
             document.title = 'Liscord';
         };
     }, [business]);
+
+    // ═══ Visitor Heartbeat — track anonymous storefront visitors ═══
+    useEffect(() => {
+        if (!business?.id) return;
+
+        // Generate or retrieve a session-specific visitor ID
+        let visitorId = sessionStorage.getItem('liscord_visitor_id');
+        if (!visitorId) {
+            visitorId = `v_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
+            sessionStorage.setItem('liscord_visitor_id', visitorId);
+        }
+
+        const visitorRef = doc(db, 'businesses', business.id, 'visitors', visitorId);
+
+        // Write heartbeat
+        const writeHeartbeat = () => {
+            setDoc(visitorRef, {
+                lastActiveAt: serverTimestamp(),
+                userAgent: navigator.userAgent.slice(0, 100),
+                page: window.location.pathname,
+            }, { merge: true }).catch(() => {});
+        };
+
+        // Initial heartbeat
+        writeHeartbeat();
+        // Repeat every 30 seconds
+        const interval = setInterval(writeHeartbeat, 30000);
+
+        // Cleanup: delete visitor doc on unmount
+        return () => {
+            clearInterval(interval);
+            deleteDoc(visitorRef).catch(() => {});
+        };
+    }, [business?.id]);
 
     if (loading) {
         return (
