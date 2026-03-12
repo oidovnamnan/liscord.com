@@ -380,6 +380,7 @@ function SourcingDetailModal({ order, businessId, settings, onClose, onUpdate }:
     };
 
     const allItemsOrdered = order.items.every(it => itemsState[it.productId]?.ordered);
+    const anyItemOrdered = order.items.some(it => itemsState[it.productId]?.ordered);
 
     // Auto-calculate status based on items
     const computedStatus: SourcingStatus = (() => {
@@ -561,7 +562,7 @@ function SourcingDetailModal({ order, businessId, settings, onClose, onUpdate }:
 
                 <div className="modal-footer" style={{ padding: '16px 28px' }}>
                     <button className="btn btn-secondary" onClick={onClose}>Болих</button>
-                    <button className="btn btn-primary gradient-btn" onClick={handleSave} disabled={saving}>
+                    <button className="btn btn-primary gradient-btn" onClick={handleSave} disabled={saving || !anyItemOrdered}>
                         {saving ? 'Хадгалж байна...' : '💾 Хадгалах'}
                     </button>
                 </div>
