@@ -27,9 +27,15 @@ class SmsBroadcastReceiver : BroadcastReceiver() {
         private const val TAG = "LiscordSMS"
         private const val FIRESTORE_BASE = "https://firestore.googleapis.com/v1/projects/liscord-2b529/databases/(default)/documents"
         
-        // Income keywords (must match App.tsx)
+        // Bank SMS keywords — covers all known Mongolian bank formats
         private val INCOME_KEYWORDS = listOf(
-            "orlogo", "ORLOGO", "Orlogo", "орлого", "Орлого", "орсон", "credited", "received"
+            // Standard income words
+            "orlogo", "орлого", "орсон", "credited", "received",
+            // Golomt-style keywords
+            "dungeer", "дүнгээр", "dansand", "данс руу", "guilgee", "гүйлгээ",
+            // Generic bank transaction words  
+            "hiigdlee", "хийгдлээ", "husnegtiin", "шилжүүлэг",
+            "залгамжлуулсан", "кредит", "орлогын"
         )
     }
 
@@ -89,9 +95,11 @@ class SmsBroadcastReceiver : BroadcastReceiver() {
 
     private fun isIncomeSms(body: String): Boolean {
         val lower = body.lowercase()
-        // Content-based: check for income keywords + MNT amount
+        // Content-based: check for any bank transaction keywords
         val hasKeyword = INCOME_KEYWORDS.any { lower.contains(it.lowercase()) }
-        val hasAmount = Regex("\\d+\\.?\\d*\\s*mnt", RegexOption.IGNORE_CASE).containsMatchIn(body)
+        // Accept with keyword alone (no MNT required — Golomt doesn't use MNT)
+        // Also accept if it has both a number and MNT  
+        val hasAmount = Regex("\\d[\\d,.]*", RegexOption.IGNORE_CASE).containsMatchIn(body)
         return hasKeyword && hasAmount
     }
 
@@ -118,7 +126,7 @@ class SmsBroadcastReceiver : BroadcastReceiver() {
     private fun parseBankName(sender: String, body: String): String {
         // Check sender
         if (sender.contains("1900") || sender.lowercase().contains("khan")) return "Khan Bank"
-        if (sender.contains("1800") || sender.lowercase().contains("golomt")) return "Golomt"
+        if (sender.contains("1800") || sender.contains("132525") || sender.lowercase().contains("golomt")) return "Golomt"
         if (sender.contains("1500") || sender.lowercase().contains("tdb")) return "TDB"
         if (sender.contains("7575") || sender.lowercase().contains("xac")) return "XacBank"
         if (sender.contains("1234") || sender.lowercase().contains("state")) return "Төрийн Банк"

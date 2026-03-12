@@ -20,7 +20,7 @@ import { Camera, useCameraDevice, useCodeScanner } from 'react-native-vision-cam
 
 // Firestore REST API base URL for direct document creation
 const FIRESTORE_BASE = 'https://firestore.googleapis.com/v1/projects/liscord-2b529/databases/(default)/documents';
-const APP_VERSION = '1.2';
+const APP_VERSION = '1.3';
 
 const sleep = (time: number) => new Promise<void>((resolve) => setTimeout(() => resolve(), time));
 
@@ -28,8 +28,14 @@ const sleep = (time: number) => new Promise<void>((resolve) => setTimeout(() => 
 // Empty by default — user adds their bank's actual SMS sender numbers
 const DEFAULT_BANK_SENDERS: string[] = [];
 
-// Income keywords in Mongolian bank SMS
-const INCOME_KEYWORDS = ['orlogo', 'Orlogo', 'ORLOGO', 'орлого', 'Орлого', 'орсон', 'credited', 'received'];
+// Bank SMS keywords — covers all known Mongolian bank formats
+const INCOME_KEYWORDS = [
+  'orlogo', 'Orlogo', 'ORLOGO', 'орлого', 'Орлого', 'орсон', 'credited', 'received',
+  // Golomt-style
+  'dungeer', 'дүнгээр', 'dansand', 'guilgee', 'гүйлгээ',
+  // Generic bank words
+  'hiigdlee', 'хийгдлээ', 'шилжүүлэг', 'орлогын',
+];
 
 const backgroundTaskOptions = {
   taskName: 'LiscordBridge',
@@ -140,9 +146,9 @@ function isBankSms(sender: string, body: string, currentSettings: AppSettings): 
     sender.includes(bankNum) || bankNum.includes(sender)
   );
   if (senderMatch) return true;
-  // Content-based detection: if body contains income keywords, treat as bank SMS
-  const hasIncomeKeyword = /orlogo|орлого|credited|received/i.test(body);
-  const hasAmount = /\d+\.?\d*\s*MNT/i.test(body);
+  // Content-based detection: if body contains bank keywords + any number
+  const hasIncomeKeyword = INCOME_KEYWORDS.some(kw => body.toLowerCase().includes(kw.toLowerCase()));
+  const hasAmount = /\d[\d,.]*/.test(body);
   return hasIncomeKeyword && hasAmount;
 }
 
