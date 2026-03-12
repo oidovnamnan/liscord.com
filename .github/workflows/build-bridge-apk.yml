@@ -50,12 +50,30 @@ jobs:
           name: LiscordBridge-app-release
           path: liscordbridge/android/app/build/outputs/apk/release/app-release.apk
 
-      - name: Create Release
+      # Delete old 'bridge-latest' release & tag so we can recreate it
+      - name: Delete old bridge-latest release
+        if: success() && github.ref == 'refs/heads/main'
+        run: |
+          gh release delete bridge-latest --yes 2>/dev/null || true
+          git push --delete origin bridge-latest 2>/dev/null || true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # Create/overwrite the stable 'bridge-latest' release
+      - name: Create Release (bridge-latest)
         uses: softprops/action-gh-release@v1
         if: success() && github.ref == 'refs/heads/main'
         with:
-          tag_name: bridge-v${{ github.run_number }}
-          name: Liscord Bridge v1.0.${{ github.run_number }}
+          tag_name: bridge-latest
+          name: "Liscord Bridge — Хамгийн сүүлийн хувилбар"
+          body: |
+            **Автоматаар бүйлд хийгдсэн APK**
+            
+            Commit: ${{ github.sha }}
+            Огноо: ${{ github.event.head_commit.timestamp }}
+            
+            Шинэчлэлтүүд:
+            - ${{ github.event.head_commit.message }}
           files: liscordbridge/android/app/build/outputs/apk/release/app-release.apk
           draft: false
           prerelease: false

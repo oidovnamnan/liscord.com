@@ -77,7 +77,7 @@ export function SmsBridgeSettings({ bizId }: { bizId: string }) {
                         <h4>Bridge апп суулгах</h4>
                         <p>Liscord Bridge апп-ыг Android утсан дээрээ суулгана уу.</p>
                         <a
-                            href="https://github.com/oidovnamnan/liscord.com/releases/download/bridge-v1/app-release.apk"
+                            href="https://github.com/oidovnamnan/liscord.com/releases/download/bridge-latest/app-release.apk"
                             target="_blank"
                             rel="noopener noreferrer"
                             className="sms-download-btn"
