@@ -78,31 +78,84 @@
     font-weight: 500;
 }
 
-.dashboard-hero-action {
+.dashboard-hero-stats {
     position: relative;
     z-index: 1;
     flex-shrink: 0;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
 }
 
-.dashboard-hero-action .btn {
-    background: rgba(255, 255, 255, 0.2);
-    border: 1.5px solid rgba(255, 255, 255, 0.25);
-    color: white;
-    font-weight: 700;
-    padding: 12px 24px;
+.hero-stat-card {
+    background: rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.15);
     border-radius: 14px;
-    font-size: 0.88rem;
-    display: flex;
-    align-items: center;
-    gap: 8px;
+    padding: 14px 16px;
+    min-width: 130px;
     transition: all 0.3s;
-    text-decoration: none;
+    cursor: default;
 }
 
-.dashboard-hero-action .btn:hover {
-    background: rgba(255, 255, 255, 0.3);
+.hero-stat-card:hover {
+    background: rgba(255, 255, 255, 0.18);
     transform: translateY(-2px);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+}
+
+.hero-stat-value {
+    font-size: 1.3rem;
+    font-weight: 900;
+    line-height: 1.1;
+    margin-bottom: 3px;
+    letter-spacing: -0.02em;
+}
+
+.hero-stat-label {
+    font-size: 0.68rem;
+    font-weight: 600;
+    opacity: 0.7;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.hero-stat-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    font-size: 0.65rem;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 6px;
+    margin-left: 4px;
+    vertical-align: middle;
+}
+
+.hero-stat-indicator.green {
+    background: rgba(16, 185, 129, 0.25);
+    color: #6ee7b7;
+}
+
+.hero-stat-indicator.orange {
+    background: rgba(255, 165, 0, 0.25);
+    color: #fcd34d;
+}
+
+.hero-stat-indicator.pulse {
+    position: relative;
+}
+
+.hero-stat-indicator.pulse::before {
+    content: '';
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #10b981;
+    animation: pulse-dot 2s infinite;
+}
+
+@keyframes pulse-dot {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
 }
 
 /* ═══ KPI Stat Cards ═══ */
@@ -794,6 +847,10 @@
 
     .hide-mobile {
         display: none;
+    }
+
+    .dashboard-hero-stats {
+        width: 100%;
     }
 
     .grid-4 {

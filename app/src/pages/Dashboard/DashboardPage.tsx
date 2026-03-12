@@ -3,7 +3,7 @@ import { Header } from '../../components/layout/Header';
 import {
     ShoppingCart, Package, Loader2, ArrowRight, CheckCircle2, ScanLine,
     Truck as TruckIcon, AlertTriangle, Users, FileText, TrendingDown,
-    Clock, CreditCard, Radio, Wifi
+    Clock, CreditCard, Radio, Wifi, Activity
 } from 'lucide-react';
 import { useBusinessStore, useAuthStore } from '../../store';
 import { dashboardService, systemSettingsService } from '../../services/db';
@@ -288,6 +288,18 @@ export function DashboardPage() {
     const preparingOrders = (ordersByStatus['preparing'] || 0) + (ordersByStatus['ready'] || 0);
     const shippingOrders = ordersByStatus['shipping'] || 0;
 
+    // Today's revenue from recent orders
+    const todayRevenue = useMemo(() => {
+        const todayStart = new Date();
+        todayStart.setHours(0, 0, 0, 0);
+        return recentOrders
+            .filter(o => {
+                const d = o.createdAt instanceof Date ? o.createdAt : (o.createdAt as any)?.toDate?.();
+                return d && d >= todayStart && o.paymentStatus === 'paid';
+            })
+            .reduce((sum, o) => sum + (o.financials?.totalAmount || 0), 0);
+    }, [recentOrders]);
+
     return (
         <>
             <Header title="Хянах самбар" />
@@ -299,15 +311,38 @@ export function DashboardPage() {
                         <h1>Сайн байна уу, <span className="text-gradient">{isImpersonating && employee ? employee.name : (user?.displayName || 'Эзэн')}</span>! 👋</h1>
                         <p className="text-secondary">{business?.name} бизнесийн өнөөдрийн тойм болон шуурхай үйлдлүүд.</p>
                     </div>
-                    <div className="dashboard-hero-action hide-mobile">
-                        {business?.category === 'cargo' ? (
-                            hasModule('packages') && <a href="/app/packages" className="btn btn-primary btn-lg shine-effect">
-                                <ScanLine size={18} /> Ачаа бүртгэх
-                            </a>
-                        ) : (
-                            hasModule('orders') && (isOwner || (employee as any)?.permissions?.includes('orders.create')) && <a href="/app/orders" className="btn btn-primary btn-lg shine-effect">
-                                <ShoppingCart size={18} /> Шинэ захиалга
-                            </a>
+                    <div className="dashboard-hero-stats">
+                        {hasModule('orders') && (
+                            <div className="hero-stat-card">
+                                <div className="hero-stat-value">
+                                    ₮{todayRevenue > 999999 ? `${(todayRevenue / 1000000).toFixed(1)}M` : todayRevenue > 999 ? `${(todayRevenue / 1000).toFixed(0)}K` : todayRevenue.toLocaleString()}
+                                </div>
+                                <div className="hero-stat-label">Өнөөдрийн орлого</div>
+                            </div>
+                        )}
+                        {hasModule('orders') && (
+                            <div className="hero-stat-card">
+                                <div className="hero-stat-value">
+                                    {pendingOrders}
+                                    {pendingOrders > 0 && <span className="hero-stat-indicator orange">шинэ</span>}
+                                </div>
+                                <div className="hero-stat-label">Хүлээгдэж буй</div>
+                            </div>
+                        )}
+                        {hasModule('products') && (
+                            <div className="hero-stat-card">
+                                <div className="hero-stat-value">{stats?.totalProducts || 0}</div>
+                                <div className="hero-stat-label">Идэвхтэй бараа</div>
+                            </div>
+                        )}
+                        {hasModule('online-presence') && (
+                            <div className="hero-stat-card">
+                                <div className="hero-stat-value">
+                                    {onlineEmployees.length}
+                                    {onlineEmployees.length > 0 && <span className="hero-stat-indicator pulse"></span>}
+                                </div>
+                                <div className="hero-stat-label">Онлайн ажилтан</div>
+                            </div>
                         )}
                     </div>
                 </div>
