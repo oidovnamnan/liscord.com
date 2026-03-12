@@ -84,8 +84,13 @@ export function SourcingPage() {
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 const data = d.data() as any;
                 const items = data.items || [];
-                const preorderItems = items.filter((it: { isPreorder?: boolean }) => it.isPreorder);
-                if (preorderItems.length === 0) return; // Skip orders without preorder items
+                // Show items that are preorder (by isPreorder flag OR productType)
+                const preorderItems = items.filter((it: { isPreorder?: boolean; productType?: string }) => 
+                    it.isPreorder || it.productType === 'preorder'
+                );
+                // If no explicitly preorder items, show ALL items for paid orders
+                const displayItems = preorderItems.length > 0 ? preorderItems : items;
+                if (displayItems.length === 0) return;
                 
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 const createdAt = data.createdAt?.toDate ? data.createdAt.toDate() : (data.createdAt ? new Date(data.createdAt) : undefined);
@@ -93,7 +98,7 @@ export function SourcingPage() {
                 result.push({
                     ...data,
                     id: d.id,
-                    items: preorderItems,
+                    items: displayItems,
                     createdAt,
                     sourcing: data.sourcing ? {
                         ...data.sourcing,
