@@ -327,8 +327,9 @@ function SourcingDetailModal({ order, businessId, settings, onClose, onUpdate }:
     const [itemsState, setItemsState] = useState<Record<string, SourcingItem>>(() => {
         const existing = order.sourcing?.items || {};
         const state: Record<string, SourcingItem> = {};
+        const hasExisting = Object.keys(existing).length > 0;
         order.items.forEach(it => {
-            state[it.productId] = existing[it.productId] || { ordered: false };
+            state[it.productId] = existing[it.productId] || { ordered: !hasExisting, orderedAt: !hasExisting ? new Date() : undefined };
         });
         return state;
     });
