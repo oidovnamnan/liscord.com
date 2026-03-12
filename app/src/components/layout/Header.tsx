@@ -1,8 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { Menu, Bell, Search, Plus, Zap, ShoppingBag } from 'lucide-react';
+import { Menu, Bell, Search, Plus, ShoppingBag } from 'lucide-react';
 import { useUIStore, useAuthStore, useBusinessStore } from '../../store';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { V2UpgradeModal } from '../common/V2UpgradeModal';
 import { userService } from '../../services/db';
 import { db } from '../../services/firebase';
 import { collection, query, orderBy, limit, onSnapshot, doc, updateDoc, writeBatch, serverTimestamp } from 'firebase/firestore';
@@ -55,7 +54,7 @@ export function Header({ title, subtitle, action, extra }: HeaderProps) {
     const navigate = useNavigate();
     const location = useLocation();
 
-    const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(false);
+
     const [isNotifOpen, setIsNotifOpen] = useState(false);
     const notifRef = useRef<HTMLDivElement>(null);
     const [notifications, setNotifications] = useState<NotifItem[]>([]);
@@ -163,17 +162,7 @@ export function Header({ title, subtitle, action, extra }: HeaderProps) {
         return '📋';
     };
 
-    const handleToggleV2 = async () => {
-        if (!user) return;
-        const isAuthorized = user.isSuperAdmin || business?.subscription?.hasV2Access;
-        if (isAuthorized) {
-            const nextVersion = user.uiVersion === 'v2' ? 'v1' : 'v2';
-            await userService.updateProfile(user.uid, { uiVersion: nextVersion });
-            setUser({ ...user, uiVersion: nextVersion });
-        } else {
-            setIsUpgradeModalOpen(true);
-        }
-    };
+
 
     return (
         <header className="header">
@@ -309,42 +298,10 @@ export function Header({ title, subtitle, action, extra }: HeaderProps) {
                     </button>
                 )}
 
-                {/* V2 Toggle Switcher */}
-                <button
-                    onClick={handleToggleV2}
-                    className="btn btn-sm hide-mobile"
-                    style={{
-                        background: user?.uiVersion === 'v2' ? 'linear-gradient(135deg, #fcd34d 0%, #f59e0b 100%)' : 'rgba(255,255,255,0.1)',
-                        color: user?.uiVersion === 'v2' ? '#000' : 'var(--text-primary)',
-                        border: '1px solid var(--border-color)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 6,
-                        fontWeight: 600
-                    }}
-                    title="Switch Workspace Version"
-                >
-                    <Zap size={14} />
-                    <span className="hide-mobile">{user?.uiVersion === 'v2' ? 'V2' : 'V1'}</span>
-                </button>
-
                 <div className="header-avatar" title={user?.displayName || 'Хэрэглэгч'}>
                     {user?.displayName?.charAt(0) || '?'}
                 </div>
             </div>
-
-            <V2UpgradeModal
-                isOpen={isUpgradeModalOpen}
-                onClose={() => setIsUpgradeModalOpen(false)}
-                onSuccess={() => {
-                    setIsUpgradeModalOpen(false);
-                    if (user) {
-                        const newV = 'v2';
-                        userService.updateProfile(user.uid, { uiVersion: newV });
-                        setUser({ ...user, uiVersion: newV });
-                    }
-                }}
-            />
         </header>
     );
 }

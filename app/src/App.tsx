@@ -12,7 +12,6 @@ import { getDeviceId, getDeviceInfo } from './utils/device';
 
 // Layouts
 const AppLayout = lazy(() => import('./components/layout/AppLayout').then(m => ({ default: m.AppLayout })));
-const AppLayoutV2 = lazy(() => import('./components/layout/AppLayoutV2').then(m => ({ default: m.AppLayoutV2 })));
 const SuperAdminLayout = lazy(() => import('./components/layout/SuperAdminLayout').then(m => ({ default: m.SuperAdminLayout })));
 
 // Pages (Lazy Loaded)
@@ -210,11 +209,7 @@ function SuperAdminRoute({ children }: { children: React.ReactNode }) {
   return <Suspense fallback={<PageLoader />}>{children}</Suspense>;
 }
 
-// Layout Switcher Route wrapper
-function DynamicAppLayout() {
-  const { user } = useAuthStore();
-  return user?.uiVersion === 'v2' ? <AppLayoutV2 /> : <AppLayout />;
-}
+
 
 const AppStorePage = lazy(() => import('./pages/AppStore/AppStorePage').then(m => ({ default: m.AppStorePage })));
 
@@ -400,7 +395,7 @@ export default function App() {
             <Route path="checkout" element={<StoreCheckout />} />
           </Route>
 
-          <Route path="/app" element={<ProtectedRoute><DynamicAppLayout /></ProtectedRoute>}>
+          <Route path="/app" element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
             <Route index element={<DashboardPage />} />
 
             {/* --- Core Modules (Always Accessible) --- */}
