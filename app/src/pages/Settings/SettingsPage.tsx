@@ -14,6 +14,7 @@ import { LISCORD_MODULES } from '../../config/modules';
 import { isSubscriptionExpired } from '../../utils/moduleUtils';
 import { MODULE_PERMISSIONS } from '../../config/modulePermissions';
 import { db } from '../../services/firebase';
+import { collection, query, where, onSnapshot } from 'firebase/firestore';
 
 import { ActivityTab } from './components/ActivityTab';
 import { PaymentTab } from './components/PaymentTab';
@@ -885,9 +886,9 @@ function ModuleOrderTab() {
 
     useEffect(() => {
         if (!business?.id) return;
-        const { collection: col, query: q, where: w, onSnapshot: snap } = require('firebase/firestore');
-        const qry = q(col(db, 'businesses', business.id, 'employees'), w('isDeleted', '==', false), w('status', '==', 'active'));
-        return snap(qry, (s: any) => setEmployees(s.docs.map((d: any) => ({ id: d.id, ...d.data() }))));
+        const qry = query(collection(db, 'businesses', business.id, 'employees'), where('isDeleted', '==', false), where('status', '==', 'active'));
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        return onSnapshot(qry, (s) => setEmployees(s.docs.map((d) => ({ id: d.id, ...d.data() } as any))));
     }, [business?.id]);
 
     const allModules = useMemo(() => {
