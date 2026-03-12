@@ -332,7 +332,7 @@ function SourcingDetailModal({ order, businessId, settings, onClose, onUpdate }:
         });
         return state;
     });
-    const [statusOverride, setStatusOverride] = useState<SourcingStatus>(order.sourcing?.status || 'pending');
+    const [statusOverride, setStatusOverride] = useState<SourcingStatus>(order.sourcing?.status || 'ordered');
     const [copiedField, setCopiedField] = useState<string | null>(null);
 
     // Settings
