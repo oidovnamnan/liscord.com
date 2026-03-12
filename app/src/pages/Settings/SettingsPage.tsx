@@ -4,7 +4,7 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
 import { Header } from '../../components/layout/Header';
 import { Building2, Palette, Bell, Shield, Users, Globe, Loader2, Share2, X, CheckSquare, ListOrdered, ShoppingBag, CreditCard, Sun, Moon, Monitor, CheckCircle2, Smartphone, ArrowLeft, Settings as SettingsIcon, GripVertical, ArrowUp, ArrowDown } from 'lucide-react';
 import { useBusinessStore, useUIStore } from '../../store';
-import { businessService, businessRequestService, moduleSettingsService } from '../../services/db';
+import { businessService, businessRequestService, moduleSettingsService, systemSettingsService } from '../../services/db';
 import { teamService } from '../../services/db';
 import { eventBus, EVENTS } from '../../services/eventBus';
 import { storageService as storage } from '../../services/storage';
@@ -12,7 +12,7 @@ import { toast } from 'react-hot-toast';
 import { ImageUpload } from '../../components/common/ImageUpload';
 import * as Icons from 'lucide-react';
 import { LISCORD_MODULES } from '../../config/modules';
-import { isSubscriptionExpired } from '../../utils/moduleUtils';
+import { isSubscriptionExpired, getVisibleModules } from '../../utils/moduleUtils';
 import { MODULE_PERMISSIONS } from '../../config/modulePermissions';
 import { db } from '../../services/firebase';
 import { collection, query, where, onSnapshot } from 'firebase/firestore';
@@ -884,41 +884,52 @@ function ModuleOrderTab() {
     const [selectedEmp, setSelectedEmp] = useState<any>(null);
     const [moduleOrder, setModuleOrder] = useState<string[]>([]);
     const [saving, setSaving] = useState(false);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const [moduleDefaults, setModuleDefaults] = useState<any>({});
 
-    // Load employees using teamService (reliable, no composite index)
+    // Load employees using teamService
     useEffect(() => {
         if (!business?.id) return;
         return teamService.subscribeEmployees(business.id, (emps) => {
-            console.log('[ModuleOrder] raw employees:', emps.length, emps.map(e => ({ name: e.name, status: e.status, isDeleted: e.isDeleted })));
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             setEmployees((emps as any[]).filter(e => !e.isDeleted));
         });
     }, [business?.id]);
 
-    const allModules = useMemo(() => {
-        const allIds = new Set<string>(business?.activeModules || []);
-        if (business?.moduleSubscriptions) Object.keys(business.moduleSubscriptions).forEach(id => allIds.add(id));
-        return LISCORD_MODULES.filter(m => allIds.has(m.id) && m.placement !== 'settings');
-    }, [business?.activeModules, business?.moduleSubscriptions]);
+    // Load module defaults (same as sidebar)
+    useEffect(() => {
+        systemSettingsService.getModuleDefaults().then(setModuleDefaults).catch(() => {});
+    }, []);
 
-    const empModules = useMemo(() => {
-        if (!selectedEmp) return allModules;
-        const empPerms: string[] = selectedEmp.permissions || [];
-        if (empPerms.length === 0) return allModules; // No permissions set = show all
-        const modulePermMap: Record<string, string[]> = {};
+    // Use SAME logic as sidebar: getVisibleModules
+    const allModules = useMemo(() => {
+        return getVisibleModules(business, moduleDefaults);
+    }, [business, moduleDefaults]);
+
+    // Build permission prefix map (same as sidebar)
+    const modulePermissionMap = useMemo(() => {
+        const map: Record<string, string[]> = {};
         for (const [moduleId, perms] of Object.entries(MODULE_PERMISSIONS)) {
             const prefixes = new Set<string>();
             for (const p of perms) { const d = p.id.indexOf('.'); if (d > 0) prefixes.add(p.id.substring(0, d + 1)); }
-            if (prefixes.size > 0) modulePermMap[moduleId] = [...prefixes];
+            if (prefixes.size > 0) map[moduleId] = [...prefixes];
         }
-        modulePermMap['dashboard'] = ['reports.'];
+        map['dashboard'] = ['reports.'];
+        return map;
+    }, []);
+
+    // Filter modules per employee — exact same logic as sidebar's filteredNavItems
+    const empModules = useMemo(() => {
+        if (!selectedEmp) return allModules;
+        const empPerms: string[] = selectedEmp.permissions || [];
+        if (empPerms.length === 0) return allModules; // No permissions set = show all (owner-like)
         return allModules.filter(mod => {
             if (mod.id === 'dashboard') return true;
-            const prefixes = modulePermMap[mod.id];
-            if (!prefixes) return false;
-            return prefixes.some(prefix => empPerms.some(p => p.startsWith(prefix)));
+            const prefixes = modulePermissionMap[mod.id];
+            if (!prefixes || prefixes.length === 0) return false;
+            return prefixes.some(prefix => empPerms.some((p: string) => p.startsWith(prefix)));
         });
-    }, [selectedEmp, allModules]);
+    }, [selectedEmp, allModules, modulePermissionMap]);
 
     useEffect(() => {
         if (!selectedEmp) { setModuleOrder([]); return; }
