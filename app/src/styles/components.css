@@ -2,6 +2,23 @@
    COMPONENT STYLES
    ==================================== */
 
+/* Loading Screen */
+.loading-screen {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 60vh;
+    gap: 16px;
+    color: var(--text-muted);
+    font-size: 0.95rem;
+    font-weight: 500;
+}
+
+.loading-screen .animate-spin {
+    color: var(--primary);
+}
+
 /* ====================================
    BUTTONS
    ==================================== */
