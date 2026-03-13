@@ -32,6 +32,7 @@ interface OrderItem {
 }
 
 interface CustomerAddress {
+    locationType: 'city' | 'rural';
     district: string;
     subDistrict: string;
     building: string;
@@ -63,7 +64,7 @@ export function CustomerDashboard({ isOpen, onClose, business, phone, onOpenMemb
     const [memberships, setMemberships] = useState<MembershipDetail[]>([]);
     const [orders, setOrders] = useState<OrderItem[]>([]);
     const [address, setAddress] = useState<CustomerAddress>({
-        district: '', subDistrict: '', building: '', floor: '', entrance: '', doorCode: '', notes: ''
+        locationType: 'city', district: '', subDistrict: '', building: '', floor: '', entrance: '', doorCode: '', notes: ''
     });
     const [loadingMemberships, setLoadingMemberships] = useState(false);
     const [loadingOrders, setLoadingOrders] = useState(false);
@@ -346,37 +347,55 @@ export function CustomerDashboard({ isOpen, onClose, business, phone, onOpenMemb
                         <div className="cd-section">
                             <h3 className="cd-section-title">Хүргэлтийн хаяг</h3>
                             <div className="cd-address-form">
+                                {/* Location type toggle */}
+                                <div className="cd-location-toggle">
+                                    <button
+                                        className={`cd-loc-btn ${address.locationType === 'city' ? 'active' : ''}`}
+                                        onClick={() => setAddress(a => ({ ...a, locationType: 'city' }))}
+                                    >
+                                        🏙️ Улаанбаатар
+                                    </button>
+                                    <button
+                                        className={`cd-loc-btn ${address.locationType === 'rural' ? 'active' : ''}`}
+                                        onClick={() => setAddress(a => ({ ...a, locationType: 'rural' }))}
+                                    >
+                                        🏔️ Орон нутаг
+                                    </button>
+                                </div>
+
                                 <div className="cd-form-group">
-                                    <label>Дүүрэг</label>
-                                    <input value={address.district} onChange={e => setAddress(a => ({ ...a, district: e.target.value }))} placeholder="Хан-Уул" />
+                                    <label>{address.locationType === 'city' ? 'Дүүрэг' : 'Аймаг'}</label>
+                                    <input value={address.district} onChange={e => setAddress(a => ({ ...a, district: e.target.value }))} placeholder={address.locationType === 'city' ? 'Хан-Уул' : 'Дархан-Уул'} />
                                 </div>
                                 <div className="cd-form-group">
-                                    <label>Хороо</label>
-                                    <input value={address.subDistrict} onChange={e => setAddress(a => ({ ...a, subDistrict: e.target.value }))} placeholder="1-р хороо" />
+                                    <label>{address.locationType === 'city' ? 'Хороо' : 'Сум, Баг'}</label>
+                                    <input value={address.subDistrict} onChange={e => setAddress(a => ({ ...a, subDistrict: e.target.value }))} placeholder={address.locationType === 'city' ? '1-р хороо' : 'Дархан сум, 3-р баг'} />
                                 </div>
                                 <div className="cd-form-row">
                                     <div className="cd-form-group">
-                                        <label>Байр / Гэр</label>
-                                        <input value={address.building} onChange={e => setAddress(a => ({ ...a, building: e.target.value }))} placeholder="Skytel Tower" />
+                                        <label>{address.locationType === 'city' ? 'Байр / Гэр' : 'Гэрийн хаяг'}</label>
+                                        <input value={address.building} onChange={e => setAddress(a => ({ ...a, building: e.target.value }))} placeholder={address.locationType === 'city' ? 'Skytel Tower' : '5-р байр'} />
                                     </div>
                                     <div className="cd-form-group">
                                         <label>Давхар</label>
                                         <input value={address.floor} onChange={e => setAddress(a => ({ ...a, floor: e.target.value }))} placeholder="12" />
                                     </div>
                                 </div>
-                                <div className="cd-form-row">
-                                    <div className="cd-form-group">
-                                        <label>Орц</label>
-                                        <input value={address.entrance} onChange={e => setAddress(a => ({ ...a, entrance: e.target.value }))} placeholder="2" />
+                                {address.locationType === 'city' && (
+                                    <div className="cd-form-row">
+                                        <div className="cd-form-group">
+                                            <label>Орц</label>
+                                            <input value={address.entrance} onChange={e => setAddress(a => ({ ...a, entrance: e.target.value }))} placeholder="2" />
+                                        </div>
+                                        <div className="cd-form-group">
+                                            <label>Хаалганы код</label>
+                                            <input value={address.doorCode} onChange={e => setAddress(a => ({ ...a, doorCode: e.target.value }))} placeholder="1234#" />
+                                        </div>
                                     </div>
-                                    <div className="cd-form-group">
-                                        <label>Хаалганы код</label>
-                                        <input value={address.doorCode} onChange={e => setAddress(a => ({ ...a, doorCode: e.target.value }))} placeholder="1234#" />
-                                    </div>
-                                </div>
+                                )}
                                 <div className="cd-form-group">
                                     <label>Нэмэлт тэмдэглэл</label>
-                                    <textarea value={address.notes} onChange={e => setAddress(a => ({ ...a, notes: e.target.value }))} placeholder="Барилгын урд талд зогсоно уу..." rows={3} />
+                                    <textarea value={address.notes} onChange={e => setAddress(a => ({ ...a, notes: e.target.value }))} placeholder={address.locationType === 'city' ? 'Барилгын урд талд зогсоно уу...' : 'Унааны мэдээлэл, хүлээн авагчийн нэмэлт мэдээлэл...'} rows={3} />
                                 </div>
                                 <button className="cd-btn-primary" onClick={saveAddress}>
                                     {addressSaved ? '✓ Хадгаллаа!' : 'Хадгалах'}

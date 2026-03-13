@@ -1577,6 +1577,37 @@
     gap: 12px;
 }
 
+/* Location type toggle (city/rural) */
+.cd-location-toggle {
+    display: flex;
+    gap: 0;
+    border: 1px solid var(--sf-border-strong);
+    border-radius: var(--sf-radius-sm);
+    overflow: hidden;
+}
+
+.cd-loc-btn {
+    flex: 1;
+    padding: 10px 12px;
+    border: none;
+    background: var(--sf-bg);
+    color: var(--sf-text-muted);
+    font-size: 0.82rem;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: var(--sf-font-body);
+    transition: all 0.2s;
+}
+
+.cd-loc-btn.active {
+    background: var(--sf-text);
+    color: #fff;
+}
+
+.cd-loc-btn:not(.active):hover {
+    background: var(--sf-bg-warm);
+}
+
 .cd-btn-primary {
     padding: 12px;
     background: var(--sf-text);
