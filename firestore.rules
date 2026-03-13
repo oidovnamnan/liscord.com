@@ -105,10 +105,18 @@ service cloud.firestore {
         allow delete: if false;
       }
 
-      // Orders: public create (storefront checkout), member read/update
+      // Orders: public create + update (storefront checkout + QPay payment update)
       match /orders/{docId} {
-        allow create: if true;  // Public: storefront checkout
-        allow read, update: if isMemberOf(bizId);
+        allow create, update: if true;  // Public: storefront checkout + payment confirmation
+        allow read: if isMemberOf(bizId);
+        allow delete: if false;
+      }
+
+      // Memberships: public read (storefront VIP check) + public create (after payment)
+      match /memberships/{docId} {
+        allow read: if true;  // Public: storefront checks VIP access by phone
+        allow create: if true;  // Public: granted after QPay payment
+        allow update: if isMemberOf(bizId);
         allow delete: if false;
       }
 
