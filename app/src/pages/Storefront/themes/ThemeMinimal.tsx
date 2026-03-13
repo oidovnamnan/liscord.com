@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { ShoppingBag, Search, Plus, Lock, Crown, X, Phone } from 'lucide-react';
 import type { Business, Product } from '../../../types';
 import { useCartStore } from '../../../store';
@@ -431,6 +431,9 @@ function MembershipModal({
                 await updateDoc(doc(db, 'businesses', business.id, 'orders', targetOrderId), {
                     qpayInvoiceId: invoice.invoice_id,
                 });
+
+                // Start polling QPay for payment confirmation
+                startPaymentPolling(invoice.invoice_id, targetOrderId);
             }
         } catch (qpayErr) {
             console.error('QPay QR generation failed:', qpayErr);
@@ -439,6 +442,75 @@ function MembershipModal({
             setQpayLoading(false);
         }
     };
+
+    // Poll QPay every 3s to detect payment
+    const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+    const startPaymentPolling = (invoiceId: string, oid: string) => {
+        // Clear any existing polling
+        if (pollingRef.current) clearInterval(pollingRef.current);
+
+        let attempts = 0;
+        const maxAttempts = 200; // ~10 min at 3s intervals
+
+        pollingRef.current = setInterval(async () => {
+            attempts++;
+            if (attempts > maxAttempts) {
+                if (pollingRef.current) clearInterval(pollingRef.current);
+                return;
+            }
+
+            try {
+                const resp = await fetch('/api/qpay-check', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ invoiceId }),
+                });
+                const data = await resp.json();
+
+                if (data.paid) {
+                    // Payment confirmed! Update Firestore order
+                    if (pollingRef.current) clearInterval(pollingRef.current);
+
+                    try {
+                        const { doc, updateDoc, arrayUnion, serverTimestamp } = await import('firebase/firestore');
+                        const { db } = await import('../../../services/firebase');
+                        const orderRef = doc(db, 'businesses', business.id, 'orders', oid);
+                        await updateDoc(orderRef, {
+                            paymentStatus: 'paid',
+                            paymentVerifiedAt: serverTimestamp(),
+                            paymentVerifiedBy: 'qpay',
+                            'financials.paidAmount': price,
+                            'financials.balanceDue': 0,
+                            'financials.payments': arrayUnion({
+                                id: `qpay_${data.payment?.payment_id || Date.now()}`,
+                                amount: price,
+                                method: 'qpay',
+                                note: 'QPay төлбөр',
+                                paidAt: serverTimestamp(),
+                                recordedBy: 'qpay_auto',
+                            }),
+                        });
+                    } catch (updateErr) {
+                        console.error('Failed to update order:', updateErr);
+                    }
+
+                    // The onSnapshot will catch the paymentStatus change
+                    // and trigger setPaymentConfirmed(true)
+                }
+            } catch (pollErr) {
+                // Silent fail — will retry on next interval
+                console.debug('QPay poll error:', pollErr);
+            }
+        }, 3000);
+    };
+
+    // Cleanup polling on unmount
+    useEffect(() => {
+        return () => {
+            if (pollingRef.current) clearInterval(pollingRef.current);
+        };
+    }, []);
 
     return (
         <div className="sf-membership-backdrop" onClick={onClose}>
