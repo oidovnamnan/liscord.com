@@ -428,6 +428,15 @@ function MembershipModal({
                 qPay_shortUrl: invoice.qPay_shortUrl,
                 urls: invoice.urls || [],
             });
+
+            // Save invoice_id to order for callback verification
+            if (invoice.invoice_id) {
+                const { doc, updateDoc } = await import('firebase/firestore');
+                const { db } = await import('../../../services/firebase');
+                await updateDoc(doc(db, 'businesses', business.id, 'orders', targetOrderId), {
+                    qpayInvoiceId: invoice.invoice_id,
+                });
+            }
         } catch (qpayErr) {
             console.error('QPay QR generation failed:', qpayErr);
             setQpayError(true);
