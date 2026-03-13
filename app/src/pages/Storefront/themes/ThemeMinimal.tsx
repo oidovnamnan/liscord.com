@@ -281,7 +281,7 @@ function MembershipModal({
     const [creatingOrder, setCreatingOrder] = useState(false);
     const [orderId, setOrderId] = useState('');
     const [refCode, setRefCode] = useState('');
-    const [qpayData, setQpayData] = useState<{ qr_image: string; qPay_shortUrl: string; urls: Array<{ name: string; link: string; logo: string }> } | null>(null);
+    const [qpayData, setQpayData] = useState<{ qr_image: string; qPay_shortUrl: string; urls: Array<{ name: string; description: string; link: string; logo: string }> } | null>(null);
     const [qpayError, setQpayError] = useState(false);
     const [qpayLoading, setQpayLoading] = useState(false);
     const [paymentConfirmed, setPaymentConfirmed] = useState(false);
@@ -512,12 +512,27 @@ function MembershipModal({
                                     Банкны аппаараа QR уншуулна уу
                                 </p>
                                 {qpayData.urls.length > 0 && (
-                                    <div className="sf-membership-bank-apps">
-                                        {qpayData.urls.slice(0, 6).map((url, i) => (
-                                            <a key={i} href={url.link} className="sf-membership-bank-app">
-                                                {url.name}
-                                            </a>
-                                        ))}
+                                    <div className="sf-qpay-banks-section">
+                                        <div className="sf-qpay-banks-divider">
+                                            <span>эсвэл аппаар нээх</span>
+                                        </div>
+                                        <div className="sf-qpay-banks-grid">
+                                            {qpayData.urls.map((url, i) => (
+                                                <a key={i} href={url.link} className="sf-qpay-bank-item">
+                                                    <img
+                                                        src={url.logo}
+                                                        alt={url.name}
+                                                        className="sf-qpay-bank-logo"
+                                                        onError={(e) => {
+                                                            (e.target as HTMLImageElement).style.display = 'none';
+                                                            (e.target as HTMLImageElement).nextElementSibling?.classList.add('sf-qpay-bank-fallback-visible');
+                                                        }}
+                                                    />
+                                                    <span className="sf-qpay-bank-fallback">{url.name.slice(0, 2)}</span>
+                                                    <span className="sf-qpay-bank-name">{url.description || url.name}</span>
+                                                </a>
+                                            ))}
+                                        </div>
                                     </div>
                                 )}
                                 <div className="sf-membership-waiting">
