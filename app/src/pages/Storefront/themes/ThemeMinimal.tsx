@@ -270,6 +270,14 @@ function MembershipModal({
     const [error, setError] = useState('');
     const [success, setSuccess] = useState(false);
 
+    // OTP states
+    const [otpSent, setOtpSent] = useState(false);
+    const [otpCode, setOtpCode] = useState('');
+    const [otpVerifying, setOtpVerifying] = useState(false);
+    const [confirmationResult, setConfirmationResult] = useState<any>(null);
+    const recaptchaRef = useRef<HTMLDivElement>(null);
+    const recaptchaVerifierRef = useRef<any>(null);
+
     // Payment flow
     const [showPayment, setShowPayment] = useState(false);
     const [paymentTab, setPaymentTab] = useState<'qpay' | 'bank'>('qpay');
@@ -295,16 +303,65 @@ function MembershipModal({
         return code;
     };
 
-    // Step 1: Verify existing membership
-    const handleVerify = async () => {
-        if (!phone.trim() || phone.length < 8) {
+    // Step 1: Send OTP to phone
+    const handleSendOTP = async () => {
+        const cleanPhone = phone.trim().replace(/[\s\-]/g, '');
+        if (!cleanPhone || cleanPhone.length < 8) {
             setError('Утасны дугаараа оруулна уу');
             return;
         }
         setChecking(true);
         setError('');
+
         try {
-            const hasMembership = await onVerify(phone.trim().replace(/[\s\-+]/g, ''));
+            const { RecaptchaVerifier, signInWithPhoneNumber } = await import('firebase/auth');
+            const { auth } = await import('../../../services/firebase');
+
+            // Create invisible recaptcha (only once)
+            if (!recaptchaVerifierRef.current && recaptchaRef.current) {
+                recaptchaVerifierRef.current = new RecaptchaVerifier(auth, recaptchaRef.current, {
+                    size: 'invisible',
+                });
+            }
+
+            // Format phone number (add +976 if not present)
+            const formattedPhone = cleanPhone.startsWith('+') ? cleanPhone :
+                cleanPhone.startsWith('976') ? `+${cleanPhone}` : `+976${cleanPhone}`;
+
+            const result = await signInWithPhoneNumber(auth, formattedPhone, recaptchaVerifierRef.current);
+            setConfirmationResult(result);
+            setOtpSent(true);
+        } catch (err: any) {
+            console.error('OTP send error:', err);
+            if (err.code === 'auth/too-many-requests') {
+                setError('Хэт олон удаа оролдлоо. Түр хүлээнэ үү.');
+            } else if (err.code === 'auth/invalid-phone-number') {
+                setError('Буруу утасны дугаар байна');
+            } else {
+                setError('SMS илгээхэд алдаа гарлаа. Дахин оролдоно уу.');
+            }
+            // Reset recaptcha on error
+            recaptchaVerifierRef.current = null;
+        } finally {
+            setChecking(false);
+        }
+    };
+
+    // Step 2: Verify OTP code
+    const handleVerifyOTP = async () => {
+        if (!otpCode || otpCode.length < 6) {
+            setError('6 оронтой кодоо оруулна уу');
+            return;
+        }
+        setOtpVerifying(true);
+        setError('');
+
+        try {
+            await confirmationResult.confirm(otpCode);
+
+            // OTP verified! Now check membership
+            const cleanPhone = phone.trim().replace(/[\s\-+]/g, '');
+            const hasMembership = await onVerify(cleanPhone);
             if (hasMembership) {
                 setSuccess(true);
                 setTimeout(() => onClose(), 1500);
@@ -312,10 +369,19 @@ function MembershipModal({
                 // No membership → show payment options
                 setShowPayment(true);
             }
-        } catch {
-            setError('Алдаа гарлаа. Дахин оролдоно уу.');
+        } catch (err: any) {
+            console.error('OTP verify error:', err);
+            if (err.code === 'auth/invalid-verification-code') {
+                setError('Буруу код байна');
+            } else if (err.code === 'auth/code-expired') {
+                setError('Кодын хугацаа дууссан. Дахин илгээнэ үү.');
+                setOtpSent(false);
+                setOtpCode('');
+            } else {
+                setError('Баталгаажуулахад алдаа гарлаа');
+            }
         } finally {
-            setChecking(false);
+            setOtpVerifying(false);
         }
     };
 
@@ -703,31 +769,90 @@ function MembershipModal({
                         {error && <div className="sf-membership-error">{error}</div>}
                     </div>
                 ) : (
-                    /* ═══ Phone input ═══ */
+                    /* ═══ Phone + OTP verification ═══ */
                     <>
-                        <div className="sf-membership-input-group">
-                            <label>Утасны дугаар</label>
-                            <div className="sf-membership-input-wrap">
-                                <Phone size={16} />
-                                <input
-                                    type="tel"
-                                    placeholder="9900 1234"
-                                    value={phone}
-                                    onChange={e => setPhone(e.target.value)}
-                                    maxLength={12}
-                                    onKeyDown={e => e.key === 'Enter' && handleVerify()}
-                                />
-                            </div>
-                            {error && <div className="sf-membership-error">{error}</div>}
-                        </div>
+                        {!otpSent ? (
+                            /* Step 1: Phone input */
+                            <>
+                                <div className="sf-membership-input-group">
+                                    <label>Утасны дугаар</label>
+                                    <div className="sf-membership-input-wrap">
+                                        <Phone size={16} />
+                                        <input
+                                            type="tel"
+                                            placeholder="9900 1234"
+                                            value={phone}
+                                            onChange={e => setPhone(e.target.value)}
+                                            maxLength={12}
+                                            onKeyDown={e => e.key === 'Enter' && handleSendOTP()}
+                                        />
+                                    </div>
+                                    {error && <div className="sf-membership-error">{error}</div>}
+                                </div>
 
-                        <button
-                            className="sf-membership-verify-btn"
-                            onClick={handleVerify}
-                            disabled={checking}
-                        >
-                            {checking ? 'Шалгаж байна...' : 'Үргэлжлүүлэх'}
-                        </button>
+                                <button
+                                    className="sf-membership-verify-btn"
+                                    onClick={handleSendOTP}
+                                    disabled={checking}
+                                >
+                                    {checking ? 'Илгээж байна...' : '📱 Код илгээх'}
+                                </button>
+                            </>
+                        ) : (
+                            /* Step 2: OTP code input */
+                            <>
+                                <div className="sf-membership-input-group">
+                                    <label>
+                                        <strong>+976{phone.replace(/[\s\-+]/g, '')}</strong> дугаар руу код илгээлээ
+                                    </label>
+                                    <div className="sf-membership-input-wrap sf-otp-input-wrap">
+                                        <input
+                                            type="text"
+                                            inputMode="numeric"
+                                            placeholder="— — — — — —"
+                                            value={otpCode}
+                                            onChange={e => {
+                                                const v = e.target.value.replace(/\D/g, '').slice(0, 6);
+                                                setOtpCode(v);
+                                            }}
+                                            maxLength={6}
+                                            onKeyDown={e => e.key === 'Enter' && handleVerifyOTP()}
+                                            autoFocus
+                                            style={{ textAlign: 'center', letterSpacing: '8px', fontSize: '1.2rem', fontWeight: 700 }}
+                                        />
+                                    </div>
+                                    {error && <div className="sf-membership-error">{error}</div>}
+                                </div>
+
+                                <button
+                                    className="sf-membership-verify-btn"
+                                    onClick={handleVerifyOTP}
+                                    disabled={otpVerifying}
+                                >
+                                    {otpVerifying ? 'Шалгаж байна...' : '✅ Баталгаажуулах'}
+                                </button>
+
+                                <button
+                                    className="sf-membership-resend-btn"
+                                    onClick={() => {
+                                        setOtpSent(false);
+                                        setOtpCode('');
+                                        setError('');
+                                        recaptchaVerifierRef.current = null;
+                                    }}
+                                    style={{
+                                        background: 'none', border: 'none', color: '#7c3aed',
+                                        fontSize: '0.78rem', cursor: 'pointer', padding: '8px',
+                                        marginTop: '4px', textDecoration: 'underline'
+                                    }}
+                                >
+                                    Дахин илгээх
+                                </button>
+                            </>
+                        )}
+
+                        {/* Invisible reCAPTCHA container */}
+                        <div ref={recaptchaRef} id="recaptcha-container" />
                     </>
                 )}
             </div>
