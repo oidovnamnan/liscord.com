@@ -42,12 +42,10 @@ export const useCartStore = create<CartState>()(
                             items: state.items.map(i =>
                                 i.id === id ? { ...i, quantity: i.quantity + newItem.quantity } : i
                             ),
-                            isOpen: true
                         };
                     }
                     return {
                         items: [...state.items, { ...newItem, id }],
-                        isOpen: true
                     };
                 });
             },
