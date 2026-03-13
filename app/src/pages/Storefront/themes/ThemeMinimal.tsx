@@ -487,7 +487,7 @@ function MembershipModal({
                                 amount: price,
                                 method: 'qpay',
                                 note: 'QPay төлбөр',
-                                paidAt: serverTimestamp(),
+                                paidAt: new Date().toISOString(),
                                 recordedBy: 'qpay_auto',
                             }),
                         });
