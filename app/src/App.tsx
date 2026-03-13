@@ -22,6 +22,7 @@ const DashboardPage = lazy(() => import('./pages/Dashboard/DashboardPage').then(
 const OrdersPage = lazy(() => import('./pages/Orders/OrdersPage').then(m => ({ default: m.OrdersPage })));
 const CustomersPage = lazy(() => import('./pages/Customers/CustomersPage').then(m => ({ default: m.CustomersPage })));
 const ProductsPage = lazy(() => import('./pages/Products/ProductsPage').then(m => ({ default: m.ProductsPage })));
+const CategoriesPage = lazy(() => import('./pages/Categories/CategoriesPage').then(m => ({ default: m.CategoriesPage })));
 const SettingsPage = lazy(() => import('./pages/Settings/SettingsPage').then(m => ({ default: m.SettingsPage })));
 const ProfilePage = lazy(() => import('./pages/Profile/ProfilePage').then(m => ({ default: m.ProfilePage })));
 const EmployeesPage = lazy(() => import('./pages/Employees/EmployeesPage').then(m => ({ default: m.EmployeesPage })));
@@ -402,6 +403,7 @@ export default function App() {
             {/* --- Core Modules (Always Accessible) --- */}
             <Route path="orders" element={<OrdersPage />} />
             <Route path="products" element={<ProductsPage />} />
+            <Route path="categories" element={<CategoriesPage />} />
             <Route path="inventory" element={<InventoryPage />} />
             <Route path="customers" element={<CustomersPage />} />
             <Route path="settings" element={<SettingsPage />} />

@@ -655,6 +655,14 @@ export interface Category {
     name: string;
     description: string;
     color?: string;
+    icon?: string;
+    categoryType: 'normal' | 'exclusive';
+    membershipConfig?: {
+        price: number;
+        durationDays: number;
+        description?: string;
+    };
+    sortOrder?: number;
     productCount: number;
     isDeleted: boolean;
     createdAt: Date;

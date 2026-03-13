@@ -98,6 +98,14 @@ export const MODULE_PERMISSIONS: Record<string, ModulePermission[]> = {
         { id: 'products.manage_stock', label: 'Нөөц удирдах' },
     ],
 
+    'categories': [
+        { id: 'categories.view', label: 'Ангилал харах' },
+        { id: 'categories.create', label: 'Ангилал нэмэх' },
+        { id: 'categories.edit', label: 'Ангилал засах' },
+        { id: 'categories.delete', label: 'Ангилал устгах' },
+        { id: 'categories.manage_memberships', label: 'Гишүүнчлэл удирдах' },
+    ],
+
     'inventory': [
         { id: 'inventory.view', label: 'Нөөц харах' },
         { id: 'inventory.adjust', label: 'Нөөц тохируулах (+/-)' },

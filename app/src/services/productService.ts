@@ -270,7 +270,7 @@ export const categoryService = {
         const q = query(this.getCategoriesRef(bizId), where('isDeleted', '==', false));
         return onSnapshot(q, (snapshot) => {
             const categories = snapshot.docs.map(d => ({ id: d.id, ...convertTimestamps(d.data()) } as Category));
-            categories.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+            categories.sort((a, b) => (a.sortOrder ?? 999) - (b.sortOrder ?? 999) || (a.name || '').localeCompare(b.name || ''));
             callback(categories);
         });
     },
@@ -278,11 +278,28 @@ export const categoryService = {
     async createCategory(bizId: string, category: Partial<Category>): Promise<string> {
         const docRef = await addDoc(this.getCategoriesRef(bizId), {
             ...category,
+            categoryType: category.categoryType || 'normal',
             productCount: 0,
             isDeleted: false,
             createdAt: serverTimestamp()
         });
         return docRef.id;
+    },
+
+    async updateCategory(bizId: string, id: string, data: Partial<Category>) {
+        const docRef = doc(this.getCategoriesRef(bizId), id);
+        await updateDoc(docRef, {
+            ...data,
+            updatedAt: serverTimestamp()
+        });
+    },
+
+    async deleteCategory(bizId: string, id: string) {
+        const docRef = doc(this.getCategoriesRef(bizId), id);
+        await updateDoc(docRef, {
+            isDeleted: true,
+            updatedAt: serverTimestamp()
+        });
     }
 };
 
