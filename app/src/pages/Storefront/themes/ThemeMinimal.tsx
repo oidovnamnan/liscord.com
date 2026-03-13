@@ -282,6 +282,8 @@ function MembershipModal({
     const [orderId, setOrderId] = useState('');
     const [refCode, setRefCode] = useState('');
     const [qpayData, setQpayData] = useState<{ qr_image: string; qPay_shortUrl: string; urls: Array<{ name: string; link: string; logo: string }> } | null>(null);
+    const [qpayError, setQpayError] = useState(false);
+    const [qpayLoading, setQpayLoading] = useState(false);
     const [paymentConfirmed, setPaymentConfirmed] = useState(false);
 
     const enabledBanks = (business.settings?.bankTransferAccounts || []).filter((a: { enabled: boolean }) => a.enabled);
@@ -396,31 +398,41 @@ function MembershipModal({
 
             // If QPay selected, generate QR
             if (paymentTab === 'qpay') {
-                try {
-                    const { qpayService } = await import('../../../services/qpay');
-                    const invoice = await qpayService.createInvoice(
-                        business.id,
-                        newId,
-                        price,
-                        `VIP гишүүнчлэл — ${product.exclusiveCategoryName || 'Онцгой'}`,
-                        cleanPhone
-                    );
-                    setQpayData({
-                        qr_image: invoice.qr_image,
-                        qPay_shortUrl: invoice.qPay_shortUrl,
-                        urls: invoice.urls || [],
-                    });
-                } catch (qpayErr) {
-                    console.error('QPay QR generation failed:', qpayErr);
-                    // Fall back to bank transfer
-                    setPaymentTab('bank');
-                }
+                await generateQPayQR(newId, cleanPhone);
             }
         } catch (err) {
             console.error('Failed to create membership order:', err);
             setError('Захиалга үүсгэхэд алдаа гарлаа. Дахин оролдоно уу.');
         } finally {
             setCreatingOrder(false);
+        }
+    };
+
+    // Generate or retry QPay QR
+    const generateQPayQR = async (oid?: string, phone?: string) => {
+        const targetOrderId = oid || orderId;
+        if (!targetOrderId) return;
+        setQpayLoading(true);
+        setQpayError(false);
+        try {
+            const { qpayService } = await import('../../../services/qpay');
+            const invoice = await qpayService.createInvoice(
+                business.id,
+                targetOrderId,
+                price,
+                `VIP гишүүнчлэл — ${product.exclusiveCategoryName || 'Онцгой'}`,
+                phone || ''
+            );
+            setQpayData({
+                qr_image: invoice.qr_image,
+                qPay_shortUrl: invoice.qPay_shortUrl,
+                urls: invoice.urls || [],
+            });
+        } catch (qpayErr) {
+            console.error('QPay QR generation failed:', qpayErr);
+            setQpayError(true);
+        } finally {
+            setQpayLoading(false);
         }
     };
 
@@ -504,7 +516,13 @@ function MembershipModal({
                                     Төлбөр хүлээж байна...
                                 </div>
                             </div>
-                        ) : paymentTab === 'qpay' && !qpayData ? (
+                        ) : paymentTab === 'qpay' && qpayError ? (
+                            <div className="sf-membership-qpay-error">
+                                <p style={{ color: '#dc2626', fontWeight: 600, margin: '0 0 10px' }}>QPay QR үүсгэхэд алдаа гарлаа</p>
+                                <button className="sf-membership-verify-btn" onClick={() => generateQPayQR()}>Дахин оролдох</button>
+                                <p style={{ fontSize: '0.75rem', color: '#999', marginTop: 8 }}>Эсвэл "Банкны шилжүүлэг" сонгоно уу</p>
+                            </div>
+                        ) : paymentTab === 'qpay' && (qpayLoading || !qpayData) ? (
                             <div className="sf-membership-waiting">
                                 <div className="sf-membership-spinner" />
                                 QPay QR код үүсгэж байна...
