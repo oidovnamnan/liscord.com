@@ -392,7 +392,7 @@ export default function App() {
           <Route path="/" element={<LandingPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
-          <Route path="/s/:slug" element={<StorefrontWrapper />}>
+          <Route path="/:slug" element={<StorefrontWrapper />}>
             <Route index element={<StoreCatalog />} />
             <Route path="checkout" element={<StoreCheckout />} />
           </Route>

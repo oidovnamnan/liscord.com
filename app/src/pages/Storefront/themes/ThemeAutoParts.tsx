@@ -34,7 +34,7 @@ export function ThemeAutoParts({ business }: { business: Business }) {
     return (
         <div className="theme-auto">
             <header className="auto-header">
-                <a href={`/s/${business.slug}`} className="auto-logo">
+                <a href={`/${business.slug}`} className="auto-logo">
                     {business.logo && <img src={business.logo} alt={storeName} />}
                     <span className="hide-mobile">{storeName}</span>
                 </a>

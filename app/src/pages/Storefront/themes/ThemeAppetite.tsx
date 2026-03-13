@@ -34,7 +34,7 @@ export function ThemeAppetite({ business }: { business: Business }) {
         <div className="theme-appetite">
             <header className="appetite-header">
                 <div className="appetite-top">
-                    <a href={`/s/${business.slug}`} className="appetite-logo">
+                    <a href={`/${business.slug}`} className="appetite-logo">
                         {business.logo && <img src={business.logo} alt={storeName} />}
                         {storeName}
                     </a>

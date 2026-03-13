@@ -48,7 +48,7 @@ export function ThemeFurniture({ business }: { business: Business }) {
                 padding: isScrolled ? '16px 6%' : '24px 6%',
                 transition: 'all 0.3s ease'
             }}>
-                <a href={`/s/${business.slug}`} className="furn-logo">
+                <a href={`/${business.slug}`} className="furn-logo">
                     {business.logo && <img src={business.logo} alt={storeName} style={{ filter: isScrolled ? 'none' : 'brightness(0) invert(1)' }} />}
                     <span className="hide-mobile">{storeName}</span>
                 </a>

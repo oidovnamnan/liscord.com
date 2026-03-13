@@ -103,7 +103,7 @@ export function CartDrawer() {
                             className="btn btn-primary cart-checkout-btn"
                             onClick={() => {
                                 setIsOpen(false);
-                                navigate(`/s/${slug}/checkout`);
+                                navigate(`/${slug}/checkout`);
                             }}
                         >
                             Тооцоо хийх <ArrowRight size={18} />

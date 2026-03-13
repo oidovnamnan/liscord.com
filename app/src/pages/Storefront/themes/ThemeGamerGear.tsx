@@ -32,7 +32,7 @@ export function ThemeGamerGear({ business }: { business: Business }) {
     return (
         <div className="theme-gamer">
             <header className="gamer-header">
-                <a href={`/s/${business.slug}`} className="gamer-logo">
+                <a href={`/${business.slug}`} className="gamer-logo">
                     {business.logo && <img src={business.logo} alt={storeName} />}
                     <span className="hide-mobile">{storeName}</span>
                 </a>

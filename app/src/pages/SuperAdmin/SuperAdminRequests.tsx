@@ -108,7 +108,7 @@ export function SuperAdminRequests() {
                                             <div style={{ background: 'var(--surface-2)', padding: '16px', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
                                                 <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '8px', textTransform: 'uppercase', fontWeight: 600 }}>Шинэ Дэлгүүрийн Холбоос:</div>
                                                 <div style={{ fontWeight: 700, fontSize: '1rem', color: 'var(--primary)', wordBreak: 'break-all' }}>
-                                                    {window.location.origin}/s/{req.requestedData.slug}
+                                                    {window.location.origin}/{req.requestedData.slug}
                                                 </div>
                                             </div>
                                         )}

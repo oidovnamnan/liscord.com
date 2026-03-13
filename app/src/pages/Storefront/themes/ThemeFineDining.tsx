@@ -48,7 +48,7 @@ export function ThemeFineDining({ business }: { business: Business }) {
                 padding: isScrolled ? '15px 6%' : '30px 6%',
                 transition: 'all 0.3s ease'
             }}>
-                <a href={`/s/${business.slug}`} className="fd-logo">
+                <a href={`/${business.slug}`} className="fd-logo">
                     {business.logo && <img src={business.logo} alt={storeName} />}
                     <span className="hide-mobile">{storeName}</span>
                 </a>

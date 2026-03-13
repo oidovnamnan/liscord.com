@@ -53,7 +53,7 @@ export function ThemeCosmetics({ business }: { business: Business }) {
                 {/* Empty div for symmetry if we want logo centered, but keeping it standard flow for now */}
                 <div></div>
 
-                <a href={`/s/${business.slug}`} className="cosmetics-logo">
+                <a href={`/${business.slug}`} className="cosmetics-logo">
                     {business.logo && <img src={business.logo} alt={storeName} />}
                     {storeName}
                 </a>

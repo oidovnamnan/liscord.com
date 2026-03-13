@@ -33,7 +33,7 @@ export function ThemeArtisan({ business }: { business: Business }) {
     return (
         <div className="theme-artisan">
             <header className="artisan-header">
-                <a href={`/s/${business.slug}`} className="artisan-logo">
+                <a href={`/${business.slug}`} className="artisan-logo">
                     {business.logo && <img src={business.logo} alt={storeName} />}
                     <span className="hide-mobile">{storeName}</span>
                 </a>

@@ -37,7 +37,7 @@ export function ThemeEditorial({ business }: { business: Business }) {
     return (
         <div className="theme-editorial">
             <nav className="editorial-nav">
-                <a href={`/s/${business.slug}`} className="editorial-logo">
+                <a href={`/${business.slug}`} className="editorial-logo">
                     {business.logo && <img src={business.logo} alt={storeName} />}
                     {storeName}
                 </a>

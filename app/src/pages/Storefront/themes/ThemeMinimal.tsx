@@ -76,7 +76,7 @@ export function ThemeMinimal({ business }: { business: Business }) {
         <div className="store-bg">
             {/* Sticky Navbar */}
             <nav className="store-nav">
-                <a href={`/s/${business.slug}`} className="store-logo">
+                <a href={`/${business.slug}`} className="store-logo">
                     {business.logo && <img src={business.logo} alt={storeName} />}
                     <span>{storeName}</span>
                 </a>

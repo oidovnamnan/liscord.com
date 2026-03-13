@@ -341,7 +341,7 @@ export function StoreCheckout() {
                             </div>
                         )}
 
-                        <button className="btn btn-primary gradient-btn" onClick={() => navigate(`/s/${slug}`)} style={{ width: '100%', height: 54, borderRadius: 16, fontSize: '1.05rem', fontWeight: 800 }}>
+                        <button className="btn btn-primary gradient-btn" onClick={() => navigate(`/${slug}`)} style={{ width: '100%', height: 54, borderRadius: 16, fontSize: '1.05rem', fontWeight: 800 }}>
                             Дэлгүүр рүү буцах
                         </button>
                     </div>
@@ -367,7 +367,7 @@ export function StoreCheckout() {
         return (
             <div className="store-bg" style={{ minHeight: '100vh', padding: 40, textAlign: 'center' }}>
                 <h2>Таны сагс хоосон байна</h2>
-                <button className="btn btn-outline" onClick={() => navigate(`/s/${slug}`)} style={{ marginTop: 20 }}>Буцах</button>
+                <button className="btn btn-outline" onClick={() => navigate(`/${slug}`)} style={{ marginTop: 20 }}>Буцах</button>
             </div>
         );
     }
@@ -379,7 +379,7 @@ export function StoreCheckout() {
         <div className="store-bg" style={{ minHeight: '100vh', paddingBottom: 60 }}>
             <nav className="store-nav" style={{ borderBottom: '1px solid var(--border-color)', background: 'var(--surface-1)', padding: 0 }}>
                 <div style={{ maxWidth: 1100, margin: '0 auto', width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 20px' }}>
-                    <button className="btn btn-ghost" onClick={() => navigate(`/s/${slug}`)} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: 0 }}>
+                    <button className="btn btn-ghost" onClick={() => navigate(`/${slug}`)} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: 0 }}>
                         <ChevronLeft size={20} /> Буцах
                     </button>
                     <div style={{ fontWeight: 800, fontSize: '1.2rem', color: 'var(--text-primary)' }}>Тооцоо хийх</div>

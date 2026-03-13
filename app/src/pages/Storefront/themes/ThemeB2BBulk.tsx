@@ -48,7 +48,7 @@ export function ThemeB2BBulk({ business }: { business: Business }) {
     return (
         <div className="theme-b2b">
             <header className="b2b-header">
-                <a href={`/s/${business.slug}`} className="b2b-logo">
+                <a href={`/${business.slug}`} className="b2b-logo">
                     {business.logo && <img src={business.logo} alt={storeName} />}
                     <span className="hide-mobile">{storeName} Wholesale</span>
                 </a>

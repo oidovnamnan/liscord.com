@@ -32,7 +32,7 @@ export function ThemeCafe({ business }: { business: Business }) {
     return (
         <div className="theme-cafe">
             <header className="cafe-header">
-                <a href={`/s/${business.slug}`} className="cafe-logo">
+                <a href={`/${business.slug}`} className="cafe-logo">
                     {business.logo && <img src={business.logo} alt={storeName} />}
                     {storeName}
                 </a>

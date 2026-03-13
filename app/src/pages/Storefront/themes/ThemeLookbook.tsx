@@ -40,7 +40,7 @@ export function ThemeLookbook({ business }: { business: Business }) {
     return (
         <div className="theme-lookbook">
             <header className="lookbook-header">
-                <a href={`/s/${business.slug}`} className="lookbook-logo">
+                <a href={`/${business.slug}`} className="lookbook-logo">
                     {business.logo && <img src={business.logo} alt={storeName} />}
                     {storeName}
                 </a>

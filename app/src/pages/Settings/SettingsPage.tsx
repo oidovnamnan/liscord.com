@@ -482,7 +482,7 @@ export function SettingsPage() {
                                         <div className="input-group">
                                             <label className="settings-label">Дэлгүүрийн холбоос (Slug) <span style={{ color: 'var(--danger)', fontSize: '0.7rem' }}>(жилд 1 удаа)</span></label>
                                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                                <span style={{ color: 'var(--text-muted)', fontWeight: 600 }}>{window.location.origin}/s/</span>
+                                                <span style={{ color: 'var(--text-muted)', fontWeight: 600 }}>{window.location.origin}/</span>
                                                 <input className="input" name="slug" value={storefrontSlug} onChange={(e) => { setStorefrontSlug(e.target.value.toLowerCase()); setIsDirty(true); }} placeholder="zara-mongolia" required pattern="[a-z0-9-]+" title="Зөвхөн жижиг англи үсэг, тоо болон зураас ашиглана уу" style={{ flex: 1 }} disabled={!!business?.slug || !!pendingRequest} />
                                             </div>
                                             <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: '8px 0 0 0' }}>Зөвхөн жижиг англи үсэг, тоо болон дундуур зураас орж болно.</p>
@@ -537,11 +537,11 @@ export function SettingsPage() {
                                         <div style={{ marginTop: '24px', padding: '16px', background: 'var(--primary-light)', borderRadius: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                             <div>
                                                 <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '4px' }}>Танай дэлгүүрийн шууд линк:</div>
-                                                <a href={`${window.location.origin}/s/${storefrontSlug}`} target="_blank" rel="noopener noreferrer" style={{ fontWeight: 600, color: 'var(--primary)', textDecoration: 'none' }}>
-                                                    {window.location.origin}/s/{storefrontSlug}
+                                                <a href={`${window.location.origin}/${storefrontSlug}`} target="_blank" rel="noopener noreferrer" style={{ fontWeight: 600, color: 'var(--primary)', textDecoration: 'none' }}>
+                                                    {window.location.origin}/{storefrontSlug}
                                                 </a>
                                             </div>
-                                            <a href={`${window.location.origin}/s/${storefrontSlug}`} target="_blank" rel="noopener noreferrer" className="btn btn-outline btn-sm" style={{ flexShrink: 0 }}>
+                                            <a href={`${window.location.origin}/${storefrontSlug}`} target="_blank" rel="noopener noreferrer" className="btn btn-outline btn-sm" style={{ flexShrink: 0 }}>
                                                 Шалгах <Share2 size={14} style={{ marginLeft: 4 }} />
                                             </a>
                                         </div>
@@ -843,7 +843,7 @@ export function SettingsPage() {
                                     <div className="input-group">
                                         <label className="input-label" style={{ marginBottom: 4 }}>Шинэ холбоос (уншихад амархан)</label>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                            <span style={{ color: 'var(--text-muted)' }}>{window.location.origin}/s/</span>
+                                            <span style={{ color: 'var(--text-muted)' }}>{window.location.origin}/</span>
                                             <input className="input" style={{ flex: 1 }} value={requestedChanges?.slug || ''} onChange={e => setRequestedChanges(p => ({ ...p, slug: e.target.value.toLowerCase() }))} placeholder="zara-mongolia" required pattern="[a-z0-9-]+" title="Зөвхөн жижиг англи үсэг, тоо болон зураас ашиглана уу" />
                                         </div>
                                     </div>

@@ -44,7 +44,7 @@ export function ThemeGrocery({ business }: { business: Business }) {
         <div className="theme-grocery">
             <header className="grocery-header">
                 <div className="grocery-header-top animate-fade-in">
-                    <a href={`/s/${business.slug}`} className="grocery-logo">
+                    <a href={`/${business.slug}`} className="grocery-logo">
                         {business.logo && <img src={business.logo} alt={storeName} />}
                         {storeName}
                     </a>

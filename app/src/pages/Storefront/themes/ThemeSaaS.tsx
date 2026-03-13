@@ -32,7 +32,7 @@ export function ThemeSaaS({ business }: { business: Business }) {
     return (
         <div className="theme-saas">
             <header className="saas-header">
-                <a href={`/s/${business.slug}`} className="saas-logo">
+                <a href={`/${business.slug}`} className="saas-logo">
                     {business.logo ? <img src={business.logo} alt={storeName} /> : <div style={{ width: 32, height: 32, background: 'linear-gradient(135deg, #3b82f6, #8b5cf6)', borderRadius: 8 }} />}
                     {storeName}
                 </a>

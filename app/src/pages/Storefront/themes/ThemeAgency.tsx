@@ -32,7 +32,7 @@ export function ThemeAgency({ business }: { business: Business }) {
     return (
         <div className="theme-agency">
             <header className="agency-header">
-                <a href={`/s/${business.slug}`} className="agency-logo">
+                <a href={`/${business.slug}`} className="agency-logo">
                     {business.logo && <img src={business.logo} alt={storeName} />}
                     {storeName}
                 </a>

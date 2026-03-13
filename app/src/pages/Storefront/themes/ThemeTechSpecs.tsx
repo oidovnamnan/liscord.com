@@ -33,7 +33,7 @@ export function ThemeTechSpecs({ business }: { business: Business }) {
         <div className="theme-tech">
             <header className="tech-header">
                 <div className="tech-header-top animate-fade-in">
-                    <a href={`/s/${business.slug}`} className="tech-logo">
+                    <a href={`/${business.slug}`} className="tech-logo">
                         {business.logo && <img src={business.logo} alt={storeName} />}
                         {storeName}
                     </a>

@@ -33,7 +33,7 @@ export function ThemeServiceBooking({ business }: { business: Business }) {
     return (
         <div className="theme-service">
             <header className="service-header">
-                <a href={`/s/${business.slug}`} className="service-logo">
+                <a href={`/${business.slug}`} className="service-logo">
                     {business.logo && <img src={business.logo} alt={storeName} />}
                     {storeName}
                 </a>

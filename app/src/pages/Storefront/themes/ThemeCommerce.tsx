@@ -38,7 +38,7 @@ export function ThemeCommerce({ business }: { business: Business }) {
         <div className="theme-commerce">
             <header className="commerce-header">
                 <div className="commerce-top-bar">
-                    <a href={`/s/${business.slug}`} className="commerce-logo">
+                    <a href={`/${business.slug}`} className="commerce-logo">
                         {business.logo && <img src={business.logo} alt={storeName} />}
                         {storeName}
                     </a>

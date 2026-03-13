@@ -219,7 +219,7 @@ export function OnlinePresencePage() {
                             </div>
                             <div className="presence-emp-info">
                                 <div className="presence-emp-name">Зочин</div>
-                                <div className="presence-emp-position">{v.page || '/s/...'}</div>
+                                <div className="presence-emp-position">{v.page || '/...'}</div>
                             </div>
                             <div className="presence-emp-status">
                                 <div className="presence-status-label online">

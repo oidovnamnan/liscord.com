@@ -32,7 +32,7 @@ export function ThemeStreetwear({ business }: { business: Business }) {
     return (
         <div className="theme-streetwear">
             <header className="streetwear-header">
-                <a href={`/s/${business.slug}`} className="streetwear-logo">
+                <a href={`/${business.slug}`} className="streetwear-logo">
                     {business.logo && <img src={business.logo} alt={storeName} />}
                     {storeName}
                 </a>
