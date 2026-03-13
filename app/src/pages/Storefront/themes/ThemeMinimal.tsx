@@ -356,42 +356,51 @@ function MembershipModal({
         setOtpVerifying(true);
         setError('');
 
+        // Step A: Confirm the OTP code with Firebase
         try {
             await confirmationResult.confirm(otpCode);
-
-            // OTP verified! Phone is confirmed.
-            // Sign out phone-auth user to restore Firestore access
-            try {
-                const { auth } = await import('../../../services/firebase');
-                await auth.signOut();
-            } catch (authErr) {
-                console.debug('Auth signOut:', authErr);
-            }
-
-            // Now check membership with restored auth
-            const cleanPhone = phone.trim().replace(/[\s\-+]/g, '');
-            const hasMembership = await onVerify(cleanPhone);
-            if (hasMembership) {
-                setSuccess(true);
-                setTimeout(() => onClose(), 1500);
-            } else {
-                // No membership → show payment options
-                setShowPayment(true);
-            }
-        } catch (err: any) {
-            console.error('OTP verify error:', err);
-            if (err.code === 'auth/invalid-verification-code') {
+        } catch (confirmErr: any) {
+            console.error('OTP confirm error:', confirmErr);
+            setOtpVerifying(false);
+            if (confirmErr.code === 'auth/invalid-verification-code') {
                 setError('Буруу код байна');
-            } else if (err.code === 'auth/code-expired') {
+            } else if (confirmErr.code === 'auth/code-expired') {
                 setError('Кодын хугацаа дууссан. Дахин илгээнэ үү.');
                 setOtpSent(false);
                 setOtpCode('');
             } else {
-                setError('Баталгаажуулахад алдаа гарлаа');
+                setError('Код баталгаажуулахад алдаа гарлаа. Дахин оролдоно уу.');
             }
-        } finally {
-            setOtpVerifying(false);
+            return;
         }
+
+        // Step B: OTP confirmed! Sign out to restore Firestore access
+        try {
+            const { auth } = await import('../../../services/firebase');
+            await auth.signOut();
+        } catch {
+            // Ignore signOut errors
+        }
+
+        // Step C: Check if user already has membership
+        const cleanPhone = phone.trim().replace(/[\s\-+]/g, '');
+        try {
+            const hasMembership = await onVerify(cleanPhone);
+            if (hasMembership) {
+                setSuccess(true);
+                setTimeout(() => onClose(), 1500);
+                setOtpVerifying(false);
+                return;
+            }
+        } catch (verifyErr) {
+            console.debug('Membership check failed (permissions), proceeding to payment:', verifyErr);
+            // If Firestore permission error, phone IS verified — just can't check memberships
+            // Proceed to payment as if no membership exists
+        }
+
+        // No membership found (or check failed) → show payment options
+        setShowPayment(true);
+        setOtpVerifying(false);
     };
 
     // Step 2: Create membership order and initiate payment
