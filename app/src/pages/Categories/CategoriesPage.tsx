@@ -205,6 +205,20 @@ export function CategoriesPage() {
                                     </div>
                                 )}
 
+                                {cat.categoryType === 'exclusive' && cat.linkedCategoryIds && cat.linkedCategoryIds.length > 0 && (
+                                    <div className="cat-linked-info">
+                                        <span className="cat-linked-label">Холбогдсон ангилал:</span>
+                                        <div className="cat-linked-tags">
+                                            {cat.linkedCategoryIds.map(id => {
+                                                const linked = categories.find(c => c.id === id);
+                                                return linked ? (
+                                                    <span key={id} className="cat-linked-tag">{linked.name}</span>
+                                                ) : null;
+                                            })}
+                                        </div>
+                                    </div>
+                                )}
+
                                 {hasPermission('categories.edit') && (
                                     <div className="cat-card-actions">
                                         <button className="btn btn-ghost btn-sm" onClick={() => setEditingCategory(cat)} title="Засах">
@@ -225,6 +239,7 @@ export function CategoriesPage() {
 
             {showCreate && (
                 <CategoryModal
+                    allCategories={categories}
                     onClose={() => setShowCreate(false)}
                     onSaved={() => setShowCreate(false)}
                 />
@@ -233,6 +248,7 @@ export function CategoriesPage() {
             {editingCategory && (
                 <CategoryModal
                     category={editingCategory}
+                    allCategories={categories}
                     onClose={() => setEditingCategory(null)}
                     onSaved={() => setEditingCategory(null)}
                 />
@@ -246,10 +262,12 @@ export function CategoriesPage() {
 // ══════════════════════════════════════════════
 function CategoryModal({
     category,
+    allCategories,
     onClose,
     onSaved,
 }: {
     category?: Category;
+    allCategories: Category[];
     onClose: () => void;
     onSaved: () => void;
 }) {
@@ -259,10 +277,14 @@ function CategoryModal({
     const [description, setDescription] = useState(category?.description || '');
     const [color, setColor] = useState(category?.color || COLORS[0]);
     const [categoryType, setCategoryType] = useState<'normal' | 'exclusive'>(category?.categoryType || 'normal');
+    const [linkedIds, setLinkedIds] = useState<string[]>(category?.linkedCategoryIds || []);
     const [memberPrice, setMemberPrice] = useState(category?.membershipConfig?.price?.toString() || '');
     const [memberDays, setMemberDays] = useState(category?.membershipConfig?.durationDays?.toString() || '30');
     const [memberDesc, setMemberDesc] = useState(category?.membershipConfig?.description || '');
     const [showAdvanced, setShowAdvanced] = useState(!!category?.membershipConfig);
+
+
+    const normalCategories = allCategories.filter(c => c.categoryType !== 'exclusive' && c.id !== category?.id);
 
     const isEditing = !!category;
 
@@ -290,11 +312,13 @@ function CategoryModal({
                 };
                 if (memberDesc.trim()) mc.description = memberDesc.trim();
                 data.membershipConfig = mc;
+                data.linkedCategoryIds = linkedIds;
             } else {
-                // For normal categories, explicitly remove membershipConfig if editing
+                // For normal categories, explicitly remove exclusive fields if editing
                 if (isEditing) {
                     const { deleteField } = await import('firebase/firestore');
                     data.membershipConfig = deleteField();
+                    data.linkedCategoryIds = deleteField();
                 }
             }
 
@@ -414,6 +438,34 @@ function CategoryModal({
                                     </div>
                                 </div>
 
+                                {/* Linked categories */}
+                                {normalCategories.length > 0 && (
+                                    <div className="input-group" style={{ marginTop: 4 }}>
+                                        <label className="input-label">Холбогдох ангилалууд</label>
+                                        <p style={{ fontSize: '0.75rem', color: '#888', margin: '0 0 8px' }}>
+                                            Эдгээр ангилалд хамаарах барааг VIP гишүүнчлэлтэй хэрэглэгчид л харах боломжтой
+                                        </p>
+                                        <div className="cat-linked-picker">
+                                            {normalCategories.map(nc => (
+                                                <button
+                                                    key={nc.id}
+                                                    type="button"
+                                                    className={`cat-linked-chip ${linkedIds.includes(nc.id) ? 'active' : ''}`}
+                                                    onClick={() => {
+                                                        setLinkedIds(prev =>
+                                                            prev.includes(nc.id)
+                                                                ? prev.filter(id => id !== nc.id)
+                                                                : [...prev, nc.id]
+                                                        );
+                                                    }}
+                                                >
+                                                    <span className="cat-linked-chip-dot" style={{ background: nc.color || '#999' }} />
+                                                    {nc.name}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
                                 <button
                                     type="button"
                                     className="cat-advanced-toggle"

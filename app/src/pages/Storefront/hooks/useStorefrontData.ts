@@ -49,16 +49,23 @@ export function useStorefrontData(business: Business | undefined) {
         }
     }, [business]);
 
-    // Map exclusive category IDs
-    const exclusiveCategoryMap = useMemo(() => {
+    // Build reverse map: normalCategoryId → exclusiveCategory (from linkedCategoryIds)
+    const linkedToExclusiveMap = useMemo(() => {
         const map: Record<string, Category> = {};
-        categoryList.filter(c => c.categoryType === 'exclusive').forEach(c => {
-            map[c.id] = c;
+        categoryList.filter(c => c.categoryType === 'exclusive').forEach(exc => {
+            // Direct: exclusive category itself
+            map[exc.id] = exc;
+            // Linked: normal categories linked to this exclusive
+            if (exc.linkedCategoryIds) {
+                exc.linkedCategoryIds.forEach(linkedId => {
+                    map[linkedId] = exc;
+                });
+            }
         });
         return map;
     }, [categoryList]);
 
-    // Categories for filter tabs (only show normal categories in tabs)
+    // Categories for filter tabs
     const categories = useMemo(() => {
         const cats = new Set<string>();
         products.forEach(p => {
@@ -70,7 +77,7 @@ export function useStorefrontData(business: Business | undefined) {
     // Enrich products with exclusive/locked flags
     const enrichedProducts: StorefrontProduct[] = useMemo(() => {
         return products.map(p => {
-            const exclusiveCat = p.categoryId ? exclusiveCategoryMap[p.categoryId] : undefined;
+            const exclusiveCat = p.categoryId ? linkedToExclusiveMap[p.categoryId] : undefined;
             if (exclusiveCat) {
                 const isLocked = !activeMemberships.includes(exclusiveCat.id);
                 return {
@@ -83,7 +90,7 @@ export function useStorefrontData(business: Business | undefined) {
             }
             return p as StorefrontProduct;
         });
-    }, [products, exclusiveCategoryMap, activeMemberships]);
+    }, [products, linkedToExclusiveMap, activeMemberships]);
 
     const filteredProducts = useMemo(() => {
         return enrichedProducts.filter(p => {
@@ -111,7 +118,7 @@ export function useStorefrontData(business: Business | undefined) {
         setActiveCategory,
         categories,
         filteredProducts,
-        exclusiveCategoryMap,
+        linkedToExclusiveMap,
         activeMemberships,
         verifyMembership,
     };

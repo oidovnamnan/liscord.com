@@ -657,6 +657,7 @@ export interface Category {
     color?: string;
     icon?: string;
     categoryType: 'normal' | 'exclusive';
+    linkedCategoryIds?: string[];
     membershipConfig?: {
         price: number;
         durationDays: number;
