@@ -2,10 +2,11 @@ import { useState, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import {
     Tags, Plus, Search, Loader2, Pencil, Trash2, Crown,
-    FolderOpen, Lock, Package, X, ChevronDown
+    FolderOpen, Lock, Package, X, ChevronDown, Phone, UserPlus
 } from 'lucide-react';
 import { useBusinessStore } from '../../store';
 import { categoryService, productService } from '../../services/db';
+import { membershipService } from '../../services/membershipService';
 import type { Category, Product } from '../../types';
 import { toast } from 'react-hot-toast';
 import { usePermissions } from '../../hooks/usePermissions';
@@ -24,6 +25,7 @@ export function CategoriesPage() {
     const [activeTab, setActiveTab] = useState<'all' | 'normal' | 'exclusive'>('all');
     const [showCreate, setShowCreate] = useState(false);
     const [editingCategory, setEditingCategory] = useState<Category | null>(null);
+    const [membershipGrant, setMembershipGrant] = useState<Category | null>(null);
 
     useEffect(() => {
         if (!business?.id) return;
@@ -71,6 +73,12 @@ export function CategoriesPage() {
         if (!confirm(`"${cat.name}" ангилалыг устгахдаа итгэлтэй байна уу?`)) return;
         try {
             await categoryService.deleteCategory(business.id, cat.id);
+            // Clean linkedCategoryIds references from exclusive categories
+            const exclusiveCats = categories.filter(c => c.categoryType === 'exclusive' && c.linkedCategoryIds?.includes(cat.id));
+            for (const exc of exclusiveCats) {
+                const cleaned = (exc.linkedCategoryIds || []).filter(id => id !== cat.id);
+                await categoryService.updateCategory(business.id, exc.id, { linkedCategoryIds: cleaned } as Partial<Category>);
+            }
             toast.success('Ангилал устгагдлаа');
         } catch {
             toast.error('Алдаа гарлаа');
@@ -221,6 +229,11 @@ export function CategoriesPage() {
 
                                 {hasPermission('categories.edit') && (
                                     <div className="cat-card-actions">
+                                        {cat.categoryType === 'exclusive' && hasPermission('categories.manage_memberships') && (
+                                            <button className="btn btn-ghost btn-sm" onClick={() => setMembershipGrant(cat)} title="Гишүүнчлэл олгох" style={{ color: '#6c5ce7' }}>
+                                                <UserPlus size={14} />
+                                            </button>
+                                        )}
                                         <button className="btn btn-ghost btn-sm" onClick={() => setEditingCategory(cat)} title="Засах">
                                             <Pencil size={14} />
                                         </button>
@@ -251,6 +264,13 @@ export function CategoriesPage() {
                     allCategories={categories}
                     onClose={() => setEditingCategory(null)}
                     onSaved={() => setEditingCategory(null)}
+                />
+            )}
+
+            {membershipGrant && (
+                <MembershipGrantModal
+                    category={membershipGrant}
+                    onClose={() => setMembershipGrant(null)}
                 />
             )}
         </>
@@ -495,6 +515,120 @@ function CategoryModal({
                         <button type="button" className="btn btn-ghost" onClick={onClose}>Цуцлах</button>
                         <button type="submit" className="btn btn-primary gradient-btn" disabled={loading}>
                             {loading ? <Loader2 size={18} className="animate-spin" /> : isEditing ? 'Хадгалах' : 'Үүсгэх'}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>,
+        document.body
+    );
+}
+
+// ══════════════════════════════════════════════
+// MEMBERSHIP GRANT MODAL (Admin)
+// ══════════════════════════════════════════════
+function MembershipGrantModal({
+    category,
+    onClose,
+}: {
+    category: Category;
+    onClose: () => void;
+}) {
+    const { business } = useBusinessStore();
+    const [phone, setPhone] = useState('');
+    const [loading, setLoading] = useState(false);
+
+    const price = category.membershipConfig?.price || 0;
+    const days = category.membershipConfig?.durationDays || 30;
+
+    const handleGrant = async (e: React.FormEvent) => {
+        e.preventDefault();
+        const cleaned = phone.replace(/[^\d]/g, '');
+        if (!business || cleaned.length < 8) {
+            toast.error('Утасны дугаараа зөв оруулна уу');
+            return;
+        }
+        setLoading(true);
+        try {
+            await membershipService.grantMembership(business.id, category.id, cleaned, price, days);
+            toast.success(`${cleaned} дугаар дээр ${days} хоногийн гишүүнчлэл олгогдлоо`);
+            onClose();
+        } catch {
+            toast.error('Алдаа гарлаа');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    return createPortal(
+        <div className="modal-backdrop" onClick={onClose}>
+            <div className="modal" onClick={e => e.stopPropagation()} style={{ maxWidth: 420 }}>
+                <div className="modal-header">
+                    <h2>Гишүүнчлэл олгох</h2>
+                    <button type="button" className="btn btn-ghost btn-icon" onClick={onClose}><X size={18} /></button>
+                </div>
+
+                <form onSubmit={handleGrant}>
+                    <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                        {/* Category info */}
+                        <div style={{
+                            display: 'flex', alignItems: 'center', gap: 12,
+                            padding: 16, background: 'rgba(108,92,231,0.06)',
+                            borderRadius: 14, border: '1px solid rgba(108,92,231,0.15)'
+                        }}>
+                            <div style={{
+                                width: 40, height: 40, borderRadius: 12,
+                                background: 'linear-gradient(135deg, #6c5ce7, #a855f7)',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                color: '#fff', flexShrink: 0
+                            }}>
+                                <Crown size={18} />
+                            </div>
+                            <div>
+                                <div style={{ fontWeight: 700, fontSize: '0.92rem' }}>{category.name}</div>
+                                <div style={{ fontSize: '0.78rem', color: '#888' }}>
+                                    ₮{price.toLocaleString()} / {days} хоног
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Phone input */}
+                        <div className="input-group">
+                            <label className="input-label">Хэрэглэгчийн утасны дугаар <span className="required">*</span></label>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                                <Phone size={16} style={{ color: '#888', flexShrink: 0 }} />
+                                <input
+                                    className="input"
+                                    type="tel"
+                                    value={phone}
+                                    onChange={e => setPhone(e.target.value)}
+                                    placeholder="9900 1234"
+                                    maxLength={12}
+                                    autoFocus
+                                    required
+                                    style={{ flex: 1 }}
+                                />
+                            </div>
+                        </div>
+
+                        <div style={{
+                            fontSize: '0.78rem', color: '#888',
+                            padding: '10px 14px', background: 'var(--surface-1)',
+                            borderRadius: 10, lineHeight: 1.5
+                        }}>
+                            💡 Гишүүнчлэл олгосноор тухайн хэрэглэгч <strong>{days} хоног</strong>ийн
+                            турш "{category.name}" ангилалын барааг сторфронтоос харах боломжтой болно.
+                        </div>
+                    </div>
+
+                    <div className="modal-footer">
+                        <button type="button" className="btn btn-ghost" onClick={onClose}>Цуцлах</button>
+                        <button type="submit" className="btn btn-primary gradient-btn" disabled={loading}
+                            style={{ background: 'linear-gradient(135deg, #6c5ce7, #a855f7)' }}
+                        >
+                            {loading ? <Loader2 size={18} className="animate-spin" /> : (
+                                <><UserPlus size={16} /> Гишүүнчлэл олгох</>
+                            )}
                         </button>
                     </div>
                 </form>

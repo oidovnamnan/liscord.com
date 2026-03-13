@@ -59,6 +59,38 @@
                     "order": "DESCENDING"
                 }
             ]
+        },
+        {
+            "collectionGroup": "memberships",
+            "queryScope": "COLLECTION",
+            "fields": [
+                {
+                    "fieldPath": "customerPhone",
+                    "order": "ASCENDING"
+                },
+                {
+                    "fieldPath": "status",
+                    "order": "ASCENDING"
+                }
+            ]
+        },
+        {
+            "collectionGroup": "memberships",
+            "queryScope": "COLLECTION",
+            "fields": [
+                {
+                    "fieldPath": "categoryId",
+                    "order": "ASCENDING"
+                },
+                {
+                    "fieldPath": "customerPhone",
+                    "order": "ASCENDING"
+                },
+                {
+                    "fieldPath": "status",
+                    "order": "ASCENDING"
+                }
+            ]
         }
     ],
     "fieldOverrides": []
