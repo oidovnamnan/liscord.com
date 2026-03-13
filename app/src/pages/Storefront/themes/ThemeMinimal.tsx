@@ -178,7 +178,7 @@ export function ThemeMinimal({ business }: { business: Business }) {
                                                     alt={p.name}
                                                     className="product-image"
                                                     loading="lazy"
-                                                    style={sfp.isLocked ? { filter: 'blur(8px)', opacity: 0.5 } : undefined}
+                                                    style={sfp.isLocked ? { filter: 'blur(4px)', opacity: 0.7 } : undefined}
                                                 />
                                             ) : (
                                                 <div style={{ color: '#ccc', fontSize: '2.5rem' }}>📦</div>
@@ -186,13 +186,8 @@ export function ThemeMinimal({ business }: { business: Business }) {
 
                                             {sfp.isLocked ? (
                                                 <div className="sf-lock-overlay">
-                                                    <Lock size={28} />
+                                                    <Lock size={22} />
                                                     <span>VIP гишүүнчлэл</span>
-                                                    {sfp.membershipConfig && (
-                                                        <span className="sf-lock-price">
-                                                            ₮{sfp.membershipConfig.price.toLocaleString()} / {sfp.membershipConfig.durationDays} хоног
-                                                        </span>
-                                                    )}
                                                 </div>
                                             ) : (
                                                 <button
