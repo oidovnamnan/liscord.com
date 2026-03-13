@@ -279,12 +279,11 @@ function MembershipModal({
         setChecking(true);
         setError('');
         try {
-            const hasMembership = await onVerify(phone.trim());
+            const hasMembership = await onVerify(phone.trim().replace(/[\s\-+]/g, ''));
             if (hasMembership) {
                 setSuccess(true);
                 setTimeout(() => {
                     onClose();
-                    window.location.reload();
                 }, 1500);
             } else {
                 setError('Таны дугаар дээр идэвхтэй гишүүнчлэл олдсонгүй. Админтай холбогдоно уу.');

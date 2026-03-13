@@ -11,6 +11,11 @@ import {
     Timestamp
 } from 'firebase/firestore';
 
+// Normalize phone to digits only (remove spaces, dashes, + prefix)
+function normalizePhone(phone: string): string {
+    return phone.replace(/[^\d]/g, '');
+}
+
 export interface Membership {
     id: string;
     categoryId: string;
@@ -30,10 +35,11 @@ export const membershipService = {
      * Check if a customer has active membership for a category
      */
     async checkMembership(bizId: string, categoryId: string, customerPhone: string): Promise<boolean> {
+        const phone = normalizePhone(customerPhone);
         const q = query(
             this.getMembershipsRef(bizId),
             where('categoryId', '==', categoryId),
-            where('customerPhone', '==', customerPhone),
+            where('customerPhone', '==', phone),
             where('status', '==', 'active')
         );
         const snap = await getDocs(q);
@@ -54,9 +60,10 @@ export const membershipService = {
      * Get all active memberships for a customer
      */
     async getCustomerMemberships(bizId: string, customerPhone: string): Promise<string[]> {
+        const phone = normalizePhone(customerPhone);
         const q = query(
             this.getMembershipsRef(bizId),
-            where('customerPhone', '==', customerPhone),
+            where('customerPhone', '==', phone),
             where('status', '==', 'active')
         );
         const snap = await getDocs(q);
@@ -80,12 +87,13 @@ export const membershipService = {
      * Grant membership (admin action)
      */
     async grantMembership(bizId: string, categoryId: string, customerPhone: string, amountPaid: number, durationDays: number): Promise<string> {
+        const phone = normalizePhone(customerPhone);
         const now = new Date();
         const expiresAt = new Date(now.getTime() + durationDays * 24 * 60 * 60 * 1000);
 
         const docRef = await addDoc(this.getMembershipsRef(bizId), {
             categoryId,
-            customerPhone,
+            customerPhone: phone,
             amountPaid,
             purchasedAt: serverTimestamp(),
             expiresAt: Timestamp.fromDate(expiresAt),

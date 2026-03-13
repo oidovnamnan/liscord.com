@@ -40,7 +40,7 @@ export const LISCORD_MODULES: AppModule[] = [
         route: '/app/categories',
         isCore: true,
         category: 'operations',
-        isFree: false,
+        isFree: true,
         plans: [
             { id: 'monthly', name: '30 хоног', price: 20000, durationDays: 30 },
             { id: 'yearly', name: '1 жил', price: 192000, durationDays: 365 }
