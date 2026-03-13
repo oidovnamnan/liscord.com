@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Phone, ArrowRight, Loader2, CheckCircle2, ArrowLeft, Shield, QrCode, Smartphone, Camera, User } from 'lucide-react';
-import { signInWithPhoneNumber, RecaptchaVerifier, signInWithCustomToken } from 'firebase/auth';
+import { Phone, ArrowRight, Loader2, CheckCircle2, ArrowLeft, Shield, QrCode, Smartphone, Camera, User, Mail, Lock } from 'lucide-react';
+import { signInWithPhoneNumber, RecaptchaVerifier, signInWithCustomToken, signInWithEmailAndPassword } from 'firebase/auth';
 import { auth, db } from '../../services/firebase';
 import { doc, updateDoc, onSnapshot, getDoc } from 'firebase/firestore';
 import { Html5QrcodeScanner } from 'html5-qrcode';
@@ -11,6 +11,9 @@ import './AuthPage.css';
 export function LoginPage() {
     const navigate = useNavigate();
     const [authMethod, setAuthMethod] = useState<'phone' | 'qr'>('phone');
+    const [showEmailLogin, setShowEmailLogin] = useState(false);
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
     const [phone, setPhone] = useState('');
     const [otp, setOtp] = useState('');
     const [step, setStep] = useState<'phone' | 'otp' | 'success'>('phone');
@@ -374,6 +377,55 @@ export function LoginPage() {
                             </span>
                         </div>
                     </div>
+                )}
+
+                {/* ========== Email fallback ========== */}
+                {!showEmailLogin ? (
+                    <div style={{ textAlign: 'center', marginTop: 16 }}>
+                        <button
+                            className="btn btn-ghost btn-sm"
+                            onClick={() => setShowEmailLogin(true)}
+                            style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}
+                        >
+                            <Mail size={12} style={{ marginRight: 4 }} /> И-мэйлээр нэвтрэх
+                        </button>
+                    </div>
+                ) : (
+                    <form
+                        className="auth-form animate-fade-in"
+                        style={{ marginTop: 16, paddingTop: 16, borderTop: '1px solid var(--border-color)' }}
+                        onSubmit={async (e) => {
+                            e.preventDefault();
+                            if (!email.trim() || !password.trim()) return;
+                            setLoading(true);
+                            try {
+                                await signInWithEmailAndPassword(auth, email, password);
+                                navigate('/app');
+                            } catch (error: any) {
+                                let msg = 'И-мэйл эсвэл нууц үг буруу байна';
+                                if (error.code === 'auth/user-not-found') msg = 'Ийм бүртгэл олдсонгүй';
+                                else if (error.code === 'auth/wrong-password') msg = 'Нууц үг буруу';
+                                else if (error.code === 'auth/too-many-requests') msg = 'Олон удаа буруу оролдлого. Түр хүлээнэ үү.';
+                                toast.error(msg);
+                            } finally { setLoading(false); }
+                        }}
+                    >
+                        <div className="input-group">
+                            <label className="input-label"><Mail size={14} /> И-мэйл</label>
+                            <input type="email" className="input" placeholder="example@mail.com" value={email}
+                                onChange={(e) => setEmail(e.target.value)} autoFocus />
+                        </div>
+                        <div className="input-group">
+                            <label className="input-label"><Lock size={14} /> Нууц үг</label>
+                            <input type="password" className="input" placeholder="••••••••" value={password}
+                                onChange={(e) => setPassword(e.target.value)} />
+                        </div>
+                        <button type="submit" className="btn btn-primary btn-full btn-lg" disabled={loading}>
+                            {loading ? <Loader2 size={18} className="animate-spin" /> : 'Нэвтрэх'}
+                        </button>
+                        <button type="button" className="btn btn-ghost btn-sm btn-full" onClick={() => setShowEmailLogin(false)}
+                            style={{ marginTop: 4, fontSize: '0.75rem' }}>Буцах</button>
+                    </form>
                 )}
 
                 <div className="auth-footer">
