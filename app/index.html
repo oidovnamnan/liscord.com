@@ -23,7 +23,7 @@
     // ═══ Stale Chunk Recovery (Pre-React) ═══
     // After Vercel deploys new code, old hashed JS chunks are deleted.
     // If a user has a stale tab, the entry-point module script fails to load.
-    // This inline script detects that failure and auto-reloads ONCE.
+    // This inline script detects that failure, clears SW cache, and auto-reloads.
     (function() {
       var RELOAD_KEY = 'liscord_chunk_reload';
       var COOLDOWN_MS = 10000; // 10 seconds between reloads
@@ -34,10 +34,23 @@
       }
 
       function doReload() {
-        if (shouldReload()) {
-          sessionStorage.setItem(RELOAD_KEY, Date.now().toString());
-          window.location.reload();
+        if (!shouldReload()) return;
+        sessionStorage.setItem(RELOAD_KEY, Date.now().toString());
+
+        // Clear service worker caches to prevent serving stale index.html
+        if ('caches' in window) {
+          caches.keys().then(function(names) {
+            names.forEach(function(name) { caches.delete(name); });
+          });
         }
+        // Unregister service worker so it doesn't intercept the reload
+        if ('serviceWorker' in navigator) {
+          navigator.serviceWorker.getRegistrations().then(function(regs) {
+            regs.forEach(function(reg) { reg.unregister(); });
+          });
+        }
+        // Hard reload (bypass cache)
+        setTimeout(function() { window.location.reload(); }, 100);
       }
 
       // 1. Catch module script load errors (capture phase)
@@ -75,6 +88,15 @@
       window.addEventListener('vite:preloadError', function() {
         doReload();
       });
+
+      // 4. Render timeout — if app doesn't render within 8 seconds, reload
+      // This catches cases where the script silently fails without throwing
+      setTimeout(function() {
+        var root = document.getElementById('root');
+        if (root && root.children.length === 0) {
+          doReload();
+        }
+      }, 8000);
     })();
   </script>
   <script type="module" src="/src/main.tsx"></script>
