@@ -667,7 +667,7 @@ export const onSmsIncome = functions
  * QPay Create Invoice (Callable)
  * Frontend calls this to generate a QR code for payment
  */
-export const qpayCreateInvoice = functions.https.onCall(async (data) => {
+export const qpayCreateInvoice = functions.runWith({ invoker: "public" }).https.onCall(async (data) => {
     const { bizId, orderId, amount, description, customerPhone } = data;
 
     if (!bizId || !orderId || !amount) {
@@ -731,7 +731,7 @@ export const qpayCreateInvoice = functions.https.onCall(async (data) => {
  * QPay Callback (HTTP)
  * QPay hits this URL when payment is made
  */
-export const qpayCallback = functions.https.onRequest(async (req, res) => {
+export const qpayCallback = functions.runWith({ invoker: "public" }).https.onRequest(async (req, res) => {
     const bizId = req.query.bizId as string;
     const orderId = req.query.orderId as string;
 
