@@ -1707,3 +1707,39 @@
     align-items: center;
     gap: 10px;
 }
+
+/* Minimal Cart Button — icon only, no heavy background */
+.store-cart-btn-minimal {
+    position: relative;
+    background: none;
+    border: none;
+    padding: 8px;
+    cursor: pointer;
+    color: var(--sf-text);
+    transition: opacity 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.store-cart-btn-minimal:hover {
+    opacity: 0.6;
+}
+
+.cart-badge-minimal {
+    position: absolute;
+    top: 2px;
+    right: 0;
+    background: #ef4444;
+    color: #fff;
+    font-size: 0.6rem;
+    font-weight: 800;
+    height: 16px;
+    min-width: 16px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 4px;
+    line-height: 1;
+}

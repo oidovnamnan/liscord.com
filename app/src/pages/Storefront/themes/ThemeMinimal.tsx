@@ -81,6 +81,13 @@ export function ThemeMinimal({ business }: { business: Business }) {
                 </a>
 
                 <div className="store-nav-actions">
+                    <button
+                        className="store-cart-btn-minimal"
+                        onClick={() => useCartStore.getState().setIsOpen(true)}
+                    >
+                        <ShoppingBag size={20} strokeWidth={2} />
+                        {cartCount > 0 && <span className="cart-badge-minimal">{cartCount}</span>}
+                    </button>
                     {storedPhone && (
                         <button
                             className={`store-profile-btn ${hasMembership ? 'has-membership' : ''}`}
@@ -90,14 +97,6 @@ export function ThemeMinimal({ business }: { business: Business }) {
                             {hasMembership && <span className="store-profile-vip-dot" />}
                         </button>
                     )}
-                    <button
-                        className="store-cart-btn"
-                        onClick={() => useCartStore.getState().setIsOpen(true)}
-                    >
-                        <ShoppingBag size={18} strokeWidth={2.5} />
-                        {cartCount > 0 && <span className="cart-badge">{cartCount}</span>}
-                        <span className="hide-mobile">Сагс</span>
-                    </button>
                 </div>
             </nav>
 
