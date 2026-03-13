@@ -1,13 +1,24 @@
 import { useState, useEffect, useMemo } from 'react';
-import { productService } from '../../../services/db';
-import type { Business, Product } from '../../../types';
+import { productService, categoryService } from '../../../services/db';
+import { membershipService } from '../../../services/membershipService';
+import type { Business, Product, Category } from '../../../types';
+
+export interface StorefrontProduct extends Product {
+    isExclusive?: boolean;
+    isLocked?: boolean;
+    exclusiveCategoryName?: string;
+    membershipConfig?: Category['membershipConfig'];
+}
 
 export function useStorefrontData(business: Business | undefined) {
     const [products, setProducts] = useState<Product[]>([]);
+    const [categoryList, setCategoryList] = useState<Category[]>([]);
+    const [activeMemberships, setActiveMemberships] = useState<string[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
     const [activeCategory, setActiveCategory] = useState<string>('all');
 
+    // Load products
     useEffect(() => {
         if (!business) return;
         setTimeout(() => setLoading(true), 0);
@@ -18,6 +29,36 @@ export function useStorefrontData(business: Business | undefined) {
         return () => unsubscribe();
     }, [business]);
 
+    // Load categories (for exclusive detection)
+    useEffect(() => {
+        if (!business) return;
+        const unsub = categoryService.subscribeCategories(business.id, (cats) => {
+            setCategoryList(cats);
+        });
+        return () => unsub();
+    }, [business]);
+
+    // Check membership from localStorage
+    useEffect(() => {
+        if (!business) return;
+        const storedPhone = localStorage.getItem(`membership_phone_${business.id}`);
+        if (storedPhone) {
+            membershipService.getCustomerMemberships(business.id, storedPhone)
+                .then(ids => setActiveMemberships(ids))
+                .catch(() => setActiveMemberships([]));
+        }
+    }, [business]);
+
+    // Map exclusive category IDs
+    const exclusiveCategoryMap = useMemo(() => {
+        const map: Record<string, Category> = {};
+        categoryList.filter(c => c.categoryType === 'exclusive').forEach(c => {
+            map[c.id] = c;
+        });
+        return map;
+    }, [categoryList]);
+
+    // Categories for filter tabs (only show normal categories in tabs)
     const categories = useMemo(() => {
         const cats = new Set<string>();
         products.forEach(p => {
@@ -26,15 +67,52 @@ export function useStorefrontData(business: Business | undefined) {
         return ['all', ...Array.from(cats)];
     }, [products]);
 
+    // Enrich products with exclusive/locked flags
+    const enrichedProducts: StorefrontProduct[] = useMemo(() => {
+        return products.map(p => {
+            const exclusiveCat = p.categoryId ? exclusiveCategoryMap[p.categoryId] : undefined;
+            if (exclusiveCat) {
+                const isLocked = !activeMemberships.includes(exclusiveCat.id);
+                return {
+                    ...p,
+                    isExclusive: true,
+                    isLocked,
+                    exclusiveCategoryName: exclusiveCat.name,
+                    membershipConfig: exclusiveCat.membershipConfig
+                };
+            }
+            return p as StorefrontProduct;
+        });
+    }, [products, exclusiveCategoryMap, activeMemberships]);
+
     const filteredProducts = useMemo(() => {
-        return products.filter(p => {
+        return enrichedProducts.filter(p => {
             const matchesSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase());
             const matchesCat = activeCategory === 'all' || p.categoryName === activeCategory;
             return matchesSearch && matchesCat;
         });
-    }, [products, searchQuery, activeCategory]);
+    }, [enrichedProducts, searchQuery, activeCategory]);
+
+    // Membership verification function
+    const verifyMembership = async (phone: string) => {
+        if (!business) return false;
+        localStorage.setItem(`membership_phone_${business.id}`, phone);
+        const ids = await membershipService.getCustomerMemberships(business.id, phone);
+        setActiveMemberships(ids);
+        return ids.length > 0;
+    };
 
     return {
-        products, loading, searchQuery, setSearchQuery, activeCategory, setActiveCategory, categories, filteredProducts
+        products: enrichedProducts,
+        loading,
+        searchQuery,
+        setSearchQuery,
+        activeCategory,
+        setActiveCategory,
+        categories,
+        filteredProducts,
+        exclusiveCategoryMap,
+        activeMemberships,
+        verifyMembership,
     };
 }

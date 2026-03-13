@@ -644,3 +644,264 @@
         display: none;
     }
 }
+
+/* ============================================
+   EXCLUSIVE / VIP LOCK OVERLAY
+   ============================================ */
+.product-card-locked {
+    cursor: pointer;
+}
+
+.product-card-locked:hover {
+    transform: translateY(-2px);
+}
+
+.sf-vip-badge {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    background: linear-gradient(135deg, #6c5ce7, #a855f7);
+    color: #fff;
+    padding: 4px 10px;
+    border-radius: 100px;
+    font-size: 0.65rem;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+}
+
+.sf-lock-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 3;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    background: rgba(0, 0, 0, 0.45);
+    backdrop-filter: blur(2px);
+    border-radius: inherit;
+    color: #fff;
+    font-weight: 700;
+    font-size: 0.82rem;
+    text-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+}
+
+.sf-lock-overlay svg {
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+}
+
+.sf-lock-price {
+    font-size: 0.72rem;
+    font-weight: 600;
+    opacity: 0.85;
+    background: rgba(255, 255, 255, 0.15);
+    padding: 3px 10px;
+    border-radius: 100px;
+    margin-top: 2px;
+}
+
+/* ============================================
+   MEMBERSHIP VERIFICATION MODAL
+   ============================================ */
+.sf-membership-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(8px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    animation: fadeIn 0.2s ease-out;
+}
+
+.sf-membership-modal {
+    background: #fff;
+    border-radius: 24px;
+    padding: 36px 32px;
+    max-width: 380px;
+    width: 100%;
+    position: relative;
+    box-shadow: 0 24px 64px -16px rgba(0, 0, 0, 0.25);
+    animation: slideInUp 0.3s var(--sf-transition);
+}
+
+.sf-membership-close {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    background: none;
+    border: none;
+    color: var(--sf-text-muted);
+    cursor: pointer;
+    padding: 4px;
+    transition: color 0.2s;
+}
+
+.sf-membership-close:hover {
+    color: var(--sf-text);
+}
+
+.sf-membership-header {
+    text-align: center;
+    margin-bottom: 24px;
+}
+
+.sf-membership-icon {
+    width: 56px;
+    height: 56px;
+    border-radius: 16px;
+    background: linear-gradient(135deg, #6c5ce7, #a855f7);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 16px;
+}
+
+.sf-membership-header h3 {
+    font-family: var(--sf-font-title);
+    font-size: 1.3rem;
+    font-weight: 800;
+    margin: 0 0 8px;
+    color: var(--sf-text);
+}
+
+.sf-membership-header p {
+    font-size: 0.85rem;
+    color: var(--sf-text-muted);
+    margin: 0;
+    line-height: 1.5;
+}
+
+.sf-membership-pricing {
+    display: flex;
+    align-items: baseline;
+    justify-content: center;
+    gap: 2px;
+    margin-bottom: 24px;
+    padding: 16px;
+    background: linear-gradient(135deg, rgba(108, 92, 231, 0.06), rgba(168, 85, 247, 0.06));
+    border-radius: 16px;
+}
+
+.sf-membership-price {
+    font-family: var(--sf-font-title);
+    font-size: 1.8rem;
+    font-weight: 800;
+    color: #6c5ce7;
+}
+
+.sf-membership-duration {
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: var(--sf-text-muted);
+}
+
+.sf-membership-input-group {
+    margin-bottom: 16px;
+}
+
+.sf-membership-input-group label {
+    display: block;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--sf-text-secondary);
+    margin-bottom: 8px;
+}
+
+.sf-membership-input-wrap {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 16px;
+    background: var(--sf-bg-surface);
+    border-radius: var(--sf-radius-md);
+    border: 1.5px solid transparent;
+    transition: all 0.2s;
+}
+
+.sf-membership-input-wrap:focus-within {
+    border-color: #6c5ce7;
+    background: #fff;
+    box-shadow: 0 0 0 3px rgba(108, 92, 231, 0.1);
+}
+
+.sf-membership-input-wrap svg {
+    color: var(--sf-text-muted);
+    flex-shrink: 0;
+}
+
+.sf-membership-input-wrap input {
+    flex: 1;
+    border: none;
+    background: none;
+    font-size: 1rem;
+    font-family: var(--sf-font-body);
+    font-weight: 600;
+    color: var(--sf-text);
+    outline: none;
+    letter-spacing: 0.5px;
+}
+
+.sf-membership-input-wrap input::placeholder {
+    color: var(--sf-text-muted);
+    font-weight: 400;
+}
+
+.sf-membership-error {
+    color: #dc2626;
+    font-size: 0.78rem;
+    font-weight: 600;
+    margin-top: 8px;
+}
+
+.sf-membership-verify-btn {
+    width: 100%;
+    padding: 14px;
+    border: none;
+    border-radius: var(--sf-radius-md);
+    background: linear-gradient(135deg, #6c5ce7, #a855f7);
+    color: #fff;
+    font-family: var(--sf-font-body);
+    font-size: 0.95rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-bottom: 12px;
+}
+
+.sf-membership-verify-btn:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 20px -4px rgba(108, 92, 231, 0.4);
+}
+
+.sf-membership-verify-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.sf-membership-success {
+    text-align: center;
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #059669;
+    padding: 20px;
+    background: rgba(5, 150, 105, 0.06);
+    border-radius: var(--sf-radius-md);
+}
+
+.sf-membership-hint {
+    text-align: center;
+    font-size: 0.75rem;
+    color: var(--sf-text-muted);
+    margin: 0;
+    line-height: 1.5;
+}

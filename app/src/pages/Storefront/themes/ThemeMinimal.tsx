@@ -1,8 +1,8 @@
 import { useState } from 'react';
-import { ShoppingBag, Search, Plus } from 'lucide-react';
+import { ShoppingBag, Search, Plus, Lock, Crown, X, Phone } from 'lucide-react';
 import type { Business, Product } from '../../../types';
 import { useCartStore } from '../../../store';
-import { useStorefrontData } from '../hooks/useStorefrontData';
+import { useStorefrontData, type StorefrontProduct } from '../hooks/useStorefrontData';
 import { StorefrontEmpty } from '../../../components/Storefront/StorefrontEmpty';
 import { ProductModal } from '../../../components/Storefront/ProductModal';
 import '../Storefront.css';
@@ -10,10 +10,13 @@ import '../Storefront.css';
 export function ThemeMinimal({ business }: { business: Business }) {
     const {
         products, loading, searchQuery, setSearchQuery,
-        activeCategory, setActiveCategory, categories, filteredProducts
+        activeCategory, setActiveCategory, categories, filteredProducts,
+        verifyMembership,
     } = useStorefrontData(business);
 
     const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+    const [showMembershipModal, setShowMembershipModal] = useState(false);
+    const [membershipTarget, setMembershipTarget] = useState<StorefrontProduct | null>(null);
 
     const extractBrand = (desc: string) => {
         if (!desc) return null;
@@ -33,6 +36,15 @@ export function ThemeMinimal({ business }: { business: Business }) {
             quantity: 1,
             price: p.pricing?.salePrice || 0
         });
+    };
+
+    const handleProductClick = (p: StorefrontProduct) => {
+        if (p.isLocked) {
+            setMembershipTarget(p);
+            setShowMembershipModal(true);
+        } else {
+            setSelectedProduct(p);
+        }
     };
 
     if (loading) {
@@ -127,6 +139,7 @@ export function ThemeMinimal({ business }: { business: Business }) {
                             </div>
                         ) : (
                             filteredProducts.map((p, index) => {
+                                const sfp = p as StorefrontProduct;
                                 const brand = extractBrand(p.description);
                                 const salePrice = p.pricing?.salePrice || 0;
                                 const comparePrice = p.pricing?.comparePrice;
@@ -135,14 +148,20 @@ export function ThemeMinimal({ business }: { business: Business }) {
                                 return (
                                     <div
                                         key={p.id}
-                                        className="product-card"
-                                        onClick={() => setSelectedProduct(p)}
+                                        className={`product-card ${sfp.isLocked ? 'product-card-locked' : ''}`}
+                                        onClick={() => handleProductClick(sfp)}
                                         style={{ animationDelay: `${Math.min(index * 0.05, 0.5)}s` }}
                                     >
                                         <div className="product-image-wrap">
-                                            {brand && <div className="product-brand-badge">{brand}</div>}
+                                            {brand && !sfp.isLocked && <div className="product-brand-badge">{brand}</div>}
 
-                                            {hasDiscount && (
+                                            {sfp.isExclusive && !sfp.isLocked && (
+                                                <div className="sf-vip-badge">
+                                                    <Crown size={10} /> VIP
+                                                </div>
+                                            )}
+
+                                            {hasDiscount && !sfp.isLocked && (
                                                 <div style={{
                                                     position: 'absolute', top: 12, right: 12, zIndex: 2,
                                                     background: '#dc2626', color: '#fff',
@@ -154,31 +173,57 @@ export function ThemeMinimal({ business }: { business: Business }) {
                                             )}
 
                                             {p.images?.[0] ? (
-                                                <img src={p.images[0]} alt={p.name} className="product-image" loading="lazy" />
+                                                <img
+                                                    src={p.images[0]}
+                                                    alt={p.name}
+                                                    className="product-image"
+                                                    loading="lazy"
+                                                    style={sfp.isLocked ? { filter: 'blur(8px)', opacity: 0.5 } : undefined}
+                                                />
                                             ) : (
                                                 <div style={{ color: '#ccc', fontSize: '2.5rem' }}>📦</div>
                                             )}
 
-                                            <button
-                                                className="product-add-overlay"
-                                                onClick={(e) => handleAddToCart(e, p)}
-                                                title="Сагсанд нэмэх"
-                                            >
-                                                <Plus size={20} strokeWidth={2.5} />
-                                            </button>
+                                            {sfp.isLocked ? (
+                                                <div className="sf-lock-overlay">
+                                                    <Lock size={28} />
+                                                    <span>VIP гишүүнчлэл</span>
+                                                    {sfp.membershipConfig && (
+                                                        <span className="sf-lock-price">
+                                                            ₮{sfp.membershipConfig.price.toLocaleString()} / {sfp.membershipConfig.durationDays} хоног
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            ) : (
+                                                <button
+                                                    className="product-add-overlay"
+                                                    onClick={(e) => handleAddToCart(e, p)}
+                                                    title="Сагсанд нэмэх"
+                                                >
+                                                    <Plus size={20} strokeWidth={2.5} />
+                                                </button>
+                                            )}
                                         </div>
 
                                         <div className="product-info">
-                                            <h3 className="product-name">{p.name}</h3>
+                                            <h3 className="product-name">
+                                                {sfp.isLocked ? '🔒 ' : ''}{p.name}
+                                            </h3>
                                             <div className="product-price">
-                                                {salePrice.toLocaleString()} ₮
-                                                {hasDiscount && (
-                                                    <span style={{
-                                                        fontSize: '0.82rem', textDecoration: 'line-through',
-                                                        opacity: 0.35, fontWeight: 400, color: '#888'
-                                                    }}>
-                                                        {comparePrice.toLocaleString()} ₮
-                                                    </span>
+                                                {sfp.isLocked ? (
+                                                    <span style={{ color: '#999', fontSize: '0.85rem' }}>Гишүүнчлэл шаардлагатай</span>
+                                                ) : (
+                                                    <>
+                                                        {salePrice.toLocaleString()} ₮
+                                                        {hasDiscount && (
+                                                            <span style={{
+                                                                fontSize: '0.82rem', textDecoration: 'line-through',
+                                                                opacity: 0.35, fontWeight: 400, color: '#888'
+                                                            }}>
+                                                                {comparePrice.toLocaleString()} ₮
+                                                            </span>
+                                                        )}
+                                                    </>
                                                 )}
                                             </div>
                                         </div>
@@ -197,6 +242,121 @@ export function ThemeMinimal({ business }: { business: Business }) {
                     preorderTerms={business.settings?.storefront?.preorderTerms}
                 />
             )}
+
+            {showMembershipModal && membershipTarget && (
+                <MembershipModal
+                    product={membershipTarget}
+                    onClose={() => { setShowMembershipModal(false); setMembershipTarget(null); }}
+                    onVerify={verifyMembership}
+                />
+            )}
+        </div>
+    );
+}
+
+// ═══════════════════════════════════════════
+// Membership Verification Modal
+// ═══════════════════════════════════════════
+function MembershipModal({
+    product,
+    onClose,
+    onVerify,
+}: {
+    product: StorefrontProduct;
+    onClose: () => void;
+    onVerify: (phone: string) => Promise<boolean>;
+}) {
+    const [phone, setPhone] = useState('');
+    const [checking, setChecking] = useState(false);
+    const [error, setError] = useState('');
+    const [success, setSuccess] = useState(false);
+
+    const handleVerify = async () => {
+        if (!phone.trim() || phone.length < 8) {
+            setError('Утасны дугаараа оруулна уу');
+            return;
+        }
+        setChecking(true);
+        setError('');
+        try {
+            const hasMembership = await onVerify(phone.trim());
+            if (hasMembership) {
+                setSuccess(true);
+                setTimeout(() => {
+                    onClose();
+                    window.location.reload();
+                }, 1500);
+            } else {
+                setError('Таны дугаар дээр идэвхтэй гишүүнчлэл олдсонгүй. Админтай холбогдоно уу.');
+            }
+        } catch {
+            setError('Алдаа гарлаа. Дахин оролдоно уу.');
+        } finally {
+            setChecking(false);
+        }
+    };
+
+    return (
+        <div className="sf-membership-backdrop" onClick={onClose}>
+            <div className="sf-membership-modal" onClick={e => e.stopPropagation()}>
+                <button className="sf-membership-close" onClick={onClose}>
+                    <X size={18} />
+                </button>
+
+                <div className="sf-membership-header">
+                    <div className="sf-membership-icon">
+                        <Crown size={28} />
+                    </div>
+                    <h3>VIP Гишүүнчлэл</h3>
+                    <p>"{product.exclusiveCategoryName}" ангилалын бараа үзэхэд гишүүнчлэл шаардлагатай.</p>
+                </div>
+
+                {product.membershipConfig && (
+                    <div className="sf-membership-pricing">
+                        <div className="sf-membership-price">
+                            ₮{product.membershipConfig.price.toLocaleString()}
+                        </div>
+                        <div className="sf-membership-duration">
+                             / {product.membershipConfig.durationDays} хоног
+                        </div>
+                    </div>
+                )}
+
+                {success ? (
+                    <div className="sf-membership-success">
+                        ✅ Гишүүнчлэл баталгаажлаа! Хуудсыг шинэчилж байна...
+                    </div>
+                ) : (
+                    <>
+                        <div className="sf-membership-input-group">
+                            <label>Утасны дугаар</label>
+                            <div className="sf-membership-input-wrap">
+                                <Phone size={16} />
+                                <input
+                                    type="tel"
+                                    placeholder="9900 1234"
+                                    value={phone}
+                                    onChange={e => setPhone(e.target.value)}
+                                    maxLength={12}
+                                />
+                            </div>
+                            {error && <div className="sf-membership-error">{error}</div>}
+                        </div>
+
+                        <button
+                            className="sf-membership-verify-btn"
+                            onClick={handleVerify}
+                            disabled={checking}
+                        >
+                            {checking ? 'Шалгаж байна...' : 'Гишүүнчлэл шалгах'}
+                        </button>
+
+                        <p className="sf-membership-hint">
+                            Гишүүнчлэл авахыг хүсвэл дэлгүүрийн админтай холбогдоно уу.
+                        </p>
+                    </>
+                )}
+            </div>
         </div>
     );
 }
