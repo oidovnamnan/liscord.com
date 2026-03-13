@@ -169,13 +169,13 @@ export function StoreCheckout() {
             // Generate QPay QR if enabled
             if (business.settings?.qpay?.enabled && paymentMethod === 'qpay') {
                 try {
-                    const invoice = await qpayService.mockCreateInvoice({
-                        invoice_code: business.settings.qpay.merchantId,
-                        sender_invoice_no: newId,
-                        invoice_receiver_code: phone,
-                        invoice_description: `${business.name} захиалга #${newId.slice(-4)}`,
-                        amount: finalTotal
-                    }, business.settings);
+                    const invoice = await qpayService.createInvoice(
+                        business.id,
+                        newId,
+                        finalTotal,
+                        `${business.name} захиалга #${newId.slice(-4)}`,
+                        phone
+                    );
                     setQpayInvoice(invoice);
                 } catch (e) {
                     console.error('QPay generation failed', e);

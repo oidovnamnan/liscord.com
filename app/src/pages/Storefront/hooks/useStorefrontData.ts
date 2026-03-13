@@ -7,6 +7,7 @@ export interface StorefrontProduct extends Product {
     isExclusive?: boolean;
     isLocked?: boolean;
     exclusiveCategoryName?: string;
+    exclusiveCategoryId?: string;
     membershipConfig?: Category['membershipConfig'];
 }
 
@@ -85,6 +86,7 @@ export function useStorefrontData(business: Business | undefined) {
                     isExclusive: true,
                     isLocked,
                     exclusiveCategoryName: exclusiveCat.name,
+                    exclusiveCategoryId: exclusiveCat.id,
                     membershipConfig: exclusiveCat.membershipConfig
                 };
             }

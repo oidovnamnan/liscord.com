@@ -553,6 +553,12 @@ export interface Order {
     updatedAt: Date;
     isDeleted: boolean;
     cancelReason?: string;
+
+    // Membership purchase order fields
+    orderType?: 'standard' | 'membership';
+    membershipCategoryId?: string;
+    membershipDurationDays?: number;
+    qpayInvoiceId?: string;
 }
 
 // ============ CUSTOMER ============

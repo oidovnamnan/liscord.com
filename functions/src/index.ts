@@ -1,9 +1,129 @@
 import * as functions from "firebase-functions/v1";
 import * as admin from "firebase-admin";
+import * as https from "https";
 
 admin.initializeApp();
 
 const db = admin.firestore();
+
+// ═══════════════════════════════════════════
+// QPay V2 Configuration
+// ═══════════════════════════════════════════
+const QPAY_CONFIG = {
+    baseUrl: "https://merchant.qpay.mn",
+    username: "GATE_SIM",
+    password: "8r3bvsa3",
+    invoiceCode: "GATE_SIM_INVOICE",
+};
+
+// Token cache
+let qpayTokenCache: { token: string; expiresAt: number } | null = null;
+
+/**
+ * Make HTTPS request (no external deps needed)
+ */
+function httpsRequest(
+    url: string,
+    method: string,
+    headers: Record<string, string>,
+    body?: string
+): Promise<{ status: number; data: string }> {
+    return new Promise((resolve, reject) => {
+        const parsed = new URL(url);
+        const options: https.RequestOptions = {
+            hostname: parsed.hostname,
+            port: parsed.port || 443,
+            path: parsed.pathname + parsed.search,
+            method,
+            headers: {
+                ...headers,
+                ...(body ? { "Content-Length": Buffer.byteLength(body).toString() } : {}),
+            },
+        };
+
+        const req = https.request(options, (res) => {
+            let data = "";
+            res.on("data", (chunk: Buffer) => { data += chunk.toString(); });
+            res.on("end", () => resolve({ status: res.statusCode || 0, data }));
+        });
+
+        req.on("error", reject);
+        if (body) req.write(body);
+        req.end();
+    });
+}
+
+/**
+ * Get QPay auth token (with caching)
+ */
+async function getQPayToken(): Promise<string> {
+    // Return cached token if still valid (5 min buffer)
+    if (qpayTokenCache && qpayTokenCache.expiresAt > Date.now() + 300000) {
+        return qpayTokenCache.token;
+    }
+
+    const credentials = Buffer.from(`${QPAY_CONFIG.username}:${QPAY_CONFIG.password}`).toString("base64");
+    const resp = await httpsRequest(
+        `${QPAY_CONFIG.baseUrl}/v2/auth/token`,
+        "POST",
+        {
+            "Authorization": `Basic ${credentials}`,
+            "Content-Type": "application/json",
+        },
+        ""
+    );
+
+    if (resp.status !== 200) {
+        console.error("QPay auth failed:", resp.status, resp.data);
+        throw new functions.https.HttpsError("internal", "QPay auth failed");
+    }
+
+    const result = JSON.parse(resp.data);
+    qpayTokenCache = {
+        token: result.access_token,
+        expiresAt: Date.now() + (result.expires_in || 3600) * 1000,
+    };
+
+    return result.access_token;
+}
+
+// ═══════════════════════════════════════════
+// Grant membership helper
+// ═══════════════════════════════════════════
+async function grantMembershipFromOrder(
+    bizId: string,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    orderData: any,
+    orderId: string
+): Promise<void> {
+    const categoryId = orderData.membershipCategoryId;
+    const customerPhone = (orderData.customer?.phone || "").replace(/[^\d]/g, "");
+    const durationDays = orderData.membershipDurationDays || 30;
+    const amountPaid = orderData.financials?.totalAmount || 0;
+
+    if (!categoryId || !customerPhone) {
+        console.error("Missing categoryId or phone for membership grant:", orderId);
+        return;
+    }
+
+    const now = new Date();
+    const expiresAt = new Date(now.getTime() + durationDays * 24 * 60 * 60 * 1000);
+
+    await db.collection(`businesses/${bizId}/memberships`).add({
+        categoryId,
+        customerPhone,
+        amountPaid,
+        purchasedAt: admin.firestore.FieldValue.serverTimestamp(),
+        expiresAt: admin.firestore.Timestamp.fromDate(expiresAt),
+        durationDays,
+        status: "active",
+        grantedBy: "payment_auto",
+        orderId,
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+    });
+
+    console.log(`✅ MEMBERSHIP GRANTED: ${customerPhone} → cat:${categoryId} for ${durationDays} days (order:${orderId})`);
+}
 
 /**
  * Trigger: On Order Create (v1 - Default Region)
@@ -479,13 +599,26 @@ export const onSmsIncome = functions
                 autoMatched: true,
             });
 
-            // 6. Create notification for successful auto-match
+            // 5.5 AUTO-GRANT MEMBERSHIP if this is a membership order
             const matchedOrder = matchedOrderDoc.data();
+            if (matchedOrder.orderType === 'membership' && matchedOrder.membershipCategoryId) {
+                try {
+                    await grantMembershipFromOrder(bizId, matchedOrder, matchedOrderDoc.id);
+                } catch (memberErr) {
+                    console.error("Membership grant failed (non-critical):", memberErr);
+                }
+            }
+
+            // 6. Create notification for successful auto-match
             const orderNumber = matchedOrder.orderNumber || matchedOrderDoc.id.slice(0, 6);
+            const notifTitle = matchedOrder.orderType === 'membership'
+                ? `✅ VIP гишүүнчлэл − төлбөр баталгаажлаа`
+                : `✅ Төлбөр автомат холбогдлоо #${orderNumber}`;
+
             await db.collection(`businesses/${bizId}/notifications`).add({
                 templateId: 'payment.received',
                 type: 'sms_income',
-                title: `✅ Төлбөр автомат холбогдлоо #${orderNumber}`,
+                title: notifTitle,
                 body: `₮${smsAmount.toLocaleString()} — ${matchedOrder.customer?.name || 'Зочин'} — ${smsData.bank || 'Банк'}`,
                 icon: '✅',
                 link: '/app/orders',
@@ -505,7 +638,7 @@ export const onSmsIncome = functions
                     if (tokens.length > 0) {
                         await admin.messaging().sendEachForMulticast({
                             notification: {
-                                title: `✅ Төлбөр автомат холбогдлоо #${orderNumber}`,
+                                title: notifTitle,
                                 body: `₮${smsAmount.toLocaleString()} — ${matchedOrder.customer?.name || 'Зочин'}`,
                             },
                             data: { type: 'sms_income', bizId, link: '/app/orders' },
@@ -525,3 +658,191 @@ export const onSmsIncome = functions
             return null;
         }
     });
+
+// ═══════════════════════════════════════════
+// QPay V2 Cloud Functions
+// ═══════════════════════════════════════════
+
+/**
+ * QPay Create Invoice (Callable)
+ * Frontend calls this to generate a QR code for payment
+ */
+export const qpayCreateInvoice = functions.https.onCall(async (data) => {
+    const { bizId, orderId, amount, description, customerPhone } = data;
+
+    if (!bizId || !orderId || !amount) {
+        throw new functions.https.HttpsError("invalid-argument", "Missing required fields");
+    }
+
+    try {
+        const token = await getQPayToken();
+
+        // Build callback URL pointing to our qpayCallback function
+        const projectId = process.env.GCLOUD_PROJECT || process.env.GCP_PROJECT || "liscord-pro";
+        const callbackUrl = `https://us-central1-${projectId}.cloudfunctions.net/qpayCallback?bizId=${bizId}&orderId=${orderId}`;
+
+        const invoiceBody = JSON.stringify({
+            invoice_code: QPAY_CONFIG.invoiceCode,
+            sender_invoice_no: orderId,
+            invoice_receiver_code: customerPhone || "guest",
+            invoice_description: description || `Liscord #${orderId.slice(-6)}`,
+            amount: amount,
+            callback_url: callbackUrl,
+        });
+
+        const resp = await httpsRequest(
+            `${QPAY_CONFIG.baseUrl}/v2/invoice`,
+            "POST",
+            {
+                "Authorization": `Bearer ${token}`,
+                "Content-Type": "application/json",
+            },
+            invoiceBody
+        );
+
+        if (resp.status !== 200) {
+            console.error("QPay invoice creation failed:", resp.status, resp.data);
+            throw new functions.https.HttpsError("internal", "QPay invoice creation failed");
+        }
+
+        const result = JSON.parse(resp.data);
+
+        // Save invoice_id to the order
+        await db.doc(`businesses/${bizId}/orders/${orderId}`).update({
+            qpayInvoiceId: result.invoice_id,
+        });
+
+        return {
+            invoice_id: result.invoice_id,
+            qr_text: result.qr_text,
+            qr_image: result.qr_image,
+            qPay_shortUrl: result.qPay_shortUrl,
+            urls: result.urls || [],
+        };
+
+    } catch (err) {
+        if (err instanceof functions.https.HttpsError) throw err;
+        console.error("qpayCreateInvoice error:", err);
+        throw new functions.https.HttpsError("internal", "Failed to create QPay invoice");
+    }
+});
+
+/**
+ * QPay Callback (HTTP)
+ * QPay hits this URL when payment is made
+ */
+export const qpayCallback = functions.https.onRequest(async (req, res) => {
+    const bizId = req.query.bizId as string;
+    const orderId = req.query.orderId as string;
+
+    console.log(`QPay callback received: bizId=${bizId}, orderId=${orderId}`);
+
+    if (!bizId || !orderId) {
+        res.status(400).json({ error: "Missing bizId or orderId" });
+        return;
+    }
+
+    try {
+        // 1. Get order
+        const orderRef = db.doc(`businesses/${bizId}/orders/${orderId}`);
+        const orderSnap = await orderRef.get();
+        if (!orderSnap.exists) {
+            res.status(404).json({ error: "Order not found" });
+            return;
+        }
+
+        const orderData = orderSnap.data()!;
+        if (orderData.paymentStatus === 'paid') {
+            res.status(200).json({ message: "Already paid" });
+            return;
+        }
+
+        // 2. Verify payment with QPay
+        const invoiceId = orderData.qpayInvoiceId;
+        if (!invoiceId) {
+            res.status(400).json({ error: "No QPay invoice ID on order" });
+            return;
+        }
+
+        const token = await getQPayToken();
+        const checkBody = JSON.stringify({
+            object_type: "INVOICE",
+            object_id: invoiceId,
+            offset: { page_number: 1, page_limit: 100 },
+        });
+
+        const checkResp = await httpsRequest(
+            `${QPAY_CONFIG.baseUrl}/v2/payment/check`,
+            "POST",
+            {
+                "Authorization": `Bearer ${token}`,
+                "Content-Type": "application/json",
+            },
+            checkBody
+        );
+
+        const checkResult = JSON.parse(checkResp.data);
+        const payments = checkResult.rows || [];
+        const paidPayment = payments.find((p: { payment_status: string }) => p.payment_status === "PAID");
+
+        if (!paidPayment) {
+            console.log("QPay callback: payment not confirmed yet");
+            res.status(200).json({ message: "Payment not confirmed yet" });
+            return;
+        }
+
+        // 3. Update order as paid
+        const now = admin.firestore.FieldValue.serverTimestamp();
+        const totalAmount = orderData.financials?.totalAmount || 0;
+
+        await orderRef.update({
+            paymentStatus: 'paid',
+            paymentVerifiedAt: now,
+            paymentVerifiedBy: 'qpay',
+            'financials.paidAmount': totalAmount,
+            'financials.balanceDue': 0,
+            'financials.payments': admin.firestore.FieldValue.arrayUnion({
+                id: `qpay_${paidPayment.payment_id || Date.now()}`,
+                amount: totalAmount,
+                method: 'qpay',
+                note: `QPay төлбөр`,
+                paidAt: now,
+                recordedBy: 'qpay_auto',
+            }),
+            updatedAt: now,
+        });
+
+        // 4. Grant membership if applicable
+        if (orderData.orderType === 'membership' && orderData.membershipCategoryId) {
+            await grantMembershipFromOrder(bizId, orderData, orderId);
+        }
+
+        // 5. Create notification
+        const orderNumber = orderData.orderNumber || orderId.slice(0, 6);
+        const notifTitle = orderData.orderType === 'membership'
+            ? `✅ VIP гишүүнчлэл − QPay төлбөр баталгаажлаа`
+            : `✅ QPay төлбөр баталгаажлаа #${orderNumber}`;
+
+        await db.collection(`businesses/${bizId}/notifications`).add({
+            templateId: 'payment.received',
+            type: 'qpay_payment',
+            title: notifTitle,
+            body: `₮${totalAmount.toLocaleString()} — ${orderData.customer?.name || 'Зочин'}`,
+            icon: '✅',
+            link: '/app/orders',
+            referenceId: orderId,
+            readBy: {},
+            priority: 'high',
+            createdAt: now,
+            createdBy: 'system',
+        });
+
+        console.log(`✅ QPay payment confirmed: Order ${orderId} (₮${totalAmount})`);
+        res.status(200).json({ message: "Payment confirmed" });
+
+    } catch (err) {
+        console.error("QPay callback error:", err);
+        res.status(500).json({ error: "Internal error" });
+    }
+});
+
