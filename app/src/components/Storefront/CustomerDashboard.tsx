@@ -135,7 +135,8 @@ export function CustomerDashboard({ isOpen, onClose, business, phone, onOpenMemb
             const { db } = await import('../../services/firebase');
             const ref = collection(db, 'businesses', business.id, 'orders');
             const normalizedPhone = phone.replace(/[^\d]/g, '');
-            const q = query(ref, where('customerPhone', '==', normalizedPhone));
+            // Orders store phone as customer.phone (nested object)
+            const q = query(ref, where('customer.phone', '==', normalizedPhone));
             const snap = await getDocs(q);
             const items: OrderItem[] = snap.docs.map(d => {
                 const data = d.data();
@@ -145,7 +146,7 @@ export function CustomerDashboard({ isOpen, onClose, business, phone, onOpenMemb
                 return {
                     id: d.id,
                     orderNumber: data.orderNumber || d.id.slice(-6).toUpperCase(),
-                    totalAmount: data.totalAmount || 0,
+                    totalAmount: data.financials?.totalAmount || data.totalAmount || 0,
                     paymentStatus: data.paymentStatus || 'pending',
                     createdAt,
                     items: data.items || [],
