@@ -275,19 +275,28 @@ function CategoryModal({
 
         setLoading(true);
         try {
-            const data: Partial<Category> = {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const data: Record<string, any> = {
                 name: name.trim(),
                 description: description.trim(),
                 color,
                 categoryType,
-                ...(categoryType === 'exclusive' ? {
-                    membershipConfig: {
-                        price: Number(memberPrice) || 0,
-                        durationDays: Number(memberDays) || 30,
-                        description: memberDesc.trim() || undefined,
-                    }
-                } : { membershipConfig: undefined }),
             };
+
+            if (categoryType === 'exclusive') {
+                const mc: Record<string, any> = {
+                    price: Number(memberPrice) || 0,
+                    durationDays: Number(memberDays) || 30,
+                };
+                if (memberDesc.trim()) mc.description = memberDesc.trim();
+                data.membershipConfig = mc;
+            } else {
+                // For normal categories, explicitly remove membershipConfig if editing
+                if (isEditing) {
+                    const { deleteField } = await import('firebase/firestore');
+                    data.membershipConfig = deleteField();
+                }
+            }
 
             if (isEditing) {
                 await categoryService.updateCategory(business.id, category.id, data);
