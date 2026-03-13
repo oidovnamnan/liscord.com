@@ -117,33 +117,47 @@ class SmsBroadcastReceiver : BroadcastReceiver() {
     }
 
     private fun parseAmount(body: String): Double {
-        val patterns = listOf(
-            Regex("(?:orlogo|орлого)[:\\s]*(\\d[\\d,]*(?:\\.\\d{1,2})?)\\s*(?:MNT|₮|төг)", RegexOption.IGNORE_CASE),
-            Regex("(\\d[\\d,]*(?:\\.\\d{1,2})?)\\s*(?:MNT|₮|төг)", RegexOption.IGNORE_CASE),
-            Regex("(?:орлого|orlogo|credited|дүн|amount)[:\\s]*(\\d[\\d,\\s]*(?:\\.\\d{1,2})?)", RegexOption.IGNORE_CASE),
+        // Priority 1: Amount near 'guilgeenii dun' / 'гүйлгээний дүн'
+        val txnPatterns = listOf(
+            Regex("(?:guilgeenii\\s*dun|гүйлгээний\\s*(?:дүн|дүнгээр))[:\\s]*(\\d[\\d,]*(?:\\.\\d{1,2})?)\\s*(?:MNT|₮|төг)?", RegexOption.IGNORE_CASE),
+            Regex("(?:orlogo|орлого)[:\\s]*(\\d[\\d,]*(?:\\.\\d{1,2})?)\\s*(?:MNT|₮|төг)?", RegexOption.IGNORE_CASE),
+            Regex("(?:dun|дүн)[:\\s]*(\\d[\\d,]*(?:\\.\\d{1,2})?)\\s*(?:MNT|₮|төг)?", RegexOption.IGNORE_CASE),
         )
-        for (pattern in patterns) {
+        for (pattern in txnPatterns) {
             val match = pattern.find(body)
             if (match != null) {
                 val value = match.groupValues[1].replace(Regex("[,\\s]"), "").toDoubleOrNull() ?: 0.0
                 if (value > 0) return value
             }
         }
-        // Fallback: find largest number > 100
+        // Priority 2: Number + MNT, but skip if preceded by 'uldegdel/үлдэгдэл'
+        val mntMatch = Regex("(\\d[\\d,]*(?:\\.\\d{1,2})?)\\s*(?:MNT|₮|төг)", RegexOption.IGNORE_CASE).find(body)
+        if (mntMatch != null) {
+            val idx = mntMatch.range.first
+            val before = body.substring(maxOf(0, idx - 30), idx).lowercase()
+            if (!before.contains("uldegdel") && !before.contains("үлдэгдэл") && !before.contains("balance")) {
+                val value = mntMatch.groupValues[1].replace(Regex("[,\\s]"), "").toDoubleOrNull() ?: 0.0
+                if (value > 0) return value
+            }
+        }
+        // Priority 3: Second-largest number > 100 (largest is usually balance)
         val numbers = Regex("\\d[\\d,]*(?:\\.\\d{1,2})?").findAll(body)
-        return numbers.mapNotNull { it.value.replace(",", "").toDoubleOrNull() }
+            .mapNotNull { it.value.replace(",", "").toDoubleOrNull() }
             .filter { it > 100 }
-            .maxOrNull() ?: 0.0
+            .sortedDescending()
+            .toList()
+        return if (numbers.size >= 2) numbers[1] else numbers.firstOrNull() ?: 0.0
     }
 
     private fun parseBankName(sender: String, body: String): String {
-        // Check sender
-        if (sender.contains("1900") || sender.lowercase().contains("khan")) return "Khan Bank"
-        if (sender.contains("1800") || sender.contains("132525") || sender.lowercase().contains("golomt")) return "Golomt"
-        if (sender.contains("1500") || sender.lowercase().contains("tdb")) return "TDB"
-        if (sender.contains("7575") || sender.lowercase().contains("xac")) return "XacBank"
-        if (sender.contains("1234") || sender.lowercase().contains("state")) return "Төрийн Банк"
-        if (sender.contains("2525") || sender.lowercase().contains("bogd")) return "Bogd Bank"
+        // Check sender — longer numbers BEFORE shorter to avoid partial matches
+        if (sender.contains("1900") || sender.contains("19001917")) return "Khan Bank"
+        if (sender.contains("132525") || sender.contains("18001800")) return "Golomt"  // 132525 BEFORE 2525!
+        if (sender.contains("1800")) return "Golomt"
+        if (sender.contains("15001500") || sender.contains("1500")) return "TDB"
+        if (sender.contains("7575")) return "XacBank"
+        if (sender.contains("1234")) return "Төрийн Банк"
+        if (sender.contains("2525")) return "Bogd Bank"  // After 132525 checked above
         
         // Check body
         val lower = body.lowercase()
@@ -154,7 +168,7 @@ class SmsBroadcastReceiver : BroadcastReceiver() {
         if (lower.contains("state") || lower.contains("төрийн")) return "Төрийн Банк"
         if (lower.contains("bogd") || lower.contains("богд")) return "Bogd Bank"
         
-        if (Regex("orlogo|орлого", RegexOption.IGNORE_CASE).containsMatchIn(body)) {
+        if (Regex("orlogo|орлого|dungeer|guilgee", RegexOption.IGNORE_CASE).containsMatchIn(body)) {
             return "Банк ($sender)"
         }
         return sender
@@ -181,7 +195,10 @@ class SmsBroadcastReceiver : BroadcastReceiver() {
         utga: String
     ) {
         try {
-            val docId = "sms_${System.currentTimeMillis()}_${(Math.random() * 100000).toInt()}"
+            // Deterministic docId to prevent duplicates (native receiver + App.tsx)
+            val bodyHash = body.take(50).replace(Regex("[^a-zA-Z0-9]"), "").take(20)
+            val timeKey = System.currentTimeMillis() / 60000  // round to nearest minute
+            val docId = "sms_${sender}_${timeKey}_${bodyHash}"
             val url = URL("$FIRESTORE_BASE/sms_inbox/$docId")
             val isoDate = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US).format(Date())
 

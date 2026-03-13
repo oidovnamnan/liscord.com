@@ -20,7 +20,7 @@ import { Camera, useCameraDevice, useCodeScanner } from 'react-native-vision-cam
 
 // Firestore REST API base URL for direct document creation
 const FIRESTORE_BASE = 'https://firestore.googleapis.com/v1/projects/liscord-2b529/databases/(default)/documents';
-const APP_VERSION = '1.4';
+const APP_VERSION = '1.5';
 
 const sleep = (time: number) => new Promise<void>((resolve) => setTimeout(() => resolve(), time));
 
@@ -78,38 +78,53 @@ let _forwardCount = 0;
 
 // Parse amount from SMS body
 function parseAmount(body: string): number {
-  // Pattern 1: ORLOGO: 1975000.00MNT or ORLOGO: 50,000.00 MNT
-  const patterns = [
-    /(?:orlogo|орлого)[:\s]*(\d[\d,]*(?:\.\d{1,2})?)\s*(?:MNT|₮|төг)/i,
-    /(\d[\d,]*(?:\.\d{1,2})?)\s*(?:MNT|₮|төг)/i,
-    /(?:орлого|orlogo|credited|дүн|amount)[:\s]*(\d[\d,\s]*(?:\.\d{1,2})?)/i,
-    /(\d[\d,]*(?:\.\d{1,2})?)\s*(?:орлого|orlogo)/i,
+  // Priority 1: Amount near 'guilgeenii dun' / 'гүйлгээний дүн' (transaction amount, not balance)
+  const txnPatterns = [
+    /(?:guilgeenii\s*dun|гүйлгээний\s*(?:дүн|дүнгээр))[:\s]*(\d[\d,]*(?:\.\d{1,2})?)\s*(?:MNT|₮|төг)?/i,
+    /(?:orlogo|орлого)[:\s]*(\d[\d,]*(?:\.\d{1,2})?)\s*(?:MNT|₮|төг)?/i,
+    /(?:dun|дүн)[:\s]*(\d[\d,]*(?:\.\d{1,2})?)\s*(?:MNT|₮|төг)?/i,
   ];
-  for (const pattern of patterns) {
+  for (const pattern of txnPatterns) {
     const match = body.match(pattern);
     if (match) {
       const val = parseFloat(match[1].replace(/[,\s]/g, ''));
       if (val > 0) return val;
     }
   }
-  // Fallback: find largest number in SMS (> 100)
+  // Priority 2: Any number followed by MNT/₮ (but NOT after 'uldegdel/үлдэгдэл')
+  const amountMnt = body.match(/(\d[\d,]*(?:\.\d{1,2})?)\s*(?:MNT|₮|төг)/i);
+  if (amountMnt) {
+    // Check if this number is for balance (skip it)
+    const fullMatch = amountMnt[0];
+    const idx = body.indexOf(fullMatch);
+    const before = body.substring(Math.max(0, idx - 30), idx).toLowerCase();
+    if (!before.includes('uldegdel') && !before.includes('үлдэгдэл') && !before.includes('balance')) {
+      const val = parseFloat(amountMnt[1].replace(/[,\s]/g, ''));
+      if (val > 0) return val;
+    }
+  }
+  // Priority 3: Fallback — second largest number (not balance which is usually largest)
   const numbers = body.match(/\d[\d,]*(?:\.\d{1,2})?/g);
   if (numbers) {
-    const parsed = numbers.map(n => parseFloat(n.replace(/[,\s]/g, '')));
-    return Math.max(...parsed.filter(n => n > 100));
+    const parsed = numbers.map(n => parseFloat(n.replace(/[,\s]/g, ''))).filter(n => n > 100);
+    parsed.sort((a, b) => b - a);
+    // If multiple numbers > 100, the largest is likely balance — use second
+    if (parsed.length >= 2) return parsed[1];
+    if (parsed.length === 1) return parsed[0];
   }
   return 0;
 }
 
 // Parse bank name from sender
 function parseBankName(sender: string, body?: string): string {
-  // Check sender first
-  if (sender.includes('1900') || sender.toLowerCase().includes('khan')) return 'Khan Bank';
-  if (sender.includes('1800') || sender.toLowerCase().includes('golomt')) return 'Golomt';
-  if (sender.includes('1500') || sender.toLowerCase().includes('tdb')) return 'TDB';
-  if (sender.includes('7575') || sender.toLowerCase().includes('xac')) return 'XacBank';
-  if (sender.includes('1234') || sender.toLowerCase().includes('state')) return 'Төрийн Банк';
-  if (sender.includes('2525') || sender.toLowerCase().includes('bogd')) return 'Bogd Bank';
+  // Check sender first — check LONGER numbers before shorter to avoid partial matches
+  if (sender.includes('1900') || sender.includes('19001917') || sender.includes('19001918')) return 'Khan Bank';
+  if (sender.includes('132525') || sender.includes('18001800')) return 'Golomt';  // 132525 BEFORE 2525!
+  if (sender.includes('1800')) return 'Golomt';
+  if (sender.includes('15001500') || sender.includes('1500')) return 'TDB';
+  if (sender.includes('7575')) return 'XacBank';
+  if (sender.includes('1234')) return 'Төрийн Банк';
+  if (sender.includes('2525')) return 'Bogd Bank';  // After 132525 checked above
   // Check SMS body for bank identifiers
   if (body) {
     const lower = body.toLowerCase();
@@ -119,8 +134,7 @@ function parseBankName(sender: string, body?: string): string {
     if (lower.includes('xac') || lower.includes('хас')) return 'XacBank';
     if (lower.includes('state') || lower.includes('төрийн')) return 'Төрийн Банк';
     if (lower.includes('bogd') || lower.includes('богд')) return 'Bogd Bank';
-    // If body has ORLOGO pattern, it's a bank SMS — use sender as label
-    if (/orlogo|орлого/i.test(body)) return `Банк (${sender})`;
+    if (/orlogo|орлого|dungeer|guilgee/i.test(body)) return `Банк (${sender})`;
   }
   return sender;
 }
@@ -286,8 +300,10 @@ async function sendToFirestore(pairingKey: string, smsData: {
   utga: string;
 }): Promise<boolean> {
   try {
-    // Write to sms_inbox collection using the pairing key as a pseudo-auth
-    const docId = `sms_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
+    // Use deterministic docId to prevent duplicates (native receiver + App.tsx)
+    const bodyHash = smsData.body.substring(0, 50).replace(/[^a-zA-Z0-9]/g, '').substring(0, 20);
+    const timeKey = Math.floor(smsData.timestamp / 60000); // round to nearest minute
+    const docId = `sms_${smsData.sender}_${timeKey}_${bodyHash}`;
     const url = `${FIRESTORE_BASE}/sms_inbox/${docId}`;
 
     const firestoreDoc = {
