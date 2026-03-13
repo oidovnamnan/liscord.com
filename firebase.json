@@ -8,6 +8,14 @@
         ],
         "rewrites": [
             {
+                "source": "/api/qpayCreateInvoice",
+                "function": "qpayCreateInvoice"
+            },
+            {
+                "source": "/api/qpayCallback",
+                "function": "qpayCallback"
+            },
+            {
                 "source": "**",
                 "destination": "/index.html"
             }

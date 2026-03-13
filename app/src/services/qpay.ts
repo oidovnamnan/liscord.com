@@ -16,8 +16,8 @@ export interface QPayInvoiceResponse {
     }>;
 }
 
-// Cloud Function URL
-const QPAY_FUNCTION_URL = 'https://us-central1-liscord-2b529.cloudfunctions.net/qpayCreateInvoice';
+// Via Firebase Hosting rewrite — bypasses org IAM policy
+const QPAY_FUNCTION_URL = '/api/qpayCreateInvoice';
 
 export const qpayService = {
     /**
