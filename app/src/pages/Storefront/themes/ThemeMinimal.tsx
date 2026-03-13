@@ -1,22 +1,28 @@
 import { useState, useRef, useEffect } from 'react';
-import { ShoppingBag, Search, Plus, Lock, Crown, X, Phone } from 'lucide-react';
+import { ShoppingBag, Search, Plus, Lock, Crown, X, Phone, User } from 'lucide-react';
 import type { Business, Product } from '../../../types';
 import { useCartStore } from '../../../store';
 import { useStorefrontData, type StorefrontProduct } from '../hooks/useStorefrontData';
 import { StorefrontEmpty } from '../../../components/Storefront/StorefrontEmpty';
 import { ProductModal } from '../../../components/Storefront/ProductModal';
+import { CustomerDashboard } from '../../../components/Storefront/CustomerDashboard';
 import '../Storefront.css';
 
 export function ThemeMinimal({ business }: { business: Business }) {
     const {
         products, loading, searchQuery, setSearchQuery,
         activeCategory, setActiveCategory, categories, filteredProducts,
-        verifyMembership,
+        verifyMembership, activeMemberships,
     } = useStorefrontData(business);
 
     const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
     const [showMembershipModal, setShowMembershipModal] = useState(false);
     const [membershipTarget, setMembershipTarget] = useState<StorefrontProduct | null>(null);
+    const [showDashboard, setShowDashboard] = useState(false);
+
+    // Check if user has stored phone (logged in)
+    const storedPhone = localStorage.getItem(`membership_phone_${business.id}`) || '';
+    const hasMembership = activeMemberships.length > 0;
 
     const extractBrand = (desc: string) => {
         if (!desc) return null;
@@ -74,14 +80,25 @@ export function ThemeMinimal({ business }: { business: Business }) {
                     <span>{storeName}</span>
                 </a>
 
-                <button
-                    className="store-cart-btn"
-                    onClick={() => useCartStore.getState().setIsOpen(true)}
-                >
-                    <ShoppingBag size={18} strokeWidth={2.5} />
-                    {cartCount > 0 && <span className="cart-badge">{cartCount}</span>}
-                    <span className="hide-mobile">Сагс</span>
-                </button>
+                <div className="store-nav-actions">
+                    {storedPhone && (
+                        <button
+                            className={`store-profile-btn ${hasMembership ? 'has-membership' : ''}`}
+                            onClick={() => setShowDashboard(true)}
+                        >
+                            <User size={18} strokeWidth={2.5} />
+                            {hasMembership && <span className="store-profile-vip-dot" />}
+                        </button>
+                    )}
+                    <button
+                        className="store-cart-btn"
+                        onClick={() => useCartStore.getState().setIsOpen(true)}
+                    >
+                        <ShoppingBag size={18} strokeWidth={2.5} />
+                        {cartCount > 0 && <span className="cart-badge">{cartCount}</span>}
+                        <span className="hide-mobile">Сагс</span>
+                    </button>
+                </div>
             </nav>
 
             <main>
@@ -246,6 +263,23 @@ export function ThemeMinimal({ business }: { business: Business }) {
                     business={business}
                 />
             )}
+
+            {/* Customer Dashboard Drawer */}
+            <CustomerDashboard
+                isOpen={showDashboard}
+                onClose={() => setShowDashboard(false)}
+                business={business}
+                phone={storedPhone}
+                onOpenMembership={() => {
+                    setShowDashboard(false);
+                    // Show membership modal for any exclusive product
+                    const exclusive = filteredProducts.find(p => p.isExclusive);
+                    if (exclusive) {
+                        setMembershipTarget(exclusive);
+                        setShowMembershipModal(true);
+                    }
+                }}
+            />
         </div>
     );
 }

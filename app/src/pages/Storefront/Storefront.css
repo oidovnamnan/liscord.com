@@ -1188,3 +1188,522 @@
     flex-direction: column;
     gap: 12px;
 }
+
+/* ============================================
+   CUSTOMER DASHBOARD — Slide-over Drawer
+   ============================================ */
+.cd-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(4px);
+    z-index: 9998;
+    animation: cdFadeIn 0.25s ease;
+}
+
+@keyframes cdFadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes cdSlideIn { from { transform: translateX(100%); } to { transform: translateX(0); } }
+
+.cd-drawer {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: min(420px, 92vw);
+    background: var(--sf-bg);
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    animation: cdSlideIn 0.3s var(--sf-transition);
+    box-shadow: -8px 0 32px rgba(0, 0, 0, 0.12);
+}
+
+.cd-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 24px;
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+    color: #fff;
+}
+
+.cd-header-user {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.cd-avatar {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.15);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+}
+
+.cd-phone {
+    font-weight: 700;
+    font-size: 1rem;
+    letter-spacing: 0.02em;
+}
+
+.cd-member-badge {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 0.78rem;
+    opacity: 0.8;
+    margin-top: 2px;
+}
+
+.cd-close {
+    background: rgba(255, 255, 255, 0.15);
+    border: none;
+    border-radius: 50%;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.cd-close:hover {
+    background: rgba(255, 255, 255, 0.25);
+}
+
+/* Tabs */
+.cd-tabs {
+    display: flex;
+    border-bottom: 1px solid var(--sf-border);
+    padding: 0 8px;
+    background: var(--sf-bg-warm);
+}
+
+.cd-tab {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 12px 4px;
+    border: none;
+    background: none;
+    color: var(--sf-text-muted);
+    font-size: 0.72rem;
+    font-weight: 600;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s;
+    font-family: var(--sf-font-body);
+}
+
+.cd-tab.active {
+    color: var(--sf-primary);
+    border-bottom-color: var(--sf-primary);
+}
+
+.cd-tab:hover:not(.active) {
+    color: var(--sf-text-secondary);
+}
+
+/* Content */
+.cd-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px 24px;
+}
+
+.cd-section-title {
+    font-family: var(--sf-font-title);
+    font-size: 1.05rem;
+    font-weight: 700;
+    margin-bottom: 16px;
+    color: var(--sf-text);
+}
+
+.cd-loading {
+    text-align: center;
+    padding: 40px 0;
+    color: var(--sf-text-muted);
+    font-size: 0.9rem;
+}
+
+.cd-empty {
+    text-align: center;
+    padding: 48px 16px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    color: var(--sf-text-muted);
+    font-size: 0.9rem;
+}
+
+/* Membership Cards */
+.cd-membership-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.cd-membership-card {
+    border-radius: var(--sf-radius-md);
+    padding: 16px;
+    border: 1px solid var(--sf-border);
+}
+
+.cd-membership-card.active {
+    background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%);
+    border-color: #86efac;
+}
+
+.cd-membership-card.expired {
+    background: var(--sf-bg-surface);
+    border-color: var(--sf-border);
+    opacity: 0.75;
+}
+
+.cd-membership-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.cd-membership-status {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 700;
+    font-size: 0.85rem;
+}
+
+.cd-membership-card.active .cd-membership-status { color: #16a34a; }
+.cd-membership-card.expired .cd-membership-status { color: #9ca3af; }
+
+.cd-days-remaining {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: #16a34a;
+    background: rgba(22, 163, 106, 0.1);
+    padding: 3px 10px;
+    border-radius: 12px;
+}
+
+.cd-membership-details {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.cd-detail-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.85rem;
+}
+
+.cd-detail-row span:first-child {
+    color: var(--sf-text-muted);
+}
+
+.cd-detail-row span:last-child {
+    font-weight: 600;
+    color: var(--sf-text);
+}
+
+.cd-progress-bar {
+    margin-top: 12px;
+    height: 4px;
+    background: rgba(0, 0, 0, 0.08);
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.cd-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #22c55e, #16a34a);
+    border-radius: 2px;
+    transition: width 0.5s ease;
+}
+
+.cd-btn-renew {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 12px;
+    padding: 8px 16px;
+    background: var(--sf-text);
+    color: #fff;
+    border: none;
+    border-radius: var(--sf-radius-sm);
+    font-weight: 600;
+    font-size: 0.82rem;
+    cursor: pointer;
+    font-family: var(--sf-font-body);
+    transition: opacity 0.2s;
+}
+
+.cd-btn-renew:hover { opacity: 0.85; }
+
+/* Order Cards */
+.cd-orders-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.cd-order-card {
+    border: 1px solid var(--sf-border);
+    border-radius: var(--sf-radius-md);
+    padding: 14px 16px;
+    transition: box-shadow 0.2s;
+}
+
+.cd-order-card:hover {
+    box-shadow: var(--sf-shadow-xs);
+}
+
+.cd-order-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.cd-order-number {
+    font-weight: 700;
+    font-size: 0.88rem;
+    font-family: var(--sf-font-title);
+}
+
+.cd-order-status {
+    font-size: 0.72rem;
+    font-weight: 700;
+    padding: 3px 10px;
+    border-radius: 12px;
+}
+
+.cd-order-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.82rem;
+}
+
+.cd-order-date {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    color: var(--sf-text-muted);
+}
+
+.cd-order-amount {
+    font-weight: 700;
+    color: var(--sf-text);
+}
+
+.cd-order-items {
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid var(--sf-border);
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.cd-order-item {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.8rem;
+    color: var(--sf-text-secondary);
+}
+
+.cd-order-more {
+    font-size: 0.78rem;
+    color: var(--sf-text-muted);
+    font-style: italic;
+}
+
+/* Address Form */
+.cd-address-form {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.cd-form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    flex: 1;
+}
+
+.cd-form-group label {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--sf-text-secondary);
+}
+
+.cd-form-group input,
+.cd-form-group textarea {
+    padding: 10px 14px;
+    border: 1px solid var(--sf-border-strong);
+    border-radius: var(--sf-radius-sm);
+    font-size: 0.9rem;
+    font-family: var(--sf-font-body);
+    background: var(--sf-bg);
+    color: var(--sf-text);
+    transition: border-color 0.2s;
+    outline: none;
+}
+
+.cd-form-group input:focus,
+.cd-form-group textarea:focus {
+    border-color: var(--sf-primary);
+}
+
+.cd-form-group textarea {
+    resize: vertical;
+}
+
+.cd-form-row {
+    display: flex;
+    gap: 12px;
+}
+
+.cd-btn-primary {
+    padding: 12px;
+    background: var(--sf-text);
+    color: #fff;
+    border: none;
+    border-radius: var(--sf-radius-sm);
+    font-weight: 700;
+    font-size: 0.9rem;
+    cursor: pointer;
+    font-family: var(--sf-font-body);
+    transition: opacity 0.2s;
+}
+
+.cd-btn-primary:hover { opacity: 0.85; }
+
+/* Notifications */
+.cd-notifications {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.cd-notification {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 14px 16px;
+    border-radius: var(--sf-radius-md);
+    border: 1px solid var(--sf-border);
+}
+
+.cd-notification.warn {
+    background: #fffbeb;
+    border-color: #fde68a;
+}
+
+.cd-notification.warn svg { color: #f59e0b; flex-shrink: 0; margin-top: 2px; }
+
+.cd-notification.success {
+    background: #f0fdf4;
+    border-color: #86efac;
+}
+
+.cd-notification.success svg { color: #22c55e; flex-shrink: 0; margin-top: 2px; }
+
+.cd-notification.info {
+    background: #eff6ff;
+    border-color: #93c5fd;
+}
+
+.cd-notification.info svg { color: #3b82f6; flex-shrink: 0; margin-top: 2px; }
+
+.cd-notif-title {
+    font-weight: 600;
+    font-size: 0.85rem;
+    color: var(--sf-text);
+}
+
+.cd-notif-time {
+    font-size: 0.75rem;
+    color: var(--sf-text-muted);
+    margin-top: 2px;
+}
+
+/* Footer */
+.cd-footer {
+    padding: 16px 24px;
+    border-top: 1px solid var(--sf-border);
+}
+
+.cd-btn-logout {
+    width: 100%;
+    padding: 10px;
+    background: none;
+    border: 1px solid #fecaca;
+    border-radius: var(--sf-radius-sm);
+    color: #ef4444;
+    font-weight: 600;
+    font-size: 0.85rem;
+    cursor: pointer;
+    font-family: var(--sf-font-body);
+    transition: all 0.2s;
+}
+
+.cd-btn-logout:hover {
+    background: #fef2f2;
+}
+
+/* Profile Icon in Nav */
+.store-profile-btn {
+    background: none;
+    border: 2px solid var(--sf-border-strong);
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: var(--sf-text);
+    transition: all 0.2s;
+    position: relative;
+}
+
+.store-profile-btn:hover {
+    border-color: var(--sf-text);
+}
+
+.store-profile-btn.has-membership {
+    border-color: #22c55e;
+    background: #f0fdf4;
+    color: #16a34a;
+}
+
+.store-profile-vip-dot {
+    position: absolute;
+    top: -2px;
+    right: -2px;
+    width: 10px;
+    height: 10px;
+    background: #22c55e;
+    border-radius: 50%;
+    border: 2px solid #fff;
+}
+
+.store-nav-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
