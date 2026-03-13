@@ -663,15 +663,37 @@ export const onSmsIncome = functions
 // QPay V2 Cloud Functions
 // ═══════════════════════════════════════════
 
+// CORS helper
+function setCors(res: functions.Response): void {
+    res.set("Access-Control-Allow-Origin", "*");
+    res.set("Access-Control-Allow-Methods", "POST, OPTIONS");
+    res.set("Access-Control-Allow-Headers", "Content-Type, Authorization");
+    res.set("Access-Control-Max-Age", "3600");
+}
+
 /**
- * QPay Create Invoice (Callable)
+ * QPay Create Invoice (HTTP with CORS)
  * Frontend calls this to generate a QR code for payment
  */
-export const qpayCreateInvoice = functions.runWith({ invoker: "public" }).https.onCall(async (data) => {
-    const { bizId, orderId, amount, description, customerPhone } = data;
+export const qpayCreateInvoice = functions.https.onRequest(async (req, res) => {
+    setCors(res);
+
+    // Handle CORS preflight
+    if (req.method === "OPTIONS") {
+        res.status(204).send("");
+        return;
+    }
+
+    if (req.method !== "POST") {
+        res.status(405).json({ error: "Method not allowed" });
+        return;
+    }
+
+    const { bizId, orderId, amount, description, customerPhone } = req.body;
 
     if (!bizId || !orderId || !amount) {
-        throw new functions.https.HttpsError("invalid-argument", "Missing required fields");
+        res.status(400).json({ error: "Missing required fields: bizId, orderId, amount" });
+        return;
     }
 
     try {
@@ -702,7 +724,8 @@ export const qpayCreateInvoice = functions.runWith({ invoker: "public" }).https.
 
         if (resp.status !== 200) {
             console.error("QPay invoice creation failed:", resp.status, resp.data);
-            throw new functions.https.HttpsError("internal", "QPay invoice creation failed");
+            res.status(500).json({ error: "QPay invoice creation failed" });
+            return;
         }
 
         const result = JSON.parse(resp.data);
@@ -712,18 +735,17 @@ export const qpayCreateInvoice = functions.runWith({ invoker: "public" }).https.
             qpayInvoiceId: result.invoice_id,
         });
 
-        return {
+        res.status(200).json({
             invoice_id: result.invoice_id,
             qr_text: result.qr_text,
             qr_image: result.qr_image,
             qPay_shortUrl: result.qPay_shortUrl,
             urls: result.urls || [],
-        };
+        });
 
     } catch (err) {
-        if (err instanceof functions.https.HttpsError) throw err;
         console.error("qpayCreateInvoice error:", err);
-        throw new functions.https.HttpsError("internal", "Failed to create QPay invoice");
+        res.status(500).json({ error: "Failed to create QPay invoice" });
     }
 });
 
@@ -731,7 +753,7 @@ export const qpayCreateInvoice = functions.runWith({ invoker: "public" }).https.
  * QPay Callback (HTTP)
  * QPay hits this URL when payment is made
  */
-export const qpayCallback = functions.runWith({ invoker: "public" }).https.onRequest(async (req, res) => {
+export const qpayCallback = functions.https.onRequest(async (req, res) => {
     const bizId = req.query.bizId as string;
     const orderId = req.query.orderId as string;
 
