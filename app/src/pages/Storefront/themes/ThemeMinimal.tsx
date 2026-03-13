@@ -595,8 +595,9 @@ function MembershipModal({
                         console.error('Failed to update order:', updateErr);
                     }
 
-                    // The onSnapshot will catch the paymentStatus change
-                    // and trigger setPaymentConfirmed(true)
+                    // Directly confirm payment (don't rely only on onSnapshot)
+                    setPaymentConfirmed(true);
+                    setTimeout(() => onClose(), 2500);
                 }
             } catch (pollErr) {
                 // Silent fail — will retry on next interval
