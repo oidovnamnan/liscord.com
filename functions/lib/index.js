@@ -592,32 +592,14 @@ exports.onSmsIncome = functions
 // ═══════════════════════════════════════════
 // QPay V2 Cloud Functions
 // ═══════════════════════════════════════════
-// CORS helper
-function setCors(res) {
-    res.set("Access-Control-Allow-Origin", "*");
-    res.set("Access-Control-Allow-Methods", "POST, OPTIONS");
-    res.set("Access-Control-Allow-Headers", "Content-Type, Authorization");
-    res.set("Access-Control-Max-Age", "3600");
-}
 /**
- * QPay Create Invoice (HTTP with CORS)
- * Frontend calls this to generate a QR code for payment
+ * QPay Create Invoice (Callable)
+ * Frontend calls this via httpsCallable with Anonymous Auth token
  */
-exports.qpayCreateInvoice = functions.https.onRequest(async (req, res) => {
-    setCors(res);
-    // Handle CORS preflight
-    if (req.method === "OPTIONS") {
-        res.status(204).send("");
-        return;
-    }
-    if (req.method !== "POST") {
-        res.status(405).json({ error: "Method not allowed" });
-        return;
-    }
-    const { bizId, orderId, amount, description, customerPhone } = req.body;
+exports.qpayCreateInvoice = functions.https.onCall(async (data) => {
+    const { bizId, orderId, amount, description, customerPhone } = data;
     if (!bizId || !orderId || !amount) {
-        res.status(400).json({ error: "Missing required fields: bizId, orderId, amount" });
-        return;
+        throw new functions.https.HttpsError("invalid-argument", "Missing required fields");
     }
     try {
         const token = await getQPayToken();
@@ -638,25 +620,26 @@ exports.qpayCreateInvoice = functions.https.onRequest(async (req, res) => {
         }, invoiceBody);
         if (resp.status !== 200) {
             console.error("QPay invoice creation failed:", resp.status, resp.data);
-            res.status(500).json({ error: "QPay invoice creation failed" });
-            return;
+            throw new functions.https.HttpsError("internal", "QPay invoice creation failed");
         }
         const result = JSON.parse(resp.data);
         // Save invoice_id to the order
         await db.doc(`businesses/${bizId}/orders/${orderId}`).update({
             qpayInvoiceId: result.invoice_id,
         });
-        res.status(200).json({
+        return {
             invoice_id: result.invoice_id,
             qr_text: result.qr_text,
             qr_image: result.qr_image,
             qPay_shortUrl: result.qPay_shortUrl,
             urls: result.urls || [],
-        });
+        };
     }
     catch (err) {
+        if (err instanceof functions.https.HttpsError)
+            throw err;
         console.error("qpayCreateInvoice error:", err);
-        res.status(500).json({ error: "Failed to create QPay invoice" });
+        throw new functions.https.HttpsError("internal", "Failed to create QPay invoice");
     }
 });
 /**

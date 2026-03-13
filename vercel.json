@@ -1,0 +1,12 @@
+{
+    "rewrites": [
+        {
+            "source": "/api/qpayCreateInvoice",
+            "destination": "https://us-central1-liscord-2b529.cloudfunctions.net/qpayCreateInvoice"
+        },
+        {
+            "source": "/api/qpayCallback",
+            "destination": "https://us-central1-liscord-2b529.cloudfunctions.net/qpayCallback"
+        }
+    ]
+}

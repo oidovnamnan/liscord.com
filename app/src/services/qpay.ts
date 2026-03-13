@@ -1,7 +1,10 @@
 /**
  * QPay V2 Integration — Real API via Cloud Functions
- * Calls our HTTP endpoint (not httpsCallable) to avoid CORS/IAM issues.
+ * Uses httpsCallable with Anonymous Auth to bypass org IAM restrictions.
  */
+import { getFunctions, httpsCallable } from 'firebase/functions';
+import { signInAnonymously } from 'firebase/auth';
+import { auth } from './firebase';
 
 export interface QPayInvoiceResponse {
     invoice_id: string;
@@ -16,12 +19,20 @@ export interface QPayInvoiceResponse {
     }>;
 }
 
-// Via Firebase Hosting rewrite — bypasses org IAM policy
-const QPAY_FUNCTION_URL = '/api/qpayCreateInvoice';
+/**
+ * Ensure we have a Firebase Auth session (anonymous) so the callable function
+ * receives an authenticated request. This bypasses the org IAM policy that
+ * blocks unauthenticated Cloud Function invocations.
+ */
+async function ensureAuth(): Promise<void> {
+    if (!auth.currentUser) {
+        await signInAnonymously(auth);
+    }
+}
 
 export const qpayService = {
     /**
-     * Create a real QPay invoice via Cloud Function HTTP endpoint
+     * Create a QPay invoice via Cloud Function callable
      */
     async createInvoice(
         bizId: string,
@@ -30,23 +41,20 @@ export const qpayService = {
         description: string,
         customerPhone?: string
     ): Promise<QPayInvoiceResponse> {
-        const response = await fetch(QPAY_FUNCTION_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                bizId,
-                orderId,
-                amount,
-                description,
-                customerPhone,
-            }),
+        // Ensure anonymous auth session for the callable
+        await ensureAuth();
+
+        const functions = getFunctions();
+        const createInvoiceFn = httpsCallable(functions, 'qpayCreateInvoice');
+
+        const result = await createInvoiceFn({
+            bizId,
+            orderId,
+            amount,
+            description,
+            customerPhone,
         });
 
-        if (!response.ok) {
-            const errorData = await response.json().catch(() => ({}));
-            throw new Error(errorData.error || `QPay request failed: ${response.status}`);
-        }
-
-        return response.json();
+        return result.data as QPayInvoiceResponse;
     },
 };
