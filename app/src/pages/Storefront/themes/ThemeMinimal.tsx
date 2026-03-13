@@ -359,7 +359,17 @@ function MembershipModal({
         try {
             await confirmationResult.confirm(otpCode);
 
-            // OTP verified! Now check membership
+            // OTP verified! Phone is confirmed.
+            // Restore anonymous auth (phone sign-in changes auth state which breaks Firestore rules)
+            try {
+                const { signInAnonymously } = await import('firebase/auth');
+                const { auth } = await import('../../../services/firebase');
+                await signInAnonymously(auth);
+            } catch (authErr) {
+                console.debug('Auth restore:', authErr);
+            }
+
+            // Now check membership with restored auth
             const cleanPhone = phone.trim().replace(/[\s\-+]/g, '');
             const hasMembership = await onVerify(cleanPhone);
             if (hasMembership) {
