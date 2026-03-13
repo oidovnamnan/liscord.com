@@ -6,6 +6,7 @@ import { useStorefrontData, type StorefrontProduct } from '../hooks/useStorefron
 import { StorefrontEmpty } from '../../../components/Storefront/StorefrontEmpty';
 import { ProductModal } from '../../../components/Storefront/ProductModal';
 import { CustomerDashboard } from '../../../components/Storefront/CustomerDashboard';
+import { FlashDealSection, type FlashDealConfig } from '../../../components/Storefront/FlashDealSection';
 import '../Storefront.css';
 
 export function ThemeMinimal({ business }: { business: Business }) {
@@ -141,6 +142,26 @@ export function ThemeMinimal({ business }: { business: Business }) {
                         ))}
                     </div>
                 )}
+
+                {/* Flash Deal Section */}
+                {(() => {
+                    const fd = (business.settings as any)?.storefront?.flashDeal;
+                    if (!fd?.enabled || !fd.products?.length) return null;
+                    const flashConfig: FlashDealConfig = {
+                        enabled: fd.enabled,
+                        title: fd.title || '⚡ FLASH DEAL',
+                        startsAt: fd.startsAt?.toDate?.() || new Date(fd.startsAt),
+                        endsAt: fd.endsAt?.toDate?.() || new Date(fd.endsAt),
+                        products: fd.products,
+                    };
+                    return (
+                        <FlashDealSection
+                            config={flashConfig}
+                            allProducts={products}
+                            onProductClick={(p) => setSelectedProduct(p)}
+                        />
+                    );
+                })()}
 
                 {/* Product Grid */}
                 <div className="store-container">

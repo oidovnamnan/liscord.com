@@ -1190,6 +1190,326 @@
 }
 
 /* ============================================
+   FLASH DEAL — Premium Eye-catching Section
+   ============================================ */
+.fd-section {
+    position: relative;
+    margin: 0 clamp(12px, 4vw, 32px) 24px;
+    padding: 24px 20px;
+    border-radius: 20px;
+    background: linear-gradient(135deg, #1a0533 0%, #2d1b4e 30%, #4a1942 60%, #1a0533 100%);
+    overflow: hidden;
+    box-shadow: 0 8px 40px rgba(74, 25, 66, 0.4);
+}
+
+/* Animated glow orbs */
+.fd-glow {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(60px);
+    pointer-events: none;
+    opacity: 0.35;
+}
+
+.fd-glow-1 {
+    width: 200px;
+    height: 200px;
+    background: #ff006e;
+    top: -60px;
+    right: -40px;
+    animation: fdFloat 4s ease-in-out infinite;
+}
+
+.fd-glow-2 {
+    width: 150px;
+    height: 150px;
+    background: #8338ec;
+    bottom: -40px;
+    left: -30px;
+    animation: fdFloat 5s ease-in-out infinite reverse;
+}
+
+@keyframes fdFloat {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    50% { transform: translate(10px, -15px) scale(1.1); }
+}
+
+/* Header */
+.fd-header {
+    position: relative;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 18px;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.fd-title-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.fd-icon-pulse {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #ff006e, #ff4d6d);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: fdPulse 1.5s ease-in-out infinite;
+    box-shadow: 0 0 20px rgba(255, 0, 110, 0.5);
+}
+
+@keyframes fdPulse {
+    0%, 100% { box-shadow: 0 0 20px rgba(255, 0, 110, 0.5); transform: scale(1); }
+    50% { box-shadow: 0 0 35px rgba(255, 0, 110, 0.8); transform: scale(1.05); }
+}
+
+.fd-title {
+    color: #fff;
+    font-family: var(--sf-font-title);
+    font-size: 1.1rem;
+    font-weight: 900;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin: 0;
+    text-shadow: 0 2px 10px rgba(255, 0, 110, 0.3);
+}
+
+/* Countdown Timer */
+.fd-timer {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: rgba(255, 255, 255, 0.6);
+}
+
+.fd-timer-box {
+    background: rgba(255, 255, 255, 0.12);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: #fff;
+    font-size: 1rem;
+    font-weight: 800;
+    font-family: 'SF Mono', 'Menlo', monospace;
+    min-width: 36px;
+    height: 34px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    letter-spacing: 0.05em;
+}
+
+.fd-timer-sec {
+    background: rgba(255, 0, 110, 0.25);
+    border-color: rgba(255, 0, 110, 0.3);
+}
+
+.fd-timer-sep {
+    color: rgba(255, 255, 255, 0.4);
+    font-weight: 700;
+    font-size: 1rem;
+}
+
+/* Product Cards */
+.fd-products {
+    position: relative;
+    display: flex;
+    gap: 12px;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 4px;
+    scrollbar-width: none;
+}
+
+.fd-products::-webkit-scrollbar { display: none; }
+
+.fd-card {
+    flex: 0 0 calc(50% - 6px);
+    scroll-snap-align: start;
+    background: rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 14px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: transform 0.2s, border-color 0.2s;
+    position: relative;
+}
+
+.fd-card:hover {
+    transform: translateY(-2px);
+    border-color: rgba(255, 0, 110, 0.4);
+}
+
+.fd-card.sold-out {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* Discount badge */
+.fd-discount-badge {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    background: linear-gradient(135deg, #ff006e, #ff4d6d);
+    color: #fff;
+    font-size: 0.7rem;
+    font-weight: 900;
+    padding: 3px 8px;
+    border-radius: 6px;
+    z-index: 2;
+    box-shadow: 0 2px 8px rgba(255, 0, 110, 0.4);
+    letter-spacing: 0.02em;
+}
+
+/* Card image */
+.fd-card-img {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 1;
+    background: rgba(0, 0, 0, 0.2);
+    overflow: hidden;
+}
+
+.fd-card-img img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.fd-img-placeholder {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+}
+
+.fd-sold-out-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.65);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-weight: 900;
+    font-size: 0.85rem;
+    letter-spacing: 0.15em;
+}
+
+/* Card info */
+.fd-card-info {
+    padding: 10px 12px 12px;
+}
+
+.fd-card-name {
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 0.78rem;
+    font-weight: 600;
+    line-height: 1.3;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-bottom: 6px;
+}
+
+.fd-card-prices {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    margin-bottom: 8px;
+}
+
+.fd-flash-price {
+    color: #ff4d6d;
+    font-weight: 900;
+    font-size: 1rem;
+    text-shadow: 0 0 12px rgba(255, 0, 110, 0.3);
+}
+
+.fd-original-price {
+    color: rgba(255, 255, 255, 0.4);
+    font-size: 0.75rem;
+    text-decoration: line-through;
+    font-weight: 500;
+}
+
+/* Progress bar */
+.fd-progress-wrap {
+    margin-bottom: 8px;
+}
+
+.fd-progress-bar {
+    height: 4px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 2px;
+    overflow: hidden;
+    margin-bottom: 4px;
+}
+
+.fd-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #ff006e, #ff4d6d, #ff006e);
+    background-size: 200% 100%;
+    border-radius: 2px;
+    transition: width 0.5s ease;
+    animation: fdProgressShimmer 2s ease infinite;
+}
+
+@keyframes fdProgressShimmer {
+    0% { background-position: 0% 0%; }
+    100% { background-position: 200% 0%; }
+}
+
+.fd-progress-text {
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 0.65rem;
+    font-weight: 600;
+}
+
+/* Add to cart button */
+.fd-add-btn {
+    width: 100%;
+    padding: 7px 0;
+    background: linear-gradient(135deg, #ff006e, #ff4d6d);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    font-family: var(--sf-font-body);
+    transition: opacity 0.2s, transform 0.1s;
+}
+
+.fd-add-btn:hover { opacity: 0.85; }
+.fd-add-btn:active { transform: scale(0.97); }
+
+/* Single product layout */
+@media (min-width: 500px) {
+    .fd-card { flex: 0 0 calc(33.33% - 8px); }
+}
+
+@media (max-width: 380px) {
+    .fd-card { flex: 0 0 calc(55% - 6px); }
+    .fd-timer-box { min-width: 30px; height: 28px; font-size: 0.85rem; }
+    .fd-title { font-size: 0.95rem; }
+}
+
+/* ============================================
    CUSTOMER DASHBOARD — Slide-over Drawer
    ============================================ */
 .cd-backdrop {
