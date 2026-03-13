@@ -235,7 +235,7 @@ export function ProductModal({ product, onClose, preorderTerms }: ProductModalPr
                                     <Package size={16} />
                                     <div>
                                         <div style={{ fontWeight: 700, fontSize: '0.85rem' }}>Урьдчилсан захиалга</div>
-                                        <div style={{ fontSize: '0.72rem', opacity: 0.7 }}>Захиалга өгсөнөөс хойш 3-14 хоногт хүргэнэ</div>
+                                        <div style={{ fontSize: '0.72rem', opacity: 0.7 }}>Захиалга өгсөнөөс хойш дунджаар 14 хоногт хүргэнэ</div>
                                     </div>
                                 </div>
                             ) : (
@@ -248,15 +248,18 @@ export function ProductModal({ product, onClose, preorderTerms }: ProductModalPr
                             {/* Description */}
                             {product.description && (
                                 <div className="sf-modal-desc">
-                                    {product.description.split('\n').map((line, i) => {
+                                    {product.description
+                                        // Split on newlines AND ' - ' separators (common in AI descriptions)
+                                        .split(/\n| - /)
+                                        .map((line, i) => {
                                         if (!line.trim()) return <br key={i} />;
                                         // Bold label pattern: "Label: value"
-                                        const labelMatch = line.match(/^([^:]{2,20}):\s*(.+)/);
-                                        const knownLabels = ['Хэмжээ', 'Хадгалах нөхцөл', 'Хадгалах хугацаа', 'Гарал үүсэл', 'Найрлага', 'Хэрэглэх заавар', 'Жин', 'Эзлэхүүн', 'Багц', 'Материал', 'Өнгө', 'Брэнд', 'Загвар'];
+                                        const labelMatch = line.match(/^([^:]{2,25}):\s*(.+)/);
+                                        const knownLabels = ['Хэмжээ', 'Хадгалах нөхцөл', 'Хадгалах хугацаа', 'Гарал үүсэл', 'Найрлага', 'Хэрэглэх заавар', 'Жин', 'Эзлэхүүн', 'Багц', 'Материал', 'Өнгө', 'Брэнд', 'Загвар', 'Багтаамж', 'Аюулгүй байдал', 'Чанартай материал', 'Биед эвтэйхэн', 'Аялахад тухтай', 'Зориулалт', 'Онцлог', 'Хэмжээс', 'Бүтээгдэхүүн', 'Төрөл'];
                                         if (labelMatch && knownLabels.some(l => labelMatch[1].trim().includes(l))) {
                                             return <div key={i} className="sf-modal-desc-detail"><strong>{labelMatch[1].trim()}:</strong> {labelMatch[2]}</div>;
                                         }
-                                        return <span key={i}>{line}{i < product.description.split('\n').length - 1 ? ' ' : ''}</span>;
+                                        return <span key={i}>{line}{' '}</span>;
                                     })}
                                 </div>
                             )}
@@ -274,7 +277,7 @@ export function ProductModal({ product, onClose, preorderTerms }: ProductModalPr
                                     {showTerms && (
                                         <div className="sf-modal-terms-body">
                                             <ul>
-                                                {(preorderTerms || 'Урьдчилсан захиалга нь бараа ирсний дараа хүргэгдэнэ\nХүргэлтийн хугацаа 3-14 хоног\nЗахиалга цуцлах боломжгүй, буцаалт хийгдэхгүй\nБараа ирсэн даруй утсаар мэдэгдэнэ\nТөлбөрийг захиалга өгөх үед бүрэн төлнө')
+                                                {(preorderTerms || 'Урьдчилсан захиалга нь бараа ирсний дараа хүргэгдэнэ\nХүргэлтийн хугацаа дунджаар 14 хоног\nЗахиалга цуцлах боломжгүй, буцаалт хийгдэхгүй\nБараа ирсэн даруй утсаар мэдэгдэнэ\nТөлбөрийг захиалга өгөх үед бүрэн төлнө')
                                                     .split('\n')
                                                     .filter(line => line.trim())
                                                     .map((term, i) => <li key={i}>{term.trim()}</li>)}

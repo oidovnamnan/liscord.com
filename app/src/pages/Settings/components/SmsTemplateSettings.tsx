@@ -34,9 +34,9 @@ const DEFAULT_TEMPLATES: Omit<SmsTemplate, 'id'>[] = [
     },
     {
         bankName: 'Golomt Bank',
-        senderNumbers: ['1800', '18001800'],
-        incomeKeywords: ['ORLOGO', 'орлого', 'credited'],
-        amountPattern: '(\\d[\\d,]*(?:\\.\\d{1,2})?)\\s*(?:MNT|₮|mnt)',
+        senderNumbers: ['1800', '18001800', '132525'],
+        incomeKeywords: ['ORLOGO', 'орлого', 'credited', 'dungeer', 'guilgee'],
+        amountPattern: '(?:guilgeenii\\s*dun|гүйлгээний\\s*дүн)[:\\s]*(\\d[\\d,]*(?:\\.\\d{1,2})?)\\s*(?:MNT|₮|mnt)',
         utgaPattern: '(?:guilgeenii\\s*)?(?:utga|Utga|утга|Утга)[:\\s]*([^\\n,.]+)',
         sampleSms: 'ORLOGO 250000.00MNT guilgeenii utga: Zahialga#123',
         isActive: true,
@@ -388,6 +388,39 @@ export function SmsTemplateSettings({ bizId }: { bizId: string }) {
                                 </div>
                             )}
                         </div>
+                        {/* Auto-create template from AI result */}
+                        {aiTestResult.isIncome && aiTestResult.bank && !templates.some(t => t.bankName.toLowerCase() === aiTestResult.bank.toLowerCase()) && (
+                            <button
+                                className="sms-ai-add-bank-btn"
+                                onClick={async () => {
+                                    const bankName = aiTestResult.bank;
+                                    const id = bankName.toLowerCase().replace(/[^a-z0-9]/g, '_') + '_' + Date.now();
+                                    const newTmpl: SmsTemplate = {
+                                        id,
+                                        bankName,
+                                        senderNumbers: [],
+                                        incomeKeywords: ['Orlogo', 'орлого', 'dungeer', 'guilgee', 'credited'],
+                                        amountPattern: '(?:guilgeenii\\s*dun|гүйлгээний\\s*дүн|dun|дүн)[:\\s]*(\\d[\\d,]*(?:\\.\\d{1,2})?)\\s*(?:MNT|₮)?',
+                                        utgaPattern: '(?:guilgeenii\\s*)?(?:utga|Utga|утга|Утга)[:\\s]*([^\\n,.]+)',
+                                        sampleSms: testSms,
+                                        isActive: true,
+                                        isDefault: false,
+                                    };
+                                    try {
+                                        const { id: _, ...data } = newTmpl;
+                                        await setDoc(doc(db, 'businesses', bizId, 'smsTemplates', id), data);
+                                        setTemplates(prev => [...prev, newTmpl]);
+                                        toast.success(`✅ ${bankName} загвар нэмэгдлээ! Илгээгчийн дугаарыг доороос нэмнэ үү.`);
+                                        setAiTestResult(null);
+                                        setTestSms('');
+                                    } catch {
+                                        toast.error('Нэмэхэд алдаа');
+                                    }
+                                }}
+                            >
+                                <Plus size={14} /> "{aiTestResult.bank}" банк нэмэх
+                            </button>
+                        )}
                     </div>
                 )}
             </div>
@@ -493,6 +526,7 @@ function TemplateForm({
     setEditForm: (f: Partial<SmsTemplate>) => void;
     preview: { amount: number; utga: string; bank: string; matched: boolean } | null;
 }) {
+    const [showAdvanced, setShowAdvanced] = useState(false);
     return (
         <div className="sms-tmpl-form-fields">
             <div className="sms-tmpl-form-row">
@@ -501,49 +535,29 @@ function TemplateForm({
                     type="text"
                     value={editForm.bankName || ''}
                     onChange={e => setEditForm({ ...editForm, bankName: e.target.value })}
-                    placeholder="жнь: Khan Bank"
+                    placeholder="жнь: Khan Bank, Golomt, TDB"
                 />
             </div>
             <div className="sms-tmpl-form-row">
-                <label>Илгээгчийн дугаарууд</label>
+                <label>Илгээгчийн дугаарууд <span className="sms-tmpl-hint">SMS ирж байгаа дугаар</span></label>
                 <input
                     type="text"
                     value={(editForm.senderNumbers || []).join(', ')}
                     onChange={e => setEditForm({ ...editForm, senderNumbers: e.target.value.split(',').map(s => s.trim()).filter(Boolean) })}
-                    placeholder="1900, 19001917 (таслалаар тусгаарлана)"
+                    placeholder="жнь: 1900, 132525 (таслалаар тусгаарлана)"
                 />
             </div>
             <div className="sms-tmpl-form-row">
-                <label>Орлогын түлхүүр үгс</label>
+                <label>Орлогын түлхүүр үгс <span className="sms-tmpl-hint">SMS-д орлого гэдгийг илтгэх үгс</span></label>
                 <input
                     type="text"
                     value={(editForm.incomeKeywords || []).join(', ')}
                     onChange={e => setEditForm({ ...editForm, incomeKeywords: e.target.value.split(',').map(s => s.trim()).filter(Boolean) })}
-                    placeholder="Orlogo, орлого, credited"
+                    placeholder="Orlogo, орлого, dungeer, guilgee, credited"
                 />
             </div>
             <div className="sms-tmpl-form-row">
-                <label>Дүн (regex pattern)</label>
-                <input
-                    type="text"
-                    value={editForm.amountPattern || ''}
-                    onChange={e => setEditForm({ ...editForm, amountPattern: e.target.value })}
-                    placeholder="(\d[\d,]*(?:\.\d{1,2})?)\s*(?:MNT|₮)"
-                    className="mono"
-                />
-            </div>
-            <div className="sms-tmpl-form-row">
-                <label>Утга (regex pattern)</label>
-                <input
-                    type="text"
-                    value={editForm.utgaPattern || ''}
-                    onChange={e => setEditForm({ ...editForm, utgaPattern: e.target.value })}
-                    placeholder="(?:utga|утга)[:\s]*([^\n,.]+)"
-                    className="mono"
-                />
-            </div>
-            <div className="sms-tmpl-form-row">
-                <label>Жишиг SMS</label>
+                <label>Жишиг SMS <span className="sms-tmpl-hint">Банкнаас ирсэн орлогын мессеж paste хийнэ</span></label>
                 <textarea
                     value={editForm.sampleSms || ''}
                     onChange={e => setEditForm({ ...editForm, sampleSms: e.target.value })}
@@ -551,6 +565,38 @@ function TemplateForm({
                     rows={2}
                 />
             </div>
+            {/* Advanced regex fields — hidden by default */}
+            <button
+                className="sms-tmpl-advanced-toggle"
+                onClick={() => setShowAdvanced(!showAdvanced)}
+                type="button"
+            >
+                {showAdvanced ? '▼' : '▶'} Дэлгэрэнгүй тохиргоо (regex)
+            </button>
+            {showAdvanced && (
+                <>
+                    <div className="sms-tmpl-form-row">
+                        <label>Дүн (regex pattern)</label>
+                        <input
+                            type="text"
+                            value={editForm.amountPattern || ''}
+                            onChange={e => setEditForm({ ...editForm, amountPattern: e.target.value })}
+                            placeholder="(\d[\d,]*(?:\.\d{1,2})?)\s*(?:MNT|₮)"
+                            className="mono"
+                        />
+                    </div>
+                    <div className="sms-tmpl-form-row">
+                        <label>Утга (regex pattern)</label>
+                        <input
+                            type="text"
+                            value={editForm.utgaPattern || ''}
+                            onChange={e => setEditForm({ ...editForm, utgaPattern: e.target.value })}
+                            placeholder="(?:utga|утга)[:\s]*([^\n,.]+)"
+                            className="mono"
+                        />
+                    </div>
+                </>
+            )}
             {preview && editForm.sampleSms && (
                 <div className={`sms-tmpl-form-preview ${preview.matched ? 'ok' : 'fail'}`}>
                     <strong>Үр дүн:</strong>{' '}

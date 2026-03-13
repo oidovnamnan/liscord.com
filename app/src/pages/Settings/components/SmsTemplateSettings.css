@@ -472,3 +472,51 @@
         font-size: 0.75rem;
     }
 }
+
+/* AI-to-Bank button */
+.sms-ai-add-bank-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    width: 100%;
+    padding: 10px 16px;
+    margin-top: 12px;
+    background: linear-gradient(135deg, #6c5ce7 0%, #a855f7 100%);
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    font-size: 0.88rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.sms-ai-add-bank-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(108, 92, 231, 0.3);
+}
+
+/* Form hint text */
+.sms-tmpl-hint {
+    font-size: 0.72rem;
+    color: var(--text-tertiary, #64748b);
+    font-weight: 400;
+    margin-left: 4px;
+}
+
+/* Advanced regex toggle */
+.sms-tmpl-advanced-toggle {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: none;
+    border: none;
+    color: var(--text-tertiary, #64748b);
+    font-size: 0.78rem;
+    cursor: pointer;
+    padding: 6px 0;
+    margin-top: 4px;
+    transition: color 0.2s;
+}
+.sms-tmpl-advanced-toggle:hover {
+    color: var(--text-primary);
+}
