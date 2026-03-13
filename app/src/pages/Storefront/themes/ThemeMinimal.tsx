@@ -491,6 +491,22 @@ function MembershipModal({
                                 recordedBy: 'qpay_auto',
                             }),
                         });
+
+                        // Grant membership!
+                        const categoryId = product.exclusiveCategoryId || '';
+                        const memberPhone = phone || localStorage.getItem(`membership_phone_${business.id}`) || '';
+                        if (categoryId && memberPhone) {
+                            const { membershipService } = await import('../../../services/membershipService');
+                            await membershipService.grantMembership(
+                                business.id,
+                                categoryId,
+                                memberPhone,
+                                price,
+                                durationDays
+                            );
+                            // Refresh membership status so products unlock
+                            onVerify(memberPhone);
+                        }
                     } catch (updateErr) {
                         console.error('Failed to update order:', updateErr);
                     }
