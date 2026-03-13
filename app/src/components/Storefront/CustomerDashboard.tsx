@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
-import { X, User, Crown, Package, MapPin, Bell, ChevronRight, Clock, CheckCircle, AlertTriangle, RefreshCw } from 'lucide-react';
+import { X, User, Crown, Package, MapPin, Bell, Clock, CheckCircle, AlertTriangle, RefreshCw } from 'lucide-react';
 import type { Business } from '../../types';
-import { membershipService } from '../../services/membershipService';
 import { Timestamp } from 'firebase/firestore';
 
 interface CustomerDashboardProps {
@@ -110,7 +109,7 @@ export function CustomerDashboard({ isOpen, onClose, business, phone, onOpenMemb
                     expiresAt,
                     purchasedAt,
                     amountPaid: data.amountPaid || 0,
-                    status: expiresAt > now ? 'active' : 'expired',
+                    status: (expiresAt > now ? 'active' : 'expired') as 'active' | 'expired',
                     daysRemaining,
                 };
             }).sort((a, b) => (a.status === 'active' ? -1 : 1));
@@ -132,7 +131,7 @@ export function CustomerDashboard({ isOpen, onClose, business, phone, onOpenMemb
         if (!business?.id || !phone) return;
         setLoadingOrders(true);
         try {
-            const { collection, query, where, getDocs, orderBy } = await import('firebase/firestore');
+            const { collection, query, where, getDocs } = await import('firebase/firestore');
             const { db } = await import('../../services/firebase');
             const ref = collection(db, 'businesses', business.id, 'orders');
             const normalizedPhone = phone.replace(/[^\d]/g, '');
