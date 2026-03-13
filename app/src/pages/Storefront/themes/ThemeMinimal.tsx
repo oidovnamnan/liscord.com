@@ -360,13 +360,12 @@ function MembershipModal({
             await confirmationResult.confirm(otpCode);
 
             // OTP verified! Phone is confirmed.
-            // Restore anonymous auth (phone sign-in changes auth state which breaks Firestore rules)
+            // Sign out phone-auth user to restore Firestore access
             try {
-                const { signInAnonymously } = await import('firebase/auth');
                 const { auth } = await import('../../../services/firebase');
-                await signInAnonymously(auth);
+                await auth.signOut();
             } catch (authErr) {
-                console.debug('Auth restore:', authErr);
+                console.debug('Auth signOut:', authErr);
             }
 
             // Now check membership with restored auth
