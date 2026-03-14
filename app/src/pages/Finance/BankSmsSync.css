@@ -165,7 +165,7 @@
 }
 
 .sms-table thead th {
-    padding: var(--space-sm) var(--space-md);
+    padding: 8px var(--space-md);
     text-align: left;
     font-size: 0.7rem;
     text-transform: uppercase;
@@ -190,7 +190,7 @@
 }
 
 .sms-table td {
-    padding: var(--space-md);
+    padding: 10px var(--space-md);
     vertical-align: middle;
 }
 
