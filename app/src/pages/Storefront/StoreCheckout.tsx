@@ -24,6 +24,11 @@ export function StoreCheckout() {
     const { business } = useOutletContext<{ business: Business }>();
     const { items, totalAmount, totalItems, clearCart } = useCartStore();
 
+    // Scroll to top on mount
+    useEffect(() => {
+        window.scrollTo(0, 0);
+    }, []);
+
     const [loading, setLoading] = useState(false);
     const [successId, setSuccessId] = useState<string | null>(null);
     const [qpayInvoice, setQpayInvoice] = useState<QPayInvoiceResponse | null>(null);
