@@ -12,6 +12,8 @@ import {
   Switch,
   TextInput,
   NativeModules,
+  Linking,
+  ActivityIndicator,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import BackgroundService from 'react-native-background-actions';
@@ -21,6 +23,8 @@ import { Camera, useCameraDevice, useCodeScanner } from 'react-native-vision-cam
 // Firestore REST API base URL for direct document creation
 const FIRESTORE_BASE = 'https://firestore.googleapis.com/v1/projects/liscord-2b529/databases/(default)/documents';
 const APP_VERSION = '1.6';
+const GITHUB_RELEASE_API = 'https://api.github.com/repos/oidovnamnan/liscord.com/releases/tags/bridge-latest';
+const APK_DOWNLOAD_URL = 'https://github.com/oidovnamnan/liscord.com/releases/download/bridge-latest/app-release.apk';
 
 const sleep = (time: number) => new Promise<void>((resolve) => setTimeout(() => resolve(), time));
 
@@ -342,6 +346,8 @@ const App = () => {
   const [settings, setSettings] = useState<AppSettings>(DEFAULT_SETTINGS);
   const [newSender, setNewSender] = useState('');
   const [forwardCount, setForwardCount] = useState(0);
+  const [updateAvailable, setUpdateAvailable] = useState<string | null>(null);
+  const [checkingUpdate, setCheckingUpdate] = useState(false);
 
   // Use refs for background task to avoid stale closures
   const pairingKeyRef = useRef<string | null>(null);
@@ -356,6 +362,7 @@ const App = () => {
     loadPairingKey();
     loadSettings();
     loadForwardCount();
+    checkForUpdate();
     // Auto-start: if pairing key exists but background service isn't running, start it
     const autoStartService = async () => {
       try {
@@ -683,6 +690,58 @@ const App = () => {
     saveSettings(updated);
   };
 
+  // ---- UPDATE CHECK ----
+  const checkForUpdate = async () => {
+    setCheckingUpdate(true);
+    try {
+      const res = await fetch(GITHUB_RELEASE_API, {
+        headers: { 'Accept': 'application/vnd.github.v3+json' },
+      });
+      if (!res.ok) {
+        addLog('⚠️ Шинэчлэл шалгахад алдаа');
+        return;
+      }
+      const data = await res.json();
+      // Extract version from release body — look for "v1.6" style or commit info
+      const releaseName = data?.name || '';
+      const releaseBody = data?.body || '';
+      // Check if the release has a newer APK by comparing published date
+      const publishedAt = data?.published_at || '';
+      
+      // Simple version detection: look for "v" followed by digits in the release
+      const versionMatch = releaseBody.match(/v(\d+\.\d+)/i) || releaseName.match(/v(\d+\.\d+)/i);
+      const remoteVersion = versionMatch ? versionMatch[1] : null;
+      
+      // Also check if the commit SHA in the release is different from our build
+      const commitMatch = releaseBody.match(/Commit:\s*([a-f0-9]+)/i);
+      const remoteCommit = commitMatch ? commitMatch[1].substring(0, 7) : null;
+      
+      if (remoteVersion && remoteVersion !== APP_VERSION) {
+        setUpdateAvailable(remoteVersion);
+        addLog(`🚀 Шинэ хувилбар v${remoteVersion} бэлэн!`);
+      } else if (publishedAt) {
+        // Check by date — if release is newer than 5 minutes after our check
+        setUpdateAvailable(null);
+        addLog(`✅ Хамгийн сүүлийн хувилбар (v${APP_VERSION})`);
+      } else {
+        addLog(`✅ Хувилбар шинэчлэл байхгүй`);
+      }
+    } catch (err) {
+      addLog('⚠️ Шинэчлэл шалгаж чадсангүй');
+    } finally {
+      setCheckingUpdate(false);
+    }
+  };
+
+  const downloadUpdate = async () => {
+    try {
+      addLog('📥 APK татаж байна...');
+      await Linking.openURL(APK_DOWNLOAD_URL);
+    } catch (err) {
+      Alert.alert('Алдаа', 'Татах холбоос нээгдсэнгүй');
+    }
+  };
+
   // ---- SCANNER VIEW ----
   if (isScanning && device) {
     return (
@@ -833,6 +892,26 @@ const App = () => {
               <Text style={styles.secondaryBtnText}>🔓 Салгах</Text>
             </TouchableOpacity>
           </View>
+        )}
+
+        {/* Update Banner */}
+        {updateAvailable && (
+          <TouchableOpacity style={styles.updateBanner} onPress={downloadUpdate}>
+            <Text style={styles.updateBannerText}>🚀 Шинэ хувилбар v{updateAvailable} бэлэн!</Text>
+            <Text style={styles.updateBannerAction}>ШИНЭЧЛЭХ →</Text>
+          </TouchableOpacity>
+        )}
+        {!updateAvailable && (
+          <TouchableOpacity
+            style={styles.checkUpdateBtn}
+            onPress={checkForUpdate}
+            disabled={checkingUpdate}
+          >
+            {checkingUpdate ? (
+              <ActivityIndicator size="small" color="#818cf8" />
+            ) : (
+              <Text style={styles.checkUpdateText}>🔄 Шинэчлэл шалгах (v{APP_VERSION})</Text>
+            )}          </TouchableOpacity>
         )}
 
         {/* Activity Log */}
@@ -1010,6 +1089,25 @@ const styles = StyleSheet.create({
   },
   infoTitle: { fontSize: 14, fontWeight: '800', color: '#93c5fd', marginBottom: 8 },
   infoText: { fontSize: 12, color: 'rgba(147,197,253,0.7)', marginBottom: 6, lineHeight: 19 },
+  updateBanner: {
+    backgroundColor: '#059669',
+    borderRadius: 16,
+    padding: 18,
+    marginTop: 12,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  updateBannerText: { color: '#fff', fontSize: 14, fontWeight: '700', flex: 1 },
+  updateBannerAction: { color: '#fff', fontSize: 15, fontWeight: '900', marginLeft: 8 },
+  checkUpdateBtn: {
+    alignItems: 'center',
+    padding: 14,
+    marginTop: 8,
+    borderRadius: 12,
+    backgroundColor: 'rgba(99,102,241,0.08)',
+  },
+  checkUpdateText: { color: '#818cf8', fontSize: 13, fontWeight: '600' },
 });
 
 export default App;
