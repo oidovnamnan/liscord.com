@@ -327,7 +327,7 @@ export function BankSmsSyncPage() {
             </div>
 
             {/* Stats Grid */}
-            <div className="inv-stats-grid" style={{ marginBottom: 24 }}>
+            <div className="inv-stats-grid" style={{ marginBottom: 10 }}>
                 <div className="inv-stat-card">
                     <div className="inv-stat-content">
                         <h4>Нийт орлого</h4>
@@ -413,7 +413,7 @@ export function BankSmsSyncPage() {
             ) : filteredLogs.length > 0 ? (
                 <>
                     {/* Table (desktop) */}
-                    <div className="sms-table-wrap" style={{ marginTop: 24 }}>
+                    <div className="sms-table-wrap" style={{ marginTop: 12 }}>
                         <table className="sms-table">
                             <thead>
                                 <tr>
