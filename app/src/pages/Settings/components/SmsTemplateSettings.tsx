@@ -6,7 +6,7 @@ import {
     MessageSquare, Plus, Trash2, Edit3, TestTube,
     Check, X, ToggleLeft, ToggleRight, Banknote, Sparkles, Zap, Loader2
 } from 'lucide-react';
-import { parseSmsWithAi, type AiSmsParseResult } from '../../../services/ai/aiSmsParser';
+import { parseSmsWithAi, generatePatternsFromAi, type AiSmsParseResult } from '../../../services/ai/aiSmsParser';
 import './SmsTemplateSettings.css';
 
 interface SmsTemplate {
@@ -388,39 +388,89 @@ export function SmsTemplateSettings({ bizId }: { bizId: string }) {
                                 </div>
                             )}
                         </div>
-                        {/* Auto-create template from AI result */}
-                        {aiTestResult.isIncome && aiTestResult.bank && !templates.some(t => t.bankName.toLowerCase() === aiTestResult.bank.toLowerCase()) && (
+                    {aiTestResult.isIncome && aiTestResult.confidence !== 'low' && (
+                        <div className="sms-ai-confirm-section">
+                            <div className="sms-ai-patterns">
+                                <div className="sms-ai-pattern-title">📐 Танигдсан загвар</div>
+                                {aiTestResult.amountPrefix && (
+                                    <div className="sms-ai-pattern-row">
+                                        <span className="label">Дүн олох:</span>
+                                        <span className="pattern">
+                                            <span className="prefix">{aiTestResult.amountPrefix}</span>
+                                            <span className="value">{aiTestResult.amount?.toLocaleString()}</span>
+                                            {aiTestResult.amountSuffix && <span className="suffix">{aiTestResult.amountSuffix}</span>}
+                                        </span>
+                                    </div>
+                                )}
+                                {aiTestResult.utgaPrefix && (
+                                    <div className="sms-ai-pattern-row">
+                                        <span className="label">Утга олох:</span>
+                                        <span className="pattern">
+                                            <span className="prefix">{aiTestResult.utgaPrefix}</span>
+                                            <span className="value">{aiTestResult.utga}</span>
+                                            {aiTestResult.utgaSuffix && <span className="suffix">{aiTestResult.utgaSuffix}</span>}
+                                        </span>
+                                    </div>
+                                )}
+                                {aiTestResult.incomeKeywords && aiTestResult.incomeKeywords.length > 0 && (
+                                    <div className="sms-ai-pattern-row">
+                                        <span className="label">Орлого үг:</span>
+                                        <span className="pattern">
+                                            {aiTestResult.incomeKeywords.map((kw, i) => (
+                                                <span key={i} className="keyword-chip">{kw}</span>
+                                            ))}
+                                        </span>
+                                    </div>
+                                )}
+                            </div>
                             <button
-                                className="sms-ai-add-bank-btn"
+                                className="sms-ai-confirm-btn"
                                 onClick={async () => {
                                     const bankName = aiTestResult.bank;
+                                    const patterns = generatePatternsFromAi(aiTestResult);
                                     const id = bankName.toLowerCase().replace(/[^a-z0-9]/g, '_') + '_' + Date.now();
-                                    const newTmpl: SmsTemplate = {
-                                        id,
+                                    const existing = templates.find(t => t.bankName.toLowerCase() === bankName.toLowerCase());
+
+                                    const templateData = {
                                         bankName,
-                                        senderNumbers: [],
-                                        incomeKeywords: ['Orlogo', 'орлого', 'dungeer', 'guilgee', 'credited'],
-                                        amountPattern: '(?:guilgeenii\\s*dun|гүйлгээний\\s*дүн|dun|дүн)[:\\s]*(\\d[\\d,]*(?:\\.\\d{1,2})?)\\s*(?:MNT|₮)?',
-                                        utgaPattern: '(?:guilgeenii\\s*)?(?:utga|Utga|утга|Утга)[:\\s]*([^\\n,.]+)',
+                                        senderNumbers: existing?.senderNumbers || [],
+                                        incomeKeywords: aiTestResult.incomeKeywords && aiTestResult.incomeKeywords.length > 0
+                                            ? aiTestResult.incomeKeywords
+                                            : ['Orlogo', 'орлого', 'dungeer', 'guilgee', 'credited'],
+                                        amountPattern: patterns.amountPattern,
+                                        utgaPattern: patterns.utgaPattern,
                                         sampleSms: testSms,
                                         isActive: true,
                                         isDefault: false,
                                     };
+
                                     try {
-                                        const { id: _, ...data } = newTmpl;
-                                        await setDoc(doc(db, 'businesses', bizId, 'smsTemplates', id), data);
-                                        setTemplates(prev => [...prev, newTmpl]);
-                                        toast.success(`✅ ${bankName} загвар нэмэгдлээ! Илгээгчийн дугаарыг доороос нэмнэ үү.`);
+                                        if (existing) {
+                                            // Update existing template
+                                            await updateDoc(doc(db, 'businesses', bizId, 'smsTemplates', existing.id), templateData);
+                                            setTemplates(prev => prev.map(t => t.id === existing.id ? { ...t, ...templateData } : t));
+                                            toast.success(`✅ ${bankName} загвар шинэчлэгдлээ!`);
+                                        } else {
+                                            // Create new template
+                                            await setDoc(doc(db, 'businesses', bizId, 'smsTemplates', id), templateData);
+                                            setTemplates(prev => [...prev, { id, ...templateData }]);
+                                            toast.success(`✅ ${bankName} загвар нэмэгдлээ! Илгээгчийн дугаарыг доороос нэмнэ үү.`);
+                                        }
                                         setAiTestResult(null);
                                         setTestSms('');
                                     } catch {
-                                        toast.error('Нэмэхэд алдаа');
+                                        toast.error('Хадгалахад алдаа');
                                     }
                                 }}
                             >
-                                <Plus size={14} /> "{aiTestResult.bank}" банк нэмэх
+                                <Check size={16} />
+                                {templates.some(t => t.bankName.toLowerCase() === aiTestResult.bank.toLowerCase())
+                                    ? `"${aiTestResult.bank}" загвар шинэчлэх`
+                                    : `"${aiTestResult.bank}" загвар баталгаажуулах`
+                                }
                             </button>
-                        )}
+                        </div>
+                    )}
                     </div>
                 )}
             </div>

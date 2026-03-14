@@ -473,26 +473,104 @@
     }
 }
 
-/* AI-to-Bank button */
-.sms-ai-add-bank-btn {
+/* AI Confirm Section */
+.sms-ai-confirm-section {
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px dashed rgba(16, 185, 129, 0.2);
+}
+
+.sms-ai-patterns {
+    background: rgba(16, 185, 129, 0.04);
+    border: 1px solid rgba(16, 185, 129, 0.12);
+    border-radius: 12px;
+    padding: 14px 16px;
+    margin-bottom: 14px;
+}
+
+.sms-ai-pattern-title {
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 10px;
+}
+
+.sms-ai-pattern-row {
     display: flex;
     align-items: center;
-    gap: 6px;
-    width: 100%;
-    padding: 10px 16px;
-    margin-top: 12px;
-    background: linear-gradient(135deg, #6c5ce7 0%, #a855f7 100%);
-    color: #fff;
-    border: none;
-    border-radius: 10px;
-    font-size: 0.88rem;
+    gap: 8px;
+    margin-bottom: 8px;
+    font-size: 0.82rem;
+}
+
+.sms-ai-pattern-row:last-child {
+    margin-bottom: 0;
+}
+
+.sms-ai-pattern-row .label {
+    color: var(--text-tertiary);
     font-weight: 600;
+    white-space: nowrap;
+    min-width: 72px;
+}
+
+.sms-ai-pattern-row .pattern {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    flex-wrap: wrap;
+}
+
+.sms-ai-pattern-row .prefix,
+.sms-ai-pattern-row .suffix {
+    background: rgba(99, 102, 241, 0.1);
+    color: #6366f1;
+    padding: 2px 8px;
+    border-radius: 6px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.78rem;
+    font-weight: 600;
+}
+
+.sms-ai-pattern-row .value {
+    background: rgba(16, 185, 129, 0.1);
+    color: #10b981;
+    padding: 2px 8px;
+    border-radius: 6px;
+    font-weight: 800;
+    font-size: 0.82rem;
+}
+
+.sms-ai-pattern-row .keyword-chip {
+    background: rgba(245, 158, 11, 0.1);
+    color: #d97706;
+    padding: 2px 8px;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    margin-right: 4px;
+}
+
+.sms-ai-confirm-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    padding: 12px;
+    background: linear-gradient(135deg, #10b981, #059669);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-size: 0.9rem;
+    font-weight: 700;
     cursor: pointer;
     transition: all 0.2s;
 }
-.sms-ai-add-bank-btn:hover {
+
+.sms-ai-confirm-btn:hover {
     transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(108, 92, 231, 0.3);
+    box-shadow: 0 4px 16px rgba(16, 185, 129, 0.3);
 }
 
 /* Form hint text */
