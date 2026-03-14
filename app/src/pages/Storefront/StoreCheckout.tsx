@@ -55,6 +55,15 @@ export function StoreCheckout() {
     const [customerName, setCustomerName] = useState('');
     const [customerPhone, setCustomerPhone] = useState('');
     const [copied, setCopied] = useState(false);
+
+    // Auto-fill name & phone from localStorage (returning customers)
+    useEffect(() => {
+        if (!business?.id) return;
+        const savedPhone = localStorage.getItem(`membership_phone_${business.id}`) || localStorage.getItem(`customer_phone_${business.id}`) || '';
+        const savedName = localStorage.getItem(`customer_name_${business.id}`) || '';
+        if (savedPhone && !customerPhone) setCustomerPhone(savedPhone.replace(/[^\d]/g, ''));
+        if (savedName && !customerName) setCustomerName(savedName);
+    }, [business?.id]);
     const [savedTotal, setSavedTotal] = useState(0);
     const [paymentConfirmed, setPaymentConfirmed] = useState(false);
 
@@ -204,6 +213,10 @@ export function StoreCheckout() {
             setSuccessId(newId);
             window.scrollTo(0, 0);
             clearCart();
+
+            // Save customer info for auto-fill on next visit
+            if (name) localStorage.setItem(`customer_name_${business.id}`, name);
+            if (phone) localStorage.setItem(`customer_phone_${business.id}`, phone);
 
             // Generate QPay QR if enabled
             if (business.settings?.qpay?.enabled && paymentMethod === 'qpay') {
