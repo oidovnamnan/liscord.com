@@ -418,4 +418,70 @@
     .membership-order-card { grid-template-columns: 1fr; gap: 12px; }
     .membership-order-meta { text-align: left; }
     .membership-order-item-name { text-align: left; }
+    .membership-subtabs { flex-direction: row; overflow-x: auto; }
+}
+
+/* ============ ORDER SUB-TABS ============ */
+.membership-subtabs {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 14px;
+}
+
+.membership-subtab {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 7px 16px;
+    border-radius: 10px;
+    border: 1.5px solid var(--border-primary);
+    background: var(--surface-1);
+    color: var(--text-muted);
+    font-size: 0.78rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.membership-subtab:hover {
+    border-color: var(--primary);
+    color: var(--text-primary);
+}
+
+.membership-subtab.active.confirmed {
+    background: rgba(0, 184, 148, 0.08);
+    border-color: rgba(0, 184, 148, 0.3);
+    color: #00b894;
+}
+
+.membership-subtab.active.unconfirmed {
+    background: rgba(225, 112, 85, 0.08);
+    border-color: rgba(225, 112, 85, 0.3);
+    color: #e17055;
+}
+
+/* ============ AUTO-DELETE TIMER ============ */
+.membership-unpaid-info {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 4px;
+}
+
+.membership-auto-delete-timer {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.68rem;
+    font-weight: 700;
+    color: #e17055;
+    background: rgba(225, 112, 85, 0.06);
+    padding: 2px 8px;
+    border-radius: 6px;
+    animation: pulse-timer 2s ease-in-out infinite;
+}
+
+@keyframes pulse-timer {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.6; }
 }

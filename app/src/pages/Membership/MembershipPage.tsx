@@ -3,14 +3,17 @@
  * 
  * Shows VIP membership orders (orderNumber starts with VIP-) 
  * and active/expired memberships for management.
+ * 
+ * - Orders split into Баталгаажсан (paid) / Баталгаажаагүй (unpaid) sub-tabs
+ * - Unpaid orders older than 24 hours are auto-deleted (soft-delete)
  */
-import { useState, useEffect, useMemo } from 'react';
-import { collection, query, where, onSnapshot, Timestamp } from 'firebase/firestore';
+import { useState, useEffect, useMemo, useRef } from 'react';
+import { collection, query, where, onSnapshot, Timestamp, doc, updateDoc } from 'firebase/firestore';
 import { db } from '../../services/firebase';
 import { useBusinessStore } from '../../store';
 import {
     Crown, Search, Clock, CheckCircle, AlertCircle, Users,
-    Phone, Calendar, Package, Filter, ChevronDown
+    Phone, Calendar, Package, Trash2, Timer
 } from 'lucide-react';
 import { format } from 'date-fns';
 import './MembershipPage.css';
@@ -37,6 +40,8 @@ interface MembershipRecord {
     status: 'active' | 'expired';
 }
 
+const TWENTY_FOUR_HOURS = 24 * 60 * 60 * 1000;
+
 export function MembershipPage() {
     const { business } = useBusinessStore();
     const [orders, setOrders] = useState<VipOrder[]>([]);
@@ -44,22 +49,47 @@ export function MembershipPage() {
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
     const [tab, setTab] = useState<'orders' | 'members'>('orders');
+    const [orderSubTab, setOrderSubTab] = useState<'confirmed' | 'unconfirmed'>('confirmed');
+    const autoDeletedRef = useRef<Set<string>>(new Set());
 
-    // Load VIP orders
+    // Load VIP orders + auto-delete unpaid >24h
     useEffect(() => {
         if (!business?.id) return;
         const q = query(
             collection(db, 'businesses', business.id, 'orders'),
             where('isDeleted', '==', false),
         );
-        const unsub = onSnapshot(q, (snap) => {
+        const unsub = onSnapshot(q, async (snap) => {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const result: VipOrder[] = [];
-            snap.docs.forEach(d => {
+            const now = Date.now();
+
+            for (const d of snap.docs) {
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 const data = d.data() as any;
-                if (!data.orderNumber?.startsWith('VIP-')) return;
+                if (!data.orderNumber?.startsWith('VIP-')) continue;
                 const createdAt = data.createdAt?.toDate ? data.createdAt.toDate() : (data.createdAt ? new Date(data.createdAt) : undefined);
+
+                // Auto-delete unpaid orders older than 24 hours
+                if (
+                    data.paymentStatus !== 'paid' &&
+                    createdAt &&
+                    now - createdAt.getTime() > TWENTY_FOUR_HOURS &&
+                    !autoDeletedRef.current.has(d.id)
+                ) {
+                    autoDeletedRef.current.add(d.id);
+                    try {
+                        await updateDoc(doc(db, 'businesses', business.id, 'orders', d.id), {
+                            isDeleted: true,
+                            deletedAt: Timestamp.now(),
+                            deletedReason: 'auto_expired_vip_24h',
+                        });
+                    } catch (e) {
+                        console.warn('[Membership] Auto-delete failed:', d.id, e);
+                    }
+                    continue; // Don't show this order
+                }
+
                 result.push({
                     id: d.id,
                     orderNumber: data.orderNumber,
@@ -71,7 +101,7 @@ export function MembershipPage() {
                     createdAt,
                     notes: data.notes || '',
                 });
-            });
+            }
             result.sort((a, b) => (b.createdAt?.getTime() || 0) - (a.createdAt?.getTime() || 0));
             setOrders(result);
             setLoading(false);
@@ -108,10 +138,15 @@ export function MembershipPage() {
         return () => unsub();
     }, [business?.id]);
 
+    const confirmedOrders = useMemo(() => orders.filter(o => o.paymentStatus === 'paid'), [orders]);
+    const unconfirmedOrders = useMemo(() => orders.filter(o => o.paymentStatus !== 'paid'), [orders]);
+
+    const displayOrders = orderSubTab === 'confirmed' ? confirmedOrders : unconfirmedOrders;
+
     const filtered = useMemo(() => {
         const q = searchQuery.toLowerCase();
         if (tab === 'orders') {
-            return orders.filter(o =>
+            return displayOrders.filter(o =>
                 !q || o.orderNumber.toLowerCase().includes(q) ||
                 o.customerName.toLowerCase().includes(q) ||
                 o.customerPhone.includes(q)
@@ -120,16 +155,25 @@ export function MembershipPage() {
         return memberships.filter(m =>
             !q || m.customerPhone.includes(q) || m.categoryId.toLowerCase().includes(q)
         );
-    }, [tab, orders, memberships, searchQuery]);
+    }, [tab, displayOrders, memberships, searchQuery]);
 
     const stats = useMemo(() => ({
         totalOrders: orders.length,
-        paidOrders: orders.filter(o => o.paymentStatus === 'paid').length,
-        unpaidOrders: orders.filter(o => o.paymentStatus === 'unpaid').length,
+        paidOrders: confirmedOrders.length,
+        unpaidOrders: unconfirmedOrders.length,
         activeMembers: memberships.filter(m => m.status === 'active').length,
-        expiredMembers: memberships.filter(m => m.status === 'expired').length,
-        totalRevenue: orders.filter(o => o.paymentStatus === 'paid').reduce((s, o) => s + o.total, 0),
-    }), [orders, memberships]);
+    }), [orders, confirmedOrders, unconfirmedOrders, memberships]);
+
+    // Helper: time remaining before auto-delete
+    const getTimeRemaining = (createdAt?: Date) => {
+        if (!createdAt) return '';
+        const deadline = createdAt.getTime() + TWENTY_FOUR_HOURS;
+        const remaining = deadline - Date.now();
+        if (remaining <= 0) return 'Устгагдах гэж байна...';
+        const hours = Math.floor(remaining / (1000 * 60 * 60));
+        const mins = Math.floor((remaining % (1000 * 60 * 60)) / (1000 * 60));
+        return `${hours}ц ${mins}м үлдсэн`;
+    };
 
     return (
         <div className="membership-page">
@@ -160,7 +204,7 @@ export function MembershipPage() {
                     </div>
                     <div>
                         <div className="membership-stat-value">{stats.paidOrders}</div>
-                        <div className="membership-stat-label">Төлсөн</div>
+                        <div className="membership-stat-label">Баталгаажсан</div>
                     </div>
                 </div>
                 <div className="membership-stat-card">
@@ -169,7 +213,7 @@ export function MembershipPage() {
                     </div>
                     <div>
                         <div className="membership-stat-value">{stats.unpaidOrders}</div>
-                        <div className="membership-stat-label">Хүлээгдэж буй</div>
+                        <div className="membership-stat-label">Баталгаажаагүй</div>
                     </div>
                 </div>
                 <div className="membership-stat-card">
@@ -183,7 +227,7 @@ export function MembershipPage() {
                 </div>
             </div>
 
-            {/* Tabs + Search */}
+            {/* Main Tabs + Search */}
             <div className="membership-toolbar">
                 <div className="membership-tabs">
                     <button className={`membership-tab ${tab === 'orders' ? 'active' : ''}`} onClick={() => setTab('orders')}>
@@ -204,6 +248,24 @@ export function MembershipPage() {
                 </div>
             </div>
 
+            {/* Order Sub-tabs */}
+            {tab === 'orders' && (
+                <div className="membership-subtabs">
+                    <button
+                        className={`membership-subtab ${orderSubTab === 'confirmed' ? 'active confirmed' : ''}`}
+                        onClick={() => setOrderSubTab('confirmed')}
+                    >
+                        <CheckCircle size={14} /> Баталгаажсан ({confirmedOrders.length})
+                    </button>
+                    <button
+                        className={`membership-subtab ${orderSubTab === 'unconfirmed' ? 'active unconfirmed' : ''}`}
+                        onClick={() => setOrderSubTab('unconfirmed')}
+                    >
+                        <Clock size={14} /> Баталгаажаагүй ({unconfirmedOrders.length})
+                    </button>
+                </div>
+            )}
+
             {/* Content */}
             {loading ? (
                 <div className="membership-loading">
@@ -214,8 +276,8 @@ export function MembershipPage() {
                     {(filtered as VipOrder[]).length === 0 ? (
                         <div className="membership-empty">
                             <div className="membership-empty-icon"><Crown size={32} /></div>
-                            <h3>VIP захиалга байхгүй</h3>
-                            <p>VIP гишүүнчлэлийн захиалга ирэхэд энд харагдана</p>
+                            <h3>{orderSubTab === 'confirmed' ? 'Баталгаажсан захиалга байхгүй' : 'Баталгаажаагүй захиалга байхгүй'}</h3>
+                            <p>{orderSubTab === 'confirmed' ? 'Төлбөр бататгаажсан VIP захиалгууд энд харагдана' : 'Төлбөр хүлээгдэж буй VIP захиалгууд энд харагдана (24ц дотор устгагдана)'}</p>
                         </div>
                     ) : (
                         (filtered as VipOrder[]).map(order => (
@@ -248,13 +310,20 @@ export function MembershipPage() {
                                     <div className="membership-order-amount">₮{order.total.toLocaleString()}</div>
                                 </div>
                                 <div className="membership-order-status">
-                                    <span className={`membership-badge ${order.paymentStatus}`}>
-                                        {order.paymentStatus === 'paid' ? (
-                                            <><CheckCircle size={13} /> Төлсөн</>
-                                        ) : (
-                                            <><Clock size={13} /> Хүлээгдэж буй</>
-                                        )}
-                                    </span>
+                                    {order.paymentStatus === 'paid' ? (
+                                        <span className="membership-badge paid">
+                                            <CheckCircle size={13} /> Баталгаажсан
+                                        </span>
+                                    ) : (
+                                        <div className="membership-unpaid-info">
+                                            <span className="membership-badge unpaid">
+                                                <Clock size={13} /> Хүлээгдэж буй
+                                            </span>
+                                            <span className="membership-auto-delete-timer">
+                                                <Timer size={11} /> {getTimeRemaining(order.createdAt)}
+                                            </span>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         ))
