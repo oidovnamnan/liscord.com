@@ -365,6 +365,46 @@ export const scheduledCleanup = functions
         return null;
     });
 
+// Helper: create notification for unmatched SMS income
+async function createUnmatchedNotification(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    bizDoc: FirebaseFirestore.QueryDocumentSnapshot, bizId: string, snap: FirebaseFirestore.QueryDocumentSnapshot, smsData: any, smsAmount: number, smsNote: string
+): Promise<void> {
+    console.log(`No matching order: amount=${smsAmount}, note=${smsNote || 'empty'}`);
+    await db.collection(`businesses/${bizId}/notifications`).add({
+        templateId: 'payment.received',
+        type: 'sms_income',
+        title: `💰 Шинэ орлого ₮${smsAmount.toLocaleString()}`,
+        body: `${smsData.bank || smsData.sender || 'Банк'} — ${smsNote || 'Утга байхгүй'}`,
+        icon: '💰',
+        link: '/app/sms-income-sync',
+        referenceId: snap.id,
+        readBy: {},
+        priority: 'normal',
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        createdBy: 'system',
+    });
+    try {
+        const ownerId = bizDoc.data()?.ownerId;
+        if (ownerId) {
+            const userSnap = await db.doc(`users/${ownerId}`).get();
+            const tokens: string[] = userSnap.data()?.fcmTokens || [];
+            if (tokens.length > 0) {
+                await admin.messaging().sendEachForMulticast({
+                    notification: {
+                        title: `💰 Шинэ орлого ₮${smsAmount.toLocaleString()}`,
+                        body: `${smsData.bank || 'Банк'} — Холбогдоогүй`,
+                    },
+                    data: { type: 'sms_income', bizId, link: '/app/sms-income-sync' },
+                    tokens,
+                });
+            }
+        }
+    } catch (pushErr) {
+        console.warn('FCM push failed (non-critical):', pushErr);
+    }
+}
+
 /**
  * SMS Income Auto-Matching (REALTIME)
  * Triggers server-side when a new SMS arrives — no page needs to be open.
@@ -384,14 +424,11 @@ export const onSmsIncome = functions
         if (!smsData) return null;
 
         const pairingKey = smsData.pairingKey;
-        const smsAmount = smsData.amount || 0;
-        const smsBody = (smsData.body || '').toLowerCase();
-        const smsNote = (smsData.utga || '').toLowerCase();
+        let smsAmount = smsData.amount || 0;
+        const smsBody = (smsData.body || '');
+        let smsNote = (smsData.utga || '');
 
-        if (smsAmount <= 0 || !pairingKey) return null;
-
-        // Combine note + body for searching
-        const searchText = `${smsNote} ${smsBody}`;
+        if (!pairingKey) return null;
 
         try {
             // 1. Find business by pairingKey (smsBridgeKey)
@@ -408,82 +445,131 @@ export const onSmsIncome = functions
             const bizDoc = bizQuery.docs[0];
             const bizId = bizDoc.id;
 
-            // 2. Load all unpaid orders for this business
+            // 2. Load SMS templates and try parsing with them
+            const templatesSnap = await db.collection(`businesses/${bizId}/smsTemplates`)
+                .where('isActive', '==', true)
+                .get();
+
+            let parsedByTemplate = false;
+            for (const tmplDoc of templatesSnap.docs) {
+                const tmpl = tmplDoc.data();
+                if (!tmpl.incomeKeywords?.length) continue;
+
+                // Check if any income keyword exists in SMS body
+                const bodyLower = smsBody.toLowerCase();
+                const hasKeyword = tmpl.incomeKeywords.some((kw: string) =>
+                    bodyLower.includes(kw.toLowerCase())
+                );
+                if (!hasKeyword) continue;
+
+                // Try amount regex
+                if (tmpl.amountPattern && !smsAmount) {
+                    try {
+                        const amountRegex = new RegExp(tmpl.amountPattern, 'i');
+                        const amountMatch = smsBody.match(amountRegex);
+                        if (amountMatch?.[1]) {
+                            smsAmount = parseFloat(amountMatch[1].replace(/[,\s]/g, ''));
+                        }
+                    } catch (_e) { /* invalid regex */ }
+                }
+
+                // Try utga regex
+                if (tmpl.utgaPattern && !smsNote) {
+                    try {
+                        const utgaRegex = new RegExp(tmpl.utgaPattern, 'i');
+                        const utgaMatch = smsBody.match(utgaRegex);
+                        if (utgaMatch?.[1]) {
+                            smsNote = utgaMatch[1].trim();
+                        }
+                    } catch (_e) { /* invalid regex */ }
+                }
+
+                if (smsAmount > 0) {
+                    parsedByTemplate = true;
+                    console.log(`Parsed with template "${tmpl.bankName}": amount=${smsAmount}, utga=${smsNote}`);
+                    break;
+                }
+            }
+
+            // Fallback parsing if templates didn't parse
+            if (!smsAmount) {
+                const mntMatch = smsBody.match(/(\d[\d,]*(?:\.\d{1,2})?)\s*(?:MNT|₮|mnt)/i);
+                if (mntMatch) {
+                    smsAmount = parseFloat(mntMatch[1].replace(/,/g, ''));
+                }
+            }
+            if (!smsNote) {
+                const utgaMatch = smsBody.match(/(?:guilgeenii\s*)?(?:utga|Utga|UTGA|утга|Утга)[:\s]*([^\n]+)/i);
+                if (utgaMatch) {
+                    smsNote = utgaMatch[1].trim();
+                }
+            }
+
+            // Update the sms_inbox doc with parsed values if we found better ones
+            if (parsedByTemplate || (!smsData.amount && smsAmount > 0)) {
+                await snap.ref.update({
+                    amount: smsAmount,
+                    utga: smsNote,
+                    parsedByTemplate: parsedByTemplate,
+                });
+            }
+
+            if (smsAmount <= 0) {
+                console.log(`No amount found in SMS: ${smsBody.substring(0, 80)}`);
+                return null;
+            }
+
+            // Combine note + body for searching, lowercase
+            const searchText = `${smsNote} ${smsBody}`.toLowerCase();
+
+            // 3. Load all unpaid orders for this business
             const ordersSnap = await db.collection(`businesses/${bizId}/orders`)
                 .where('paymentStatus', '==', 'unpaid')
                 .get();
 
             if (ordersSnap.empty) {
                 console.log(`No unpaid orders for business: ${bizId}`);
+                // Still create notification for unmatched income
+                await createUnmatchedNotification(bizDoc, bizId, snap, smsData, smsAmount, smsNote);
                 return null;
             }
 
-            // 3. Find matching order: amount + (refCode OR phone) in утга
+            // 4. Find matching order
+            // Extract all potential 4-digit ref codes from utga text
+            const refCodesInUtga = smsNote.match(/\b(\d{4})\b/g) || [];
+
             let matchedOrderDoc: FirebaseFirestore.QueryDocumentSnapshot | null = null;
 
             for (const orderDoc of ordersSnap.docs) {
                 const order = orderDoc.data();
-
-                // Skip deleted/cancelled
                 if (order.isDeleted || order.status === 'cancelled') continue;
 
                 // Amount must match exactly (±1₮ tolerance)
                 const orderTotal = order.financials?.totalAmount || 0;
                 if (Math.abs(smsAmount - orderTotal) > 1) continue;
 
-                // Check if searchText contains refCode or phone
+                // Check refCode match
                 const refCode = (order.paymentRefCode || '').toLowerCase();
                 const phone = (order.customer?.phone || '');
 
-                const hasRefCode = refCode && refCode.length >= 4 && searchText.includes(refCode);
+                // Method 1: searchText contains exact refCode
+                const hasRefCode = refCode && refCode.length >= 3 && searchText.includes(refCode);
+
+                // Method 2: 4-digit ref codes found in utga match order's refCode
+                const hasRefCodeInDigits = refCode && refCodesInUtga.some((rc: string) => rc === refCode);
+
+                // Method 3: phone number match
                 const hasPhone = phone && phone.length >= 8 && searchText.includes(phone);
 
-                if (hasRefCode || hasPhone) {
+                if (hasRefCode || hasRefCodeInDigits || hasPhone) {
                     matchedOrderDoc = orderDoc;
-                    console.log(`Match found: refCode=${hasRefCode}, phone=${hasPhone}, order=${orderDoc.id}`);
+                    console.log(`Match: refCode=${hasRefCode || hasRefCodeInDigits}, phone=${hasPhone}, order=${orderDoc.id}`);
                     break;
                 }
             }
 
             if (!matchedOrderDoc) {
-                console.log(`No matching order: amount=${smsAmount}, note=${smsNote || smsBody.substring(0, 50)}`);
-
-                // Create "new income" notification (unmatched)
-                await db.collection(`businesses/${bizId}/notifications`).add({
-                    templateId: 'payment.received',
-                    type: 'sms_income',
-                    title: `💰 Шинэ орлого ₮${smsAmount.toLocaleString()}`,
-                    body: `${smsData.bank || smsData.sender || 'Банк'} — ${smsData.utga || 'Утга байхгүй'}`,
-                    icon: '💰',
-                    link: '/app/sms-income-sync',
-                    referenceId: snap.id,
-                    readBy: {},
-                    priority: 'normal',
-                    createdAt: admin.firestore.FieldValue.serverTimestamp(),
-                    createdBy: 'system',
-                });
-
-                // FCM push to owner
-                try {
-                    const ownerId = bizDoc.data()?.ownerId;
-                    if (ownerId) {
-                        const userSnap = await db.doc(`users/${ownerId}`).get();
-                        const tokens: string[] = userSnap.data()?.fcmTokens || [];
-                        if (tokens.length > 0) {
-                            await admin.messaging().sendEachForMulticast({
-                                notification: {
-                                    title: `💰 Шинэ орлого ₮${smsAmount.toLocaleString()}`,
-                                    body: `${smsData.bank || 'Банк'} — Холбогдоогүй`,
-                                },
-                                data: { type: 'sms_income', bizId, link: '/app/sms-income-sync' },
-                                tokens,
-                            });
-                        }
-                    }
-                } catch (pushErr) {
-                    console.warn('FCM push failed (non-critical):', pushErr);
-                }
-
+                await createUnmatchedNotification(bizDoc, bizId, snap, smsData, smsAmount, smsNote);
                 return null;
             }
 

@@ -133,7 +133,7 @@ exports.sendOrderNotification = functions
     .firestore
     .document("businesses/{bizId}/orders/{orderId}")
     .onCreate(async (snap, context) => {
-    var _a, _b, _c, _d, _e;
+    var _a, _b, _c, _d, _f;
     const orderData = snap.data();
     const bizId = context.params.bizId;
     if (!orderData || orderData.isDeleted)
@@ -188,7 +188,7 @@ exports.sendOrderNotification = functions
                     continue; // No position = no order permission
                 }
                 const userSnap = await db.doc(`users/${empData.userId}`).get();
-                const userTokens = ((_e = userSnap.data()) === null || _e === void 0 ? void 0 : _e.fcmTokens) || [];
+                const userTokens = ((_f = userSnap.data()) === null || _f === void 0 ? void 0 : _f.fcmTokens) || [];
                 userTokens.forEach(t => tokensToSend.push({ token: t, userId: empData.userId }));
             }
         }
@@ -244,15 +244,15 @@ exports.lowStockAlert = functions
     .firestore
     .document("businesses/{bizId}/products/{productId}")
     .onUpdate(async (change, context) => {
-    var _a, _b, _c, _d, _e, _f, _g, _h, _j;
+    var _a, _b, _c, _d, _f, _g, _h, _j, _k;
     const after = change.after.data();
     const before = change.before.data();
     const bizId = context.params.bizId;
     if (!after || !((_a = after.stock) === null || _a === void 0 ? void 0 : _a.trackInventory))
         return null;
     const currentQty = (_c = (_b = after.stock) === null || _b === void 0 ? void 0 : _b.quantity) !== null && _c !== void 0 ? _c : 0;
-    const previousQty = (_e = (_d = before === null || before === void 0 ? void 0 : before.stock) === null || _d === void 0 ? void 0 : _d.quantity) !== null && _e !== void 0 ? _e : 0;
-    const lowStockThreshold = (_g = (_f = after.stock) === null || _f === void 0 ? void 0 : _f.lowStockThreshold) !== null && _g !== void 0 ? _g : 5;
+    const previousQty = (_f = (_d = before === null || before === void 0 ? void 0 : before.stock) === null || _d === void 0 ? void 0 : _d.quantity) !== null && _f !== void 0 ? _f : 0;
+    const lowStockThreshold = (_h = (_g = after.stock) === null || _g === void 0 ? void 0 : _g.lowStockThreshold) !== null && _h !== void 0 ? _h : 5;
     if (currentQty < lowStockThreshold && previousQty >= lowStockThreshold) {
         try {
             // 1. Create notification doc
@@ -271,10 +271,10 @@ exports.lowStockAlert = functions
             });
             // 2. Send FCM push to owner
             const bizSnap = await db.doc(`businesses/${bizId}`).get();
-            const ownerId = (_h = bizSnap.data()) === null || _h === void 0 ? void 0 : _h.ownerId;
+            const ownerId = (_j = bizSnap.data()) === null || _j === void 0 ? void 0 : _j.ownerId;
             if (ownerId) {
                 const userSnap = await db.doc(`users/${ownerId}`).get();
-                const tokens = ((_j = userSnap.data()) === null || _j === void 0 ? void 0 : _j.fcmTokens) || [];
+                const tokens = ((_k = userSnap.data()) === null || _k === void 0 ? void 0 : _k.fcmTokens) || [];
                 if (tokens.length > 0) {
                     await admin.messaging().sendEachForMulticast({
                         notification: {
@@ -337,6 +337,46 @@ exports.scheduledCleanup = functions
     }
     return null;
 });
+// Helper: create notification for unmatched SMS income
+async function createUnmatchedNotification(
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+bizDoc, bizId, snap, smsData, smsAmount, smsNote) {
+    var _a, _b;
+    console.log(`No matching order: amount=${smsAmount}, note=${smsNote || 'empty'}`);
+    await db.collection(`businesses/${bizId}/notifications`).add({
+        templateId: 'payment.received',
+        type: 'sms_income',
+        title: `💰 Шинэ орлого ₮${smsAmount.toLocaleString()}`,
+        body: `${smsData.bank || smsData.sender || 'Банк'} — ${smsNote || 'Утга байхгүй'}`,
+        icon: '💰',
+        link: '/app/sms-income-sync',
+        referenceId: snap.id,
+        readBy: {},
+        priority: 'normal',
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        createdBy: 'system',
+    });
+    try {
+        const ownerId = (_a = bizDoc.data()) === null || _a === void 0 ? void 0 : _a.ownerId;
+        if (ownerId) {
+            const userSnap = await db.doc(`users/${ownerId}`).get();
+            const tokens = ((_b = userSnap.data()) === null || _b === void 0 ? void 0 : _b.fcmTokens) || [];
+            if (tokens.length > 0) {
+                await admin.messaging().sendEachForMulticast({
+                    notification: {
+                        title: `💰 Шинэ орлого ₮${smsAmount.toLocaleString()}`,
+                        body: `${smsData.bank || 'Банк'} — Холбогдоогүй`,
+                    },
+                    data: { type: 'sms_income', bizId, link: '/app/sms-income-sync' },
+                    tokens,
+                });
+            }
+        }
+    }
+    catch (pushErr) {
+        console.warn('FCM push failed (non-critical):', pushErr);
+    }
+}
 /**
  * SMS Income Auto-Matching (REALTIME)
  * Triggers server-side when a new SMS arrives — no page needs to be open.
@@ -352,18 +392,16 @@ exports.onSmsIncome = functions
     .firestore
     .document("sms_inbox/{smsId}")
     .onCreate(async (snap) => {
-    var _a, _b, _c, _d, _e, _f, _g, _h;
+    var _a, _b, _c, _d, _f, _g, _h;
     const smsData = snap.data();
     if (!smsData)
         return null;
     const pairingKey = smsData.pairingKey;
-    const smsAmount = smsData.amount || 0;
-    const smsBody = (smsData.body || '').toLowerCase();
-    const smsNote = (smsData.utga || '').toLowerCase();
-    if (smsAmount <= 0 || !pairingKey)
+    let smsAmount = smsData.amount || 0;
+    const smsBody = (smsData.body || '');
+    let smsNote = (smsData.utga || '');
+    if (!pairingKey)
         return null;
-    // Combine note + body for searching
-    const searchText = `${smsNote} ${smsBody}`;
     try {
         // 1. Find business by pairingKey (smsBridgeKey)
         const bizQuery = await db.collection('businesses')
@@ -376,73 +414,114 @@ exports.onSmsIncome = functions
         }
         const bizDoc = bizQuery.docs[0];
         const bizId = bizDoc.id;
-        // 2. Load all unpaid orders for this business
+        // 2. Load SMS templates and try parsing with them
+        const templatesSnap = await db.collection(`businesses/${bizId}/smsTemplates`)
+            .where('isActive', '==', true)
+            .get();
+        let parsedByTemplate = false;
+        for (const tmplDoc of templatesSnap.docs) {
+            const tmpl = tmplDoc.data();
+            if (!((_a = tmpl.incomeKeywords) === null || _a === void 0 ? void 0 : _a.length))
+                continue;
+            // Check if any income keyword exists in SMS body
+            const bodyLower = smsBody.toLowerCase();
+            const hasKeyword = tmpl.incomeKeywords.some((kw) => bodyLower.includes(kw.toLowerCase()));
+            if (!hasKeyword)
+                continue;
+            // Try amount regex
+            if (tmpl.amountPattern && !smsAmount) {
+                try {
+                    const amountRegex = new RegExp(tmpl.amountPattern, 'i');
+                    const amountMatch = smsBody.match(amountRegex);
+                    if (amountMatch === null || amountMatch === void 0 ? void 0 : amountMatch[1]) {
+                        smsAmount = parseFloat(amountMatch[1].replace(/[,\s]/g, ''));
+                    }
+                }
+                catch (_e) { /* invalid regex */ }
+            }
+            // Try utga regex
+            if (tmpl.utgaPattern && !smsNote) {
+                try {
+                    const utgaRegex = new RegExp(tmpl.utgaPattern, 'i');
+                    const utgaMatch = smsBody.match(utgaRegex);
+                    if (utgaMatch === null || utgaMatch === void 0 ? void 0 : utgaMatch[1]) {
+                        smsNote = utgaMatch[1].trim();
+                    }
+                }
+                catch (_e) { /* invalid regex */ }
+            }
+            if (smsAmount > 0) {
+                parsedByTemplate = true;
+                console.log(`Parsed with template "${tmpl.bankName}": amount=${smsAmount}, utga=${smsNote}`);
+                break;
+            }
+        }
+        // Fallback parsing if templates didn't parse
+        if (!smsAmount) {
+            const mntMatch = smsBody.match(/(\d[\d,]*(?:\.\d{1,2})?)\s*(?:MNT|₮|mnt)/i);
+            if (mntMatch) {
+                smsAmount = parseFloat(mntMatch[1].replace(/,/g, ''));
+            }
+        }
+        if (!smsNote) {
+            const utgaMatch = smsBody.match(/(?:guilgeenii\s*)?(?:utga|Utga|UTGA|утга|Утга)[:\s]*([^\n]+)/i);
+            if (utgaMatch) {
+                smsNote = utgaMatch[1].trim();
+            }
+        }
+        // Update the sms_inbox doc with parsed values if we found better ones
+        if (parsedByTemplate || (!smsData.amount && smsAmount > 0)) {
+            await snap.ref.update({
+                amount: smsAmount,
+                utga: smsNote,
+                parsedByTemplate: parsedByTemplate,
+            });
+        }
+        if (smsAmount <= 0) {
+            console.log(`No amount found in SMS: ${smsBody.substring(0, 80)}`);
+            return null;
+        }
+        // Combine note + body for searching, lowercase
+        const searchText = `${smsNote} ${smsBody}`.toLowerCase();
+        // 3. Load all unpaid orders for this business
         const ordersSnap = await db.collection(`businesses/${bizId}/orders`)
             .where('paymentStatus', '==', 'unpaid')
             .get();
         if (ordersSnap.empty) {
             console.log(`No unpaid orders for business: ${bizId}`);
+            // Still create notification for unmatched income
+            await createUnmatchedNotification(bizDoc, bizId, snap, smsData, smsAmount, smsNote);
             return null;
         }
-        // 3. Find matching order: amount + (refCode OR phone) in утга
+        // 4. Find matching order
+        // Extract all potential 4-digit ref codes from utga text
+        const refCodesInUtga = smsNote.match(/\b(\d{4})\b/g) || [];
         let matchedOrderDoc = null;
         for (const orderDoc of ordersSnap.docs) {
             const order = orderDoc.data();
-            // Skip deleted/cancelled
             if (order.isDeleted || order.status === 'cancelled')
                 continue;
             // Amount must match exactly (±1₮ tolerance)
-            const orderTotal = ((_a = order.financials) === null || _a === void 0 ? void 0 : _a.totalAmount) || 0;
+            const orderTotal = ((_b = order.financials) === null || _b === void 0 ? void 0 : _b.totalAmount) || 0;
             if (Math.abs(smsAmount - orderTotal) > 1)
                 continue;
-            // Check if searchText contains refCode or phone
+            // Check refCode match
             const refCode = (order.paymentRefCode || '').toLowerCase();
-            const phone = (((_b = order.customer) === null || _b === void 0 ? void 0 : _b.phone) || '');
-            const hasRefCode = refCode && refCode.length >= 4 && searchText.includes(refCode);
+            const phone = (((_c = order.customer) === null || _c === void 0 ? void 0 : _c.phone) || '');
+            // Method 1: searchText contains exact refCode
+            const hasRefCode = refCode && refCode.length >= 3 && searchText.includes(refCode);
+            // Method 2: 4-digit ref codes found in utga match order's refCode
+            const hasRefCodeInDigits = refCode && refCodesInUtga.some((rc) => rc === refCode);
+            // Method 3: phone number match
             const hasPhone = phone && phone.length >= 8 && searchText.includes(phone);
-            if (hasRefCode || hasPhone) {
+            if (hasRefCode || hasRefCodeInDigits || hasPhone) {
                 matchedOrderDoc = orderDoc;
-                console.log(`Match found: refCode=${hasRefCode}, phone=${hasPhone}, order=${orderDoc.id}`);
+                console.log(`Match: refCode=${hasRefCode || hasRefCodeInDigits}, phone=${hasPhone}, order=${orderDoc.id}`);
                 break;
             }
         }
         if (!matchedOrderDoc) {
-            console.log(`No matching order: amount=${smsAmount}, note=${smsNote || smsBody.substring(0, 50)}`);
-            // Create "new income" notification (unmatched)
-            await db.collection(`businesses/${bizId}/notifications`).add({
-                templateId: 'payment.received',
-                type: 'sms_income',
-                title: `💰 Шинэ орлого ₮${smsAmount.toLocaleString()}`,
-                body: `${smsData.bank || smsData.sender || 'Банк'} — ${smsData.utga || 'Утга байхгүй'}`,
-                icon: '💰',
-                link: '/app/sms-income-sync',
-                referenceId: snap.id,
-                readBy: {},
-                priority: 'normal',
-                createdAt: admin.firestore.FieldValue.serverTimestamp(),
-                createdBy: 'system',
-            });
-            // FCM push to owner
-            try {
-                const ownerId = (_c = bizDoc.data()) === null || _c === void 0 ? void 0 : _c.ownerId;
-                if (ownerId) {
-                    const userSnap = await db.doc(`users/${ownerId}`).get();
-                    const tokens = ((_d = userSnap.data()) === null || _d === void 0 ? void 0 : _d.fcmTokens) || [];
-                    if (tokens.length > 0) {
-                        await admin.messaging().sendEachForMulticast({
-                            notification: {
-                                title: `💰 Шинэ орлого ₮${smsAmount.toLocaleString()}`,
-                                body: `${smsData.bank || 'Банк'} — Холбогдоогүй`,
-                            },
-                            data: { type: 'sms_income', bizId, link: '/app/sms-income-sync' },
-                            tokens,
-                        });
-                    }
-                }
-            }
-            catch (pushErr) {
-                console.warn('FCM push failed (non-critical):', pushErr);
-            }
+            await createUnmatchedNotification(bizDoc, bizId, snap, smsData, smsAmount, smsNote);
             return null;
         }
         // 4. Auto-match: Update order as paid
@@ -491,7 +570,7 @@ exports.onSmsIncome = functions
             templateId: 'payment.received',
             type: 'sms_income',
             title: notifTitle,
-            body: `₮${smsAmount.toLocaleString()} — ${((_e = matchedOrder.customer) === null || _e === void 0 ? void 0 : _e.name) || 'Зочин'} — ${smsData.bank || 'Банк'}`,
+            body: `₮${smsAmount.toLocaleString()} — ${((_d = matchedOrder.customer) === null || _d === void 0 ? void 0 : _d.name) || 'Зочин'} — ${smsData.bank || 'Банк'}`,
             icon: '✅',
             link: '/app/orders',
             referenceId: matchedOrderDoc.id,
