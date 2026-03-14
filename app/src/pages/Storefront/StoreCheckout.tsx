@@ -88,6 +88,14 @@ export function StoreCheckout() {
 
     // Generate ref code once per session
     const [refCode, setRefCode] = useState('');
+    useEffect(() => {
+        if (!refCode && business?.id) {
+            getUniqueRefCode(business.id).then(code => setRefCode(code)).catch(() => {
+                // Fallback: random 4-digit
+                setRefCode(String(Math.floor(Math.random() * 9999) + 1).padStart(4, '0'));
+            });
+        }
+    }, [business?.id]);
 
     const handleAddressChange = (val: string) => {
         const lower = val.toLowerCase();
@@ -141,7 +149,7 @@ export function StoreCheckout() {
         setLoading(true);
 
         try {
-            // Generate unique 4-digit ref code
+            // Ensure ref code is available (should already be set on mount)
             let code = refCode;
             if (paymentMethod === 'bank_transfer' && !code) {
                 code = await getUniqueRefCode(business.id);
