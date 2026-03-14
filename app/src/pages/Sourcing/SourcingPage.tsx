@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import {
     Globe, Search, Loader2, Clock, Package, Truck, CheckCircle2, Copy, Check, X, ChevronDown,
-    Link2, ExternalLink, Plus, DollarSign, Trash2
+    Link2, ExternalLink, Plus, DollarSign, Trash2, EyeOff, Eye, Power, ChevronUp
 } from 'lucide-react';
 import { useBusinessStore } from '../../store';
 import { collection, query, where, onSnapshot, doc, updateDoc, Timestamp } from 'firebase/firestore';
@@ -56,8 +56,11 @@ interface SourcingOrder {
 
 interface ProductInfo {
     id: string;
+    name: string;
     salePrice: number;
     sourceLinks: { url: string; label: string }[];
+    isActive: boolean;
+    images: string[];
 }
 
 const STATUS_LABELS: Record<SourcingStatus, { label: string; color: string; icon: typeof Clock }> = {
@@ -76,6 +79,37 @@ export function SourcingPage() {
     const [searchQuery, setSearchQuery] = useState('');
     const [statusFilter, setStatusFilter] = useState<'all' | SourcingStatus>('all');
     const [selectedOrder, setSelectedOrder] = useState<SourcingOrder | null>(null);
+    const [inactiveProducts, setInactiveProducts] = useState<ProductInfo[]>([]);
+    const [showInactive, setShowInactive] = useState(false);
+    const [reactivating, setReactivating] = useState<string | null>(null);
+
+    // Subscribe to products for inactive list
+    useEffect(() => {
+        if (!business?.id) return;
+        return productService.subscribeProducts(business.id, (products) => {
+            const inactive = products
+                .filter(p => !p.isActive && !p.isDeleted)
+                .map(p => ({
+                    id: p.id,
+                    name: p.name,
+                    salePrice: p.pricing?.salePrice || 0,
+                    sourceLinks: (p as any).sourceLinks || [],
+                    isActive: p.isActive,
+                    images: p.images || [],
+                }));
+            setInactiveProducts(inactive);
+        });
+    }, [business?.id]);
+
+    const handleReactivate = async (productId: string) => {
+        if (!business?.id) return;
+        setReactivating(productId);
+        try {
+            await productService.updateProduct(business.id, productId, { isActive: true } as any);
+            toast.success('Бараа идэвхтэй боллоо');
+        } catch { toast.error('Алдаа гарлаа'); }
+        finally { setReactivating(null); }
+    };
 
     // Load paid orders that have pre-order items
     useEffect(() => {
@@ -303,6 +337,52 @@ export function SourcingPage() {
                 )}
             </div>
 
+            {/* Inactive Products Panel */}
+            {inactiveProducts.length > 0 && (
+                <div className="sourcing-inactive-panel" style={{ marginTop: 20 }}>
+                    <button
+                        className="sourcing-inactive-toggle"
+                        onClick={() => setShowInactive(!showInactive)}
+                    >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <EyeOff size={16} />
+                            <span>Идэвхгүй бараа ({inactiveProducts.length})</span>
+                        </div>
+                        {showInactive ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                    </button>
+                    {showInactive && (
+                        <div className="sourcing-inactive-list">
+                            {inactiveProducts.map(p => (
+                                <div key={p.id} className="sourcing-inactive-item">
+                                    <div className="sourcing-inactive-img">
+                                        {p.images[0] ? (
+                                            <img src={p.images[0]} alt="" />
+                                        ) : (
+                                            <Package size={16} style={{ color: 'var(--text-muted)' }} />
+                                        )}
+                                    </div>
+                                    <div className="sourcing-inactive-info">
+                                        <span className="sourcing-inactive-name">{p.name}</span>
+                                        <span className="sourcing-inactive-price">₮{p.salePrice.toLocaleString()}</span>
+                                    </div>
+                                    <button
+                                        className="sourcing-reactivate-btn"
+                                        onClick={() => handleReactivate(p.id)}
+                                        disabled={reactivating === p.id}
+                                    >
+                                        {reactivating === p.id ? (
+                                            <Loader2 size={14} className="animate-spin" />
+                                        ) : (
+                                            <><Eye size={14} /> Идэвхжүүлэх</>
+                                        )}
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            )}
+
             {selectedOrder && (
                 <SourcingDetailModal
                     order={selectedOrder}
@@ -358,8 +438,11 @@ function SourcingDetailModal({ order, businessId, settings, onClose, onUpdate }:
             products.forEach(p => {
                 info[p.id] = {
                     id: p.id,
+                    name: p.name,
                     salePrice: p.pricing?.salePrice || 0,
-                    sourceLinks: p.sourceLinks || [],
+                    sourceLinks: (p as any).sourceLinks || [],
+                    isActive: p.isActive,
+                    images: p.images || [],
                 };
             });
             setProductsInfo(info);
@@ -498,6 +581,13 @@ function SourcingDetailModal({ order, businessId, settings, onClose, onUpdate }:
         catch { return 'Линк'; }
     };
 
+    const handleDeactivateProduct = async (productId: string) => {
+        try {
+            await productService.updateProduct(businessId, productId, { isActive: false } as any);
+            toast.success('Бараа идэвхгүй боллоо');
+        } catch { toast.error('Алдаа'); }
+    };
+
     const hasConfig = !!recipientName && !!cargoAddress;
 
     return createPortal(
@@ -584,6 +674,9 @@ function SourcingDetailModal({ order, businessId, settings, onClose, onUpdate }:
                                             <div className="sourcing-item-info">
                                                 <span className="sourcing-item-name">{item.name}</span>
                                                 <span className="sourcing-item-qty">x{item.quantity || 1}</span>
+                                                {productsInfo[item.productId] && !productsInfo[item.productId].isActive && (
+                                                    <span style={{ fontSize: '0.65rem', fontWeight: 700, color: '#e17055', background: 'rgba(225,112,85,0.1)', padding: '1px 6px', borderRadius: 4 }}>Идэвхгүй</span>
+                                                )}
                                             </div>
                                             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                                                 {/* Inline price display/edit */}
@@ -652,6 +745,7 @@ function SourcingDetailModal({ order, businessId, settings, onClose, onUpdate }:
                                                     <button className="btn btn-ghost btn-xs" onClick={() => { setAddingLink(null); setNewLinkUrl(''); setNewLinkLabel(''); }} style={{ height: 26, padding: '0 4px' }}><X size={12} /></button>
                                                 </div>
                                             ) : (
+                                                <>
                                                 <button
                                                     className="sourcing-link-add-btn"
                                                     onClick={(e) => { e.stopPropagation(); setAddingLink(item.productId); setNewLinkUrl(''); setNewLinkLabel(''); }}
@@ -659,6 +753,18 @@ function SourcingDetailModal({ order, businessId, settings, onClose, onUpdate }:
                                                     <Plus size={11} />
                                                     Линк
                                                 </button>
+                                                {productsInfo[item.productId]?.isActive !== false && (
+                                                    <button
+                                                        className="sourcing-link-add-btn"
+                                                        onClick={(e) => { e.stopPropagation(); handleDeactivateProduct(item.productId); }}
+                                                        style={{ color: '#e17055', borderColor: 'rgba(225,112,85,0.2)' }}
+                                                        title="Бараа дууссан — идэвхгүй болгох"
+                                                    >
+                                                        <EyeOff size={11} />
+                                                        Дууссан
+                                                    </button>
+                                                )}
+                                                </>
                                             )}
                                         </div>
                                     </div>

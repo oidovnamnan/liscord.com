@@ -589,3 +589,124 @@
     gap: 4px;
     flex-wrap: wrap;
 }
+
+/* ============ INACTIVE PRODUCTS PANEL ============ */
+.sourcing-inactive-panel {
+    background: var(--surface-1);
+    border: 1.5px solid var(--border-soft);
+    border-radius: 16px;
+    overflow: hidden;
+}
+
+.sourcing-inactive-toggle {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 20px;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--text-secondary);
+    transition: background 0.2s;
+}
+
+.sourcing-inactive-toggle:hover {
+    background: var(--bg-hover);
+}
+
+.sourcing-inactive-list {
+    display: flex;
+    flex-direction: column;
+    border-top: 1px solid var(--border-soft);
+}
+
+.sourcing-inactive-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 20px;
+    border-bottom: 1px solid var(--border-soft);
+    transition: background 0.2s;
+}
+
+.sourcing-inactive-item:last-child {
+    border-bottom: none;
+}
+
+.sourcing-inactive-item:hover {
+    background: var(--bg-hover);
+}
+
+.sourcing-inactive-img {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    overflow: hidden;
+    background: var(--surface-2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.sourcing-inactive-img img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.sourcing-inactive-info {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.sourcing-inactive-name {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.sourcing-inactive-price {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--text-muted);
+}
+
+.sourcing-reactivate-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 6px 14px;
+    border-radius: 10px;
+    border: 1.5px solid rgba(0, 184, 148, 0.25);
+    background: rgba(0, 184, 148, 0.06);
+    color: #00b894;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 0.78rem;
+    font-weight: 700;
+    white-space: nowrap;
+    transition: all 0.2s;
+    flex-shrink: 0;
+}
+
+.sourcing-reactivate-btn:hover {
+    background: #00b894;
+    color: white;
+    border-color: #00b894;
+}
+
+.sourcing-reactivate-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
