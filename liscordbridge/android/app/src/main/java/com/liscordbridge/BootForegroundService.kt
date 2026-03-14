@@ -8,6 +8,7 @@ import android.app.Service
 import android.content.Intent
 import android.os.Build
 import android.os.Handler
+import java.util.Calendar
 import android.os.IBinder
 import android.os.Looper
 import android.util.Log
@@ -34,7 +35,7 @@ class BootForegroundService : Service() {
         private const val UPDATE_NOTIFICATION_ID = 9002
         private const val GITHUB_RELEASE_URL = "https://api.github.com/repos/oidovnamnan/liscord.com/releases/tags/bridge-latest"
         private const val APK_DOWNLOAD_URL = "https://github.com/oidovnamnan/liscord.com/releases/download/bridge-latest/app-release.apk"
-        private const val UPDATE_CHECK_INTERVAL = 30 * 60 * 1000L // 30 minutes
+        private const val ONE_DAY_MS = 24 * 60 * 60 * 1000L // 24 hours
     }
 
     private val handler = Handler(Looper.getMainLooper())
@@ -91,12 +92,28 @@ class BootForegroundService : Service() {
         val runnable = object : Runnable {
             override fun run() {
                 thread { checkForUpdate() }
-                handler.postDelayed(this, UPDATE_CHECK_INTERVAL)
+                // Schedule next check at midnight
+                handler.postDelayed(this, msUntilMidnight())
             }
         }
         updateCheckRunnable = runnable
-        // First check after 60 seconds (let app settle)
-        handler.postDelayed(runnable, 60000)
+        // First check: at next midnight
+        val delayMs = msUntilMidnight()
+        Log.i(TAG, "Next update check in ${delayMs / 3600000}h ${(delayMs % 3600000) / 60000}m")
+        handler.postDelayed(runnable, delayMs)
+    }
+
+    /** Milliseconds until next 00:00 */
+    private fun msUntilMidnight(): Long {
+        val now = Calendar.getInstance()
+        val midnight = Calendar.getInstance().apply {
+            add(Calendar.DAY_OF_YEAR, 1)
+            set(Calendar.HOUR_OF_DAY, 0)
+            set(Calendar.MINUTE, 0)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+        }
+        return midnight.timeInMillis - now.timeInMillis
     }
 
     private fun checkForUpdate() {
