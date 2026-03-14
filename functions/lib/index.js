@@ -419,10 +419,15 @@ function parseWithMarkers(text, prefix, suffix) {
 exports.onSmsIncome = functions
     .firestore
     .document("sms_inbox/{smsId}")
-    .onCreate(async (snap) => {
+    .onWrite(async (change) => {
     var _a, _b, _c, _d, _f, _g, _h;
+    // Only process if doc exists after write
+    const snap = change.after;
+    if (!snap.exists)
+        return null;
     const smsData = snap.data();
-    if (!smsData)
+    // Skip if already matched, processing, or checked and unmatched
+    if (['matched', 'processing', 'unmatched'].includes(smsData.status))
         return null;
     const pairingKey = smsData.pairingKey;
     let smsAmount = smsData.amount || 0;
@@ -430,6 +435,8 @@ exports.onSmsIncome = functions
     let smsNote = (smsData.utga || '');
     if (!pairingKey)
         return null;
+    // Mark as processing to prevent race conditions
+    await snap.ref.update({ status: 'processing' });
     try {
         // 1. Find business by pairingKey (smsBridgeKey)
         const bizQuery = await db.collection('businesses')
@@ -534,6 +541,7 @@ exports.onSmsIncome = functions
             console.log(`No unpaid orders for business: ${bizId}`);
             // Still create notification for unmatched income
             await createUnmatchedNotification(bizDoc, bizId, snap, smsData, smsAmount, smsNote);
+            await snap.ref.update({ status: 'unmatched' });
             return null;
         }
         // 4. Find matching order
@@ -565,6 +573,7 @@ exports.onSmsIncome = functions
         }
         if (!matchedOrderDoc) {
             await createUnmatchedNotification(bizDoc, bizId, snap, smsData, smsAmount, smsNote);
+            await snap.ref.update({ status: 'unmatched' });
             return null;
         }
         // 4. Auto-match: Update order as paid

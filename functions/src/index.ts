@@ -450,9 +450,15 @@ function parseWithMarkers(text: string, prefix: string, suffix: string): string 
 export const onSmsIncome = functions
     .firestore
     .document("sms_inbox/{smsId}")
-    .onCreate(async (snap) => {
-        const smsData = snap.data();
-        if (!smsData) return null;
+    .onWrite(async (change) => {
+        // Only process if doc exists after write
+        const snap = change.after;
+        if (!snap.exists) return null;
+
+        const smsData = snap.data()!;
+
+        // Skip if already matched, processing, or checked and unmatched
+        if (['matched', 'processing', 'unmatched'].includes(smsData.status)) return null;
 
         const pairingKey = smsData.pairingKey;
         let smsAmount = smsData.amount || 0;
@@ -460,6 +466,9 @@ export const onSmsIncome = functions
         let smsNote = (smsData.utga || '');
 
         if (!pairingKey) return null;
+
+        // Mark as processing to prevent race conditions
+        await snap.ref.update({ status: 'processing' });
 
         try {
             // 1. Find business by pairingKey (smsBridgeKey)
@@ -576,7 +585,8 @@ export const onSmsIncome = functions
             if (ordersSnap.empty) {
                 console.log(`No unpaid orders for business: ${bizId}`);
                 // Still create notification for unmatched income
-                await createUnmatchedNotification(bizDoc, bizId, snap, smsData, smsAmount, smsNote);
+                await createUnmatchedNotification(bizDoc, bizId, snap as any, smsData, smsAmount, smsNote);
+                await snap.ref.update({ status: 'unmatched' });
                 return null;
             }
 
@@ -615,7 +625,8 @@ export const onSmsIncome = functions
             }
 
             if (!matchedOrderDoc) {
-                await createUnmatchedNotification(bizDoc, bizId, snap, smsData, smsAmount, smsNote);
+                await createUnmatchedNotification(bizDoc, bizId, snap as any, smsData, smsAmount, smsNote);
+                await snap.ref.update({ status: 'unmatched' });
                 return null;
             }
 
