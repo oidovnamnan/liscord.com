@@ -573,6 +573,63 @@
     box-shadow: 0 4px 16px rgba(16, 185, 129, 0.3);
 }
 
+/* Editable AI result inputs */
+.sms-ai-edit-input {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-primary);
+    border-radius: 8px;
+    padding: 6px 10px;
+    font-size: 0.88rem;
+    color: var(--text-primary);
+    font-weight: 600;
+    font-family: inherit;
+    width: 100%;
+    transition: border-color 0.2s;
+}
+
+.sms-ai-edit-input:focus {
+    outline: none;
+    border-color: #6366f1;
+    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.1);
+}
+
+.sms-ai-edit-input.amount {
+    color: #10b981;
+    font-weight: 800;
+}
+
+/* Pattern editor inputs */
+.sms-ai-pattern-input {
+    background: transparent;
+    border: 1px dashed rgba(99, 102, 241, 0.3);
+    border-radius: 6px;
+    padding: 3px 8px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: #6366f1;
+    width: 100px;
+    transition: all 0.2s;
+}
+
+.sms-ai-pattern-input:focus {
+    outline: none;
+    border-color: #6366f1;
+    background: rgba(99, 102, 241, 0.05);
+}
+
+.sms-ai-pattern-input::placeholder {
+    color: rgba(99, 102, 241, 0.3);
+    font-weight: 400;
+}
+
+.sms-ai-pattern-hint {
+    font-size: 0.72rem;
+    color: var(--text-tertiary);
+    font-weight: 400;
+    margin-left: 4px;
+}
+
 /* Form hint text */
 .sms-tmpl-hint {
     font-size: 0.72rem;

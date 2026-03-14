@@ -353,15 +353,28 @@ export function SmsTemplateSettings({ bizId }: { bizId: string }) {
                         <div className="sms-tmpl-test-fields">
                             <div className="sms-tmpl-test-field">
                                 <label>Банк</label>
-                                <span>{aiTestResult.bank}</span>
+                                <input
+                                    className="sms-ai-edit-input"
+                                    value={aiTestResult.bank}
+                                    onChange={e => setAiTestResult({ ...aiTestResult, bank: e.target.value })}
+                                />
                             </div>
                             <div className="sms-tmpl-test-field">
                                 <label>Дүн</label>
-                                <span className="amount">{aiTestResult.amount ? aiTestResult.amount.toLocaleString() + '₮' : '—'}</span>
+                                <input
+                                    className="sms-ai-edit-input amount"
+                                    type="number"
+                                    value={aiTestResult.amount || ''}
+                                    onChange={e => setAiTestResult({ ...aiTestResult, amount: parseFloat(e.target.value) || 0 })}
+                                />
                             </div>
                             <div className="sms-tmpl-test-field">
                                 <label>Утга</label>
-                                <span>{aiTestResult.utga || '—'}</span>
+                                <input
+                                    className="sms-ai-edit-input"
+                                    value={aiTestResult.utga}
+                                    onChange={e => setAiTestResult({ ...aiTestResult, utga: e.target.value })}
+                                />
                             </div>
                             <div className="sms-tmpl-test-field">
                                 <label>Төрөл</label>
@@ -375,53 +388,46 @@ export function SmsTemplateSettings({ bizId }: { bizId: string }) {
                                     <span>{aiTestResult.accountNumber}</span>
                                 </div>
                             )}
-                            {aiTestResult.balance && (
-                                <div className="sms-tmpl-test-field">
-                                    <label>Үлдэгдэл</label>
-                                    <span>{aiTestResult.balance}</span>
-                                </div>
-                            )}
-                            {aiTestResult.date && (
-                                <div className="sms-tmpl-test-field">
-                                    <label>Огноо</label>
-                                    <span>{aiTestResult.date}</span>
-                                </div>
-                            )}
                         </div>
-                    {aiTestResult.isIncome && aiTestResult.confidence !== 'low' && (
                         <div className="sms-ai-confirm-section">
                             <div className="sms-ai-patterns">
-                                <div className="sms-ai-pattern-title">📐 Танигдсан загвар</div>
-                                {aiTestResult.amountPrefix && (
-                                    <div className="sms-ai-pattern-row">
-                                        <span className="label">Дүн олох:</span>
-                                        <span className="pattern">
-                                            <span className="prefix">{aiTestResult.amountPrefix}</span>
-                                            <span className="value">{aiTestResult.amount?.toLocaleString()}</span>
-                                            {aiTestResult.amountSuffix && <span className="suffix">{aiTestResult.amountSuffix}</span>}
-                                        </span>
-                                    </div>
-                                )}
-                                {aiTestResult.utgaPrefix && (
-                                    <div className="sms-ai-pattern-row">
-                                        <span className="label">Утга олох:</span>
-                                        <span className="pattern">
-                                            <span className="prefix">{aiTestResult.utgaPrefix}</span>
-                                            <span className="value">{aiTestResult.utga}</span>
-                                            {aiTestResult.utgaSuffix && <span className="suffix">{aiTestResult.utgaSuffix}</span>}
-                                        </span>
-                                    </div>
-                                )}
-                                {aiTestResult.incomeKeywords && aiTestResult.incomeKeywords.length > 0 && (
-                                    <div className="sms-ai-pattern-row">
-                                        <span className="label">Орлого үг:</span>
-                                        <span className="pattern">
-                                            {aiTestResult.incomeKeywords.map((kw, i) => (
-                                                <span key={i} className="keyword-chip">{kw}</span>
-                                            ))}
-                                        </span>
-                                    </div>
-                                )}
+                                <div className="sms-ai-pattern-title">📐 Загвар тохиргоо <span className="sms-ai-pattern-hint">(засаж болно)</span></div>
+                                <div className="sms-ai-pattern-row">
+                                    <span className="label">Дүн олох:</span>
+                                    <span className="pattern">
+                                        <input
+                                            className="sms-ai-pattern-input prefix"
+                                            value={aiTestResult.amountPrefix || ''}
+                                            onChange={e => setAiTestResult({ ...aiTestResult, amountPrefix: e.target.value })}
+                                            placeholder="өмнөх текст"
+                                        />
+                                        <span className="value">{aiTestResult.amount?.toLocaleString()}</span>
+                                        <input
+                                            className="sms-ai-pattern-input suffix"
+                                            value={aiTestResult.amountSuffix || ''}
+                                            onChange={e => setAiTestResult({ ...aiTestResult, amountSuffix: e.target.value })}
+                                            placeholder="дараах текст"
+                                        />
+                                    </span>
+                                </div>
+                                <div className="sms-ai-pattern-row">
+                                    <span className="label">Утга олох:</span>
+                                    <span className="pattern">
+                                        <input
+                                            className="sms-ai-pattern-input prefix"
+                                            value={aiTestResult.utgaPrefix || ''}
+                                            onChange={e => setAiTestResult({ ...aiTestResult, utgaPrefix: e.target.value })}
+                                            placeholder="өмнөх текст"
+                                        />
+                                        <span className="value">{aiTestResult.utga}</span>
+                                        <input
+                                            className="sms-ai-pattern-input suffix"
+                                            value={aiTestResult.utgaSuffix || ''}
+                                            onChange={e => setAiTestResult({ ...aiTestResult, utgaSuffix: e.target.value })}
+                                            placeholder="дараах текст"
+                                        />
+                                    </span>
+                                </div>
                             </div>
                             <button
                                 className="sms-ai-confirm-btn"
@@ -470,7 +476,6 @@ export function SmsTemplateSettings({ bizId }: { bizId: string }) {
                                 }
                             </button>
                         </div>
-                    )}
                     </div>
                 )}
             </div>
