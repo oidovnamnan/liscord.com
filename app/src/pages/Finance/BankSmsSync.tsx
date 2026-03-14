@@ -12,6 +12,11 @@ import {
     Smartphone,
     Loader2,
     Banknote,
+    X,
+    Link,
+    Phone,
+    Hash,
+    User,
 } from 'lucide-react';
 import { collection, query, where, orderBy, onSnapshot, doc, getDoc, getDocs, updateDoc } from 'firebase/firestore';
 import { db } from '../../services/firebase';
@@ -32,6 +37,16 @@ interface SmsLog {
     createdAt?: any;
 }
 
+interface MatchCandidate {
+    id: string;
+    orderNumber: string;
+    customerName: string;
+    customerPhone: string;
+    total: number;
+    refCode: string;
+    createdAt?: Date;
+}
+
 export function BankSmsSyncPage() {
     const navigate = useNavigate();
     const { business } = useBusinessStore();
@@ -40,6 +55,12 @@ export function BankSmsSyncPage() {
     const [logs, setLogs] = useState<SmsLog[]>([]);
     const [loading, setLoading] = useState(true);
     const [pairingKey, setPairingKey] = useState<string | null>(null);
+
+    // Manual match modal state
+    const [matchingSms, setMatchingSms] = useState<SmsLog | null>(null);
+    const [candidates, setCandidates] = useState<MatchCandidate[]>([]);
+    const [loadingCandidates, setLoadingCandidates] = useState(false);
+    const [matchingOrderId, setMatchingOrderId] = useState<string | null>(null);
 
     useEffect(() => {
         if (!business?.id) return;
@@ -147,21 +168,15 @@ export function BankSmsSyncPage() {
                 // Find matching order: amount must match exactly + утга must contain refCode or phone
                 const matched = unpaidOrders.find(order => {
                     const orderTotal = order.financials?.totalAmount || 0;
-                    // 1) Amount must match exactly
                     if (Math.abs(smsAmount - orderTotal) > 1) return false;
-
-                    // 2) Check if утга contains refCode or phone (at least one)
                     const refCode = (order.paymentRefCode || '').toLowerCase();
                     const phone = (order.customer?.phone || '').toLowerCase();
-
-                    const hasRefCode = refCode && smsNote.includes(refCode);
+                    const hasRefCode = refCode && refCode.length >= 3 && smsNote.includes(refCode);
                     const hasPhone = phone && phone.length >= 8 && smsNote.includes(phone);
-
                     return hasRefCode || hasPhone;
                 });
 
                 if (matched) {
-                    // Match found! Update SMS status
                     const smsRef = doc(db, 'sms_inbox', sms.id);
                     await updateDoc(smsRef, {
                         status: 'matched',
@@ -169,8 +184,6 @@ export function BankSmsSyncPage() {
                         matchedAt: new Date(),
                         autoMatched: true,
                     });
-
-                    // Update order payment status
                     const orderRef = doc(db, `businesses/${business.id}/orders`, matched.id);
                     await updateDoc(orderRef, {
                         paymentStatus: 'paid',
@@ -178,18 +191,93 @@ export function BankSmsSyncPage() {
                         paymentVerifiedBy: 'auto-match',
                         paymentSmsId: sms.id,
                     });
-
-                    // Remove from unpaid list so it can't double-match
                     const idx = unpaidOrders.indexOf(matched);
                     if (idx > -1) unpaidOrders.splice(idx, 1);
-
-                    console.log(`Auto-matched SMS ${sms.id} → Order ${matched.id} (amount: ${smsAmount}, note: ${sms.note})`);
+                    console.log(`Auto-matched SMS ${sms.id} → Order ${matched.id}`);
                 }
             } catch (err) {
                 console.error('Auto-match error for SMS:', sms.id, err);
             }
         }
     }, [business?.id]);
+
+    // Open manual match modal — load unpaid orders with matching amount
+    const openManualMatch = async (sms: SmsLog) => {
+        if (!business?.id) return;
+        setMatchingSms(sms);
+        setLoadingCandidates(true);
+        setCandidates([]);
+
+        try {
+            const ordersRef = collection(db, `businesses/${business.id}/orders`);
+            const ordersQ = query(ordersRef, where('paymentStatus', '==', 'unpaid'));
+            const snap = await getDocs(ordersQ);
+
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const results: MatchCandidate[] = [];
+            snap.docs.forEach(d => {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                const data = d.data() as any;
+                if (data.isDeleted || data.status === 'cancelled') return;
+                const total = data.financials?.totalAmount || 0;
+                // Show orders with matching amount (±1₮ tolerance)
+                if (Math.abs(total - sms.amount) > 1) return;
+                const createdAt = data.createdAt?.toDate ? data.createdAt.toDate() : undefined;
+                results.push({
+                    id: d.id,
+                    orderNumber: data.orderNumber || d.id.slice(0, 8),
+                    customerName: data.customer?.name || data.customerName || '',
+                    customerPhone: data.customer?.phone || data.customerPhone || '',
+                    total,
+                    refCode: data.paymentRefCode || '',
+                    createdAt,
+                });
+            });
+
+            // Sort by date descending
+            results.sort((a, b) => (b.createdAt?.getTime() || 0) - (a.createdAt?.getTime() || 0));
+            setCandidates(results);
+        } catch (err) {
+            console.error('Failed to load candidates:', err);
+        } finally {
+            setLoadingCandidates(false);
+        }
+    };
+
+    // Execute manual match
+    const handleManualMatch = async (orderId: string) => {
+        if (!business?.id || !matchingSms) return;
+        setMatchingOrderId(orderId);
+
+        try {
+            // Update SMS
+            const smsRef = doc(db, 'sms_inbox', matchingSms.id);
+            await updateDoc(smsRef, {
+                status: 'matched',
+                orderId,
+                matchedAt: new Date(),
+                autoMatched: false,
+                manualMatch: true,
+            });
+
+            // Update order payment status
+            const orderRef = doc(db, `businesses/${business.id}/orders`, orderId);
+            await updateDoc(orderRef, {
+                paymentStatus: 'paid',
+                paymentVerifiedAt: new Date(),
+                paymentVerifiedBy: 'manual-match',
+                paymentSmsId: matchingSms.id,
+            });
+
+            // Close modal
+            setMatchingSms(null);
+            setCandidates([]);
+        } catch (err) {
+            console.error('Manual match failed:', err);
+        } finally {
+            setMatchingOrderId(null);
+        }
+    };
 
     const filteredLogs = logs.filter(log => {
         const matchSearch = !search ||
@@ -359,7 +447,10 @@ export function BankSmsSyncPage() {
                                         <td>{getStatusBadge(log.status)}</td>
                                         <td>
                                             {log.status === 'pending' && (
-                                                <button className="sms-match-btn">
+                                                <button
+                                                    className="sms-match-btn"
+                                                    onClick={() => openManualMatch(log)}
+                                                >
                                                     Холбох
                                                 </button>
                                             )}
@@ -392,7 +483,12 @@ export function BankSmsSyncPage() {
                                     <span>{log.note}</span>
                                 </div>
                                 {log.status === 'pending' && (
-                                    <button className="sms-match-btn sms-match-btn-full">Захиалгатай холбох</button>
+                                    <button
+                                        className="sms-match-btn sms-match-btn-full"
+                                        onClick={() => openManualMatch(log)}
+                                    >
+                                        Захиалгатай холбох
+                                    </button>
                                 )}
                             </div>
                         ))}
@@ -416,6 +512,101 @@ export function BankSmsSyncPage() {
                             Bridge тохируулах
                         </button>
                     )}
+                </div>
+            )}
+
+            {/* ═══════════════════════════════════════════ */}
+            {/* Manual Match Modal */}
+            {/* ═══════════════════════════════════════════ */}
+            {matchingSms && (
+                <div className="sms-match-modal-backdrop" onClick={() => setMatchingSms(null)}>
+                    <div className="sms-match-modal" onClick={e => e.stopPropagation()}>
+                        <div className="sms-match-modal-header">
+                            <div>
+                                <h3><Link size={18} /> Захиалгатай холбох</h3>
+                                <p>Дүн таарч буй захиалгуудаас сонгоно уу</p>
+                            </div>
+                            <button className="sms-match-modal-close" onClick={() => setMatchingSms(null)}>
+                                <X size={18} />
+                            </button>
+                        </div>
+
+                        {/* SMS info card */}
+                        <div className="sms-match-sms-info">
+                            <div className="sms-match-sms-row">
+                                <span className="sms-match-sms-label">Банк</span>
+                                <span className="sms-bank-badge">{matchingSms.bank}</span>
+                            </div>
+                            <div className="sms-match-sms-row">
+                                <span className="sms-match-sms-label">Дүн</span>
+                                <span className="sms-match-sms-amount">+{matchingSms.amount.toLocaleString()}₮</span>
+                            </div>
+                            <div className="sms-match-sms-row">
+                                <span className="sms-match-sms-label">Утга</span>
+                                <span className="sms-match-sms-note">{matchingSms.note}</span>
+                            </div>
+                        </div>
+
+                        {/* Candidate orders */}
+                        <div className="sms-match-candidates">
+                            {loadingCandidates ? (
+                                <div className="sms-match-loading">
+                                    <Loader2 size={24} className="spin" />
+                                    <span>Захиалга хайж байна...</span>
+                                </div>
+                            ) : candidates.length === 0 ? (
+                                <div className="sms-match-empty">
+                                    <AlertCircle size={24} />
+                                    <span>Дүн таарсан захиалга олдсонгүй</span>
+                                    <span className="sms-match-empty-hint">₮{matchingSms.amount.toLocaleString()} дүнтэй төлбөр хүлээгдэж буй захиалга байхгүй</span>
+                                </div>
+                            ) : (
+                                <>
+                                    <div className="sms-match-count">
+                                        {candidates.length} захиалга олдлоо (дүн: ₮{matchingSms.amount.toLocaleString()})
+                                    </div>
+                                    {candidates.map(order => (
+                                        <div key={order.id} className="sms-match-candidate">
+                                            <div className="sms-match-candidate-info">
+                                                <div className="sms-match-candidate-top">
+                                                    <span className="sms-match-order-num">
+                                                        <Hash size={13} /> {order.orderNumber}
+                                                    </span>
+                                                    {order.refCode && (
+                                                        <span className="sms-match-ref">
+                                                            Код: {order.refCode}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                                <div className="sms-match-candidate-details">
+                                                    {order.customerName && (
+                                                        <span><User size={12} /> {order.customerName}</span>
+                                                    )}
+                                                    {order.customerPhone && (
+                                                        <span><Phone size={12} /> {order.customerPhone}</span>
+                                                    )}
+                                                </div>
+                                                <div className="sms-match-candidate-amount">
+                                                    ₮{order.total.toLocaleString()}
+                                                </div>
+                                            </div>
+                                            <button
+                                                className="sms-match-select-btn"
+                                                onClick={() => handleManualMatch(order.id)}
+                                                disabled={matchingOrderId === order.id}
+                                            >
+                                                {matchingOrderId === order.id ? (
+                                                    <Loader2 size={14} className="spin" />
+                                                ) : (
+                                                    <><Link size={14} /> Холбох</>
+                                                )}
+                                            </button>
+                                        </div>
+                                    ))}
+                                </>
+                            )}
+                        </div>
+                    </div>
                 </div>
             )}
         </div>
