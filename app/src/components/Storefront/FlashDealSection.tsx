@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { ShoppingBag, Zap, Clock, TrendingUp } from 'lucide-react';
+import { ShoppingBag, Zap, Clock } from 'lucide-react';
 import type { Product } from '../../types';
 import { useCartStore } from '../../store';
 
@@ -81,25 +81,7 @@ export function FlashDealSection({ config, allProducts, onProductClick }: FlashD
             <div className="fd-glow fd-glow-1" />
             <div className="fd-glow fd-glow-2" />
 
-            {/* Header */}
-            <div className="fd-header">
-                <div className="fd-title-row">
-                    <div className="fd-icon-pulse">
-                        <Zap size={20} />
-                    </div>
-                    <h2 className="fd-title">{config.title || '⚡ FLASH DEAL'}</h2>
-                </div>
-                <div className="fd-timer">
-                    <Clock size={14} />
-                    <div className="fd-timer-box">{pad(hours)}</div>
-                    <span className="fd-timer-sep">:</span>
-                    <div className="fd-timer-box">{pad(minutes)}</div>
-                    <span className="fd-timer-sep">:</span>
-                    <div className="fd-timer-box fd-timer-sec">{pad(seconds)}</div>
-                </div>
-            </div>
-
-            {/* Scrollable product cards */}
+            {/* Scrollable product cards — each with its own timer overlay */}
             <div className="fd-products">
                 {dealProducts.map(deal => {
                     const { product, flashPrice, maxQuantity, soldCount } = deal;
@@ -117,13 +99,6 @@ export function FlashDealSection({ config, allProducts, onProductClick }: FlashD
                             className={`fd-card ${isSoldOut ? 'sold-out' : ''}`}
                             onClick={() => !isSoldOut && onProductClick?.(product)}
                         >
-                            {/* Discount badge */}
-                            {discountPercent > 0 && (
-                                <div className="fd-discount-badge">
-                                    -{discountPercent}%
-                                </div>
-                            )}
-
                             {/* Product image */}
                             <div className="fd-card-img">
                                 {product.images?.[0] ? (
@@ -131,6 +106,34 @@ export function FlashDealSection({ config, allProducts, onProductClick }: FlashD
                                 ) : (
                                     <div className="fd-img-placeholder">📦</div>
                                 )}
+
+                                {/* Overlay: title + timer + badge on each card */}
+                                <div className="fd-card-overlay">
+                                    <div className="fd-card-overlay-top">
+                                        <div className="fd-title-row">
+                                            <div className="fd-icon-pulse">
+                                                <Zap size={14} />
+                                            </div>
+                                            <span className="fd-title-sm">FLASH DEAL</span>
+                                        </div>
+                                        {discountPercent > 0 && (
+                                            <div className="fd-discount-badge">
+                                                -{discountPercent}%
+                                            </div>
+                                        )}
+                                    </div>
+                                    <div className="fd-card-overlay-bottom">
+                                        <div className="fd-timer-sm">
+                                            <Clock size={11} />
+                                            <span className="fd-timer-box-sm">{pad(hours)}</span>
+                                            <span className="fd-timer-sep-sm">:</span>
+                                            <span className="fd-timer-box-sm">{pad(minutes)}</span>
+                                            <span className="fd-timer-sep-sm">:</span>
+                                            <span className="fd-timer-box-sm fd-timer-sec-sm">{pad(seconds)}</span>
+                                        </div>
+                                    </div>
+                                </div>
+
                                 {isSoldOut && (
                                     <div className="fd-sold-out-overlay">ДУУССАН</div>
                                 )}
