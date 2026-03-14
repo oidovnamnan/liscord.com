@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import {
     Search,
@@ -304,6 +305,7 @@ export function BankSmsSyncPage() {
     };
 
     return (
+        <>
         <div className="inventory-page animate-fade-in">
             <div className="page-hero" style={{ marginBottom: 8 }}>
                 <div className="page-hero-left">
@@ -518,97 +520,101 @@ export function BankSmsSyncPage() {
             {/* ═══════════════════════════════════════════ */}
             {/* Manual Match Modal */}
             {/* ═══════════════════════════════════════════ */}
-            {matchingSms && (
-                <div className="sms-match-modal-backdrop" onClick={() => setMatchingSms(null)}>
-                    <div className="sms-match-modal" onClick={e => e.stopPropagation()}>
-                        <div className="sms-match-modal-header">
-                            <div>
-                                <h3><Link size={18} /> Захиалгатай холбох</h3>
-                                <p>Дүн таарч буй захиалгуудаас сонгоно уу</p>
-                            </div>
-                            <button className="sms-match-modal-close" onClick={() => setMatchingSms(null)}>
-                                <X size={18} />
-                            </button>
-                        </div>
+        </div>
 
-                        {/* SMS info card */}
-                        <div className="sms-match-sms-info">
-                            <div className="sms-match-sms-row">
-                                <span className="sms-match-sms-label">Банк</span>
-                                <span className="sms-bank-badge">{matchingSms.bank}</span>
-                            </div>
-                            <div className="sms-match-sms-row">
-                                <span className="sms-match-sms-label">Дүн</span>
-                                <span className="sms-match-sms-amount">+{matchingSms.amount.toLocaleString()}₮</span>
-                            </div>
-                            <div className="sms-match-sms-row">
-                                <span className="sms-match-sms-label">Утга</span>
-                                <span className="sms-match-sms-note">{matchingSms.note}</span>
-                            </div>
+        {matchingSms && createPortal(
+            <div className="sms-match-modal-backdrop" onClick={() => setMatchingSms(null)}>
+                <div className="sms-match-modal" onClick={e => e.stopPropagation()}>
+                    <div className="sms-match-modal-header">
+                        <div>
+                            <h3><Link size={18} /> Захиалгатай холбох</h3>
+                            <p>Дүн таарч буй захиалгуудаас сонгоно уу</p>
                         </div>
+                        <button className="sms-match-modal-close" onClick={() => setMatchingSms(null)}>
+                            <X size={18} />
+                        </button>
+                    </div>
 
-                        {/* Candidate orders */}
-                        <div className="sms-match-candidates">
-                            {loadingCandidates ? (
-                                <div className="sms-match-loading">
-                                    <Loader2 size={24} className="spin" />
-                                    <span>Захиалга хайж байна...</span>
-                                </div>
-                            ) : candidates.length === 0 ? (
-                                <div className="sms-match-empty">
-                                    <AlertCircle size={24} />
-                                    <span>Дүн таарсан захиалга олдсонгүй</span>
-                                    <span className="sms-match-empty-hint">₮{matchingSms.amount.toLocaleString()} дүнтэй төлбөр хүлээгдэж буй захиалга байхгүй</span>
-                                </div>
-                            ) : (
-                                <>
-                                    <div className="sms-match-count">
-                                        {candidates.length} захиалга олдлоо (дүн: ₮{matchingSms.amount.toLocaleString()})
-                                    </div>
-                                    {candidates.map(order => (
-                                        <div key={order.id} className="sms-match-candidate">
-                                            <div className="sms-match-candidate-info">
-                                                <div className="sms-match-candidate-top">
-                                                    <span className="sms-match-order-num">
-                                                        <Hash size={13} /> {order.orderNumber}
-                                                    </span>
-                                                    {order.refCode && (
-                                                        <span className="sms-match-ref">
-                                                            Код: {order.refCode}
-                                                        </span>
-                                                    )}
-                                                </div>
-                                                <div className="sms-match-candidate-details">
-                                                    {order.customerName && (
-                                                        <span><User size={12} /> {order.customerName}</span>
-                                                    )}
-                                                    {order.customerPhone && (
-                                                        <span><Phone size={12} /> {order.customerPhone}</span>
-                                                    )}
-                                                </div>
-                                                <div className="sms-match-candidate-amount">
-                                                    ₮{order.total.toLocaleString()}
-                                                </div>
-                                            </div>
-                                            <button
-                                                className="sms-match-select-btn"
-                                                onClick={() => handleManualMatch(order.id)}
-                                                disabled={matchingOrderId === order.id}
-                                            >
-                                                {matchingOrderId === order.id ? (
-                                                    <Loader2 size={14} className="spin" />
-                                                ) : (
-                                                    <><Link size={14} /> Холбох</>
-                                                )}
-                                            </button>
-                                        </div>
-                                    ))}
-                                </>
-                            )}
+                    {/* SMS info card */}
+                    <div className="sms-match-sms-info">
+                        <div className="sms-match-sms-row">
+                            <span className="sms-match-sms-label">Банк</span>
+                            <span className="sms-bank-badge">{matchingSms.bank}</span>
+                        </div>
+                        <div className="sms-match-sms-row">
+                            <span className="sms-match-sms-label">Дүн</span>
+                            <span className="sms-match-sms-amount">+{matchingSms.amount.toLocaleString()}₮</span>
+                        </div>
+                        <div className="sms-match-sms-row">
+                            <span className="sms-match-sms-label">Утга</span>
+                            <span className="sms-match-sms-note">{matchingSms.note}</span>
                         </div>
                     </div>
+
+                    {/* Candidate orders */}
+                    <div className="sms-match-candidates">
+                        {loadingCandidates ? (
+                            <div className="sms-match-loading">
+                                <Loader2 size={24} className="spin" />
+                                <span>Захиалга хайж байна...</span>
+                            </div>
+                        ) : candidates.length === 0 ? (
+                            <div className="sms-match-empty">
+                                <AlertCircle size={24} />
+                                <span>Дүн таарсан захиалга олдсонгүй</span>
+                                <span className="sms-match-empty-hint">₮{matchingSms.amount.toLocaleString()} дүнтэй төлбөр хүлээгдэж буй захиалга байхгүй</span>
+                            </div>
+                        ) : (
+                            <>
+                                <div className="sms-match-count">
+                                    {candidates.length} захиалга олдлоо (дүн: ₮{matchingSms.amount.toLocaleString()})
+                                </div>
+                                {candidates.map(order => (
+                                    <div key={order.id} className="sms-match-candidate">
+                                        <div className="sms-match-candidate-info">
+                                            <div className="sms-match-candidate-top">
+                                                <span className="sms-match-order-num">
+                                                    <Hash size={13} /> {order.orderNumber}
+                                                </span>
+                                                {order.refCode && (
+                                                    <span className="sms-match-ref">
+                                                        Код: {order.refCode}
+                                                    </span>
+                                                )}
+                                            </div>
+                                            <div className="sms-match-candidate-details">
+                                                {order.customerName && (
+                                                    <span><User size={12} /> {order.customerName}</span>
+                                                )}
+                                                {order.customerPhone && (
+                                                    <span><Phone size={12} /> {order.customerPhone}</span>
+                                                )}
+                                            </div>
+                                            <div className="sms-match-candidate-amount">
+                                                ₮{order.total.toLocaleString()}
+                                            </div>
+                                        </div>
+                                        <button
+                                            className="sms-match-select-btn"
+                                            onClick={() => handleManualMatch(order.id)}
+                                            disabled={matchingOrderId === order.id}
+                                        >
+                                            {matchingOrderId === order.id ? (
+                                                <Loader2 size={14} className="spin" />
+                                            ) : (
+                                                <><Link size={14} /> Холбох</>
+                                            )}
+                                        </button>
+                                    </div>
+                                ))}
+                            </>
+                        )}
+                    </div>
                 </div>
-            )}
-        </div>
+            </div>,
+            document.body
+        )}
+        </>
     );
 }
+
