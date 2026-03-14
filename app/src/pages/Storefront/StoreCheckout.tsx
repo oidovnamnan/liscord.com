@@ -213,11 +213,11 @@ export function StoreCheckout() {
     // ──────── SUCCESS SCREEN ────────
     if (successId) {
         return (
-            <div className="store-bg" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', padding: '60px 20px' }}>
+            <div className="store-bg" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', padding: '24px 16px' }}>
                 <div style={{ maxWidth: 800, margin: '0 auto', width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                     <div className="animate-slide-up" style={{
                         background: 'var(--surface-1)',
-                        padding: '60px 40px',
+                        padding: '32px 24px',
                         borderRadius: 32,
                         textAlign: 'center',
                         maxWidth: 500,
@@ -229,7 +229,7 @@ export function StoreCheckout() {
                         transition: 'border-color 0.5s ease'
                     }}>
                         <div style={{
-                            position: 'absolute', top: 0, left: 0, width: '100%', height: 6,
+                            position: 'absolute', top: 0, left: 0, width: '100%', height: 4,
                             background: paymentConfirmed
                                 ? 'linear-gradient(90deg, #4BB543, #2ecc71, #4BB543)'
                                 : 'linear-gradient(90deg, #4BB543, #85e085)',
@@ -240,71 +240,71 @@ export function StoreCheckout() {
                         {paymentConfirmed ? (
                             <>
                                 <div style={{
-                                    width: 90, height: 90, borderRadius: '50%',
+                                    width: 64, height: 64, borderRadius: '50%',
                                     background: 'linear-gradient(135deg, #4BB543, #2ecc71)',
                                     color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                    margin: '0 auto 24px', boxShadow: '0 8px 32px rgba(75, 181, 67, 0.3)',
+                                    margin: '0 auto 16px', boxShadow: '0 8px 32px rgba(75, 181, 67, 0.3)',
                                     animation: 'popIn 0.5s cubic-bezier(0.16, 1, 0.3, 1)'
                                 }}>
-                                    <PartyPopper size={40} />
+                                    <PartyPopper size={28} />
                                 </div>
-                                <h2 style={{ marginBottom: 8, fontSize: '1.8rem', fontWeight: 900, color: '#4BB543', letterSpacing: '-0.02em' }}>Төлбөр баталгаажлаа!</h2>
-                                <p style={{ color: 'var(--text-muted)', fontSize: '0.95rem', fontWeight: 500, marginBottom: 16 }}>Таны шилжүүлэг амжилттай хүлээн авлаа. Захиалга боловсруулагдаж эхэлнэ.</p>
+                                <h2 style={{ marginBottom: 4, fontSize: '1.4rem', fontWeight: 900, color: '#4BB543', letterSpacing: '-0.02em' }}>Төлбөр баталгаажлаа!</h2>
+                                <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', fontWeight: 500, marginBottom: 8 }}>Таны шилжүүлэг амжилттай хүлээн авлаа.</p>
                             </>
                         ) : (
                             <>
-                                <div style={{ width: 80, height: 80, borderRadius: '50%', background: 'rgba(75, 181, 67, 0.1)', color: '#4BB543', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px' }}>
-                                    <CheckCircle size={40} />
+                                <div style={{ width: 56, height: 56, borderRadius: '50%', background: 'rgba(75, 181, 67, 0.1)', color: '#4BB543', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 12px' }}>
+                                    <CheckCircle size={28} />
                                 </div>
-                                <h2 style={{ marginBottom: 16, fontSize: '1.8rem', fontWeight: 900, color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>Захиалга амжилттай!</h2>
+                                <h2 style={{ marginBottom: 8, fontSize: '1.4rem', fontWeight: 900, color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>Захиалга амжилттай!</h2>
                             </>
                         )}
 
                         {/* Bank Transfer Info on Success */}
                         {paymentMethod === 'bank_transfer' && selectedBank && (
-                            <div className="animate-fade-in" style={{ margin: '32px 0', background: 'var(--bg-soft)', padding: 28, borderRadius: 24, border: '1px solid var(--border-primary)', textAlign: 'left' }}>
-                                <p style={{ fontWeight: 800, marginBottom: 16, fontSize: '0.9rem', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'center' }}>Шилжүүлэг хийх мэдээлэл</p>
+                            <div className="animate-fade-in" style={{ margin: '16px 0', background: 'var(--bg-soft)', padding: 20, borderRadius: 20, border: '1px solid var(--border-primary)', textAlign: 'left' }}>
+                                <p style={{ fontWeight: 800, marginBottom: 12, fontSize: '0.82rem', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'center' }}>Шилжүүлэг хийх мэдээлэл</p>
 
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 20 }}>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem' }}>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 16 }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.82rem' }}>
                                         <span style={{ color: 'var(--text-muted)', fontWeight: 500 }}>Банк:</span>
                                         <span style={{ fontWeight: 700 }}>{selectedBank.bankName}</span>
                                     </div>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem' }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.82rem' }}>
                                         <span style={{ color: 'var(--text-muted)', fontWeight: 500 }}>Данс:</span>
                                         <span style={{ fontWeight: 700, letterSpacing: '0.05em' }}>{selectedBank.accountNumber}</span>
                                     </div>
                                     {selectedBank.iban && (
-                                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem' }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.82rem' }}>
                                             <span style={{ color: 'var(--text-muted)', fontWeight: 500 }}>IBAN:</span>
-                                            <span style={{ fontWeight: 700, letterSpacing: '0.03em', fontSize: '0.82rem' }}>{selectedBank.iban}</span>
+                                            <span style={{ fontWeight: 700, letterSpacing: '0.03em', fontSize: '0.78rem' }}>{selectedBank.iban}</span>
                                         </div>
                                     )}
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem' }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.82rem' }}>
                                         <span style={{ color: 'var(--text-muted)', fontWeight: 500 }}>Хүлээн авагч:</span>
                                         <span style={{ fontWeight: 700 }}>{selectedBank.accountName}</span>
                                     </div>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem' }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.82rem' }}>
                                         <span style={{ color: 'var(--text-muted)', fontWeight: 500 }}>Дүн:</span>
                                         <span style={{ fontWeight: 800, color: 'var(--primary)' }}>{savedTotal.toLocaleString()} ₮</span>
                                     </div>
                                 </div>
 
                                 <div style={{
-                                    background: 'var(--surface-1)', borderRadius: 16, padding: 20, textAlign: 'center',
+                                    background: 'var(--surface-1)', borderRadius: 14, padding: 16, textAlign: 'center',
                                     border: '2px dashed var(--primary)', position: 'relative'
                                 }}>
-                                    <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 600, marginBottom: 8 }}>ГҮЙЛГЭЭНИЙ УТГА</p>
-                                    <div style={{ fontSize: '2rem', fontWeight: 900, letterSpacing: '0.15em', color: 'var(--primary)', fontFamily: 'monospace' }}>
+                                    <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 600, marginBottom: 4 }}>ГҮЙЛГЭЭНИЙ УТГА</p>
+                                    <div style={{ fontSize: '1.6rem', fontWeight: 900, letterSpacing: '0.15em', color: 'var(--primary)', fontFamily: 'monospace' }}>
                                         {refCode}
                                     </div>
                                     <button
                                         type="button"
                                         onClick={copyRefCode}
                                         style={{
-                                            marginTop: 12, background: copied ? '#4BB543' : 'var(--primary)', color: '#fff',
-                                            border: 'none', borderRadius: 10, padding: '8px 20px', fontWeight: 700,
-                                            fontSize: '0.85rem', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6,
+                                            marginTop: 8, background: copied ? '#4BB543' : 'var(--primary)', color: '#fff',
+                                            border: 'none', borderRadius: 10, padding: '6px 16px', fontWeight: 700,
+                                            fontSize: '0.8rem', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6,
                                             transition: 'all 0.2s'
                                         }}
                                     >
@@ -312,7 +312,7 @@ export function StoreCheckout() {
                                     </button>
                                 </div>
 
-                                <p style={{ textAlign: 'center', fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: 12, lineHeight: 1.5 }}>
+                                <p style={{ textAlign: 'center', fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 8, lineHeight: 1.4 }}>
                                     Шилжүүлэг хийхдээ дээрх кодыг гүйлгээний утга дээр заавал бичнэ үү. Төлбөр автоматаар баталгаажна.
                                 </p>
                             </div>
@@ -350,28 +350,28 @@ export function StoreCheckout() {
                         {/* Payment Status Indicator */}
                         {paymentMethod === 'bank_transfer' && !paymentConfirmed && (
                             <div className="animate-fade-in" style={{
-                                margin: '24px 0 32px',
+                                margin: '12px 0 16px',
                                 background: 'linear-gradient(135deg, #fef9c3, #fef3c7)',
                                 border: '1px solid #f59e0b33',
-                                borderRadius: 20,
-                                padding: '20px 24px',
+                                borderRadius: 16,
+                                padding: '14px 18px',
                                 display: 'flex',
                                 alignItems: 'center',
                                 gap: 16,
                             }}>
                                 <div style={{
-                                    width: 44, height: 44, borderRadius: '50%',
+                                    width: 36, height: 36, borderRadius: '50%',
                                     border: '3px solid #f59e0b',
                                     borderTopColor: 'transparent',
                                     animation: 'paymentSpin 1s linear infinite',
                                     flexShrink: 0,
                                 }} />
                                 <div>
-                                    <div style={{ fontWeight: 800, fontSize: '0.95rem', color: '#92400e', marginBottom: 2 }}>
+                                    <div style={{ fontWeight: 800, fontSize: '0.85rem', color: '#92400e', marginBottom: 1 }}>
                                         Төлбөр хүлээж байна...
                                     </div>
-                                    <div style={{ fontSize: '0.78rem', color: '#a16207', lineHeight: 1.4 }}>
-                                        Шилжүүлэг хийсний дараа төлбөр автоматаар баталгаажна
+                                    <div style={{ fontSize: '0.72rem', color: '#a16207', lineHeight: 1.3 }}>
+                                        Шилжүүлэг хийсний дараа автоматаар баталгаажна
                                     </div>
                                 </div>
                             </div>
@@ -379,35 +379,35 @@ export function StoreCheckout() {
 
                         {paymentMethod === 'bank_transfer' && paymentConfirmed && (
                             <div className="animate-fade-in" style={{
-                                margin: '24px 0 32px',
+                                margin: '12px 0 16px',
                                 background: 'linear-gradient(135deg, #dcfce7, #d1fae5)',
                                 border: '1px solid #4ade8033',
-                                borderRadius: 20,
-                                padding: '20px 24px',
+                                borderRadius: 16,
+                                padding: '14px 18px',
                                 display: 'flex',
                                 alignItems: 'center',
                                 gap: 16,
                             }}>
                                 <div style={{
-                                    width: 44, height: 44, borderRadius: '50%',
+                                    width: 36, height: 36, borderRadius: '50%',
                                     background: '#4BB543', color: '#fff',
                                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                                     flexShrink: 0, animation: 'popIn 0.5s cubic-bezier(0.16, 1, 0.3, 1)',
                                 }}>
-                                    <CheckCircle size={24} />
+                                    <CheckCircle size={18} />
                                 </div>
                                 <div>
-                                    <div style={{ fontWeight: 800, fontSize: '0.95rem', color: '#166534', marginBottom: 2 }}>
+                                    <div style={{ fontWeight: 800, fontSize: '0.85rem', color: '#166534', marginBottom: 1 }}>
                                         Төлбөр баталгаажсан ✅
                                     </div>
-                                    <div style={{ fontSize: '0.78rem', color: '#15803d', lineHeight: 1.4 }}>
+                                    <div style={{ fontSize: '0.72rem', color: '#15803d', lineHeight: 1.3 }}>
                                         Таны шилжүүлэг амжилттай хүлээн авлаа
                                     </div>
                                 </div>
                             </div>
                         )}
 
-                        <button className="btn btn-primary gradient-btn" onClick={() => navigate(`/${slug}`)} style={{ width: '100%', height: 54, borderRadius: 16, fontSize: '1.05rem', fontWeight: 800 }}>
+                        <button className="btn btn-primary gradient-btn" onClick={() => navigate(`/${slug}`)} style={{ width: '100%', height: 48, borderRadius: 14, fontSize: '0.95rem', fontWeight: 800 }}>
                             Дэлгүүр рүү буцах
                         </button>
                     </div>
