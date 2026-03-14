@@ -536,8 +536,7 @@ exports.onSmsIncome = functions
         // 3. Load unpaid + recently paid orders for this business
         const ordersSnap = await db.collection(`businesses/${bizId}/orders`)
             .where('paymentStatus', 'in', ['unpaid', 'paid'])
-            .orderBy('createdAt', 'desc')
-            .limit(100)
+            .limit(200)
             .get();
         if (ordersSnap.empty) {
             console.log(`No orders for business: ${bizId}`);
