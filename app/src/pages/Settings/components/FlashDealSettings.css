@@ -29,28 +29,49 @@
     background: rgba(255, 255, 255, 0.05);
 }
 
-/* Toggle override inside hero */
-.fds-hero .toggle {
+/* Self-contained toggle for hero */
+.fds-toggle {
+    position: relative;
+    display: inline-block;
     width: 52px;
     height: 28px;
+    cursor: pointer;
+    flex-shrink: 0;
 }
-.fds-hero .toggle-slider {
-    background: rgba(255, 255, 255, 0.3) !important;
-    border: 2px solid rgba(255, 255, 255, 0.4);
-    box-shadow: none;
+.fds-toggle input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+    position: absolute;
 }
-.fds-hero .toggle-slider::before {
-    width: 22px; height: 22px;
-    left: 2px; top: 1px;
+.fds-toggle-track {
+    position: absolute;
+    inset: 0;
+    background: rgba(255, 255, 255, 0.25);
+    border-radius: 999px;
+    border: 2px solid rgba(255, 255, 255, 0.35);
+    transition: all 0.3s ease;
+}
+.fds-toggle-track::before {
+    content: '';
+    position: absolute;
+    left: 3px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 20px;
+    height: 20px;
+    background: #fff;
+    border-radius: 50%;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
 }
-.fds-hero .toggle input:checked + .toggle-slider {
-    background: rgba(255, 255, 255, 0.95) !important;
-    border-color: rgba(255, 255, 255, 0.95);
+.fds-toggle input:checked + .fds-toggle-track {
+    background: rgba(255, 255, 255, 0.9);
+    border-color: rgba(255, 255, 255, 0.9);
 }
-.fds-hero .toggle input:checked + .toggle-slider::before {
+.fds-toggle input:checked + .fds-toggle-track::before {
+    transform: translateY(-50%) translateX(24px);
     background: linear-gradient(135deg, #8338ec, #ff006e);
-    transform: translateX(24px);
 }
 
 .fds-hero-top {

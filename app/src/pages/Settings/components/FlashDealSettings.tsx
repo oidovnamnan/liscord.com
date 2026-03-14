@@ -156,9 +156,9 @@ export function FlashDealSettings({ bizId }: { bizId: string }) {
                             <div className="fds-hero-desc">Дэлгүүрийн дээд хэсэгт хязгаартай хугацааны хямдрал</div>
                         </div>
                     </div>
-                    <label className="toggle">
+                    <label className="fds-toggle">
                         <input type="checkbox" checked={config.enabled} onChange={e => setConfig({ ...config, enabled: e.target.checked })} />
-                        <span className="toggle-slider" />
+                        <span className="fds-toggle-track" />
                     </label>
                 </div>
             </div>
