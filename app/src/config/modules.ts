@@ -803,6 +803,21 @@ export const LISCORD_MODULES: AppModule[] = [
         ]
     },
     {
+        id: 'flash-deal',
+        name: 'Flash Deal',
+        description: 'Цагтай хязгаартай хямдрал, countdown timer',
+        icon: 'Zap',
+        route: '/app/settings?tab=flash-deal',
+        isCore: false,
+        category: 'sales',
+        hasSettings: true,
+        isFree: false,
+        plans: [
+            { id: 'monthly', name: '30 хоног', price: 15000, durationDays: 30 },
+            { id: 'yearly', name: '1 жил', price: 150000, durationDays: 365 }
+        ]
+    },
+    {
         id: 'loyalty',
         name: 'Лоялти & Оноо',
         description: 'Гишүүнчлэл, урамшуулал',
