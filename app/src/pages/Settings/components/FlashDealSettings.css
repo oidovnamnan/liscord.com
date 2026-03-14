@@ -207,6 +207,67 @@
     margin-top: 8px;
 }
 
+/* Duration presets */
+.fds-duration-presets {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.fds-duration-btn {
+    padding: 8px 16px;
+    border-radius: 10px;
+    border: 1.5px solid var(--border-color, #e5e7eb);
+    background: var(--surface-1, #fff);
+    color: var(--text-secondary);
+    font-size: 0.82rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: inherit;
+}
+.fds-duration-btn:hover {
+    border-color: #8338ec;
+    color: #8338ec;
+    background: rgba(131, 56, 236, 0.04);
+}
+.fds-duration-btn.active {
+    background: linear-gradient(135deg, #8338ec, #c850c0);
+    color: #fff;
+    border-color: transparent;
+    box-shadow: 0 3px 12px rgba(131, 56, 236, 0.25);
+}
+
+.fds-duration-custom {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-left: 4px;
+}
+.fds-duration-custom input {
+    width: 64px;
+    height: 36px;
+    border: 1.5px solid var(--border-color, #e5e7eb);
+    border-radius: 10px;
+    text-align: center;
+    font-size: 0.85rem;
+    font-weight: 700;
+    background: var(--bg-soft, #f9fafb);
+    color: var(--text-primary);
+    font-family: inherit;
+}
+.fds-duration-custom input:focus {
+    outline: none;
+    border-color: #8338ec;
+    box-shadow: 0 0 0 3px rgba(131, 56, 236, 0.1);
+}
+.fds-duration-custom span {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--text-muted);
+}
+
 /* ── Products Section ── */
 .fds-products-header {
     display: flex;

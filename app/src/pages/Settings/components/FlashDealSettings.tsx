@@ -17,8 +17,7 @@ interface FlashProduct {
 interface FlashConfig {
     enabled: boolean;
     title: string;
-    startsAt: string;
-    endsAt: string;
+    durationHours: number; // deal duration in hours
     products: FlashProduct[];
 }
 
@@ -33,8 +32,7 @@ export function FlashDealSettings({ bizId }: { bizId: string }) {
     const [config, setConfig] = useState<FlashConfig>({
         enabled: false,
         title: '⚡ FLASH DEAL',
-        startsAt: new Date().toISOString().slice(0, 16),
-        endsAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().slice(0, 16),
+        durationHours: 24,
         products: [],
     });
 
@@ -46,15 +44,17 @@ export function FlashDealSettings({ bizId }: { bizId: string }) {
                 const sfDoc = await getDoc(doc(db, 'businesses', bizId, 'module_settings', 'storefront'));
                 const fd = sfDoc.data()?.flashDeal;
                 if (fd) {
+                    // Calculate duration from stored startsAt/endsAt
+                    let dur = 24;
+                    if (fd.startsAt && fd.endsAt) {
+                        const s = fd.startsAt?.toDate?.() || new Date(fd.startsAt);
+                        const e = fd.endsAt?.toDate?.() || new Date(fd.endsAt);
+                        dur = Math.max(1, Math.round((e.getTime() - s.getTime()) / (1000 * 60 * 60)));
+                    }
                     setConfig({
                         enabled: fd.enabled || false,
                         title: fd.title || '⚡ FLASH DEAL',
-                        startsAt: fd.startsAt?.toDate?.()
-                            ? fd.startsAt.toDate().toISOString().slice(0, 16)
-                            : new Date().toISOString().slice(0, 16),
-                        endsAt: fd.endsAt?.toDate?.()
-                            ? fd.endsAt.toDate().toISOString().slice(0, 16)
-                            : new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().slice(0, 16),
+                        durationHours: dur,
                         products: fd.products || [],
                     });
                 }
@@ -75,12 +75,14 @@ export function FlashDealSettings({ bizId }: { bizId: string }) {
         setSaving(true);
         try {
             const { doc: docRef, setDoc } = await import('firebase/firestore');
+            const now = new Date();
+            const endsAt = new Date(now.getTime() + config.durationHours * 60 * 60 * 1000);
             await setDoc(docRef(db, 'businesses', bizId, 'module_settings', 'storefront'), {
                 flashDeal: {
                     enabled: config.enabled,
                     title: config.title,
-                    startsAt: Timestamp.fromDate(new Date(config.startsAt)),
-                    endsAt: Timestamp.fromDate(new Date(config.endsAt)),
+                    startsAt: Timestamp.fromDate(now),
+                    endsAt: Timestamp.fromDate(endsAt),
                     products: config.products,
                 },
             }, { merge: true });
@@ -183,25 +185,32 @@ export function FlashDealSettings({ bizId }: { bizId: string }) {
                             />
                         </div>
 
-                        {/* Date pickers */}
-                        <div className="fds-row">
-                            <div>
-                                <label className="fds-label">📅 Эхлэх огноо/цаг</label>
-                                <input
-                                    className="input"
-                                    type="datetime-local"
-                                    value={config.startsAt}
-                                    onChange={e => setConfig({ ...config, startsAt: e.target.value })}
-                                />
+                        {/* Duration presets */}
+                        <div className="fds-row-full">
+                            <label className="fds-label">⏱️ Хугацаа (хадгалснаас эхэлж тоолно)</label>
+                            <div className="fds-duration-presets">
+                                {[4, 8, 12, 24, 48, 72].map(h => (
+                                    <button
+                                        key={h}
+                                        className={`fds-duration-btn ${config.durationHours === h ? 'active' : ''}`}
+                                        onClick={() => setConfig({ ...config, durationHours: h })}
+                                    >
+                                        {h}ц
+                                    </button>
+                                ))}
+                                <div className="fds-duration-custom">
+                                    <input
+                                        type="number"
+                                        min={1}
+                                        max={168}
+                                        value={config.durationHours}
+                                        onChange={e => setConfig({ ...config, durationHours: Math.max(1, Number(e.target.value)) })}
+                                    />
+                                    <span>цаг</span>
+                                </div>
                             </div>
-                            <div>
-                                <label className="fds-label">📅 Дуусах огноо/цаг</label>
-                                <input
-                                    className="input"
-                                    type="datetime-local"
-                                    value={config.endsAt}
-                                    onChange={e => setConfig({ ...config, endsAt: e.target.value })}
-                                />
+                            <div className="fds-slider-info">
+                                Хадгалах товч дарахад эхлэх цаг автоматаар тохируулагдана.
                             </div>
                         </div>
 
