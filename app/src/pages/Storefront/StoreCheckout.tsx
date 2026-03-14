@@ -118,6 +118,21 @@ export function StoreCheckout() {
         }
     };
 
+    const copyToClipboard = async (text: string, label: string) => {
+        try {
+            await navigator.clipboard.writeText(text);
+            toast.success(`${label} хуулагдлаа`);
+        } catch {
+            const textarea = document.createElement('textarea');
+            textarea.value = text;
+            document.body.appendChild(textarea);
+            textarea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textarea);
+            toast.success(`${label} хуулагдлаа`);
+        }
+    };
+
     const copyRefCode = async () => {
         try {
             await navigator.clipboard.writeText(refCode);
@@ -318,12 +333,24 @@ export function StoreCheckout() {
                                     </div>
                                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.82rem' }}>
                                         <span style={{ color: 'var(--text-muted)', fontWeight: 500 }}>Данс:</span>
-                                        <span style={{ fontWeight: 700, letterSpacing: '0.05em' }}>{selectedBank.accountNumber}</span>
+                                        <span
+                                            style={{ fontWeight: 700, letterSpacing: '0.05em', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}
+                                            onClick={() => copyToClipboard(selectedBank.accountNumber, 'Дансны дугаар')}
+                                        >
+                                            {selectedBank.accountNumber}
+                                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.4 }}><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                                        </span>
                                     </div>
                                     {selectedBank.iban && (
                                         <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.82rem' }}>
                                             <span style={{ color: 'var(--text-muted)', fontWeight: 500 }}>IBAN:</span>
-                                            <span style={{ fontWeight: 700, letterSpacing: '0.03em', fontSize: '0.78rem' }}>{selectedBank.iban}</span>
+                                            <span
+                                                style={{ fontWeight: 700, letterSpacing: '0.03em', fontSize: '0.78rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}
+                                                onClick={() => copyToClipboard(selectedBank.iban!, 'IBAN')}
+                                            >
+                                                {selectedBank.iban}
+                                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.4 }}><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                                            </span>
                                         </div>
                                     )}
                                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.82rem' }}>
@@ -734,12 +761,24 @@ export function StoreCheckout() {
                                                 </div>
                                                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.88rem' }}>
                                                     <span style={{ color: 'var(--text-muted)', fontWeight: 500 }}>Данс:</span>
-                                                    <span style={{ fontWeight: 700, letterSpacing: '0.05em' }}>{selectedBank.accountNumber}</span>
+                                                    <span
+                                                        style={{ fontWeight: 700, letterSpacing: '0.05em', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}
+                                                        onClick={() => copyToClipboard(selectedBank.accountNumber, 'Дансны дугаар')}
+                                                    >
+                                                        {selectedBank.accountNumber}
+                                                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.4 }}><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                                                    </span>
                                                 </div>
                                                 {selectedBank.iban && (
                                                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.88rem' }}>
                                                         <span style={{ color: 'var(--text-muted)', fontWeight: 500 }}>IBAN:</span>
-                                                        <span style={{ fontWeight: 700, letterSpacing: '0.03em', fontSize: '0.82rem' }}>{selectedBank.iban}</span>
+                                                        <span
+                                                            style={{ fontWeight: 700, letterSpacing: '0.03em', fontSize: '0.82rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}
+                                                            onClick={() => copyToClipboard(selectedBank.iban!, 'IBAN')}
+                                                        >
+                                                            {selectedBank.iban}
+                                                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.4 }}><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                                                        </span>
                                                     </div>
                                                 )}
                                                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.88rem' }}>
