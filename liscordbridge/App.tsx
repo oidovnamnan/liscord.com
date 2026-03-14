@@ -458,20 +458,28 @@ const App = () => {
 
       if (!tmplData?.documents?.length) return;
 
-      // 3. Extract all keywords and sender numbers
+      // 3. Extract all keywords, sender numbers, and full template data
       const allKeywords: string[] = [];
       const allSenders: string[] = [];
+      const allTemplates: any[] = [];
 
       for (const doc of tmplData.documents) {
         const fields = doc.fields;
         // Check isActive
         if (fields?.isActive?.booleanValue === false) continue;
 
+        const tmplObj: any = {};
+
         // Keywords
         if (fields?.incomeKeywords?.arrayValue?.values) {
+          const keywords: string[] = [];
           for (const v of fields.incomeKeywords.arrayValue.values) {
-            if (v.stringValue) allKeywords.push(v.stringValue);
+            if (v.stringValue) {
+              allKeywords.push(v.stringValue);
+              keywords.push(v.stringValue);
+            }
           }
+          tmplObj.incomeKeywords = keywords;
         }
         // Sender numbers
         if (fields?.senderNumbers?.arrayValue?.values) {
@@ -479,6 +487,14 @@ const App = () => {
             if (v.stringValue) allSenders.push(v.stringValue);
           }
         }
+        // Prefix/suffix markers
+        tmplObj.amountPrefix = fields?.amountPrefix?.stringValue || '';
+        tmplObj.amountSuffix = fields?.amountSuffix?.stringValue || '';
+        tmplObj.utgaPrefix = fields?.utgaPrefix?.stringValue || '';
+        tmplObj.utgaSuffix = fields?.utgaSuffix?.stringValue || '';
+        tmplObj.bankName = fields?.bankName?.stringValue || '';
+
+        allTemplates.push(tmplObj);
       }
 
       // 4. Sync to native SharedPreferences
@@ -488,8 +504,14 @@ const App = () => {
         try {
           NativeModules.PairingKeyModule?.setSmsConfig(keywordsStr, sendersStr);
         } catch (_e) { }
-        addLog(`🔄 ${allKeywords.length} keyword, ${allSenders.length} sender синк хийгдлээ`);
       }
+      // 5. Sync full templates JSON for native prefix/suffix parsing
+      if (allTemplates.length > 0) {
+        try {
+          NativeModules.PairingKeyModule?.setSmsTemplates(JSON.stringify(allTemplates));
+        } catch (_e) { }
+      }
+      addLog(`🔄 ${allTemplates.length} загвар, ${allSenders.length} sender синк хийгдлээ`);
     } catch (err) {
       // Silent fail — fallback to hardcoded keywords
       console.log('SMS config sync failed:', err);

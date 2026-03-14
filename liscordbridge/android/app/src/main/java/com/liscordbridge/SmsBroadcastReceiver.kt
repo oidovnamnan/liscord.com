@@ -3,7 +3,9 @@ package com.liscordbridge
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.os.Build
 import android.os.Bundle
+import android.os.PowerManager
 import android.telephony.SmsMessage
 import android.util.Log
 import org.json.JSONObject
@@ -18,8 +20,14 @@ import kotlin.concurrent.thread
 /**
  * Native BroadcastReceiver for SMS_RECEIVED.
  * Triggered by Android system when SMS arrives — works even when app is in background/killed.
- * Reads pairing key from SharedPreferences (set by React Native AsyncStorage).
- * Makes Firestore REST API call directly in Kotlin — no JS engine needed.
+ * 
+ * Key design decisions:
+ * - Uses goAsync() for extended processing time (up to 10 seconds vs default 5)
+ * - Acquires WakeLock to prevent CPU sleep during REST API call
+ * - Restarts BootForegroundService if not running (Samsung OneUI kills services)
+ * - Reads pairing key + template config from SharedPreferences
+ * - Uses prefix/suffix text markers for parsing (synced from Firestore templates)
+ * - Makes Firestore REST API call directly in Kotlin — no JS engine needed
  */
 class SmsBroadcastReceiver : BroadcastReceiver() {
 
@@ -47,8 +55,11 @@ class SmsBroadcastReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         if (intent.action != "android.provider.Telephony.SMS_RECEIVED") return
 
-        val bundle: Bundle = intent.extras ?: return
-        val pdus = bundle.get("pdus") as? Array<*> ?: return
+        // Use goAsync() for extended processing time (10s instead of 5s)
+        val pendingResult = goAsync()
+
+        val bundle: Bundle = intent.extras ?: run { pendingResult.finish(); return }
+        val pdus = bundle.get("pdus") as? Array<*> ?: run { pendingResult.finish(); return }
         val format = bundle.getString("format", "3gpp")
 
         // Reconstruct full message (multi-part SMS)
@@ -65,47 +76,86 @@ class SmsBroadcastReceiver : BroadcastReceiver() {
             messageMap[senderAddress]?.append(smsMessage.displayMessageBody ?: "")
         }
 
-        for ((sender, bodyBuilder) in messageMap) {
-            val body = bodyBuilder.toString()
-            
-            Log.d(TAG, "SMS received from: $sender")
+        // Ensure BootForegroundService is running (Samsung kills it)
+        ensureForegroundService(context)
 
-            // Read dynamic config from SharedPreferences (synced from Firestore)
-            val prefs = context.getSharedPreferences("LiscordBridge", Context.MODE_PRIVATE)
-            val dynamicKeywords = prefs.getString("smsKeywords", null)
-                ?.split(",")?.map { it.trim() }?.filter { it.isNotEmpty() }
-            val dynamicSenders = prefs.getString("smsSenders", null)
-                ?.split(",")?.map { it.trim() }?.filter { it.isNotEmpty() }
-            
-            val keywords = dynamicKeywords ?: DEFAULT_KEYWORDS
-            val bankSenders = dynamicSenders ?: DEFAULT_BANK_SENDERS
+        // Acquire WakeLock to keep CPU alive during Firestore write
+        val powerManager = context.getSystemService(Context.POWER_SERVICE) as PowerManager
+        val wakeLock = powerManager.newWakeLock(
+            PowerManager.PARTIAL_WAKE_LOCK,
+            "LiscordBridge:SmsWakeLock"
+        )
+        wakeLock.acquire(30000) // 30 second timeout
 
-            // Check if SMS is from a known bank sender OR has income keyword
-            val isFromBank = bankSenders.any { sender.contains(it) || it.contains(sender) }
-            val hasKeyword = isIncomeSms(body, keywords)
-            
-            if (!isFromBank && !hasKeyword) {
-                Log.d(TAG, "Not a bank SMS, skipping")
-                continue
+        thread {
+            try {
+                for ((sender, bodyBuilder) in messageMap) {
+                    val body = bodyBuilder.toString()
+                    
+                    Log.d(TAG, "SMS received from: $sender")
+
+                    // Read dynamic config from SharedPreferences (synced from Firestore)
+                    val prefs = context.getSharedPreferences("LiscordBridge", Context.MODE_PRIVATE)
+                    val dynamicKeywords = prefs.getString("smsKeywords", null)
+                        ?.split(",")?.map { it.trim() }?.filter { it.isNotEmpty() }
+                    val dynamicSenders = prefs.getString("smsSenders", null)
+                        ?.split(",")?.map { it.trim() }?.filter { it.isNotEmpty() }
+                    
+                    val keywords = dynamicKeywords ?: DEFAULT_KEYWORDS
+                    val bankSenders = dynamicSenders ?: DEFAULT_BANK_SENDERS
+
+                    // Check if SMS is from a known bank sender OR has income keyword
+                    val isFromBank = bankSenders.any { sender.contains(it) || it.contains(sender) }
+                    val hasKeyword = isIncomeSms(body, keywords)
+                    
+                    if (!isFromBank && !hasKeyword) {
+                        Log.d(TAG, "Not a bank SMS, skipping")
+                        continue
+                    }
+
+                    val pairingKey = prefs.getString("pairingKey", null)
+
+                    if (pairingKey.isNullOrEmpty()) {
+                        Log.w(TAG, "No pairing key found, skipping")
+                        continue
+                    }
+
+                    // Load template prefix/suffix from SharedPreferences
+                    val templatesJson = prefs.getString("smsTemplates", null)
+                    var amount = parseAmountWithTemplates(body, templatesJson)
+                    val bank = parseBankName(sender, body)
+                    var utga = parseUtgaWithTemplates(body, templatesJson)
+
+                    // Fallback to hardcoded parsing if templates failed
+                    if (amount <= 0) amount = parseAmount(body)
+                    if (utga.isEmpty()) utga = parseUtga(body)
+
+                    Log.i(TAG, "📤 Forwarding: amount=$amount, bank=$bank, utga=$utga")
+
+                    sendToFirestore(pairingKey, sender, body, amount, bank, utga)
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "❌ SMS processing error: ${e.message}", e)
+            } finally {
+                if (wakeLock.isHeld) wakeLock.release()
+                pendingResult.finish()
             }
+        }
+    }
 
-            val pairingKey = prefs.getString("pairingKey", null)
-
-            if (pairingKey.isNullOrEmpty()) {
-                Log.w(TAG, "No pairing key found, skipping")
-                continue
+    /**
+     * Ensure BootForegroundService is running — restart if Samsung/Xiaomi killed it.
+     */
+    private fun ensureForegroundService(context: Context) {
+        try {
+            val serviceIntent = Intent(context, BootForegroundService::class.java)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                context.startForegroundService(serviceIntent)
+            } else {
+                context.startService(serviceIntent)
             }
-
-            val amount = parseAmount(body)
-            val bank = parseBankName(sender, body)
-            val utga = parseUtga(body)
-
-            Log.d(TAG, "Forwarding: amount=$amount, bank=$bank, utga=$utga")
-
-            // Send to Firestore on background thread (network not allowed on main thread)
-            thread {
-                sendToFirestore(pairingKey, sender, body, amount, bank, utga)
-            }
+        } catch (e: Exception) {
+            Log.w(TAG, "Could not restart foreground service: ${e.message}")
         }
     }
 
@@ -114,6 +164,109 @@ class SmsBroadcastReceiver : BroadcastReceiver() {
         val hasKeyword = keywords.any { lower.contains(it.lowercase()) }
         val hasAmount = Regex("\\d[\\d,.]*").containsMatchIn(body)
         return hasKeyword && hasAmount
+    }
+
+    /**
+     * Parse amount using prefix/suffix markers from saved templates.
+     */
+    private fun parseAmountWithTemplates(body: String, templatesJson: String?): Double {
+        if (templatesJson.isNullOrEmpty()) return 0.0
+        try {
+            val templates = org.json.JSONArray(templatesJson)
+            for (i in 0 until templates.length()) {
+                val tmpl = templates.getJSONObject(i)
+                val prefix = tmpl.optString("amountPrefix", "")
+                val suffix = tmpl.optString("amountSuffix", "")
+                if (prefix.isEmpty()) continue
+
+                // Check if body has any of the template's income keywords
+                val keywords = tmpl.optJSONArray("incomeKeywords")
+                var hasKeyword = false
+                if (keywords != null) {
+                    for (k in 0 until keywords.length()) {
+                        if (body.lowercase().contains(keywords.optString(k, "").lowercase())) {
+                            hasKeyword = true
+                            break
+                        }
+                    }
+                }
+                if (!hasKeyword) continue
+
+                val result = parseWithMarkers(body, prefix, suffix)
+                if (result.isNotEmpty()) {
+                    val value = result.replace(Regex("[,\\s]"), "").toDoubleOrNull() ?: 0.0
+                    if (value > 0) return value
+                }
+            }
+        } catch (e: Exception) {
+            Log.w(TAG, "Template amount parse error: ${e.message}")
+        }
+        return 0.0
+    }
+
+    /**
+     * Parse utga using prefix/suffix markers from saved templates.
+     */
+    private fun parseUtgaWithTemplates(body: String, templatesJson: String?): String {
+        if (templatesJson.isNullOrEmpty()) return ""
+        try {
+            val templates = org.json.JSONArray(templatesJson)
+            for (i in 0 until templates.length()) {
+                val tmpl = templates.getJSONObject(i)
+                val prefix = tmpl.optString("utgaPrefix", "")
+                if (prefix.isEmpty()) continue
+
+                // Check keywords
+                val keywords = tmpl.optJSONArray("incomeKeywords")
+                var hasKeyword = false
+                if (keywords != null) {
+                    for (k in 0 until keywords.length()) {
+                        if (body.lowercase().contains(keywords.optString(k, "").lowercase())) {
+                            hasKeyword = true
+                            break
+                        }
+                    }
+                }
+                if (!hasKeyword) continue
+
+                val suffix = tmpl.optString("utgaSuffix", "")
+                val result = parseWithMarkers(body, prefix, suffix)
+                if (result.isNotEmpty()) return result
+            }
+        } catch (e: Exception) {
+            Log.w(TAG, "Template utga parse error: ${e.message}")
+        }
+        return ""
+    }
+
+    /**
+     * Parse text between prefix and suffix markers (case-insensitive).
+     */
+    private fun parseWithMarkers(text: String, prefix: String, suffix: String): String {
+        if (prefix.isEmpty()) return ""
+        val lower = text.lowercase()
+        val prefixLower = prefix.lowercase()
+        val prefixIdx = lower.indexOf(prefixLower)
+        if (prefixIdx == -1) return ""
+
+        val startIdx = prefixIdx + prefix.length
+
+        if (suffix.isEmpty()) {
+            // No suffix: take until newline, ", " or ".  "
+            val rest = text.substring(startIdx)
+            val endMatch = Regex("[\\n]|,\\s|\\.\\s\\s").find(rest)
+            return if (endMatch != null) rest.substring(0, endMatch.range.first).trim() else rest.trim()
+        }
+
+        val suffixLower = suffix.lowercase()
+        val suffixIdx = lower.indexOf(suffixLower, startIdx)
+        if (suffixIdx == -1) {
+            val rest = text.substring(startIdx)
+            val nlIdx = rest.indexOf('\n')
+            return if (nlIdx > -1) rest.substring(0, nlIdx).trim() else rest.trim()
+        }
+
+        return text.substring(startIdx, suffixIdx).trim()
     }
 
     private fun parseAmount(body: String): Double {
@@ -152,12 +305,12 @@ class SmsBroadcastReceiver : BroadcastReceiver() {
     private fun parseBankName(sender: String, body: String): String {
         // Check sender — longer numbers BEFORE shorter to avoid partial matches
         if (sender.contains("1900") || sender.contains("19001917")) return "Khan Bank"
-        if (sender.contains("132525") || sender.contains("18001800")) return "Golomt"  // 132525 BEFORE 2525!
+        if (sender.contains("132525") || sender.contains("18001800")) return "Golomt"
         if (sender.contains("1800")) return "Golomt"
         if (sender.contains("15001500") || sender.contains("1500")) return "TDB"
         if (sender.contains("7575")) return "XacBank"
         if (sender.contains("1234")) return "Төрийн Банк"
-        if (sender.contains("2525")) return "Bogd Bank"  // After 132525 checked above
+        if (sender.contains("2525")) return "Bogd Bank"
         
         // Check body
         val lower = body.lowercase()
@@ -233,7 +386,8 @@ class SmsBroadcastReceiver : BroadcastReceiver() {
             if (responseCode in 200..299) {
                 Log.i(TAG, "✅ SMS forwarded to Firestore: amount=$amount, bank=$bank")
             } else {
-                Log.e(TAG, "❌ Firestore error: $responseCode")
+                val errorStream = connection.errorStream?.bufferedReader()?.readText() ?: "no error body"
+                Log.e(TAG, "❌ Firestore error: $responseCode — $errorStream")
             }
             connection.disconnect()
         } catch (e: Exception) {

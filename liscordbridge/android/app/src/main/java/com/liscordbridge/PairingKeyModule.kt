@@ -38,4 +38,16 @@ class PairingKeyModule(reactContext: ReactApplicationContext) : ReactContextBase
             .putString("smsSenders", senders)
             .apply()
     }
+
+    /**
+     * Sync full template data (JSON array) to SharedPreferences for native prefix/suffix parsing.
+     * @param templatesJson JSON array of template objects with amountPrefix, amountSuffix, utgaPrefix, utgaSuffix, incomeKeywords
+     */
+    @ReactMethod
+    fun setSmsTemplates(templatesJson: String) {
+        val prefs = reactApplicationContext.getSharedPreferences("LiscordBridge", ReactApplicationContext.MODE_PRIVATE)
+        prefs.edit()
+            .putString("smsTemplates", templatesJson)
+            .apply()
+    }
 }
