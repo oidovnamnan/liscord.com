@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import {
     Globe, Search, Loader2, Clock, Package, Truck, CheckCircle2, Copy, Check, X, ChevronDown,
-    Link2, ExternalLink, Plus, DollarSign, Trash2, EyeOff, Eye, Power, ChevronUp
+    Link2, ExternalLink, Plus, DollarSign, Trash2, EyeOff, Eye, Power, ChevronUp, Layers
 } from 'lucide-react';
 import { useBusinessStore } from '../../store';
 import { collection, query, where, onSnapshot, doc, updateDoc, Timestamp } from 'firebase/firestore';
@@ -49,6 +49,8 @@ interface SourcingOrder {
         sourceCost: number;
         notes: string;
         updatedAt?: Date;
+        batchId?: string;
+        isBatch?: boolean;
     };
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     [key: string]: any;
@@ -82,6 +84,43 @@ export function SourcingPage() {
     const [inactiveProducts, setInactiveProducts] = useState<ProductInfo[]>([]);
     const [showInactive, setShowInactive] = useState(false);
     const [reactivating, setReactivating] = useState<string | null>(null);
+
+    // Batch mode
+    const [batchMode, setBatchMode] = useState(false);
+    const [selectedOrderIds, setSelectedOrderIds] = useState<Set<string>>(new Set());
+    const [showBatchModal, setShowBatchModal] = useState(false);
+
+    const toggleBatchMode = () => {
+        setBatchMode(prev => !prev);
+        setSelectedOrderIds(new Set());
+    };
+
+    const toggleOrderSelection = (orderId: string) => {
+        setSelectedOrderIds(prev => {
+            const next = new Set(prev);
+            if (next.has(orderId)) next.delete(orderId);
+            else next.add(orderId);
+            return next;
+        });
+    };
+
+    const selectedOrders = useMemo(() => {
+        return orders.filter(o => selectedOrderIds.has(o.id));
+    }, [orders, selectedOrderIds]);
+
+    const generateBatchId = (): string => {
+        const now = new Date();
+        const dateStr = format(now, 'yyMMdd');
+        // Find existing batch numbers for today
+        const todayPrefix = `B-${dateStr}-`;
+        const existingNums = orders
+            .map(o => o.sourcing?.batchId)
+            .filter((b): b is string => !!b && b.startsWith(todayPrefix))
+            .map(b => parseInt(b.split('-').pop() || '0'))
+            .filter(n => !isNaN(n));
+        const nextNum = existingNums.length > 0 ? Math.max(...existingNums) + 1 : 1;
+        return `${todayPrefix}${String(nextNum).padStart(3, '0')}`;
+    };
 
     // Subscribe to products for inactive list
     useEffect(() => {
@@ -249,19 +288,28 @@ export function SourcingPage() {
                     <Search size={18} className="inv-search-icon" />
                     <input className="inv-search-input" placeholder="Захиалга, харилцагчаар хайх..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
                 </div>
-                <select
-                    value={statusFilter}
-                    onChange={e => setStatusFilter(e.target.value as typeof statusFilter)}
-                    className="sourcing-status-select"
-                >
-                    <option value="all">Бүх төлөв</option>
-                    <option value="pending">Хүлээгдэж буй</option>
-                    <option value="ordered">Захиалсан</option>
-                    <option value="arrived">Ирсэн</option>
-                    <option value="picked_up">Ирж авсан</option>
-                    <option value="delivered">Хүргэсэн</option>
-                    <option value="fulfilled">Биелсэн</option>
-                </select>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <button
+                        className={`sourcing-batch-toggle ${batchMode ? 'active' : ''}`}
+                        onClick={toggleBatchMode}
+                    >
+                        <Layers size={16} />
+                        {batchMode ? 'Болих' : 'Нэгтгэх горим'}
+                    </button>
+                    <select
+                        value={statusFilter}
+                        onChange={e => setStatusFilter(e.target.value as typeof statusFilter)}
+                        className="sourcing-status-select"
+                    >
+                        <option value="all">Бүх төлөв</option>
+                        <option value="pending">Хүлээгдэж буй</option>
+                        <option value="ordered">Захиалсан</option>
+                        <option value="arrived">Ирсэн</option>
+                        <option value="picked_up">Ирж авсан</option>
+                        <option value="delivered">Хүргэсэн</option>
+                        <option value="fulfilled">Биелсэн</option>
+                    </select>
+                </div>
             </div>
 
             {/* Orders List — Premium Cards */}
@@ -287,9 +335,20 @@ export function SourcingPage() {
                         return (
                             <div
                                 key={order.id}
-                                className={`sourcing-order-card ${s}`}
-                                onClick={() => setSelectedOrder(order)}
+                                className={`sourcing-order-card ${s} ${batchMode && selectedOrderIds.has(order.id) ? 'batch-selected' : ''}`}
+                                onClick={() => batchMode ? toggleOrderSelection(order.id) : setSelectedOrder(order)}
                             >
+                                {batchMode && (
+                                    <div className="sourcing-batch-check">
+                                        <input
+                                            type="checkbox"
+                                            checked={selectedOrderIds.has(order.id)}
+                                            onChange={() => toggleOrderSelection(order.id)}
+                                            onClick={e => e.stopPropagation()}
+                                            style={{ accentColor: 'var(--primary)', width: 18, height: 18 }}
+                                        />
+                                    </div>
+                                )}
                                 <div className="sourcing-card-left">
                                     <div className="sourcing-card-avatar" style={{ background: statusInfo.color + '18', color: statusInfo.color }}>
                                         <StatusIcon size={18} />
@@ -298,6 +357,12 @@ export function SourcingPage() {
                                         <div className="sourcing-card-top">
                                             <span className="sourcing-card-order">#{(order.orderNumber || order.id.slice(0, 6)).toUpperCase()}</span>
                                             <span className="sourcing-card-date">{order.createdAt ? format(order.createdAt, 'MM/dd HH:mm') : '—'}</span>
+                                            {order.sourcing?.batchId && (
+                                                <span className="sourcing-batch-id-badge">
+                                                    <Layers size={10} />
+                                                    {order.sourcing.batchId}
+                                                </span>
+                                            )}
                                         </div>
                                         <div className="sourcing-card-customer">{order.customerName || 'Тодорхойгүй'}</div>
                                         {order.customerPhone && <div className="sourcing-card-phone">{order.customerPhone}</div>}
@@ -383,6 +448,24 @@ export function SourcingPage() {
                 </div>
             )}
 
+            {/* Batch Mode Floating Action Bar */}
+            {batchMode && selectedOrderIds.size > 0 && (
+                <div className="sourcing-batch-fab">
+                    <div className="sourcing-batch-fab-inner">
+                        <span className="sourcing-batch-fab-count">
+                            <Layers size={16} />
+                            {selectedOrderIds.size} захиалга сонгосон
+                        </span>
+                        <button
+                            className="btn btn-primary gradient-btn sourcing-batch-fab-btn"
+                            onClick={() => setShowBatchModal(true)}
+                        >
+                            📦 Нэгтгэх
+                        </button>
+                    </div>
+                </div>
+            )}
+
             {selectedOrder && (
                 <SourcingDetailModal
                     order={selectedOrder}
@@ -392,6 +475,22 @@ export function SourcingPage() {
                     onUpdate={(updated) => {
                         setOrders(prev => prev.map(o => o.id === updated.id ? updated : o));
                         setSelectedOrder(updated);
+                    }}
+                />
+            )}
+
+            {showBatchModal && selectedOrders.length > 0 && (
+                <BatchSourcingModal
+                    orders={selectedOrders}
+                    allOrders={orders}
+                    businessId={business!.id}
+                    settings={(business as any)?.settings?.sourcing}
+                    generateBatchId={generateBatchId}
+                    onClose={() => setShowBatchModal(false)}
+                    onSaved={() => {
+                        setShowBatchModal(false);
+                        setBatchMode(false);
+                        setSelectedOrderIds(new Set());
                     }}
                 />
             )}
@@ -813,6 +912,262 @@ function SourcingDetailModal({ order, businessId, settings, onClose, onUpdate }:
                     <button className="btn btn-secondary" onClick={onClose}>Болих</button>
                     <button className="btn btn-primary gradient-btn" onClick={handleSave} disabled={saving || !anyItemOrdered}>
                         {saving ? 'Хадгалж байна...' : '💾 Хадгалах'}
+                    </button>
+                </div>
+            </div>
+        </div>,
+        document.body
+    );
+}
+
+// ============ BATCH SOURCING MODAL ============
+interface BatchItem {
+    productId: string;
+    name: string;
+    totalQty: number;
+    breakdown: { orderId: string; orderNumber: string; customer: string; qty: number }[];
+}
+
+function BatchSourcingModal({ orders, allOrders, businessId, settings, generateBatchId, onClose, onSaved }: {
+    orders: SourcingOrder[];
+    allOrders: SourcingOrder[];
+    businessId: string;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    settings?: any;
+    generateBatchId: () => string;
+    onClose: () => void;
+    onSaved: () => void;
+}) {
+    const [saving, setSaving] = useState(false);
+    const [batchId] = useState(() => generateBatchId());
+    const [statusOverride, setStatusOverride] = useState<SourcingStatus>('ordered');
+    const [trackingNumber, setTrackingNumber] = useState('');
+    const [notes, setNotes] = useState('');
+    const [copiedField, setCopiedField] = useState<string | null>(null);
+
+    // Group items by productId
+    const batchItems = useMemo<BatchItem[]>(() => {
+        const map = new Map<string, BatchItem>();
+        orders.forEach(order => {
+            order.items.forEach(item => {
+                const existing = map.get(item.productId);
+                if (existing) {
+                    existing.totalQty += item.quantity || 1;
+                    existing.breakdown.push({
+                        orderId: order.id,
+                        orderNumber: order.orderNumber || order.id.slice(0, 6),
+                        customer: order.customerName || 'Тодорхойгүй',
+                        qty: item.quantity || 1,
+                    });
+                } else {
+                    map.set(item.productId, {
+                        productId: item.productId,
+                        name: item.name,
+                        totalQty: item.quantity || 1,
+                        breakdown: [{
+                            orderId: order.id,
+                            orderNumber: order.orderNumber || order.id.slice(0, 6),
+                            customer: order.customerName || 'Тодорхойгүй',
+                            qty: item.quantity || 1,
+                        }],
+                    });
+                }
+            });
+        });
+        return Array.from(map.values()).sort((a, b) => b.totalQty - a.totalQty);
+    }, [orders]);
+
+    const totalQty = batchItems.reduce((s, i) => s + i.totalQty, 0);
+
+    // Cargo settings
+    const recipientName = settings?.recipientName || '';
+    const recipientPhone = settings?.recipientPhone || '';
+    const cargoAddress = settings?.cargoAddress || '';
+    const shopPhone = settings?.shopPhone || '';
+
+    const recipientText = `${recipientName}，${recipientPhone}`;
+    const cargoLabel = `${shopPhone} ${batchId} ${totalQty}ш`;
+    const addressText = `${cargoAddress} (${cargoLabel})`;
+
+    const hasConfig = !!recipientName && !!cargoAddress;
+
+    const handleCopy = async (text: string, field: string) => {
+        try {
+            await navigator.clipboard.writeText(text);
+            setCopiedField(field);
+            setTimeout(() => setCopiedField(null), 2000);
+        } catch { toast.error('Хуулж чадсангүй'); }
+    };
+
+    const handleSave = async () => {
+        setSaving(true);
+        try {
+            // Build sourcing items for each order
+            const promises = orders.map(order => {
+                const itemsMap: Record<string, SourcingItem> = {};
+                order.items.forEach(it => {
+                    itemsMap[it.productId] = { ordered: true, orderedAt: new Date() };
+                });
+
+                const sourcingData = {
+                    status: statusOverride,
+                    items: Object.fromEntries(
+                        Object.entries(itemsMap).map(([k, v]) => [k, {
+                            ordered: v.ordered,
+                            ...(v.orderedAt ? { orderedAt: Timestamp.fromDate(v.orderedAt) } : {}),
+                        }])
+                    ),
+                    cargoLabel,
+                    batchId,
+                    isBatch: true,
+                    trackingNumber,
+                    notes,
+                    updatedAt: Timestamp.now(),
+                };
+
+                return updateDoc(doc(db, 'businesses', businessId, 'orders', order.id), {
+                    sourcing: sourcingData,
+                });
+            });
+
+            await Promise.all(promises);
+            toast.success(`${orders.length} захиалга нэгтгэгдлээ · ${batchId}`);
+            onSaved();
+        } catch {
+            toast.error('Алдаа гарлаа');
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    return createPortal(
+        <div className="modal-backdrop" onClick={onClose}>
+            <div className="modal sourcing-detail-modal" onClick={e => e.stopPropagation()} style={{ maxWidth: 720 }}>
+                {/* Header */}
+                <div className="modal-header" style={{ padding: '20px 28px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                        <div className="icon-badge" style={{ background: 'var(--primary)', color: 'white' }}>
+                            <Layers size={20} />
+                        </div>
+                        <div>
+                            <h2 style={{ margin: 0, fontSize: '1.15rem' }}>
+                                📦 Нэгтгэсэн Сорсинг
+                            </h2>
+                            <p style={{ margin: '2px 0 0', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                                {orders.length} захиалга · {batchItems.length} төрөл · {totalQty}ш
+                            </p>
+                        </div>
+                    </div>
+                    <button className="btn btn-ghost btn-icon" onClick={onClose}><X size={20} /></button>
+                </div>
+
+                <div className="modal-body" style={{ padding: 0, overflowY: 'auto' }}>
+                    {/* Batch Code */}
+                    <div className="sourcing-cargo-section">
+                        <div className="sourcing-copy-block" style={{
+                            background: 'linear-gradient(135deg, rgba(108,92,231,0.06) 0%, rgba(0,206,158,0.06) 100%)',
+                            borderColor: 'var(--primary)', borderStyle: 'dashed',
+                        }}>
+                            <div className="sourcing-copy-label">🏷️ Багц код</div>
+                            <div className="sourcing-copy-value" style={{
+                                fontSize: '1.3rem', fontWeight: 800, color: 'var(--primary)',
+                                letterSpacing: '1px', fontFamily: 'monospace',
+                            }}>{batchId}</div>
+                            <button className="sourcing-copy-btn" onClick={() => handleCopy(batchId, 'batchId')}>
+                                {copiedField === 'batchId' ? <Check size={14} /> : <Copy size={14} />}
+                                {copiedField === 'batchId' ? 'Хуулсан!' : 'Хуулах'}
+                            </button>
+                        </div>
+
+                        {hasConfig ? (
+                            <>
+                                <div className="sourcing-copy-block">
+                                    <div className="sourcing-copy-label">📋 Хүлээн авагч</div>
+                                    <div className="sourcing-copy-value">{recipientText}</div>
+                                    <button className="sourcing-copy-btn" onClick={() => handleCopy(recipientText, 'recipient')}>
+                                        {copiedField === 'recipient' ? <Check size={14} /> : <Copy size={14} />}
+                                        {copiedField === 'recipient' ? 'Хуулсан!' : 'Хуулах'}
+                                    </button>
+                                </div>
+                                <div className="sourcing-copy-block">
+                                    <div className="sourcing-copy-label">📋 Хаяг (карго шошго)</div>
+                                    <div className="sourcing-copy-value">{addressText}</div>
+                                    <button className="sourcing-copy-btn" onClick={() => handleCopy(addressText, 'address')}>
+                                        {copiedField === 'address' ? <Check size={14} /> : <Copy size={14} />}
+                                        {copiedField === 'address' ? 'Хуулсан!' : 'Хуулах'}
+                                    </button>
+                                </div>
+                            </>
+                        ) : (
+                            <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', margin: 0 }}>
+                                ⚠️ Каргоны тохиргоо хийгдээгүй. Тохиргоо → Сорсинг хэсэгт хаяг оруулна уу.
+                            </p>
+                        )}
+                    </div>
+
+                    {/* Grouped Items */}
+                    <div className="sourcing-items-section">
+                        <div className="sourcing-section-title">
+                            Нэгтгэсэн бараа ({batchItems.length} төрөл · {totalQty}ш)
+                        </div>
+                        <div className="sourcing-items-list">
+                            {batchItems.map(item => (
+                                <div key={item.productId} className="sourcing-batch-item-block">
+                                    <div className="sourcing-batch-item-header">
+                                        <span className="sourcing-batch-item-name">{item.name}</span>
+                                        <span className="sourcing-batch-item-qty">{item.totalQty}ш</span>
+                                    </div>
+                                    <div className="sourcing-batch-breakdown">
+                                        {item.breakdown.map((b, i) => (
+                                            <span key={i} className="sourcing-batch-breakdown-chip">
+                                                #{b.orderNumber.toUpperCase()}-{b.customer}({b.qty})
+                                            </span>
+                                        ))}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Status + Tracking */}
+                    <div className="sourcing-tracking-section">
+                        <div className="sourcing-section-title">Статус & Tracking</div>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
+                            <div className="input-group">
+                                <label className="input-label">Статус</label>
+                                <div className="sourcing-select-wrap">
+                                    <select
+                                        className="input select"
+                                        value={statusOverride}
+                                        onChange={e => setStatusOverride(e.target.value as SourcingStatus)}
+                                        style={{ height: 44 }}
+                                    >
+                                        <option value="pending">Хүлээгдэж буй</option>
+                                        <option value="ordered">Захиалсан</option>
+                                        <option value="arrived">Ирсэн</option>
+                                        <option value="picked_up">Ирж авсан</option>
+                                        <option value="delivered">Хүргэсэн</option>
+                                        <option value="fulfilled">Биелсэн</option>
+                                    </select>
+                                    <ChevronDown size={14} className="sourcing-select-icon" />
+                                </div>
+                            </div>
+                            <div className="input-group">
+                                <label className="input-label">Tracking №</label>
+                                <input className="input" value={trackingNumber} onChange={e => setTrackingNumber(e.target.value)} placeholder="Илгээмжийн дугаар" style={{ height: 44 }} />
+                            </div>
+                        </div>
+                        <div className="input-group">
+                            <label className="input-label">Тэмдэглэл</label>
+                            <textarea className="input" value={notes} onChange={e => setNotes(e.target.value)} placeholder="Нэмэлт мэдээлэл..." rows={2} style={{ resize: 'vertical' }} />
+                        </div>
+                    </div>
+                </div>
+
+                <div className="modal-footer" style={{ padding: '16px 28px' }}>
+                    <button className="btn btn-secondary" onClick={onClose}>Болих</button>
+                    <button className="btn btn-primary gradient-btn" onClick={handleSave} disabled={saving}>
+                        {saving ? 'Хадгалж байна...' : `📦 ${orders.length} захиалга нэгтгэх`}
                     </button>
                 </div>
             </div>

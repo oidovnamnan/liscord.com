@@ -710,3 +710,152 @@
     opacity: 0.6;
     cursor: not-allowed;
 }
+
+/* ============ BATCH SOURCING MODE ============ */
+.sourcing-batch-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 18px;
+    border-radius: 14px;
+    border: 1.5px solid var(--border-primary);
+    background: var(--surface-2);
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: var(--text-secondary);
+    transition: all 0.25s;
+    white-space: nowrap;
+}
+
+.sourcing-batch-toggle:hover {
+    border-color: var(--primary);
+    color: var(--primary);
+}
+
+.sourcing-batch-toggle.active {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
+}
+
+.sourcing-batch-check {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.sourcing-order-card.batch-selected {
+    border-color: var(--primary) !important;
+    background: linear-gradient(135deg, rgba(108, 92, 231, 0.04) 0%, rgba(0, 206, 158, 0.04) 100%) !important;
+    box-shadow: 0 0 0 2px rgba(108, 92, 231, 0.12);
+}
+
+/* Batch ID Badge on order cards */
+.sourcing-batch-id-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    padding: 2px 8px;
+    border-radius: 6px;
+    font-size: 0.65rem;
+    font-weight: 700;
+    color: var(--primary);
+    background: rgba(108, 92, 231, 0.08);
+    font-family: monospace;
+    letter-spacing: 0.3px;
+}
+
+/* Floating Action Bar */
+.sourcing-batch-fab {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 100;
+    pointer-events: none;
+}
+
+.sourcing-batch-fab-inner {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 12px 12px 12px 20px;
+    background: var(--surface-1);
+    border: 1.5px solid var(--primary);
+    border-radius: 18px;
+    box-shadow: 0 8px 32px rgba(108, 92, 231, 0.2), 0 2px 8px rgba(0,0,0,0.1);
+    pointer-events: all;
+}
+
+.sourcing-batch-fab-count {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.88rem;
+    font-weight: 700;
+    color: var(--primary);
+    white-space: nowrap;
+}
+
+.sourcing-batch-fab-btn {
+    padding: 10px 24px !important;
+    border-radius: 14px !important;
+    font-size: 0.88rem !important;
+    font-weight: 700 !important;
+    white-space: nowrap;
+}
+
+/* Batch Item Blocks in Modal */
+.sourcing-batch-item-block {
+    padding: 14px 16px;
+    border: 1.5px solid var(--border-soft);
+    border-radius: 14px;
+    background: var(--surface-1);
+    transition: border-color 0.2s;
+}
+
+.sourcing-batch-item-block:hover {
+    border-color: var(--border-primary);
+}
+
+.sourcing-batch-item-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+}
+
+.sourcing-batch-item-name {
+    font-size: 0.92rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.sourcing-batch-item-qty {
+    font-size: 0.95rem;
+    font-weight: 800;
+    color: var(--primary);
+    background: rgba(108, 92, 231, 0.08);
+    padding: 3px 12px;
+    border-radius: 8px;
+}
+
+.sourcing-batch-breakdown {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+
+.sourcing-batch-breakdown-chip {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 6px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    background: var(--surface-2);
+    border: 1px solid var(--border-soft);
+}
