@@ -1,15 +1,17 @@
 package com.liscordbridge
 
-import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.app.Service
+import android.content.ContentResolver
 import android.content.Intent
+import android.database.Cursor
 import android.net.ConnectivityManager
 import android.net.Network
 import android.net.NetworkCapabilities
 import android.net.NetworkRequest
+import android.net.Uri
 import android.os.Build
 import android.os.Handler
 import android.os.IBinder
@@ -23,12 +25,16 @@ import java.util.Calendar
 import kotlin.concurrent.thread
 
 /**
- * BootForegroundService — persistent foreground service.
+ * BootForegroundService — the MAIN reliable SMS forwarding mechanism.
  *
- * Responsibilities:
- * 1. Keep process alive so SmsBroadcastReceiver works on Samsung/Xiaomi
- * 2. Retry offline SMS queue when network becomes available
- * 3. Check for app updates at midnight daily
+ * Samsung/Xiaomi kills BroadcastReceivers via "deep sleep", but they CANNOT kill
+ * a foreground service with a persistent notification.
+ *
+ * This service:
+ * 1. Polls SMS inbox every 5 seconds for new bank SMS (ContentResolver)
+ * 2. Forwards matching SMS to Firestore REST API
+ * 3. Retries offline queue when network becomes available
+ * 4. Checks for app updates at midnight
  */
 class BootForegroundService : Service() {
 
@@ -39,13 +45,15 @@ class BootForegroundService : Service() {
         private const val NOTIFICATION_ID = 9001
         private const val UPDATE_NOTIFICATION_ID = 9002
         private const val GITHUB_RELEASE_URL = "https://api.github.com/repos/oidovnamnan/liscord.com/releases/tags/bridge-latest"
-        private const val QUEUE_RETRY_INTERVAL = 5 * 60 * 1000L // retry queue every 5 minutes
+        private const val SMS_POLL_INTERVAL = 5000L  // 5 seconds
     }
 
     private val handler = Handler(Looper.getMainLooper())
+    private var smsPollRunnable: Runnable? = null
     private var updateCheckRunnable: Runnable? = null
-    private var queueRetryRunnable: Runnable? = null
     private var networkCallback: ConnectivityManager.NetworkCallback? = null
+    private var lastCheckedTimestamp = 0L  // millis of last SMS check
+    private var totalForwarded = 0
 
     override fun onBind(intent: Intent?): IBinder? = null
 
@@ -53,10 +61,13 @@ class BootForegroundService : Service() {
         super.onCreate()
         createNotificationChannel()
         createUpdateChannel()
+        // Restore last checked timestamp (don't reprocess old SMS)
+        val prefs = getSharedPreferences(SmsBroadcastReceiver.PREFS_NAME, MODE_PRIVATE)
+        lastCheckedTimestamp = prefs.getLong("lastSmsTimestamp", System.currentTimeMillis())
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        Log.i(TAG, "✅ Service started")
+        Log.i(TAG, "✅ Service started — SMS polling active")
 
         val tapIntent = packageManager.getLaunchIntentForPackage(packageName)
         val pendingIntent = if (tapIntent != null) {
@@ -64,20 +75,11 @@ class BootForegroundService : Service() {
                 PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
         } else null
 
-        val notification = NotificationCompat.Builder(this, CHANNEL_ID)
-            .setContentTitle("Liscord Bridge")
-            .setContentText("SMS хяналт идэвхтэй ✅")
-            .setSmallIcon(android.R.drawable.ic_dialog_email)
-            .setPriority(NotificationCompat.PRIORITY_MIN)
-            .setOngoing(true)
-            .setSilent(true)
-            .setContentIntent(pendingIntent)
-            .build()
+        updateNotification(pendingIntent, "SMS хяналт идэвхтэй ✅")
+        startForeground(NOTIFICATION_ID, buildNotification(pendingIntent, "SMS хяналт идэвхтэй ✅"))
 
-        startForeground(NOTIFICATION_ID, notification)
-
-        // Start periodic tasks
-        startQueueRetry()
+        // Start all periodic tasks
+        startSmsPoll()
         startUpdateChecks()
         registerNetworkListener()
 
@@ -86,38 +88,262 @@ class BootForegroundService : Service() {
 
     override fun onDestroy() {
         super.onDestroy()
+        smsPollRunnable?.let { handler.removeCallbacks(it) }
         updateCheckRunnable?.let { handler.removeCallbacks(it) }
-        queueRetryRunnable?.let { handler.removeCallbacks(it) }
         unregisterNetworkListener()
         Log.w(TAG, "⚠️ Service destroyed")
     }
 
-    // ====== OFFLINE QUEUE RETRY ======
+    // ====== SMS POLLING (main forwarding mechanism) ======
 
-    private fun startQueueRetry() {
-        queueRetryRunnable?.let { handler.removeCallbacks(it) }
+    private fun startSmsPoll() {
+        smsPollRunnable?.let { handler.removeCallbacks(it) }
 
         val runnable = object : Runnable {
             override fun run() {
-                thread {
-                    try {
-                        val remaining = SmsBroadcastReceiver.retryQueue(this@BootForegroundService)
-                        if (remaining > 0) {
-                            Log.i(TAG, "📦 $remaining SMS still queued, will retry")
-                        }
-                    } catch (e: Exception) {
-                        Log.w(TAG, "Queue retry error: ${e.message}")
-                    }
-                }
-                handler.postDelayed(this, QUEUE_RETRY_INTERVAL)
+                thread { pollSmsInbox() }
+                handler.postDelayed(this, SMS_POLL_INTERVAL)
             }
         }
-        queueRetryRunnable = runnable
-        // First retry after 30 seconds
-        handler.postDelayed(runnable, 30000)
+        smsPollRunnable = runnable
+        handler.postDelayed(runnable, 3000) // start after 3 sec
     }
 
-    // ====== NETWORK CHANGE LISTENER ======
+    private fun pollSmsInbox() {
+        try {
+            val prefs = getSharedPreferences(SmsBroadcastReceiver.PREFS_NAME, MODE_PRIVATE)
+            val pairingKey = prefs.getString("pairingKey", null)
+            if (pairingKey.isNullOrEmpty()) return
+
+            val dynamicKeywords = prefs.getString("smsKeywords", null)
+                ?.split(",")?.map { it.trim() }?.filter { it.isNotEmpty() }
+            val dynamicSenders = prefs.getString("smsSenders", null)
+                ?.split(",")?.map { it.trim() }?.filter { it.isNotEmpty() }
+            val keywords = dynamicKeywords ?: listOf(
+                "orlogo", "орлого", "орсон", "credited", "received",
+                "dungeer", "дүнгээр", "dansand", "guilgee", "гүйлгээ",
+                "hiigdlee", "хийгдлээ", "шилжүүлэг", "орлогын"
+            )
+            val bankSenders = dynamicSenders ?: listOf(
+                "1900", "19001917", "19001918",
+                "1800", "18001800", "132525",
+                "1500", "15001500", "7575", "1234", "2525"
+            )
+            val templatesJson = prefs.getString("smsTemplates", null)
+
+            // Query recent SMS inbox (since last check)
+            val uri = Uri.parse("content://sms/inbox")
+            val cursor: Cursor? = contentResolver.query(
+                uri,
+                arrayOf("_id", "address", "body", "date"),
+                "date > ?",
+                arrayOf(lastCheckedTimestamp.toString()),
+                "date ASC"
+            )
+
+            cursor?.use {
+                while (it.moveToNext()) {
+                    val sender = it.getString(it.getColumnIndexOrThrow("address")) ?: ""
+                    val body = it.getString(it.getColumnIndexOrThrow("body")) ?: ""
+                    val date = it.getLong(it.getColumnIndexOrThrow("date"))
+
+                    // Update timestamp
+                    if (date > lastCheckedTimestamp) lastCheckedTimestamp = date
+
+                    // Check if bank SMS
+                    val isFromBank = bankSenders.any { b -> sender.contains(b) || b.contains(sender) }
+                    val hasKeyword = keywords.any { k ->
+                        body.lowercase().contains(k.lowercase())
+                    } && Regex("\\d[\\d,.]*").containsMatchIn(body)
+
+                    if (!isFromBank && !hasKeyword) continue
+
+                    // Parse
+                    var amount = parseAmountWithTemplates(body, templatesJson)
+                    val bank = parseBankName(sender, body)
+                    var utga = parseUtgaWithTemplates(body, templatesJson)
+                    if (amount <= 0) amount = parseAmountFallback(body)
+                    if (utga.isEmpty()) utga = parseUtgaFallback(body)
+
+                    Log.i(TAG, "📤 SMS poll: amount=$amount, bank=$bank, utga=$utga")
+
+                    val success = SmsBroadcastReceiver.sendToFirestore(
+                        pairingKey, sender, body, amount, bank, utga, date
+                    )
+                    if (success) {
+                        totalForwarded++
+                        // Update notification
+                        val tapIntent = packageManager.getLaunchIntentForPackage(packageName)
+                        val pi = if (tapIntent != null) {
+                            PendingIntent.getActivity(this, 0, tapIntent,
+                                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
+                        } else null
+                        updateNotification(pi, "📤 $totalForwarded дамжуулсан")
+                    } else {
+                        SmsBroadcastReceiver.enqueue(
+                            this, pairingKey, sender, body, amount, bank, utga, date
+                        )
+                    }
+                }
+            }
+
+            // Also persist lastCheckedTimestamp so it survives restarts
+            prefs.edit().putLong("lastSmsTimestamp", lastCheckedTimestamp).apply()
+
+        } catch (e: Exception) {
+            Log.e(TAG, "SMS poll error: ${e.message}")
+        }
+    }
+
+    // ====== PARSING HELPERS (same logic as SmsBroadcastReceiver) ======
+
+    private fun parseAmountWithTemplates(body: String, templatesJson: String?): Double {
+        if (templatesJson.isNullOrEmpty()) return 0.0
+        try {
+            val templates = org.json.JSONArray(templatesJson)
+            for (i in 0 until templates.length()) {
+                val tmpl = templates.getJSONObject(i)
+                val prefix = tmpl.optString("amountPrefix", "")
+                if (prefix.isEmpty()) continue
+                val kws = tmpl.optJSONArray("incomeKeywords")
+                var match = false
+                if (kws != null) {
+                    for (k in 0 until kws.length()) {
+                        if (body.lowercase().contains(kws.optString(k, "").lowercase())) { match = true; break }
+                    }
+                }
+                if (!match) continue
+                val suffix = tmpl.optString("amountSuffix", "")
+                val result = parseWithMarkers(body, prefix, suffix)
+                if (result.isNotEmpty()) {
+                    val v = result.replace(Regex("[,\\s]"), "").toDoubleOrNull() ?: 0.0
+                    if (v > 0) return v
+                }
+            }
+        } catch (_: Exception) {}
+        return 0.0
+    }
+
+    private fun parseUtgaWithTemplates(body: String, templatesJson: String?): String {
+        if (templatesJson.isNullOrEmpty()) return ""
+        try {
+            val templates = org.json.JSONArray(templatesJson)
+            for (i in 0 until templates.length()) {
+                val tmpl = templates.getJSONObject(i)
+                val prefix = tmpl.optString("utgaPrefix", "")
+                if (prefix.isEmpty()) continue
+                val kws = tmpl.optJSONArray("incomeKeywords")
+                var match = false
+                if (kws != null) {
+                    for (k in 0 until kws.length()) {
+                        if (body.lowercase().contains(kws.optString(k, "").lowercase())) { match = true; break }
+                    }
+                }
+                if (!match) continue
+                val suffix = tmpl.optString("utgaSuffix", "")
+                val result = parseWithMarkers(body, prefix, suffix)
+                if (result.isNotEmpty()) return result
+            }
+        } catch (_: Exception) {}
+        return ""
+    }
+
+    private fun parseWithMarkers(text: String, prefix: String, suffix: String): String {
+        if (prefix.isEmpty()) return ""
+        val lower = text.lowercase()
+        val pi = lower.indexOf(prefix.lowercase())
+        if (pi == -1) return ""
+        val start = pi + prefix.length
+        if (suffix.isEmpty()) {
+            val rest = text.substring(start)
+            val end = Regex("[\\n]|,\\s|\\.\\s\\s").find(rest)
+            return if (end != null) rest.substring(0, end.range.first).trim() else rest.trim()
+        }
+        val si = lower.indexOf(suffix.lowercase(), start)
+        if (si == -1) {
+            val rest = text.substring(start)
+            val nl = rest.indexOf('\n')
+            return if (nl > -1) rest.substring(0, nl).trim() else rest.trim()
+        }
+        return text.substring(start, si).trim()
+    }
+
+    private fun parseAmountFallback(body: String): Double {
+        val txnPatterns = listOf(
+            Regex("(?:guilgeenii\\s*dun|гүйлгээний\\s*(?:дүн|дүнгээр))[:\\s]*(\\d[\\d,]*(?:\\.\\d{1,2})?)\\s*(?:MNT|₮|төг)?", RegexOption.IGNORE_CASE),
+            Regex("(?:orlogo|орлого)[:\\s]*(\\d[\\d,]*(?:\\.\\d{1,2})?)\\s*(?:MNT|₮|төг)?", RegexOption.IGNORE_CASE),
+            Regex("(?:dun|дүн)[:\\s]*(\\d[\\d,]*(?:\\.\\d{1,2})?)\\s*(?:MNT|₮|төг)?", RegexOption.IGNORE_CASE),
+        )
+        for (p in txnPatterns) {
+            val m = p.find(body)
+            if (m != null) {
+                val v = m.groupValues[1].replace(Regex("[,\\s]"), "").toDoubleOrNull() ?: 0.0
+                if (v > 0) return v
+            }
+        }
+        val mntMatch = Regex("(\\d[\\d,]*(?:\\.\\d{1,2})?)\\s*(?:MNT|₮|төг)", RegexOption.IGNORE_CASE).find(body)
+        if (mntMatch != null) {
+            val idx = mntMatch.range.first
+            val before = body.substring(maxOf(0, idx - 30), idx).lowercase()
+            if (!before.contains("uldegdel") && !before.contains("үлдэгдэл")) {
+                val v = mntMatch.groupValues[1].replace(Regex("[,\\s]"), "").toDoubleOrNull() ?: 0.0
+                if (v > 0) return v
+            }
+        }
+        val numbers = Regex("\\d[\\d,]*(?:\\.\\d{1,2})?").findAll(body)
+            .mapNotNull { it.value.replace(",", "").toDoubleOrNull() }
+            .filter { it > 100 }.sortedDescending().toList()
+        return if (numbers.size >= 2) numbers[1] else numbers.firstOrNull() ?: 0.0
+    }
+
+    private fun parseBankName(sender: String, body: String): String {
+        if (sender.contains("1900") || sender.contains("19001917")) return "Khan Bank"
+        if (sender.contains("132525") || sender.contains("18001800")) return "Golomt"
+        if (sender.contains("1800")) return "Golomt"
+        if (sender.contains("15001500") || sender.contains("1500")) return "TDB"
+        if (sender.contains("7575")) return "XacBank"
+        if (sender.contains("1234")) return "Төрийн Банк"
+        if (sender.contains("2525")) return "Bogd Bank"
+        val lower = body.lowercase()
+        if (lower.contains("khan") || lower.contains("хаан")) return "Khan Bank"
+        if (lower.contains("golomt") || lower.contains("голомт")) return "Golomt"
+        if (lower.contains("tdb") || lower.contains("худалдаа")) return "TDB"
+        return "Банк ($sender)"
+    }
+
+    private fun parseUtgaFallback(body: String): String {
+        val patterns = listOf(
+            Regex("(?:guilgeenii\\s*)?utga[:\\s]*([^\\n,.]+)", RegexOption.IGNORE_CASE),
+            Regex("(?:гүйлгээний\\s*)?утга[:\\s]*([^\\n,.]+)", RegexOption.IGNORE_CASE),
+        )
+        for (p in patterns) {
+            val m = p.find(body)
+            if (m != null) return m.groupValues[1].trim()
+        }
+        return ""
+    }
+
+    // ====== NOTIFICATION ======
+
+    private fun buildNotification(pendingIntent: PendingIntent?, text: String) =
+        NotificationCompat.Builder(this, CHANNEL_ID)
+            .setContentTitle("Liscord Bridge")
+            .setContentText(text)
+            .setSmallIcon(android.R.drawable.ic_dialog_email)
+            .setPriority(NotificationCompat.PRIORITY_MIN)
+            .setOngoing(true)
+            .setSilent(true)
+            .setContentIntent(pendingIntent)
+            .build()
+
+    private fun updateNotification(pendingIntent: PendingIntent?, text: String) {
+        try {
+            val manager = getSystemService(NotificationManager::class.java)
+            manager.notify(NOTIFICATION_ID, buildNotification(pendingIntent, text))
+        } catch (_: Exception) {}
+    }
+
+    // ====== OFFLINE QUEUE RETRY ======
 
     private fun registerNetworkListener() {
         try {
@@ -125,12 +351,10 @@ class BootForegroundService : Service() {
             val request = NetworkRequest.Builder()
                 .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
                 .build()
-
             val callback = object : ConnectivityManager.NetworkCallback() {
                 override fun onAvailable(network: Network) {
-                    Log.i(TAG, "🌐 Network available — retrying queue")
+                    Log.i(TAG, "🌐 Network back — retrying queue")
                     thread {
-                        // Small delay to let connection stabilize
                         Thread.sleep(2000)
                         SmsBroadcastReceiver.retryQueue(this@BootForegroundService)
                     }
@@ -146,8 +370,7 @@ class BootForegroundService : Service() {
     private fun unregisterNetworkListener() {
         try {
             networkCallback?.let {
-                val cm = getSystemService(CONNECTIVITY_SERVICE) as ConnectivityManager
-                cm.unregisterNetworkCallback(it)
+                (getSystemService(CONNECTIVITY_SERVICE) as ConnectivityManager).unregisterNetworkCallback(it)
             }
             networkCallback = null
         } catch (_: Exception) {}
@@ -157,7 +380,6 @@ class BootForegroundService : Service() {
 
     private fun startUpdateChecks() {
         updateCheckRunnable?.let { handler.removeCallbacks(it) }
-
         val runnable = object : Runnable {
             override fun run() {
                 thread { checkForUpdate() }
@@ -165,9 +387,7 @@ class BootForegroundService : Service() {
             }
         }
         updateCheckRunnable = runnable
-        val delayMs = msUntilMidnight()
-        Log.i(TAG, "Next update check in ${delayMs / 3600000}h")
-        handler.postDelayed(runnable, delayMs)
+        handler.postDelayed(runnable, msUntilMidnight())
     }
 
     private fun msUntilMidnight(): Long {
@@ -185,53 +405,39 @@ class BootForegroundService : Service() {
     private fun checkForUpdate() {
         try {
             val url = URL(GITHUB_RELEASE_URL)
-            val connection = url.openConnection() as HttpURLConnection
-            connection.setRequestProperty("Accept", "application/vnd.github.v3+json")
-            connection.connectTimeout = 10000
-            connection.readTimeout = 10000
-
-            if (connection.responseCode != 200) {
-                connection.disconnect(); return
-            }
-
-            val responseText = connection.inputStream.bufferedReader().readText()
-            connection.disconnect()
-
-            val json = JSONObject(responseText)
-            val body = json.optString("body", "")
-            val match = Regex("v(\\d+\\.\\d+)").find(body)
+            val conn = url.openConnection() as HttpURLConnection
+            conn.setRequestProperty("Accept", "application/vnd.github.v3+json")
+            conn.connectTimeout = 10000
+            conn.readTimeout = 10000
+            if (conn.responseCode != 200) { conn.disconnect(); return }
+            val body = conn.inputStream.bufferedReader().readText()
+            conn.disconnect()
+            val json = JSONObject(body)
+            val match = Regex("v(\\d+\\.\\d+)").find(json.optString("body", ""))
             val remoteVersion = match?.groupValues?.get(1) ?: return
-
             val prefs = getSharedPreferences("LiscordBridge", MODE_PRIVATE)
             val currentVersion = prefs.getString("appVersion", "1.6") ?: "1.6"
-
-            if (remoteVersion != currentVersion) {
-                showUpdateNotification(remoteVersion)
-            }
-        } catch (e: Exception) {
-            Log.w(TAG, "Update check failed: ${e.message}")
-        }
+            if (remoteVersion != currentVersion) showUpdateNotification(remoteVersion)
+        } catch (_: Exception) {}
     }
 
     private fun showUpdateNotification(version: String) {
-        val tapIntent = packageManager.getLaunchIntentForPackage(packageName)
-        tapIntent?.putExtra("updateAvailable", version)
-        val pendingIntent = if (tapIntent != null) {
+        val tapIntent = packageManager.getLaunchIntentForPackage(packageName)?.apply {
+            putExtra("updateAvailable", version)
+        }
+        val pi = if (tapIntent != null) {
             PendingIntent.getActivity(this, 1, tapIntent,
                 PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
         } else null
-
-        val notification = NotificationCompat.Builder(this, UPDATE_CHANNEL_ID)
+        val n = NotificationCompat.Builder(this, UPDATE_CHANNEL_ID)
             .setContentTitle("🚀 Шинэ хувилбар v$version")
             .setContentText("Дарж шинэчлэнэ үү")
             .setSmallIcon(android.R.drawable.stat_sys_download_done)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setAutoCancel(true)
-            .setContentIntent(pendingIntent)
+            .setContentIntent(pi)
             .build()
-
-        val manager = getSystemService(NotificationManager::class.java)
-        manager.notify(UPDATE_NOTIFICATION_ID, notification)
+        getSystemService(NotificationManager::class.java).notify(UPDATE_NOTIFICATION_ID, n)
     }
 
     // ====== CHANNELS ======
@@ -240,8 +446,7 @@ class BootForegroundService : Service() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(CHANNEL_ID, "SMS Хяналт", NotificationManager.IMPORTANCE_MIN).apply {
                 description = "SMS орлого хяналтын мэдэгдэл"
-                setShowBadge(false)
-                setSound(null, null)
+                setShowBadge(false); setSound(null, null)
             }
             getSystemService(NotificationManager::class.java).createNotificationChannel(channel)
         }
@@ -250,8 +455,7 @@ class BootForegroundService : Service() {
     private fun createUpdateChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(UPDATE_CHANNEL_ID, "Шинэчлэл", NotificationManager.IMPORTANCE_HIGH).apply {
-                description = "Апп шинэчлэлийн мэдэгдэл"
-                setShowBadge(true)
+                description = "Апп шинэчлэлийн мэдэгдэл"; setShowBadge(true)
             }
             getSystemService(NotificationManager::class.java).createNotificationChannel(channel)
         }
