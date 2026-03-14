@@ -1476,6 +1476,27 @@
     .fd-card { flex: 0 0 33.33%; }
 }
 
+/* Scroll indicator dots */
+.fd-dots {
+    display: flex;
+    justify-content: center;
+    gap: 6px;
+    padding: 10px 0 6px;
+}
+.fd-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.25);
+    transition: all 0.3s;
+}
+.fd-dot.active {
+    background: #ff4d6d;
+    width: 16px;
+    border-radius: 3px;
+    box-shadow: 0 0 8px rgba(255, 0, 110, 0.5);
+}
+
 /* ============================================
    CUSTOMER DASHBOARD — Slide-over Drawer
    ============================================ */

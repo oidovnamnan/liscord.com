@@ -8,6 +8,7 @@ export interface FlashDealProduct {
     flashPrice: number;
     maxQuantity: number;
     soldCount: number;
+    addedAt?: string; // ISO — when product was added to flash deal
 }
 
 export interface FlashDealConfig {
@@ -24,36 +25,50 @@ interface FlashDealSectionProps {
     onProductClick?: (product: Product) => void;
 }
 
-function useCountdown(targetDate: Date) {
+/** Per-product countdown: each product counts down based on its own addedAt + deal duration */
+function ProductCountdown({ addedAt, dealDuration }: { addedAt?: string; dealDuration: number }) {
     const calcTimeLeft = useCallback(() => {
-        const diff = targetDate.getTime() - Date.now();
-        if (diff <= 0) return { hours: 0, minutes: 0, seconds: 0, expired: true };
+        if (!addedAt) return { h: 0, m: 0, s: 0, expired: true };
+        const expiresAt = new Date(addedAt).getTime() + dealDuration;
+        const diff = expiresAt - Date.now();
+        if (diff <= 0) return { h: 0, m: 0, s: 0, expired: true };
         return {
-            hours: Math.floor(diff / (1000 * 60 * 60)),
-            minutes: Math.floor((diff / (1000 * 60)) % 60),
-            seconds: Math.floor((diff / 1000) % 60),
+            h: Math.floor(diff / (1000 * 60 * 60)),
+            m: Math.floor((diff / (1000 * 60)) % 60),
+            s: Math.floor((diff / 1000) % 60),
             expired: false,
         };
-    }, [targetDate]);
+    }, [addedAt, dealDuration]);
 
-    const [timeLeft, setTimeLeft] = useState(calcTimeLeft);
+    const [t, setT] = useState(calcTimeLeft);
 
     useEffect(() => {
-        const timer = setInterval(() => setTimeLeft(calcTimeLeft()), 1000);
+        const timer = setInterval(() => setT(calcTimeLeft()), 1000);
         return () => clearInterval(timer);
     }, [calcTimeLeft]);
 
-    return timeLeft;
+    if (t.expired) return null;
+
+    const pad = (n: number) => String(n).padStart(2, '0');
+
+    return (
+        <div className="fd-timer-sm">
+            <Clock size={11} />
+            <span className="fd-timer-box-sm">{pad(t.h)}</span>
+            <span className="fd-timer-sep-sm">:</span>
+            <span className="fd-timer-box-sm">{pad(t.m)}</span>
+            <span className="fd-timer-sep-sm">:</span>
+            <span className="fd-timer-box-sm fd-timer-sec-sm">{pad(t.s)}</span>
+        </div>
+    );
 }
 
 export function FlashDealSection({ config, allProducts, onProductClick }: FlashDealSectionProps) {
-    const { hours, minutes, seconds, expired } = useCountdown(config.endsAt);
     const now = new Date();
+    if (!config.enabled) return null;
 
-    // Don't render if not enabled, not started yet, or expired
-    if (!config.enabled || now < config.startsAt || expired) return null;
-
-    const pad = (n: number) => String(n).padStart(2, '0');
+    // Deal duration in ms (from config startsAt to endsAt)
+    const dealDuration = config.endsAt.getTime() - config.startsAt.getTime();
 
     const handleAddToCart = (e: React.MouseEvent, product: Product, flashPrice: number) => {
         e.stopPropagation();
@@ -64,16 +79,33 @@ export function FlashDealSection({ config, allProducts, onProductClick }: FlashD
         });
     };
 
-    // Match flash deal products with actual product data
+    // Match flash deal products with actual product data, filter expired
     const dealProducts = config.products
         .map(fp => {
             const product = allProducts.find(p => p.id === fp.productId);
             if (!product) return null;
+            // Check if this product's deal has expired
+            if (fp.addedAt) {
+                const expiresAt = new Date(fp.addedAt).getTime() + dealDuration;
+                if (expiresAt <= now.getTime()) return null; // expired
+            }
             return { ...fp, product };
         })
         .filter(Boolean) as (FlashDealProduct & { product: Product })[];
 
     if (dealProducts.length === 0) return null;
+
+    // Scroll indicator state
+    const [activeIndex, setActiveIndex] = useState(0);
+    const totalCards = dealProducts.length;
+    const visibleCards = 2; // show 2 at a time on mobile
+
+    const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+        const el = e.currentTarget;
+        const cardWidth = el.scrollWidth / totalCards;
+        const idx = Math.round(el.scrollLeft / cardWidth);
+        setActiveIndex(idx);
+    };
 
     return (
         <div className="fd-section">
@@ -81,10 +113,10 @@ export function FlashDealSection({ config, allProducts, onProductClick }: FlashD
             <div className="fd-glow fd-glow-1" />
             <div className="fd-glow fd-glow-2" />
 
-            {/* Scrollable product cards — each with its own timer overlay */}
-            <div className="fd-products">
+            {/* Scrollable product cards */}
+            <div className="fd-products" onScroll={handleScroll}>
                 {dealProducts.map(deal => {
-                    const { product, flashPrice, maxQuantity, soldCount } = deal;
+                    const { product, flashPrice, maxQuantity, soldCount, addedAt } = deal;
                     const originalPrice = product.pricing?.salePrice || 0;
                     const discountPercent = originalPrice > 0
                         ? Math.round((1 - flashPrice / originalPrice) * 100)
@@ -107,7 +139,7 @@ export function FlashDealSection({ config, allProducts, onProductClick }: FlashD
                                     <div className="fd-img-placeholder">📦</div>
                                 )}
 
-                                {/* Overlay: title + timer + badge on each card */}
+                                {/* Overlay */}
                                 <div className="fd-card-overlay">
                                     <div className="fd-card-overlay-top">
                                         <div className="fd-title-row">
@@ -123,14 +155,7 @@ export function FlashDealSection({ config, allProducts, onProductClick }: FlashD
                                         )}
                                     </div>
                                     <div className="fd-card-overlay-bottom">
-                                        <div className="fd-timer-sm">
-                                            <Clock size={11} />
-                                            <span className="fd-timer-box-sm">{pad(hours)}</span>
-                                            <span className="fd-timer-sep-sm">:</span>
-                                            <span className="fd-timer-box-sm">{pad(minutes)}</span>
-                                            <span className="fd-timer-sep-sm">:</span>
-                                            <span className="fd-timer-box-sm fd-timer-sec-sm">{pad(seconds)}</span>
-                                        </div>
+                                        <ProductCountdown addedAt={addedAt} dealDuration={dealDuration} />
                                     </div>
                                 </div>
 
@@ -153,7 +178,6 @@ export function FlashDealSection({ config, allProducts, onProductClick }: FlashD
                                     )}
                                 </div>
 
-                                {/* Progress bar */}
                                 <div className="fd-progress-wrap">
                                     <div className="fd-progress-bar">
                                         <div
@@ -166,7 +190,6 @@ export function FlashDealSection({ config, allProducts, onProductClick }: FlashD
                                     </span>
                                 </div>
 
-                                {/* Add to cart */}
                                 {!isSoldOut && (
                                     <button
                                         className="fd-add-btn"
@@ -181,6 +204,15 @@ export function FlashDealSection({ config, allProducts, onProductClick }: FlashD
                     );
                 })}
             </div>
+
+            {/* Scroll indicator dots */}
+            {totalCards > visibleCards && (
+                <div className="fd-dots">
+                    {Array.from({ length: Math.ceil(totalCards / visibleCards) }).map((_, i) => (
+                        <div key={i} className={`fd-dot ${i === Math.floor(activeIndex / visibleCards) ? 'active' : ''}`} />
+                    ))}
+                </div>
+            )}
         </div>
     );
 }

@@ -10,6 +10,7 @@ interface FlashProduct {
     flashPrice: number;
     maxQuantity: number;
     soldCount: number;
+    addedAt?: string; // ISO string — when this product was added to flash deal
 }
 
 interface FlashConfig {
@@ -107,6 +108,7 @@ export function FlashDealSettings({ bizId }: { bizId: string }) {
                 flashPrice,
                 maxQuantity: 10,
                 soldCount: 0,
+                addedAt: new Date().toISOString(),
             }],
         }));
         setShowProductPicker(false);

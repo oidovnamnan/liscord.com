@@ -159,7 +159,10 @@ export function ThemeMinimal({ business }: { business: Business }) {
                         title: fd.title || '⚡ FLASH DEAL',
                         startsAt: fd.startsAt?.toDate?.() || new Date(fd.startsAt),
                         endsAt: fd.endsAt?.toDate?.() || new Date(fd.endsAt),
-                        products: fd.products,
+                        products: (fd.products || []).map((p: any) => ({
+                            ...p,
+                            addedAt: p.addedAt?.toDate?.()?.toISOString?.() || p.addedAt || null,
+                        })),
                     };
                     return (
                         <FlashDealSection
