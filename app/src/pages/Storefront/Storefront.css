@@ -1195,7 +1195,7 @@
 .fd-section {
     position: relative;
     margin: 0 clamp(12px, 4vw, 32px) 24px;
-    padding: 24px 20px;
+    padding: 20px 16px;
     border-radius: 20px;
     background: linear-gradient(135deg, #1a0533 0%, #2d1b4e 30%, #4a1942 60%, #1a0533 100%);
     overflow: hidden;
@@ -1241,7 +1241,9 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 16px;
+    margin-bottom: 14px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
     flex-wrap: wrap;
     gap: 10px;
 }
@@ -1333,6 +1335,7 @@
 
 .fd-card {
     flex: 0 0 calc(50% - 6px);
+    min-width: 140px;
     scroll-snap-align: start;
     background: rgba(255, 255, 255, 0.08);
     backdrop-filter: blur(10px);
@@ -1374,7 +1377,7 @@
 .fd-card-img {
     position: relative;
     width: 100%;
-    aspect-ratio: 1;
+    aspect-ratio: 4/3;
     background: rgba(0, 0, 0, 0.2);
     overflow: hidden;
 }
@@ -1499,15 +1502,17 @@
 .fd-add-btn:hover { opacity: 0.85; }
 .fd-add-btn:active { transform: scale(0.97); }
 
-/* Single product layout */
+/* Responsive */
 @media (min-width: 500px) {
     .fd-card { flex: 0 0 calc(33.33% - 8px); }
 }
 
 @media (max-width: 380px) {
-    .fd-card { flex: 0 0 calc(55% - 6px); }
-    .fd-timer-box { min-width: 30px; height: 28px; font-size: 0.85rem; }
-    .fd-title { font-size: 0.95rem; }
+    .fd-card { flex: 0 0 calc(50% - 6px); min-width: 120px; }
+    .fd-timer-box { min-width: 28px; height: 26px; font-size: 0.8rem; }
+    .fd-title { font-size: 0.9rem; }
+    .fd-icon-pulse { width: 28px; height: 28px; }
+    .fd-icon-pulse svg { width: 14px; height: 14px; }
 }
 
 /* ============================================
