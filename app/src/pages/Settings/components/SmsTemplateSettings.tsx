@@ -1,12 +1,11 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
-import { collection, doc, getDocs, setDoc, updateDoc, deleteDoc, getDoc } from 'firebase/firestore';
+import { useState, useEffect, useMemo } from 'react';
+import { collection, doc, getDocs, setDoc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { db } from '../../../services/firebase';
 import { toast } from 'react-hot-toast';
 import {
-    MessageSquare, Plus, Trash2, Edit3, TestTube,
-    Check, X, ToggleLeft, ToggleRight, Banknote, Sparkles, Zap, Loader2
+    MessageSquare, Plus, Trash2, Edit3,
+    Check, X, ToggleLeft, ToggleRight, Banknote, TestTube, Eye
 } from 'lucide-react';
-import { parseSmsWithAi, generatePatternsFromAi, type AiSmsParseResult } from '../../../services/ai/aiSmsParser';
 import './SmsTemplateSettings.css';
 
 interface SmsTemplate {
@@ -14,75 +13,56 @@ interface SmsTemplate {
     bankName: string;
     senderNumbers: string[];
     incomeKeywords: string[];
-    amountPattern: string;
-    utgaPattern: string;
+    // Prefix/suffix markers for amount
+    amountPrefix: string;  // text before amount (e.g. "dansand ")
+    amountSuffix: string;  // text after amount (e.g. " dungeer")
+    // Prefix/suffix markers for utga
+    utgaPrefix: string;    // text before utga (e.g. "Utga: ")
+    utgaSuffix: string;    // text after utga (e.g. "" = end of line)
     sampleSms: string;
     isActive: boolean;
     isDefault: boolean;
+    // Keep old regex fields for backward compatibility
+    amountPattern?: string;
+    utgaPattern?: string;
 }
 
-const DEFAULT_TEMPLATES: Omit<SmsTemplate, 'id'>[] = [
-    {
-        bankName: 'Khan Bank',
-        senderNumbers: ['1900', '19001917', '19001918'],
-        incomeKeywords: ['Orlogo', 'орлого', 'ORLOGO'],
-        amountPattern: '(?:orlogo|Orlogo|ORLOGO|орлого)[:\\s]*(\\d[\\d,]*(?:\\.\\d{1,2})?)\\s*(?:MNT|₮|mnt)',
-        utgaPattern: '(?:guilgeenii\\s*)?(?:utga|Utga|UTGA|утга|Утга)[:\\s]*([^\\n,.]+)',
-        sampleSms: 'Orlogo: 150,000.00MNT Dan: 5021XXXX Utga: 90007878',
-        isActive: true,
-        isDefault: true,
-    },
-    {
-        bankName: 'Golomt Bank',
-        senderNumbers: ['1800', '18001800', '132525'],
-        incomeKeywords: ['ORLOGO', 'орлого', 'credited', 'dungeer', 'guilgee'],
-        amountPattern: '(?:guilgeenii\\s*dun|гүйлгээний\\s*дүн)[:\\s]*(\\d[\\d,]*(?:\\.\\d{1,2})?)\\s*(?:MNT|₮|mnt)',
-        utgaPattern: '(?:guilgeenii\\s*)?(?:utga|Utga|утга|Утга)[:\\s]*([^\\n,.]+)',
-        sampleSms: 'ORLOGO 250000.00MNT guilgeenii utga: Zahialga#123',
-        isActive: true,
-        isDefault: true,
-    },
-    {
-        bankName: 'TDB (Худалдаа Хөгжлийн)',
-        senderNumbers: ['1500', '15001500'],
-        incomeKeywords: ['Orlogo', 'орлого', 'credited'],
-        amountPattern: '(\\d[\\d,]*(?:\\.\\d{1,2})?)\\s*(?:MNT|₮|mnt)',
-        utgaPattern: '(?:utga|Utga|утга|Утга|Ref)[:\\s]*([^\\n,.]+)',
-        sampleSms: 'Orlogo 1975000.00MNT Utga: Tulbur toloo',
-        isActive: true,
-        isDefault: true,
-    },
-    {
-        bankName: 'XacBank',
-        senderNumbers: ['7575'],
-        incomeKeywords: ['Orlogo', 'орлого', 'received'],
-        amountPattern: '(\\d[\\d,]*(?:\\.\\d{1,2})?)\\s*(?:MNT|₮|mnt)',
-        utgaPattern: '(?:utga|Utga|утга|Утга)[:\\s]*([^\\n,.]+)',
-        sampleSms: 'Orlogo: 50,000MNT Утга: test123',
-        isActive: true,
-        isDefault: true,
-    },
-    {
-        bankName: 'Төрийн Банк',
-        senderNumbers: ['1234'],
-        incomeKeywords: ['Orlogo', 'орлого', 'credited'],
-        amountPattern: '(\\d[\\d,]*(?:\\.\\d{1,2})?)\\s*(?:MNT|₮|mnt)',
-        utgaPattern: '(?:utga|Utga|утга|Утга)[:\\s]*([^\\n,.]+)',
-        sampleSms: 'Orlogo 300000MNT utga: salary',
-        isActive: true,
-        isDefault: true,
-    },
-    {
-        bankName: 'Bogd Bank',
-        senderNumbers: ['2525'],
-        incomeKeywords: ['Orlogo', 'орлого'],
-        amountPattern: '(\\d[\\d,]*(?:\\.\\d{1,2})?)\\s*(?:MNT|₮|mnt)',
-        utgaPattern: '(?:utga|Utga|утга|Утга)[:\\s]*([^\\n,.]+)',
-        sampleSms: 'ORLOGO: 80,000.00MNT Utga: test',
-        isActive: true,
-        isDefault: true,
-    },
-];
+/**
+ * Parse SMS using prefix/suffix text markers.
+ * Finds text between prefix and suffix to extract value.
+ */
+function parseWithMarkers(
+    smsBody: string,
+    prefix: string,
+    suffix: string
+): string {
+    if (!prefix) return '';
+    const lower = smsBody.toLowerCase();
+    const prefixLower = prefix.toLowerCase();
+    const prefixIdx = lower.indexOf(prefixLower);
+    if (prefixIdx === -1) return '';
+
+    const startIdx = prefixIdx + prefix.length;
+
+    if (!suffix) {
+        // No suffix: take until end of line, comma, period followed by space, or next whitespace-heavy break
+        const rest = smsBody.substring(startIdx);
+        // Find end: newline, or ". " or ", " or "  " double space
+        const endMatch = rest.match(/[\n]|,\s|\.\s\s/);
+        return endMatch ? rest.substring(0, endMatch.index).trim() : rest.trim();
+    }
+
+    const suffixLower = suffix.toLowerCase();
+    const suffixIdx = lower.indexOf(suffixLower, startIdx);
+    if (suffixIdx === -1) {
+        // Suffix not found: take everything after prefix until line end
+        const rest = smsBody.substring(startIdx);
+        const nlIdx = rest.indexOf('\n');
+        return nlIdx > -1 ? rest.substring(0, nlIdx).trim() : rest.trim();
+    }
+
+    return smsBody.substring(startIdx, suffixIdx).trim();
+}
 
 function tryParseWithTemplate(template: SmsTemplate, smsBody: string): { amount: number; utga: string; bank: string; matched: boolean } {
     let amount = 0;
@@ -95,26 +75,45 @@ function tryParseWithTemplate(template: SmsTemplate, smsBody: string): { amount:
     );
     if (!hasKeyword) return { amount, utga, bank: template.bankName, matched: false };
 
-    // Parse amount — try template pattern first
-    try {
-        const amountRegex = new RegExp(template.amountPattern, 'i');
-        const amountMatch = smsBody.match(amountRegex);
-        if (amountMatch?.[1]) {
-            amount = parseFloat(amountMatch[1].replace(/[,\s]/g, ''));
-            matched = true;
+    // Parse amount by prefix/suffix markers
+    if (template.amountPrefix) {
+        const amountStr = parseWithMarkers(smsBody, template.amountPrefix, template.amountSuffix);
+        if (amountStr) {
+            const parsed = parseFloat(amountStr.replace(/[,\s]/g, ''));
+            if (!isNaN(parsed) && parsed > 0) {
+                amount = parsed;
+                matched = true;
+            }
         }
-    } catch (_e) { /* invalid regex */ }
+    }
 
-    // Parse utga
-    try {
-        const utgaRegex = new RegExp(template.utgaPattern, 'i');
-        const utgaMatch = smsBody.match(utgaRegex);
-        if (utgaMatch?.[1]) {
-            utga = utgaMatch[1].trim();
-        }
-    } catch (_e) { /* invalid regex */ }
+    // Parse utga by prefix/suffix markers
+    if (template.utgaPrefix) {
+        utga = parseWithMarkers(smsBody, template.utgaPrefix, template.utgaSuffix);
+    }
 
-    // Fallback 1: try standard MNT/₮ amount pattern
+    // Fallback: try old regex patterns if markers didn't work
+    if (!matched && template.amountPattern) {
+        try {
+            const amountRegex = new RegExp(template.amountPattern, 'i');
+            const amountMatch = smsBody.match(amountRegex);
+            if (amountMatch?.[1]) {
+                amount = parseFloat(amountMatch[1].replace(/[,\s]/g, ''));
+                matched = amount > 0;
+            }
+        } catch (_e) { /* invalid regex */ }
+    }
+    if (!utga && template.utgaPattern) {
+        try {
+            const utgaRegex = new RegExp(template.utgaPattern, 'i');
+            const utgaMatch = smsBody.match(utgaRegex);
+            if (utgaMatch?.[1]) {
+                utga = utgaMatch[1].trim();
+            }
+        } catch (_e) { /* invalid regex */ }
+    }
+
+    // Fallback: MNT amount pattern
     if (!matched) {
         const mntFallback = smsBody.match(/(\d[\d,]*(?:\.\d{1,2})?)\s*(?:MNT|₮|mnt)/i);
         if (mntFallback) {
@@ -123,22 +122,59 @@ function tryParseWithTemplate(template: SmsTemplate, smsBody: string): { amount:
         }
     }
 
-    // Fallback 2: keyword matched but no MNT — find largest number > 100 in SMS
-    if (!matched && hasKeyword) {
-        const numbers = smsBody.match(/\d[\d,]*(?:\.\d{1,2})?/g);
-        if (numbers) {
-            const parsed = numbers
-                .map(n => parseFloat(n.replace(/,/g, '')))
-                .filter(n => n > 100);
-            if (parsed.length > 0) {
-                amount = Math.max(...parsed);
-                matched = true;
-            }
-        }
-    }
-
     return { amount, utga, bank: template.bankName, matched };
 }
+
+const DEFAULT_TEMPLATES: Omit<SmsTemplate, 'id'>[] = [
+    {
+        bankName: 'Golomt',
+        senderNumbers: ['132525'],
+        incomeKeywords: ['dungeer', 'orlogiin guilgee'],
+        amountPrefix: 'dansand ',
+        amountSuffix: ' dungeer',
+        utgaPrefix: 'Utga: ',
+        utgaSuffix: ' Uldegdel:',
+        sampleSms: '270*****32 dansand 5,000.00 dungeer orlogiin guilgee hiigdlee. Ognoo: 2026-03-14, Utga: 5468-OIDOVJAMTS N Uldegdel: 30,350.00',
+        isActive: true,
+        isDefault: true,
+    },
+    {
+        bankName: 'Khan Bank',
+        senderNumbers: ['1900', '19001917', '19001918'],
+        incomeKeywords: ['Orlogo', 'орлого'],
+        amountPrefix: 'Orlogo: ',
+        amountSuffix: 'MNT',
+        utgaPrefix: 'Utga: ',
+        utgaSuffix: '',
+        sampleSms: 'Orlogo: 150,000.00MNT Dan: 5021XXXX Utga: 90007878',
+        isActive: true,
+        isDefault: true,
+    },
+    {
+        bankName: 'Golomt Bank',
+        senderNumbers: ['1800', '18001800'],
+        incomeKeywords: ['ORLOGO', 'guilgeenii utga'],
+        amountPrefix: 'ORLOGO ',
+        amountSuffix: 'MNT',
+        utgaPrefix: 'guilgeenii utga: ',
+        utgaSuffix: '',
+        sampleSms: 'ORLOGO 250000.00MNT guilgeenii utga: Zahialga#123',
+        isActive: true,
+        isDefault: true,
+    },
+    {
+        bankName: 'TDB',
+        senderNumbers: ['1500', '15001500'],
+        incomeKeywords: ['Orlogo', 'орлого'],
+        amountPrefix: 'Orlogo ',
+        amountSuffix: 'MNT',
+        utgaPrefix: 'Utga: ',
+        utgaSuffix: '',
+        sampleSms: 'Orlogo 1975000.00MNT Utga: Tulbur toloo',
+        isActive: true,
+        isDefault: true,
+    },
+];
 
 export function SmsTemplateSettings({ bizId }: { bizId: string }) {
     const [templates, setTemplates] = useState<SmsTemplate[]>([]);
@@ -147,21 +183,6 @@ export function SmsTemplateSettings({ bizId }: { bizId: string }) {
     const [editingId, setEditingId] = useState<string | null>(null);
     const [editForm, setEditForm] = useState<Partial<SmsTemplate>>({});
     const [showAddForm, setShowAddForm] = useState(false);
-    const [geminiApiKey, setGeminiApiKey] = useState('');
-    const [aiTestResult, setAiTestResult] = useState<AiSmsParseResult | null>(null);
-    const [aiTesting, setAiTesting] = useState(false);
-
-    // Load Gemini API key from global settings
-    useEffect(() => {
-        const loadApiKey = async () => {
-            try {
-                const snap = await getDoc(doc(db, 'system_settings', 'global'));
-                const data = snap.data();
-                if (data?.geminiApiKey) setGeminiApiKey(data.geminiApiKey);
-            } catch (_e) { /* ignore */ }
-        };
-        loadApiKey();
-    }, []);
 
     // Load templates
     useEffect(() => {
@@ -175,7 +196,6 @@ export function SmsTemplateSettings({ bizId }: { bizId: string }) {
             const items = snap.docs.map(d => ({ id: d.id, ...d.data() } as SmsTemplate));
 
             if (items.length === 0) {
-                // First time: seed default templates
                 const seeded: SmsTemplate[] = [];
                 for (const tmpl of DEFAULT_TEMPLATES) {
                     const id = tmpl.bankName.toLowerCase().replace(/[^a-z0-9]/g, '_');
@@ -183,7 +203,7 @@ export function SmsTemplateSettings({ bizId }: { bizId: string }) {
                     seeded.push({ ...tmpl, id });
                 }
                 setTemplates(seeded);
-                toast.success('6 банкны бэлэн загвар үүсгэлээ');
+                toast.success(`${DEFAULT_TEMPLATES.length} банкны бэлэн загвар үүсгэлээ`);
             } else {
                 setTemplates(items);
             }
@@ -195,35 +215,22 @@ export function SmsTemplateSettings({ bizId }: { bizId: string }) {
         }
     };
 
-    // AI-powered SMS test
-    const handleAiTest = useCallback(async () => {
-        if (!testSms.trim()) return;
-        if (!geminiApiKey) {
-            toast.error('Gemini API Key тохируулаагүй байна. Super Admin → Тохиргоо хэсгээс нэмнэ үү.');
-            return;
+    // Test SMS with all templates
+    const testResult = useMemo(() => {
+        if (!testSms.trim()) return null;
+        for (const tmpl of templates) {
+            if (!tmpl.isActive) continue;
+            const result = tryParseWithTemplate(tmpl, testSms);
+            if (result.matched) return result;
         }
-        setAiTesting(true);
-        setAiTestResult(null);
-        try {
-            const result = await parseSmsWithAi(geminiApiKey, testSms);
-            setAiTestResult(result);
-        } catch (err) {
-            console.error('AI test error:', err);
-            toast.error('AI задлалт амжилтгүй');
-        } finally {
-            setAiTesting(false);
-        }
-    }, [testSms, geminiApiKey]);
+        return { amount: 0, utga: '', bank: 'Тодорхойгүй', matched: false };
+    }, [testSms, templates]);
 
     const toggleTemplate = async (tmpl: SmsTemplate) => {
         try {
-            await updateDoc(doc(db, 'businesses', bizId, 'smsTemplates', tmpl.id), {
-                isActive: !tmpl.isActive,
-            });
+            await updateDoc(doc(db, 'businesses', bizId, 'smsTemplates', tmpl.id), { isActive: !tmpl.isActive });
             setTemplates(prev => prev.map(t => t.id === tmpl.id ? { ...t, isActive: !t.isActive } : t));
-        } catch {
-            toast.error('Төлөв солиход алдаа');
-        }
+        } catch { toast.error('Төлөв солиход алдаа'); }
     };
 
     const startEdit = (tmpl: SmsTemplate) => {
@@ -232,8 +239,10 @@ export function SmsTemplateSettings({ bizId }: { bizId: string }) {
             bankName: tmpl.bankName,
             senderNumbers: tmpl.senderNumbers,
             incomeKeywords: tmpl.incomeKeywords,
-            amountPattern: tmpl.amountPattern,
-            utgaPattern: tmpl.utgaPattern,
+            amountPrefix: tmpl.amountPrefix || '',
+            amountSuffix: tmpl.amountSuffix || '',
+            utgaPrefix: tmpl.utgaPrefix || '',
+            utgaSuffix: tmpl.utgaSuffix || '',
             sampleSms: tmpl.sampleSms,
         });
     };
@@ -245,9 +254,7 @@ export function SmsTemplateSettings({ bizId }: { bizId: string }) {
             setTemplates(prev => prev.map(t => t.id === editingId ? { ...t, ...editForm } as SmsTemplate : t));
             setEditingId(null);
             toast.success('Загвар хадгалагдлаа');
-        } catch {
-            toast.error('Хадгалахад алдаа');
-        }
+        } catch { toast.error('Хадгалахад алдаа'); }
     };
 
     const deleteTemplate = async (tmpl: SmsTemplate) => {
@@ -256,9 +263,7 @@ export function SmsTemplateSettings({ bizId }: { bizId: string }) {
             await deleteDoc(doc(db, 'businesses', bizId, 'smsTemplates', tmpl.id));
             setTemplates(prev => prev.filter(t => t.id !== tmpl.id));
             toast.success('Устгалаа');
-        } catch {
-            toast.error('Устгахад алдаа');
-        }
+        } catch { toast.error('Устгахад алдаа'); }
     };
 
     const addTemplate = async () => {
@@ -269,8 +274,10 @@ export function SmsTemplateSettings({ bizId }: { bizId: string }) {
             bankName: editForm.bankName || '',
             senderNumbers: editForm.senderNumbers || [],
             incomeKeywords: editForm.incomeKeywords || ['Orlogo', 'орлого'],
-            amountPattern: editForm.amountPattern || '(\\d[\\d,]*(?:\\.\\d{1,2})?)\\s*(?:MNT|₮)',
-            utgaPattern: editForm.utgaPattern || '(?:utga|утга)[:\\s]*([^\\n,.]+)',
+            amountPrefix: editForm.amountPrefix || '',
+            amountSuffix: editForm.amountSuffix || '',
+            utgaPrefix: editForm.utgaPrefix || '',
+            utgaSuffix: editForm.utgaSuffix || '',
             sampleSms: editForm.sampleSms || '',
             isActive: true,
             isDefault: false,
@@ -282,21 +289,21 @@ export function SmsTemplateSettings({ bizId }: { bizId: string }) {
             setShowAddForm(false);
             setEditForm({});
             toast.success('Шинэ загвар нэмлээ');
-        } catch {
-            toast.error('Нэмэхэд алдаа');
-        }
+        } catch { toast.error('Нэмэхэд алдаа'); }
     };
 
-    // Preview edit form's pattern on the sample SMS
+    // Preview live
     const editPreview = useMemo(() => {
-        if (!editForm.sampleSms || !editForm.amountPattern) return null;
+        if (!editForm.sampleSms) return null;
         const mockTemplate: SmsTemplate = {
             id: 'preview',
             bankName: editForm.bankName || '',
             senderNumbers: editForm.senderNumbers || [],
-            incomeKeywords: editForm.incomeKeywords || ['Orlogo', 'орлого'],
-            amountPattern: editForm.amountPattern || '',
-            utgaPattern: editForm.utgaPattern || '',
+            incomeKeywords: editForm.incomeKeywords || ['Orlogo', 'орлого', 'dungeer'],
+            amountPrefix: editForm.amountPrefix || '',
+            amountSuffix: editForm.amountSuffix || '',
+            utgaPrefix: editForm.utgaPrefix || '',
+            utgaSuffix: editForm.utgaSuffix || '',
             sampleSms: editForm.sampleSms || '',
             isActive: true,
             isDefault: false,
@@ -310,172 +317,49 @@ export function SmsTemplateSettings({ bizId }: { bizId: string }) {
 
     return (
         <div className="sms-tmpl-container">
-            {/* AI SMS Test Section */}
+            {/* Test SMS Section */}
             <div className="sms-tmpl-card sms-tmpl-test-card">
                 <div className="sms-tmpl-card-header">
                     <div className="sms-tmpl-card-icon test">
-                        <Zap size={18} />
+                        <TestTube size={18} />
                     </div>
                     <div>
-                        <h3>AI SMS Задлалт</h3>
-                        <p>Банкны мессежийг хуулж paste хийнэ үү — AI автоматаар танина</p>
+                        <h3>SMS Тест</h3>
+                        <p>Банкны мессежийг paste хийж загвар зөв таньж байгааг шалгана</p>
                     </div>
                 </div>
                 <textarea
                     className="sms-tmpl-test-input"
                     placeholder="Банкнаас ирсэн SMS мессежийг энд paste хийнэ үү..."
                     value={testSms}
-                    onChange={e => { setTestSms(e.target.value); setAiTestResult(null); }}
+                    onChange={e => setTestSms(e.target.value)}
                     rows={3}
                 />
-                {testSms.trim() && (
-                    <button
-                        className="sms-ai-test-btn"
-                        onClick={handleAiTest}
-                        disabled={aiTesting}
-                    >
-                        {aiTesting ? (
-                            <><Loader2 size={16} className="spin" /> AI задалж байна...</>
-                        ) : (
-                            <><Sparkles size={16} /> AI-аар задлах</>
-                        )}
-                    </button>
-                )}
-                {aiTestResult && (
-                    <div className={`sms-tmpl-test-result ${aiTestResult.confidence !== 'low' ? 'matched' : 'unmatched'}`}>
+                {testResult && (
+                    <div className={`sms-tmpl-test-result ${testResult.matched ? 'matched' : 'unmatched'}`}>
                         <div className="sms-tmpl-test-result-header">
-                            {aiTestResult.confidence !== 'low' ? (
-                                <><Sparkles size={14} /> <span>AI амжилттай таниллаа ({aiTestResult.confidence === 'high' ? '🟢 Өндөр' : '🟡 Дунд'} итгэлтэй)</span></>
+                            {testResult.matched ? (
+                                <><Check size={14} /> <span>✅ Амжилттай таниллаа — {testResult.bank}</span></>
                             ) : (
-                                <><Zap size={14} /> <span>Банкны SMS биш байх магадлалтай</span></>
+                                <><X size={14} /> <span>❌ Танигдсангүй. Загвар тохируулна уу.</span></>
                             )}
                         </div>
-                        <div className="sms-tmpl-test-fields">
-                            <div className="sms-tmpl-test-field">
-                                <label>Банк</label>
-                                <input
-                                    className="sms-ai-edit-input"
-                                    value={aiTestResult.bank}
-                                    onChange={e => setAiTestResult({ ...aiTestResult, bank: e.target.value })}
-                                />
-                            </div>
-                            <div className="sms-tmpl-test-field">
-                                <label>Дүн</label>
-                                <input
-                                    className="sms-ai-edit-input amount"
-                                    type="number"
-                                    value={aiTestResult.amount || ''}
-                                    onChange={e => setAiTestResult({ ...aiTestResult, amount: parseFloat(e.target.value) || 0 })}
-                                />
-                            </div>
-                            <div className="sms-tmpl-test-field">
-                                <label>Утга</label>
-                                <input
-                                    className="sms-ai-edit-input"
-                                    value={aiTestResult.utga}
-                                    onChange={e => setAiTestResult({ ...aiTestResult, utga: e.target.value })}
-                                />
-                            </div>
-                            <div className="sms-tmpl-test-field">
-                                <label>Төрөл</label>
-                                <span style={{ color: aiTestResult.isIncome ? '#10b981' : '#ef4444', fontWeight: 700 }}>
-                                    {aiTestResult.isIncome ? '📥 Орлого' : '📤 Зарлага'}
-                                </span>
-                            </div>
-                            {aiTestResult.accountNumber && (
+                        {testResult.matched && (
+                            <div className="sms-tmpl-test-fields">
                                 <div className="sms-tmpl-test-field">
-                                    <label>Данс</label>
-                                    <span>{aiTestResult.accountNumber}</span>
+                                    <label>Дүн</label>
+                                    <span className="amount">{testResult.amount.toLocaleString()}₮</span>
                                 </div>
-                            )}
-                        </div>
-                        <div className="sms-ai-confirm-section">
-                            <div className="sms-ai-patterns">
-                                <div className="sms-ai-pattern-title">📐 Загвар тохиргоо <span className="sms-ai-pattern-hint">(засаж болно)</span></div>
-                                <div className="sms-ai-pattern-row">
-                                    <span className="label">Дүн олох:</span>
-                                    <span className="pattern">
-                                        <input
-                                            className="sms-ai-pattern-input prefix"
-                                            value={aiTestResult.amountPrefix || ''}
-                                            onChange={e => setAiTestResult({ ...aiTestResult, amountPrefix: e.target.value })}
-                                            placeholder="өмнөх текст"
-                                        />
-                                        <span className="value">{aiTestResult.amount?.toLocaleString()}</span>
-                                        <input
-                                            className="sms-ai-pattern-input suffix"
-                                            value={aiTestResult.amountSuffix || ''}
-                                            onChange={e => setAiTestResult({ ...aiTestResult, amountSuffix: e.target.value })}
-                                            placeholder="дараах текст"
-                                        />
-                                    </span>
+                                <div className="sms-tmpl-test-field">
+                                    <label>Утга</label>
+                                    <span>{testResult.utga || '—'}</span>
                                 </div>
-                                <div className="sms-ai-pattern-row">
-                                    <span className="label">Утга олох:</span>
-                                    <span className="pattern">
-                                        <input
-                                            className="sms-ai-pattern-input prefix"
-                                            value={aiTestResult.utgaPrefix || ''}
-                                            onChange={e => setAiTestResult({ ...aiTestResult, utgaPrefix: e.target.value })}
-                                            placeholder="өмнөх текст"
-                                        />
-                                        <span className="value">{aiTestResult.utga}</span>
-                                        <input
-                                            className="sms-ai-pattern-input suffix"
-                                            value={aiTestResult.utgaSuffix || ''}
-                                            onChange={e => setAiTestResult({ ...aiTestResult, utgaSuffix: e.target.value })}
-                                            placeholder="дараах текст"
-                                        />
-                                    </span>
+                                <div className="sms-tmpl-test-field">
+                                    <label>Банк</label>
+                                    <span>{testResult.bank}</span>
                                 </div>
                             </div>
-                            <button
-                                className="sms-ai-confirm-btn"
-                                onClick={async () => {
-                                    const bankName = aiTestResult.bank;
-                                    const patterns = generatePatternsFromAi(aiTestResult);
-                                    const id = bankName.toLowerCase().replace(/[^a-z0-9]/g, '_') + '_' + Date.now();
-                                    const existing = templates.find(t => t.bankName.toLowerCase() === bankName.toLowerCase());
-
-                                    const templateData = {
-                                        bankName,
-                                        senderNumbers: existing?.senderNumbers || [],
-                                        incomeKeywords: aiTestResult.incomeKeywords && aiTestResult.incomeKeywords.length > 0
-                                            ? aiTestResult.incomeKeywords
-                                            : ['Orlogo', 'орлого', 'dungeer', 'guilgee', 'credited'],
-                                        amountPattern: patterns.amountPattern,
-                                        utgaPattern: patterns.utgaPattern,
-                                        sampleSms: testSms,
-                                        isActive: true,
-                                        isDefault: false,
-                                    };
-
-                                    try {
-                                        if (existing) {
-                                            // Update existing template
-                                            await updateDoc(doc(db, 'businesses', bizId, 'smsTemplates', existing.id), templateData);
-                                            setTemplates(prev => prev.map(t => t.id === existing.id ? { ...t, ...templateData } : t));
-                                            toast.success(`✅ ${bankName} загвар шинэчлэгдлээ!`);
-                                        } else {
-                                            // Create new template
-                                            await setDoc(doc(db, 'businesses', bizId, 'smsTemplates', id), templateData);
-                                            setTemplates(prev => [...prev, { id, ...templateData }]);
-                                            toast.success(`✅ ${bankName} загвар нэмэгдлээ! Илгээгчийн дугаарыг доороос нэмнэ үү.`);
-                                        }
-                                        setAiTestResult(null);
-                                        setTestSms('');
-                                    } catch {
-                                        toast.error('Хадгалахад алдаа');
-                                    }
-                                }}
-                            >
-                                <Check size={16} />
-                                {templates.some(t => t.bankName.toLowerCase() === aiTestResult.bank.toLowerCase())
-                                    ? `"${aiTestResult.bank}" загвар шинэчлэх`
-                                    : `"${aiTestResult.bank}" загвар баталгаажуулах`
-                                }
-                            </button>
-                        </div>
+                        )}
                     </div>
                 )}
             </div>
@@ -488,14 +372,13 @@ export function SmsTemplateSettings({ bizId }: { bizId: string }) {
                     </div>
                     <div>
                         <h3>Банкны загварууд</h3>
-                        <p>Банк бүрийн SMS формат тохиргоо</p>
+                        <p>Банк бүрийн SMS-ийн өмнөх/арын тэмдэгтээр орлого, утга таниулна</p>
                     </div>
                     <button className="sms-tmpl-add-btn" onClick={() => { setShowAddForm(true); setEditForm({}); }}>
                         <Plus size={14} /> Банк нэмэх
                     </button>
                 </div>
 
-                {/* Add new template form */}
                 {showAddForm && (
                     <div className="sms-tmpl-edit-form">
                         <h4>Шинэ банк нэмэх</h4>
@@ -555,6 +438,25 @@ export function SmsTemplateSettings({ bizId }: { bizId: string }) {
                                             )}
                                         </div>
                                     </div>
+                                    {/* Show markers summary */}
+                                    <div className="sms-tmpl-markers">
+                                        {tmpl.amountPrefix && (
+                                            <div className="sms-tmpl-marker-row">
+                                                <span className="marker-label">💰 Дүн:</span>
+                                                <span className="marker-prefix">{tmpl.amountPrefix}</span>
+                                                <span className="marker-value">ДҮНГИЙН ТОО</span>
+                                                {tmpl.amountSuffix && <span className="marker-suffix">{tmpl.amountSuffix}</span>}
+                                            </div>
+                                        )}
+                                        {tmpl.utgaPrefix && (
+                                            <div className="sms-tmpl-marker-row">
+                                                <span className="marker-label">📝 Утга:</span>
+                                                <span className="marker-prefix">{tmpl.utgaPrefix}</span>
+                                                <span className="marker-value">УТГЫН ТЕКСТ</span>
+                                                {tmpl.utgaSuffix && <span className="marker-suffix">{tmpl.utgaSuffix}</span>}
+                                            </div>
+                                        )}
+                                    </div>
                                     {tmpl.sampleSms && (
                                         <div className="sms-tmpl-sample">
                                             <MessageSquare size={12} />
@@ -571,7 +473,6 @@ export function SmsTemplateSettings({ bizId }: { bizId: string }) {
     );
 }
 
-// Reusable form for editing/adding templates
 function TemplateForm({
     editForm,
     setEditForm,
@@ -581,7 +482,6 @@ function TemplateForm({
     setEditForm: (f: Partial<SmsTemplate>) => void;
     preview: { amount: number; utga: string; bank: string; matched: boolean } | null;
 }) {
-    const [showAdvanced, setShowAdvanced] = useState(false);
     return (
         <div className="sms-tmpl-form-fields">
             <div className="sms-tmpl-form-row">
@@ -611,6 +511,66 @@ function TemplateForm({
                     placeholder="Orlogo, орлого, dungeer, guilgee, credited"
                 />
             </div>
+
+            {/* Prefix/Suffix markers */}
+            <div className="sms-tmpl-marker-section">
+                <div className="sms-tmpl-marker-title">
+                    <Eye size={14} /> Дүн таних тэмдэгт
+                    <span className="sms-tmpl-hint">Дүнгийн тооны өмнө/ард ямар текст байдгийг зааж өгнө</span>
+                </div>
+                <div className="sms-tmpl-marker-inputs">
+                    <div className="sms-tmpl-form-row compact">
+                        <label>Өмнөх текст</label>
+                        <input
+                            type="text"
+                            value={editForm.amountPrefix || ''}
+                            onChange={e => setEditForm({ ...editForm, amountPrefix: e.target.value })}
+                            placeholder="жнь: dansand "
+                            className="mono"
+                        />
+                    </div>
+                    <div className="sms-tmpl-form-row compact">
+                        <label>Арын текст <span className="sms-tmpl-hint">(хоосон = мөрийн төгсгөл)</span></label>
+                        <input
+                            type="text"
+                            value={editForm.amountSuffix || ''}
+                            onChange={e => setEditForm({ ...editForm, amountSuffix: e.target.value })}
+                            placeholder="жнь: dungeer (хоосон байж болно)"
+                            className="mono"
+                        />
+                    </div>
+                </div>
+            </div>
+
+            <div className="sms-tmpl-marker-section">
+                <div className="sms-tmpl-marker-title">
+                    <Eye size={14} /> Утга таних тэмдэгт
+                    <span className="sms-tmpl-hint">Утгын текстийн өмнө/ард ямар текст байдгийг зааж өгнө</span>
+                </div>
+                <div className="sms-tmpl-marker-inputs">
+                    <div className="sms-tmpl-form-row compact">
+                        <label>Өмнөх текст</label>
+                        <input
+                            type="text"
+                            value={editForm.utgaPrefix || ''}
+                            onChange={e => setEditForm({ ...editForm, utgaPrefix: e.target.value })}
+                            placeholder="жнь: Utga: "
+                            className="mono"
+                        />
+                    </div>
+                    <div className="sms-tmpl-form-row compact">
+                        <label>Арын текст <span className="sms-tmpl-hint">(хоосон = мөрийн төгсгөл)</span></label>
+                        <input
+                            type="text"
+                            value={editForm.utgaSuffix || ''}
+                            onChange={e => setEditForm({ ...editForm, utgaSuffix: e.target.value })}
+                            placeholder="жнь: Uldegdel: (хоосон байж болно)"
+                            className="mono"
+                        />
+                    </div>
+                </div>
+            </div>
+
             <div className="sms-tmpl-form-row">
                 <label>Жишиг SMS <span className="sms-tmpl-hint">Банкнаас ирсэн орлогын мессеж paste хийнэ</span></label>
                 <textarea
@@ -620,38 +580,7 @@ function TemplateForm({
                     rows={2}
                 />
             </div>
-            {/* Advanced regex fields — hidden by default */}
-            <button
-                className="sms-tmpl-advanced-toggle"
-                onClick={() => setShowAdvanced(!showAdvanced)}
-                type="button"
-            >
-                {showAdvanced ? '▼' : '▶'} Дэлгэрэнгүй тохиргоо (regex)
-            </button>
-            {showAdvanced && (
-                <>
-                    <div className="sms-tmpl-form-row">
-                        <label>Дүн (regex pattern)</label>
-                        <input
-                            type="text"
-                            value={editForm.amountPattern || ''}
-                            onChange={e => setEditForm({ ...editForm, amountPattern: e.target.value })}
-                            placeholder="(\d[\d,]*(?:\.\d{1,2})?)\s*(?:MNT|₮)"
-                            className="mono"
-                        />
-                    </div>
-                    <div className="sms-tmpl-form-row">
-                        <label>Утга (regex pattern)</label>
-                        <input
-                            type="text"
-                            value={editForm.utgaPattern || ''}
-                            onChange={e => setEditForm({ ...editForm, utgaPattern: e.target.value })}
-                            placeholder="(?:utga|утга)[:\s]*([^\n,.]+)"
-                            className="mono"
-                        />
-                    </div>
-                </>
-            )}
+
             {preview && editForm.sampleSms && (
                 <div className={`sms-tmpl-form-preview ${preview.matched ? 'ok' : 'fail'}`}>
                     <strong>Үр дүн:</strong>{' '}

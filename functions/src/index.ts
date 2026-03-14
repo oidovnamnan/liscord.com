@@ -406,6 +406,37 @@ async function createUnmatchedNotification(
 }
 
 /**
+ * Parse text between prefix and suffix markers.
+ * Case-insensitive prefix/suffix search.
+ */
+function parseWithMarkers(text: string, prefix: string, suffix: string): string {
+    if (!prefix) return '';
+    const lower = text.toLowerCase();
+    const prefixLower = prefix.toLowerCase();
+    const prefixIdx = lower.indexOf(prefixLower);
+    if (prefixIdx === -1) return '';
+
+    const startIdx = prefixIdx + prefix.length;
+
+    if (!suffix) {
+        // No suffix: take until newline, ", " or ". "
+        const rest = text.substring(startIdx);
+        const endMatch = rest.match(/[\n]|,\s|\.\s\s/);
+        return endMatch ? rest.substring(0, endMatch.index).trim() : rest.trim();
+    }
+
+    const suffixLower = suffix.toLowerCase();
+    const suffixIdx = lower.indexOf(suffixLower, startIdx);
+    if (suffixIdx === -1) {
+        const rest = text.substring(startIdx);
+        const nlIdx = rest.indexOf('\n');
+        return nlIdx > -1 ? rest.substring(0, nlIdx).trim() : rest.trim();
+    }
+
+    return text.substring(startIdx, suffixIdx).trim();
+}
+
+/**
  * SMS Income Auto-Matching (REALTIME)
  * Triggers server-side when a new SMS arrives — no page needs to be open.
  *
@@ -462,8 +493,25 @@ export const onSmsIncome = functions
                 );
                 if (!hasKeyword) continue;
 
-                // Try amount regex
-                if (tmpl.amountPattern && !smsAmount) {
+                // Parse amount by prefix/suffix markers (new approach)
+                if (tmpl.amountPrefix && !smsAmount) {
+                    const amountStr = parseWithMarkers(smsBody, tmpl.amountPrefix, tmpl.amountSuffix || '');
+                    if (amountStr) {
+                        const parsed = parseFloat(amountStr.replace(/[,\s]/g, ''));
+                        if (!isNaN(parsed) && parsed > 0) {
+                            smsAmount = parsed;
+                        }
+                    }
+                }
+
+                // Parse utga by prefix/suffix markers (new approach)
+                if (tmpl.utgaPrefix && !smsNote) {
+                    const utga = parseWithMarkers(smsBody, tmpl.utgaPrefix, tmpl.utgaSuffix || '');
+                    if (utga) smsNote = utga;
+                }
+
+                // Fallback: old regex patterns
+                if (!smsAmount && tmpl.amountPattern) {
                     try {
                         const amountRegex = new RegExp(tmpl.amountPattern, 'i');
                         const amountMatch = smsBody.match(amountRegex);
@@ -472,9 +520,7 @@ export const onSmsIncome = functions
                         }
                     } catch (_e) { /* invalid regex */ }
                 }
-
-                // Try utga regex
-                if (tmpl.utgaPattern && !smsNote) {
+                if (!smsNote && tmpl.utgaPattern) {
                     try {
                         const utgaRegex = new RegExp(tmpl.utgaPattern, 'i');
                         const utgaMatch = smsBody.match(utgaRegex);

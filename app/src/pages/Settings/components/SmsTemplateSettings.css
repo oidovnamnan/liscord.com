@@ -49,8 +49,8 @@
 }
 
 .sms-tmpl-card-icon.test {
-    background: rgba(139, 92, 246, 0.1);
-    color: #8b5cf6;
+    background: rgba(16, 185, 129, 0.1);
+    color: #10b981;
 }
 
 .sms-tmpl-card-icon.templates {
@@ -60,46 +60,7 @@
 
 /* Test SMS */
 .sms-tmpl-test-card {
-    border-color: rgba(139, 92, 246, 0.2);
-}
-
-/* AI Test Button */
-.sms-ai-test-btn {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    width: 100%;
-    padding: 12px;
-    margin-top: 12px;
-    background: linear-gradient(135deg, #8b5cf6, #6366f1);
-    color: white;
-    border: none;
-    border-radius: var(--radius-lg);
-    font-size: 0.88rem;
-    font-weight: 700;
-    cursor: pointer;
-    transition: all 0.2s;
-}
-
-.sms-ai-test-btn:hover:not(:disabled) {
-    opacity: 0.9;
-    transform: translateY(-1px);
-    box-shadow: 0 4px 16px rgba(139, 92, 246, 0.3);
-}
-
-.sms-ai-test-btn:disabled {
-    opacity: 0.7;
-    cursor: wait;
-}
-
-.spin {
-    animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
+    border-color: rgba(16, 185, 129, 0.2);
 }
 
 .sms-tmpl-test-input {
@@ -138,15 +99,15 @@
 }
 
 .sms-tmpl-test-result.unmatched {
-    background: rgba(245, 158, 11, 0.05);
-    border-color: rgba(245, 158, 11, 0.2);
+    background: rgba(239, 68, 68, 0.05);
+    border-color: rgba(239, 68, 68, 0.15);
 }
 
 .sms-tmpl-test-result-header {
     display: flex;
     align-items: center;
     gap: 6px;
-    font-size: 0.82rem;
+    font-size: 0.85rem;
     font-weight: 700;
     margin-bottom: 12px;
 }
@@ -156,7 +117,7 @@
 }
 
 .sms-tmpl-test-result.unmatched .sms-tmpl-test-result-header {
-    color: #f59e0b;
+    color: #ef4444;
 }
 
 .sms-tmpl-test-fields {
@@ -282,13 +243,8 @@
     transition: color 0.2s;
 }
 
-.sms-tmpl-toggle.on {
-    color: #10b981;
-}
-
-.sms-tmpl-toggle.off {
-    color: var(--text-tertiary);
-}
+.sms-tmpl-toggle.on { color: #10b981; }
+.sms-tmpl-toggle.off { color: var(--text-tertiary); }
 
 .sms-tmpl-edit-btn,
 .sms-tmpl-delete-btn {
@@ -309,6 +265,49 @@
 .sms-tmpl-delete-btn:hover {
     background: rgba(239, 68, 68, 0.1);
     color: #ef4444;
+}
+
+/* Marker display on template card */
+.sms-tmpl-markers {
+    margin-top: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.sms-tmpl-marker-row {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.78rem;
+    flex-wrap: wrap;
+}
+
+.sms-tmpl-marker-row .marker-label {
+    color: var(--text-tertiary);
+    font-weight: 600;
+    min-width: 52px;
+}
+
+.sms-tmpl-marker-row .marker-prefix,
+.sms-tmpl-marker-row .marker-suffix {
+    background: rgba(99, 102, 241, 0.1);
+    color: #6366f1;
+    padding: 2px 8px;
+    border-radius: 6px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.sms-tmpl-marker-row .marker-value {
+    background: rgba(16, 185, 129, 0.1);
+    color: #10b981;
+    padding: 2px 8px;
+    border-radius: 6px;
+    font-weight: 700;
+    font-size: 0.72rem;
+    letter-spacing: 0.3px;
 }
 
 .sms-tmpl-sample {
@@ -379,15 +378,46 @@
     box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
 }
 
-.sms-tmpl-form-row input.mono,
-.sms-tmpl-form-row textarea.mono {
+.sms-tmpl-form-row input.mono {
     font-family: 'JetBrains Mono', 'Fira Code', monospace;
-    font-size: 0.8rem;
+    font-size: 0.82rem;
 }
 
 .sms-tmpl-form-row input::placeholder,
 .sms-tmpl-form-row textarea::placeholder {
     color: var(--text-tertiary);
+}
+
+/* Marker section in form */
+.sms-tmpl-marker-section {
+    background: rgba(99, 102, 241, 0.04);
+    border: 1px solid rgba(99, 102, 241, 0.1);
+    border-radius: 12px;
+    padding: 14px 16px;
+}
+
+.sms-tmpl-marker-title {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 10px;
+}
+
+.sms-tmpl-marker-inputs {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+
+.sms-tmpl-form-row.compact {
+    gap: 3px;
+}
+
+.sms-tmpl-form-row.compact label {
+    font-size: 0.72rem;
 }
 
 .sms-tmpl-form-preview {
@@ -432,9 +462,7 @@
     color: white;
 }
 
-.sms-tmpl-save-btn:hover {
-    background: #059669;
-}
+.sms-tmpl-save-btn:hover { background: #059669; }
 
 .sms-tmpl-cancel-btn {
     background: var(--bg-primary);
@@ -442,195 +470,9 @@
     border: 1px solid var(--border-primary);
 }
 
-.sms-tmpl-cancel-btn:hover {
-    background: var(--bg-secondary);
-}
+.sms-tmpl-cancel-btn:hover { background: var(--bg-secondary); }
 
-/* Mobile */
-@media (max-width: 768px) {
-    .sms-tmpl-card {
-        padding: 18px;
-    }
-
-    .sms-tmpl-test-fields {
-        grid-template-columns: 1fr;
-        gap: 8px;
-    }
-
-    .sms-tmpl-item-main {
-        flex-direction: column;
-        align-items: flex-start;
-    }
-
-    .sms-tmpl-item-actions {
-        align-self: flex-end;
-        margin-top: -32px;
-    }
-
-    .sms-tmpl-add-btn {
-        padding: 6px 12px;
-        font-size: 0.75rem;
-    }
-}
-
-/* AI Confirm Section */
-.sms-ai-confirm-section {
-    margin-top: 16px;
-    padding-top: 16px;
-    border-top: 1px dashed rgba(16, 185, 129, 0.2);
-}
-
-.sms-ai-patterns {
-    background: rgba(16, 185, 129, 0.04);
-    border: 1px solid rgba(16, 185, 129, 0.12);
-    border-radius: 12px;
-    padding: 14px 16px;
-    margin-bottom: 14px;
-}
-
-.sms-ai-pattern-title {
-    font-size: 0.82rem;
-    font-weight: 700;
-    color: var(--text-primary);
-    margin-bottom: 10px;
-}
-
-.sms-ai-pattern-row {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-bottom: 8px;
-    font-size: 0.82rem;
-}
-
-.sms-ai-pattern-row:last-child {
-    margin-bottom: 0;
-}
-
-.sms-ai-pattern-row .label {
-    color: var(--text-tertiary);
-    font-weight: 600;
-    white-space: nowrap;
-    min-width: 72px;
-}
-
-.sms-ai-pattern-row .pattern {
-    display: flex;
-    align-items: center;
-    gap: 2px;
-    flex-wrap: wrap;
-}
-
-.sms-ai-pattern-row .prefix,
-.sms-ai-pattern-row .suffix {
-    background: rgba(99, 102, 241, 0.1);
-    color: #6366f1;
-    padding: 2px 8px;
-    border-radius: 6px;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.78rem;
-    font-weight: 600;
-}
-
-.sms-ai-pattern-row .value {
-    background: rgba(16, 185, 129, 0.1);
-    color: #10b981;
-    padding: 2px 8px;
-    border-radius: 6px;
-    font-weight: 800;
-    font-size: 0.82rem;
-}
-
-.sms-ai-pattern-row .keyword-chip {
-    background: rgba(245, 158, 11, 0.1);
-    color: #d97706;
-    padding: 2px 8px;
-    border-radius: 6px;
-    font-size: 0.75rem;
-    font-weight: 600;
-    margin-right: 4px;
-}
-
-.sms-ai-confirm-btn {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    width: 100%;
-    padding: 12px;
-    background: linear-gradient(135deg, #10b981, #059669);
-    color: white;
-    border: none;
-    border-radius: 12px;
-    font-size: 0.9rem;
-    font-weight: 700;
-    cursor: pointer;
-    transition: all 0.2s;
-}
-
-.sms-ai-confirm-btn:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 4px 16px rgba(16, 185, 129, 0.3);
-}
-
-/* Editable AI result inputs */
-.sms-ai-edit-input {
-    background: var(--bg-secondary);
-    border: 1px solid var(--border-primary);
-    border-radius: 8px;
-    padding: 6px 10px;
-    font-size: 0.88rem;
-    color: var(--text-primary);
-    font-weight: 600;
-    font-family: inherit;
-    width: 100%;
-    transition: border-color 0.2s;
-}
-
-.sms-ai-edit-input:focus {
-    outline: none;
-    border-color: #6366f1;
-    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.1);
-}
-
-.sms-ai-edit-input.amount {
-    color: #10b981;
-    font-weight: 800;
-}
-
-/* Pattern editor inputs */
-.sms-ai-pattern-input {
-    background: transparent;
-    border: 1px dashed rgba(99, 102, 241, 0.3);
-    border-radius: 6px;
-    padding: 3px 8px;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.78rem;
-    font-weight: 600;
-    color: #6366f1;
-    width: 100px;
-    transition: all 0.2s;
-}
-
-.sms-ai-pattern-input:focus {
-    outline: none;
-    border-color: #6366f1;
-    background: rgba(99, 102, 241, 0.05);
-}
-
-.sms-ai-pattern-input::placeholder {
-    color: rgba(99, 102, 241, 0.3);
-    font-weight: 400;
-}
-
-.sms-ai-pattern-hint {
-    font-size: 0.72rem;
-    color: var(--text-tertiary);
-    font-weight: 400;
-    margin-left: 4px;
-}
-
-/* Form hint text */
+/* Hint */
 .sms-tmpl-hint {
     font-size: 0.72rem;
     color: var(--text-tertiary, #64748b);
@@ -638,20 +480,12 @@
     margin-left: 4px;
 }
 
-/* Advanced regex toggle */
-.sms-tmpl-advanced-toggle {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    background: none;
-    border: none;
-    color: var(--text-tertiary, #64748b);
-    font-size: 0.78rem;
-    cursor: pointer;
-    padding: 6px 0;
-    margin-top: 4px;
-    transition: color 0.2s;
-}
-.sms-tmpl-advanced-toggle:hover {
-    color: var(--text-primary);
+/* Mobile */
+@media (max-width: 768px) {
+    .sms-tmpl-card { padding: 18px; }
+    .sms-tmpl-test-fields { grid-template-columns: 1fr; gap: 8px; }
+    .sms-tmpl-item-main { flex-direction: column; align-items: flex-start; }
+    .sms-tmpl-item-actions { align-self: flex-end; margin-top: -32px; }
+    .sms-tmpl-add-btn { padding: 6px 12px; font-size: 0.75rem; }
+    .sms-tmpl-marker-inputs { grid-template-columns: 1fr; }
 }
