@@ -1237,12 +1237,13 @@
 /* Header */
 .fd-header {
     position: relative;
+    z-index: 3;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 18px;
+    margin-bottom: 16px;
     flex-wrap: wrap;
-    gap: 12px;
+    gap: 10px;
 }
 
 .fd-title-row {
@@ -1357,7 +1358,7 @@
 .fd-discount-badge {
     position: absolute;
     top: 8px;
-    left: 8px;
+    right: 8px;
     background: linear-gradient(135deg, #ff006e, #ff4d6d);
     color: #fff;
     font-size: 0.7rem;
