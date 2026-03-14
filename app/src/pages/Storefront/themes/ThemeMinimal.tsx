@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import { ShoppingBag, Search, Plus, Lock, Crown, X, Phone, User } from 'lucide-react';
 import type { Business, Product } from '../../../types';
 import { useCartStore } from '../../../store';
@@ -20,6 +20,13 @@ export function ThemeMinimal({ business }: { business: Business }) {
     const [showMembershipModal, setShowMembershipModal] = useState(false);
     const [membershipTarget, setMembershipTarget] = useState<StorefrontProduct | null>(null);
     const [showDashboard, setShowDashboard] = useState(false);
+    const [visibleCount, setVisibleCount] = useState(20);
+    const PRODUCTS_PER_PAGE = 20;
+
+    // Reset visible count when filters change
+    useEffect(() => {
+        setVisibleCount(PRODUCTS_PER_PAGE);
+    }, [activeCategory, searchQuery]);
 
     // Check if user has stored phone (logged in)
     const storedPhone = localStorage.getItem(`membership_phone_${business.id}`) || '';
@@ -175,7 +182,7 @@ export function ThemeMinimal({ business }: { business: Business }) {
                                 <StorefrontEmpty message="Ийм нэртэй бараа олдсонгүй" />
                             </div>
                         ) : (
-                            filteredProducts.map((p, index) => {
+                            filteredProducts.slice(0, visibleCount).map((p, index) => {
                                 const sfp = p as StorefrontProduct;
                                 const brand = extractBrand(p.description);
                                 const salePrice = p.pricing?.salePrice || 0;
@@ -264,6 +271,32 @@ export function ThemeMinimal({ business }: { business: Business }) {
                             })
                         )}
                     </div>
+
+                    {/* Load More */}
+                    {filteredProducts.length > visibleCount && (
+                        <div style={{
+                            display: 'flex', flexDirection: 'column', alignItems: 'center',
+                            gap: 8, padding: '28px 0 12px',
+                        }}>
+                            <button
+                                onClick={() => setVisibleCount(prev => prev + PRODUCTS_PER_PAGE)}
+                                style={{
+                                    padding: '12px 36px', borderRadius: 100,
+                                    border: '1.5px solid #e0e0e0', background: '#fff',
+                                    cursor: 'pointer', fontFamily: 'inherit',
+                                    fontSize: '0.9rem', fontWeight: 600, color: '#333',
+                                    transition: 'all 0.2s',
+                                }}
+                                onMouseEnter={e => { (e.target as HTMLElement).style.background = '#f5f5f5'; (e.target as HTMLElement).style.borderColor = '#bbb'; }}
+                                onMouseLeave={e => { (e.target as HTMLElement).style.background = '#fff'; (e.target as HTMLElement).style.borderColor = '#e0e0e0'; }}
+                            >
+                                Цааш үзэх
+                            </button>
+                            <span style={{ fontSize: '0.75rem', color: '#999' }}>
+                                {Math.min(visibleCount, filteredProducts.length)} / {filteredProducts.length} бараа
+                            </span>
+                        </div>
+                    )}
                 </div>
             </main>
 
