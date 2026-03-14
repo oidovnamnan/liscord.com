@@ -533,13 +533,14 @@ exports.onSmsIncome = functions
         }
         // Combine note + body for searching, lowercase
         const searchText = `${smsNote} ${smsBody}`.toLowerCase();
-        // 3. Load all unpaid orders for this business
+        // 3. Load unpaid + recently paid orders for this business
         const ordersSnap = await db.collection(`businesses/${bizId}/orders`)
-            .where('paymentStatus', '==', 'unpaid')
+            .where('paymentStatus', 'in', ['unpaid', 'paid'])
+            .orderBy('createdAt', 'desc')
+            .limit(100)
             .get();
         if (ordersSnap.empty) {
-            console.log(`No unpaid orders for business: ${bizId}`);
-            // Still create notification for unmatched income
+            console.log(`No orders for business: ${bizId}`);
             await createUnmatchedNotification(bizDoc, bizId, snap, smsData, smsAmount, smsNote);
             await snap.ref.update({ status: 'unmatched' });
             return null;
@@ -576,26 +577,29 @@ exports.onSmsIncome = functions
             await snap.ref.update({ status: 'unmatched' });
             return null;
         }
-        // 4. Auto-match: Update order as paid
+        // 4. Auto-match: Update order as paid (only if still unpaid)
         const now = admin.firestore.FieldValue.serverTimestamp();
-        const paymentEntry = {
-            id: `sms_${snap.id}`,
-            amount: smsAmount,
-            method: 'bank',
-            note: `Банкны шилжүүлэг (автомат) - ${smsData.bank || smsData.sender || 'Unknown'}`,
-            paidAt: now,
-            recordedBy: 'system_auto',
-        };
-        await matchedOrderDoc.ref.update({
-            paymentStatus: 'paid',
-            paymentVerifiedAt: now,
-            paymentVerifiedBy: 'auto-match',
-            paymentSmsId: snap.id,
-            'financials.paidAmount': smsAmount,
-            'financials.balanceDue': 0,
-            'financials.payments': admin.firestore.FieldValue.arrayUnion(paymentEntry),
-            updatedAt: now,
-        });
+        const matchedOrder = matchedOrderDoc.data();
+        if (matchedOrder.paymentStatus === 'unpaid') {
+            const paymentEntry = {
+                id: `sms_${snap.id}`,
+                amount: smsAmount,
+                method: 'bank',
+                note: `Банкны шилжүүлэг (автомат) - ${smsData.bank || smsData.sender || 'Unknown'}`,
+                paidAt: now,
+                recordedBy: 'system_auto',
+            };
+            await matchedOrderDoc.ref.update({
+                paymentStatus: 'paid',
+                paymentVerifiedAt: now,
+                paymentVerifiedBy: 'auto-match',
+                paymentSmsId: snap.id,
+                'financials.paidAmount': smsAmount,
+                'financials.balanceDue': 0,
+                'financials.payments': admin.firestore.FieldValue.arrayUnion(paymentEntry),
+                updatedAt: now,
+            });
+        }
         // 5. Update SMS doc as matched
         await snap.ref.update({
             status: 'matched',
@@ -604,7 +608,6 @@ exports.onSmsIncome = functions
             autoMatched: true,
         });
         // 5.5 AUTO-GRANT MEMBERSHIP if this is a membership order
-        const matchedOrder = matchedOrderDoc.data();
         if (matchedOrder.orderType === 'membership' && matchedOrder.membershipCategoryId) {
             try {
                 await grantMembershipFromOrder(bizId, matchedOrder, matchedOrderDoc.id);
