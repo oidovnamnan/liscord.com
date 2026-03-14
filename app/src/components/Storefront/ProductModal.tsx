@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { X, Plus, Minus, ShoppingBag, Check, ChevronLeft, ChevronRight, Package } from 'lucide-react';
+import { X, Plus, Minus, ShoppingBag, Check, ChevronLeft, ChevronRight, Package, Zap } from 'lucide-react';
 import type { Product } from '../../types';
 import { useCartStore } from '../../store';
 import './ProductModal.css';
@@ -84,6 +84,17 @@ export function ProductModal({ product, onClose, preorderTerms }: ProductModalPr
             setAdded(false);
             onClose();
         }, 800);
+    };
+
+    const handleBuyNow = () => {
+        useCartStore.getState().addItem({
+            product,
+            quantity,
+            price: product.pricing?.salePrice || 0
+        });
+        onClose();
+        // Open cart immediately for checkout
+        setTimeout(() => useCartStore.getState().setIsOpen(true), 100);
     };
 
     const extractBrand = (desc: string) => {
@@ -296,7 +307,7 @@ export function ProductModal({ product, onClose, preorderTerms }: ProductModalPr
                             )}
                         </div>
 
-                        {/* Add to cart */}
+                        {/* Actions: Quantity + Buy Now + Add to Cart */}
                         <div className="sf-modal-actions">
                             <div className="sf-modal-qty">
                                 <button
@@ -314,18 +325,28 @@ export function ProductModal({ product, onClose, preorderTerms }: ProductModalPr
                                     <Plus size={16} />
                                 </button>
                             </div>
-                            <button
-                                className="sf-modal-add-btn"
-                                onClick={handleAddToCart}
-                                disabled={added || (isPreorder && !termsAccepted)}
-                                style={added ? { background: '#16a34a' } : (isPreorder && !termsAccepted) ? { opacity: 0.5, cursor: 'not-allowed' } : undefined}
-                            >
-                                {added ? (
-                                    <><Check size={18} /> Нэмэгдлээ!</>
-                                ) : (
-                                    <><ShoppingBag size={18} /> {isPreorder ? 'Захиалга өгөх' : 'Сагсанд нэмэх'}</>
-                                )}
-                            </button>
+                            <div className="sf-modal-btn-group">
+                                <button
+                                    className="sf-modal-cart-btn"
+                                    onClick={handleAddToCart}
+                                    disabled={added || (isPreorder && !termsAccepted)}
+                                    style={added ? { background: '#16a34a', borderColor: '#16a34a', color: '#fff' } : (isPreorder && !termsAccepted) ? { opacity: 0.5, cursor: 'not-allowed' } : undefined}
+                                >
+                                    {added ? (
+                                        <><Check size={16} /> Нэмэгдлээ!</>
+                                    ) : (
+                                        <><ShoppingBag size={16} /> Сагслах</>
+                                    )}
+                                </button>
+                                <button
+                                    className="sf-modal-add-btn"
+                                    onClick={handleBuyNow}
+                                    disabled={isPreorder && !termsAccepted}
+                                    style={(isPreorder && !termsAccepted) ? { opacity: 0.5, cursor: 'not-allowed' } : undefined}
+                                >
+                                    <Zap size={16} /> Захиалах
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>

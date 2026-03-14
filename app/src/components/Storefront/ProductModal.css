@@ -549,7 +549,44 @@
     user-select: none;
 }
 
-/* Add to Cart Button */
+/* Button Group */
+.sf-modal-btn-group {
+    display: flex;
+    gap: 8px;
+    flex: 1;
+}
+
+/* Cart (Secondary) Button */
+.sf-modal-cart-btn {
+    flex: 1;
+    height: 48px;
+    background: #fff;
+    color: var(--sf-brand-color, #111);
+    border: 2px solid var(--sf-brand-color, #111);
+    border-radius: 14px;
+    font-weight: 700;
+    font-size: 0.88rem;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    font-family: 'Plus Jakarta Sans', 'Inter', system-ui, sans-serif;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    letter-spacing: -0.01em;
+}
+
+.sf-modal-cart-btn:hover {
+    background: rgba(0, 0, 0, 0.03);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 16px -6px rgba(0, 0, 0, 0.15);
+}
+
+.sf-modal-cart-btn:active {
+    transform: translateY(0);
+}
+
+/* Buy Now (Primary) Button */
 .sf-modal-add-btn {
     flex: 1;
     height: 48px;
@@ -558,14 +595,14 @@
     border: none;
     border-radius: 14px;
     font-weight: 700;
-    font-size: 0.95rem;
+    font-size: 0.88rem;
     cursor: pointer;
     transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
     font-family: 'Plus Jakarta Sans', 'Inter', system-ui, sans-serif;
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 8px;
+    gap: 6px;
     letter-spacing: -0.01em;
 }
 
