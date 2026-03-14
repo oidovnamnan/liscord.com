@@ -169,6 +169,7 @@ export function StoreCheckout() {
             const newId = await orderService.createOrder(business.id, orderPayload);
             setSavedTotal(finalTotal);
             setSuccessId(newId);
+            window.scrollTo(0, 0);
             clearCart();
 
             // Generate QPay QR if enabled
