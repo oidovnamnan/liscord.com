@@ -1190,193 +1190,219 @@
 }
 
 /* ============================================
-   FLASH DEAL — Premium Eye-catching Section
+   FLASH DEAL — Premium Section
    ============================================ */
 .fd-section {
     position: relative;
     margin: 0 clamp(12px, 4vw, 32px) 24px;
+    padding: 20px 16px 14px;
     border-radius: 20px;
-    background: linear-gradient(135deg, #1a0533 0%, #2d1b4e 30%, #4a1942 60%, #1a0533 100%);
+    background: linear-gradient(145deg, #0d0221 0%, #1a0a3e 35%, #2d1250 65%, #150830 100%);
     overflow: hidden;
-    box-shadow: 0 8px 40px rgba(74, 25, 66, 0.4);
+    box-shadow:
+        0 8px 40px rgba(74, 25, 66, 0.4),
+        inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.06);
 }
 
-/* Animated glow orbs */
+/* Glow orbs */
 .fd-glow {
     position: absolute;
     border-radius: 50%;
-    filter: blur(60px);
+    filter: blur(80px);
     pointer-events: none;
-    opacity: 0.35;
+    opacity: 0.2;
     z-index: 0;
 }
-
 .fd-glow-1 {
-    width: 200px;
-    height: 200px;
+    width: 180px; height: 180px;
     background: #ff006e;
-    top: -60px;
-    right: -40px;
-    animation: fdFloat 4s ease-in-out infinite;
+    top: -50px; right: -30px;
+    animation: fdFloat 5s ease-in-out infinite;
 }
-
 .fd-glow-2 {
-    width: 150px;
-    height: 150px;
-    background: #8338ec;
-    bottom: -40px;
-    left: -30px;
-    animation: fdFloat 5s ease-in-out infinite reverse;
+    width: 120px; height: 120px;
+    background: #7b2ff7;
+    bottom: -30px; left: -20px;
+    animation: fdFloat 6s ease-in-out infinite reverse;
 }
-
 @keyframes fdFloat {
     0%, 100% { transform: translate(0, 0) scale(1); }
-    50% { transform: translate(10px, -15px) scale(1.1); }
+    50% { transform: translate(8px, -10px) scale(1.08); }
 }
 
-/* Per-card overlay */
-.fd-card-overlay {
-    position: absolute;
-    inset: 0;
+/* ── Header ── */
+.fd-header {
+    position: relative;
     z-index: 2;
     display: flex;
-    flex-direction: column;
     justify-content: space-between;
-    padding: 10px;
-    pointer-events: none;
-    background: linear-gradient(180deg, rgba(0,0,0,0.55) 0%, transparent 40%, transparent 65%, rgba(0,0,0,0.45) 100%);
+    align-items: center;
+    margin-bottom: 16px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
-.fd-card-overlay > * { pointer-events: auto; }
-.fd-card-overlay-top { display: flex; justify-content: space-between; align-items: flex-start; }
-.fd-card-overlay-bottom { display: flex; justify-content: center; }
 
-.fd-title-row { display: flex; align-items: center; gap: 6px; }
+.fd-title-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
 
 .fd-icon-pulse {
-    width: 24px; height: 24px; border-radius: 6px;
+    width: 30px; height: 30px;
+    border-radius: 8px;
     background: linear-gradient(135deg, #ff006e, #ff4d6d);
-    color: #fff; display: flex; align-items: center; justify-content: center;
-    animation: fdPulse 1.5s ease-in-out infinite;
-    box-shadow: 0 0 12px rgba(255, 0, 110, 0.5); flex-shrink: 0;
+    color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    animation: fdPulse 2s ease-in-out infinite;
+    box-shadow: 0 0 16px rgba(255, 0, 110, 0.4);
+    flex-shrink: 0;
 }
 @keyframes fdPulse {
-    0%, 100% { box-shadow: 0 0 12px rgba(255, 0, 110, 0.5); transform: scale(1); }
-    50% { box-shadow: 0 0 20px rgba(255, 0, 110, 0.8); transform: scale(1.05); }
+    0%, 100% { box-shadow: 0 0 16px rgba(255, 0, 110, 0.4); transform: scale(1); }
+    50% { box-shadow: 0 0 24px rgba(255, 0, 110, 0.7); transform: scale(1.06); }
 }
 
-.fd-title-sm {
-    color: #fff; font-family: var(--sf-font-title);
-    font-size: 0.65rem; font-weight: 900; letter-spacing: 0.08em;
-    text-transform: uppercase; text-shadow: 0 1px 6px rgba(0,0,0,0.6);
+.fd-title {
+    color: #fff;
+    font-family: var(--sf-font-title);
+    font-size: 1rem;
+    font-weight: 900;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin: 0;
+    text-shadow: 0 2px 8px rgba(255, 0, 110, 0.25);
 }
 
-.fd-timer-sm { display: flex; align-items: center; gap: 3px; color: rgba(255,255,255,0.7); }
-
-.fd-timer-box-sm {
-    background: rgba(0,0,0,0.5); backdrop-filter: blur(6px);
-    border: 1px solid rgba(255,255,255,0.2); color: #fff;
-    font-size: 0.7rem; font-weight: 800; font-family: 'SF Mono', 'Menlo', monospace;
-    min-width: 26px; height: 22px; display: inline-flex;
-    align-items: center; justify-content: center; border-radius: 5px;
-}
-.fd-timer-sec-sm { background: rgba(255,0,110,0.35); border-color: rgba(255,0,110,0.4); }
-.fd-timer-sep-sm { color: rgba(255,255,255,0.5); font-weight: 700; font-size: 0.7rem; }
-
-.fd-discount-badge {
-    background: linear-gradient(135deg, #ff006e, #ff4d6d); color: #fff;
-    font-size: 0.65rem; font-weight: 900; padding: 2px 7px; border-radius: 5px;
-    box-shadow: 0 2px 6px rgba(255,0,110,0.4);
+/* ── Flip-clock Timer ── */
+.fd-flip-timer {
+    display: flex;
+    align-items: center;
+    gap: 2px;
 }
 
-/* Product Cards */
+.fd-flip-digit {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 24px;
+    height: 30px;
+    background: rgba(0, 0, 0, 0.55);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 6px;
+    color: #fff;
+    font-size: 0.95rem;
+    font-weight: 800;
+    font-family: 'SF Mono', 'Menlo', 'Courier New', monospace;
+    letter-spacing: 0;
+    text-shadow: 0 0 8px rgba(255, 255, 255, 0.15);
+}
+
+.fd-flip-sep {
+    color: rgba(255, 255, 255, 0.4);
+    font-weight: 800;
+    font-size: 0.9rem;
+    margin: 0 2px;
+    animation: fdBlink 1s step-end infinite;
+}
+@keyframes fdBlink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.2; }
+}
+
+/* ── Product Cards ── */
 .fd-products {
     position: relative;
     z-index: 1;
     display: flex;
-    gap: 0;
+    gap: 10px;
     overflow-x: auto;
     scroll-snap-type: x mandatory;
     -webkit-overflow-scrolling: touch;
+    padding-bottom: 2px;
     scrollbar-width: none;
 }
-
 .fd-products::-webkit-scrollbar { display: none; }
 
 .fd-card {
-    flex: 0 0 50%;
+    flex: 0 0 47%;
     scroll-snap-align: start;
-    background: transparent;
-    border-right: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
     overflow: hidden;
     cursor: pointer;
-    transition: opacity 0.2s;
+    transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
     position: relative;
 }
-
-.fd-card:last-child {
-    border-right: none;
-}
-
 .fd-card:hover {
-    opacity: 0.9;
+    transform: translateY(-3px);
+    border-color: rgba(255, 0, 110, 0.3);
+    box-shadow: 0 8px 24px rgba(255, 0, 110, 0.15);
+}
+.fd-card.sold-out {
+    opacity: 0.55;
+    cursor: not-allowed;
+    filter: grayscale(0.3);
 }
 
-.fd-card.sold-out {
-    opacity: 0.6;
-    cursor: not-allowed;
+/* Image container with inner padding */
+.fd-card-img-wrap {
+    position: relative;
+    padding: 8px 8px 0;
+}
+
+.fd-card-img {
+    width: 100%;
+    aspect-ratio: 1;
+    border-radius: 10px;
+    overflow: hidden;
+    background: rgba(255, 255, 255, 0.03);
+}
+.fd-card-img img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s;
+}
+.fd-card:hover .fd-card-img img {
+    transform: scale(1.04);
+}
+
+.fd-img-placeholder {
+    width: 100%; height: 100%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 2rem;
 }
 
 /* Discount badge */
 .fd-discount-badge {
     position: absolute;
-    top: 8px;
-    right: 8px;
+    top: 14px; right: 14px;
     background: linear-gradient(135deg, #ff006e, #ff4d6d);
     color: #fff;
-    font-size: 0.7rem;
+    font-size: 0.65rem;
     font-weight: 900;
-    padding: 3px 8px;
+    padding: 3px 7px;
     border-radius: 6px;
-    z-index: 2;
-    box-shadow: 0 2px 8px rgba(255, 0, 110, 0.4);
+    box-shadow: 0 2px 8px rgba(255, 0, 110, 0.45);
     letter-spacing: 0.02em;
-}
-
-/* Card image */
-.fd-card-img {
-    position: relative;
-    width: 100%;
-    aspect-ratio: 1;
-    background: rgba(0, 0, 0, 0.2);
-    overflow: hidden;
-}
-
-.fd-card-img img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-}
-
-.fd-img-placeholder {
-    width: 100%;
-    height: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 2rem;
+    z-index: 2;
 }
 
 .fd-sold-out-overlay {
     position: absolute;
-    inset: 0;
-    background: rgba(0, 0, 0, 0.65);
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    inset: 8px 8px 0 8px;
+    border-radius: 10px;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex; align-items: center; justify-content: center;
     color: #fff;
     font-weight: 900;
-    font-size: 0.85rem;
+    font-size: 0.8rem;
     letter-spacing: 0.15em;
+    z-index: 2;
 }
 
 /* Card info */
@@ -1385,8 +1411,8 @@
 }
 
 .fd-card-name {
-    color: rgba(255, 255, 255, 0.9);
-    font-size: 0.78rem;
+    color: rgba(255, 255, 255, 0.88);
+    font-size: 0.75rem;
     font-weight: 600;
     line-height: 1.3;
     white-space: nowrap;
@@ -1405,28 +1431,26 @@
 .fd-flash-price {
     color: #ff4d6d;
     font-weight: 900;
-    font-size: 1rem;
-    text-shadow: 0 0 12px rgba(255, 0, 110, 0.3);
+    font-size: 0.95rem;
+    text-shadow: 0 0 10px rgba(255, 0, 110, 0.25);
 }
 
 .fd-original-price {
-    color: rgba(255, 255, 255, 0.4);
-    font-size: 0.75rem;
+    color: rgba(255, 255, 255, 0.35);
+    font-size: 0.7rem;
     text-decoration: line-through;
     font-weight: 500;
 }
 
 /* Progress bar */
-.fd-progress-wrap {
-    margin-bottom: 8px;
-}
+.fd-progress-wrap { margin-bottom: 8px; }
 
 .fd-progress-bar {
-    height: 4px;
-    background: rgba(255, 255, 255, 0.1);
+    height: 3px;
+    background: rgba(255, 255, 255, 0.08);
     border-radius: 2px;
     overflow: hidden;
-    margin-bottom: 4px;
+    margin-bottom: 3px;
 }
 
 .fd-progress-fill {
@@ -1435,21 +1459,20 @@
     background-size: 200% 100%;
     border-radius: 2px;
     transition: width 0.5s ease;
-    animation: fdProgressShimmer 2s ease infinite;
+    animation: fdShimmer 2s ease infinite;
 }
-
-@keyframes fdProgressShimmer {
+@keyframes fdShimmer {
     0% { background-position: 0% 0%; }
     100% { background-position: 200% 0%; }
 }
 
 .fd-progress-text {
-    color: rgba(255, 255, 255, 0.5);
-    font-size: 0.65rem;
+    color: rgba(255, 255, 255, 0.4);
+    font-size: 0.6rem;
     font-weight: 600;
 }
 
-/* Add to cart button */
+/* Add to cart */
 .fd-add-btn {
     width: 100%;
     padding: 7px 0;
@@ -1457,44 +1480,50 @@
     color: #fff;
     border: none;
     border-radius: 8px;
-    font-size: 0.75rem;
+    font-size: 0.72rem;
     font-weight: 700;
     cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    display: flex; align-items: center; justify-content: center;
     gap: 5px;
     font-family: var(--sf-font-body);
     transition: opacity 0.2s, transform 0.1s;
+    box-shadow: 0 3px 12px rgba(255, 0, 110, 0.3);
 }
-
-.fd-add-btn:hover { opacity: 0.85; }
+.fd-add-btn:hover { opacity: 0.88; }
 .fd-add-btn:active { transform: scale(0.97); }
 
-/* Responsive */
-@media (min-width: 600px) {
-    .fd-card { flex: 0 0 33.33%; }
-}
-
-/* Scroll indicator dots */
+/* Scroll dots */
 .fd-dots {
     display: flex;
     justify-content: center;
     gap: 6px;
-    padding: 10px 0 6px;
+    padding: 12px 0 2px;
 }
 .fd-dot {
-    width: 6px;
-    height: 6px;
+    width: 6px; height: 6px;
     border-radius: 50%;
-    background: rgba(255, 255, 255, 0.25);
-    transition: all 0.3s;
+    background: rgba(255, 255, 255, 0.2);
+    transition: all 0.3s ease;
 }
 .fd-dot.active {
     background: #ff4d6d;
-    width: 16px;
+    width: 18px;
     border-radius: 3px;
     box-shadow: 0 0 8px rgba(255, 0, 110, 0.5);
+}
+
+/* Responsive */
+@media (min-width: 600px) {
+    .fd-card { flex: 0 0 31%; }
+    .fd-flip-digit { min-width: 28px; height: 34px; font-size: 1.05rem; }
+    .fd-title { font-size: 1.1rem; }
+}
+
+@media (max-width: 380px) {
+    .fd-card { flex: 0 0 47%; }
+    .fd-flip-digit { min-width: 20px; height: 26px; font-size: 0.8rem; }
+    .fd-title { font-size: 0.85rem; letter-spacing: 0.06em; }
+    .fd-icon-pulse { width: 26px; height: 26px; }
 }
 
 /* ============================================
