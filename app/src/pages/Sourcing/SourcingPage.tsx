@@ -910,7 +910,7 @@ function SourcingDetailModal({ order, businessId, settings, onClose, onUpdate }:
 
                 <div className="modal-footer" style={{ padding: '16px 28px' }}>
                     <button className="btn btn-secondary" onClick={onClose}>Болих</button>
-                    <button className="btn btn-primary gradient-btn" onClick={handleSave} disabled={saving || !anyItemOrdered}>
+                    <button className="btn btn-primary gradient-btn" onClick={handleSave} disabled={saving || (!anyItemOrdered && !order.sourcing?.status)}>
                         {saving ? 'Хадгалж байна...' : '💾 Хадгалах'}
                     </button>
                 </div>
