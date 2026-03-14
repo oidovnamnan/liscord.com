@@ -807,7 +807,7 @@ export const LISCORD_MODULES: AppModule[] = [
         name: 'Flash Deal',
         description: 'Цагтай хязгаартай хямдрал, countdown timer',
         icon: 'Zap',
-        route: '/app/settings?tab=flash-deal',
+        route: '/app/flash-deal',
         isCore: false,
         category: 'sales',
         hasSettings: true,

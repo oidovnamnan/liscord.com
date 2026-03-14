@@ -139,6 +139,7 @@ const IoTSensorsPage = lazy(() => import('./pages/Manufacturing/IoTSensorsPage')
 const MultiWarehousePage = lazy(() => import('./pages/Inventory/MultiWarehousePage').then(m => ({ default: m.MultiWarehousePage })));
 const PackagingPage = lazy(() => import('./pages/Inventory/PackagingPage').then(m => ({ default: m.PackagingPage })));
 const SerialTrackingPage = lazy(() => import('./pages/Inventory/SerialTrackingPage').then(m => ({ default: m.SerialTrackingPage })));
+const FlashDealPage = lazy(() => import('./pages/FlashDeal/FlashDealPage').then(m => ({ default: m.FlashDealPage })));
 
 const EBarimtPage = lazy(() => import('./pages/Finance/EBarimtPage').then(m => ({ default: m.EBarimtPage })));
 const AssetsPage = lazy(() => import('./pages/Finance/AssetsPage').then(m => ({ default: m.AssetsPage })));
@@ -468,6 +469,7 @@ export default function App() {
             <Route path="online-presence" element={<ModuleGuard moduleId="online-presence"><OnlinePresencePage /></ModuleGuard>} />
             <Route path="campaigns" element={<ModuleGuard moduleId="campaigns"><CampaignsPage /></ModuleGuard>} />
             <Route path="loyalty" element={<ModuleGuard moduleId="loyalty"><LoyaltyPage /></ModuleGuard>} />
+            <Route path="flash-deal" element={<ModuleGuard moduleId="flash-deal"><FlashDealPage /></ModuleGuard>} />
             <Route path="leads" element={<ModuleGuard moduleId="leads"><LeadsPage /></ModuleGuard>} />
             <Route path="quotes" element={<ModuleGuard moduleId="quotes"><QuotesPage /></ModuleGuard>} />
             <Route path="affiliate" element={<ModuleGuard moduleId="affiliate"><ShellPage title="Түншийн Шагнал" moduleId="affiliate" /></ModuleGuard>} />
