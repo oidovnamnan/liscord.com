@@ -347,6 +347,66 @@ export function StoreCheckout() {
                             </div>
                         )}
 
+                        {/* Payment Status Indicator */}
+                        {paymentMethod === 'bank_transfer' && !paymentConfirmed && (
+                            <div className="animate-fade-in" style={{
+                                margin: '24px 0 32px',
+                                background: 'linear-gradient(135deg, #fef9c3, #fef3c7)',
+                                border: '1px solid #f59e0b33',
+                                borderRadius: 20,
+                                padding: '20px 24px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 16,
+                            }}>
+                                <div style={{
+                                    width: 44, height: 44, borderRadius: '50%',
+                                    border: '3px solid #f59e0b',
+                                    borderTopColor: 'transparent',
+                                    animation: 'paymentSpin 1s linear infinite',
+                                    flexShrink: 0,
+                                }} />
+                                <div>
+                                    <div style={{ fontWeight: 800, fontSize: '0.95rem', color: '#92400e', marginBottom: 2 }}>
+                                        Төлбөр хүлээж байна...
+                                    </div>
+                                    <div style={{ fontSize: '0.78rem', color: '#a16207', lineHeight: 1.4 }}>
+                                        Шилжүүлэг хийсний дараа төлбөр автоматаар баталгаажна
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {paymentMethod === 'bank_transfer' && paymentConfirmed && (
+                            <div className="animate-fade-in" style={{
+                                margin: '24px 0 32px',
+                                background: 'linear-gradient(135deg, #dcfce7, #d1fae5)',
+                                border: '1px solid #4ade8033',
+                                borderRadius: 20,
+                                padding: '20px 24px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 16,
+                            }}>
+                                <div style={{
+                                    width: 44, height: 44, borderRadius: '50%',
+                                    background: '#4BB543', color: '#fff',
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                    flexShrink: 0, animation: 'popIn 0.5s cubic-bezier(0.16, 1, 0.3, 1)',
+                                }}>
+                                    <CheckCircle size={24} />
+                                </div>
+                                <div>
+                                    <div style={{ fontWeight: 800, fontSize: '0.95rem', color: '#166534', marginBottom: 2 }}>
+                                        Төлбөр баталгаажсан ✅
+                                    </div>
+                                    <div style={{ fontSize: '0.78rem', color: '#15803d', lineHeight: 1.4 }}>
+                                        Таны шилжүүлэг амжилттай хүлээн авлаа
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
                         <button className="btn btn-primary gradient-btn" onClick={() => navigate(`/${slug}`)} style={{ width: '100%', height: 54, borderRadius: 16, fontSize: '1.05rem', fontWeight: 800 }}>
                             Дэлгүүр рүү буцах
                         </button>
@@ -362,6 +422,10 @@ export function StoreCheckout() {
                         0% { transform: scale(0.3); opacity: 0; }
                         50% { transform: scale(1.1); }
                         100% { transform: scale(1); opacity: 1; }
+                    }
+                    @keyframes paymentSpin {
+                        0% { transform: rotate(0deg); }
+                        100% { transform: rotate(360deg); }
                     }
                 `}</style>
             </div>
