@@ -22,7 +22,7 @@ import { Camera, useCameraDevice, useCodeScanner } from 'react-native-vision-cam
 
 // Firestore REST API base URL for direct document creation
 const FIRESTORE_BASE = 'https://firestore.googleapis.com/v1/projects/liscord-2b529/databases/(default)/documents';
-const APP_VERSION = '1.8';
+const APP_VERSION = '2.0';
 const GITHUB_RELEASE_API = 'https://api.github.com/repos/oidovnamnan/liscord.com/releases/tags/bridge-latest';
 const APK_DOWNLOAD_URL = 'https://github.com/oidovnamnan/liscord.com/releases/download/bridge-latest/app-release.apk';
 
