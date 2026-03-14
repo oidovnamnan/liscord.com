@@ -56,7 +56,21 @@ export function FlashDealSection({ config, allProducts, onProductClick }: FlashD
     const { hours, minutes, seconds, expired } = useCountdown(config.endsAt);
     const now = new Date();
 
-    if (!config.enabled || now < config.startsAt || expired) return null;
+    // Debug: log why flash deal might not show
+    if (typeof window !== 'undefined') {
+        console.log('[FlashDeal]', {
+            enabled: config.enabled,
+            products: config.products?.length,
+            startsAt: config.startsAt?.toString(),
+            endsAt: config.endsAt?.toString(),
+            now: now.toString(),
+            expired,
+            notStarted: now < config.startsAt,
+        });
+    }
+
+    if (!config.enabled) return null;
+    if (expired) return null;
 
     const pad = (n: number) => String(n).padStart(2, '0');
     const h = pad(hours);
