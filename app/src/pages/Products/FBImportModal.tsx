@@ -627,6 +627,7 @@ export function FBImportModal({ onClose }: FBImportModalProps) {
                                                 onToggle={() => toggleProduct(product.fbPostId)}
                                                 onUpdate={(field, val) => updateProduct(product.fbPostId, field, val)}
                                                 cargoTypes={cargoTypes}
+                                                categories={categories}
                                             />
                                         ))}
                                     </div>
@@ -751,13 +752,16 @@ export function FBImportModal({ onClose }: FBImportModalProps) {
 }
 
 // ===== Product Review Card =====
-function ProductCard({ product, onToggle, onUpdate, cargoTypes }: {
+function ProductCard({ product, onToggle, onUpdate, cargoTypes, categories }: {
     product: FBExtractedProduct;
     onToggle: () => void;
     onUpdate: (field: keyof FBExtractedProduct, value: any) => void;
     cargoTypes: CargoType[];
+    categories: Category[];
 }) {
     const [expanded, setExpanded] = useState(false);
+    const [catSearch, setCatSearch] = useState('');
+    const [catOpen, setCatOpen] = useState(false);
     const profit = product.salePrice - (product.costPrice || 0) - (product.cargoFee || 0);
     const profitPercent = product.salePrice > 0 ? Math.round((profit / product.salePrice) * 100) : 0;
 
@@ -810,6 +814,75 @@ function ProductCard({ product, onToggle, onUpdate, cargoTypes }: {
                     <div className="input-group">
                         <label className="input-label" style={{ fontSize: '0.7rem' }}>Нэр</label>
                         <input className="input" value={product.name} onChange={e => onUpdate('name', e.target.value)} style={{ height: 36, fontSize: '0.85rem' }} />
+                    </div>
+                    <div className="input-group">
+                        <label className="input-label" style={{ fontSize: '0.7rem' }}>Ангилал</label>
+                        <div style={{ position: 'relative' }}>
+                            <input
+                                className="input"
+                                value={catOpen ? catSearch : product.categoryName}
+                                onChange={e => {
+                                    setCatSearch(e.target.value);
+                                    if (!catOpen) setCatOpen(true);
+                                }}
+                                onFocus={() => { setCatOpen(true); setCatSearch(product.categoryName || ''); }}
+                                onBlur={() => setTimeout(() => setCatOpen(false), 200)}
+                                placeholder="Ангилал сонгох эсвэл бичих..."
+                                style={{ height: 36, fontSize: '0.85rem' }}
+                            />
+                            {catOpen && (
+                                <div style={{
+                                    position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 50,
+                                    background: 'var(--surface-1)', border: '1.5px solid var(--border-primary)',
+                                    borderRadius: 12, marginTop: 4, maxHeight: 180, overflowY: 'auto',
+                                    boxShadow: '0 8px 24px rgba(0,0,0,0.12)'
+                                }}>
+                                    {categories
+                                        .filter(c => !catSearch || c.name.toLowerCase().includes(catSearch.toLowerCase()))
+                                        .map(c => (
+                                            <div
+                                                key={c.id}
+                                                onMouseDown={() => {
+                                                    onUpdate('categoryName', c.name);
+                                                    setCatOpen(false);
+                                                    setCatSearch('');
+                                                }}
+                                                style={{
+                                                    padding: '8px 14px', cursor: 'pointer',
+                                                    fontSize: '0.82rem', fontWeight: 600,
+                                                    background: product.categoryName === c.name ? 'rgba(99,102,241,0.08)' : 'transparent',
+                                                    color: product.categoryName === c.name ? 'var(--primary)' : 'var(--text-primary)',
+                                                    borderBottom: '1px solid var(--border-primary)',
+                                                }}
+                                            >
+                                                {c.name}
+                                            </div>
+                                        ))}
+                                    {catSearch && !categories.some(c => c.name.toLowerCase() === catSearch.toLowerCase()) && (
+                                        <div
+                                            onMouseDown={() => {
+                                                onUpdate('categoryName', catSearch.trim());
+                                                setCatOpen(false);
+                                                setCatSearch('');
+                                            }}
+                                            style={{
+                                                padding: '8px 14px', cursor: 'pointer',
+                                                fontSize: '0.82rem', fontWeight: 700,
+                                                color: 'var(--primary)',
+                                                display: 'flex', alignItems: 'center', gap: 6,
+                                            }}
+                                        >
+                                            + "{catSearch.trim()}" шинээр үүсгэх
+                                        </div>
+                                    )}
+                                    {categories.filter(c => !catSearch || c.name.toLowerCase().includes(catSearch.toLowerCase())).length === 0 && !catSearch && (
+                                        <div style={{ padding: '12px 14px', fontSize: '0.78rem', color: 'var(--text-muted)', textAlign: 'center' }}>
+                                            Ангилал байхгүй
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+                        </div>
                     </div>
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
                         <div className="input-group">
