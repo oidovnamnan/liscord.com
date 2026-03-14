@@ -50,4 +50,15 @@ class PairingKeyModule(reactContext: ReactApplicationContext) : ReactContextBase
             .putString("smsTemplates", templatesJson)
             .apply()
     }
+
+    /**
+     * Sync current app version to SharedPreferences for native update checker.
+     */
+    @ReactMethod
+    fun setAppVersion(version: String) {
+        val prefs = reactApplicationContext.getSharedPreferences("LiscordBridge", ReactApplicationContext.MODE_PRIVATE)
+        prefs.edit()
+            .putString("appVersion", version)
+            .apply()
+    }
 }

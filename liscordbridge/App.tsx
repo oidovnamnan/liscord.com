@@ -424,7 +424,11 @@ const App = () => {
       pairingKeyRef.current = key;
       _pairingKey = key;
       // Sync to native SharedPreferences for BroadcastReceiver
-      try { NativeModules.PairingKeyModule?.setPairingKey(key); } catch (_e) { }
+      try {
+        NativeModules.PairingKeyModule?.setPairingKey(key);
+        // Sync app version for native update checker
+        NativeModules.PairingKeyModule?.setAppVersion?.(APP_VERSION);
+      } catch (_e) { }
       // Sync SMS templates from Firestore
       syncSmsConfigFromFirestore(key);
     }
@@ -854,24 +858,29 @@ const App = () => {
         <Text style={styles.subtitle}>SMS Forwarder v{APP_VERSION}</Text>
       </View>
 
-      <ScrollView style={styles.content} contentContainerStyle={{ paddingBottom: 40 }}>
+      <ScrollView style={styles.content} contentContainerStyle={{ paddingBottom: 32 }}>
         {/* Status Card */}
         <View style={[styles.statusCard, pairingKey ? styles.statusCardActive : styles.statusCardInactive]}>
-          <Text style={styles.statusLabel}>Төлөв</Text>
-          <Text style={styles.statusValue}>
-            {pairingKey ? (isRunning ? 'Идэвхтэй 🟢' : 'Холбогдсон 🔗') : 'Холбогдоогүй ❌'}
-          </Text>
+          <View style={styles.statusRow}>
+            <View style={[styles.statusDot, pairingKey && isRunning ? styles.dotGreen : pairingKey ? styles.dotYellow : styles.dotRed]} />
+            <Text style={styles.statusValue}>
+              {pairingKey ? (isRunning ? 'Идэвхтэй' : 'Холбогдсон') : 'Холбогдоогүй'}
+            </Text>
+          </View>
           {pairingKey && (
-            <Text style={styles.keyText} numberOfLines={1}>Түлхүүр: {pairingKey}</Text>
+            <Text style={styles.keyText} numberOfLines={1}>{pairingKey}</Text>
           )}
           {pairingKey && (
-            <Text style={styles.statText}>Дамжуулсан: {forwardCount} мессеж</Text>
+            <View style={styles.statRow}>
+              <Text style={styles.statText}>📤 {forwardCount}</Text>
+              <Text style={styles.statLabel}>дамжуулсан</Text>
+            </View>
           )}
         </View>
 
         {!pairingKey ? (
           <TouchableOpacity style={styles.primaryBtn} onPress={startScanning}>
-            <Text style={styles.primaryBtnText}>📷 Системтэй холбох (QR Scan)</Text>
+            <Text style={styles.primaryBtnText}>QR холбох</Text>
           </TouchableOpacity>
         ) : (
           <View style={styles.actionsBox}>
@@ -880,72 +889,46 @@ const App = () => {
               onPress={toggleService}
             >
               <Text style={styles.actionBtnText}>
-                {isRunning ? '⏹ Дамжуулалтыг ЗОГСООХ' : '▶ Дамжуулалтыг ЭХЛҮҮЛЭХ'}
+                {isRunning ? '⏹  Зогсоох' : '▶  Эхлүүлэх'}
               </Text>
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.settingsBtn} onPress={() => setShowSettings(true)}>
-              <Text style={styles.settingsBtnText}>⚙️ Тохиргоо</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity style={styles.secondaryBtn} onPress={unpair}>
-              <Text style={styles.secondaryBtnText}>🔓 Салгах</Text>
-            </TouchableOpacity>
+            <View style={styles.btnRow}>
+              <TouchableOpacity style={styles.settingsBtn} onPress={() => setShowSettings(true)}>
+                <Text style={styles.settingsBtnText}>⚙ Тохиргоо</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.unpairBtn} onPress={unpair}>
+                <Text style={styles.unpairBtnText}>Салгах</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         )}
 
         {/* Update Banner */}
         {updateAvailable && (
           <TouchableOpacity style={styles.updateBanner} onPress={downloadUpdate}>
-            <Text style={styles.updateBannerText}>🚀 Шинэ хувилбар v{updateAvailable} бэлэн!</Text>
-            <Text style={styles.updateBannerAction}>ШИНЭЧЛЭХ →</Text>
+            <View>
+              <Text style={styles.updateBannerText}>Шинэ хувилбар v{updateAvailable}</Text>
+              <Text style={styles.updateBannerHint}>Дарж шинэчлэнэ үү</Text>
+            </View>
+            <Text style={styles.updateBannerAction}>↓</Text>
           </TouchableOpacity>
-        )}
-        {!updateAvailable && (
-          <TouchableOpacity
-            style={styles.checkUpdateBtn}
-            onPress={checkForUpdate}
-            disabled={checkingUpdate}
-          >
-            {checkingUpdate ? (
-              <ActivityIndicator size="small" color="#818cf8" />
-            ) : (
-              <Text style={styles.checkUpdateText}>🔄 Шинэчлэл шалгах (v{APP_VERSION})</Text>
-            )}          </TouchableOpacity>
         )}
 
         {/* Activity Log */}
         {logs.length > 0 && (
           <View style={styles.logsCard}>
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-              <Text style={styles.logsTitle}>📋 Үйл ажиллагааны лог</Text>
-              {isRunning && (
-                <TouchableOpacity onPress={refreshFromStorage}>
-                  <Text style={{ color: '#818cf8', fontSize: 13, fontWeight: '600' }}>🔄 Шинэчлэх</Text>
-                </TouchableOpacity>
-              )}
+            <View style={styles.logsHeader}>
+              <Text style={styles.logsTitle}>Лог</Text>
+              <TouchableOpacity onPress={checkingUpdate ? undefined : checkForUpdate}>
+                <Text style={styles.refreshText}>{checkingUpdate ? '...' : 'v' + APP_VERSION}</Text>
+              </TouchableOpacity>
             </View>
-            {logs.map((log, i) => (
+            {logs.slice(0, 15).map((log, i) => (
               <Text key={i} style={styles.logEntry}>{log}</Text>
             ))}
           </View>
         )}
-
-        {/* Info */}
-        <View style={styles.infoCard}>
-          <Text style={styles.infoTitle}>ℹ️ Тухай</Text>
-          <Text style={styles.infoText}>
-            Энэ апп нь таны утсанд ирсэн банкны SMS мессежийг автоматаар Liscord систем рүү дамжуулна.
-          </Text>
-          <Text style={styles.infoText}>
-            ⚙️ Тохиргоо хэсэгт банкны дугаар нэмэх/хасах, зөвхөн орлого шүүх тохиргоо өөрчлөх боломжтой.
-          </Text>
-          <Text style={styles.infoText}>
-            ⚠️ "Дамжуулалтыг ЭХЛҮҮЛЭХ" дарсны дараа утсаа хааж болно — арын горимд автоматаар ажиллана.
-          </Text>
-        </View>
-
-        <Text style={{ textAlign: 'center', color: 'rgba(255,255,255,0.2)', fontSize: 11, marginTop: 8 }}>v{APP_VERSION} (build 2)</Text>
       </ScrollView>
     </SafeAreaView>
   );
@@ -953,161 +936,161 @@ const App = () => {
 
 const styles = StyleSheet.create({
   // ===== BASE =====
-  container: { flex: 1, backgroundColor: '#0f0f14' },
+  container: { flex: 1, backgroundColor: '#0a0a0f' },
   header: {
-    padding: 24, paddingTop: 48, alignItems: 'center',
-    borderBottomWidth: 1, borderColor: 'rgba(255,255,255,0.06)',
-    backgroundColor: '#0f0f14',
+    paddingHorizontal: 24, paddingTop: 52, paddingBottom: 16, alignItems: 'center',
   },
-  title: { fontSize: 26, fontWeight: '900', color: '#ffffff', letterSpacing: -0.5 },
-  subtitle: { fontSize: 13, color: 'rgba(255,255,255,0.4)', marginTop: 4, fontWeight: '500', letterSpacing: 1, textTransform: 'uppercase' },
-  backBtn: { fontSize: 15, color: '#818cf8', fontWeight: '700', marginTop: 10 },
-  content: { flex: 1, padding: 20 },
+  title: { fontSize: 20, fontWeight: '800', color: '#ffffff', letterSpacing: 1 },
+  subtitle: { fontSize: 11, color: 'rgba(255,255,255,0.3)', marginTop: 3, fontWeight: '600', letterSpacing: 2, textTransform: 'uppercase' },
+  backBtn: { fontSize: 14, color: '#818cf8', fontWeight: '700', marginTop: 10 },
+  content: { flex: 1, paddingHorizontal: 20 },
 
-  // ===== STATUS CARD (glassmorphism) =====
+  // ===== STATUS CARD =====
   statusCard: {
-    padding: 22, borderRadius: 20, marginBottom: 24,
-    borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)',
+    padding: 20, borderRadius: 16, marginBottom: 20,
+    borderWidth: 1,
   },
-  statusCardInactive: { backgroundColor: 'rgba(239,68,68,0.08)', borderColor: 'rgba(239,68,68,0.2)' },
-  statusCardActive: { backgroundColor: 'rgba(16,185,129,0.08)', borderColor: 'rgba(16,185,129,0.2)' },
-  statusLabel: {
-    fontSize: 10, color: 'rgba(255,255,255,0.45)', textTransform: 'uppercase',
-    fontWeight: '800', letterSpacing: 2,
-  },
-  statusValue: { fontSize: 22, fontWeight: '800', marginTop: 8, color: '#ffffff' },
-  keyText: { fontSize: 11, color: 'rgba(255,255,255,0.3)', marginTop: 14, fontFamily: 'monospace' },
-  statText: {
-    fontSize: 14, color: '#34d399', marginTop: 8, fontWeight: '700',
-  },
+  statusCardInactive: { backgroundColor: 'rgba(239,68,68,0.06)', borderColor: 'rgba(239,68,68,0.15)' },
+  statusCardActive: { backgroundColor: 'rgba(16,185,129,0.06)', borderColor: 'rgba(16,185,129,0.15)' },
+  statusRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  statusDot: { width: 10, height: 10, borderRadius: 5 },
+  dotGreen: { backgroundColor: '#34d399' },
+  dotYellow: { backgroundColor: '#fbbf24' },
+  dotRed: { backgroundColor: '#f87171' },
+  statusValue: { fontSize: 18, fontWeight: '700', color: '#ffffff' },
+  keyText: { fontSize: 10, color: 'rgba(255,255,255,0.25)', marginTop: 12, fontFamily: 'monospace' },
+  statRow: { flexDirection: 'row', alignItems: 'baseline', gap: 4, marginTop: 8 },
+  statText: { fontSize: 20, color: '#34d399', fontWeight: '800' },
+  statLabel: { fontSize: 12, color: 'rgba(52,211,153,0.6)', fontWeight: '600' },
 
   // ===== BUTTONS =====
   primaryBtn: {
-    backgroundColor: '#6366f1', padding: 18, borderRadius: 16,
+    backgroundColor: '#6366f1', paddingVertical: 16, borderRadius: 14,
     alignItems: 'center', marginBottom: 16,
-    shadowColor: '#6366f1', shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.4, shadowRadius: 20, elevation: 8,
   },
-  primaryBtnText: { color: 'white', fontSize: 16, fontWeight: '800', letterSpacing: 0.5 },
-  actionsBox: { gap: 12, marginBottom: 28 },
+  primaryBtnText: { color: 'white', fontSize: 15, fontWeight: '700' },
+  actionsBox: { gap: 10, marginBottom: 20 },
   actionBtn: {
-    padding: 18, borderRadius: 16, alignItems: 'center',
-    shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.35, shadowRadius: 16, elevation: 6,
+    paddingVertical: 16, borderRadius: 14, alignItems: 'center',
   },
-  actionBtnStart: {
-    backgroundColor: '#6366f1',
-    shadowColor: '#6366f1',
-  },
-  actionBtnStop: {
-    backgroundColor: '#ef4444',
-    shadowColor: '#ef4444',
-  },
-  actionBtnText: { color: 'white', fontSize: 15, fontWeight: '800', letterSpacing: 0.5 },
+  actionBtnStart: { backgroundColor: '#6366f1' },
+  actionBtnStop: { backgroundColor: '#dc2626' },
+  actionBtnText: { color: 'white', fontSize: 15, fontWeight: '700', letterSpacing: 0.3 },
+  btnRow: { flexDirection: 'row', gap: 10 },
   settingsBtn: {
-    padding: 16, borderRadius: 16, alignItems: 'center',
+    flex: 1, paddingVertical: 14, borderRadius: 14, alignItems: 'center',
     backgroundColor: 'rgba(255,255,255,0.04)',
-    borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)',
+    borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)',
   },
-  settingsBtnText: { color: '#a5b4fc', fontSize: 15, fontWeight: '700' },
-  secondaryBtn: {
-    padding: 14, borderRadius: 16, alignItems: 'center',
-    backgroundColor: 'rgba(239,68,68,0.08)',
-    borderWidth: 1, borderColor: 'rgba(239,68,68,0.2)',
+  settingsBtnText: { color: '#a5b4fc', fontSize: 14, fontWeight: '600' },
+  unpairBtn: {
+    paddingVertical: 14, paddingHorizontal: 20, borderRadius: 14, alignItems: 'center',
+    backgroundColor: 'rgba(239,68,68,0.06)',
+    borderWidth: 1, borderColor: 'rgba(239,68,68,0.12)',
   },
-  secondaryBtnText: { color: '#f87171', fontSize: 14, fontWeight: '700' },
+  unpairBtnText: { color: '#f87171', fontSize: 14, fontWeight: '600' },
+
+  // ===== UPDATE =====
+  updateBanner: {
+    backgroundColor: '#059669', borderRadius: 14,
+    paddingVertical: 14, paddingHorizontal: 18, marginBottom: 16,
+    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+  },
+  updateBannerText: { color: '#fff', fontSize: 14, fontWeight: '700' },
+  updateBannerHint: { color: 'rgba(255,255,255,0.7)', fontSize: 11, marginTop: 2 },
+  updateBannerAction: { color: '#fff', fontSize: 22, fontWeight: '800' },
 
   // ===== SCANNER =====
   closeBtn: {
     position: 'absolute', bottom: 50, alignSelf: 'center',
-    backgroundColor: 'rgba(0,0,0,0.8)', paddingHorizontal: 36,
-    paddingVertical: 16, borderRadius: 30,
-    borderWidth: 1, borderColor: 'rgba(255,255,255,0.15)',
+    backgroundColor: 'rgba(0,0,0,0.85)', paddingHorizontal: 36,
+    paddingVertical: 14, borderRadius: 30,
   },
-  closeBtnText: { color: 'white', fontWeight: '800', fontSize: 15, letterSpacing: 1 },
+  closeBtnText: { color: 'white', fontWeight: '800', fontSize: 14, letterSpacing: 1 },
   scannerOverlay: {
     position: 'absolute', top: 60, alignSelf: 'center',
     backgroundColor: 'rgba(0,0,0,0.6)', paddingHorizontal: 24,
     paddingVertical: 12, borderRadius: 24,
-    borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)',
   },
   scannerHint: { color: 'white', fontSize: 14, fontWeight: '700' },
 
   // ===== SETTINGS =====
   settingCard: {
-    backgroundColor: '#1a1b23', borderRadius: 18, padding: 20,
-    marginBottom: 16, borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)',
+    backgroundColor: '#111118', borderRadius: 14, padding: 18,
+    marginBottom: 12, borderWidth: 1, borderColor: 'rgba(255,255,255,0.05)',
   },
   settingRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  settingTitle: { fontSize: 16, fontWeight: '800', color: '#ffffff', marginBottom: 4 },
-  settingDesc: { fontSize: 12, color: 'rgba(255,255,255,0.4)', marginBottom: 14 },
-  senderInputRow: { flexDirection: 'row', gap: 8, marginBottom: 12 },
+  settingTitle: { fontSize: 15, fontWeight: '700', color: '#ffffff', marginBottom: 2 },
+  settingDesc: { fontSize: 11, color: 'rgba(255,255,255,0.35)', marginBottom: 12 },
+  senderInputRow: { flexDirection: 'row', gap: 8, marginBottom: 10 },
   senderInput: {
-    flex: 1, backgroundColor: 'rgba(255,255,255,0.05)',
-    borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)',
-    borderRadius: 12, paddingHorizontal: 14, paddingVertical: 10,
-    fontSize: 14, color: '#ffffff',
+    flex: 1, backgroundColor: 'rgba(255,255,255,0.04)',
+    borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)',
+    borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10,
+    fontSize: 13, color: '#ffffff',
   },
   addBtn: {
-    backgroundColor: '#6366f1', width: 44, borderRadius: 12,
+    backgroundColor: '#6366f1', width: 42, borderRadius: 10,
     alignItems: 'center', justifyContent: 'center',
   },
-  addBtnText: { color: 'white', fontSize: 22, fontWeight: '800' },
-  sendersList: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  addBtnText: { color: 'white', fontSize: 20, fontWeight: '800' },
+  sendersList: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
   senderChip: {
-    backgroundColor: 'rgba(99,102,241,0.12)', paddingHorizontal: 12,
-    paddingVertical: 6, borderRadius: 20,
-    borderWidth: 1, borderColor: 'rgba(99,102,241,0.3)',
-    flexDirection: 'row', alignItems: 'center', gap: 6,
+    backgroundColor: 'rgba(99,102,241,0.1)', paddingHorizontal: 10,
+    paddingVertical: 5, borderRadius: 16,
+    borderWidth: 1, borderColor: 'rgba(99,102,241,0.2)',
+    flexDirection: 'row', alignItems: 'center', gap: 5,
   },
-  senderChipText: { color: '#a5b4fc', fontSize: 12, fontWeight: '700' },
+  senderChipText: { color: '#a5b4fc', fontSize: 11, fontWeight: '700' },
   senderDeleteBtn: {
-    width: 18, height: 18, borderRadius: 9,
-    backgroundColor: 'rgba(239,68,68,0.2)',
+    width: 16, height: 16, borderRadius: 8,
+    backgroundColor: 'rgba(239,68,68,0.15)',
     alignItems: 'center', justifyContent: 'center',
   },
-  senderDeleteText: { color: '#f87171', fontSize: 10, fontWeight: '900' },
-  hintText: { fontSize: 11, color: 'rgba(255,255,255,0.25)', marginTop: 8, fontStyle: 'italic' },
+  senderDeleteText: { color: '#f87171', fontSize: 9, fontWeight: '900' },
+  hintText: { fontSize: 11, color: 'rgba(255,255,255,0.2)', marginTop: 6, fontStyle: 'italic' },
   resetBtn: {
-    padding: 16, borderRadius: 14, alignItems: 'center',
-    backgroundColor: 'rgba(249,115,22,0.08)',
-    borderWidth: 1, borderColor: 'rgba(249,115,22,0.25)',
+    padding: 14, borderRadius: 12, alignItems: 'center',
+    backgroundColor: 'rgba(249,115,22,0.06)',
+    borderWidth: 1, borderColor: 'rgba(249,115,22,0.15)',
   },
-  resetBtnText: { color: '#fb923c', fontSize: 14, fontWeight: '700' },
+  resetBtnText: { color: '#fb923c', fontSize: 13, fontWeight: '700' },
 
   // ===== LOGS =====
   logsCard: {
-    backgroundColor: '#1a1b23', borderRadius: 18, padding: 16,
-    marginBottom: 16, borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)',
+    backgroundColor: '#111118', borderRadius: 14, padding: 14,
+    marginBottom: 12, borderWidth: 1, borderColor: 'rgba(255,255,255,0.05)',
   },
-  logsTitle: { fontSize: 14, fontWeight: '800', color: '#ffffff' },
-  logEntry: { fontSize: 11, color: 'rgba(255,255,255,0.45)', marginBottom: 4, fontFamily: 'monospace' },
+  logsHeader: {
+    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8,
+  },
+  logsTitle: { fontSize: 13, fontWeight: '700', color: 'rgba(255,255,255,0.6)' },
+  refreshText: { fontSize: 11, color: 'rgba(129,140,248,0.6)', fontWeight: '600' },
+  logEntry: { fontSize: 10, color: 'rgba(255,255,255,0.35)', marginBottom: 3, fontFamily: 'monospace', lineHeight: 15 },
 
   // ===== INFO =====
   infoCard: {
-    backgroundColor: 'rgba(59,130,246,0.06)', borderRadius: 18,
-    padding: 16, borderWidth: 1, borderColor: 'rgba(59,130,246,0.15)',
+    backgroundColor: 'rgba(59,130,246,0.04)', borderRadius: 14,
+    padding: 14, borderWidth: 1, borderColor: 'rgba(59,130,246,0.1)',
   },
-  infoTitle: { fontSize: 14, fontWeight: '800', color: '#93c5fd', marginBottom: 8 },
-  infoText: { fontSize: 12, color: 'rgba(147,197,253,0.7)', marginBottom: 6, lineHeight: 19 },
-  updateBanner: {
-    backgroundColor: '#059669',
-    borderRadius: 16,
-    padding: 18,
-    marginTop: 12,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+  infoTitle: { fontSize: 13, fontWeight: '700', color: '#93c5fd', marginBottom: 6 },
+  infoText: { fontSize: 11, color: 'rgba(147,197,253,0.5)', marginBottom: 4, lineHeight: 17 },
+
+  // Unused but may be referenced
+  secondaryBtn: {
+    padding: 14, borderRadius: 14, alignItems: 'center',
+    backgroundColor: 'rgba(239,68,68,0.06)',
   },
-  updateBannerText: { color: '#fff', fontSize: 14, fontWeight: '700', flex: 1 },
-  updateBannerAction: { color: '#fff', fontSize: 15, fontWeight: '900', marginLeft: 8 },
+  secondaryBtnText: { color: '#f87171', fontSize: 13, fontWeight: '700' },
+  statusLabel: {
+    fontSize: 10, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase',
+    fontWeight: '800', letterSpacing: 2,
+  },
   checkUpdateBtn: {
-    alignItems: 'center',
-    padding: 14,
-    marginTop: 8,
-    borderRadius: 12,
-    backgroundColor: 'rgba(99,102,241,0.08)',
+    alignItems: 'center', padding: 12, marginBottom: 12,
+    borderRadius: 10, backgroundColor: 'rgba(99,102,241,0.06)',
   },
-  checkUpdateText: { color: '#818cf8', fontSize: 13, fontWeight: '600' },
+  checkUpdateText: { color: '#818cf8', fontSize: 12, fontWeight: '600' },
 });
 
 export default App;
