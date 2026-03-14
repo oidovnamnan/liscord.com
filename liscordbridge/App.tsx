@@ -176,11 +176,10 @@ function isIncomeSms(body: string, currentSettings: AppSettings): boolean {
 }
 
 // ======= BACKGROUND TASK (module-level, no closure dependency) =======
+// NOTE: SMS forwarding is handled entirely by native BootForegroundService (5s polling).
+// This RN task only keeps the React Native service alive and syncs UI counters.
 const backgroundTask = async (taskDataArguments: any) => {
-  let lastCheckedStamp = Date.now();
   const { delay } = taskDataArguments;
-  let totalForwarded = 0;
-  let cycleCount = 0;
 
   const bgLog = async (msg: string) => {
     try {
@@ -192,106 +191,24 @@ const backgroundTask = async (taskDataArguments: any) => {
     } catch (_e) { /* ignore */ }
   };
 
-  await bgLog('🚀 Background task эхэллээ');
+  await bgLog('🚀 Background task эхэллээ (native service SMS дамжуулна)');
 
-  // Use an infinite loop with manual running check
-  const keepRunning = async () => {
-    while (BackgroundService.isRunning()) {
-      cycleCount++;
-      const currentKey = _pairingKey;
-      const currentSettings = _settings;
+  // Keep service alive — native BootForegroundService handles actual SMS forwarding
+  while (BackgroundService.isRunning()) {
+    const countStr = await AsyncStorage.getItem('LiscordForwardCount');
+    const totalForwarded = parseInt(countStr || '0', 10);
 
-      // Update notification every cycle to keep service alive on Samsung/Android 14+
-      try {
-        await BackgroundService.updateNotification({
-          taskDesc: totalForwarded > 0
-            ? `📤 ${totalForwarded} мессеж дамжууллаа | Хүлээж байна...`
-            : 'Банкны гүйлгээний мессеж хүлээж байна...',
-        });
-      } catch (_e) { /* ignore notification update errors */ }
+    // Update notification to keep service alive on Samsung/Android 14+
+    try {
+      await BackgroundService.updateNotification({
+        taskDesc: totalForwarded > 0
+          ? `📤 ${totalForwarded} мессеж дамжууллаа | Хүлээж байна...`
+          : 'SMS хяналт идэвхтэй ✅ (native service)',
+      });
+    } catch (_e) { /* ignore notification update errors */ }
 
-      if (!currentKey) {
-        await sleep(delay);
-        continue;
-      }
-
-      try {
-        const filter = {
-          box: 'inbox',
-          minDate: lastCheckedStamp,
-        };
-
-        await new Promise<void>((resolve) => {
-          SmsAndroid.list(
-            JSON.stringify(filter),
-            (fail: string) => {
-              bgLog(`❌ SMS уншихад алдаа: ${fail}`);
-              resolve();
-            },
-            async (count: number, smsList: string) => {
-              if (count > 0) {
-                try {
-                  const arr = JSON.parse(smsList);
-                  let forwarded = 0;
-
-                  for (const msg of arr) {
-                    const sender = msg.address || '';
-                    const body = msg.body || '';
-
-                    if (!isBankSms(sender, body, currentSettings)) continue;
-                    if (currentSettings.onlyIncome && !isIncomeSms(body, currentSettings)) continue;
-
-                    const amount = parseAmount(body);
-                    const bank = parseBankName(sender, body);
-                    const utga = parseUtga(body);
-
-                    const success = await sendToFirestore(currentKey, {
-                      sender,
-                      body,
-                      timestamp: msg.date || Date.now(),
-                      amount,
-                      bank,
-                      utga,
-                    });
-
-                    if (success) {
-                      forwarded++;
-                      totalForwarded++;
-                      const countStr = await AsyncStorage.getItem('LiscordForwardCount');
-                      const newCount = (parseInt(countStr || '0', 10)) + 1;
-                      _forwardCount = newCount;
-                      await AsyncStorage.setItem('LiscordForwardCount', String(newCount));
-                    }
-                  }
-
-                  if (forwarded > 0) {
-                    await bgLog(`📤 ${forwarded} мессеж дамжууллаа`);
-                    // Update notification immediately after forwarding
-                    try {
-                      await BackgroundService.updateNotification({
-                        taskDesc: `📤 ${totalForwarded} мессеж дамжууллаа | Хүлээж байна...`,
-                      });
-                    } catch (_ne) { /* ignore */ }
-                  }
-                } catch (parseErr: any) {
-                  await bgLog(`❌ SMS parse алдаа: ${parseErr?.message || parseErr}`);
-                }
-              }
-              resolve();
-            },
-          );
-        });
-      } catch (e: any) {
-        await bgLog(`❌ Polling алдаа: ${e?.message || e}`);
-      }
-
-      lastCheckedStamp = Date.now();
-      await sleep(delay);
-    }
-  };
-
-  // Start polling and never let the promise resolve (keeps service alive)
-  await keepRunning();
+    await sleep(delay);
+  }
 };
 
 // Send SMS data to Firestore REST API

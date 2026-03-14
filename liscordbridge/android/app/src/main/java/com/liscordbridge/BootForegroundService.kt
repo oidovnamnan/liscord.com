@@ -1,5 +1,6 @@
 package com.liscordbridge
 
+import android.app.AlarmManager
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
@@ -91,7 +92,36 @@ class BootForegroundService : Service() {
         smsPollRunnable?.let { handler.removeCallbacks(it) }
         updateCheckRunnable?.let { handler.removeCallbacks(it) }
         unregisterNetworkListener()
-        Log.w(TAG, "⚠️ Service destroyed")
+        Log.w(TAG, "⚠️ Service destroyed — scheduling restart")
+        scheduleRestart()
+    }
+
+    override fun onTaskRemoved(rootIntent: Intent?) {
+        super.onTaskRemoved(rootIntent)
+        Log.w(TAG, "⚠️ App swiped away — scheduling restart")
+        scheduleRestart()
+    }
+
+    /**
+     * Schedule service restart via AlarmManager — works even after force-stop on most OEMs.
+     * Uses a 5-second delay to avoid rapid restart loops.
+     */
+    private fun scheduleRestart() {
+        try {
+            val restartIntent = Intent(this, BootForegroundService::class.java)
+            val pendingIntent = PendingIntent.getService(
+                this, 1, restartIntent,
+                PendingIntent.FLAG_ONE_SHOT or PendingIntent.FLAG_IMMUTABLE
+            )
+            val alarmManager = getSystemService(ALARM_SERVICE) as AlarmManager
+            alarmManager.setExactAndAllowWhileIdle(
+                AlarmManager.RTC_WAKEUP,
+                System.currentTimeMillis() + 5000,
+                pendingIntent
+            )
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to schedule restart: ${e.message}")
+        }
     }
 
     // ====== SMS POLLING (main forwarding mechanism) ======

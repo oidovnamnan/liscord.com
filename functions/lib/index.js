@@ -489,24 +489,15 @@ function parseWithMarkers(text, prefix, suffix) {
 exports.onSmsIncome = functions
     .firestore
     .document("sms_inbox/{smsId}")
-    .onWrite(async (change) => {
+    .onCreate(async (snap) => {
     var _a, _b, _c, _d, _f, _g, _h;
-    // Only process if doc exists after write
-    const snap = change.after;
-    if (!snap.exists)
-        return null;
     const smsData = snap.data();
-    // Skip if already matched, processing, or checked and unmatched
-    if (['matched', 'processing', 'unmatched'].includes(smsData.status))
-        return null;
     const pairingKey = smsData.pairingKey;
     let smsAmount = smsData.amount || 0;
     const smsBody = (smsData.body || '');
     let smsNote = (smsData.utga || '');
     if (!pairingKey)
         return null;
-    // Mark as processing to prevent race conditions
-    await snap.ref.update({ status: 'processing' });
     try {
         // 1. Find business by pairingKey (smsBridgeKey)
         const bizQuery = await db.collection('businesses')
@@ -599,13 +590,14 @@ exports.onSmsIncome = functions
         }
         if (smsAmount <= 0) {
             console.log(`No amount found in SMS: ${smsBody.substring(0, 80)}`);
+            await snap.ref.update({ status: 'no_amount' });
             return null;
         }
         // Combine note + body for searching, lowercase
         const searchText = `${smsNote} ${smsBody}`.toLowerCase();
-        // 3. Load unpaid + recently paid orders for this business
+        // 3. Load unpaid orders for this business
         const ordersSnap = await db.collection(`businesses/${bizId}/orders`)
-            .where('paymentStatus', 'in', ['unpaid', 'paid'])
+            .where('paymentStatus', '==', 'unpaid')
             .limit(200)
             .get();
         if (ordersSnap.empty) {
@@ -729,6 +721,10 @@ exports.onSmsIncome = functions
     }
     catch (err) {
         console.error("SMS auto-matching failed:", err);
+        try {
+            await snap.ref.update({ status: 'error' });
+        }
+        catch (_) { }
         return null;
     }
 });
