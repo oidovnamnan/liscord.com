@@ -4,18 +4,37 @@ import { useCartStore } from '../../store';
 import { orderService } from '../../services/db';
 import { qpayService, type QPayInvoiceResponse } from '../../services/qpay';
 import { ChevronLeft, CheckCircle, MapPin, Truck, ImageIcon, ShieldCheck, CreditCard, QrCode, Landmark, Copy, Check, Smartphone, PartyPopper } from 'lucide-react';
-import { doc, onSnapshot } from 'firebase/firestore';
+import { doc, onSnapshot, getDoc, setDoc, updateDoc, arrayUnion } from 'firebase/firestore';
 import { db } from '../../services/firebase';
 import type { Business, Order } from '../../types';
 import { toast } from 'react-hot-toast';
 
-function generateRefCode(): string {
-    const chars = 'ABCDEFGHJKMNPQRSTVWXYZ23456789';
-    let code = '';
-    for (let i = 0; i < 5; i++) {
-        code += chars[Math.floor(Math.random() * chars.length)];
+async function getUniqueRefCode(businessId: string): Promise<string> {
+    const counterRef = doc(db, `businesses/${businessId}/counters`, 'refCodes');
+    const snap = await getDoc(counterRef);
+    let usedCodes: number[] = snap.exists() ? (snap.data().used || []) : [];
+
+    // If all 9999 codes are used, reset
+    if (usedCodes.length >= 9999) {
+        await setDoc(counterRef, { used: [] });
+        usedCodes = [];
     }
-    return code;
+
+    // Pick a random 4-digit number not in usedCodes
+    const usedSet = new Set(usedCodes);
+    let code: number;
+    do {
+        code = Math.floor(Math.random() * 9999) + 1; // 1–9999
+    } while (usedSet.has(code));
+
+    // Save used code
+    if (snap.exists()) {
+        await updateDoc(counterRef, { used: arrayUnion(code) });
+    } else {
+        await setDoc(counterRef, { used: [code] });
+    }
+
+    return String(code).padStart(4, '0');
 }
 
 export function StoreCheckout() {
@@ -68,7 +87,7 @@ export function StoreCheckout() {
     const selectedBank = enabledBanks.find(b => b.id === selectedBankId) || enabledBanks[0] || null;
 
     // Generate ref code once per session
-    const refCode = useMemo(() => generateRefCode(), []);
+    const [refCode, setRefCode] = useState('');
 
     const handleAddressChange = (val: string) => {
         const lower = val.toLowerCase();
@@ -122,6 +141,12 @@ export function StoreCheckout() {
         setLoading(true);
 
         try {
+            // Generate unique 4-digit ref code
+            let code = refCode;
+            if (paymentMethod === 'bank_transfer' && !code) {
+                code = await getUniqueRefCode(business.id);
+                setRefCode(code);
+            }
             const orderPayload: Partial<Order> = {
                 orderNumber: `${business.settings?.orderPrefix || 'ORD-'}${Date.now().toString().slice(-6)}`,
                 status: 'new',
@@ -133,7 +158,7 @@ export function StoreCheckout() {
                 },
                 source: 'website',
                 selectedPaymentMethod: paymentMethod,
-                paymentRefCode: paymentMethod === 'bank_transfer' ? refCode : '',
+                paymentRefCode: paymentMethod === 'bank_transfer' ? code : '',
                 items: items.map(item => ({
                     productId: item.product.id,
                     name: item.product.name,
@@ -158,7 +183,7 @@ export function StoreCheckout() {
                     balanceDue: finalTotal
                 },
                 deliveryAddress: isDeliveryRequested ? `${deliveryFees[deliveryZone].label} - ${address}` : 'Дэлгүүрээс очиж авах',
-                notes: `Онлайн дэлгүүрээр өгсөн захиалга${paymentMethod === 'bank_transfer' && selectedBank ? ` | Шилжүүлэг: ${selectedBank.bankName} ${selectedBank.accountNumber} | Код: ${refCode}` : ''}`,
+                notes: `Онлайн дэлгүүрээр өгсөн захиалга${paymentMethod === 'bank_transfer' && selectedBank ? ` | Шилжүүлэг: ${selectedBank.bankName} ${selectedBank.accountNumber} | Код: ${code}` : ''}`,
                 internalNotes: '',
                 tags: ['online'],
                 statusHistory: [],
