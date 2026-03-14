@@ -33,6 +33,7 @@ const PackagesPage = lazy(() => import('./pages/Cargo/Packages/PackagesPage').th
 const InventoryPage = lazy(() => import('./pages/Inventory/InventoryPage').then(m => ({ default: m.InventoryPage })));
 const ProcurementPage = lazy(() => import('./pages/Inventory/ProcurementPage').then(m => ({ default: m.ProcurementPage })));
 const SourcingPage = lazy(() => import('./pages/Sourcing/SourcingPage').then(m => ({ default: m.SourcingPage })));
+const MembershipPage = lazy(() => import('./pages/Membership/MembershipPage').then(m => ({ default: m.MembershipPage })));
 const LeadsPage = lazy(() => import('./pages/CRM/LeadsPage').then(m => ({ default: m.LeadsPage })));
 const QuotesPage = lazy(() => import('./pages/CRM/QuotesPage').then(m => ({ default: m.QuotesPage })));
 const CampaignsPage = lazy(() => import('./pages/Marketing/CampaignsPage').then(m => ({ default: m.CampaignsPage })));
@@ -607,7 +608,7 @@ export default function App() {
             <Route path="event-tickets" element={<ModuleGuard moduleId="event-tickets"><TicketsPage /></ModuleGuard>} />
             <Route path="field-service" element={<ModuleGuard moduleId="field-service"><ShellPage title="Гадуур Засвар" moduleId="field-service" /></ModuleGuard>} />
             <Route path="repair-shop" element={<ModuleGuard moduleId="repair-shop"><ShellPage title="Засварын Газар" moduleId="repair-shop" /></ModuleGuard>} />
-            <Route path="membership" element={<ModuleGuard moduleId="membership"><ShellPage title="VIP Гишүүнчлэл" moduleId="membership" /></ModuleGuard>} />
+            <Route path="membership" element={<ModuleGuard moduleId="membership"><MembershipPage /></ModuleGuard>} />
             <Route path="facility-mgt" element={<ModuleGuard moduleId="facility-mgt"><ShellPage title="Барилга Засвар" moduleId="facility-mgt" /></ModuleGuard>} />
             <Route path="manufacturing" element={<ModuleGuard moduleId="manufacturing"><ManufacturingPage /></ModuleGuard>} />
             <Route path="mrp" element={<ModuleGuard moduleId="mrp"><MRPPage /></ModuleGuard>} />

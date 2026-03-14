@@ -99,6 +99,8 @@ export function SourcingPage() {
                 // If no explicitly preorder items, show ALL items for paid orders
                 const displayItems = preorderItems.length > 0 ? preorderItems : items;
                 if (displayItems.length === 0) return;
+                // Exclude VIP membership orders — they belong in the Membership module
+                if (data.orderNumber?.startsWith('VIP-')) return;
                 
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 const createdAt = data.createdAt?.toDate ? data.createdAt.toDate() : (data.createdAt ? new Date(data.createdAt) : undefined);
