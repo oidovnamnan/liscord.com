@@ -1,11 +1,13 @@
 import { useState, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import {
-    Globe, Search, Loader2, Clock, Package, Truck, CheckCircle2, Copy, Check, X, ChevronDown
+    Globe, Search, Loader2, Clock, Package, Truck, CheckCircle2, Copy, Check, X, ChevronDown,
+    Link2, ExternalLink, Plus, DollarSign, Trash2
 } from 'lucide-react';
 import { useBusinessStore } from '../../store';
 import { collection, query, where, onSnapshot, doc, updateDoc, Timestamp } from 'firebase/firestore';
 import { db } from '../../services/firebase';
+import { productService } from '../../services/productService';
 import { toast } from 'react-hot-toast';
 import { format } from 'date-fns';
 import { usePermissions } from '../../hooks/usePermissions';
@@ -50,6 +52,12 @@ interface SourcingOrder {
     };
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     [key: string]: any;
+}
+
+interface ProductInfo {
+    id: string;
+    salePrice: number;
+    sourceLinks: { url: string; label: string }[];
 }
 
 const STATUS_LABELS: Record<SourcingStatus, { label: string; color: string; icon: typeof Clock }> = {
@@ -336,6 +344,29 @@ function SourcingDetailModal({ order, businessId, settings, onClose, onUpdate }:
     const [statusOverride, setStatusOverride] = useState<SourcingStatus>(order.sourcing?.status || 'ordered');
     const [copiedField, setCopiedField] = useState<string | null>(null);
 
+    // Products info for source links + price editing
+    const [productsInfo, setProductsInfo] = useState<Record<string, ProductInfo>>({});
+    const [editingPrice, setEditingPrice] = useState<Record<string, string>>({});
+    const [addingLink, setAddingLink] = useState<string | null>(null);
+    const [newLinkUrl, setNewLinkUrl] = useState('');
+    const [newLinkLabel, setNewLinkLabel] = useState('');
+
+    // Subscribe to products for sourceLinks and live pricing
+    useEffect(() => {
+        const unsub = productService.subscribeProducts(businessId, (products) => {
+            const info: Record<string, ProductInfo> = {};
+            products.forEach(p => {
+                info[p.id] = {
+                    id: p.id,
+                    salePrice: p.pricing?.salePrice || 0,
+                    sourceLinks: p.sourceLinks || [],
+                };
+            });
+            setProductsInfo(info);
+        });
+        return () => unsub();
+    }, [businessId]);
+
     // Settings
     const recipientName = settings?.recipientName || '';
     const recipientPhone = settings?.recipientPhone || '';
@@ -427,6 +458,48 @@ function SourcingDetailModal({ order, businessId, settings, onClose, onUpdate }:
         }
     };
 
+    // Source link management
+    const handleAddLink = async (productId: string) => {
+        if (!newLinkUrl.trim()) return;
+        const product = productsInfo[productId];
+        const currentLinks = product?.sourceLinks || [];
+        const newLink = { url: newLinkUrl.trim(), label: newLinkLabel.trim() || extractDomain(newLinkUrl) };
+        try {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            await productService.updateProduct(businessId, productId, { sourceLinks: [...currentLinks, newLink] } as any);
+            toast.success('Линк нэмэгдлээ');
+            setAddingLink(null);
+            setNewLinkUrl('');
+            setNewLinkLabel('');
+        } catch { toast.error('Алдаа'); }
+    };
+
+    const handleRemoveLink = async (productId: string, index: number) => {
+        const product = productsInfo[productId];
+        const currentLinks = [...(product?.sourceLinks || [])];
+        currentLinks.splice(index, 1);
+        try {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            await productService.updateProduct(businessId, productId, { sourceLinks: currentLinks } as any);
+            toast.success('Линк устгагдлаа');
+        } catch { toast.error('Алдаа'); }
+    };
+
+    const handlePriceUpdate = async (productId: string) => {
+        const newPrice = parseFloat(editingPrice[productId]);
+        if (isNaN(newPrice) || newPrice < 0) return;
+        try {
+            await productService.updateProduct(businessId, productId, { 'pricing.salePrice': newPrice } as any);
+            toast.success('Үнэ шинэчлэгдлээ');
+            setEditingPrice(prev => { const n = {...prev}; delete n[productId]; return n; });
+        } catch { toast.error('Алдаа'); }
+    };
+
+    const extractDomain = (url: string): string => {
+        try { return new URL(url).hostname.replace('www.', ''); }
+        catch { return 'Линк'; }
+    };
+
     const hasConfig = !!recipientName && !!cargoAddress;
 
     return createPortal(
@@ -495,20 +568,102 @@ function SourcingDetailModal({ order, businessId, settings, onClose, onUpdate }:
                         <div className="sourcing-items-list">
                             {order.items.map(item => {
                                 const isOrdered = itemsState[item.productId]?.ordered;
+                                const productInfo = productsInfo[item.productId];
+                                const links = productInfo?.sourceLinks || [];
+                                const currentPrice = productInfo?.salePrice || 0;
+                                const priceChanged = currentPrice !== item.price && currentPrice > 0;
+                                const isEditingPrice = editingPrice[item.productId] !== undefined;
+
                                 return (
-                                    <label key={item.productId} className={`sourcing-item-row ${isOrdered ? 'ordered' : ''}`}>
-                                        <input
-                                            type="checkbox"
-                                            checked={isOrdered}
-                                            onChange={() => toggleItem(item.productId)}
-                                            style={{ accentColor: 'var(--primary)', width: 18, height: 18 }}
-                                        />
-                                        <div className="sourcing-item-info">
-                                            <span className="sourcing-item-name">{item.name}</span>
-                                            <span className="sourcing-item-qty">x{item.quantity || 1}</span>
+                                    <div key={item.productId} className={`sourcing-item-block ${isOrdered ? 'ordered' : ''}`}>
+                                        <label className="sourcing-item-row">
+                                            <input
+                                                type="checkbox"
+                                                checked={isOrdered}
+                                                onChange={() => toggleItem(item.productId)}
+                                                style={{ accentColor: 'var(--primary)', width: 18, height: 18 }}
+                                            />
+                                            <div className="sourcing-item-info">
+                                                <span className="sourcing-item-name">{item.name}</span>
+                                                <span className="sourcing-item-qty">x{item.quantity || 1}</span>
+                                            </div>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                                {/* Inline price display/edit */}
+                                                {isEditingPrice ? (
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                                                        <input
+                                                            type="number"
+                                                            className="input"
+                                                            value={editingPrice[item.productId]}
+                                                            onChange={e => setEditingPrice(prev => ({...prev, [item.productId]: e.target.value}))}
+                                                            onKeyDown={e => { if (e.key === 'Enter') handlePriceUpdate(item.productId); if (e.key === 'Escape') setEditingPrice(prev => { const n = {...prev}; delete n[item.productId]; return n; }); }}
+                                                            onClick={e => e.stopPropagation()}
+                                                            autoFocus
+                                                            style={{ width: 90, height: 30, fontSize: '0.85rem', padding: '2px 8px', borderRadius: 8, textAlign: 'right' }}
+                                                        />
+                                                        <button className="btn btn-primary btn-xs" onClick={(e) => { e.preventDefault(); handlePriceUpdate(item.productId); }} style={{ height: 28, padding: '0 8px', borderRadius: 6, fontSize: '0.75rem' }}>✓</button>
+                                                    </div>
+                                                ) : (
+                                                    <span
+                                                        className="sourcing-item-price"
+                                                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); setEditingPrice(prev => ({...prev, [item.productId]: String(currentPrice || item.price)})); }}
+                                                        style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, position: 'relative' }}
+                                                        title="Дарж үнэ засах"
+                                                    >
+                                                        ₮{(currentPrice || item.price || 0).toLocaleString()}
+                                                        <DollarSign size={11} style={{ opacity: 0.4 }} />
+                                                        {priceChanged && <span style={{ position: 'absolute', top: -6, right: -6, width: 6, height: 6, borderRadius: '50%', background: '#e17055' }} />}
+                                                    </span>
+                                                )}
+                                            </div>
+                                        </label>
+
+                                        {/* Source links */}
+                                        <div className="sourcing-links-row">
+                                            {links.map((link, i) => (
+                                                <div key={i} className="sourcing-link-chip">
+                                                    <a href={link.url} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()} title={link.url}>
+                                                        <ExternalLink size={11} />
+                                                        {link.label}
+                                                    </a>
+                                                    <button className="sourcing-link-remove" onClick={() => handleRemoveLink(item.productId, i)} title="Устгах">
+                                                        <X size={10} />
+                                                    </button>
+                                                </div>
+                                            ))}
+                                            {addingLink === item.productId ? (
+                                                <div className="sourcing-link-add-form" onClick={e => e.stopPropagation()}>
+                                                    <input
+                                                        className="input"
+                                                        placeholder="URL (https://...)"
+                                                        value={newLinkUrl}
+                                                        onChange={e => setNewLinkUrl(e.target.value)}
+                                                        onKeyDown={e => { if (e.key === 'Enter') handleAddLink(item.productId); }}
+                                                        autoFocus
+                                                        style={{ height: 28, fontSize: '0.8rem', padding: '2px 8px', borderRadius: 6, flex: 1, minWidth: 160 }}
+                                                    />
+                                                    <input
+                                                        className="input"
+                                                        placeholder="Нэр"
+                                                        value={newLinkLabel}
+                                                        onChange={e => setNewLinkLabel(e.target.value)}
+                                                        onKeyDown={e => { if (e.key === 'Enter') handleAddLink(item.productId); }}
+                                                        style={{ height: 28, fontSize: '0.8rem', padding: '2px 8px', borderRadius: 6, width: 70 }}
+                                                    />
+                                                    <button className="btn btn-primary btn-xs" onClick={() => handleAddLink(item.productId)} style={{ height: 26, padding: '0 8px', borderRadius: 6, fontSize: '0.75rem' }}>✓</button>
+                                                    <button className="btn btn-ghost btn-xs" onClick={() => { setAddingLink(null); setNewLinkUrl(''); setNewLinkLabel(''); }} style={{ height: 26, padding: '0 4px' }}><X size={12} /></button>
+                                                </div>
+                                            ) : (
+                                                <button
+                                                    className="sourcing-link-add-btn"
+                                                    onClick={(e) => { e.stopPropagation(); setAddingLink(item.productId); setNewLinkUrl(''); setNewLinkLabel(''); }}
+                                                >
+                                                    <Plus size={11} />
+                                                    Линк
+                                                </button>
+                                            )}
                                         </div>
-                                        <span className="sourcing-item-price">₮{(item.price || 0).toLocaleString()}</span>
-                                    </label>
+                                    </div>
                                 );
                             })}
                         </div>

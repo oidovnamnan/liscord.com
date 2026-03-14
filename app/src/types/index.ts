@@ -654,6 +654,7 @@ export interface Product {
     updatedAt: Date;
     isDeleted: boolean;
     isHidden?: boolean;
+    sourceLinks?: { url: string; label: string }[];
 }
 
 // ============ CATEGORY ============

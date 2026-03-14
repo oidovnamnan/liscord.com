@@ -471,3 +471,121 @@
         grid-template-columns: 1fr !important;
     }
 }
+
+/* ============ SOURCE LINKS + ITEM BLOCK ============ */
+.sourcing-item-block {
+    border: 1.5px solid var(--border-soft);
+    border-radius: 14px;
+    background: var(--surface-1);
+    transition: all 0.2s;
+    overflow: hidden;
+}
+
+.sourcing-item-block:hover {
+    border-color: var(--border-primary);
+}
+
+.sourcing-item-block.ordered {
+    background: rgba(0, 184, 148, 0.04);
+    border-color: rgba(0, 184, 148, 0.2);
+}
+
+.sourcing-item-block .sourcing-item-row {
+    border: none;
+    border-radius: 0;
+    background: transparent;
+}
+
+.sourcing-item-block .sourcing-item-row:hover {
+    background: transparent;
+}
+
+.sourcing-links-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    padding: 0 14px 10px;
+}
+
+.sourcing-link-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: linear-gradient(135deg, rgba(108, 92, 231, 0.08), rgba(0, 184, 148, 0.08));
+    border: 1px solid rgba(108, 92, 231, 0.15);
+    border-radius: 8px;
+    padding: 3px 4px 3px 8px;
+    transition: all 0.2s;
+}
+
+.sourcing-link-chip:hover {
+    border-color: var(--primary);
+    background: linear-gradient(135deg, rgba(108, 92, 231, 0.12), rgba(0, 184, 148, 0.12));
+}
+
+.sourcing-link-chip a {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--primary);
+    text-decoration: none;
+    max-width: 120px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.sourcing-link-chip a:hover {
+    text-decoration: underline;
+}
+
+.sourcing-link-remove {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    border-radius: 5px;
+    border: none;
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.15s;
+    padding: 0;
+}
+
+.sourcing-link-remove:hover {
+    background: rgba(225, 112, 85, 0.15);
+    color: #e17055;
+}
+
+.sourcing-link-add-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    padding: 3px 10px;
+    border-radius: 8px;
+    border: 1.5px dashed var(--border-primary);
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 0.72rem;
+    font-weight: 600;
+    transition: all 0.2s;
+}
+
+.sourcing-link-add-btn:hover {
+    border-color: var(--primary);
+    color: var(--primary);
+    background: rgba(108, 92, 231, 0.04);
+}
+
+.sourcing-link-add-form {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-wrap: wrap;
+}
