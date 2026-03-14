@@ -613,7 +613,7 @@
 
     .sf-modal-gallery {
         position: relative;
-        padding: 20px;
+        padding: 44px 20px 20px;
         min-height: 280px;
         border-radius: 0;
     }
