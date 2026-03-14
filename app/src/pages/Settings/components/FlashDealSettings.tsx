@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Zap, Save, Loader2, Plus, Trash2, Search } from 'lucide-react';
-import { doc, getDoc, updateDoc, Timestamp } from 'firebase/firestore';
+import { doc, getDoc, Timestamp } from 'firebase/firestore';
 import { db } from '../../../services/firebase';
 import { toast } from 'react-hot-toast';
 import type { Product } from '../../../types';
@@ -26,6 +26,7 @@ export function FlashDealSettings({ bizId }: { bizId: string }) {
     const [allProducts, setAllProducts] = useState<Product[]>([]);
     const [productSearch, setProductSearch] = useState('');
     const [showProductPicker, setShowProductPicker] = useState(false);
+    const [discountPercent, setDiscountPercent] = useState(30);
 
     const [config, setConfig] = useState<FlashConfig>({
         enabled: false,
@@ -40,9 +41,9 @@ export function FlashDealSettings({ bizId }: { bizId: string }) {
         (async () => {
             setLoading(true);
             try {
-                // Load flash deal config
-                const bizDoc = await getDoc(doc(db, 'businesses', bizId));
-                const fd = bizDoc.data()?.settings?.storefront?.flashDeal;
+                // Load flash deal config from module_settings/storefront
+                const sfDoc = await getDoc(doc(db, 'businesses', bizId, 'module_settings', 'storefront'));
+                const fd = sfDoc.data()?.flashDeal;
                 if (fd) {
                     setConfig({
                         enabled: fd.enabled || false,
@@ -73,15 +74,16 @@ export function FlashDealSettings({ bizId }: { bizId: string }) {
     const handleSave = async () => {
         setSaving(true);
         try {
-            await updateDoc(doc(db, 'businesses', bizId), {
-                'settings.storefront.flashDeal': {
+            const { doc: docRef, setDoc } = await import('firebase/firestore');
+            await setDoc(docRef(db, 'businesses', bizId, 'module_settings', 'storefront'), {
+                flashDeal: {
                     enabled: config.enabled,
                     title: config.title,
                     startsAt: Timestamp.fromDate(new Date(config.startsAt)),
                     endsAt: Timestamp.fromDate(new Date(config.endsAt)),
                     products: config.products,
                 },
-            });
+            }, { merge: true });
             toast.success('Flash Deal тохиргоо хадгалагдлаа!');
         } catch (e) {
             console.error(e);
@@ -96,11 +98,13 @@ export function FlashDealSettings({ bizId }: { bizId: string }) {
             toast.error('Энэ бараа аль хэдийн нэмэгдсэн');
             return;
         }
+        const origPrice = product.pricing?.salePrice || 0;
+        const flashPrice = Math.round(origPrice * (1 - discountPercent / 100));
         setConfig(prev => ({
             ...prev,
             products: [...prev.products, {
                 productId: product.id,
-                flashPrice: Math.round((product.pricing?.salePrice || 0) * 0.7),
+                flashPrice,
                 maxQuantity: 10,
                 soldCount: 0,
             }],
@@ -211,6 +215,26 @@ export function FlashDealSettings({ bizId }: { bizId: string }) {
                                         onChange={e => setConfig({ ...config, endsAt: e.target.value })}
                                     />
                                 </div>
+                            </div>
+
+                            <div className="divider" />
+
+                            {/* Discount Percent */}
+                            <div className="input-group">
+                                <label className="input-label">Хямдралын хувь (шинэ бараа нэмэхэд)</label>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                    <input
+                                        className="input"
+                                        type="number"
+                                        min={1}
+                                        max={99}
+                                        value={discountPercent}
+                                        onChange={e => setDiscountPercent(Math.min(99, Math.max(1, Number(e.target.value))))}
+                                        style={{ width: 100, textAlign: 'center' }}
+                                    />
+                                    <span style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--text-secondary)' }}>%</span>
+                                </div>
+                                <div className="input-info">Бараа нэмэхэд анхны үнэнд энэ хувийг хэрэглэнэ. Нэмсний дараа бараа тус бүрийн үнийг тус тусад нь засах боломжтой.</div>
                             </div>
 
                             <div className="divider" />
