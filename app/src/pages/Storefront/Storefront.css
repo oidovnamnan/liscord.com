@@ -1200,6 +1200,8 @@
     background: linear-gradient(135deg, #1a0533 0%, #2d1b4e 30%, #4a1942 60%, #1a0533 100%);
     overflow: hidden;
     box-shadow: 0 8px 40px rgba(74, 25, 66, 0.4);
+    display: flex;
+    flex-direction: column;
 }
 
 /* Animated glow orbs */
@@ -1209,6 +1211,7 @@
     filter: blur(60px);
     pointer-events: none;
     opacity: 0.35;
+    z-index: 0;
 }
 
 .fd-glow-1 {
@@ -1237,15 +1240,16 @@
 /* Header */
 .fd-header {
     position: relative;
-    z-index: 3;
+    z-index: 2;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 14px;
-    padding-bottom: 12px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    margin-bottom: 16px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.12);
     flex-wrap: wrap;
     gap: 10px;
+    flex-shrink: 0;
 }
 
 .fd-title-row {
@@ -1255,9 +1259,9 @@
 }
 
 .fd-icon-pulse {
-    width: 36px;
-    height: 36px;
-    border-radius: 10px;
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
     background: linear-gradient(135deg, #ff006e, #ff4d6d);
     color: #fff;
     display: flex;
@@ -1265,6 +1269,7 @@
     justify-content: center;
     animation: fdPulse 1.5s ease-in-out infinite;
     box-shadow: 0 0 20px rgba(255, 0, 110, 0.5);
+    flex-shrink: 0;
 }
 
 @keyframes fdPulse {
@@ -1322,6 +1327,7 @@
 /* Product Cards */
 .fd-products {
     position: relative;
+    z-index: 1;
     display: flex;
     gap: 12px;
     overflow-x: auto;
@@ -1335,7 +1341,8 @@
 
 .fd-card {
     flex: 0 0 calc(50% - 6px);
-    min-width: 140px;
+    min-width: 150px;
+    max-width: 280px;
     scroll-snap-align: start;
     background: rgba(255, 255, 255, 0.08);
     backdrop-filter: blur(10px);
@@ -1504,11 +1511,13 @@
 
 /* Responsive */
 @media (min-width: 500px) {
-    .fd-card { flex: 0 0 calc(33.33% - 8px); }
+    .fd-card { flex: 0 0 calc(33.33% - 8px); min-width: 180px; }
 }
 
-@media (max-width: 380px) {
-    .fd-card { flex: 0 0 calc(50% - 6px); min-width: 120px; }
+@media (max-width: 480px) {
+    .fd-section { padding: 16px 12px; }
+    .fd-header { margin-bottom: 12px; padding-bottom: 10px; }
+    .fd-card { flex: 0 0 calc(50% - 6px); min-width: 130px; }
     .fd-timer-box { min-width: 28px; height: 26px; font-size: 0.8rem; }
     .fd-title { font-size: 0.9rem; }
     .fd-icon-pulse { width: 28px; height: 28px; }
