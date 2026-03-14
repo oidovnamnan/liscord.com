@@ -329,8 +329,6 @@ function SourcingDetailModal({ order, businessId, settings, onClose, onUpdate }:
     const { hasPermission } = usePermissions();
     const [saving, setSaving] = useState(false);
     const [trackingNumber, setTrackingNumber] = useState(order.sourcing?.trackingNumber || '');
-    const [sourceUrl, setSourceUrl] = useState(order.sourcing?.sourceUrl || '');
-    const [sourceCost, setSourceCost] = useState(order.sourcing?.sourceCost || 0);
     const [notes, setNotes] = useState(order.sourcing?.notes || '');
     const [itemsState, setItemsState] = useState<Record<string, SourcingItem>>(() => {
         const existing = order.sourcing?.items || {};
@@ -435,8 +433,6 @@ function SourcingDetailModal({ order, businessId, settings, onClose, onUpdate }:
                 ),
                 cargoLabel: autoLabel,
                 trackingNumber,
-                sourceUrl,
-                sourceCost,
                 notes,
                 updatedAt: Timestamp.now(),
             };
@@ -696,16 +692,6 @@ function SourcingDetailModal({ order, businessId, settings, onClose, onUpdate }:
                             <div className="input-group">
                                 <label className="input-label">Tracking №</label>
                                 <input className="input" value={trackingNumber} onChange={e => setTrackingNumber(e.target.value)} placeholder="Илгээмжийн дугаар" style={{ height: 44 }} />
-                            </div>
-                        </div>
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
-                            <div className="input-group">
-                                <label className="input-label">Source URL</label>
-                                <input className="input" value={sourceUrl} onChange={e => setSourceUrl(e.target.value)} placeholder="Taobao/1688 link" style={{ height: 44 }} />
-                            </div>
-                            <div className="input-group">
-                                <label className="input-label">Бодит өртөг (¥)</label>
-                                <input className="input" type="number" value={sourceCost || ''} onChange={e => setSourceCost(Number(e.target.value))} placeholder="0" style={{ height: 44 }} />
                             </div>
                         </div>
                         <div className="input-group">
