@@ -225,6 +225,7 @@ export interface BusinessSettings {
         enabled: boolean;
     }>;
     autoLogoutMinutes?: number;
+    unpaidOrderExpiryHours?: number;
 }
 
 export interface OrderSource {

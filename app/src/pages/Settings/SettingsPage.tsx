@@ -197,6 +197,7 @@ export function SettingsPage() {
         const enabled = fd.has('storefrontEnabled') ? fd.get('storefrontEnabled') === 'on' : business.settings?.storefront?.enabled;
         const showFooter = fd.has('showFooter') ? fd.get('showFooter') === 'on' : business.settings?.storefront?.showFooter;
         const preorderTerms = fd.has('preorderTerms') ? (fd.get('preorderTerms') as string) : business.settings?.storefront?.preorderTerms;
+        const unpaidExpiry = fd.has('unpaidOrderExpiryHours') ? parseInt(fd.get('unpaidOrderExpiryHours') as string, 10) : (business.settings?.unpaidOrderExpiryHours ?? 24);
         const newTheme = fd.get('storefrontTheme') as string;
 
         setLoading(true);
@@ -231,6 +232,7 @@ export function SettingsPage() {
                 slug: slug !== undefined ? (slug || business.slug || '') : (business.slug || ''),
                 settings: {
                     ...business.settings,
+                    unpaidOrderExpiryHours: unpaidExpiry,
                     storefront: {
                         ...business.settings?.storefront,
                         enabled: enabled ?? false,
@@ -524,6 +526,25 @@ export function SettingsPage() {
                                                 style={{ resize: 'vertical', minHeight: 100 }}
                                             />
                                             <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: '8px 0 0 0' }}>Мөр бүрд нэг нөхцөл бичнэ. Захиалгын бараа-д харагдана.</p>
+                                        </div>
+
+                                        <div className="input-group" style={{ marginTop: 24 }}>
+                                            <label className="settings-label">Төлбөргүй захиалга автомат устгах хугацаа</label>
+                                            <select
+                                                className="input"
+                                                name="unpaidOrderExpiryHours"
+                                                defaultValue={business?.settings?.unpaidOrderExpiryHours ?? 24}
+                                                style={{ maxWidth: 300 }}
+                                                onChange={() => setIsDirty(true)}
+                                            >
+                                                <option value={6}>6 цаг</option>
+                                                <option value={12}>12 цаг</option>
+                                                <option value={24}>24 цаг (Стандарт)</option>
+                                                <option value={48}>48 цаг</option>
+                                                <option value={72}>72 цаг</option>
+                                                <option value={0}>Устгахгүй (Идэвхгүй)</option>
+                                            </select>
+                                            <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: '8px 0 0 0' }}>Тогтоосон хугацаанд төлбөр баталгаажаагүй захиалгууд системээс автоматаар устгагдана.</p>
                                         </div>
 
                                         <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 24 }}>

@@ -365,6 +365,85 @@ export const scheduledCleanup = functions
         return null;
     });
 
+/**
+ * Scheduled Cleanup: Unpaid Orders
+ * Runs every hour. Soft-deletes unpaid orders older than configured expiry (default 24h).
+ * Each business can set `settings.unpaidOrderExpiryHours` (0 = disabled).
+ */
+export const cleanupUnpaidOrders = functions
+    .pubsub
+    .schedule("every 1 hours")
+    .timeZone("Asia/Ulaanbaatar")
+    .onRun(async () => {
+        const DEFAULT_EXPIRY_HOURS = 24;
+        let totalDeleted = 0;
+
+        try {
+            const bizsSnap = await db.collection('businesses').get();
+
+            for (const bizDoc of bizsSnap.docs) {
+                const bizData = bizDoc.data();
+                const expiryHours = bizData.settings?.unpaidOrderExpiryHours ?? DEFAULT_EXPIRY_HOURS;
+
+                // 0 means disabled
+                if (expiryHours <= 0) continue;
+
+                const cutoff = new Date();
+                cutoff.setHours(cutoff.getHours() - expiryHours);
+
+                const unpaidSnap = await db
+                    .collection(`businesses/${bizDoc.id}/orders`)
+                    .where('paymentStatus', '==', 'unpaid')
+                    .where('createdAt', '<=', cutoff)
+                    .limit(50)
+                    .get();
+
+                if (unpaidSnap.empty) continue;
+
+                const now = admin.firestore.FieldValue.serverTimestamp();
+                const batch = db.batch();
+                let count = 0;
+
+                for (const orderDoc of unpaidSnap.docs) {
+                    const order = orderDoc.data();
+                    if (order.isDeleted) continue;
+
+                    batch.update(orderDoc.ref, {
+                        isDeleted: true,
+                        deletedAt: now,
+                        deletedBy: 'system_auto',
+                        deletionReason: `Төлбөр ${expiryHours} цагийн дотор хийгдээгүй`,
+                    });
+                    count++;
+                }
+
+                if (count > 0) {
+                    await batch.commit();
+                    totalDeleted += count;
+
+                    // Notify business
+                    await db.collection(`businesses/${bizDoc.id}/notifications`).add({
+                        type: 'system',
+                        title: `🗑️ ${count} захиалга автомат устгагдлаа`,
+                        body: `Төлбөр ${expiryHours} цагийн дотор хийгдээгүй захиалгууд устгагдлаа.`,
+                        icon: '🗑️',
+                        link: '/app/orders',
+                        readBy: {},
+                        priority: 'low',
+                        createdAt: now,
+                        createdBy: 'system',
+                    });
+                }
+            }
+
+            console.log(`Unpaid order cleanup: ${totalDeleted} orders deleted.`);
+        } catch (err) {
+            console.error("Unpaid order cleanup failed:", err);
+        }
+
+        return null;
+    });
+
 // Helper: create notification for unmatched SMS income
 async function createUnmatchedNotification(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
