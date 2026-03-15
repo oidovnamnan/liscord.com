@@ -92,6 +92,10 @@ export function CustomerDashboard({ isOpen, onClose, business, phone, onOpenMemb
     const effectivePhone = loggedInPhone || phone;
     const isLoggedIn = !!effectivePhone;
 
+    // Normalize phone for display and queries — always 8 digits without 976
+    const normalizePhone = (p: string) => p.replace(/[^\d]/g, '').replace(/^976/, '');
+    const displayPhone = normalizePhone(effectivePhone);
+
     // Sync phone prop
     useEffect(() => {
         if (phone) setLoggedInPhone(phone);
@@ -100,7 +104,7 @@ export function CustomerDashboard({ isOpen, onClose, business, phone, onOpenMemb
     // Load saved customer name
     useEffect(() => {
         if (!effectivePhone || !business?.id) return;
-        const savedName = localStorage.getItem(`customer_name_${business.id}_${effectivePhone.replace(/[^\d]/g, '')}`);
+        const savedName = localStorage.getItem(`customer_name_${business.id}_${normalizePhone(effectivePhone)}`);
         if (savedName) setCustomerName(savedName);
     }, [effectivePhone, business?.id]);
 
@@ -126,7 +130,7 @@ export function CustomerDashboard({ isOpen, onClose, business, phone, onOpenMemb
             const { collection, query, where, getDocs } = await import('firebase/firestore');
             const { db } = await import('../../services/firebase');
             const ref = collection(db, 'businesses', business.id, 'memberships');
-            const q = query(ref, where('customerPhone', '==', effectivePhone.replace(/[^\d]/g, '')));
+            const q = query(ref, where('customerPhone', '==', normalizePhone(effectivePhone)));
             const snap = await getDocs(q);
             const now = new Date();
             const details: MembershipDetail[] = snap.docs.map(d => {
@@ -169,7 +173,7 @@ export function CustomerDashboard({ isOpen, onClose, business, phone, onOpenMemb
             const { collection, query, where, getDocs } = await import('firebase/firestore');
             const { db } = await import('../../services/firebase');
             const ref = collection(db, 'businesses', business.id, 'orders');
-            const normalizedPhone = effectivePhone.replace(/[^\d]/g, '');
+            const normalizedPhone = normalizePhone(effectivePhone);
             const q = query(ref, where('customer.phone', '==', normalizedPhone));
             const snap = await getDocs(q);
             const items: OrderItem[] = snap.docs.map(d => {
@@ -196,13 +200,13 @@ export function CustomerDashboard({ isOpen, onClose, business, phone, onOpenMemb
 
     const saveAddress = () => {
         if (!business?.id || !effectivePhone) return;
-        localStorage.setItem(`customer_address_${business.id}_${effectivePhone}`, JSON.stringify(address));
+        localStorage.setItem(`customer_address_${business.id}_${normalizePhone(effectivePhone)}`, JSON.stringify(address));
         (async () => {
             try {
                 const { doc, setDoc } = await import('firebase/firestore');
                 const { db } = await import('../../services/firebase');
-                const addrRef = doc(db, 'businesses', business.id, 'customer_addresses', effectivePhone.replace(/[^\d]/g, ''));
-                await setDoc(addrRef, { ...address, phone: effectivePhone.replace(/[^\d]/g, ''), updatedAt: new Date().toISOString() }, { merge: true });
+                const addrRef = doc(db, 'businesses', business.id, 'customer_addresses', normalizePhone(effectivePhone));
+                await setDoc(addrRef, { ...address, phone: normalizePhone(effectivePhone), updatedAt: new Date().toISOString() }, { merge: true });
             } catch { /* silent */ }
         })();
         setAddressSaved(true);
@@ -291,16 +295,16 @@ export function CustomerDashboard({ isOpen, onClose, business, phone, onOpenMemb
         if (!name.trim() || !business?.id || !effectivePhone) return;
         const cleanName = name.trim();
         setCustomerName(cleanName);
-        localStorage.setItem(`customer_name_${business.id}_${effectivePhone.replace(/[^\d]/g, '')}`, cleanName);
+        localStorage.setItem(`customer_name_${business.id}_${normalizePhone(effectivePhone)}`, cleanName);
         setShowNamePrompt(false);
         setEditingName(false);
         // Save to Firestore
         try {
             const { doc, setDoc } = await import('firebase/firestore');
             const { db } = await import('../../services/firebase');
-            await setDoc(doc(db, 'businesses', business.id, 'customer_profiles', effectivePhone.replace(/[^\d]/g, '')), {
+            await setDoc(doc(db, 'businesses', business.id, 'customer_profiles', normalizePhone(effectivePhone)), {
                 name: cleanName,
-                phone: effectivePhone.replace(/[^\d]/g, ''),
+                phone: normalizePhone(effectivePhone),
                 updatedAt: new Date().toISOString(),
             }, { merge: true });
         } catch { /* silent */ }
@@ -424,7 +428,7 @@ export function CustomerDashboard({ isOpen, onClose, business, phone, onOpenMemb
                         <div className="cd-header-user">
                             <div className="cd-avatar"><User size={22} /></div>
                             <div>
-                                <div className="cd-phone">{effectivePhone}</div>
+                                <div className="cd-phone">{displayPhone}</div>
                                 <div className="cd-member-badge">Бүртгэл</div>
                             </div>
                         </div>
@@ -480,11 +484,11 @@ export function CustomerDashboard({ isOpen, onClose, business, phone, onOpenMemb
                             <User size={22} />
                         </div>
                         <div>
-                            <div className="cd-phone">{customerName || effectivePhone}</div>
+                            <div className="cd-phone">{customerName || displayPhone}</div>
                             <div className="cd-member-badge">
                                 {memberships.some(m => m.status === 'active')
                                     ? <><Crown size={12} /> VIP Гишүүн</>
-                                    : customerName ? effectivePhone : 'Хэрэглэгч'}
+                                    : customerName ? displayPhone : 'Хэрэглэгч'}
                             </div>
                         </div>
                     </div>
@@ -537,7 +541,7 @@ export function CustomerDashboard({ isOpen, onClose, business, phone, onOpenMemb
                                 </div>
                                 <div className="cd-detail-row">
                                     <span>Утас</span>
-                                    <span>{effectivePhone}</span>
+                                    <span>{displayPhone}</span>
                                 </div>
                             </div>
 
@@ -680,37 +684,37 @@ export function CustomerDashboard({ isOpen, onClose, business, phone, onOpenMemb
 
                                 <div className="cd-form-group">
                                     <label>{address.locationType === 'city' ? 'Дүүрэг' : 'Аймаг'}</label>
-                                    <input value={address.district} onChange={e => setAddress(a => ({ ...a, district: e.target.value }))} placeholder={address.locationType === 'city' ? 'Хан-Уул' : 'Дархан-Уул'} />
+                                    <input value={address.district} onChange={e => setAddress(a => ({ ...a, district: e.target.value }))} />
                                 </div>
                                 <div className="cd-form-group">
                                     <label>{address.locationType === 'city' ? 'Хороо' : 'Сум, Баг'}</label>
-                                    <input value={address.subDistrict} onChange={e => setAddress(a => ({ ...a, subDistrict: e.target.value }))} placeholder={address.locationType === 'city' ? '1-р хороо' : 'Дархан сум, 3-р баг'} />
+                                    <input value={address.subDistrict} onChange={e => setAddress(a => ({ ...a, subDistrict: e.target.value }))} />
                                 </div>
                                 <div className="cd-form-row">
                                     <div className="cd-form-group">
                                         <label>{address.locationType === 'city' ? 'Байр / Гэр' : 'Гэрийн хаяг'}</label>
-                                        <input value={address.building} onChange={e => setAddress(a => ({ ...a, building: e.target.value }))} placeholder={address.locationType === 'city' ? 'Skytel Tower' : '5-р байр'} />
+                                        <input value={address.building} onChange={e => setAddress(a => ({ ...a, building: e.target.value }))} />
                                     </div>
                                     <div className="cd-form-group">
                                         <label>Давхар</label>
-                                        <input value={address.floor} onChange={e => setAddress(a => ({ ...a, floor: e.target.value }))} placeholder="12" />
+                                        <input value={address.floor} onChange={e => setAddress(a => ({ ...a, floor: e.target.value }))} />
                                     </div>
                                 </div>
                                 {address.locationType === 'city' && (
                                     <div className="cd-form-row">
                                         <div className="cd-form-group">
                                             <label>Орц</label>
-                                            <input value={address.entrance} onChange={e => setAddress(a => ({ ...a, entrance: e.target.value }))} placeholder="2" />
+                                            <input value={address.entrance} onChange={e => setAddress(a => ({ ...a, entrance: e.target.value }))} />
                                         </div>
                                         <div className="cd-form-group">
                                             <label>Хаалганы код</label>
-                                            <input value={address.doorCode} onChange={e => setAddress(a => ({ ...a, doorCode: e.target.value }))} placeholder="1234#" />
+                                            <input value={address.doorCode} onChange={e => setAddress(a => ({ ...a, doorCode: e.target.value }))} />
                                         </div>
                                     </div>
                                 )}
                                 <div className="cd-form-group">
                                     <label>Нэмэлт тэмдэглэл</label>
-                                    <textarea value={address.notes} onChange={e => setAddress(a => ({ ...a, notes: e.target.value }))} placeholder={address.locationType === 'city' ? 'Барилгын урд талд зогсоно уу...' : 'Унааны мэдээлэл, хүлээн авагчийн нэмэлт мэдээлэл...'} rows={3} />
+                                    <textarea value={address.notes} onChange={e => setAddress(a => ({ ...a, notes: e.target.value }))} rows={3} />
                                 </div>
                                 <button className="cd-btn-primary" onClick={saveAddress}>
                                     {addressSaved ? '✓ Хадгаллаа!' : 'Хадгалах'}
