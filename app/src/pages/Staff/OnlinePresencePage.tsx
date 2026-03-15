@@ -159,52 +159,40 @@ export function OnlinePresencePage() {
 
     return (
         <div className="online-presence-page">
-            {/* Hero */}
-            <div className="page-hero">
-                <div className="page-hero-left">
-                    <div className="page-hero-icon"><Radio size={24} /></div>
-                    <div>
-                        <h1 className="page-hero-title">Онлайн Хяналт</h1>
-                        <p className="page-hero-subtitle">Ажилтнууд & зочдын одоогийн идэвхжилт</p>
+            {/* ── Premium Hero ── */}
+            <div className="op-hero">
+                <div className="op-hero-top">
+                    <div className="op-hero-left">
+                        <div className="op-hero-icon"><Radio size={24} /></div>
+                        <div>
+                            <h1 className="op-hero-title">Онлайн Хяналт</h1>
+                            <div className="op-hero-desc">Ажилтнууд & зочдын одоогийн идэвхжилт</div>
+                        </div>
                     </div>
                 </div>
-            </div>
-
-            {/* Stats */}
-            <div className="presence-stats">
-                <div className="presence-stat-card online">
-                    <div className="presence-stat-icon"><Wifi size={20} /></div>
-                    <div className="presence-stat-info">
-                        <div className="presence-stat-value">{counts.online}</div>
-                        <div className="presence-stat-label">Ажилтан</div>
+                <div className="op-hero-stats">
+                    <div className="op-hero-stat">
+                        <div className="op-hero-stat-value">{counts.online}</div>
+                        <div className="op-hero-stat-label">Ажилтан</div>
                     </div>
-                </div>
-                <div className="presence-stat-card" style={{ background: 'rgba(59, 130, 246, 0.08)', borderColor: 'rgba(59, 130, 246, 0.15)' }}>
-                    <div className="presence-stat-icon" style={{ background: 'rgba(59, 130, 246, 0.15)', color: '#3b82f6' }}><Eye size={20} /></div>
-                    <div className="presence-stat-info">
-                        <div className="presence-stat-value">{visitors.length}</div>
-                        <div className="presence-stat-label">Зочид</div>
+                    <div className="op-hero-stat">
+                        <div className="op-hero-stat-value">{visitors.length}</div>
+                        <div className="op-hero-stat-label">Зочид</div>
                     </div>
-                </div>
-                <div className="presence-stat-card idle">
-                    <div className="presence-stat-icon"><Clock size={20} /></div>
-                    <div className="presence-stat-info">
-                        <div className="presence-stat-value">{counts.idle}</div>
-                        <div className="presence-stat-label">Идэвхгүй</div>
+                    <div className="op-hero-stat">
+                        <div className="op-hero-stat-value">{counts.idle}</div>
+                        <div className="op-hero-stat-label">Идэвхгүй</div>
                     </div>
-                </div>
-                <div className="presence-stat-card offline">
-                    <div className="presence-stat-icon"><WifiOff size={20} /></div>
-                    <div className="presence-stat-info">
-                        <div className="presence-stat-value">{counts.offline}</div>
-                        <div className="presence-stat-label">Оффлайн</div>
+                    <div className="op-hero-stat">
+                        <div className="op-hero-stat-value">{counts.offline}</div>
+                        <div className="op-hero-stat-label">Оффлайн</div>
                     </div>
                 </div>
             </div>
 
             {/* Visitors Section */}
             {visitors.length > 0 && (
-                <div className="presence-employee-list" style={{ marginBottom: 16 }}>
+                <div className="op-page-card">
                     <div className="presence-list-header">
                         <div className="presence-list-title"><Eye size={16} style={{ marginRight: 6, verticalAlign: 'middle' }} />Зочид (Storefront)</div>
                         <div className="presence-list-count" style={{ color: '#3b82f6' }}>{visitors.length} онлайн</div>
@@ -233,8 +221,8 @@ export function OnlinePresencePage() {
                 </div>
             )}
 
-            {/* Search + List */}
-            <div className="presence-employee-list">
+            {/* Search + Employees List */}
+            <div className="op-page-card">
                 <div className="presence-list-header">
                     <div className="presence-list-title">Ажилтнууд</div>
                     <div className="presence-list-count">{filtered.length} / {employees.length}</div>
