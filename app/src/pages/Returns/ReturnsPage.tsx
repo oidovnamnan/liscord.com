@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { collection, onSnapshot, query, orderBy, doc, updateDoc, Timestamp, where, getDocs } from 'firebase/firestore';
 import { db } from '../../services/firebase';
 import { useBusinessStore, useAuthStore } from '../../store';
-import { Undo2, Clock, CheckCircle, XCircle, DollarSign, Search, X, Eye, AlertTriangle } from 'lucide-react';
+import { Undo2, Clock, CheckCircle, XCircle, DollarSign, Search, X, Eye, AlertTriangle, CreditCard, Users, FileText, Package } from 'lucide-react';
 import type { ReturnRequest, ReturnStatus, Order } from '../../types';
 import './ReturnsPage.css';
 
@@ -109,8 +109,6 @@ export function ReturnsPage() {
                 update.refundedBy = currentUserId;
                 update.refundedAt = new Date();
                 update.financeNote = financeNote || note || '';
-
-                // Update order financials
                 try {
                     const orderRef = doc(db, `businesses/${business.id}/orders`, returnReq.orderId);
                     const orderSnap = await getDocs(query(collection(db, `businesses/${business.id}/orders`), where('__name__', '==', returnReq.orderId)));
@@ -133,7 +131,6 @@ export function ReturnsPage() {
                 update.financeNote = note || '';
             }
             await updateDoc(ref, update);
-            // Refresh selected
             setSelectedReturn(prev => prev ? { ...prev, ...update, status: newStatus } as ReturnRequest : null);
         } catch (e) {
             console.error('Failed to update return status:', e);
@@ -153,230 +150,202 @@ export function ReturnsPage() {
     }
 
     return (
-        <div className="page-container">
-            {/* Header */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                    <div style={{ width: 44, height: 44, borderRadius: 12, background: 'linear-gradient(135deg, #f87171, #ef4444)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <Undo2 size={22} />
+        <div className="page-container animate-fade-in">
+            {/* ── Gradient Hero ── */}
+            <div className="rtn-hero">
+                <div className="rtn-hero-top">
+                    <div className="rtn-hero-left">
+                        <div className="rtn-hero-icon">
+                            <Undo2 size={24} />
+                        </div>
+                        <div>
+                            <h3 className="rtn-hero-title">Буцаалт & Refund</h3>
+                            <div className="rtn-hero-desc">Захиалгын буцаалт удирдах, санхүүгийн тооцоо</div>
+                        </div>
                     </div>
-                    <div>
-                        <h1 style={{ fontSize: '1.4rem', fontWeight: 800, margin: 0 }}>Буцаалт & Refund</h1>
-                        <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: 0 }}>Захиалгын буцаалт удирдах</p>
+                </div>
+
+                <div className="rtn-hero-stats">
+                    <div className={`rtn-hero-stat ${filterStatus === 'pending' ? 'active' : ''}`} onClick={() => setFilterStatus(filterStatus === 'pending' ? 'all' : 'pending')}>
+                        <div className="rtn-hero-stat-value">{stats.pending}</div>
+                        <div className="rtn-hero-stat-label">Хүлээгдэж буй</div>
+                    </div>
+                    <div className={`rtn-hero-stat ${filterStatus === 'finance_review' ? 'active' : ''}`} onClick={() => setFilterStatus(filterStatus === 'finance_review' ? 'all' : 'finance_review')}>
+                        <div className="rtn-hero-stat-value">{stats.financeReview}</div>
+                        <div className="rtn-hero-stat-label">Санхүүд шилжсэн</div>
+                    </div>
+                    <div className={`rtn-hero-stat ${filterStatus === 'refunded' ? 'active' : ''}`} onClick={() => setFilterStatus(filterStatus === 'refunded' ? 'all' : 'refunded')}>
+                        <div className="rtn-hero-stat-value">{stats.refunded}</div>
+                        <div className="rtn-hero-stat-label">Буцаалт хийгдсэн</div>
+                    </div>
+                    <div className="rtn-hero-stat">
+                        <div className="rtn-hero-stat-value">{stats.totalRefunded.toLocaleString()}₮</div>
+                        <div className="rtn-hero-stat-label">Нийт буцаасан</div>
                     </div>
                 </div>
             </div>
 
-            {/* Stats */}
-            <div className="returns-stats">
-                <div className="returns-stat-card">
-                    <div className="returns-stat-icon" style={{ background: 'rgba(245, 158, 11, 0.1)', color: '#f59e0b' }}>
-                        <Clock size={22} />
+            {/* ── Main Content Card ── */}
+            <div className="rtn-card">
+                {/* Toolbar */}
+                <div className="rtn-toolbar">
+                    <div className="rtn-tab-group">
+                        {[
+                            { key: 'all', label: 'Бүгд' },
+                            { key: 'pending', label: 'Хүлээгдэж буй' },
+                            { key: 'operator_review', label: 'Хянаж буй' },
+                            { key: 'finance_review', label: 'Санхүү' },
+                            { key: 'refunded', label: 'Буцаасан' },
+                            { key: 'rejected', label: 'Татгалзсан' },
+                        ].map(tab => {
+                            const count = tab.key === 'all' ? returns.length : returns.filter(r => r.status === tab.key).length;
+                            return (
+                                <button
+                                    key={tab.key}
+                                    className={`rtn-tab ${filterStatus === tab.key ? 'active' : ''}`}
+                                    onClick={() => setFilterStatus(tab.key)}
+                                >
+                                    {tab.label}
+                                    {count > 0 && <span className="count">{count}</span>}
+                                </button>
+                            );
+                        })}
                     </div>
-                    <div>
-                        <div className="returns-stat-value">{stats.pending}</div>
-                        <div className="returns-stat-label">Хүлээгдэж буй</div>
-                    </div>
-                </div>
-                <div className="returns-stat-card">
-                    <div className="returns-stat-icon" style={{ background: 'rgba(139, 92, 246, 0.1)', color: '#8b5cf6' }}>
-                        <Eye size={22} />
-                    </div>
-                    <div>
-                        <div className="returns-stat-value">{stats.financeReview}</div>
-                        <div className="returns-stat-label">Санхүүд шилжсэн</div>
-                    </div>
-                </div>
-                <div className="returns-stat-card">
-                    <div className="returns-stat-icon" style={{ background: 'rgba(34, 197, 94, 0.1)', color: '#22c55e' }}>
-                        <CheckCircle size={22} />
-                    </div>
-                    <div>
-                        <div className="returns-stat-value">{stats.refunded}</div>
-                        <div className="returns-stat-label">Буцаалт хийгдсэн</div>
-                    </div>
-                </div>
-                <div className="returns-stat-card">
-                    <div className="returns-stat-icon" style={{ background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444' }}>
-                        <DollarSign size={22} />
-                    </div>
-                    <div>
-                        <div className="returns-stat-value">{stats.totalRefunded.toLocaleString()}₮</div>
-                        <div className="returns-stat-label">Нийт буцаасан</div>
+                    <div className="rtn-search-wrap">
+                        <Search size={16} />
+                        <input
+                            placeholder="Хайх..."
+                            value={searchQuery}
+                            onChange={e => setSearchQuery(e.target.value)}
+                        />
                     </div>
                 </div>
+
+                {/* List */}
+                {filtered.length === 0 ? (
+                    <div className="rtn-empty" style={{ marginTop: 16 }}>
+                        <div className="rtn-empty-icon">📦</div>
+                        <h3 style={{ fontWeight: 700, marginBottom: 4 }}>Буцаалт байхгүй</h3>
+                        <p style={{ fontSize: '0.85rem' }}>Захиалгаас буцаалт хийхэд энд харагдана</p>
+                    </div>
+                ) : (
+                    <div className="rtn-list">
+                        {filtered.map(r => (
+                            <div key={r.id} className="rtn-row" onClick={() => setSelectedReturn(r)}>
+                                <div className="rtn-row-order">
+                                    #{r.orderNumber}
+                                </div>
+                                <div>
+                                    <div className="rtn-row-customer-name">{r.customer.name}</div>
+                                    <div className="rtn-row-customer-phone">{r.customer.phone}</div>
+                                </div>
+                                <div>
+                                    <span className={`rtn-type-badge ${r.type}`}>
+                                        {TYPE_LABELS[r.type]?.emoji} {TYPE_LABELS[r.type]?.label}
+                                    </span>
+                                </div>
+                                <div className="rtn-row-amount">
+                                    {r.refundAmount.toLocaleString()}₮
+                                </div>
+                                <div>
+                                    <span className={`rtn-status ${r.status}`}>
+                                        {STATUS_LABELS[r.status]}
+                                    </span>
+                                </div>
+                                <div className="rtn-row-date">
+                                    {toDate(r.createdAt).toLocaleDateString('mn-MN')}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                )}
             </div>
 
-            {/* Filters */}
-            <div className="returns-filters">
-                <div className="returns-tab-group">
-                    {[
-                        { key: 'all', label: 'Бүгд', count: returns.length },
-                        { key: 'pending', label: 'Хүлээгдэж буй', count: returns.filter(r => r.status === 'pending').length },
-                        { key: 'operator_review', label: 'Хянаж буй', count: returns.filter(r => r.status === 'operator_review').length },
-                        { key: 'finance_review', label: 'Санхүү', count: returns.filter(r => r.status === 'finance_review').length },
-                        { key: 'refunded', label: 'Буцаасан', count: returns.filter(r => r.status === 'refunded').length },
-                        { key: 'rejected', label: 'Татгалзсан', count: returns.filter(r => r.status === 'rejected').length },
-                    ].map(tab => (
-                        <button
-                            key={tab.key}
-                            className={`returns-tab ${filterStatus === tab.key ? 'active' : ''}`}
-                            onClick={() => setFilterStatus(tab.key)}
-                        >
-                            {tab.label}
-                            {tab.count > 0 && <span className="badge">{tab.count}</span>}
-                        </button>
-                    ))}
-                </div>
-                <div style={{ flex: 1 }} />
-                <div style={{ position: 'relative' }}>
-                    <Search size={16} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
-                    <input
-                        className="input"
-                        placeholder="Хайх..."
-                        value={searchQuery}
-                        onChange={e => setSearchQuery(e.target.value)}
-                        style={{ paddingLeft: 36, height: 38, borderRadius: 10, width: 220, fontSize: '0.82rem' }}
-                    />
-                </div>
-            </div>
-
-            {/* Table */}
-            {filtered.length === 0 ? (
-                <div className="returns-empty">
-                    <div className="returns-empty-icon">📦</div>
-                    <h3 style={{ fontWeight: 700, marginBottom: 4 }}>Буцаалт байхгүй</h3>
-                    <p style={{ fontSize: '0.85rem' }}>Захиалгаас буцаалт хийхэд энд харагдана</p>
-                </div>
-            ) : (
-                <div className="returns-table-wrap">
-                    <table className="returns-table">
-                        <thead>
-                            <tr>
-                                <th>Захиалга</th>
-                                <th>Захиалагч</th>
-                                <th>Төрөл</th>
-                                <th>Дүн</th>
-                                <th>Төлөв</th>
-                                <th>Огноо</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {filtered.map(r => (
-                                <tr key={r.id} onClick={() => setSelectedReturn(r)}>
-                                    <td style={{ fontWeight: 700, fontFamily: 'monospace' }}>
-                                        {r.orderNumber}
-                                    </td>
-                                    <td>
-                                        <div style={{ fontWeight: 600 }}>{r.customer.name}</div>
-                                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{r.customer.phone}</div>
-                                    </td>
-                                    <td>
-                                        <span className={`return-type ${r.type}`}>
-                                            {TYPE_LABELS[r.type]?.emoji} {TYPE_LABELS[r.type]?.label}
-                                        </span>
-                                    </td>
-                                    <td style={{ fontWeight: 700 }}>
-                                        {r.refundAmount.toLocaleString()}₮
-                                    </td>
-                                    <td>
-                                        <span className={`return-status ${r.status}`}>
-                                            {STATUS_LABELS[r.status]}
-                                        </span>
-                                    </td>
-                                    <td style={{ fontSize: '0.8rem', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
-                                        {toDate(r.createdAt).toLocaleDateString('mn-MN')}
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
-            )}
-
-            {/* Detail Panel */}
+            {/* ── Detail Panel ── */}
             {selectedReturn && (
-                <div className="return-detail-overlay" onClick={() => setSelectedReturn(null)}>
-                    <div className="return-detail-panel" onClick={e => e.stopPropagation()}>
+                <div className="rtn-overlay" onClick={() => setSelectedReturn(null)}>
+                    <div className="rtn-detail-panel" onClick={e => e.stopPropagation()}>
                         {/* Header */}
-                        <div className="return-detail-header">
+                        <div className="rtn-detail-header">
                             <div>
-                                <h2 style={{ fontSize: '1.1rem', fontWeight: 800, margin: 0 }}>
+                                <h2 className="rtn-detail-title">
                                     Буцаалт #{selectedReturn.orderNumber}
                                 </h2>
-                                <span className={`return-status ${selectedReturn.status}`} style={{ marginTop: 6, display: 'inline-flex' }}>
+                                <span className={`rtn-status ${selectedReturn.status}`} style={{ marginTop: 6, display: 'inline-flex' }}>
                                     {STATUS_LABELS[selectedReturn.status]}
                                 </span>
                             </div>
-                            <button className="btn btn-ghost" onClick={() => setSelectedReturn(null)} style={{ padding: 8 }}>
+                            <button className="rtn-detail-close" onClick={() => setSelectedReturn(null)}>
                                 <X size={20} />
                             </button>
                         </div>
 
-                        <div className="return-detail-body">
+                        <div className="rtn-detail-body">
                             {/* Customer */}
-                            <div className="return-detail-section">
-                                <h4>Захиалагч</h4>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', marginBottom: 6 }}>
-                                    <span style={{ color: 'var(--text-muted)' }}>Нэр:</span>
-                                    <span style={{ fontWeight: 600 }}>{selectedReturn.customer.name}</span>
+                            <div className="rtn-section">
+                                <div className="rtn-section-title"><Users size={14} /> Захиалагч</div>
+                                <div className="rtn-info-row">
+                                    <span className="rtn-info-label">Нэр:</span>
+                                    <span className="rtn-info-value">{selectedReturn.customer.name}</span>
                                 </div>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', marginBottom: 6 }}>
-                                    <span style={{ color: 'var(--text-muted)' }}>Утас:</span>
-                                    <span style={{ fontWeight: 600 }}>{selectedReturn.customer.phone}</span>
+                                <div className="rtn-info-row">
+                                    <span className="rtn-info-label">Утас:</span>
+                                    <span className="rtn-info-value">{selectedReturn.customer.phone}</span>
                                 </div>
                                 {selectedReturn.refundAccount && (
                                     <>
-                                        <div style={{ borderTop: '1px solid var(--border-color)', marginTop: 8, paddingTop: 8 }} />
-                                        <h4 style={{ marginBottom: 8 }}>Буцаалтын данс</h4>
-                                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', marginBottom: 4 }}>
-                                            <span style={{ color: 'var(--text-muted)' }}>Банк:</span>
-                                            <span style={{ fontWeight: 600 }}>{selectedReturn.refundAccount.bankName}</span>
+                                        <div style={{ borderTop: '1px solid var(--border-color)', margin: '10px 0' }} />
+                                        <div className="rtn-section-title" style={{ marginTop: 0 }}><CreditCard size={14} /> Буцаалтын данс</div>
+                                        <div className="rtn-info-row">
+                                            <span className="rtn-info-label">Банк:</span>
+                                            <span className="rtn-info-value">{selectedReturn.refundAccount.bankName}</span>
                                         </div>
-                                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', marginBottom: 4 }}>
-                                            <span style={{ color: 'var(--text-muted)' }}>Данс:</span>
-                                            <span style={{ fontWeight: 600, fontFamily: 'monospace' }}>{selectedReturn.refundAccount.accountNumber}</span>
+                                        <div className="rtn-info-row">
+                                            <span className="rtn-info-label">Данс:</span>
+                                            <span className="rtn-info-value mono">{selectedReturn.refundAccount.accountNumber}</span>
                                         </div>
-                                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem' }}>
-                                            <span style={{ color: 'var(--text-muted)' }}>Нэр:</span>
-                                            <span style={{ fontWeight: 600 }}>{selectedReturn.refundAccount.accountHolder}</span>
+                                        <div className="rtn-info-row">
+                                            <span className="rtn-info-label">Нэр:</span>
+                                            <span className="rtn-info-value">{selectedReturn.refundAccount.accountHolder}</span>
                                         </div>
                                     </>
                                 )}
                             </div>
 
                             {/* Type & Reason */}
-                            <div className="return-detail-section">
-                                <h4>Буцаалтын мэдээлэл</h4>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', marginBottom: 6 }}>
-                                    <span style={{ color: 'var(--text-muted)' }}>Төрөл:</span>
-                                    <span className={`return-type ${selectedReturn.type}`}>
+                            <div className="rtn-section">
+                                <div className="rtn-section-title"><FileText size={14} /> Буцаалтын мэдээлэл</div>
+                                <div className="rtn-info-row">
+                                    <span className="rtn-info-label">Төрөл:</span>
+                                    <span className={`rtn-type-badge ${selectedReturn.type}`}>
                                         {TYPE_LABELS[selectedReturn.type]?.emoji} {TYPE_LABELS[selectedReturn.type]?.label}
                                     </span>
                                 </div>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', marginBottom: 6 }}>
-                                    <span style={{ color: 'var(--text-muted)' }}>Шалтгаан:</span>
-                                    <span style={{ fontWeight: 600 }}>{selectedReturn.reason}</span>
+                                <div className="rtn-info-row">
+                                    <span className="rtn-info-label">Шалтгаан:</span>
+                                    <span className="rtn-info-value">{selectedReturn.reason}</span>
                                 </div>
                                 {selectedReturn.reasonNote && (
-                                    <div style={{ background: 'var(--bg-soft)', padding: 10, borderRadius: 8, fontSize: '0.82rem', marginTop: 6, fontStyle: 'italic' }}>
-                                        {selectedReturn.reasonNote}
+                                    <div style={{ background: 'var(--surface-1, #fff)', padding: '10px 12px', borderRadius: 10, fontSize: '0.82rem', marginTop: 8, fontStyle: 'italic', color: 'var(--text-secondary)' }}>
+                                        "{selectedReturn.reasonNote}"
                                     </div>
                                 )}
                             </div>
 
                             {/* Items */}
-                            <div className="return-detail-section">
-                                <h4>Буцаах бараа</h4>
+                            <div className="rtn-section">
+                                <div className="rtn-section-title"><Package size={14} /> Буцаах бараа</div>
                                 {selectedReturn.items.map((item, i) => (
-                                    <div key={i} className="return-item-row">
-                                        {item.image ?
-                                            <img className="return-item-img" src={item.image} alt={item.name} /> :
-                                            <div className="return-item-img" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.1rem' }}>📦</div>
-                                        }
+                                    <div key={i} className="rtn-item-row">
+                                        <div className="rtn-item-img">
+                                            {item.image ?
+                                                <img src={item.image} alt={item.name} /> :
+                                                <div className="rtn-item-img-empty">📦</div>
+                                            }
+                                        </div>
                                         <div style={{ flex: 1 }}>
                                             <div style={{ fontWeight: 600, fontSize: '0.85rem' }}>{item.name}</div>
-                                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                                            <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
                                                 {item.quantity}ш × {item.unitPrice.toLocaleString()}₮
                                             </div>
                                         </div>
@@ -386,25 +355,25 @@ export function ReturnsPage() {
                                     </div>
                                 ))}
                                 {selectedReturn.includeDeliveryFee && selectedReturn.deliveryFeeRefund > 0 && (
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: 10, borderTop: '1px dashed var(--border-color)', marginTop: 6, fontSize: '0.82rem' }}>
-                                        <span style={{ color: 'var(--text-muted)' }}>Хүргэлтийн зардал буцаалт:</span>
-                                        <span style={{ fontWeight: 700 }}>{selectedReturn.deliveryFeeRefund.toLocaleString()}₮</span>
+                                    <div className="rtn-info-row" style={{ paddingTop: 10, borderTop: '1px dashed var(--border-color)', marginTop: 6, fontSize: '0.82rem' }}>
+                                        <span className="rtn-info-label">Хүргэлтийн зардал буцаалт:</span>
+                                        <span className="rtn-info-value">{selectedReturn.deliveryFeeRefund.toLocaleString()}₮</span>
                                     </div>
                                 )}
-                                <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: 12, borderTop: '2px solid var(--border-color)', marginTop: 8, fontSize: '0.95rem' }}>
-                                    <span style={{ fontWeight: 700 }}>Нийт буцаах дүн:</span>
-                                    <span style={{ fontWeight: 800, color: 'var(--primary)' }}>{selectedReturn.refundAmount.toLocaleString()}₮</span>
+                                <div className="rtn-total-row">
+                                    <span className="rtn-total-label">Нийт буцаах дүн:</span>
+                                    <span className="rtn-total-value">{selectedReturn.refundAmount.toLocaleString()}₮</span>
                                 </div>
                             </div>
 
                             {/* Evidence */}
                             {selectedReturn.evidenceUrls && selectedReturn.evidenceUrls.length > 0 && (
-                                <div className="return-detail-section">
-                                    <h4>📸 Баталгаажуулалт</h4>
+                                <div className="rtn-section">
+                                    <div className="rtn-section-title">📸 Баталгаажуулалт</div>
                                     <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                                         {selectedReturn.evidenceUrls.map((url, i) => (
                                             <a key={i} href={url} target="_blank" rel="noopener noreferrer">
-                                                <img src={url} alt={`evidence-${i}`} style={{ width: 80, height: 80, objectFit: 'cover', borderRadius: 8, border: '1px solid var(--border-color)' }} />
+                                                <img src={url} alt={`evidence-${i}`} style={{ width: 72, height: 72, objectFit: 'cover', borderRadius: 10, border: '1px solid var(--border-color)' }} />
                                             </a>
                                         ))}
                                     </div>
@@ -413,19 +382,19 @@ export function ReturnsPage() {
 
                             {/* Status History */}
                             {selectedReturn.statusHistory && selectedReturn.statusHistory.length > 0 && (
-                                <div className="return-detail-section">
-                                    <h4>Түүх</h4>
+                                <div className="rtn-section">
+                                    <div className="rtn-section-title"><Clock size={14} /> Түүх</div>
                                     {selectedReturn.statusHistory.map((h, i) => (
-                                        <div key={i} style={{ display: 'flex', gap: 10, fontSize: '0.8rem', marginBottom: 8 }}>
-                                            <div style={{ color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
+                                        <div key={i} className="rtn-history-item">
+                                            <div className="rtn-history-date">
                                                 {toDate(h.at).toLocaleString('mn-MN')}
                                             </div>
                                             <div>
-                                                <span className={`return-status ${h.status}`} style={{ fontSize: '0.68rem', padding: '2px 6px' }}>
+                                                <span className={`rtn-status ${h.status}`} style={{ fontSize: '0.65rem', padding: '2px 6px' }}>
                                                     {STATUS_LABELS[h.status as ReturnStatus] || h.status}
                                                 </span>
-                                                <span style={{ marginLeft: 6, color: 'var(--text-secondary)' }}>— {h.byName}</span>
-                                                {h.note && <div style={{ color: 'var(--text-muted)', marginTop: 2 }}>{h.note}</div>}
+                                                <span style={{ marginLeft: 6, color: 'var(--text-secondary)', fontSize: '0.78rem' }}>— {h.byName}</span>
+                                                {h.note && <div style={{ color: 'var(--text-muted)', marginTop: 2, fontSize: '0.75rem' }}>{h.note}</div>}
                                             </div>
                                         </div>
                                     ))}
@@ -434,8 +403,8 @@ export function ReturnsPage() {
 
                             {/* Finance note display */}
                             {selectedReturn.financeNote && selectedReturn.status === 'refunded' && (
-                                <div className="return-detail-section" style={{ borderColor: '#22c55e44', background: 'rgba(34, 197, 94, 0.04)' }}>
-                                    <h4>💰 Санхүүгийн тайлбар</h4>
+                                <div className="rtn-finance-note">
+                                    <div className="rtn-section-title">💰 Санхүүгийн тайлбар</div>
                                     <p style={{ fontSize: '0.85rem', margin: 0 }}>{selectedReturn.financeNote}</p>
                                 </div>
                             )}
@@ -443,39 +412,34 @@ export function ReturnsPage() {
 
                         {/* Actions */}
                         {selectedReturn.status !== 'refunded' && selectedReturn.status !== 'rejected' && (
-                            <div className="return-actions" style={{ flexDirection: 'column', gap: 10 }}>
+                            <div className="rtn-actions">
                                 <textarea
-                                    className="input"
                                     placeholder={selectedReturn.status === 'finance_review' ? 'Санхүүгийн тайлбар бичнэ үү...' : 'Тайлбар (заавал биш)...'}
                                     value={selectedReturn.status === 'finance_review' ? financeNote : actionNote}
                                     onChange={e => selectedReturn.status === 'finance_review' ? setFinanceNote(e.target.value) : setActionNote(e.target.value)}
                                     rows={2}
-                                    style={{ borderRadius: 10, fontSize: '0.82rem', resize: 'none' }}
                                 />
-                                <div style={{ display: 'flex', gap: 10 }}>
+                                <div className="rtn-action-row">
                                     {selectedReturn.status === 'pending' && (
                                         <button
-                                            className="btn btn-primary"
-                                            style={{ flex: 1 }}
+                                            className="rtn-btn rtn-btn-review"
                                             disabled={actionLoading}
                                             onClick={() => handleStatusChange(selectedReturn, 'operator_review', actionNote)}
                                         >
-                                            Хянах
+                                            <Eye size={16} /> Хянах
                                         </button>
                                     )}
                                     {selectedReturn.status === 'operator_review' && (
                                         <>
                                             <button
-                                                className="btn"
-                                                style={{ flex: 1, background: '#22c55e', color: '#fff', border: 'none' }}
+                                                className="rtn-btn rtn-btn-approve"
                                                 disabled={actionLoading}
                                                 onClick={() => handleStatusChange(selectedReturn, 'finance_review', actionNote)}
                                             >
                                                 <CheckCircle size={16} /> Зөвшөөрөх
                                             </button>
                                             <button
-                                                className="btn"
-                                                style={{ flex: 1, background: '#ef4444', color: '#fff', border: 'none' }}
+                                                className="rtn-btn rtn-btn-reject"
                                                 disabled={actionLoading}
                                                 onClick={() => handleStatusChange(selectedReturn, 'rejected', actionNote)}
                                             >
@@ -485,8 +449,7 @@ export function ReturnsPage() {
                                     )}
                                     {(selectedReturn.status === 'approved' || selectedReturn.status === 'finance_review') && (
                                         <button
-                                            className="btn"
-                                            style={{ flex: 1, background: 'linear-gradient(135deg, #8b5cf6, #7c3aed)', color: '#fff', border: 'none' }}
+                                            className="rtn-btn rtn-btn-refund"
                                             disabled={actionLoading}
                                             onClick={() => handleStatusChange(selectedReturn, 'refunded', financeNote)}
                                         >
