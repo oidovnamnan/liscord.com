@@ -10,6 +10,7 @@ import './EmployeesPage.css';
 export function EmployeesPage() {
     const { business } = useBusinessStore();
     const [search, setSearch] = useState('');
+    const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'pending'>('all');
     const [showInvite, setShowInvite] = useState(false);
     const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
     const [employees, setEmployees] = useState<Employee[]>([]);
@@ -41,6 +42,8 @@ export function EmployeesPage() {
 
     const filtered = employees.filter(e => {
         if (e.isDeleted) return false;
+        if (statusFilter === 'active' && e.status !== 'active') return false;
+        if (statusFilter === 'pending' && e.status === 'active') return false;
         if (!search) return true;
         const s = search.toLowerCase();
         return (e.name || '').toLowerCase().includes(s) ||
@@ -50,6 +53,7 @@ export function EmployeesPage() {
 
     const activeCount = employees.filter(e => e.status === 'active' && !e.isDeleted).length;
     const totalCount = employees.filter(e => !e.isDeleted).length;
+    const pendingCount = totalCount - activeCount;
     const positionCount = new Set(employees.filter(e => !e.isDeleted).map(e => e.positionId)).size;
 
     const getAvatarGradient = (name: string) => {
@@ -96,6 +100,10 @@ export function EmployeesPage() {
                             <div className="emp-hero-stat-label">Нийт баг</div>
                         </div>
                         <div className="emp-hero-stat">
+                            <div className="emp-hero-stat-value">{pendingCount}</div>
+                            <div className="emp-hero-stat-label">Хүлээгдэж</div>
+                        </div>
+                        <div className="emp-hero-stat">
                             <div className="emp-hero-stat-value">{positionCount}</div>
                             <div className="emp-hero-stat-label">Албан тушаал</div>
                         </div>
@@ -104,14 +112,27 @@ export function EmployeesPage() {
 
                 {/* ── Main Content Card ── */}
                 <div className="emp-card">
-                    {/* Search */}
-                    <div className="emp-search-wrap">
-                        <Search size={18} />
-                        <input
-                            placeholder="Нэр, утас, албан тушаал хайх..."
-                            value={search}
-                            onChange={e => setSearch(e.target.value)}
-                        />
+                    {/* Toolbar: Search + Filter Tabs */}
+                    <div className="emp-toolbar">
+                        <div className="emp-search-wrap">
+                            <Search size={18} />
+                            <input
+                                placeholder="Нэр, утас, албан тушаал хайх..."
+                                value={search}
+                                onChange={e => setSearch(e.target.value)}
+                            />
+                        </div>
+                        <div className="emp-filter-tabs">
+                            <button className={`emp-filter-tab ${statusFilter === 'all' ? 'active' : ''}`} onClick={() => setStatusFilter('all')}>
+                                Бүгд <span className="emp-filter-count">{totalCount}</span>
+                            </button>
+                            <button className={`emp-filter-tab ${statusFilter === 'active' ? 'active' : ''}`} onClick={() => setStatusFilter('active')}>
+                                Идэвхтэй <span className="emp-filter-count">{activeCount}</span>
+                            </button>
+                            <button className={`emp-filter-tab ${statusFilter === 'pending' ? 'active' : ''}`} onClick={() => setStatusFilter('pending')}>
+                                Хүлээгдэж <span className="emp-filter-count">{pendingCount}</span>
+                            </button>
+                        </div>
                     </div>
 
                     {/* Employee List */}
@@ -136,6 +157,11 @@ export function EmployeesPage() {
                                             <div className="emp-position">
                                                 <Shield size={10} /> {emp.positionName || 'Ажилтан'}
                                             </div>
+                                            {emp.phone && (
+                                                <div className="emp-phone">
+                                                    <Phone size={10} /> {emp.phone}
+                                                </div>
+                                            )}
                                         </div>
                                         <div className="emp-meta">
                                             <span className={`emp-status-badge ${emp.status || 'inactive'}`}>

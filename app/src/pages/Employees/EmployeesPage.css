@@ -94,7 +94,7 @@
 /* ── Stats in hero ── */
 .emp-hero-stats {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(4, 1fr);
     gap: 10px;
     margin-top: 20px;
     position: relative;
@@ -133,6 +133,20 @@
     padding: 24px;
     margin-bottom: 20px;
     box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+}
+
+/* ── Toolbar ── */
+.emp-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 18px;
+    flex-wrap: wrap;
+}
+.emp-toolbar .emp-search-wrap {
+    flex: 1;
+    min-width: 200px;
+    margin-bottom: 0;
 }
 
 /* ── Search ── */
@@ -238,6 +252,62 @@
     border-radius: 100px;
     background: rgba(14, 165, 233, 0.06);
     color: #0ea5e9;
+}
+
+.emp-phone {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.72rem;
+    font-weight: 500;
+    margin-top: 2px;
+    color: var(--text-muted);
+}
+
+/* ── Filter Tabs ── */
+.emp-filter-tabs {
+    display: flex;
+    gap: 4px;
+    background: var(--bg-soft, #f5f5f5);
+    border-radius: 10px;
+    padding: 3px;
+}
+
+.emp-filter-tab {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 6px 14px;
+    border: none;
+    background: transparent;
+    border-radius: 8px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    font-family: inherit;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+}
+.emp-filter-tab:hover {
+    color: var(--text-primary);
+}
+.emp-filter-tab.active {
+    background: var(--surface-1, #fff);
+    color: var(--text-primary);
+    box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+}
+
+.emp-filter-count {
+    font-size: 0.68rem;
+    font-weight: 800;
+    background: rgba(14, 165, 233, 0.1);
+    color: #0ea5e9;
+    padding: 1px 7px;
+    border-radius: 100px;
+}
+.emp-filter-tab.active .emp-filter-count {
+    background: rgba(14, 165, 233, 0.15);
 }
 
 .emp-meta {
