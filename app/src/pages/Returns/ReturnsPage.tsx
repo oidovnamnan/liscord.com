@@ -143,14 +143,14 @@ export function ReturnsPage() {
 
     if (loading) {
         return (
-            <div className="page-container" style={{ display: 'flex', justifyContent: 'center', paddingTop: 100 }}>
+            <div style={{ display: 'flex', justifyContent: 'center', paddingTop: 100, padding: '24px clamp(16px, 3vw, 32px) 32px' }}>
                 <div className="loading-spinner" />
             </div>
         );
     }
 
     return (
-        <div className="page-container animate-fade-in">
+        <div className="animate-fade-in" style={{ padding: '24px clamp(16px, 3vw, 32px) 32px' }}>
             {/* ── Gradient Hero ── */}
             <div className="rtn-hero">
                 <div className="rtn-hero-top">
