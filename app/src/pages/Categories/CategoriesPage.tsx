@@ -128,11 +128,11 @@ export function CategoriesPage() {
                 {/* ── Card Container (toolbar + content) ── */}
                 <div className="cat-page-card">
                 {/* Toolbar */}
-                <div className="orders-toolbar animate-fade-in">
-                    <div className="orders-search">
-                        <Search size={18} className="orders-search-icon" />
+                <div className="cat-toolbar">
+                    <div className="cat-search-wrap">
+                        <Search size={18} className="cat-search-icon" />
                         <input
-                            className="input orders-search-input"
+                            className="cat-search-input"
                             placeholder="Ангилал хайх..."
                             value={search}
                             onChange={e => setSearch(e.target.value)}
