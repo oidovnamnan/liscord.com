@@ -142,109 +142,82 @@ export function ProductsPage() {
 
     return (
         <>
-            <div className="page">
-                <div className="page-hero" style={{ marginBottom: 8 }}>
-                    <div className="page-hero-left">
-                        <div className="page-hero-icon">
-                            <Package size={24} />
+            <div className="animate-fade-in" style={{ padding: '24px clamp(16px, 3vw, 32px) 32px' }}>
+                {/* ── Gradient Hero ── */}
+                <div className="prd-hero">
+                    <div className="prd-hero-top">
+                        <div className="prd-hero-left">
+                            <div className="prd-hero-icon">
+                                <Package size={24} />
+                            </div>
+                            <div>
+                                <h3 className="prd-hero-title">Бараа Материал</h3>
+                                <div className="prd-hero-desc">
+                                    {loading ? 'Уншиж байна...' : `Нийт ${products.length} төрлийн бараа`}
+                                </div>
+                            </div>
                         </div>
-                        <div>
-                            <h2 className="page-hero-title">Бараа Материал</h2>
-                            <p className="page-hero-subtitle">{loading ? 'Уншиж байна...' : `Нийт ${products.length} төрлийн бараа`}</p>
-                        </div>
-                    </div>
-                    <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                        <PermissionGate permission="products.create">
-                            <button
-                                className="btn btn-secondary"
-                                onClick={() => setShowFBImport(true)}
-                                style={{ height: '42px', padding: '0 16px', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '8px', background: 'rgba(24, 119, 242, 0.1)', border: '1px solid rgba(24, 119, 242, 0.2)', color: '#1877f2' }}
-                            >
-                                <Facebook size={18} />
-                                <span style={{ fontWeight: 700, fontSize: '0.85rem' }}>FB</span>
-                            </button>
-                        </PermissionGate>
-                        <PermissionGate permission="products.create">
-                            <button
-                                className="btn btn-primary gradient-btn"
-                                onClick={() => setShowCreate(true)}
-                                style={{ height: '42px', padding: '0 20px', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}
-                            >
-                                <Plus size={18} />
-                                <span style={{ fontWeight: 700 }}>Шинэ бараа</span>
-                            </button>
-                        </PermissionGate>
-                    </div>
-                </div>
-
-                {/* Stats Grid — Inventory-style Glassmorphism */}
-                <div className="inv-stats-grid" style={{ marginBottom: 24 }}>
-                    <div className="inv-stat-card">
-                        <div className="inv-stat-content">
-                            <h4>Нийт бараа</h4>
-                            <div className="inv-stat-value">{stats.total}</div>
-                        </div>
-                        <div className="inv-stat-icon icon-primary">
-                            <Grid3X3 size={24} />
+                        <div className="prd-hero-actions">
+                            <PermissionGate permission="products.create">
+                                <button className="prd-hero-btn fb-btn" onClick={() => setShowFBImport(true)}>
+                                    <Facebook size={16} /> FB
+                                </button>
+                            </PermissionGate>
+                            <PermissionGate permission="products.create">
+                                <button className="prd-hero-btn" onClick={() => setShowCreate(true)}>
+                                    <Plus size={16} /> Шинэ бараа
+                                </button>
+                            </PermissionGate>
                         </div>
                     </div>
 
-                    <div className="inv-stat-card" style={{ cursor: 'pointer' }} onClick={() => setSearch('нөөц бага')}>
-                        <div className="inv-stat-content">
-                            <h4>Нөөц бага</h4>
-                            <div className="inv-stat-value">{stats.low}</div>
+                    <div className="prd-hero-stats">
+                        <div className="prd-hero-stat">
+                            <div className="prd-hero-stat-value">{stats.total}</div>
+                            <div className="prd-hero-stat-label">Нийт бараа</div>
                         </div>
-                        <div className="inv-stat-icon icon-red">
-                            <AlertTriangle size={24} />
+                        <div className="prd-hero-stat clickable" onClick={() => setSearch('нөөц бага')}>
+                            <div className="prd-hero-stat-value">{stats.low}</div>
+                            <div className="prd-hero-stat-label">Нөөц бага</div>
                         </div>
-                    </div>
-
-                    <div className="inv-stat-card" style={{ cursor: 'pointer' }} onClick={() => setSearch('дууссан')}>
-                        <div className="inv-stat-content">
-                            <h4>Дууссан</h4>
-                            <div className="inv-stat-value">{stats.out}</div>
+                        <div className="prd-hero-stat clickable" onClick={() => setSearch('дууссан')}>
+                            <div className="prd-hero-stat-value">{stats.out}</div>
+                            <div className="prd-hero-stat-label">Дууссан</div>
                         </div>
-                        <div className="inv-stat-icon icon-red">
-                            <MoreVertical size={24} />
-                        </div>
-                    </div>
-
-                    <div className="inv-stat-card">
-                        <div className="inv-stat-content">
-                            <h4>Нөөцийн үнэ</h4>
-                            <div className="inv-stat-value">{fmt(stats.value)}</div>
-                        </div>
-                        <div className="inv-stat-icon icon-green">
-                            <Plus size={24} />
+                        <div className="prd-hero-stat">
+                            <div className="prd-hero-stat-value">{fmt(stats.value)}</div>
+                            <div className="prd-hero-stat-label">Нөөцийн үнэ</div>
                         </div>
                     </div>
                 </div>
 
-                <div className="orders-toolbar animate-fade-in">
-                    <div className="orders-search">
-                        <Search size={18} className="orders-search-icon" />
-                        <input className="input orders-search-input" placeholder="Бараа, SKU хайх..." value={search} onChange={e => setSearch(e.target.value)} />
-                    </div>
-                    <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                        {categories.length > 0 && (
-                            <select
-                                className="input"
-                                value={categoryFilter}
-                                onChange={(e) => setCategoryFilter(e.target.value)}
-                                style={{ minWidth: 140, height: 42, borderRadius: 12, fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer', padding: '0 12px', background: 'var(--surface-1)', border: '1.5px solid var(--border-primary)', color: 'var(--text-primary)' }}
-                            >
-                                <option value="all">Бүгд ангилал</option>
-                                {categories.map(cat => (
-                                    <option key={cat.id} value={cat.id}>{cat.name}</option>
-                                ))}
-                            </select>
-                        )}
-                        <div className="products-view-toggle">
-                            <button className={`btn btn-ghost ${viewMode === 'grid' ? 'active' : ''}`} onClick={() => setViewMode('grid')}><Grid3X3 size={18} /></button>
-                            <button className={`btn btn-ghost ${viewMode === 'list' ? 'active' : ''}`} onClick={() => setViewMode('list')}><List size={18} /></button>
+                {/* ── Card Container ── */}
+                <div className="prd-card">
+                    <div className="orders-toolbar animate-fade-in">
+                        <div className="orders-search">
+                            <Search size={18} className="orders-search-icon" />
+                            <input className="input orders-search-input" placeholder="Бараа, SKU хайх..." value={search} onChange={e => setSearch(e.target.value)} />
+                        </div>
+                        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                            {categories.length > 0 && (
+                                <select
+                                    className="input"
+                                    value={categoryFilter}
+                                    onChange={(e) => setCategoryFilter(e.target.value)}
+                                    style={{ minWidth: 140, height: 42, borderRadius: 12, fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer', padding: '0 12px', background: 'var(--surface-1)', border: '1.5px solid var(--border-primary)', color: 'var(--text-primary)' }}
+                                >
+                                    <option value="all">Бүгд ангилал</option>
+                                    {categories.map(cat => (
+                                        <option key={cat.id} value={cat.id}>{cat.name}</option>
+                                    ))}
+                                </select>
+                            )}
+                            <div className="products-view-toggle">
+                                <button className={`btn btn-ghost ${viewMode === 'grid' ? 'active' : ''}`} onClick={() => setViewMode('grid')}><Grid3X3 size={18} /></button>
+                                <button className={`btn btn-ghost ${viewMode === 'list' ? 'active' : ''}`} onClick={() => setViewMode('list')}><List size={18} /></button>
+                            </div>
                         </div>
                     </div>
-                </div>
 
                 {loading ? (
                     <div className="loading-state">
@@ -422,6 +395,7 @@ export function ProductsPage() {
                         )}
                     </>
                 )}
+                </div>{/* /prd-card */}
             </div>
 
             {showCreate && <CreateProductModal onClose={() => setShowCreate(false)} />}
