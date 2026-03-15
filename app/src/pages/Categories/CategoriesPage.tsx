@@ -87,61 +87,46 @@ export function CategoriesPage() {
 
     return (
         <>
-            <div className="page">
-                <div className="page-hero" style={{ marginBottom: 8 }}>
-                    <div className="page-hero-left">
-                        <div className="page-hero-icon">
-                            <Tags size={24} />
+            <div style={{ padding: '24px clamp(16px, 3vw, 32px) 32px' }}>
+                {/* ── Premium Hero ── */}
+                <div className="cat-hero">
+                    <div className="cat-hero-top">
+                        <div className="cat-hero-left">
+                            <div className="cat-hero-icon"><Tags size={24} /></div>
+                            <div>
+                                <h2 className="cat-hero-title">Ангилал & Нэр Төрөл</h2>
+                                <div className="cat-hero-desc">{loading ? 'Уншиж байна...' : `${categories.length} ангилал`}</div>
+                            </div>
                         </div>
-                        <div>
-                            <h2 className="page-hero-title">Ангилал & Нэр Төрөл</h2>
-                            <p className="page-hero-subtitle">{loading ? 'Уншиж байна...' : `${categories.length} ангилал`}</p>
-                        </div>
+                        <PermissionGate permission="categories.create">
+                            <button className="cat-hero-btn" onClick={() => setShowCreate(true)}>
+                                <Plus size={18} />
+                                <span>Шинэ ангилал</span>
+                            </button>
+                        </PermissionGate>
                     </div>
-                    <PermissionGate permission="categories.create">
-                        <button
-                            className="btn btn-primary gradient-btn"
-                            onClick={() => setShowCreate(true)}
-                            style={{ height: 42, padding: '0 20px', borderRadius: 12, display: 'flex', alignItems: 'center', gap: 8 }}
-                        >
-                            <Plus size={18} />
-                            <span style={{ fontWeight: 700 }}>Шинэ ангилал</span>
-                        </button>
-                    </PermissionGate>
-                </div>
-
-                {/* Stats */}
-                <div className="inv-stats-grid" style={{ marginBottom: 24 }}>
-                    <div className="inv-stat-card">
-                        <div className="inv-stat-content">
-                            <h4>Нийт ангилал</h4>
-                            <div className="inv-stat-value">{stats.total}</div>
+                    <div className="cat-hero-stats">
+                        <div className="cat-hero-stat">
+                            <div className="cat-hero-stat-value">{stats.total}</div>
+                            <div className="cat-hero-stat-label">Нийт ангилал</div>
                         </div>
-                        <div className="inv-stat-icon icon-primary"><Tags size={24} /></div>
-                    </div>
-                    <div className="inv-stat-card">
-                        <div className="inv-stat-content">
-                            <h4>Энгийн</h4>
-                            <div className="inv-stat-value">{stats.normal}</div>
+                        <div className="cat-hero-stat">
+                            <div className="cat-hero-stat-value">{stats.normal}</div>
+                            <div className="cat-hero-stat-label">Энгийн</div>
                         </div>
-                        <div className="inv-stat-icon icon-green"><FolderOpen size={24} /></div>
-                    </div>
-                    <div className="inv-stat-card">
-                        <div className="inv-stat-content">
-                            <h4>Онцгой (VIP)</h4>
-                            <div className="inv-stat-value">{stats.exclusive}</div>
+                        <div className="cat-hero-stat">
+                            <div className="cat-hero-stat-value">{stats.exclusive}</div>
+                            <div className="cat-hero-stat-label">Онцгой (VIP)</div>
                         </div>
-                        <div className="inv-stat-icon icon-purple"><Crown size={24} /></div>
-                    </div>
-                    <div className="inv-stat-card">
-                        <div className="inv-stat-content">
-                            <h4>Нийт бараа</h4>
-                            <div className="inv-stat-value">{stats.totalProducts}</div>
+                        <div className="cat-hero-stat">
+                            <div className="cat-hero-stat-value">{stats.totalProducts}</div>
+                            <div className="cat-hero-stat-label">Нийт бараа</div>
                         </div>
-                        <div className="inv-stat-icon icon-primary"><Package size={24} /></div>
                     </div>
                 </div>
 
+                {/* ── Card Container (toolbar + content) ── */}
+                <div className="cat-page-card">
                 {/* Toolbar */}
                 <div className="orders-toolbar animate-fade-in">
                     <div className="orders-search">
@@ -248,6 +233,7 @@ export function CategoriesPage() {
                         ))}
                     </div>
                 )}
+                </div>{/* /cat-page-card */}
             </div>
 
             {showCreate && (
