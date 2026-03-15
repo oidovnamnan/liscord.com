@@ -1,9 +1,8 @@
 import { useEffect, useState } from 'react';
-import { Search, Plus, Phone, Shield, MoreVertical, Clock, Loader2, Pencil, Trash2, Users } from 'lucide-react';
+import { Search, Plus, Phone, Shield, MoreVertical, Clock, Loader2, Pencil, Trash2, Users, Briefcase } from 'lucide-react';
 import { useBusinessStore } from '../../store';
 import { teamService } from '../../services/db';
 import type { Employee, Position } from '../../types';
-import { Header } from '../../components/layout/Header';
 import { HubLayout } from '../../components/common/HubLayout';
 import { toast } from 'react-hot-toast';
 import './EmployeesPage.css';
@@ -49,87 +48,118 @@ export function EmployeesPage() {
             (e.positionName || '').toLowerCase().includes(s);
     });
 
-    const getRoleColor = (role?: string) => {
-        if (role === 'owner') return '#6c5ce7';
-        return '#0dbff0';
+    const activeCount = employees.filter(e => e.status === 'active' && !e.isDeleted).length;
+    const totalCount = employees.filter(e => !e.isDeleted).length;
+    const positionCount = new Set(employees.filter(e => !e.isDeleted).map(e => e.positionId)).size;
+
+    const getAvatarGradient = (name: string) => {
+        const colors = [
+            'linear-gradient(135deg, #0ea5e9, #06b6d4)',
+            'linear-gradient(135deg, #8b5cf6, #a855f7)',
+            'linear-gradient(135deg, #f97316, #f59e0b)',
+            'linear-gradient(135deg, #ef4444, #f87171)',
+            'linear-gradient(135deg, #22c55e, #10b981)',
+            'linear-gradient(135deg, #ec4899, #db2777)',
+            'linear-gradient(135deg, #6366f1, #818cf8)',
+        ];
+        const idx = (name || '').charCodeAt(0) % colors.length;
+        return colors[idx];
     };
 
     return (
         <HubLayout hubId="staff-hub">
-            <div className="page" onClick={() => setMenuId(null)}>
-                <div className="page-hero" style={{ marginBottom: 24 }}>
-                    <div className="page-hero-left">
-                        <div className="page-hero-icon">
-                            <Users size={24} />
+            <div className="animate-fade-in" style={{ padding: '24px clamp(16px, 3vw, 32px) 32px' }} onClick={() => setMenuId(null)}>
+                {/* ── Gradient Hero ── */}
+                <div className="emp-hero">
+                    <div className="emp-hero-top">
+                        <div className="emp-hero-left">
+                            <div className="emp-hero-icon">
+                                <Users size={24} />
+                            </div>
+                            <div>
+                                <h3 className="emp-hero-title">Ажилтан</h3>
+                                <div className="emp-hero-desc">Багийн бүрэлдэхүүн, албан тушаал, эрх удирдах</div>
+                            </div>
                         </div>
-                        <div>
-                            <h2 className="page-hero-title">Ажилтан</h2>
-                            <p className="page-hero-subtitle">Нийт {employees.length} ажилтан</p>
-                        </div>
+                        <button className="emp-invite-btn" onClick={() => setShowInvite(true)}>
+                            <Plus size={16} /> Урих
+                        </button>
                     </div>
-                    <button className="btn btn-primary btn-sm gradient-btn" onClick={() => setShowInvite(true)} style={{ gap: 6 }}>
-                        <Plus size={16} /> Урих
-                    </button>
-                </div>
-                <div className="orders-toolbar">
-                    <div className="orders-search">
-                        <Search size={18} className="orders-search-icon" />
-                        <input className="input orders-search-input" placeholder="Нэр, утас, албан тушаал хайх..." value={search} onChange={e => setSearch(e.target.value)} />
+
+                    <div className="emp-hero-stats">
+                        <div className="emp-hero-stat">
+                            <div className="emp-hero-stat-value">{activeCount}</div>
+                            <div className="emp-hero-stat-label">Идэвхтэй</div>
+                        </div>
+                        <div className="emp-hero-stat">
+                            <div className="emp-hero-stat-value">{totalCount}</div>
+                            <div className="emp-hero-stat-label">Нийт баг</div>
+                        </div>
+                        <div className="emp-hero-stat">
+                            <div className="emp-hero-stat-value">{positionCount}</div>
+                            <div className="emp-hero-stat-label">Албан тушаал</div>
+                        </div>
                     </div>
                 </div>
 
-                <div className="grid-3" style={{ marginBottom: 'var(--space-lg)' }}>
-                    <div className="stat-card">
-                        <div className="stat-card-label">Идэвхтэй</div>
-                        <div className="stat-card-value">{employees.filter(e => e.status === 'active' && !e.isDeleted).length}</div>
+                {/* ── Main Content Card ── */}
+                <div className="emp-card">
+                    {/* Search */}
+                    <div className="emp-search-wrap">
+                        <Search size={18} />
+                        <input
+                            placeholder="Нэр, утас, албан тушаал хайх..."
+                            value={search}
+                            onChange={e => setSearch(e.target.value)}
+                        />
                     </div>
-                    <div className="stat-card">
-                        <div className="stat-card-label">Нийт баг</div>
-                        <div className="stat-card-value">{employees.filter(e => !e.isDeleted).length}</div>
-                    </div>
-                    <div className="stat-card">
-                        <div className="stat-card-label">Албан тушаал</div>
-                        <div className="stat-card-value">{new Set(employees.filter(e => !e.isDeleted).map(e => e.positionId)).size}</div>
-                    </div>
-                </div>
 
-                <div className="employees-list stagger-children">
-                    {filtered.map(emp => {
-                        const displayName = emp.name || emp.userId || 'Мэдэгдэхгүй';
-                        const roleColor = getRoleColor(emp.role);
-                        return (
-                            <div key={emp.id} className="employee-card card card-clickable" onClick={() => setEditingEmployee(emp)}>
-                                <div className="employee-header">
-                                    <div className="employee-avatar" style={{ borderColor: roleColor }}>
-                                        {displayName.charAt(0).toUpperCase()}
-                                        <span className={`employee-status-dot ${emp.status || 'inactive'}`} />
-                                    </div>
-                                    <div className="employee-info">
-                                        <div className="employee-name">{displayName}</div>
-                                        <div className="employee-position" style={{ color: roleColor }}>
-                                            <Shield size={12} /> {emp.positionName || 'Ажилтан'}
+                    {/* Employee List */}
+                    {filtered.length === 0 ? (
+                        <div className="emp-empty">
+                            <div className="emp-empty-icon">👥</div>
+                            <h3 style={{ fontWeight: 700, marginBottom: 4 }}>Ажилтан олдсонгүй</h3>
+                            <p style={{ fontSize: '0.85rem' }}>Шинэ ажилтан нэмэхийн тулд "Урих" товчийг дарна уу</p>
+                        </div>
+                    ) : (
+                        <div className="emp-list">
+                            {filtered.map(emp => {
+                                const displayName = emp.name || emp.userId || 'Мэдэгдэхгүй';
+                                return (
+                                    <div key={emp.id} className="emp-row" onClick={() => setEditingEmployee(emp)}>
+                                        <div className="emp-avatar" style={{ background: getAvatarGradient(displayName) }}>
+                                            {displayName.charAt(0).toUpperCase()}
+                                            <span className={`emp-status-dot ${emp.status || 'inactive'}`} />
+                                        </div>
+                                        <div className="emp-info">
+                                            <div className="emp-name">{displayName}</div>
+                                            <div className="emp-position">
+                                                <Shield size={10} /> {emp.positionName || 'Ажилтан'}
+                                            </div>
+                                        </div>
+                                        <div className="emp-meta">
+                                            <span className={`emp-status-badge ${emp.status || 'inactive'}`}>
+                                                <Clock size={10} /> {emp.status === 'active' ? 'Идэвхтэй' : 'Хүлээгдэж буй'}
+                                            </span>
+                                            <button className="emp-menu-btn" onClick={(e) => { e.stopPropagation(); setMenuId(menuId === emp.id ? null : emp.id); }}>
+                                                <MoreVertical size={16} />
+                                            </button>
+                                            {menuId === emp.id && (
+                                                <div className="emp-context-menu" onClick={e => e.stopPropagation()}>
+                                                    <button className="emp-context-item" onClick={e => { e.stopPropagation(); setMenuId(null); setEditingEmployee(emp); }}>
+                                                        <Pencil size={14} /> Засах
+                                                    </button>
+                                                    <button className="emp-context-item danger" onClick={e => { e.stopPropagation(); handleDelete(emp); }}>
+                                                        <Trash2 size={14} /> Устгах
+                                                    </button>
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
-                                    <div className="employee-meta" style={{ position: 'relative' }}>
-                                        <div className="employee-active"><Clock size={12} /> {emp.status === 'active' ? 'Идэвхтэй' : 'Хүлээгдэж буй'}</div>
-                                        <button className="btn btn-ghost btn-sm btn-icon" onClick={(e) => { e.stopPropagation(); setMenuId(menuId === emp.id ? null : emp.id); }}>
-                                            <MoreVertical size={16} />
-                                        </button>
-                                        {menuId === emp.id && (
-                                            <div className="context-menu" style={{ position: 'absolute', right: 0, top: '100%', zIndex: 50, background: 'var(--surface-1)', border: '1px solid var(--border-secondary)', borderRadius: 'var(--radius-md)', padding: 4, minWidth: 140, boxShadow: '0 8px 24px var(--shadow-color)' }}>
-                                                <button className="context-item" style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '8px 12px', border: 'none', background: 'none', color: 'var(--text-primary)', borderRadius: 'var(--radius-sm)', cursor: 'pointer', fontSize: '0.85rem' }} onClick={e => { e.stopPropagation(); setMenuId(null); setEditingEmployee(emp); }}><Pencil size={14} /> Засах</button>
-                                                <button className="context-item" style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '8px 12px', border: 'none', background: 'none', color: 'var(--danger)', borderRadius: 'var(--radius-sm)', cursor: 'pointer', fontSize: '0.85rem' }} onClick={e => { e.stopPropagation(); handleDelete(emp); }}><Trash2 size={14} /> Устгах</button>
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
-                                <div className="employee-details">
-                                    <span><Phone size={12} /> {emp.phone || 'Утасгүй'}</span>
-                                    <span>Өнөөдөр: {emp.stats?.totalOrdersHandled || 0} захиалга</span>
-                                </div>
-                            </div>
-                        );
-                    })}
+                                );
+                            })}
+                        </div>
+                    )}
                 </div>
             </div>
 
@@ -263,7 +293,7 @@ function EditEmployeeModal({ employee, positions, onClose }: { employee: Employe
                                             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                                                 <div style={{
                                                     width: 24, height: 24, borderRadius: '50%',
-                                                    background: 'linear-gradient(135deg, var(--primary), #6c5ce7)',
+                                                    background: 'linear-gradient(135deg, #0ea5e9, #06b6d4)',
                                                     color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center',
                                                     fontSize: '0.65rem', fontWeight: 700
                                                 }}>
