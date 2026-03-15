@@ -216,7 +216,7 @@ export function SuperAdminSettings() {
                             <div className="sa-hero-desc">Бизнес салбар тус бүрт модулийн хандалт тохируулах</div>
                         </div>
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
                         {hasUnsavedChanges && (
                             <span className="ms-unsaved-indicator">
                                 <span className="ms-unsaved-dot" />
@@ -226,7 +226,7 @@ export function SuperAdminSettings() {
                         <button
                             className="sa-hero-btn"
                             onClick={() => navigate('/super/app-store')}
-                            style={{ background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.25)' }}
+                            style={{ background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.25)', whiteSpace: 'nowrap', flexShrink: 0 }}
                         >
                             <Icons.DollarSign size={14} />
                             App Store
@@ -235,6 +235,7 @@ export function SuperAdminSettings() {
                             className="sa-hero-btn"
                             onClick={handleSaveClick}
                             disabled={saving}
+                            style={{ whiteSpace: 'nowrap', flexShrink: 0 }}
                         >
                             {saving ? <Loader2 className="animate-spin" size={14} /> : <Icons.Save size={14} />}
                             {saving ? 'Хадгалж...' : 'Хадгалах'}
