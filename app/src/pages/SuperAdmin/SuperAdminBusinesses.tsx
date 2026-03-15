@@ -1,10 +1,12 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import {
     Search,
     Filter,
     MoreVertical,
     Clock,
-    Lock
+    Lock,
+    Building2,
+    Sparkles
 } from 'lucide-react';
 import { businessService } from '../../services/db';
 import { collection, getDocs, query, orderBy } from 'firebase/firestore';
@@ -12,7 +14,6 @@ import { db } from '../../services/firebase';
 import { useAuthStore, useBusinessStore } from '../../store';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
-import { Header } from '../../components/layout/Header';
 import { SecurityModal } from '../../components/common/SecurityModal';
 import './SuperAdmin.css';
 
@@ -116,13 +117,49 @@ export function SuperAdminBusinesses() {
         return matchesSearch && matchesStatus;
     });
 
-    return (
-        <div className="page-container animate-fade-in">
-            <Header
-                title="Бизнесийн удирдлага"
-                subtitle={`Нийт ${businesses.length} бизнес бүртгэлтэй байна`}
-            />
+    // Compute hero stats
+    const heroStats = useMemo(() => {
+        const active = businesses.filter(b => !b.isDisabled).length;
+        const disabled = businesses.filter(b => b.isDisabled).length;
+        const pro = businesses.filter(b => b.subscription?.plan === 'pro' || b.subscription?.plan === 'business').length;
+        return { total: businesses.length, active, disabled, pro };
+    }, [businesses]);
 
+    return (
+        <div className="page-container animate-fade-in" style={{ padding: '24px clamp(16px, 3vw, 32px) 32px' }}>
+            {/* ── Premium Hero ── */}
+            <div className="sa-hero" style={{ background: 'linear-gradient(135deg, #0ea5e9 0%, #6366f1 50%, #8b5cf6 100%)', boxShadow: '0 8px 32px rgba(99, 102, 241, 0.25)' }}>
+                <div className="sa-hero-top">
+                    <div className="sa-hero-left">
+                        <div className="sa-hero-icon"><Building2 size={24} /></div>
+                        <div>
+                            <div className="sa-hero-badge"><Sparkles size={10} /> Бизнес удирдлага</div>
+                            <h1 className="sa-hero-title">Бизнесүүд</h1>
+                            <div className="sa-hero-desc">Нийт {businesses.length} бизнес бүртгэлтэй</div>
+                        </div>
+                    </div>
+                </div>
+                <div className="sa-hero-stats">
+                    <div className="sa-hero-stat">
+                        <div className="sa-hero-stat-value">{heroStats.total}</div>
+                        <div className="sa-hero-stat-label">Нийт бизнес</div>
+                    </div>
+                    <div className="sa-hero-stat">
+                        <div className="sa-hero-stat-value">{heroStats.active}</div>
+                        <div className="sa-hero-stat-label">Идэвхтэй</div>
+                    </div>
+                    <div className="sa-hero-stat">
+                        <div className="sa-hero-stat-value">{heroStats.disabled}</div>
+                        <div className="sa-hero-stat-label">Зогсоосон</div>
+                    </div>
+                    <div className="sa-hero-stat">
+                        <div className="sa-hero-stat-value">{heroStats.pro}</div>
+                        <div className="sa-hero-stat-label">Pro / Business</div>
+                    </div>
+                </div>
+            </div>
+
+            {/* ── Search & Filter ── */}
             <div className="page-content">
                 <div className="table-actions">
                     <div className="search-box">
