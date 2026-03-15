@@ -44,7 +44,8 @@ export function useStorefrontData(business: Business | undefined) {
         if (!business) return;
         const storedPhone = localStorage.getItem(`membership_phone_${business.id}`);
         if (storedPhone) {
-            membershipService.getCustomerMemberships(business.id, storedPhone)
+            const normalized = storedPhone.replace(/[^\d]/g, '').replace(/^976/, '');
+            membershipService.getCustomerMemberships(business.id, normalized)
                 .then(ids => setActiveMemberships(ids))
                 .catch(() => setActiveMemberships([]));
         }

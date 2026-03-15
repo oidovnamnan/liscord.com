@@ -117,7 +117,7 @@ export function CustomerDashboard({ isOpen, onClose, business, phone, onOpenMemb
     // Load address from localStorage
     useEffect(() => {
         if (!business?.id || !effectivePhone) return;
-        const saved = localStorage.getItem(`customer_address_${business.id}_${effectivePhone}`);
+        const saved = localStorage.getItem(`customer_address_${business.id}_${normalizePhone(effectivePhone)}`);
         if (saved) {
             try { setAddress(JSON.parse(saved)); } catch { /* ignore */ }
         }

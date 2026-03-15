@@ -11,9 +11,9 @@ import {
     Timestamp
 } from 'firebase/firestore';
 
-// Normalize phone to digits only (remove spaces, dashes, + prefix)
+// Normalize phone: strip non-digits and remove 976 country code prefix
 function normalizePhone(phone: string): string {
-    return phone.replace(/[^\d]/g, '');
+    return phone.replace(/[^\d]/g, '').replace(/^976/, '');
 }
 
 export interface Membership {
