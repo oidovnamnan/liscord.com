@@ -63,6 +63,8 @@ export function SettingsPage() {
     const [selectedThemeId, setSelectedThemeId] = useState(business?.settings?.storefront?.theme || 'minimal');
     const [logoFiles, setLogoFiles] = useState<File[]>([]);
     const [existingLogo, setExistingLogo] = useState<string[]>(business?.logo ? [business.logo] : []);
+    const [teamCount, setTeamCount] = useState(0);
+    const [deviceCount, setDeviceCount] = useState(0);
 
     const isStorefrontLocked = useMemo(() => {
         if (!business?.lastStorefrontChangeAt) return false;
@@ -96,6 +98,31 @@ export function SettingsPage() {
     }, [activeTab, business?.slug, business?.id, business?.settings?.storefront?.theme, business?.logo, business]);
 
     const isStorefrontEnabled = business?.settings?.storefront?.enabled || business?.category === 'online_shop';
+
+    // Load team count
+    useEffect(() => {
+        if (!business?.id) return;
+        return teamService.subscribeEmployees(business.id, (emps) => {
+            setTeamCount(emps.filter(e => !e.isDeleted).length);
+        });
+    }, [business?.id]);
+
+    // Load device count
+    useEffect(() => {
+        if (!business?.id) return;
+        const q = query(collection(db, 'businesses', business.id, 'devices'), where('isActive', '==', true));
+        const unsub = onSnapshot(q, (snap) => setDeviceCount(snap.size));
+        return () => unsub();
+    }, [business?.id]);
+
+    // Compute active module count
+    const activeModuleCount = useMemo(() => {
+        const allIds = new Set<string>(business?.activeModules || []);
+        if (business?.moduleSubscriptions) {
+            Object.keys(business.moduleSubscriptions).forEach(id => allIds.add(id));
+        }
+        return allIds.size;
+    }, [business?.activeModules, business?.moduleSubscriptions]);
 
 
     const tabs = useMemo(() => {
@@ -297,17 +324,37 @@ export function SettingsPage() {
     return (
         <>
             <div className="settings-page-hero">
-                <button className="settings-back-btn" onClick={() => navigate('/app')}>
-                    <ArrowLeft size={18} />
-                    <span>Буцах</span>
-                </button>
-                <div className="settings-hero-content">
-                    <div className="settings-hero-icon">
-                        <SettingsIcon size={22} />
+                <div className="settings-hero-top">
+                    <button className="settings-back-btn" onClick={() => navigate('/app')}>
+                        <ArrowLeft size={18} />
+                        <span>Буцах</span>
+                    </button>
+                    <div className="settings-hero-content">
+                        <div className="settings-hero-icon">
+                            <SettingsIcon size={22} />
+                        </div>
+                        <div>
+                            <h1 className="settings-hero-title">Тохиргоо</h1>
+                            <p className="settings-hero-subtitle">{activeTabLabel} · {business?.name || ''}</p>
+                        </div>
                     </div>
-                    <div>
-                        <h1 className="settings-hero-title">Тохиргоо</h1>
-                        <p className="settings-hero-subtitle">{activeTabLabel} · {business?.name || ''}</p>
+                </div>
+                <div className="settings-hero-stats">
+                    <div className="settings-hero-stat">
+                        <div className="settings-hero-stat-value">{teamCount}</div>
+                        <div className="settings-hero-stat-label">Баг гишүүд</div>
+                    </div>
+                    <div className="settings-hero-stat">
+                        <div className="settings-hero-stat-value">{activeModuleCount}</div>
+                        <div className="settings-hero-stat-label">Идэвхтэй модуль</div>
+                    </div>
+                    <div className="settings-hero-stat">
+                        <div className="settings-hero-stat-value">{deviceCount}</div>
+                        <div className="settings-hero-stat-label">Төхөөрөмж</div>
+                    </div>
+                    <div className="settings-hero-stat">
+                        <div className="settings-hero-stat-value">{tabs.core.length + tabs.plugins.length}</div>
+                        <div className="settings-hero-stat-label">Тохиргоо</div>
                     </div>
                 </div>
             </div>

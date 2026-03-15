@@ -7,9 +7,6 @@
     position: relative;
     overflow: hidden;
     box-shadow: 0 8px 32px rgba(99, 102, 241, 0.2);
-    display: flex;
-    align-items: center;
-    gap: 16px;
 }
 .settings-page-hero::before {
     content: '';
@@ -28,6 +25,14 @@
     background: rgba(255,255,255,0.05);
 }
 
+.settings-hero-top {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    position: relative;
+    z-index: 1;
+}
+
 .settings-back-btn {
     display: flex;
     align-items: center;
@@ -44,8 +49,6 @@
     transition: all 0.2s;
     font-family: inherit;
     flex-shrink: 0;
-    position: relative;
-    z-index: 1;
 }
 
 .settings-back-btn:hover {
@@ -57,8 +60,6 @@
     display: flex;
     align-items: center;
     gap: 12px;
-    position: relative;
-    z-index: 1;
 }
 
 .settings-hero-icon {
@@ -87,6 +88,46 @@
     font-size: 0.78rem;
     color: rgba(255,255,255,0.7);
     margin-top: 3px;
+}
+
+/* Hero Stat Cards */
+.settings-hero-stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    margin-top: 18px;
+    position: relative;
+    z-index: 1;
+}
+
+.settings-hero-stat {
+    background: rgba(255,255,255,0.15);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 12px;
+    padding: 14px 16px;
+    transition: all 0.2s;
+}
+.settings-hero-stat:hover {
+    background: rgba(255,255,255,0.25);
+    transform: translateY(-1px);
+}
+
+.settings-hero-stat-value {
+    font-size: 1.3rem;
+    font-weight: 800;
+    color: #fff;
+    line-height: 1;
+    font-feature-settings: "tnum";
+}
+
+.settings-hero-stat-label {
+    font-size: 0.68rem;
+    font-weight: 700;
+    color: rgba(255,255,255,0.7);
+    margin-top: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
 }
 
 /* ===== Layout ===== */
@@ -158,6 +199,8 @@
     border-color: var(--border-secondary);
     box-shadow: var(--shadow-sm);
     font-weight: 750;
+    border-left: 3px solid var(--primary);
+    padding-left: 11px;
 }
 
 .settings-tab svg {
@@ -621,8 +664,11 @@
 
     .settings-page-hero {
         padding: 18px 16px;
-        gap: 12px;
         margin: 12px 12px 0;
+    }
+
+    .settings-hero-stats {
+        grid-template-columns: repeat(2, 1fr);
     }
 
     .settings-back-btn span {
