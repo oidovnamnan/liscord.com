@@ -8,7 +8,6 @@ import { orderService } from '../../services/db';
 import type { Product, Order, Customer } from '../../types';
 import toast from 'react-hot-toast';
 import './AIAgentPage.css';
-import '../Inventory/InventoryPage.css';
 
 interface Message {
     id: string;
@@ -220,28 +219,34 @@ export const AIAgentPage: React.FC = () => {
     };
 
     return (
-        <div className="inventory-page ai-agent-container animate-fade-in">
-            <header className="ai-agent-header">
-                <div className="ai-header-content">
-                    <div className="ai-badge-premium"><Sparkles size={12} /> Liscord Brain v3.0 Super</div>
-                    <h1 className="ai-brain-title">🧠 Super Brain</h1>
-                    <p className="ai-brain-subtitle">Таны бизнесийн ухаалаг тархи, ко-пилот туслах</p>
-                </div>
-                <div className="ai-header-stats">
-                    <div className="stat-card">
-                        <div className="stat-value glow-text">{bizContext.totalProducts ?? '—'}</div>
-                        <div className="stat-label">Бараа</div>
-                    </div>
-                    <div className="stat-card">
-                        <div className="stat-value pulse-text">{bizContext.totalOrders ?? '—'}</div>
-                        <div className="stat-label">Захиалга</div>
-                    </div>
-                    <div className="stat-card">
-                        <div className="stat-value">{bizContext.totalCustomers ?? '—'}</div>
-                        <div className="stat-label">Хэрэглэгч</div>
+        <div className="ai-agent-container animate-fade-in" style={{ padding: '24px clamp(16px, 3vw, 32px) 32px' }}>
+            {/* ── Premium AI Hero ── */}
+            <div className="ai-hero">
+                <div className="ai-hero-top">
+                    <div className="ai-hero-left">
+                        <div className="ai-hero-icon"><Brain size={24} /></div>
+                        <div>
+                            <div className="ai-hero-badge"><Sparkles size={10} /> Liscord Brain v3.0 Super</div>
+                            <h1 className="ai-hero-title">🧠 Super Brain</h1>
+                            <div className="ai-hero-desc">Таны бизнесийн ухаалаг тархи, ко-пилот туслах</div>
+                        </div>
                     </div>
                 </div>
-            </header>
+                <div className="ai-hero-stats">
+                    <div className="ai-hero-stat">
+                        <div className="ai-hero-stat-value">{bizContext.totalProducts ?? '—'}</div>
+                        <div className="ai-hero-stat-label">Бараа</div>
+                    </div>
+                    <div className="ai-hero-stat">
+                        <div className="ai-hero-stat-value">{bizContext.totalOrders ?? '—'}</div>
+                        <div className="ai-hero-stat-label">Захиалга</div>
+                    </div>
+                    <div className="ai-hero-stat">
+                        <div className="ai-hero-stat-value">{bizContext.totalCustomers ?? '—'}</div>
+                        <div className="ai-hero-stat-label">Хэрэглэгч</div>
+                    </div>
+                </div>
+            </div>
 
             {/* Neural Activity Strip */}
             <div className="neural-strip">
