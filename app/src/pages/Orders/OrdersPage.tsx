@@ -215,69 +215,46 @@ export function OrdersPage() {
 
     return (
         <>
-            <div className="page">
-                <div className="page-hero" style={{ marginBottom: 8 }}>
-                    <div className="page-hero-left">
-                        <div className="page-hero-icon">
-                            <ShoppingCart size={24} />
+            <div style={{ padding: '24px clamp(16px, 3vw, 32px) 32px' }}>
+                {/* ── Premium Hero ── */}
+                <div className="ord-hero">
+                    <div className="ord-hero-top">
+                        <div className="ord-hero-left">
+                            <div className="ord-hero-icon"><ShoppingCart size={24} /></div>
+                            <div>
+                                <h2 className="ord-hero-title">Борлуулалтын Захиалга</h2>
+                                <div className="ord-hero-desc">{loading ? 'Уншиж байна...' : `Нийт ${orders.length} захиалга`}</div>
+                            </div>
                         </div>
-                        <div>
-                            <h2 className="page-hero-title">Борлуулалтын Захиалга</h2>
-                            <p className="page-hero-subtitle">{loading ? 'Уншиж байна...' : `Нийт ${orders.length} захиалга`}</p>
-                        </div>
+                        <PermissionGate permission="orders.create">
+                            <button className="ord-hero-btn" onClick={() => setShowCreate(true)}>
+                                <Plus size={18} />
+                                <span>Шинэ захиалга</span>
+                            </button>
+                        </PermissionGate>
                     </div>
-                    <PermissionGate permission="orders.create">
-                        <button
-                            className="btn btn-primary gradient-btn"
-                            onClick={() => setShowCreate(true)}
-                            style={{ height: '42px', padding: '0 20px', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}
-                        >
-                            <Plus size={18} />
-                            <span style={{ fontWeight: 700 }}>Шинэ захиалга</span>
-                        </button>
-                    </PermissionGate>
-                </div>
-
-                {/* Stats Grid */}
-                <div className="inv-stats-grid" style={{ marginBottom: 24 }}>
-                    <div className="inv-stat-card">
-                        <div className="inv-stat-content">
-                            <h4>Өнөөдрийн орлого</h4>
-                            <div className="inv-stat-value">{fmt(stats.revenue)}</div>
+                    <div className="ord-hero-stats">
+                        <div className="ord-hero-stat">
+                            <div className="ord-hero-stat-value">{fmt(stats.revenue)}</div>
+                            <div className="ord-hero-stat-label">Өнөөдрийн орлого</div>
                         </div>
-                        <div className="inv-stat-icon icon-green">
-                            <CreditCard size={24} />
+                        <div className="ord-hero-stat">
+                            <div className="ord-hero-stat-value">{stats.new}</div>
+                            <div className="ord-hero-stat-label">Шинэ захиалга</div>
                         </div>
-                    </div>
-                    <div className="inv-stat-card">
-                        <div className="inv-stat-content">
-                            <h4>Шинэ захиалга</h4>
-                            <div className="inv-stat-value">{stats.new}</div>
+                        <div className="ord-hero-stat">
+                            <div className="ord-hero-stat-value">{stats.processing}</div>
+                            <div className="ord-hero-stat-label">Боловсруулагдаж буй</div>
                         </div>
-                        <div className="inv-stat-icon icon-primary">
-                            <Plus size={24} />
-                        </div>
-                    </div>
-                    <div className="inv-stat-card">
-                        <div className="inv-stat-content">
-                            <h4>Боловсруулагдаж буй</h4>
-                            <div className="inv-stat-value">{stats.processing}</div>
-                        </div>
-                        <div className="inv-stat-icon icon-red">
-                            <Loader2 size={24} />
-                        </div>
-                    </div>
-                    <div className="inv-stat-card">
-                        <div className="inv-stat-content">
-                            <h4>Хүргэгдсэн</h4>
-                            <div className="inv-stat-value">{stats.delivered}</div>
-                        </div>
-                        <div className="inv-stat-icon icon-primary">
-                            <CheckSquare size={24} />
+                        <div className="ord-hero-stat">
+                            <div className="ord-hero-stat-value">{stats.delivered}</div>
+                            <div className="ord-hero-stat-label">Хүргэгдсэн</div>
                         </div>
                     </div>
                 </div>
 
+                {/* ── Card Container (toolbar + content) ── */}
+                <div className="ord-card">
                 {/* Toolbar: Search + Filters */}
                 <div className="orders-toolbar animate-fade-in">
                     <div className="orders-search">
@@ -653,6 +630,7 @@ export function OrdersPage() {
                         </button>
                     </div>
                 )}
+                </div>{/* /ord-card */}
 
                 {/* Bulk Action Bar */}
                 {selectedOrderIds.size > 0 && (
