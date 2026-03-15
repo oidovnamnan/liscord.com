@@ -270,7 +270,6 @@ export function SuperAdminCategories() {
                             <th>ID Code</th>
                             <th>Нэр</th>
                             <th>Тайлбар</th>
-                            <th>Төлөв</th>
                             <th className="text-right">Үйлдэл</th>
                         </tr>
                     </thead>
@@ -291,11 +290,6 @@ export function SuperAdminCategories() {
                                 <td className="font-mono text-xs">{cat.id}</td>
                                 <td className="font-bold">{cat.label}</td>
                                 <td className="text-secondary">{cat.desc}</td>
-                                <td>
-                                    <span className={`badge ${cat.isActive ? 'badge-delivered' : 'badge-neutral'}`}>
-                                        {cat.isActive ? 'Идэвхтэй' : 'Идэвхгүй'}
-                                    </span>
-                                </td>
                                 <td>
                                     <div style={{ display: 'flex', gap: 2, justifyContent: 'flex-end', flexWrap: 'nowrap' }}>
                                         <label className="ios-switch" title={cat.isActive ? "Идэвхгүй болгох" : "Идэвхжүүлэх"}>
