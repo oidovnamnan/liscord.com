@@ -67,60 +67,44 @@ export function ProcurementPage() {
 
     return (
         <HubLayout hubId="inventory-hub">
-            <div className="inventory-page animate-fade-in">
-                <div className="page-hero" style={{ marginBottom: 8 }}>
-                    <div className="page-hero-left">
-                        <div className="page-hero-icon">
-                            <ShoppingCart size={24} />
+            <div style={{ padding: '24px clamp(16px, 3vw, 32px) 32px' }}>
+                {/* ── Premium Hero ── */}
+                <div className="inv-hero po-hero">
+                    <div className="inv-hero-top">
+                        <div className="inv-hero-left">
+                            <div className="inv-hero-icon"><ShoppingCart size={24} /></div>
+                            <div>
+                                <h2 className="inv-hero-title">Худалдан Авалт (PO)</h2>
+                                <div className="inv-hero-desc">Нийлүүлэгчид рүү илгээх худалдан авалтын захиалга</div>
+                            </div>
                         </div>
-                        <div>
-                            <h2 className="page-hero-title">Худалдан Авалт (PO)</h2>
-                            <p className="page-hero-subtitle">Нийлүүлэгчид рүү илгээх худалдан авалтын захиалга</p>
+                        <button className="inv-hero-btn" onClick={() => { setEditingItem(null); setShowModal(true); }}>
+                            <Plus size={16} />
+                            <span>Шинэ PO</span>
+                        </button>
+                    </div>
+                    <div className="inv-hero-stats">
+                        <div className="inv-hero-stat">
+                            <div className="inv-hero-stat-value">{orders.length}</div>
+                            <div className="inv-hero-stat-label">Нийт PO</div>
+                        </div>
+                        <div className="inv-hero-stat">
+                            <div className="inv-hero-stat-value">{countPending}</div>
+                            <div className="inv-hero-stat-label">Хүлээгдэж буй</div>
+                        </div>
+                        <div className="inv-hero-stat">
+                            <div className="inv-hero-stat-value">{countReceived}</div>
+                            <div className="inv-hero-stat-label">Хүлээн авсан</div>
+                        </div>
+                        <div className="inv-hero-stat">
+                            <div className="inv-hero-stat-value">{totalAmount > 0 ? (totalAmount / 1000000).toFixed(1) + 'M ₮' : '0 ₮'}</div>
+                            <div className="inv-hero-stat-label">Нийт Дүн</div>
                         </div>
                     </div>
-                    <button className="btn btn-primary btn-sm gradient-btn" onClick={() => { setEditingItem(null); setShowModal(true); }} style={{ gap: 6 }}>
-                        <Plus size={16} /> Шинэ PO
-                    </button>
                 </div>
 
-                <div className="inv-stats-grid" style={{ marginBottom: 24 }}>
-                    <div className="inv-stat-card">
-                        <div className="inv-stat-content">
-                            <h4>Нийт PO</h4>
-                            <div className="inv-stat-value">{orders.length}</div>
-                        </div>
-                        <div className="inv-stat-icon icon-primary">
-                            <ShoppingCart size={24} />
-                        </div>
-                    </div>
-                    <div className="inv-stat-card">
-                        <div className="inv-stat-content">
-                            <h4>Хүлээгдэж буй</h4>
-                            <div className="inv-stat-value">{countPending}</div>
-                        </div>
-                        <div className="inv-stat-icon icon-red">
-                            <Truck size={24} />
-                        </div>
-                    </div>
-                    <div className="inv-stat-card">
-                        <div className="inv-stat-content">
-                            <h4>Хүлээн авсан</h4>
-                            <div className="inv-stat-value">{countReceived}</div>
-                        </div>
-                        <div className="inv-stat-icon icon-green">
-                            <CheckCircle2 size={24} />
-                        </div>
-                    </div>
-                    <div className="inv-stat-card">
-                        <div className="inv-stat-content">
-                            <h4>Нийт Дүн</h4>
-                            <div className="inv-stat-value">{totalAmount > 0 ? (totalAmount / 1000000).toFixed(1) + 'M ₮' : '0 ₮'}</div>
-                        </div>
-                        <div className="inv-stat-icon icon-primary">
-                            <AlertCircle size={24} />
-                        </div>
-                    </div>
-                </div>
+                {/* ── Card Container (toolbar + table) ── */}
+                <div className="inv-page-card">
 
                 <div className="inv-toolbar">
                     <div className="inv-search-wrap">
@@ -178,6 +162,7 @@ export function ProcurementPage() {
                         </table>
                     )}
                 </div>
+                </div>{/* /inv-page-card */}
             </div>
 
             {showModal && (
