@@ -16,6 +16,7 @@ import { fmt } from '../../utils/format';
 import { getVisibleModules } from '../../utils/moduleUtils';
 import { MODULE_PERMISSIONS } from '../../config/modulePermissions';
 import './Dashboard.css';
+import '../SuperAdmin/SuperAdmin.css';
 
 const statusLabels: Record<string, { label: string; class: string }> = {
     new: { label: 'Шинэ', class: 'badge-new' },
@@ -330,7 +331,7 @@ export function DashboardPage() {
                         </div>
                     </div>
                 </div>
-                <div className="sa-hero-stats">
+                <div className="sa-hero-stats" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))' }}>
                     {hasModule('orders') && (
                         <div className="sa-hero-stat">
                             <div className="sa-hero-stat-value">₮{todayRevenue > 999999 ? `${(todayRevenue / 1000000).toFixed(1)}M` : todayRevenue > 999 ? `${(todayRevenue / 1000).toFixed(0)}K` : todayRevenue.toLocaleString()}</div>
