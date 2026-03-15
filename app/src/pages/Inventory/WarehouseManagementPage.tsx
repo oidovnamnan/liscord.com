@@ -51,62 +51,43 @@ export function WarehouseManagementPage() {
 
     return (
         <HubLayout hubId="inventory-hub">
-            <div className="inventory-page animate-fade-in">
-                <div className="page-hero" style={{ marginBottom: 8 }}>
-                    <div className="page-hero-left">
-                        <div className="page-hero-icon">
-                            <Warehouse size={24} />
+            <div style={{ padding: '24px clamp(16px, 3vw, 32px) 32px' }}>
+                {/* ── Premium Hero ── */}
+                <div className="inv-hero wms-hero">
+                    <div className="inv-hero-top">
+                        <div className="inv-hero-left">
+                            <div className="inv-hero-icon"><Warehouse size={24} /></div>
+                            <div>
+                                <h2 className="inv-hero-title">Агуулахын Удирдлага</h2>
+                                <div className="inv-hero-desc">Бараа материалын байршил, хөдөлгөөн хянах</div>
+                            </div>
                         </div>
-                        <div>
-                            <h2 className="page-hero-title">Агуулахын Удирдлага</h2>
-                            <p className="page-hero-subtitle">Бараа материалын байршил, хөдөлгөөн хянах</p>
-                        </div>
+                        <button className="inv-hero-btn" onClick={() => { setEditingItem(null); setShowModal(true); }}>
+                            + Үйлдэл
+                        </button>
                     </div>
-                    <button className="btn btn-primary btn-sm gradient-btn" onClick={() => { setEditingItem(null); setShowModal(true); }} style={{ gap: 6 }}>
-                        + Үйлдэл
-                    </button>
-                </div>
-
-                {/* Stats Grid */}
-                <div className="inv-stats-grid" style={{ marginBottom: 24 }}>
-                    <div className="inv-stat-card">
-                        <div className="inv-stat-content">
-                            <h4>Нийт үйлдэл</h4>
-                            <div className="inv-stat-value">{items.length}</div>
+                    <div className="inv-hero-stats">
+                        <div className="inv-hero-stat">
+                            <div className="inv-hero-stat-value">{items.length}</div>
+                            <div className="inv-hero-stat-label">Нийт үйлдэл</div>
                         </div>
-                        <div className="inv-stat-icon icon-primary">
-                            <ClipboardList size={24} />
+                        <div className="inv-hero-stat">
+                            <div className="inv-hero-stat-value">{uniqueLocations}</div>
+                            <div className="inv-hero-stat-label">Байршил</div>
                         </div>
-                    </div>
-                    <div className="inv-stat-card">
-                        <div className="inv-stat-content">
-                            <h4>Байршил</h4>
-                            <div className="inv-stat-value">{uniqueLocations}</div>
+                        <div className="inv-hero-stat">
+                            <div className="inv-hero-stat-value">{uniqueProducts}</div>
+                            <div className="inv-hero-stat-label">Бараа төрөл</div>
                         </div>
-                        <div className="inv-stat-icon icon-green">
-                            <MapPin size={24} />
-                        </div>
-                    </div>
-                    <div className="inv-stat-card">
-                        <div className="inv-stat-content">
-                            <h4>Бараа төрөл</h4>
-                            <div className="inv-stat-value">{uniqueProducts}</div>
-                        </div>
-                        <div className="inv-stat-icon icon-red">
-                            <Layers size={24} />
-                        </div>
-                    </div>
-                    <div className="inv-stat-card">
-                        <div className="inv-stat-content">
-                            <h4>Нийт тоо</h4>
-                            <div className="inv-stat-value">{totalQty}</div>
-                        </div>
-                        <div className="inv-stat-icon icon-orange">
-                            <ArrowLeftRight size={24} />
+                        <div className="inv-hero-stat">
+                            <div className="inv-hero-stat-value">{totalQty}</div>
+                            <div className="inv-hero-stat-label">Нийт тоо</div>
                         </div>
                     </div>
                 </div>
 
+                {/* ── Card: Table ── */}
+                <div className="inv-page-card">
                 <div className="card" style={{ padding: 0 }}>
                     {loading ? <div style={{ padding: 48, textAlign: 'center', color: 'var(--text-muted)' }}>Ачаалж байна...</div> : (
                         <table className="table"><thead><tr><th>Байршил</th><th>Бараа</th><th>Тоо</th><th>Бүс</th><th>Үйлдэл</th><th>Огноо</th></tr></thead>
@@ -114,6 +95,7 @@ export function WarehouseManagementPage() {
                                 items.map(i => (<tr key={i.id} style={{ cursor: 'pointer' }} onClick={() => { setEditingItem(i); setShowModal(true); }}><td style={{ fontWeight: 600, fontFamily: 'monospace' }}>{i.location}</td><td>{i.productName}</td><td>{i.quantity}</td><td><span className="badge">{i.zone || '-'}</span></td><td>{i.type || '-'}</td><td>{i.date || '-'}</td></tr>))}
                             </tbody></table>)}
                 </div>
+                </div>{/* /inv-page-card */}
             </div>
             {showModal && <GenericCrudModal title="Агуулах үйлдэл" icon={<Warehouse size={20} />} collectionPath="businesses/{bizId}/warehouseOps" fields={WMS_FIELDS} editingItem={editingItem} onClose={() => setShowModal(false)} />}
         </HubLayout>
