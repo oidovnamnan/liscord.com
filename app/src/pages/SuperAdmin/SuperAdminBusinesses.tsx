@@ -300,31 +300,27 @@ export function SuperAdminBusinesses() {
                                         </div>
                                     </td>
                                     <td>
-                                        <div className="flex items-center gap-2">
-                                            <label className="ios-switch" title={biz.isDisabled ? 'Нээх' : 'Хаах'}>
-                                                <input
-                                                    type="checkbox"
-                                                    checked={!biz.isDisabled}
-                                                    onChange={() => handleToggleStatus(biz)}
-                                                />
-                                                <span className="ios-slider"></span>
-                                            </label>
-                                            <span className={`text-[10px] font-heavy uppercase ${biz.isDisabled ? 'text-danger' : 'text-success'}`}>
-                                                {biz.isDisabled ? 'Disabled' : 'Active'}
-                                            </span>
-                                        </div>
+                                        <label className="ios-switch" title={biz.isDisabled ? 'Нээх' : 'Хаах'}>
+                                            <input
+                                                type="checkbox"
+                                                checked={!biz.isDisabled}
+                                                onChange={() => handleToggleStatus(biz)}
+                                            />
+                                            <span className="ios-slider"></span>
+                                        </label>
                                     </td>
                                     <td>
-                                        <div className="row-actions justify-end">
+                                        <div style={{ display: 'flex', gap: 2, justifyContent: 'flex-end', flexWrap: 'nowrap' }}>
                                             <button
                                                 className="btn-icon"
                                                 title="Нэвтэрч орох"
                                                 onClick={() => handleImpersonateClick(biz)}
+                                                style={{ width: 32, height: 32, minWidth: 32 }}
                                             >
-                                                <Lock size={16} />
+                                                <Lock size={14} />
                                             </button>
-                                            <button className="btn-icon">
-                                                <MoreVertical size={16} />
+                                            <button className="btn-icon" style={{ width: 32, height: 32, minWidth: 32 }}>
+                                                <MoreVertical size={14} />
                                             </button>
                                         </div>
                                     </td>
