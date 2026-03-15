@@ -270,6 +270,7 @@ export function SuperAdminCategories() {
                             <th>ID Code</th>
                             <th>Нэр</th>
                             <th>Тайлбар</th>
+                            <th>Төлөв</th>
                             <th className="text-right">Үйлдэл</th>
                         </tr>
                     </thead>
@@ -291,15 +292,17 @@ export function SuperAdminCategories() {
                                 <td className="font-bold">{cat.label}</td>
                                 <td className="text-secondary">{cat.desc}</td>
                                 <td>
+                                    <label className="ios-switch" title={cat.isActive ? "Идэвхгүй болгох" : "Идэвхжүүлэх"}>
+                                        <input
+                                            type="checkbox"
+                                            checked={cat.isActive}
+                                            onChange={() => handleToggleActive(cat)}
+                                        />
+                                        <span className="ios-slider"></span>
+                                    </label>
+                                </td>
+                                <td>
                                     <div style={{ display: 'flex', gap: 2, justifyContent: 'flex-end', flexWrap: 'nowrap' }}>
-                                        <label className="ios-switch" title={cat.isActive ? "Идэвхгүй болгох" : "Идэвхжүүлэх"}>
-                                            <input
-                                                type="checkbox"
-                                                checked={cat.isActive}
-                                                onChange={() => handleToggleActive(cat)}
-                                            />
-                                            <span className="ios-slider"></span>
-                                        </label>
                                         <button className="btn-icon" onClick={() => handleOpenModal(cat)} style={{ width: 32, height: 32, minWidth: 32 }}>
                                             <Edit2 size={14} />
                                         </button>
