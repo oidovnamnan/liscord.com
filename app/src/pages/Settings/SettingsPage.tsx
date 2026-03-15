@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 
 import { Building2, Palette, Bell, Shield, Users, Globe, Loader2, Share2, X, CheckSquare, ListOrdered, ShoppingBag, CreditCard, Sun, Moon, Monitor, CheckCircle2, Smartphone, ArrowLeft, Settings as SettingsIcon, GripVertical, ArrowUp, ArrowDown } from 'lucide-react';
-import { useBusinessStore, useUIStore } from '../../store';
+import { useBusinessStore, useUIStore, useModuleDefaultsStore } from '../../store';
 import { businessService, businessRequestService, moduleSettingsService, systemSettingsService } from '../../services/db';
 import { teamService } from '../../services/db';
 import { eventBus, EVENTS } from '../../services/eventBus';
@@ -952,8 +952,7 @@ function ModuleOrderTab() {
     const [empPerms, setEmpPerms] = useState<string[]>([]);
     const [moduleOrder, setModuleOrder] = useState<string[]>([]);
     const [saving, setSaving] = useState(false);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const [moduleDefaults, setModuleDefaults] = useState<any>({});
+    const { defaults: moduleDefaults, fetchDefaults } = useModuleDefaultsStore();
 
     // Load employees using teamService
     useEffect(() => {
@@ -984,10 +983,10 @@ function ModuleOrderTab() {
         fetchPerms();
     }, [selectedEmp?.id, selectedEmp?.positionId, business?.id]);
 
-    // Load module defaults (same as sidebar)
+    // Load module defaults (from shared store)
     useEffect(() => {
-        systemSettingsService.getModuleDefaults().then(setModuleDefaults).catch(() => {});
-    }, []);
+        fetchDefaults();
+    }, [fetchDefaults]);
 
     // Use SAME logic as sidebar: getVisibleModules
     const allModules = useMemo(() => {

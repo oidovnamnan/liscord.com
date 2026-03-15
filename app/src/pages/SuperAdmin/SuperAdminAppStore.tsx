@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import { LISCORD_MODULES } from '../../config/modules';
 import { systemSettingsService } from '../../services/db';
+import { useModuleDefaultsStore } from '../../store';
 import * as Icons from 'lucide-react';
 import type { AppModule } from '../../types';
 import { SecurityModal } from '../../components/common/SecurityModal';
@@ -15,11 +16,10 @@ export function SuperAdminAppStore() {
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [showSecurityModal, setShowSecurityModal] = useState(false);
-    const [moduleDefaults, setModuleDefaults] = useState<Record<string, Record<string, string>>>({});
-    const [searchTerm, setSearchTerm] = useState('');
-    const [filter, setFilter] = useState<'all' | 'free' | 'paid'>('all');
+    const { defaults: moduleDefaults, fetchDefaults } = useModuleDefaultsStore();
 
     useEffect(() => {
+        fetchDefaults();
         const fetchConfig = async () => {
             try {
                 const config = await systemSettingsService.getAppStoreConfig();
@@ -38,17 +38,11 @@ export function SuperAdminAppStore() {
                 setLoading(false);
             }
         };
-        const fetchDefaults = async () => {
-            try {
-                const data = await systemSettingsService.getModuleDefaults();
-                setModuleDefaults(data);
-            } catch (e) {
-                console.error('Failed to fetch module defaults:', e);
-            }
-        };
         fetchConfig();
-        fetchDefaults();
-    }, []);
+    }, [fetchDefaults]);
+
+    const [searchTerm, setSearchTerm] = useState('');
+    const [filter, setFilter] = useState<'all' | 'free' | 'paid'>('all');
 
     const handleToggleFree = (id: string) => {
         setModules((prev: AppModule[]) => prev.map((mod: AppModule) => {

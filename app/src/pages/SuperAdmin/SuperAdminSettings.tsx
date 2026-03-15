@@ -3,7 +3,7 @@ import { Loader2, Sparkles } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import { systemSettingsService } from '../../services/db';
-import { useSystemCategoriesStore } from '../../store';
+import { useSystemCategoriesStore, useModuleDefaultsStore } from '../../store';
 import { LISCORD_MODULES } from '../../config/modules';
 import { getModuleRelevance, RELEVANCE_ORDER, RELEVANCE_META, type RelevanceLevel } from '../../config/moduleRelevance';
 import * as Icons from 'lucide-react';
@@ -28,6 +28,7 @@ export function SuperAdminSettings() {
     const [localCategories, setLocalCategories] = useState<BusinessCategoryConfig[]>([]);
     const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
     const [selectedModuleIds, setSelectedModuleIds] = useState<string[]>([]);
+    const { defaults: moduleDefaultsCache, fetchDefaults: fetchModuleDefaultsCache, refresh: refreshModuleDefaultsCache } = useModuleDefaultsStore();
 
     useEffect(() => {
         const init = async () => {
@@ -37,6 +38,7 @@ export function SuperAdminSettings() {
                     fetchCategories()
                 ]);
                 setDefaults(data);
+                fetchModuleDefaultsCache();
             } catch (error) {
                 console.error('Failed to fetch module settings:', error);
                 toast.error('Тохиргоо татахад алдаа гарлаа');
@@ -45,7 +47,7 @@ export function SuperAdminSettings() {
             }
         };
         init();
-    }, [fetchCategories]);
+    }, [fetchCategories, fetchModuleDefaultsCache]);
 
     useEffect(() => {
         if (categories.length > 0 && !hasUnsavedChanges) {
@@ -146,6 +148,7 @@ export function SuperAdminSettings() {
             await batch.commit();
             setHasUnsavedChanges(false);
             await refresh();
+            await refreshModuleDefaultsCache();
             toast.success('Бүх тохиргоо амжилттай хадгалагдлаа');
         } catch (error) {
             console.error('Failed to save settings:', error);

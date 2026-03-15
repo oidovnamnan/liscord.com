@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useBusinessStore } from '../../store';
+import { useBusinessStore, useModuleDefaultsStore } from '../../store';
 import { businessService, systemSettingsService } from '../../services/db';
 import { toast } from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
@@ -54,18 +54,15 @@ export function AppStorePage() {
     const [installingId, setInstallingId] = useState<string | null>(null);
     const [installProgress, setInstallProgress] = useState(0);
 
-    const [moduleDefaults, setModuleDefaults] = useState<Record<string, Record<string, string>>>({});
+    const { defaults: moduleDefaults, fetchDefaults } = useModuleDefaultsStore();
 
     const [appStoreConfig, setAppStoreConfig] = useState<Record<string, { isFree: boolean; plans: any[] }>>({}); // eslint-disable-line @typescript-eslint/no-explicit-any
 
     useEffect(() => {
-        const fetchData = async () => {
+        fetchDefaults();
+        const fetchConfig = async () => {
             try {
-                const [defaults, config] = await Promise.all([
-                    systemSettingsService.getModuleDefaults(),
-                    systemSettingsService.getAppStoreConfig()
-                ]);
-                setModuleDefaults(defaults);
+                const config = await systemSettingsService.getAppStoreConfig();
                 setAppStoreConfig(config);
             } catch (e) {
                 console.error('Fetch data error:', e);
@@ -73,8 +70,8 @@ export function AppStorePage() {
                 setInitialLoading(false);
             }
         };
-        fetchData();
-    }, []);
+        fetchConfig();
+    }, [fetchDefaults]);
 
     const activeMods = business?.activeModules || [];
     const installedThemes = business?.settings?.storefront?.installedThemes || ['minimal'];

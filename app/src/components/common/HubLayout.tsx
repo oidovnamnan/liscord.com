@@ -1,11 +1,10 @@
 import { NavLink, useLocation } from 'react-router-dom';
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import * as Icons from 'lucide-react';
 import { LISCORD_MODULES } from '../../config/modules';
 import { isModuleAccessible } from '../../utils/moduleUtils';
 import './HubLayout.css';
-import { useBusinessStore } from '../../store';
-import { systemSettingsService } from '../../services/db';
+import { useBusinessStore, useModuleDefaultsStore } from '../../store';
 
 interface HubLayoutProps {
     hubId: string;
@@ -15,11 +14,11 @@ interface HubLayoutProps {
 export function HubLayout({ hubId, children }: HubLayoutProps) {
     const location = useLocation();
     const { business } = useBusinessStore();
-    const [moduleDefaults, setModuleDefaults] = useState<Record<string, Record<string, string>>>({});
+    const { defaults: moduleDefaults, fetchDefaults } = useModuleDefaultsStore();
 
     useEffect(() => {
-        systemSettingsService.getModuleDefaults().then(setModuleDefaults).catch(console.error);
-    }, []);
+        fetchDefaults();
+    }, [fetchDefaults]);
 
     // Find all modules belonging to this hub that are accessible
     // (includes activeModules AND category-core modules from SuperAdmin)

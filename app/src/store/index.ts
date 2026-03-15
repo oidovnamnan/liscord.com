@@ -164,3 +164,45 @@ export const useSystemCategoriesStore = create<SystemCategoriesState>((set, get)
         await get().fetchCategories();
     }
 } as SystemCategoriesState));
+
+// ============ MODULE DEFAULTS STORE ============
+// Caches system_settings/modules so we don't fetch it N times per navigation.
+// Previously fetched in 9 places: ModuleGuard, Sidebar, HubLayout, Dashboard,
+// AppStore, Settings, SuperAdmin×2, and businessService.createBusiness.
+import { systemSettingsService } from '../services/db';
+
+interface ModuleDefaultsState {
+    defaults: Record<string, Record<string, 'core' | 'addon'>>;
+    loading: boolean;
+    fetched: boolean;
+    fetchDefaults: () => Promise<void>;
+    refresh: () => Promise<void>;
+}
+
+export const useModuleDefaultsStore = create<ModuleDefaultsState>((set, get) => ({
+    defaults: {},
+    loading: false,
+    fetched: false,
+    fetchDefaults: async () => {
+        if (get().fetched || get().loading) return;
+        set({ loading: true });
+        try {
+            const data = await systemSettingsService.getModuleDefaults();
+            set({ defaults: data, fetched: true });
+        } catch (error) {
+            console.error('Failed to fetch module defaults:', error);
+            set({ fetched: true }); // Mark as fetched to unblock UI
+        } finally {
+            set({ loading: false });
+        }
+    },
+    refresh: async () => {
+        set({ fetched: false, loading: false });
+        try {
+            const data = await systemSettingsService.getModuleDefaults();
+            set({ defaults: data, fetched: true });
+        } catch (error) {
+            console.error('Failed to refresh module defaults:', error);
+        }
+    }
+}));

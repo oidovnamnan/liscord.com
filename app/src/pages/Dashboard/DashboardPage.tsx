@@ -4,8 +4,8 @@ import {
     Truck as TruckIcon, AlertTriangle, Users, FileText, TrendingDown,
     Clock, CreditCard, Radio, Wifi, Activity, Eye, Sparkles, LayoutDashboard
 } from 'lucide-react';
-import { useBusinessStore, useAuthStore } from '../../store';
-import { dashboardService, systemSettingsService } from '../../services/db';
+import { useBusinessStore, useAuthStore, useModuleDefaultsStore } from '../../store';
+import { dashboardService } from '../../services/db';
 import { auditService } from '../../services/audit';
 import { collection, query, where, getDocs, orderBy, limit, Timestamp, onSnapshot } from 'firebase/firestore';
 import { db } from '../../services/firebase';
@@ -79,13 +79,12 @@ export function DashboardPage() {
     const [ordersByStatus, setOrdersByStatus] = useState<Record<string, number>>({});
     const [onlineEmployees, setOnlineEmployees] = useState<{ id: string; name: string; position?: string }[]>([]);
     const [visitorCount, setVisitorCount] = useState(0);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const [moduleDefaults, setModuleDefaults] = useState<any>({});
+    const { defaults: moduleDefaults, fetchDefaults } = useModuleDefaultsStore();
 
     // Fetch module defaults for permission filtering
     useEffect(() => {
-        systemSettingsService.getModuleDefaults().then(setModuleDefaults).catch(() => {});
-    }, []);
+        fetchDefaults();
+    }, [fetchDefaults]);
 
     // Permission-based module visibility — same logic as Sidebar
     const isOwner = !isImpersonating && (user?.uid === business?.ownerId || employee?.role === 'owner');

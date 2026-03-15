@@ -12,10 +12,10 @@ import {
     CornerDownLeft,
     Shield,
 } from 'lucide-react';
-import { useUIStore, useBusinessStore, useAuthStore } from '../../store';
+import { useUIStore, useBusinessStore, useAuthStore, useModuleDefaultsStore } from '../../store';
 import { doc, updateDoc, collection, query, where, limit, onSnapshot } from 'firebase/firestore';
 import { db } from '../../services/firebase';
-import { businessService, systemSettingsService } from '../../services/db';
+import { businessService } from '../../services/db';
 import { toast } from 'react-hot-toast';
 import * as Icons from 'lucide-react';
 import { getVisibleModules } from '../../utils/moduleUtils';
@@ -100,11 +100,11 @@ export function Sidebar() {
         if (!user || !business) return;
         try {
             const isOwner = user.uid === business.ownerId || employee?.role === 'owner';
-            console.log('[Sidebar] loadSwitchableEmployees', { isOwner, userId: user.uid, ownerId: business.ownerId, employeeId: employee?.id });
+
             if (isOwner) {
                 // Owner: load ALL non-deleted employees
                 const allEmps = await businessService.getAllEmployees(business.id);
-                console.log('[Sidebar] allEmps loaded:', allEmps.length);
+
                 const currentEmpId = employee?.id;
                 setLinkedEmployees(currentEmpId ? allEmps.filter(e => e.id !== currentEmpId) : allEmps);
             } else if (employee?.linkedEmployeeIds?.length) {
@@ -185,19 +185,11 @@ export function Sidebar() {
         toast.success('Өөрийн эрх рүү буцлаа');
     };
 
-    const [moduleDefaults, setModuleDefaults] = useState<Record<string, Record<string, string>>>({});
+    const { defaults: moduleDefaults, fetchDefaults } = useModuleDefaultsStore();
 
     useEffect(() => {
-        const fetchDefaults = async () => {
-            try {
-                const data = await systemSettingsService.getModuleDefaults();
-                setModuleDefaults(data);
-            } catch (e) {
-                console.error('Failed to fetch module defaults:', e);
-            }
-        };
         fetchDefaults();
-    }, []);
+    }, [fetchDefaults]);
 
     // Auto-generate module → permission prefix map from MODULE_PERMISSIONS
     // Each module's permissions share the same prefix (e.g. 'sourcing.view' → prefix 'sourcing.')
@@ -230,13 +222,7 @@ export function Sidebar() {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const empPerms: string[] = (employee as any)?.permissions || [];
         
-        console.log('[Sidebar] permission filter', {
-            isOwner,
-            isImpersonating,
-            employeeName: employee?.name,
-            permCount: empPerms.length,
-            permissions: empPerms,
-        });
+
 
         // Non-owner employees: filter by permissions
         if (!isOwner && employee) {
@@ -247,7 +233,7 @@ export function Sidebar() {
                 // Check if employee has ANY permission matching this module's prefixes
                 return prefixes.some(prefix => empPerms.some(p => p.startsWith(prefix)));
             });
-            console.log('[Sidebar] filtered to', items.length, 'modules:', items.map(m => m.id));
+
         }
 
         return items;
