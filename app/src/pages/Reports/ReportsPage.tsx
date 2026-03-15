@@ -1,9 +1,9 @@
 import { useEffect, useState, useMemo } from 'react';
-import { DollarSign, ShoppingCart, TrendingUp, BarChart3 } from 'lucide-react';
+import { BarChart3 } from 'lucide-react';
 import { useBusinessStore } from '../../store';
 import { orderService } from '../../services/db';
 import type { Order } from '../../types';
-import '../Inventory/InventoryPage.css';
+
 import './ReportsPage.css';
 
 function fmt(n: number) { return '₮' + n.toLocaleString('mn-MN'); }
@@ -101,22 +101,17 @@ export function ReportsPage() {
     const maxRevenue = Math.max(...dailyData.map(d => d.revenue), 100000);
 
     return (
-        <>
-            <div className="inventory-page animate-fade-in">
-                <div className="page-hero" style={{ marginBottom: 8 }}>
-                    <div className="page-hero-left">
-                        <div className="page-hero-icon">
-                            <BarChart3 size={24} />
-                        </div>
+        <div className="membership-page animate-fade-in">
+            {/* ── Premium BI Hero ── */}
+            <div className="bi-hero">
+                <div className="bi-hero-top">
+                    <div className="bi-hero-left">
+                        <div className="bi-hero-icon"><BarChart3 size={24} /></div>
                         <div>
-                            <h2 className="page-hero-title">Бизнес Анализ</h2>
-                            <p className="page-hero-subtitle">Таны бизнесийн гүйцэтгэлийг нэг дороос</p>
+                            <h2 className="bi-hero-title">Бизнес Анализ</h2>
+                            <div className="bi-hero-desc">Таны бизнесийн гүйцэтгэлийг нэг дороос</div>
                         </div>
                     </div>
-                </div>
-
-                {/* Modern Period Switcher */}
-                <div style={{ display: 'flex', justifyContent: 'center' }}>
                     <div className="report-period-bar">
                         {[
                             { key: '7d', label: '7 хоног' },
@@ -134,122 +129,101 @@ export function ReportsPage() {
                         ))}
                     </div>
                 </div>
-
-                {/* Premium Stat Cards */}
-                <div className="inv-stats-grid" style={{ marginTop: 0, marginBottom: 16 }}>
-                    <div className="inv-stat-card">
-                        <div className="inv-stat-content">
-                            <h4>Нийт орлого</h4>
-                            <div className="inv-stat-value">{fmt(totalRevenue)}</div>
-                        </div>
-                        <div className="inv-stat-icon icon-primary">
-                            <DollarSign size={24} />
-                        </div>
+                <div className="bi-hero-stats">
+                    <div className="bi-hero-stat">
+                        <div className="bi-hero-stat-value">{fmt(totalRevenue)}</div>
+                        <div className="bi-hero-stat-label">Нийт орлого</div>
                     </div>
-                    <div className="inv-stat-card">
-                        <div className="inv-stat-content">
-                            <h4>Нийт захиалга</h4>
-                            <div className="inv-stat-value">{totalOrders}</div>
-                        </div>
-                        <div className="inv-stat-icon icon-green">
-                            <ShoppingCart size={24} />
-                        </div>
+                    <div className="bi-hero-stat">
+                        <div className="bi-hero-stat-value">{totalOrders}</div>
+                        <div className="bi-hero-stat-label">Нийт захиалга</div>
                     </div>
-                    <div className="inv-stat-card">
-                        <div className="inv-stat-content">
-                            <h4>Цэвэр ашиг (тооцоолсон)</h4>
-                            <div className="inv-stat-value">{fmt(totalRevenue * 0.85)}</div>
-                        </div>
-                        <div className="inv-stat-icon icon-orange">
-                            <TrendingUp size={24} />
-                        </div>
+                    <div className="bi-hero-stat">
+                        <div className="bi-hero-stat-value">{fmt(totalRevenue * 0.85)}</div>
+                        <div className="bi-hero-stat-label">Цэвэр ашиг</div>
                     </div>
-                    <div className="inv-stat-card">
-                        <div className="inv-stat-content">
-                            <h4>Дундаж сагс</h4>
-                            <div className="inv-stat-value">{fmt(avgOrderValue)}</div>
-                        </div>
-                        <div className="inv-stat-icon icon-red">
-                            <BarChart3 size={24} />
-                        </div>
-                    </div>
-                </div>
-
-                {/* Enhanced Chart */}
-                <div className="card" style={{ marginBottom: 'var(--space-2xl)', padding: 'var(--space-xl)', background: 'var(--surface-1)' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-xl)' }}>
-                        <h3 style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                            <div style={{ width: 12, height: 12, borderRadius: 3, background: 'var(--primary)' }} />
-                            Өдрийн орлогын тренд
-                        </h3>
-                        <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Гүйлгээний дүнгээр</div>
-                    </div>
-
-                    <div className="report-chart">
-                        {dailyData.map((d, i) => {
-                            const height = (d.revenue / (maxRevenue || 1)) * 200;
-                            return (
-                                <div key={i} className="report-chart-bar-wrap">
-                                    <div className="report-chart-value">{fmt(d.revenue)}</div>
-                                    <div className="report-chart-bar" style={{ height: `${Math.max(height, 4)}px` }} />
-                                    <span className="report-chart-label">{d.date}</span>
-                                </div>
-                            );
-                        })}
-                    </div>
-                </div>
-
-                <div className="grid-2">
-                    {/* Top Products */}
-                    <div className="card" style={{ padding: 'var(--space-xl)' }}>
-                        <h3 style={{ marginBottom: 'var(--space-xl)', display: 'flex', alignItems: 'center', gap: 10 }}>
-                            <span style={{ fontSize: '1.2rem' }}>🏆</span> Шилдэг борлуулалттай бараа
-                        </h3>
-                        <div className="report-ranking">
-                            {topProducts.length === 0 ? (
-                                <div style={{ textAlign: 'center', padding: 'var(--space-2xl)', opacity: 0.5 }}>Мэдээлэл одоогоор алга</div>
-                            ) : topProducts.map((p, i) => (
-                                <div key={i} className="report-rank-item">
-                                    <div className={`report-rank-num report-rank-num-${i + 1}`}>{i + 1}</div>
-                                    <div className="report-rank-info">
-                                        <span className="report-rank-name">{p.name}</span>
-                                        <span className="report-rank-detail">{p.sold} ширхэг борлуулагдсан</span>
-                                    </div>
-                                    <div style={{ textAlign: 'right' }}>
-                                        <div className="report-rank-value">{fmt(p.revenue)}</div>
-                                        <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Нийт дүн</div>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-
-                    {/* Top Customers */}
-                    <div className="card" style={{ padding: 'var(--space-xl)' }}>
-                        <h3 style={{ marginBottom: 'var(--space-xl)', display: 'flex', alignItems: 'center', gap: 10 }}>
-                            <span style={{ fontSize: '1.2rem' }}>👑</span> Үнэнч хэрэглэгчид
-                        </h3>
-                        <div className="report-ranking">
-                            {topCustomers.length === 0 ? (
-                                <div style={{ textAlign: 'center', padding: 'var(--space-2xl)', opacity: 0.5 }}>Мэдээлэл одоогоор алга</div>
-                            ) : topCustomers.map((c, i) => (
-                                <div key={i} className="report-rank-item">
-                                    <div className={`report-rank-num report-rank-num-${i + 1}`}>{i + 1}</div>
-                                    <div className="report-rank-info">
-                                        <span className="report-rank-name">{c.name}</span>
-                                        <span className="report-rank-detail">{c.orders} удаа худалдан авалт хийсэн</span>
-                                    </div>
-                                    <div style={{ textAlign: 'right' }}>
-                                        <div className="report-rank-value">{fmt(c.spent)}</div>
-                                        <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Нийт зарцуулалт</div>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
+                    <div className="bi-hero-stat">
+                        <div className="bi-hero-stat-value">{fmt(avgOrderValue)}</div>
+                        <div className="bi-hero-stat-label">Дундаж сагс</div>
                     </div>
                 </div>
             </div>
-        </>
+
+            {/* ── Chart Card ── */}
+            <div className="bi-card">
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-xl)' }}>
+                    <h3 style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                        <div style={{ width: 12, height: 12, borderRadius: 3, background: 'var(--primary)' }} />
+                        Өдрийн орлогын тренд
+                    </h3>
+                    <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Гүйлгээний дүнгээр</div>
+                </div>
+
+                <div className="report-chart">
+                    {dailyData.map((d, i) => {
+                        const height = (d.revenue / (maxRevenue || 1)) * 200;
+                        return (
+                            <div key={i} className="report-chart-bar-wrap">
+                                <div className="report-chart-value">{fmt(d.revenue)}</div>
+                                <div className="report-chart-bar" style={{ height: `${Math.max(height, 4)}px` }} />
+                                <span className="report-chart-label">{d.date}</span>
+                            </div>
+                        );
+                    })}
+                </div>
+            </div>
+
+            {/* ── Rankings Cards ── */}
+            <div className="grid-2">
+                {/* Top Products */}
+                <div className="bi-card">
+                    <h3 style={{ marginBottom: 'var(--space-xl)', display: 'flex', alignItems: 'center', gap: 10 }}>
+                        <span style={{ fontSize: '1.2rem' }}>🏆</span> Шилдэг борлуулалттай бараа
+                    </h3>
+                    <div className="report-ranking">
+                        {topProducts.length === 0 ? (
+                            <div style={{ textAlign: 'center', padding: 'var(--space-2xl)', opacity: 0.5 }}>Мэдээлэл одоогоор алга</div>
+                        ) : topProducts.map((p, i) => (
+                            <div key={i} className="report-rank-item">
+                                <div className={`report-rank-num report-rank-num-${i + 1}`}>{i + 1}</div>
+                                <div className="report-rank-info">
+                                    <span className="report-rank-name">{p.name}</span>
+                                    <span className="report-rank-detail">{p.sold} ширхэг борлуулагдсан</span>
+                                </div>
+                                <div style={{ textAlign: 'right' }}>
+                                    <div className="report-rank-value">{fmt(p.revenue)}</div>
+                                    <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Нийт дүн</div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+
+                {/* Top Customers */}
+                <div className="bi-card">
+                    <h3 style={{ marginBottom: 'var(--space-xl)', display: 'flex', alignItems: 'center', gap: 10 }}>
+                        <span style={{ fontSize: '1.2rem' }}>👑</span> Үнэнч хэрэглэгчид
+                    </h3>
+                    <div className="report-ranking">
+                        {topCustomers.length === 0 ? (
+                            <div style={{ textAlign: 'center', padding: 'var(--space-2xl)', opacity: 0.5 }}>Мэдээлэл одоогоор алга</div>
+                        ) : topCustomers.map((c, i) => (
+                            <div key={i} className="report-rank-item">
+                                <div className={`report-rank-num report-rank-num-${i + 1}`}>{i + 1}</div>
+                                <div className="report-rank-info">
+                                    <span className="report-rank-name">{c.name}</span>
+                                    <span className="report-rank-detail">{c.orders} удаа худалдан авалт хийсэн</span>
+                                </div>
+                                <div style={{ textAlign: 'right' }}>
+                                    <div className="report-rank-value">{fmt(c.spent)}</div>
+                                    <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Нийт зарцуулалт</div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </div>
+        </div>
     );
 }
 
