@@ -3,8 +3,10 @@ import { Sparkles, Brain, Zap, BarChart3, Bot, ChevronDown, AlertTriangle, Send,
 import { useAuthStore, useBusinessStore } from '../../store';
 import { globalSettingsService } from '../../services/adminService';
 import { sendChatMessage, type ChatMessage, type BusinessContext } from '../../services/ai/aiChatService';
-import { productService, customerService } from '../../services/db';
+import { productService, customerService, teamService } from '../../services/db';
 import { orderService } from '../../services/db';
+import { collection, onSnapshot, Timestamp } from 'firebase/firestore';
+import { db } from '../../services/firebase';
 import type { Product, Order, Customer } from '../../types';
 import toast from 'react-hot-toast';
 import './AIAgentPage.css';
@@ -51,6 +53,8 @@ export const AIAgentPage: React.FC = () => {
     const [geminiApiKey, setGeminiApiKey] = useState('');
     const [bizContext, setBizContext] = useState<BusinessContext>({});
     const [dataLoaded, setDataLoaded] = useState(false);
+    const [vipCount, setVipCount] = useState(0);
+    const [employeeCount, setEmployeeCount] = useState(0);
     const [messages, setMessages] = useState<Message[]>([
         {
             id: '1',
@@ -149,6 +153,33 @@ export const AIAgentPage: React.FC = () => {
         return () => { unsub1(); unsub2(); unsub3(); };
     }, [business?.id, business?.name]);
 
+    // Load VIP memberships count
+    useEffect(() => {
+        if (!business?.id) return;
+        const unsub = onSnapshot(
+            collection(db, 'businesses', business.id, 'memberships'),
+            (snap) => {
+                const now = new Date();
+                const active = snap.docs.filter(d => {
+                    const data = d.data();
+                    const expiresAt = data.expiresAt instanceof Timestamp ? data.expiresAt.toDate() : new Date(data.expiresAt);
+                    return expiresAt >= now;
+                });
+                setVipCount(active.length);
+            }
+        );
+        return () => unsub();
+    }, [business?.id]);
+
+    // Load employees count
+    useEffect(() => {
+        if (!business?.id) return;
+        const unsub = teamService.subscribeEmployees(business.id, (employees) => {
+            setEmployeeCount(employees.filter(e => !e.isDeleted).length);
+        });
+        return () => unsub();
+    }, [business?.id]);
+
     const scrollToBottom = () => {
         chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     };
@@ -244,6 +275,14 @@ export const AIAgentPage: React.FC = () => {
                     <div className="ai-hero-stat">
                         <div className="ai-hero-stat-value">{bizContext.totalCustomers ?? '—'}</div>
                         <div className="ai-hero-stat-label">Хэрэглэгч</div>
+                    </div>
+                    <div className="ai-hero-stat">
+                        <div className="ai-hero-stat-value">{vipCount}</div>
+                        <div className="ai-hero-stat-label">VIP гишүүн</div>
+                    </div>
+                    <div className="ai-hero-stat">
+                        <div className="ai-hero-stat-value">{employeeCount}</div>
+                        <div className="ai-hero-stat-label">Ажилчид</div>
                     </div>
                 </div>
             </div>

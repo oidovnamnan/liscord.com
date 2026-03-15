@@ -110,7 +110,7 @@
 
 .ai-hero-stats {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(5, 1fr);
     gap: 10px;
     margin-top: 20px;
     position: relative;
