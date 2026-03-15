@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
-import { Header } from '../../components/layout/Header';
 import { HubLayout } from '../../components/common/HubLayout';
 import { useBusinessStore } from '../../store';
 import { importCostService, packageService } from '../../services/db';
 import type { ImportCostCalculation, PackageBatch } from '../../types';
-import { Calculator, Download, Plus, Save, ChevronRight } from 'lucide-react';
+import { Calculator, Download, Plus, Save, ChevronRight, Ship} from 'lucide-react';
 import './Finance.css'; // Reuse or create new
+import '../Settings/components/FlashDealSettings.css';
 
 export function ImportCostPage() {
     const { business } = useBusinessStore();
@@ -154,11 +154,17 @@ export function ImportCostPage() {
 
     return (
         <HubLayout hubId="logistics-hub">
-            <Header
-                title="Импортын өртөг тооцоолол"
-                subtitle="Барааны эцсийн өртөгийг тээвэр, гааль, татвартай нь нэгтгэж тооцох"
-                action={view === 'list' ? { label: "Шинэ тооцоолол", onClick: () => setView('new') } : undefined}
-            />
+            <div className="fds-hero">
+                <div className="fds-hero-top">
+                    <div className="fds-hero-left">
+                        <div className="fds-hero-icon"><Ship size={24} /></div>
+                        <div>
+                            <h3 className="fds-hero-title">Импортын Зардал</h3>
+                            <div className="fds-hero-desc">Импортын зардлын тооцоолол</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
             <div className="page-content mt-6">
                 {view === 'list' ? renderList() : renderNew()}

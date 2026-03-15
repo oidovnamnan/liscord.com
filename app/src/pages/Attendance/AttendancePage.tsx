@@ -1,14 +1,14 @@
 import { useState, useEffect } from 'react';
-import { Header } from '../../components/layout/Header';
 import { useBusinessStore, useAuthStore } from '../../store';
 import { attendanceService } from '../../services/db';
 import type { Attendance } from '../../types';
-import { Play, LogIn, LogOut, Coffee, Calendar, Search } from 'lucide-react';
+import { Play, LogIn, LogOut, Coffee, Calendar, Search, UserCheck} from 'lucide-react';
 import { HubLayout } from '../../components/common/HubLayout';
 import { format, differenceInMinutes } from 'date-fns';
 import { mn } from 'date-fns/locale';
 import { toast } from 'react-hot-toast';
 import './AttendancePage.css';
+import '../Settings/components/FlashDealSettings.css';
 
 export function AttendancePage() {
     const { business, employee } = useBusinessStore();
@@ -98,14 +98,17 @@ export function AttendancePage() {
     return (
         <HubLayout hubId="staff-hub">
             <div className="page-container attendance-page animate-fade-in">
-                <Header
-                    title="Цаг бүртгэл & Хүний нөөц"
-                    subtitle="Ажилчдын ирц, цагийн хуваарь"
-                    action={{
-                        label: "Тайлан татах",
-                        onClick: () => toast('Тайлан Excel үүсгэх (Удахгүй)')
-                    }}
-                />
+                <div className="fds-hero">
+                <div className="fds-hero-top">
+                    <div className="fds-hero-left">
+                        <div className="fds-hero-icon"><UserCheck size={24} /></div>
+                        <div>
+                            <h3 className="fds-hero-title">Ирц</h3>
+                            <div className="fds-hero-desc">Ажилтны ирцийн бүртгэл</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
                 <div className="attendance-toolbar">
                     <div style={{ display: 'flex', gap: '12px', alignItems: 'center', fontWeight: 600, color: 'var(--text-secondary)' }}>

@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
-import { Header } from '../../components/layout/Header';
 import { HubLayout } from '../../components/common/HubLayout';
-import { TrendingUp, DollarSign, PieChart, MapPin, AlertCircle, ChevronRight, BarChart3, Settings, ShieldCheck, Briefcase, Activity, Users, Search, Filter, Percent, Plus } from 'lucide-react';
+import { TrendingUp, DollarSign, PieChart, MapPin, AlertCircle, ChevronRight, BarChart3, Settings, ShieldCheck, Briefcase, Activity, Users, Search, Filter, Percent, Plus, Building} from 'lucide-react';
 import { useBusinessStore } from '../../store';
 import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
 import { db } from '../../services/firebase';
 import { GenericCrudModal, type CrudField } from '../../components/common/GenericCrudModal';
+import '../Settings/components/FlashDealSettings.css';
 
 const F: CrudField[] = [
     { name: 'name', label: 'Салбар нэр', type: 'text', required: true },
@@ -31,7 +31,17 @@ export function FranchisePage() {
 
     return (
         <HubLayout hubId="retail-hub">
-            <Header title="Франчайз Удирдлага" subtitle="Олон салбарын нэгдсэн хяналт, роялти хураамж тооцох систем" />
+            <div className="fds-hero">
+                <div className="fds-hero-top">
+                    <div className="fds-hero-left">
+                        <div className="fds-hero-icon"><Building size={24} /></div>
+                        <div>
+                            <h3 className="fds-hero-title">Франчайз</h3>
+                            <div className="fds-hero-desc">Франчайзийн удирдлага</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
             <div className="page-content mt-6 flex flex-col gap-8 stagger-children animate-fade-in translate-y-0 opacity-100 h-full">
                 <div className="grid-4 gap-6">
                     {stats.map((s, i) => (

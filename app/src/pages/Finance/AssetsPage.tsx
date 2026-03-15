@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
-import { Header } from '../../components/layout/Header';
 import { HubLayout } from '../../components/common/HubLayout';
-import { Laptop, Building2, Truck, Briefcase, Search, Edit2 } from 'lucide-react';
+import { Laptop, Building2, Truck, Briefcase, Search, Edit2, Landmark} from 'lucide-react';
 import { useBusinessStore } from '../../store';
 import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
 import { db } from '../../services/firebase';
 import { GenericCrudModal, type CrudField } from '../../components/common/GenericCrudModal';
+import '../Settings/components/FlashDealSettings.css';
 
 const ASSET_FIELDS: CrudField[] = [
     { name: 'name', label: 'Хөрөнгийн нэр', type: 'text', required: true, span: 2 },
@@ -67,7 +67,20 @@ export function AssetsPage() {
     return (
         <HubLayout hubId="finance-hub">
             <div className="page-container animate-fade-in">
-                <Header title="Хөрөнгийн Бүртгэл" action={{ label: '+ Хөрөнгө нэмэх', onClick: () => { setEditingItem(null); setShowModal(true); } }} />
+                <div className="fds-hero">
+                <div className="fds-hero-top">
+                    <div className="fds-hero-left">
+                        <div className="fds-hero-icon"><Landmark size={24} /></div>
+                        <div>
+                            <h3 className="fds-hero-title">Хөрөнгийн Бүртгэл</h3>
+                            <div className="fds-hero-desc">Үндсэн хөрөнгийн удирдлага</div>
+                        </div>
+                    </div>
+                    <button className="fds-add-btn" onClick={() => { setEditingItem(null); setShowModal(true) }}>
+                        + Хөрөнгө нэмэх
+                    </button>
+                </div>
+            </div>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16, margin: '20px 0' }}>
                     <div className="card" style={{ padding: 20 }}><div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Нийт хөрөнгө</div><div style={{ fontSize: '1.4rem', fontWeight: 700 }}>{assets.length}</div></div>
                     <div className="card" style={{ padding: 20 }}><div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Нийт үнэ цэнэ</div><div style={{ fontSize: '1.4rem', fontWeight: 700 }}>{totalValue.toLocaleString()} ₮</div></div>

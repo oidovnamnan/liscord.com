@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
-import { Header } from '../../components/layout/Header';
 import { HubLayout } from '../../components/common/HubLayout';
 import { Star, ShieldCheck, Clock, DollarSign, Award, ChevronRight, Filter } from 'lucide-react';
 import { useBusinessStore } from '../../store';
 import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
 import { db } from '../../services/firebase';
 import { GenericCrudModal, type CrudField } from '../../components/common/GenericCrudModal';
+import '../Settings/components/FlashDealSettings.css';
 
 const F: CrudField[] = [
     { name: 'name', label: 'Компани нэр', type: 'text', required: true },
@@ -28,7 +28,17 @@ export function VendorRatingPage() {
 
     return (
         <HubLayout hubId="logistics-hub">
-            <Header title="Тээвэрлэгчийн Үнэлгээ" subtitle="Гадаад болон дотоод тээврийн компаниудын гүйцэтгэлийн мониторинг" action={{ label: "Үнэлгээ нэмэх", onClick: () => { setEditingItem(null); setShowModal(true); } }} />
+            <div className="fds-hero">
+                <div className="fds-hero-top">
+                    <div className="fds-hero-left">
+                        <div className="fds-hero-icon"><Star size={24} /></div>
+                        <div>
+                            <h3 className="fds-hero-title">Нийлүүлэгч Үнэлгээ</h3>
+                            <div className="fds-hero-desc">Нийлүүлэгчдийн гүйцэтгэл</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
             <div className="page-content mt-6 flex flex-col gap-6">
                 <div className="grid-3 gap-6">
                     <div className="card p-5 bg-surface-1 flex flex-col gap-2 border-b-4 border-b-success"><div className="text-xs text-muted uppercase font-bold tracking-wider">Шилдэг тээвэрлэгч</div><div className="flex items-center gap-2"><Award className="text-warning" /><span className="text-lg font-bold">{best?.name || 'Тодорхойгүй'}</span></div></div>

@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { Header } from '../../components/layout/Header';
 import { HubLayout } from '../../components/common/HubLayout';
 import {
     Ship,
@@ -22,6 +21,7 @@ import { useBusinessStore } from '../../store';
 import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
 import { db } from '../../services/firebase';
 import { GenericCrudModal, type CrudField } from '../../components/common/GenericCrudModal';
+import '../Settings/components/FlashDealSettings.css';
 
 const FREIGHT_FIELDS: CrudField[] = [
     { name: 'origin', label: 'Гарах газар', type: 'text', required: true },
@@ -70,14 +70,17 @@ export function FreightPage() {
     return (
         <HubLayout hubId="logistics-hub">
             <div className="page-container animate-fade-in">
-                <Header
-                    title="Олон Улсын Тээвэр (Freight)"
-                    subtitle="Усан зам, агаар, төмөр зам болон авто тээврийн нэгдсэн хяналт, карго менежмент"
-                    action={{
-                        label: "Шинэ тээвэр",
-                        onClick: () => { setEditingItem(null); setShowModal(true); }
-                    }}
-                />
+                <div className="fds-hero">
+                <div className="fds-hero-top">
+                    <div className="fds-hero-left">
+                        <div className="fds-hero-icon"><Ship size={24} /></div>
+                        <div>
+                            <h3 className="fds-hero-title">Тээвэрлэлт</h3>
+                            <div className="fds-hero-desc">Тээвэрлэлтийн удирдлага</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
                 <div className="grid-12 gap-6 mt-6">
                     <div className="col-12 grid grid-cols-4 gap-6">

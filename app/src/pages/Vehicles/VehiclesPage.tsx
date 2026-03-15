@@ -1,13 +1,13 @@
 import { useState, useEffect } from 'react';
-import { Header } from '../../components/layout/Header';
 import { useBusinessStore } from '../../store';
 import { vehicleService, tripService, maintenanceService } from '../../services/db';
 import type { Vehicle, Trip, VehicleMaintenanceLog } from '../../types';
-import { Plus, Filter, Calendar, List, Wrench, Clock } from 'lucide-react';
+import { Plus, Filter, Calendar, List, Wrench, Clock, Car} from 'lucide-react';
 import { format, addDays, startOfDay, differenceInDays } from 'date-fns';
 import { toast } from 'react-hot-toast';
 import { HubLayout } from '../../components/common/HubLayout';
 import './VehiclesPage.css';
+import '../Settings/components/FlashDealSettings.css';
 
 const TIMELINE_DAYS = 14;
 
@@ -188,14 +188,17 @@ export function VehiclesPage() {
 
     return (
         <HubLayout hubId="logistics-hub">
-            <Header
-                title="Техник & Тээвэр"
-                subtitle="Парк ашиглалт, түрээс болон засвар үйлчилгээний хяналт"
-                action={{
-                    label: "Шинэ техник нэмэх",
-                    onClick: () => toast('Шинэ техник бүртгэх')
-                }}
-            />
+            <div className="fds-hero">
+                <div className="fds-hero-top">
+                    <div className="fds-hero-left">
+                        <div className="fds-hero-icon"><Car size={24} /></div>
+                        <div>
+                            <h3 className="fds-hero-title">Тээврийн Хэрэгсэл</h3>
+                            <div className="fds-hero-desc">Тээврийн хэрэгслийн удирдлага</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
             <div className="view-switcher flex gap-4 mb-6 border-b pb-2">
                 <button

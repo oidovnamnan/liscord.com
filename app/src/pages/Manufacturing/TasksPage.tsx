@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
-import { Header } from '../../components/layout/Header';
 import { HubLayout } from '../../components/common/HubLayout';
 import { CheckSquare, Circle, CheckCircle2 } from 'lucide-react';
 import { useBusinessStore } from '../../store';
 import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
 import { db } from '../../services/firebase';
 import { GenericCrudModal, type CrudField } from '../../components/common/GenericCrudModal';
+import '../Settings/components/FlashDealSettings.css';
 const TASK_FIELDS: CrudField[] = [
     { name: 'title', label: 'Даалгавар', type: 'text', required: true, span: 2 },
     { name: 'assignee', label: 'Хариуцагч', type: 'text' },
@@ -27,7 +27,20 @@ export function TasksPage() {
     const { business } = useBusinessStore(); const [items, setItems] = useState<any[]>([]); const [loading, setLoading] = useState(true); const [showModal, setShowModal] = useState(false); const [editingItem, setEditingItem] = useState<any>(null);
     useEffect(() => { if (!business?.id) return; const q = query(collection(db, `businesses/${business.id}/tasks`), orderBy('createdAt', 'desc')); const unsub = onSnapshot(q, (snap) => { setItems(snap.docs.map(d => ({ id: d.id, ...d.data() } as any))); setLoading(false); }); return () => unsub(); }, [business?.id]);
     return (
-        <HubLayout hubId="manufacturing-hub"><div className="page-container animate-fade-in"><Header title="Даалгаврууд" action={{ label: '+ Даалгавар', onClick: () => { setEditingItem(null); setShowModal(true); } }} />
+        <HubLayout hubId="manufacturing-hub"><div className="page-container animate-fade-in"><div className="fds-hero">
+                <div className="fds-hero-top">
+                    <div className="fds-hero-left">
+                        <div className="fds-hero-icon"><CheckSquare size={24} /></div>
+                        <div>
+                            <h3 className="fds-hero-title">Даалгавар</h3>
+                            <div className="fds-hero-desc">Даалгаврын удирдлага</div>
+                        </div>
+                    </div>
+                    <button className="fds-add-btn" onClick={() => { setEditingItem(null); setShowModal(true) }}>
+                        + Даалгавар
+                    </button>
+                </div>
+            </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 20 }}>{loading ? <div className="card" style={{ padding: 48, textAlign: 'center', color: 'var(--text-muted)' }}>Ачаалж байна...</div> : items.length === 0 ? <div className="card" style={{ padding: 60, textAlign: 'center' }}><CheckSquare size={48} color="var(--text-muted)" /><h3>Даалгавар олдсонгүй</h3></div> : items.map(i => (
                 <div key={i.id} className="card" style={{ padding: '12px 20px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 12 }} onClick={() => { setEditingItem(i); setShowModal(true); }}>
                     {i.status === 'done' ? <CheckCircle2 size={20} color="#2ecc71" /> : <Circle size={20} color="var(--text-muted)" />}

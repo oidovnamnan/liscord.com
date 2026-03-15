@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
-import { Header } from '../../components/layout/Header';
-import { Kanban, Filter, Plus, MessageSquareWarning, PackageOpen, Wrench, CheckCircle2 } from 'lucide-react';
+import { Kanban, Filter, Plus, MessageSquareWarning, PackageOpen, Wrench, CheckCircle2, HeadphonesIcon} from 'lucide-react';
 import { HubLayout } from '../../components/common/HubLayout';
 import { useBusinessStore } from '../../store';
 import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
 import { db } from '../../services/firebase';
 import { GenericCrudModal, type CrudField } from '../../components/common/GenericCrudModal';
+import '../Settings/components/FlashDealSettings.css';
 
 type TicketStatus = 'new' | 'inspecting' | 'repairing' | 'resolved' | 'closed';
 
@@ -81,10 +81,17 @@ export function SupportPage() {
     return (
         <HubLayout hubId="crm-hub">
             <div className="page-container animate-fade-in" style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-                <Header
-                    title="Гомдол & Буцаалт"
-                    subtitle="Хэрэглэгчийн санал гомдол, баталгаат засвар болон буцаалтын хяналт"
-                />
+                <div className="fds-hero">
+                <div className="fds-hero-top">
+                    <div className="fds-hero-left">
+                        <div className="fds-hero-icon"><HeadphonesIcon size={24} /></div>
+                        <div>
+                            <h3 className="fds-hero-title">Тусламж</h3>
+                            <div className="fds-hero-desc">Хэрэглэгчийн тусламж, дэмжлэг</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
                 <div className="page-content" style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '24px' }}>

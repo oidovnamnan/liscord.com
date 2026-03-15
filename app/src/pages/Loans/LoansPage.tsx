@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react';
-import { Header } from '../../components/layout/Header';
 import { useBusinessStore } from '../../store';
 import { loanService, pawnItemService } from '../../services/db';
 import type { Loan, PawnItem } from '../../types';
-import { TrendingUp, Loader2, Plus } from 'lucide-react';
+import { TrendingUp, Loader2, Plus, Banknote} from 'lucide-react';
 import { HubLayout } from '../../components/common/HubLayout';
 import { toast } from 'react-hot-toast';
 import './LoansPage.css';
+import '../Settings/components/FlashDealSettings.css';
 
 export function LoansPage() {
     const { business } = useBusinessStore();
@@ -53,14 +53,17 @@ export function LoansPage() {
     return (
         <HubLayout hubId="finance-hub">
             <div className="page-container loans-page animate-fade-in">
-                <Header
-                    title="Зээл & Барьцаа"
-                    subtitle="Хоршоо, Ломбард, Микро зээлийн удирдлага"
-                    action={{
-                        label: "Зээл олгох",
-                        onClick: () => setShowCreate(true)
-                    }}
-                />
+                <div className="fds-hero">
+                <div className="fds-hero-top">
+                    <div className="fds-hero-left">
+                        <div className="fds-hero-icon"><Banknote size={24} /></div>
+                        <div>
+                            <h3 className="fds-hero-title">Зээл</h3>
+                            <div className="fds-hero-desc">Зээлийн удирдлага</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
                 <div className="grid-3" style={{ marginBottom: 'var(--space-lg)' }}>
                     <div className="stat-card">

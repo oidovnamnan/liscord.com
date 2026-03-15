@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { Header } from '../../components/layout/Header';
 import { HubLayout } from '../../components/common/HubLayout';
 import {
     Calculator,
@@ -13,12 +12,12 @@ import {
     Activity,
     Landmark,
     ClipboardList,
-    TrendingUp
-} from 'lucide-react';
+    TrendingUp, Ship} from 'lucide-react';
 import { useBusinessStore } from '../../store';
 import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
 import { db } from '../../services/firebase';
 import { GenericCrudModal, type CrudField } from '../../components/common/GenericCrudModal';
+import '../Settings/components/FlashDealSettings.css';
 
 const IMPORT_COST_FIELDS: CrudField[] = [
     { name: 'product', label: 'Бүтээгдэхүүн', type: 'text', required: true },
@@ -60,14 +59,17 @@ export function ImportCostPage() {
     return (
         <HubLayout hubId="inventory-hub">
             <div className="page-container animate-fade-in">
-                <Header
-                    title="Өртөг Тооцоолол (Landed Cost)"
-                    subtitle="Импортын барааны анхны үнэ, тээвэр, татвар болон бусад зардлыг нэгтгэсэн бодит өртөг тооцоолох"
-                    action={{
-                        label: "Шинэ тооцоолол",
-                        onClick: () => { setEditingItem(null); setShowModal(true); }
-                    }}
-                />
+                <div className="fds-hero">
+                <div className="fds-hero-top">
+                    <div className="fds-hero-left">
+                        <div className="fds-hero-icon"><Ship size={24} /></div>
+                        <div>
+                            <h3 className="fds-hero-title">Импортын Зардал</h3>
+                            <div className="fds-hero-desc">Импортын зардлын тооцоолол</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
                 <div className="grid-12 gap-6 mt-6">
                     <div className="col-12 grid grid-cols-4 gap-6">

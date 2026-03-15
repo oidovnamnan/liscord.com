@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
-import { Header } from '../../components/layout/Header';
 import { HubLayout } from '../../components/common/HubLayout';
 import { Star, Award } from 'lucide-react';
 import { useBusinessStore } from '../../store';
 import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
 import { db } from '../../services/firebase';
 import { GenericCrudModal, type CrudField } from '../../components/common/GenericCrudModal';
+import '../Settings/components/FlashDealSettings.css';
 const VENDOR_FIELDS: CrudField[] = [
     { name: 'vendorName', label: 'Нийлүүлэгч', type: 'text', required: true },
     { name: 'category', label: 'Ангилал', type: 'text' },
@@ -29,7 +29,20 @@ export function VendorRatingPage() {
     return (
         <HubLayout hubId="inventory-hub">
             <div className="page-container animate-fade-in">
-                <Header title="Нийлүүлэгч Үнэлгээ" action={{ label: '+ Үнэлгээ', onClick: () => { setEditingItem(null); setShowModal(true); } }} />
+                <div className="fds-hero">
+                <div className="fds-hero-top">
+                    <div className="fds-hero-left">
+                        <div className="fds-hero-icon"><Star size={24} /></div>
+                        <div>
+                            <h3 className="fds-hero-title">Нийлүүлэгч Үнэлгээ</h3>
+                            <div className="fds-hero-desc">Нийлүүлэгчдийн гүйцэтгэл</div>
+                        </div>
+                    </div>
+                    <button className="fds-add-btn" onClick={() => { setEditingItem(null); setShowModal(true) }}>
+                        + Үнэлгээ
+                    </button>
+                </div>
+            </div>
                 <div className="card" style={{ padding: 0, marginTop: 20 }}>
                     {loading ? <div style={{ padding: 48, textAlign: 'center', color: 'var(--text-muted)' }}>Ачаалж байна...</div> : (
                         <table className="table"><thead><tr><th>Нийлүүлэгч</th><th>Ангилал</th><th>Чанар</th><th>Хүргэлт</th><th>Үнэ</th><th>Нийт</th></tr></thead>

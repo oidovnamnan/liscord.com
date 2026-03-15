@@ -1,12 +1,12 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Header } from '../../components/layout/Header';
 import { HubLayout } from '../../components/common/HubLayout';
 import { useBusinessStore } from '../../store';
 import { deliveryService, vehicleService } from '../../services/db';
 import type { DeliveryRecord, Vehicle } from '../../types';
-import { Truck, Map as MapIcon, Navigation, Radio, User } from 'lucide-react';
+import { Truck, Map as MapIcon, Navigation, Radio, User, Send} from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import './Dispatch.css';
+import '../Settings/components/FlashDealSettings.css';
 
 export function DispatchPage() {
     const { business } = useBusinessStore();
@@ -38,14 +38,17 @@ export function DispatchPage() {
 
     return (
         <HubLayout hubId="logistics-hub">
-            <Header
-                title="Диспетчерын хяналт"
-                subtitle="Хүргэлтийн захиалгыг жолооч, техникт бодит хугацаанд хувиарлах"
-                action={{
-                    label: "Live Map",
-                    onClick: () => toast('Газрын зураг идэвхжиж байна...')
-                }}
-            />
+            <div className="fds-hero">
+                <div className="fds-hero-top">
+                    <div className="fds-hero-left">
+                        <div className="fds-hero-icon"><Send size={24} /></div>
+                        <div>
+                            <h3 className="fds-hero-title">Илгээмж</h3>
+                            <div className="fds-hero-desc">Илгээмж удирдлага</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
             <div className="dispatch-dashboard grid-12">
                 {/* Column 1: Incoming Orders */}

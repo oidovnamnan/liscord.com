@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { Header } from '../../components/layout/Header';
 import { HubLayout } from '../../components/common/HubLayout';
 import {
     Box,
@@ -15,12 +14,12 @@ import {
     Maximize,
     Layers,
     MoreVertical,
-    Smartphone
-} from 'lucide-react';
+    Smartphone, Package} from 'lucide-react';
 import { useBusinessStore } from '../../store';
 import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
 import { db } from '../../services/firebase';
 import { GenericCrudModal, type CrudField } from '../../components/common/GenericCrudModal';
+import '../Settings/components/FlashDealSettings.css';
 
 const PACKING_FIELDS: CrudField[] = [
     { name: 'orderId', label: 'Захиалгын дугаар', type: 'text', required: true },
@@ -72,14 +71,17 @@ export function PackingPage() {
     return (
         <HubLayout hubId="logistics-hub">
             <div className="page-container animate-fade-in">
-                <Header
-                    title="Ангилалт & Савлагаа (Packing)"
-                    subtitle="Агуулахаас гарсан барааг ангилан савлах, хайрцаглах болон чанар шалгах үйл явц"
-                    action={{
-                        label: "Савлагаа эхлэх",
-                        onClick: () => { setEditingItem(null); setShowModal(true); }
-                    }}
-                />
+                <div className="fds-hero">
+                <div className="fds-hero-top">
+                    <div className="fds-hero-left">
+                        <div className="fds-hero-icon"><Package size={24} /></div>
+                        <div>
+                            <h3 className="fds-hero-title">Савлагаа</h3>
+                            <div className="fds-hero-desc">Савлагааны удирдлага</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
                 <div className="grid-12 gap-6 mt-6">
                     <div className="col-12 grid grid-cols-4 gap-6">

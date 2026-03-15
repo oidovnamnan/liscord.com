@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
-import { Header } from '../../components/layout/Header';
 import { Search, Loader2, CheckCircle2, XCircle, Clock, Send, Download, Edit2, FileText } from 'lucide-react';
 import { useBusinessStore } from '../../store';
 import { quoteService } from '../../services/db';
 import { format } from 'date-fns';
 import { GenericCrudModal, type CrudField } from '../../components/common/GenericCrudModal';
+import '../Settings/components/FlashDealSettings.css';
 
 const QUOTE_FIELDS: CrudField[] = [
     { name: 'customerName', label: 'Харилцагч', type: 'text', required: true, placeholder: 'Харилцагчийн нэр' },
@@ -57,9 +57,22 @@ export function QuotesPage() {
     };
 
     return (
-        <>
-            <Header title="Үнийн Санал" action={{ label: '+ Шинэ санал', onClick: () => { setEditingItem(null); setShowModal(true); } }} />
-            <div className="page">
+            <div className="animate-fade-in" style={{ padding: '24px clamp(16px, 3vw, 32px) 32px' }}>
+            <div className="fds-hero">
+                <div className="fds-hero-top">
+                    <div className="fds-hero-left">
+                        <div className="fds-hero-icon"><FileText size={24} /></div>
+                        <div>
+                            <h3 className="fds-hero-title">Үнийн Санал</h3>
+                            <div className="fds-hero-desc">Үнийн саналын удирдлага</div>
+                        </div>
+                    </div>
+                    <button className="fds-add-btn" onClick={() => { setEditingItem(null); setShowModal(true) }}>
+                        + Шинэ санал
+                    </button>
+                </div>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
                 <div className="page-header-actions" style={{ marginBottom: 20 }}>
                     <div className="search-box">
                         <Search size={18} />
@@ -109,6 +122,6 @@ export function QuotesPage() {
                     onClose={() => setShowModal(false)}
                 />
             )}
-        </>
-    );
+            </div>
+        );
 }

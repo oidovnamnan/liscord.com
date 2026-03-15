@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
-import { Header } from '../../components/layout/Header';
 import { HubLayout } from '../../components/common/HubLayout';
 import { FileText, Search, Star, Edit2 } from 'lucide-react';
 import { useBusinessStore } from '../../store';
 import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
 import { db } from '../../services/firebase';
 import { GenericCrudModal, type CrudField } from '../../components/common/GenericCrudModal';
+import '../Settings/components/FlashDealSettings.css';
 
 const DOC_FIELDS: CrudField[] = [
     { name: 'title', label: 'Баримтын нэр', type: 'text', required: true, span: 2 },
@@ -57,7 +57,20 @@ export function DocumentsPage() {
     return (
         <HubLayout hubId="workspace-hub">
             <div className="page-container animate-fade-in">
-                <Header title="Баримт бичиг" action={{ label: '+ Шинэ баримт', onClick: () => { setEditingItem(null); setShowModal(true); } }} />
+                <div className="fds-hero">
+                <div className="fds-hero-top">
+                    <div className="fds-hero-left">
+                        <div className="fds-hero-icon"><FileText size={24} /></div>
+                        <div>
+                            <h3 className="fds-hero-title">Баримт Бичиг</h3>
+                            <div className="fds-hero-desc">Баримт бичгийн удирдлага</div>
+                        </div>
+                    </div>
+                    <button className="fds-add-btn" onClick={() => { setEditingItem(null); setShowModal(true) }}>
+                        + Шинэ баримт
+                    </button>
+                </div>
+            </div>
                 <div style={{ margin: '20px 0' }}><div className="search-box" style={{ maxWidth: 400 }}><Search size={18} /><input type="text" placeholder="Баримт хайх..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} /></div></div>
                 <div className="card" style={{ padding: 0 }}>
                     {loading ? (

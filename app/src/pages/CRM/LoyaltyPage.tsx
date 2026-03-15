@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
-import { Header } from '../../components/layout/Header';
-import { Search, Loader2, MoreVertical, Coins, Users, Star, TrendingUp, History } from 'lucide-react';
+import { Search, Loader2, MoreVertical, Coins, Users, Star, TrendingUp, History, Award} from 'lucide-react';
 import { useBusinessStore } from '../../store';
 import { loyaltyService, customerService } from '../../services/db';
 import { useNavigate } from 'react-router-dom';
+import '../Settings/components/FlashDealSettings.css';
 
 export function LoyaltyPage() {
     const { business } = useBusinessStore();
@@ -36,9 +36,22 @@ export function LoyaltyPage() {
     };
 
     return (
-        <>
-            <Header title="Лоялти & Оноо" action={{ label: 'Тохиргоо', onClick: handleGoToSettings }} />
-            <div className="page">
+            <div className="animate-fade-in" style={{ padding: '24px clamp(16px, 3vw, 32px) 32px' }}>
+            <div className="fds-hero">
+                <div className="fds-hero-top">
+                    <div className="fds-hero-left">
+                        <div className="fds-hero-icon"><Award size={24} /></div>
+                        <div>
+                            <h3 className="fds-hero-title">Loyalty</h3>
+                            <div className="fds-hero-desc">Үнэнч хэрэглэгчийн хөтөлбөр</div>
+                        </div>
+                    </div>
+                    <button className="fds-add-btn" onClick={() => {  }}>
+                        Тохиргоо
+                    </button>
+                </div>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 20, marginBottom: 20 }}>
                     <div className="card" style={{ padding: 20 }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -147,6 +160,6 @@ export function LoyaltyPage() {
                     )}
                 </div>
             </div>
-        </>
-    );
+            </div>
+        );
 }

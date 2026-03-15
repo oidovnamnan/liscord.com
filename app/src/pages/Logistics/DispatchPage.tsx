@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { Header } from '../../components/layout/Header';
 import { HubLayout } from '../../components/common/HubLayout';
 import {
     Search,
@@ -15,12 +14,12 @@ import {
     Share2,
     Activity,
     Navigation,
-    Flag
-} from 'lucide-react';
+    Flag, Send} from 'lucide-react';
 import { useBusinessStore } from '../../store';
 import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
 import { db } from '../../services/firebase';
 import { GenericCrudModal, type CrudField } from '../../components/common/GenericCrudModal';
+import '../Settings/components/FlashDealSettings.css';
 
 const DISPATCH_FIELDS: CrudField[] = [
     { name: 'customer', label: 'Хэрэглэгч', type: 'text', required: true },
@@ -67,14 +66,17 @@ export function DispatchPage() {
     return (
         <HubLayout hubId="logistics-hub">
             <div className="page-container animate-fade-in">
-                <Header
-                    title="Дотоод Хүргэлт (Dispatch)"
-                    subtitle="Хотын хүргэлтийн захиалгыг жолоочид оноох, замыг хянах, гүйцэтгэл шалгах"
-                    action={{
-                        label: "Илгээлт үүсгэх",
-                        onClick: () => { setEditingItem(null); setShowModal(true); }
-                    }}
-                />
+                <div className="fds-hero">
+                <div className="fds-hero-top">
+                    <div className="fds-hero-left">
+                        <div className="fds-hero-icon"><Send size={24} /></div>
+                        <div>
+                            <h3 className="fds-hero-title">Илгээмж</h3>
+                            <div className="fds-hero-desc">Илгээмж удирдлага</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
                 <div className="grid-12 gap-6 mt-6">
                     <div className="col-12 grid grid-cols-4 gap-6">

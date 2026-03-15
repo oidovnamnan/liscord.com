@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
-import { Header } from '../../components/layout/Header';
 import { HubLayout } from '../../components/common/HubLayout';
 import { Pill, Plus, Clock, Package, AlertTriangle, CheckCircle2 } from 'lucide-react';
 import { useBusinessStore } from '../../store';
 import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
 import { db } from '../../services/firebase';
 import { GenericCrudModal, type CrudField } from '../../components/common/GenericCrudModal';
+import '../Settings/components/FlashDealSettings.css';
 const F: CrudField[] = [
     { name: 'name', label: 'Эмийн нэр', type: 'text', required: true },
     { name: 'genericName', label: 'Ерөнхий нэр', type: 'text' },
@@ -29,7 +29,20 @@ export function PharmacyPage() {
     useEffect(() => { if (!business?.id) return; const q = query(collection(db, `businesses/${business.id}/pharmacyItems`), orderBy('createdAt', 'desc')); const unsub = onSnapshot(q, s => { setItems(s.docs.map(d => ({ id: d.id, ...d.data() } as any))); setLoading(false); }); return () => unsub(); }, [business?.id]); // eslint-disable-line
     return (
         <HubLayout hubId="industry-hub">
-            <Header title="Эмийн сан" subtitle="Эмийн нөөц, жорын бүртгэл, дуусах хугацааны хяналт" action={{ label: 'Эм нэмэх', onClick: () => { setEditingItem(null); setShowModal(true); } }} />
+            <div className="fds-hero">
+                <div className="fds-hero-top">
+                    <div className="fds-hero-left">
+                        <div className="fds-hero-icon"><Pill size={24} /></div>
+                        <div>
+                            <h3 className="fds-hero-title">Эмийн Сан</h3>
+                            <div className="fds-hero-desc">Эмийн сангийн удирдлага</div>
+                        </div>
+                    </div>
+                    <button className="fds-add-btn" onClick={() => { setEditingItem(null); setShowModal(true) }}>
+                        Эм нэмэх
+                    </button>
+                </div>
+            </div>
             <div className="page-content mt-6 flex flex-col gap-6">
                 <div className="grid grid-cols-4 gap-6">
                     <div className="card p-6 bg-surface-2 border-none shadow-sm flex items-center justify-between group hover:bg-surface-3 transition-all"><div><h4 className="text-[10px] text-muted font-black tracking-widest uppercase mb-1">Нийт эм</h4><div className="text-3xl font-black text-primary">{items.length}</div></div><div className="bg-primary/10 p-4 rounded-2xl text-primary group-hover:scale-110 transition-transform"><Package size={28} /></div></div>

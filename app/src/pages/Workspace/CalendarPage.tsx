@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
-import { Header } from '../../components/layout/Header';
 import { HubLayout } from '../../components/common/HubLayout';
 import { CalendarDays, Clock, MapPin, Users } from 'lucide-react';
 import { useBusinessStore } from '../../store';
 import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
 import { db } from '../../services/firebase';
 import { GenericCrudModal, type CrudField } from '../../components/common/GenericCrudModal';
+import '../Settings/components/FlashDealSettings.css';
 const CAL_FIELDS: CrudField[] = [
     { name: 'title', label: 'Үйл явдал', type: 'text', required: true, span: 2 },
     { name: 'date', label: 'Огноо', type: 'date', required: true },
@@ -33,7 +33,20 @@ export function CalendarPage() {
     return (
         <HubLayout hubId="workspace-hub">
             <div className="page-container animate-fade-in">
-                <Header title="Хуанли" action={{ label: '+ Үйл явдал', onClick: () => { setEditingItem(null); setShowModal(true); } }} />
+                <div className="fds-hero">
+                <div className="fds-hero-top">
+                    <div className="fds-hero-left">
+                        <div className="fds-hero-icon"><CalendarDays size={24} /></div>
+                        <div>
+                            <h3 className="fds-hero-title">Хуанли</h3>
+                            <div className="fds-hero-desc">Үйл явдал, хурлын хуанли</div>
+                        </div>
+                    </div>
+                    <button className="fds-add-btn" onClick={() => { setEditingItem(null); setShowModal(true) }}>
+                        + Үйл явдал
+                    </button>
+                </div>
+            </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 20 }}>
                     {loading ? <div className="card" style={{ padding: 48, textAlign: 'center', color: 'var(--text-muted)' }}>Ачаалж байна...</div> :
                         events.length === 0 ? <div className="card" style={{ padding: 60, textAlign: 'center' }}><CalendarDays size={48} color="var(--text-muted)" /><h3>Үйл явдал олдсонгүй</h3></div> :

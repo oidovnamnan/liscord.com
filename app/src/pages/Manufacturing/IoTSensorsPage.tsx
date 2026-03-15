@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
-import { Header } from '../../components/layout/Header';
 import { HubLayout } from '../../components/common/HubLayout';
-import { Radio, Activity } from 'lucide-react';
+import { Radio, Activity, Cpu} from 'lucide-react';
 import { useBusinessStore } from '../../store';
 import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
 import { db } from '../../services/firebase';
 import { GenericCrudModal, type CrudField } from '../../components/common/GenericCrudModal';
+import '../Settings/components/FlashDealSettings.css';
 const IOT_FIELDS: CrudField[] = [
     { name: 'sensorName', label: 'Мэдрэгчийн нэр', type: 'text', required: true },
     { name: 'sensorId', label: 'ID', type: 'text', required: true },
@@ -34,7 +34,20 @@ export function IoTSensorsPage() {
     const [editingItem, setEditingItem] = useState<any>(null);
     useEffect(() => { if (!business?.id) return; const q = query(collection(db, `businesses/${business.id}/iotSensors`), orderBy('createdAt', 'desc')); const unsub = onSnapshot(q, (snap) => { setSensors(snap.docs.map(d => ({ id: d.id, ...d.data() } as any))); setLoading(false); }); return () => unsub(); }, [business?.id]);
     return (
-        <HubLayout hubId="manufacturing-hub"><div className="page-container animate-fade-in"><Header title="IoT Мэдрэгч" action={{ label: '+ Мэдрэгч', onClick: () => { setEditingItem(null); setShowModal(true); } }} />
+        <HubLayout hubId="manufacturing-hub"><div className="page-container animate-fade-in"><div className="fds-hero">
+                <div className="fds-hero-top">
+                    <div className="fds-hero-left">
+                        <div className="fds-hero-icon"><Cpu size={24} /></div>
+                        <div>
+                            <h3 className="fds-hero-title">IoT Мэдрэгч</h3>
+                            <div className="fds-hero-desc">IoT мэдрэгчийн удирдлага</div>
+                        </div>
+                    </div>
+                    <button className="fds-add-btn" onClick={() => { setEditingItem(null); setShowModal(true) }}>
+                        + Мэдрэгч
+                    </button>
+                </div>
+            </div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 16, marginTop: 20 }}>{loading ? <div style={{ gridColumn: '1 / -1', padding: 48, textAlign: 'center', color: 'var(--text-muted)' }}>Ачаалж байна...</div> : sensors.length === 0 ? <div className="card" style={{ gridColumn: '1 / -1', padding: 60, textAlign: 'center' }}><Radio size={48} color="var(--text-muted)" /><h3>Мэдрэгч олдсонгүй</h3></div> : sensors.map(s => (
                 <div key={s.id} className="card" style={{ padding: 20, cursor: 'pointer' }} onClick={() => { setEditingItem(s); setShowModal(true); }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}><span className={`badge ${s.status === 'active' ? 'badge-success' : s.status === 'error' ? 'badge-danger' : 'badge-soft'}`}>{s.status === 'active' ? '● Идэвхтэй' : s.status === 'error' ? '⚠ Алдаатай' : 'Идэвхгүй'}</span><Activity size={16} color="var(--primary)" /></div>

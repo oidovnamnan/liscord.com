@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
-import { Header } from '../../components/layout/Header';
 import { HubLayout } from '../../components/common/HubLayout';
-import { Handshake } from 'lucide-react';
+import { Handshake, Percent} from 'lucide-react';
 import { useBusinessStore } from '../../store';
 import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
 import { db } from '../../services/firebase';
 import { GenericCrudModal, type CrudField } from '../../components/common/GenericCrudModal';
+import '../Settings/components/FlashDealSettings.css';
 
 const FACTORING_FIELDS: CrudField[] = [
     { name: 'invoiceNumber', label: 'Нэхэмжлэл №', type: 'text', required: true },
@@ -46,7 +46,20 @@ export function FactoringPage() {
     return (
         <HubLayout hubId="finance-hub">
             <div className="page-container animate-fade-in">
-                <Header title="Факторинг" action={{ label: '+ Хүсэлт', onClick: () => { setEditingItem(null); setShowModal(true); } }} />
+                <div className="fds-hero">
+                <div className="fds-hero-top">
+                    <div className="fds-hero-left">
+                        <div className="fds-hero-icon"><Percent size={24} /></div>
+                        <div>
+                            <h3 className="fds-hero-title">Факторинг</h3>
+                            <div className="fds-hero-desc">Авлагын факторинг</div>
+                        </div>
+                    </div>
+                    <button className="fds-add-btn" onClick={() => { setEditingItem(null); setShowModal(true) }}>
+                        + Хүсэлт
+                    </button>
+                </div>
+            </div>
                 <div className="card" style={{ padding: 0, marginTop: 20 }}>
                     {loading ? <div style={{ padding: 48, textAlign: 'center', color: 'var(--text-muted)' }}>Ачаалж байна...</div> : (
                         <table className="table"><thead><tr><th>Нэхэмжлэл</th><th>Үйлчлүүлэгч</th><th>Дүн</th><th>Урьдчилгаа</th><th>Хугацаа</th><th>Төлөв</th></tr></thead>

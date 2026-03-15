@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
-import { Header } from '../../components/layout/Header';
 import { Loader2, MoreVertical, ArrowUpRight, ArrowDownLeft, History, Wallet } from 'lucide-react';
 import { useBusinessStore } from '../../store';
 import { pettyCashService } from '../../services/db';
 import { format } from 'date-fns';
 import { GenericCrudModal, type CrudField } from '../../components/common/GenericCrudModal';
+import '../Settings/components/FlashDealSettings.css';
 
 const PETTYCASH_FIELDS: CrudField[] = [
     { name: 'title', label: 'Гүйлгээний утга', type: 'text', required: true, span: 2, placeholder: 'Офисийн хангамж, түлш гэх мэт' },
@@ -41,9 +41,22 @@ export function PettyCashPage() {
     }, 0);
 
     return (
-        <>
-            <Header title="Бэлэн Касс" action={{ label: '+ Гүйлгээ', onClick: () => { setEditingItem(null); setShowModal(true); } }} />
-            <div className="page">
+            <div className="animate-fade-in" style={{ padding: '24px clamp(16px, 3vw, 32px) 32px' }}>
+            <div className="fds-hero">
+                <div className="fds-hero-top">
+                    <div className="fds-hero-left">
+                        <div className="fds-hero-icon"><Wallet size={24} /></div>
+                        <div>
+                            <h3 className="fds-hero-title">Жижиг Касс</h3>
+                            <div className="fds-hero-desc">Бэлэн мөнгөний удирдлага</div>
+                        </div>
+                    </div>
+                    <button className="fds-add-btn" onClick={() => { setEditingItem(null); setShowModal(true) }}>
+                        + Гүйлгээ
+                    </button>
+                </div>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 20, marginBottom: 24 }}>
                     <div className="card" style={{ padding: 24, background: 'var(--primary)', color: 'white' }}>
                         <div style={{ fontSize: '0.9rem', opacity: 0.8 }}>Нийт үлдэгдэл</div>
@@ -110,6 +123,6 @@ export function PettyCashPage() {
                     onClose={() => setShowModal(false)}
                 />
             )}
-        </>
-    );
+            </div>
+        );
 }

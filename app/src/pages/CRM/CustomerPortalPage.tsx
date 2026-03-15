@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
-import { Header } from '../../components/layout/Header';
 import { HubLayout } from '../../components/common/HubLayout';
 import { Settings, Globe, Shield, Users, Key, ChevronRight, Plus, CheckCircle2 } from 'lucide-react';
 import { useBusinessStore } from '../../store';
 import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
 import { db } from '../../services/firebase';
 import { GenericCrudModal, type CrudField } from '../../components/common/GenericCrudModal';
+import '../Settings/components/FlashDealSettings.css';
 
 const F: CrudField[] = [
     { name: 'settingName', label: 'Тохиргооны нэр', type: 'text', required: true },
@@ -22,7 +22,20 @@ export function CustomerPortalPage() {
 
     return (
         <HubLayout hubId="crm-hub">
-            <Header title="Харилцагчийн портал" subtitle="Харилцагчдад зориулсан порталын тохиргоо, нэвтрэх эрх" action={{ label: 'Тохиргоо нэмэх', onClick: () => { setEditingItem(null); setShowModal(true); } }} />
+            <div className="fds-hero">
+                <div className="fds-hero-top">
+                    <div className="fds-hero-left">
+                        <div className="fds-hero-icon"><Globe size={24} /></div>
+                        <div>
+                            <h3 className="fds-hero-title">Хэрэглэгчийн Портал</h3>
+                            <div className="fds-hero-desc">Хэрэглэгчийн өөрийн порталын удирдлага</div>
+                        </div>
+                    </div>
+                    <button className="fds-add-btn" onClick={() => { setEditingItem(null); setShowModal(true) }}>
+                        Тохиргоо нэмэх
+                    </button>
+                </div>
+            </div>
             <div className="page-content mt-6 flex flex-col gap-6">
                 <div className="grid grid-cols-4 gap-6">
                     <div className="card p-6 bg-surface-2 border-none shadow-sm flex items-center justify-between group hover:bg-surface-3 transition-all"><div><h4 className="text-[10px] text-muted font-black tracking-widest uppercase mb-1">Нийт тохиргоо</h4><div className="text-3xl font-black text-primary">{items.length}</div></div><div className="bg-primary/10 p-4 rounded-2xl text-primary"><Settings size={28} /></div></div>

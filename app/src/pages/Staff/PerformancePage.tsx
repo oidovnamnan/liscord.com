@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
-import { Header } from '../../components/layout/Header';
 import { HubLayout } from '../../components/common/HubLayout';
-import { Target, Star } from 'lucide-react';
+import { Target, Star, BarChart3} from 'lucide-react';
 import { useBusinessStore } from '../../store';
 import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
 import { db } from '../../services/firebase';
 import { GenericCrudModal, type CrudField } from '../../components/common/GenericCrudModal';
+import '../Settings/components/FlashDealSettings.css';
 
 const PERFORMANCE_FIELDS: CrudField[] = [
     { name: 'employeeName', label: 'Ажилтны нэр', type: 'text', required: true },
@@ -50,7 +50,20 @@ export function PerformancePage() {
     return (
         <HubLayout hubId="staff-hub">
             <div className="page-container animate-fade-in">
-                <Header title="Гүйцэтгэлийн Үнэлгээ" action={{ label: '+ Үнэлгээ', onClick: () => { setEditingItem(null); setShowModal(true); } }} />
+                <div className="fds-hero">
+                <div className="fds-hero-top">
+                    <div className="fds-hero-left">
+                        <div className="fds-hero-icon"><BarChart3 size={24} /></div>
+                        <div>
+                            <h3 className="fds-hero-title">Гүйцэтгэл</h3>
+                            <div className="fds-hero-desc">Ажилтны гүйцэтгэлийн үнэлгээ</div>
+                        </div>
+                    </div>
+                    <button className="fds-add-btn" onClick={() => { setEditingItem(null); setShowModal(true) }}>
+                        + Үнэлгээ
+                    </button>
+                </div>
+            </div>
                 <div className="card" style={{ padding: 0, marginTop: 20 }}>
                     {loading ? (
                         <div style={{ padding: 48, textAlign: 'center', color: 'var(--text-muted)' }}>Ачаалж байна...</div>

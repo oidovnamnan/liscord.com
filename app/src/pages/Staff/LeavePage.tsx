@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
-import { Header } from '../../components/layout/Header';
 import { HubLayout } from '../../components/common/HubLayout';
-import { CheckCircle2, XCircle, Clock, Search, User, CalendarDays } from 'lucide-react';
+import { CheckCircle2, XCircle, Clock, Search, User, CalendarDays, CalendarOff} from 'lucide-react';
 import { useBusinessStore } from '../../store';
 import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
 import { db } from '../../services/firebase';
 import { GenericCrudModal, type CrudField } from '../../components/common/GenericCrudModal';
+import '../Settings/components/FlashDealSettings.css';
 
 const LEAVE_FIELDS: CrudField[] = [
     { name: 'employeeName', label: 'Ажилтны нэр', type: 'text', required: true },
@@ -65,7 +65,20 @@ export function LeavePage() {
     return (
         <HubLayout hubId="staff-hub">
             <div className="page-container animate-fade-in">
-                <Header title="Чөлөө / Амралт" action={{ label: '+ Хүсэлт', onClick: () => { setEditingItem(null); setShowModal(true); } }} />
+                <div className="fds-hero">
+                <div className="fds-hero-top">
+                    <div className="fds-hero-left">
+                        <div className="fds-hero-icon"><CalendarOff size={24} /></div>
+                        <div>
+                            <h3 className="fds-hero-title">Чөлөө</h3>
+                            <div className="fds-hero-desc">Чөлөөний удирдлага</div>
+                        </div>
+                    </div>
+                    <button className="fds-add-btn" onClick={() => { setEditingItem(null); setShowModal(true) }}>
+                        + Хүсэлт
+                    </button>
+                </div>
+            </div>
                 <div style={{ marginTop: 20, marginBottom: 20 }}>
                     <div className="search-box" style={{ maxWidth: 400 }}><Search size={18} /><input type="text" placeholder="Ажилтны нэрээр хайх..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} /></div>
                 </div>

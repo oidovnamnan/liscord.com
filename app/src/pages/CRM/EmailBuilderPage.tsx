@@ -1,6 +1,6 @@
-import { Header } from '../../components/layout/Header';
 import { HubLayout } from '../../components/common/HubLayout';
 import {
+import '../Settings/components/FlashDealSettings.css';
     Search,
     Zap,
     Layout,
@@ -15,21 +15,23 @@ import {
     Target,
     MoreVertical,
     Save,
-    Send
-} from 'lucide-react';
+    Send, Mail} from 'lucide-react';
 
 export function EmailBuilderPage() {
     return (
         <HubLayout hubId="crm-hub">
             <div className="page-container animate-fade-in">
-                <Header
-                    title="Имэйл Дизайнер (Email Builder)"
-                    subtitle="Drag-and-drop ашиглан мэргэжлийн маркетинг имэйл, newsletter болон авто-хариулагч бүтээх"
-                    action={{
-                        label: "Шинэ имэйл",
-                        onClick: () => { }
-                    }}
-                />
+                <div className="fds-hero">
+                <div className="fds-hero-top">
+                    <div className="fds-hero-left">
+                        <div className="fds-hero-icon"><Mail size={24} /></div>
+                        <div>
+                            <h3 className="fds-hero-title">И-мэйл Бүтээгч</h3>
+                            <div className="fds-hero-desc">И-мэйл загварын бүтээгч</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
                 <div className="grid-12 gap-6 mt-6">
                     {/* Insights Hub */}

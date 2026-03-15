@@ -1,13 +1,13 @@
 import { useState, useEffect } from 'react';
-import { Header } from '../../components/layout/Header';
 import { useBusinessStore } from '../../store';
 import { roomService, bookingService } from '../../services/db';
 import type { Room, Booking } from '../../types';
-import { Plus, Users, BedDouble, Calendar as CalendarIcon, Clock, Brush } from 'lucide-react';
+import { Plus, Users, BedDouble, Calendar as CalendarIcon, Clock, Brush, DoorOpen} from 'lucide-react';
 import { format, startOfDay, endOfDay } from 'date-fns';
 import { toast } from 'react-hot-toast';
 import { HubLayout } from '../../components/common/HubLayout';
 import './RoomsPage.css';
+import '../Settings/components/FlashDealSettings.css';
 
 export function RoomsPage() {
     const { business } = useBusinessStore();
@@ -61,14 +61,17 @@ export function RoomsPage() {
     return (
         <HubLayout hubId="services-hub">
             <div className="page-container rooms-page animate-fade-in">
-                <Header
-                    title="Өрөө / Талбайн удирдлага"
-                    subtitle="Өрөөний сан болон захиалгын хяналт"
-                    action={{
-                        label: "Захиалга үүсгэх",
-                        onClick: () => toast('Шинэ захиалга бүртгэх (Удахгүй)')
-                    }}
-                />
+                <div className="fds-hero">
+                <div className="fds-hero-top">
+                    <div className="fds-hero-left">
+                        <div className="fds-hero-icon"><DoorOpen size={24} /></div>
+                        <div>
+                            <h3 className="fds-hero-title">Өрөө & Зааль</h3>
+                            <div className="fds-hero-desc">Өрөө, заалны удирдлага</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
                 <div className="rooms-toolbar">
                     <div className="room-stats">

@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
-import { Header } from '../../components/layout/Header';
 import { HubLayout } from '../../components/common/HubLayout';
 import { ClipboardCheck } from 'lucide-react';
 import { useBusinessStore } from '../../store';
 import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
 import { db } from '../../services/firebase';
 import { GenericCrudModal, type CrudField } from '../../components/common/GenericCrudModal';
+import '../Settings/components/FlashDealSettings.css';
 
 const AUDIT_FIELDS: CrudField[] = [
     { name: 'title', label: 'Нэр', type: 'text', required: true, span: 2, placeholder: '2024 Q1 Тооллого' },
@@ -45,7 +45,20 @@ export function InventoryAuditPage() {
     return (
         <HubLayout hubId="inventory-hub">
             <div className="page-container animate-fade-in">
-                <Header title="Нөөцийн Тооллого" action={{ label: '+ Тооллого', onClick: () => { setEditingItem(null); setShowModal(true); } }} />
+                <div className="fds-hero">
+                <div className="fds-hero-top">
+                    <div className="fds-hero-left">
+                        <div className="fds-hero-icon"><ClipboardCheck size={24} /></div>
+                        <div>
+                            <h3 className="fds-hero-title">Тооллого</h3>
+                            <div className="fds-hero-desc">Агуулахын тооллого</div>
+                        </div>
+                    </div>
+                    <button className="fds-add-btn" onClick={() => { setEditingItem(null); setShowModal(true) }}>
+                        + Тооллого
+                    </button>
+                </div>
+            </div>
                 <div className="card" style={{ padding: 0, marginTop: 20 }}>
                     {loading ? <div style={{ padding: 48, textAlign: 'center', color: 'var(--text-muted)' }}>Ачаалж байна...</div> : (
                         <table className="table"><thead><tr><th>Нэр</th><th>Агуулах</th><th>Огноо</th><th>Тоолсон</th><th>Зөрүү</th><th>Төлөв</th></tr></thead>

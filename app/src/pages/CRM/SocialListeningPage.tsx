@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
-import { Header } from '../../components/layout/Header';
 import { HubLayout } from '../../components/common/HubLayout';
-import { Radio, MessageSquare, TrendingUp, Eye, ThumbsUp } from 'lucide-react';
+import { Radio, MessageSquare, TrendingUp, Eye, ThumbsUp, Ear} from 'lucide-react';
 import { useBusinessStore } from '../../store';
 import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
 import { db } from '../../services/firebase';
 import { GenericCrudModal, type CrudField } from '../../components/common/GenericCrudModal';
+import '../Settings/components/FlashDealSettings.css';
 
 const SOCIAL_FIELDS: CrudField[] = [
     { name: 'keyword', label: 'Түлхүүр үг', type: 'text', required: true, span: 2 },
@@ -54,7 +54,20 @@ export function SocialListeningPage() {
     return (
         <HubLayout hubId="crm-hub">
             <div className="page-container animate-fade-in">
-                <Header title="Сошиал Хяналт" action={{ label: '+ Түлхүүр үг', onClick: () => { setEditingItem(null); setShowModal(true); } }} />
+                <div className="fds-hero">
+                <div className="fds-hero-top">
+                    <div className="fds-hero-left">
+                        <div className="fds-hero-icon"><Ear size={24} /></div>
+                        <div>
+                            <h3 className="fds-hero-title">Сошиал Мониторинг</h3>
+                            <div className="fds-hero-desc">Сошиал хяналтын удирдлага</div>
+                        </div>
+                    </div>
+                    <button className="fds-add-btn" onClick={() => { setEditingItem(null); setShowModal(true) }}>
+                        + Түлхүүр үг
+                    </button>
+                </div>
+            </div>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 16, marginTop: 20 }}>
                     {loading ? <div style={{ gridColumn: '1 / -1', padding: 48, textAlign: 'center', color: 'var(--text-muted)' }}>Ачаалж байна...</div> :
                         items.length === 0 ? <div className="card" style={{ gridColumn: '1 / -1', padding: 60, textAlign: 'center' }}><Radio size={48} color="var(--text-muted)" /><h3>Түлхүүр үг нэмнэ үү</h3></div> :

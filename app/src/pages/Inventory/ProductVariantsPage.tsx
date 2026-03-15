@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
-import { Header } from '../../components/layout/Header';
 import { HubLayout } from '../../components/common/HubLayout';
-import { Layers } from 'lucide-react';
+import { Layers, Palette} from 'lucide-react';
 import { useBusinessStore } from '../../store';
 import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
 import { db } from '../../services/firebase';
 import { GenericCrudModal, type CrudField } from '../../components/common/GenericCrudModal';
+import '../Settings/components/FlashDealSettings.css';
 const VARIANT_FIELDS: CrudField[] = [
     { name: 'productName', label: 'Бүтээгдэхүүн', type: 'text', required: true },
     { name: 'variantName', label: 'Вариант', type: 'text', required: true, placeholder: 'Хар / XL' },
@@ -28,7 +28,20 @@ export function ProductVariantsPage() {
     return (
         <HubLayout hubId="inventory-hub">
             <div className="page-container animate-fade-in">
-                <Header title="Бүтээгдэхүүний Вариант" action={{ label: '+ Вариант', onClick: () => { setEditingItem(null); setShowModal(true); } }} />
+                <div className="fds-hero">
+                <div className="fds-hero-top">
+                    <div className="fds-hero-left">
+                        <div className="fds-hero-icon"><Palette size={24} /></div>
+                        <div>
+                            <h3 className="fds-hero-title">Барааны Хувилбар</h3>
+                            <div className="fds-hero-desc">Өнгө, хэмжээний удирдлага</div>
+                        </div>
+                    </div>
+                    <button className="fds-add-btn" onClick={() => { setEditingItem(null); setShowModal(true) }}>
+                        + Вариант
+                    </button>
+                </div>
+            </div>
                 <div className="card" style={{ padding: 0, marginTop: 20 }}>
                     {loading ? <div style={{ padding: 48, textAlign: 'center', color: 'var(--text-muted)' }}>Ачаалж байна...</div> : (
                         <table className="table"><thead><tr><th>Бүтээгдэхүүн</th><th>Вариант</th><th>SKU</th><th>Өнгө</th><th>Хэмжээ</th><th>Үнэ</th><th>Үлдэгдэл</th></tr></thead>

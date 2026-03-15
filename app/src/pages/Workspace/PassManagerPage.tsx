@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
-import { Header } from '../../components/layout/Header';
 import { HubLayout } from '../../components/common/HubLayout';
 import { KeyRound, Search } from 'lucide-react';
 import { useBusinessStore } from '../../store';
 import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
 import { db } from '../../services/firebase';
 import { GenericCrudModal, type CrudField } from '../../components/common/GenericCrudModal';
+import '../Settings/components/FlashDealSettings.css';
 const PASS_FIELDS: CrudField[] = [
     { name: 'title', label: 'Нэр', type: 'text', required: true, placeholder: 'Facebook бизнес аккаунт' },
     {
@@ -33,7 +33,20 @@ export function PassManagerPage() {
     return (
         <HubLayout hubId="workspace-hub">
             <div className="page-container animate-fade-in">
-                <Header title="Нууц Үг Менежер" action={{ label: '+ Нэмэх', onClick: () => { setEditingItem(null); setShowModal(true); } }} />
+                <div className="fds-hero">
+                <div className="fds-hero-top">
+                    <div className="fds-hero-left">
+                        <div className="fds-hero-icon"><KeyRound size={24} /></div>
+                        <div>
+                            <h3 className="fds-hero-title">Нууц Үг</h3>
+                            <div className="fds-hero-desc">Нууц үгийн удирдлага</div>
+                        </div>
+                    </div>
+                    <button className="fds-add-btn" onClick={() => { setEditingItem(null); setShowModal(true) }}>
+                        + Нэмэх
+                    </button>
+                </div>
+            </div>
                 <div style={{ margin: '20px 0' }}><div className="search-box" style={{ maxWidth: 400 }}><Search size={18} /><input type="text" placeholder="Хайх..." value={search} onChange={e => setSearch(e.target.value)} /></div></div>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 16 }}>
                     {loading ? <div style={{ gridColumn: '1 / -1', padding: 48, textAlign: 'center', color: 'var(--text-muted)' }}>Ачаалж байна...</div> :

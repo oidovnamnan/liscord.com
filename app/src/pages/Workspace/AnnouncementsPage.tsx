@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
-import { Header } from '../../components/layout/Header';
 import { HubLayout } from '../../components/common/HubLayout';
-import { Bell, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Bell, CheckCircle2, AlertCircle, Megaphone} from 'lucide-react';
 import { useBusinessStore } from '../../store';
 import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
 import { db } from '../../services/firebase';
 import { GenericCrudModal, type CrudField } from '../../components/common/GenericCrudModal';
+import '../Settings/components/FlashDealSettings.css';
 
 const ANNOUNCEMENT_FIELDS: CrudField[] = [
     { name: 'title', label: 'Гарчиг', type: 'text', required: true, span: 2 },
@@ -55,7 +55,20 @@ export function AnnouncementsPage() {
     return (
         <HubLayout hubId="workspace-hub">
             <div className="page-container animate-fade-in">
-                <Header title="Зарлал & Мэдэгдэл" action={{ label: '+ Шинэ зарлал', onClick: () => { setEditingItem(null); setShowModal(true); } }} />
+                <div className="fds-hero">
+                <div className="fds-hero-top">
+                    <div className="fds-hero-left">
+                        <div className="fds-hero-icon"><Megaphone size={24} /></div>
+                        <div>
+                            <h3 className="fds-hero-title">Зарлал</h3>
+                            <div className="fds-hero-desc">Байгууллагын зарлал, мэдэгдэл</div>
+                        </div>
+                    </div>
+                    <button className="fds-add-btn" onClick={() => { setEditingItem(null); setShowModal(true) }}>
+                        + Шинэ зарлал
+                    </button>
+                </div>
+            </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 16, marginTop: 20 }}>
                     {loading ? (
                         <div className="card" style={{ padding: 48, textAlign: 'center', color: 'var(--text-muted)' }}>Ачаалж байна...</div>

@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
-import { Header } from '../../components/layout/Header';
 import { HubLayout } from '../../components/common/HubLayout';
 import { Cog, CheckCircle2, Timer, PlayCircle, Factory } from 'lucide-react';
 import { useBusinessStore } from '../../store';
 import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
 import { db } from '../../services/firebase';
 import { GenericCrudModal, type CrudField } from '../../components/common/GenericCrudModal';
+import '../Settings/components/FlashDealSettings.css';
 
 const ORDER_FIELDS: CrudField[] = [
     { name: 'product', label: 'Бүтээгдэхүүн', type: 'text', required: true },
@@ -49,7 +49,20 @@ export function ManufacturingPage() {
     return (
         <HubLayout hubId="manufacturing-hub">
             <div className="page-container animate-fade-in">
-                <Header title="Үйлдвэрлэл" action={{ label: '+ Захиалга', onClick: () => { setEditingItem(null); setShowModal(true); } }} />
+                <div className="fds-hero">
+                <div className="fds-hero-top">
+                    <div className="fds-hero-left">
+                        <div className="fds-hero-icon"><Factory size={24} /></div>
+                        <div>
+                            <h3 className="fds-hero-title">Үйлдвэрлэл</h3>
+                            <div className="fds-hero-desc">Үйлдвэрлэлийн удирдлага</div>
+                        </div>
+                    </div>
+                    <button className="fds-add-btn" onClick={() => { setEditingItem(null); setShowModal(true) }}>
+                        + Захиалга
+                    </button>
+                </div>
+            </div>
                 <div style={{ display: 'flex', gap: 8, margin: '20px 0', flexWrap: 'wrap' }}>
                     {['all', 'pending', 'cutting', 'assembling', 'finished'].map(s => (
                         <button key={s} className={`btn ${filter === s ? 'btn-primary' : ''}`} onClick={() => setFilter(s)} style={{ fontSize: '0.85rem' }}>

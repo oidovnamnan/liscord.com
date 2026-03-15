@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
-import { Header } from '../../components/layout/Header';
 import { HubLayout } from '../../components/common/HubLayout';
-import { HeartPulse, Shield, Users, CheckCircle2 } from 'lucide-react';
+import { HeartPulse, Shield, Users, CheckCircle2, Gift} from 'lucide-react';
 import { useBusinessStore } from '../../store';
 import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
 import { db } from '../../services/firebase';
 import { GenericCrudModal, type CrudField } from '../../components/common/GenericCrudModal';
+import '../Settings/components/FlashDealSettings.css';
 
 const BENEFIT_FIELDS: CrudField[] = [
     { name: 'name', label: 'Нэр', type: 'text', required: true, span: 2, placeholder: 'Эрүүл мэндийн даатгал' },
@@ -56,7 +56,20 @@ export function BenefitsPage() {
     return (
         <HubLayout hubId="hr-hub">
             <div className="page-container animate-fade-in">
-                <Header title="Нийгмийн хамгаалал & Урамшуулал" action={{ label: '+ Нэмэх', onClick: () => { setEditingItem(null); setShowModal(true); } }} />
+                <div className="fds-hero">
+                <div className="fds-hero-top">
+                    <div className="fds-hero-left">
+                        <div className="fds-hero-icon"><Gift size={24} /></div>
+                        <div>
+                            <h3 className="fds-hero-title">Тэтгэмж</h3>
+                            <div className="fds-hero-desc">Ажилтны тэтгэмжийн удирдлага</div>
+                        </div>
+                    </div>
+                    <button className="fds-add-btn" onClick={() => { setEditingItem(null); setShowModal(true) }}>
+                        + Нэмэх
+                    </button>
+                </div>
+            </div>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 20, marginTop: 20 }}>
                     {loading ? (
                         <div style={{ gridColumn: '1 / -1', padding: 48, textAlign: 'center', color: 'var(--text-muted)' }}>Ачаалж байна...</div>

@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
-import { Header } from '../../components/layout/Header';
 import { HubLayout } from '../../components/common/HubLayout';
-import { UserPlus, Briefcase } from 'lucide-react';
+import { UserPlus, Briefcase, UserSearch} from 'lucide-react';
 import { useBusinessStore } from '../../store';
 import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
 import { db } from '../../services/firebase';
 import { GenericCrudModal, type CrudField } from '../../components/common/GenericCrudModal';
+import '../Settings/components/FlashDealSettings.css';
 
 const RECRUITMENT_FIELDS: CrudField[] = [
     { name: 'position', label: 'Албан тушаал', type: 'text', required: true, placeholder: 'Менежер, Дизайнер гэх мэт' },
@@ -59,7 +59,20 @@ export function RecruitmentPage() {
     return (
         <HubLayout hubId="staff-hub">
             <div className="page-container animate-fade-in">
-                <Header title="Ажилд авах" action={{ label: '+ Шинэ зар', onClick: () => { setEditingItem(null); setShowModal(true); } }} />
+                <div className="fds-hero">
+                <div className="fds-hero-top">
+                    <div className="fds-hero-left">
+                        <div className="fds-hero-icon"><UserSearch size={24} /></div>
+                        <div>
+                            <h3 className="fds-hero-title">Ажилд Авах</h3>
+                            <div className="fds-hero-desc">Ажилтан сонгон шалгаруулалт</div>
+                        </div>
+                    </div>
+                    <button className="fds-add-btn" onClick={() => { setEditingItem(null); setShowModal(true) }}>
+                        + Шинэ зар
+                    </button>
+                </div>
+            </div>
                 <div className="card" style={{ padding: 0, marginTop: 20 }}>
                     {loading ? (
                         <div style={{ padding: 48, textAlign: 'center', color: 'var(--text-muted)' }}>Ачаалж байна...</div>

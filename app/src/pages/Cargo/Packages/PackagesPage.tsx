@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react';
-import { Header } from '../../../components/layout/Header';
-import { ScanLine, Package as PackageIcon, Clock, ChevronRight, User } from 'lucide-react';
+import { ScanLine, Package as PackageIcon, Clock, ChevronRight, User, Package} from 'lucide-react';
 import { NewPackageBatch } from './NewPackageBatch';
 import { HubLayout } from '../../../components/common/HubLayout';
 import { useBusinessStore } from '../../../store';
 import { packageService } from '../../../services/db';
 import type { PackageBatch } from '../../../types';
 import './Packages.css';
+import '../../Settings/components/FlashDealSettings.css';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const fmt = (d: any) => {
@@ -34,15 +34,20 @@ export function PackagesPage() {
 
     return (
         <HubLayout hubId="logistics-hub">
-            <Header
-                title="Ачаа бүртгэл (AI)"
-                subtitle="Хятадаас ирсэн ачааг шошгоор нь таньж статус шинэчлэх"
-                action={
-                    view === 'list'
-                        ? { label: 'Шинэ багц бүртгэх', onClick: () => setView('new') }
-                        : { label: 'Жагсаалт руу буцах', onClick: () => setView('list') }
-                }
-            />
+            <div className="fds-hero">
+                <div className="fds-hero-top">
+                    <div className="fds-hero-left">
+                        <div className="fds-hero-icon"><Package size={24} /></div>
+                        <div>
+                            <h3 className="fds-hero-title">Ачаа Илгээмж</h3>
+                            <div className="fds-hero-desc">Ачаа илгээмжийн удирдлага</div>
+                        </div>
+                    </div>
+                    <button className="fds-add-btn" onClick={() => { setView('new') }}>
+                        Шинэ багц бүртгэх
+                    </button>
+                </div>
+            </div>
 
             <div className="page packages-page">
                 {view === 'list' ? (

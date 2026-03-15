@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
-import { Header } from '../../components/layout/Header';
 import { HubLayout } from '../../components/common/HubLayout';
-import { Stethoscope, Calendar, Plus, Clock, User, CheckCircle2 } from 'lucide-react';
+import { Stethoscope, Calendar, Plus, Clock, User, CheckCircle2, Heart} from 'lucide-react';
 import { useBusinessStore } from '../../store';
 import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
 import { db } from '../../services/firebase';
 import { GenericCrudModal, type CrudField } from '../../components/common/GenericCrudModal';
+import '../Settings/components/FlashDealSettings.css';
 const F: CrudField[] = [
     { name: 'patient', label: 'Өвчтөн', type: 'text', required: true },
     {
@@ -34,7 +34,20 @@ export function DentalClinicPage() {
     useEffect(() => { if (!business?.id) return; const q = query(collection(db, `businesses/${business.id}/dentalAppointments`), orderBy('createdAt', 'desc')); const unsub = onSnapshot(q, s => { setItems(s.docs.map(d => ({ id: d.id, ...d.data() } as any))); setLoading(false); }); return () => unsub(); }, [business?.id]); // eslint-disable-line
     return (
         <HubLayout hubId="industry-hub">
-            <Header title="Шүдний эмнэлэг" subtitle="Өвчтөний цаг захиалга, эмчилгээний түүх болон эмчийн хуваарь" action={{ label: 'Шинэ цаг', onClick: () => { setEditingItem(null); setShowModal(true); } }} />
+            <div className="fds-hero">
+                <div className="fds-hero-top">
+                    <div className="fds-hero-left">
+                        <div className="fds-hero-icon"><Heart size={24} /></div>
+                        <div>
+                            <h3 className="fds-hero-title">Шүдний Эмнэлэг</h3>
+                            <div className="fds-hero-desc">Шүдний эмнэлгийн удирдлага</div>
+                        </div>
+                    </div>
+                    <button className="fds-add-btn" onClick={() => { setEditingItem(null); setShowModal(true) }}>
+                        Шинэ цаг
+                    </button>
+                </div>
+            </div>
             <div className="page-content mt-6 flex flex-col gap-6">
                 <div className="grid grid-cols-3 gap-6">
                     <div className="card p-6 bg-surface-2 border-none shadow-sm flex items-center justify-between group hover:bg-surface-3 transition-all"><div><h4 className="text-[10px] text-muted font-black tracking-widest uppercase mb-1">Нийт цаг</h4><div className="text-3xl font-black text-primary">{items.length}</div></div><div className="bg-primary/10 p-4 rounded-2xl text-primary group-hover:scale-110 transition-transform"><Calendar size={28} /></div></div>

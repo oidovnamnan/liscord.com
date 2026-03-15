@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { Header } from '../../components/layout/Header';
 import { HubLayout } from '../../components/common/HubLayout';
 import {
     Zap,
@@ -15,12 +14,12 @@ import {
     BrainCircuit,
     Route as RouteIcon,
     Maximize,
-    ChevronRight
-} from 'lucide-react';
+    ChevronRight, Route} from 'lucide-react';
 import { useBusinessStore } from '../../store';
 import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
 import { db } from '../../services/firebase';
 import { GenericCrudModal, type CrudField } from '../../components/common/GenericCrudModal';
+import '../Settings/components/FlashDealSettings.css';
 
 const ROUTE_FIELDS: CrudField[] = [
     { name: 'driver', label: 'Жолооч', type: 'text', required: true },
@@ -61,14 +60,17 @@ export function RouteOptimizePage() {
     return (
         <HubLayout hubId="logistics-hub">
             <div className="page-container animate-fade-in">
-                <Header
-                    title="Маршрут Оновчлол (AI Route)"
-                    subtitle="Хүргэлтийн хамгийн дөт замыг AI ашиглан тооцоолж, цаг болон түлш хэмнэх"
-                    action={{
-                        label: "AI Тооцоолол",
-                        onClick: () => { setEditingItem(null); setShowModal(true); }
-                    }}
-                />
+                <div className="fds-hero">
+                <div className="fds-hero-top">
+                    <div className="fds-hero-left">
+                        <div className="fds-hero-icon"><Route size={24} /></div>
+                        <div>
+                            <h3 className="fds-hero-title">Маршрут</h3>
+                            <div className="fds-hero-desc">Маршрутын оновчлол</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
                 <div className="grid-12 gap-6 mt-6">
                     <div className="col-12 grid grid-cols-4 gap-6">

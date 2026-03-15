@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
-import { Header } from '../../components/layout/Header';
 import { HubLayout } from '../../components/common/HubLayout';
 import { MapPin, Phone, Navigation, CheckCircle2, Users, Plus, Star, TrendingUp } from 'lucide-react';
 import { useBusinessStore } from '../../store';
 import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
 import { db } from '../../services/firebase';
 import { GenericCrudModal, type CrudField } from '../../components/common/GenericCrudModal';
+import '../Settings/components/FlashDealSettings.css';
 
 const F: CrudField[] = [
     { name: 'salesRep', label: 'Борлуулагч', type: 'text', required: true },
@@ -25,7 +25,20 @@ export function FieldSalesPage() {
 
     return (
         <HubLayout hubId="crm-hub">
-            <Header title="Газар дээрхи борлуулалт" subtitle="Борлуулагчдын зочилсон газар, үр дүн, маршрутыг хянах" action={{ label: 'Зочилт бүртгэх', onClick: () => { setEditingItem(null); setShowModal(true); } }} />
+            <div className="fds-hero">
+                <div className="fds-hero-top">
+                    <div className="fds-hero-left">
+                        <div className="fds-hero-icon"><MapPin size={24} /></div>
+                        <div>
+                            <h3 className="fds-hero-title">Талбарын Борлуулалт</h3>
+                            <div className="fds-hero-desc">Талбарын борлуулалтын удирдлага</div>
+                        </div>
+                    </div>
+                    <button className="fds-add-btn" onClick={() => { setEditingItem(null); setShowModal(true) }}>
+                        Зочилт бүртгэх
+                    </button>
+                </div>
+            </div>
             <div className="page-content mt-6 flex flex-col gap-6">
                 <div className="grid grid-cols-4 gap-6">
                     <div className="card p-6 bg-surface-2 border-none shadow-sm flex items-center justify-between group hover:bg-surface-3 transition-all"><div><h4 className="text-[10px] text-muted font-black tracking-widest uppercase mb-1">Нийт зочилт</h4><div className="text-3xl font-black text-primary">{items.length}</div></div><div className="bg-primary/10 p-4 rounded-2xl text-primary"><MapPin size={28} /></div></div>

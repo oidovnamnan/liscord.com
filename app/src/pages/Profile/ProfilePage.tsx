@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
-import { Header } from '../../components/layout/Header';
-import { User as UserIcon, Mail, Phone, Lock, Save, CheckCircle2, AlertTriangle, LogOut } from 'lucide-react';
+import { User as UserIcon, Mail, Phone, Lock, Save, CheckCircle2, AlertTriangle, LogOut, User} from 'lucide-react';
 import { useAuthStore, useBusinessStore } from '../../store';
 import { userService } from '../../services/db';
 import { getAuth, updatePassword, reauthenticateWithCredential, EmailAuthProvider, signOut } from 'firebase/auth';
 import './ProfilePage.css';
+import '../Settings/components/FlashDealSettings.css';
 
 export function ProfilePage() {
     const { user, setUser } = useAuthStore();
@@ -91,8 +91,18 @@ export function ProfilePage() {
     };
 
     return (
-        <>
-            <Header title="Хувийн Профайл" />
+            <div className="animate-fade-in" style={{ padding: '24px clamp(16px, 3vw, 32px) 32px' }}>
+            <div className="fds-hero">
+                <div className="fds-hero-top">
+                    <div className="fds-hero-left">
+                        <div className="fds-hero-icon"><User size={24} /></div>
+                        <div>
+                            <h3 className="fds-hero-title">Профайл</h3>
+                            <div className="fds-hero-desc">Хэрэглэгчийн профайл</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
             <div className="page animate-fade-in" style={{ gap: 28 }}>
                 {/* Profile Hero */}
                 <div className="profile-hero">
@@ -230,6 +240,6 @@ export function ProfilePage() {
                     </button>
                 </div>
             </div>
-        </>
-    );
+            </div>
+        );
 }

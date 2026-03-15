@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
-import { Header } from '../../components/layout/Header';
 import { HubLayout } from '../../components/common/HubLayout';
 import { RotateCcw } from 'lucide-react';
 import { useBusinessStore } from '../../store';
 import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
 import { db } from '../../services/firebase';
 import { GenericCrudModal, type CrudField } from '../../components/common/GenericCrudModal';
+import '../Settings/components/FlashDealSettings.css';
 const RMA_FIELDS: CrudField[] = [
     { name: 'customerName', label: 'Үйлчлүүлэгч', type: 'text', required: true },
     { name: 'productName', label: 'Бүтээгдэхүүн', type: 'text', required: true },
@@ -40,7 +40,20 @@ export function RMAPage() {
     return (
         <HubLayout hubId="inventory-hub">
             <div className="page-container animate-fade-in">
-                <Header title="Буцаалт (RMA)" action={{ label: '+ Хүсэлт', onClick: () => { setEditingItem(null); setShowModal(true); } }} />
+                <div className="fds-hero">
+                <div className="fds-hero-top">
+                    <div className="fds-hero-left">
+                        <div className="fds-hero-icon"><RotateCcw size={24} /></div>
+                        <div>
+                            <h3 className="fds-hero-title">RMA</h3>
+                            <div className="fds-hero-desc">Буцаалт, солилтын удирдлага</div>
+                        </div>
+                    </div>
+                    <button className="fds-add-btn" onClick={() => { setEditingItem(null); setShowModal(true) }}>
+                        + Хүсэлт
+                    </button>
+                </div>
+            </div>
                 <div className="card" style={{ padding: 0, marginTop: 20 }}>
                     {loading ? <div style={{ padding: 48, textAlign: 'center', color: 'var(--text-muted)' }}>Ачаалж байна...</div> : (
                         <table className="table"><thead><tr><th>Үйлчлүүлэгч</th><th>Бүтээгдэхүүн</th><th>Шалтгаан</th><th>Арга</th><th>Дүн</th><th>Төлөв</th></tr></thead>

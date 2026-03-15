@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
-import { Header } from '../../components/layout/Header';
 import { HubLayout } from '../../components/common/HubLayout';
 import { ClipboardList, BarChart2, CheckCircle2 } from 'lucide-react';
 import { useBusinessStore } from '../../store';
 import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
 import { db } from '../../services/firebase';
 import { GenericCrudModal, type CrudField } from '../../components/common/GenericCrudModal';
+import '../Settings/components/FlashDealSettings.css';
 
 const SURVEY_FIELDS: CrudField[] = [
     { name: 'title', label: 'Судалгааны нэр', type: 'text', required: true, span: 2 },
@@ -59,7 +59,20 @@ export function SurveysPage() {
     return (
         <HubLayout hubId="hr-hub">
             <div className="page-container animate-fade-in">
-                <Header title="Дотоод Судалгаа" action={{ label: '+ Судалгаа', onClick: () => { setEditingItem(null); setShowModal(true); } }} />
+                <div className="fds-hero">
+                <div className="fds-hero-top">
+                    <div className="fds-hero-left">
+                        <div className="fds-hero-icon"><ClipboardList size={24} /></div>
+                        <div>
+                            <h3 className="fds-hero-title">Судалгаа</h3>
+                            <div className="fds-hero-desc">Ажилтны судалгаа, санал асуулга</div>
+                        </div>
+                    </div>
+                    <button className="fds-add-btn" onClick={() => { setEditingItem(null); setShowModal(true) }}>
+                        + Судалгаа
+                    </button>
+                </div>
+            </div>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 20, marginTop: 20 }}>
                     {loading ? <div style={{ gridColumn: '1 / -1', padding: 48, textAlign: 'center', color: 'var(--text-muted)' }}>Ачаалж байна...</div> :
                         surveys.length === 0 ? <div className="card" style={{ gridColumn: '1 / -1', padding: 60, textAlign: 'center' }}><ClipboardList size={48} color="var(--text-muted)" /><h3>Судалгаа байхгүй</h3><button className="btn btn-primary" onClick={() => setShowModal(true)} style={{ marginTop: 16 }}>Эхлэх</button></div> :

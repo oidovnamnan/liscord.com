@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
-import { Header } from '../../components/layout/Header';
 import { HubLayout } from '../../components/common/HubLayout';
 import { Box, Printer, Check, Search, Package, Tag, Plus } from 'lucide-react';
 import { useBusinessStore } from '../../store';
 import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
 import { db } from '../../services/firebase';
 import { GenericCrudModal, type CrudField } from '../../components/common/GenericCrudModal';
+import '../Settings/components/FlashDealSettings.css';
 
 const F: CrudField[] = [
     { name: 'orderNumber', label: 'Захиалгын №', type: 'text', required: true },
@@ -23,7 +23,17 @@ export function PackingPage() {
 
     return (
         <HubLayout hubId="logistics-hub">
-            <Header title="Савлалт & Шошгожилт" subtitle="Барааг хайрцаглах, баглах болон хүргэлтийн шошго хэвлэх" action={{ label: "Савлах", onClick: () => { setEditingItem(null); setShowModal(true); } }} />
+            <div className="fds-hero">
+                <div className="fds-hero-top">
+                    <div className="fds-hero-left">
+                        <div className="fds-hero-icon"><Package size={24} /></div>
+                        <div>
+                            <h3 className="fds-hero-title">Савлагаа</h3>
+                            <div className="fds-hero-desc">Савлагааны удирдлага</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
             <div className="page-content mt-6 flex flex-col gap-6">
                 <div className="grid-3 gap-4">
                     <div className="card p-5 bg-surface-1 border-l-4 border-l-primary flex justify-between items-center"><div><div className="text-2xl font-bold">{items.filter(i => i.status === 'packing').length}</div><div className="text-xs text-muted uppercase font-bold">Савлаж буй</div></div><Box className="text-primary opacity-40" size={32} /></div>

@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
-import { Header } from '../../components/layout/Header';
 import { HubLayout } from '../../components/common/HubLayout';
 import { Clock, Users, UserCircle, CalendarDays } from 'lucide-react';
 import { useBusinessStore } from '../../store';
 import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
 import { db } from '../../services/firebase';
 import { GenericCrudModal, type CrudField } from '../../components/common/GenericCrudModal';
+import '../Settings/components/FlashDealSettings.css';
 
 const SHIFT_FIELDS: CrudField[] = [
     { name: 'employeeName', label: 'Ажилтан', type: 'text', required: true },
@@ -60,7 +60,20 @@ export function ShiftsPage() {
     return (
         <HubLayout hubId="hr-hub">
             <div className="page-container animate-fade-in">
-                <Header title="Ээлжийн Хуваарь" action={{ label: '+ Ээлж нэмэх', onClick: () => { setEditingItem(null); setShowModal(true); } }} />
+                <div className="fds-hero">
+                <div className="fds-hero-top">
+                    <div className="fds-hero-left">
+                        <div className="fds-hero-icon"><Clock size={24} /></div>
+                        <div>
+                            <h3 className="fds-hero-title">Ээлж</h3>
+                            <div className="fds-hero-desc">Ажлын ээлжийн удирдлага</div>
+                        </div>
+                    </div>
+                    <button className="fds-add-btn" onClick={() => { setEditingItem(null); setShowModal(true) }}>
+                        + Ээлж нэмэх
+                    </button>
+                </div>
+            </div>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, margin: '20px 0' }}>
                     <div className="card" style={{ padding: 20 }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>

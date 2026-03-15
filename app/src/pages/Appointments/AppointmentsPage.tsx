@@ -1,14 +1,14 @@
 import { useState, useEffect } from 'react';
-import { Header } from '../../components/layout/Header';
 import { useBusinessStore } from '../../store';
 import { appointmentService, serviceCatalogService, businessService } from '../../services/db';
 import type { Appointment, Service, Employee } from '../../types';
-import { ChevronLeft, ChevronRight, Clock } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Clock, CalendarCheck} from 'lucide-react';
 import { format, addDays, subDays, startOfDay, endOfDay, addMinutes } from 'date-fns';
 import { toast } from 'react-hot-toast';
 import { NewAppointmentModal } from './components/NewAppointmentModal';
 import { HubLayout } from '../../components/common/HubLayout';
 import './AppointmentsPage.css';
+import '../Settings/components/FlashDealSettings.css';
 
 // Settings Helpers
 const START_HOUR = 9;
@@ -109,14 +109,17 @@ export function AppointmentsPage() {
     return (
         <HubLayout hubId="industry-hub">
             <div className="page-container appointments-page animate-fade-in">
-                <Header
-                    title="Цаг захиалга"
-                    subtitle="Календарь болон цагийн хуваарь удирдах"
-                    action={{
-                        label: "Цаг бүртгэх",
-                        onClick: () => handleOpenModal(viewDate, selectedStaff !== 'all' ? selectedStaff : '')
-                    }}
-                />
+                <div className="fds-hero">
+                <div className="fds-hero-top">
+                    <div className="fds-hero-left">
+                        <div className="fds-hero-icon"><CalendarCheck size={24} /></div>
+                        <div>
+                            <h3 className="fds-hero-title">Цаг Захиалга</h3>
+                            <div className="fds-hero-desc">Цаг захиалгын удирдлага</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
                 <div className="page-content" style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
                     <div className="calendar-container">

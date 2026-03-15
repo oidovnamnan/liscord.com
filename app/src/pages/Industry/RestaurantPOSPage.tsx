@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
-import { Header } from '../../components/layout/Header';
 import { HubLayout } from '../../components/common/HubLayout';
-import { Users, Clock, Table as TableIcon, Plus, DollarSign, Split, Printer, ChefHat } from 'lucide-react';
+import { Users, Clock, Table as TableIcon, Plus, DollarSign, Split, Printer, ChefHat, UtensilsCrossed} from 'lucide-react';
 import { useBusinessStore } from '../../store';
 import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
 import { db } from '../../services/firebase';
 import { GenericCrudModal, type CrudField } from '../../components/common/GenericCrudModal';
+import '../Settings/components/FlashDealSettings.css';
 
 const TABLE_FIELDS: CrudField[] = [
     { name: 'name', label: 'Ширээний нэр', type: 'text', required: true },
@@ -45,7 +45,17 @@ export function RestaurantPOSPage() {
 
     return (
         <HubLayout hubId="industry-hub">
-            <Header title="Рестораны ПОС" subtitle="Ширээ удирдах, захиалга авах, тооцоо бодох" />
+            <div className="fds-hero">
+                <div className="fds-hero-top">
+                    <div className="fds-hero-left">
+                        <div className="fds-hero-icon"><UtensilsCrossed size={24} /></div>
+                        <div>
+                            <h3 className="fds-hero-title">Ресторан POS</h3>
+                            <div className="fds-hero-desc">Ресторан тооцооны систем</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
             <div className="page-content mt-6 h-full">
                 <div className="flex flex-col gap-8 animate-fade-in">
                     <div className="flex justify-between items-center">

@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
-import { Header } from '../../components/layout/Header';
 import { HubLayout } from '../../components/common/HubLayout';
 import { GraduationCap, BookOpen, CheckCircle2, Clock, Award } from 'lucide-react';
 import { useBusinessStore } from '../../store';
 import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
 import { db } from '../../services/firebase';
 import { GenericCrudModal, type CrudField } from '../../components/common/GenericCrudModal';
+import '../Settings/components/FlashDealSettings.css';
 
 const TRAINING_FIELDS: CrudField[] = [
     { name: 'title', label: 'Сургалтын нэр', type: 'text', required: true, span: 2 },
@@ -64,7 +64,20 @@ export function TrainingPage() {
     return (
         <HubLayout hubId="hr-hub">
             <div className="page-container animate-fade-in">
-                <Header title="Сургалт & Хөгжил" action={{ label: '+ Сургалт нэмэх', onClick: () => { setEditingItem(null); setShowModal(true); } }} />
+                <div className="fds-hero">
+                <div className="fds-hero-top">
+                    <div className="fds-hero-left">
+                        <div className="fds-hero-icon"><GraduationCap size={24} /></div>
+                        <div>
+                            <h3 className="fds-hero-title">Сургалт</h3>
+                            <div className="fds-hero-desc">Ажилтны сургалтын удирдлага</div>
+                        </div>
+                    </div>
+                    <button className="fds-add-btn" onClick={() => { setEditingItem(null); setShowModal(true) }}>
+                        + Сургалт нэмэх
+                    </button>
+                </div>
+            </div>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 20, marginTop: 20 }}>
                     {loading ? (
                         <div style={{ gridColumn: '1 / -1', padding: 48, textAlign: 'center', color: 'var(--text-muted)' }}>Ачаалж байна...</div>

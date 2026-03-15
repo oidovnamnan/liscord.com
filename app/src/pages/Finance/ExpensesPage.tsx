@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
-import { Header } from '../../components/layout/Header';
 import { Search, Loader2, TrendingDown, Receipt, Edit2 } from 'lucide-react';
 import { useBusinessStore } from '../../store';
 import { expenseService } from '../../services/db';
 import { format } from 'date-fns';
 import { GenericCrudModal, type CrudField } from '../../components/common/GenericCrudModal';
+import '../Settings/components/FlashDealSettings.css';
 
 const EXPENSE_FIELDS: CrudField[] = [
     { name: 'description', label: 'Утга / Тайлбар', type: 'text', required: true, placeholder: 'Оффисийн түрээс, цалин гэх мэт', span: 2 },
@@ -63,9 +63,22 @@ export function ExpensesPage() {
     const totalThisMonth = expenses.reduce((sum, e) => sum + (e.amount || 0), 0);
 
     return (
-        <>
-            <Header title="Зардлын Хяналт" action={{ label: '+ Шинэ зардал', onClick: () => { setEditingItem(null); setShowModal(true); } }} />
-            <div className="page">
+            <div className="animate-fade-in" style={{ padding: '24px clamp(16px, 3vw, 32px) 32px' }}>
+            <div className="fds-hero">
+                <div className="fds-hero-top">
+                    <div className="fds-hero-left">
+                        <div className="fds-hero-icon"><TrendingDown size={24} /></div>
+                        <div>
+                            <h3 className="fds-hero-title">Зардлын Хяналт</h3>
+                            <div className="fds-hero-desc">Зардлын бүртгэл, ангилал, шинжилгээ</div>
+                        </div>
+                    </div>
+                    <button className="fds-add-btn" onClick={() => { setEditingItem(null); setShowModal(true) }}>
+                        + Шинэ зардал
+                    </button>
+                </div>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16, marginBottom: 20 }}>
                     <div className="card" style={{ padding: 20 }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -135,6 +148,6 @@ export function ExpensesPage() {
                     onClose={() => setShowModal(false)}
                 />
             )}
-        </>
-    );
+            </div>
+        );
 }

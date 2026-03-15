@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { Header } from '../../components/layout/Header';
+import '../Settings/components/FlashDealSettings.css';
 import { Search, Plus, Phone, Mail, MoreVertical, ShoppingCart, DollarSign, Loader2, Pencil, Trash2, Users } from 'lucide-react';
 import { useBusinessStore, useAuthStore } from '../../store';
 import { customerService } from '../../services/db';
@@ -71,21 +71,21 @@ export function CustomersPage() {
     return (
         <HubLayout hubId="crm-hub">
             <div className="page">
-                <div className="page-hero" style={{ marginBottom: 24 }}>
-                    <div className="page-hero-left">
-                        <div className="page-hero-icon">
-                            <Users size={24} />
+                <div className="fds-hero">
+                    <div className="fds-hero-top">
+                        <div className="fds-hero-left">
+                            <div className="fds-hero-icon"><Users size={24} /></div>
+                            <div>
+                                <h3 className="fds-hero-title">Харилцагчид</h3>
+                                <div className="fds-hero-desc">{loading ? 'Уншиж байна...' : `Нийт ${customers.length} харилцагч`}</div>
+                            </div>
                         </div>
-                        <div>
-                            <h2 className="page-hero-title">Харилцагчид</h2>
-                            <p className="page-hero-subtitle">{loading ? 'Уншиж байна...' : `Нийт ${customers.length} харилцагч`}</p>
-                        </div>
+                        <PermissionGate permission="customers.create">
+                            <button className="fds-add-btn" onClick={() => setShowCreate(true)}>
+                                <Plus size={14} /> Шинэ харилцагч
+                            </button>
+                        </PermissionGate>
                     </div>
-                    <PermissionGate permission="customers.create">
-                        <button className="btn btn-primary btn-sm gradient-btn" onClick={() => setShowCreate(true)} style={{ gap: 6 }}>
-                            <Plus size={16} /> Шинэ харилцагч
-                        </button>
-                    </PermissionGate>
                 </div>
                 <div className="orders-toolbar">
                     <div className="orders-search">

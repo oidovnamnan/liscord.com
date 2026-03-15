@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
-import { Header } from '../../components/layout/Header';
 import { HubLayout } from '../../components/common/HubLayout';
 import { ShieldCheck } from 'lucide-react';
 import { useBusinessStore } from '../../store';
 import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
 import { db } from '../../services/firebase';
 import { GenericCrudModal, type CrudField } from '../../components/common/GenericCrudModal';
+import '../Settings/components/FlashDealSettings.css';
 const QC_FIELDS: CrudField[] = [
     { name: 'productName', label: 'Бүтээгдэхүүн', type: 'text', required: true },
     { name: 'batchNumber', label: 'Багцийн дугаар', type: 'text' },
@@ -31,7 +31,20 @@ export function QualityControlPage() {
     return (
         <HubLayout hubId="inventory-hub">
             <div className="page-container animate-fade-in">
-                <Header title="Чанарын Хяналт" action={{ label: '+ Шалгалт', onClick: () => { setEditingItem(null); setShowModal(true); } }} />
+                <div className="fds-hero">
+                <div className="fds-hero-top">
+                    <div className="fds-hero-left">
+                        <div className="fds-hero-icon"><ShieldCheck size={24} /></div>
+                        <div>
+                            <h3 className="fds-hero-title">Чанарын Хяналт</h3>
+                            <div className="fds-hero-desc">Чанарын шалгалтын удирдлага</div>
+                        </div>
+                    </div>
+                    <button className="fds-add-btn" onClick={() => { setEditingItem(null); setShowModal(true) }}>
+                        + Шалгалт
+                    </button>
+                </div>
+            </div>
                 <div className="card" style={{ padding: 0, marginTop: 20 }}>
                     {loading ? <div style={{ padding: 48, textAlign: 'center', color: 'var(--text-muted)' }}>Ачаалж байна...</div> : (
                         <table className="table"><thead><tr><th>Бүтээгдэхүүн</th><th>Багц</th><th>Шалгагч</th><th>Огноо</th><th>Гэмтэл</th><th>Дүн</th></tr></thead>

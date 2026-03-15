@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
-import { Header } from '../../components/layout/Header';
 import { HubLayout } from '../../components/common/HubLayout';
-import { CloudIcon, CheckCircle2, AlertCircle, FileText, TrendingUp, Search } from 'lucide-react';
+import { CloudIcon, CheckCircle2, AlertCircle, FileText, TrendingUp, Search, Receipt} from 'lucide-react';
 import { useBusinessStore } from '../../store';
 import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
 import { db } from '../../services/firebase';
 import { GenericCrudModal, type CrudField } from '../../components/common/GenericCrudModal';
+import '../Settings/components/FlashDealSettings.css';
 
 const EBARIMT_FIELDS: CrudField[] = [
     { name: 'receiptNumber', label: 'Баримтын дугаар', type: 'text', required: true },
@@ -57,7 +57,20 @@ export function EBarimtPage() {
     return (
         <HubLayout hubId="finance-hub">
             <div className="page-container animate-fade-in">
-                <Header title="Е-Баримт" action={{ label: '+ Шинэ баримт', onClick: () => { setEditingItem(null); setShowModal(true); } }} />
+                <div className="fds-hero">
+                <div className="fds-hero-top">
+                    <div className="fds-hero-left">
+                        <div className="fds-hero-icon"><Receipt size={24} /></div>
+                        <div>
+                            <h3 className="fds-hero-title">И-Баримт</h3>
+                            <div className="fds-hero-desc">Цахим баримтын удирдлага</div>
+                        </div>
+                    </div>
+                    <button className="fds-add-btn" onClick={() => { setEditingItem(null); setShowModal(true) }}>
+                        + Шинэ баримт
+                    </button>
+                </div>
+            </div>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16, margin: '20px 0' }}>
                     <div className="card" style={{ padding: 20 }}><div style={{ display: 'flex', alignItems: 'center', gap: 12 }}><div style={{ padding: 10, borderRadius: 10, background: 'rgba(52,152,219,0.1)' }}><FileText size={20} color="#3498db" /></div><div><div style={{ fontSize: '1.2rem', fontWeight: 700 }}>{receipts.length}</div><div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Нийт баримт</div></div></div></div>
                     <div className="card" style={{ padding: 20 }}><div style={{ display: 'flex', alignItems: 'center', gap: 12 }}><div style={{ padding: 10, borderRadius: 10, background: 'rgba(46,204,113,0.1)' }}><TrendingUp size={20} color="#2ecc71" /></div><div><div style={{ fontSize: '1.2rem', fontWeight: 700 }}>{totalAmount.toLocaleString()} ₮</div><div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Нийт дүн</div></div></div></div>

@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
-import { Header } from '../../components/layout/Header';
 import { HubLayout } from '../../components/common/HubLayout';
-import { Building2, ArrowRightLeft } from 'lucide-react';
+import { Building2, ArrowRightLeft, Building} from 'lucide-react';
 import { useBusinessStore } from '../../store';
 import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
 import { db } from '../../services/firebase';
 import { GenericCrudModal, type CrudField } from '../../components/common/GenericCrudModal';
+import '../Settings/components/FlashDealSettings.css';
 
 const INTERCO_FIELDS: CrudField[] = [
     { name: 'fromEntity', label: 'Илгээгч', type: 'text', required: true },
@@ -49,7 +49,20 @@ export function InterCompanyPage() {
     return (
         <HubLayout hubId="finance-hub">
             <div className="page-container animate-fade-in">
-                <Header title="Дотоод Компаний Гүйлгээ" action={{ label: '+ Гүйлгээ', onClick: () => { setEditingItem(null); setShowModal(true); } }} />
+                <div className="fds-hero">
+                <div className="fds-hero-top">
+                    <div className="fds-hero-left">
+                        <div className="fds-hero-icon"><Building size={24} /></div>
+                        <div>
+                            <h3 className="fds-hero-title">Дотоод Гүйлгээ</h3>
+                            <div className="fds-hero-desc">Компаниуд хоорондын гүйлгээ</div>
+                        </div>
+                    </div>
+                    <button className="fds-add-btn" onClick={() => { setEditingItem(null); setShowModal(true) }}>
+                        + Гүйлгээ
+                    </button>
+                </div>
+            </div>
                 <div className="card" style={{ padding: 0, marginTop: 20 }}>
                     {loading ? <div style={{ padding: 48, textAlign: 'center', color: 'var(--text-muted)' }}>Ачаалж байна...</div> : (
                         <table className="table"><thead><tr><th>Илгээгч</th><th>→</th><th>Хүлээн авагч</th><th>Төрөл</th><th>Дүн</th><th>Төлөв</th></tr></thead>

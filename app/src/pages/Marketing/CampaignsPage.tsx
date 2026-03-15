@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
-import { Header } from '../../components/layout/Header';
 import { Megaphone, Search, Loader2, Calendar, TrendingUp, Users, Edit2 } from 'lucide-react';
 import { useBusinessStore } from '../../store';
 import { campaignService } from '../../services/db';
 import { format } from 'date-fns';
 import { GenericCrudModal, type CrudField } from '../../components/common/GenericCrudModal';
+import '../Settings/components/FlashDealSettings.css';
 
 const CAMPAIGN_FIELDS: CrudField[] = [
     { name: 'name', label: 'Аяны нэр', type: 'text', required: true, placeholder: 'Зуны хямдрал 2024', span: 2 },
@@ -66,9 +66,22 @@ export function CampaignsPage() {
     };
 
     return (
-        <>
-            <Header title="Маркетинг Аян" action={{ label: '+ Шинэ аян', onClick: () => { setEditingItem(null); setShowModal(true); } }} />
-            <div className="page">
+            <div className="animate-fade-in" style={{ padding: '24px clamp(16px, 3vw, 32px) 32px' }}>
+            <div className="fds-hero">
+                <div className="fds-hero-top">
+                    <div className="fds-hero-left">
+                        <div className="fds-hero-icon"><Megaphone size={24} /></div>
+                        <div>
+                            <h3 className="fds-hero-title">Кампейн</h3>
+                            <div className="fds-hero-desc">Маркетингийн кампейн</div>
+                        </div>
+                    </div>
+                    <button className="fds-add-btn" onClick={() => { setEditingItem(null); setShowModal(true) }}>
+                        + Шинэ аян
+                    </button>
+                </div>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
                 <div className="page-header-actions" style={{ marginBottom: 20 }}>
                     <div className="search-box">
                         <Search size={18} />
@@ -131,6 +144,6 @@ export function CampaignsPage() {
                     onClose={() => setShowModal(false)}
                 />
             )}
-        </>
-    );
+            </div>
+        );
 }

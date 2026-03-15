@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
-import { Header } from '../../components/layout/Header';
-import { FileText, Calendar, DollarSign, Users, AlertTriangle, CheckCircle2, Clock, Search, ChevronRight, Edit2 } from 'lucide-react';
+import { FileText, Calendar, DollarSign, Users, AlertTriangle, CheckCircle2, Clock, Search, ChevronRight, Edit2, FileSignature} from 'lucide-react';
 import { useBusinessStore } from '../../store';
 import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
 import { db } from '../../services/firebase';
 import { GenericCrudModal, type CrudField } from '../../components/common/GenericCrudModal';
+import '../Settings/components/FlashDealSettings.css';
 
 const CONTRACT_FIELDS: CrudField[] = [
     { name: 'title', label: 'Гэрээний нэр', type: 'text', required: true, span: 2, placeholder: 'Оффис түрээсийн гэрээ' },
@@ -83,8 +83,21 @@ export function ContractsPage() {
     const warningCount = contracts.filter(c => c.status === 'warning').length;
 
     return (
-        <>
-            <Header title="Гэрээ / Бацаалан" action={{ label: '+ Шинэ гэрээ', onClick: () => { setEditingItem(null); setShowModal(true); } }} />
+            <div className="animate-fade-in" style={{ padding: '24px clamp(16px, 3vw, 32px) 32px' }}>
+            <div className="fds-hero">
+                <div className="fds-hero-top">
+                    <div className="fds-hero-left">
+                        <div className="fds-hero-icon"><FileSignature size={24} /></div>
+                        <div>
+                            <h3 className="fds-hero-title">Гэрээ</h3>
+                            <div className="fds-hero-desc">Гэрээ, хэлцлийн удирдлага</div>
+                        </div>
+                    </div>
+                    <button className="fds-add-btn" onClick={() => { setEditingItem(null); setShowModal(true) }}>
+                        + Шинэ гэрээ
+                    </button>
+                </div>
+            </div>
             <div className="page animate-fade-in">
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16, marginBottom: 24 }}>
                     <div className="card" style={{ padding: 20 }}>
@@ -173,6 +186,6 @@ export function ContractsPage() {
                     onClose={() => setShowModal(false)}
                 />
             )}
-        </>
-    );
+            </div>
+        );
 }

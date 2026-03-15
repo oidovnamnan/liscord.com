@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
-import { Header } from '../../components/layout/Header';
 import { HubLayout } from '../../components/common/HubLayout';
-import { Clock, User, CheckCircle2 } from 'lucide-react';
+import { Clock, User, CheckCircle2, Timer} from 'lucide-react';
 import { useBusinessStore } from '../../store';
 import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
 import { db } from '../../services/firebase';
 import { GenericCrudModal, type CrudField } from '../../components/common/GenericCrudModal';
+import '../Settings/components/FlashDealSettings.css';
 
 const TIMESHEET_FIELDS: CrudField[] = [
     { name: 'employeeName', label: 'Ажилтан', type: 'text', required: true },
@@ -49,7 +49,20 @@ export function TimesheetsPage() {
     return (
         <HubLayout hubId="hr-hub">
             <div className="page-container animate-fade-in">
-                <Header title="Цагийн Бүртгэл" action={{ label: '+ Бүртгэх', onClick: () => { setEditingItem(null); setShowModal(true); } }} />
+                <div className="fds-hero">
+                <div className="fds-hero-top">
+                    <div className="fds-hero-left">
+                        <div className="fds-hero-icon"><Timer size={24} /></div>
+                        <div>
+                            <h3 className="fds-hero-title">Цагийн Бүртгэл</h3>
+                            <div className="fds-hero-desc">Ажлын цагийн бүртгэл</div>
+                        </div>
+                    </div>
+                    <button className="fds-add-btn" onClick={() => { setEditingItem(null); setShowModal(true) }}>
+                        + Бүртгэх
+                    </button>
+                </div>
+            </div>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, margin: '20px 0' }}>
                     <div className="card" style={{ padding: 20, textAlign: 'center' }}><div style={{ fontSize: '1.4rem', fontWeight: 700 }}>{sheets.length}</div><div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Нийт бүртгэл</div></div>
                     <div className="card" style={{ padding: 20, textAlign: 'center' }}><div style={{ fontSize: '1.4rem', fontWeight: 700, color: '#3498db' }}>{totalHours}ц</div><div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Нийт цаг</div></div>

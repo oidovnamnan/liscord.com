@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
-import { Header } from '../../components/layout/Header';
 import { HubLayout } from '../../components/common/HubLayout';
 import { TrendingUp } from 'lucide-react';
 import { useBusinessStore } from '../../store';
 import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
 import { db } from '../../services/firebase';
 import { GenericCrudModal, type CrudField } from '../../components/common/GenericCrudModal';
+import '../Settings/components/FlashDealSettings.css';
 
 const FORECAST_FIELDS: CrudField[] = [
     { name: 'productName', label: 'Бүтээгдэхүүн', type: 'text', required: true },
@@ -45,7 +45,20 @@ export function InventoryForecastPage() {
     return (
         <HubLayout hubId="inventory-hub">
             <div className="page-container animate-fade-in">
-                <Header title="Нөөцийн Таамаглал" action={{ label: '+ Таамаглал', onClick: () => { setEditingItem(null); setShowModal(true); } }} />
+                <div className="fds-hero">
+                <div className="fds-hero-top">
+                    <div className="fds-hero-left">
+                        <div className="fds-hero-icon"><TrendingUp size={24} /></div>
+                        <div>
+                            <h3 className="fds-hero-title">Таамаглал</h3>
+                            <div className="fds-hero-desc">Нөөцийн таамаглал, шинжилгээ</div>
+                        </div>
+                    </div>
+                    <button className="fds-add-btn" onClick={() => { setEditingItem(null); setShowModal(true) }}>
+                        + Таамаглал
+                    </button>
+                </div>
+            </div>
                 <div className="card" style={{ padding: 0, marginTop: 20 }}>
                     {loading ? <div style={{ padding: 48, textAlign: 'center', color: 'var(--text-muted)' }}>Ачаалж байна...</div> : (
                         <table className="table"><thead><tr><th>Бүтээгдэхүүн</th><th>Үлдэгдэл</th><th>Дундаж/өдөр</th><th>Reorder цэг</th><th>Эрэлт</th><th>Хугацаа</th></tr></thead>

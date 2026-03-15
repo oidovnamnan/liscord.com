@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
-import { Header } from '../../components/layout/Header';
 import { HubLayout } from '../../components/common/HubLayout';
 import { Ticket, Plus, Calendar, Clock, TrendingUp, DollarSign, Search, Filter, Copy, Tag, ChevronRight, Users } from 'lucide-react';
 import { useBusinessStore } from '../../store';
 import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
 import { db } from '../../services/firebase';
 import { GenericCrudModal, type CrudField } from '../../components/common/GenericCrudModal';
+import '../Settings/components/FlashDealSettings.css';
 
 const F: CrudField[] = [
     { name: 'code', label: 'Купон код', type: 'text', required: true },
@@ -31,7 +31,17 @@ export function VouchersPage() {
 
     return (
         <HubLayout hubId="retail-hub">
-            <Header title="Бэлгийн Карт & Купон" subtitle="Борлуулалтыг дэмжих хөнгөлөлтийн код, бэлгийн карт үүсгэж удирдах" />
+            <div className="fds-hero">
+                <div className="fds-hero-top">
+                    <div className="fds-hero-left">
+                        <div className="fds-hero-icon"><Ticket size={24} /></div>
+                        <div>
+                            <h3 className="fds-hero-title">Купон</h3>
+                            <div className="fds-hero-desc">Купон, хямдрал удирдлага</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
             <div className="page-content mt-6 flex flex-col gap-8 h-full">
                 <div className="flex flex-col gap-6 stagger-children animate-fade-in translate-y-0 opacity-100 h-full">
                     <div className="grid-3 gap-6">

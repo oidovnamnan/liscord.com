@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
-import { Header } from '../../components/layout/Header';
 import { HubLayout } from '../../components/common/HubLayout';
 import { Target, TrendingUp, AlertTriangle, CheckCircle2, Edit2 } from 'lucide-react';
 import { useBusinessStore } from '../../store';
 import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
 import { db } from '../../services/firebase';
 import { GenericCrudModal, type CrudField } from '../../components/common/GenericCrudModal';
+import '../Settings/components/FlashDealSettings.css';
 
 const BUDGET_FIELDS: CrudField[] = [
     { name: 'name', label: 'Төсвийн нэр', type: 'text', required: true, span: 2, placeholder: 'Q1 Маркетинг төсөв' },
@@ -64,7 +64,20 @@ export function BudgetingPage() {
     return (
         <HubLayout hubId="finance-hub">
             <div className="page-container animate-fade-in">
-                <Header title="Төсөв Төлөвлөлт" action={{ label: '+ Төсөв', onClick: () => { setEditingItem(null); setShowModal(true); } }} />
+                <div className="fds-hero">
+                <div className="fds-hero-top">
+                    <div className="fds-hero-left">
+                        <div className="fds-hero-icon"><Target size={24} /></div>
+                        <div>
+                            <h3 className="fds-hero-title">Төсөв</h3>
+                            <div className="fds-hero-desc">Төсвийн төлөвлөлт, хяналт</div>
+                        </div>
+                    </div>
+                    <button className="fds-add-btn" onClick={() => { setEditingItem(null); setShowModal(true) }}>
+                        + Төсөв
+                    </button>
+                </div>
+            </div>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16, margin: '20px 0' }}>
                     <div className="card" style={{ padding: 20 }}><div style={{ display: 'flex', alignItems: 'center', gap: 12 }}><div style={{ padding: 10, borderRadius: 10, background: 'rgba(52,152,219,0.1)', color: '#3498db' }}><Target size={20} /></div><div><div style={{ fontSize: '1.2rem', fontWeight: 700 }}>{totalPlanned.toLocaleString()} ₮</div><div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Төлөвлөсөн</div></div></div></div>
                     <div className="card" style={{ padding: 20 }}><div style={{ display: 'flex', alignItems: 'center', gap: 12 }}><div style={{ padding: 10, borderRadius: 10, background: 'rgba(46,204,113,0.1)', color: '#2ecc71' }}><TrendingUp size={20} /></div><div><div style={{ fontSize: '1.2rem', fontWeight: 700 }}>{totalActual.toLocaleString()} ₮</div><div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Бодит</div></div></div></div>

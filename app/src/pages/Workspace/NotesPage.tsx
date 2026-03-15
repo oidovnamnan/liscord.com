@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
-import { Header } from '../../components/layout/Header';
 import { HubLayout } from '../../components/common/HubLayout';
 import { StickyNote, Search, Star } from 'lucide-react';
 import { useBusinessStore } from '../../store';
 import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
 import { db } from '../../services/firebase';
 import { GenericCrudModal, type CrudField } from '../../components/common/GenericCrudModal';
+import '../Settings/components/FlashDealSettings.css';
 
 const NOTE_FIELDS: CrudField[] = [
     { name: 'title', label: 'Гарчиг', type: 'text', required: true, span: 2 },
@@ -48,7 +48,20 @@ export function NotesPage() {
     return (
         <HubLayout hubId="workspace-hub">
             <div className="page-container animate-fade-in">
-                <Header title="Тэмдэглэл" action={{ label: '+ Шинэ', onClick: () => { setEditingItem(null); setShowModal(true); } }} />
+                <div className="fds-hero">
+                <div className="fds-hero-top">
+                    <div className="fds-hero-left">
+                        <div className="fds-hero-icon"><StickyNote size={24} /></div>
+                        <div>
+                            <h3 className="fds-hero-title">Тэмдэглэл</h3>
+                            <div className="fds-hero-desc">Хувийн тэмдэглэлүүд</div>
+                        </div>
+                    </div>
+                    <button className="fds-add-btn" onClick={() => { setEditingItem(null); setShowModal(true) }}>
+                        + Шинэ
+                    </button>
+                </div>
+            </div>
                 <div style={{ margin: '20px 0' }}><div className="search-box" style={{ maxWidth: 400 }}><Search size={18} /><input type="text" placeholder="Тэмдэглэл хайх..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} /></div></div>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 16 }}>
                     {loading ? (

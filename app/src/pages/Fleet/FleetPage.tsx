@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
-import { Header } from '../../components/layout/Header';
 import { HubLayout } from '../../components/common/HubLayout';
 import { Truck, Search, MapPin, Fuel, Wrench, CheckCircle2 } from 'lucide-react';
 import { useBusinessStore } from '../../store';
 import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
 import { db } from '../../services/firebase';
 import { GenericCrudModal, type CrudField } from '../../components/common/GenericCrudModal';
+import '../Settings/components/FlashDealSettings.css';
 
 const FLEET_FIELDS: CrudField[] = [
     { name: 'name', label: 'Тээврийн хэрэгслийн нэр', type: 'text', required: true },
@@ -67,7 +67,20 @@ export function FleetPage() {
     return (
         <HubLayout hubId="logistics-hub">
             <div className="page-container animate-fade-in">
-                <Header title="Автопарк" action={{ label: '+ Шинэ машин', onClick: () => { setEditingItem(null); setShowModal(true); } }} />
+                <div className="fds-hero">
+                <div className="fds-hero-top">
+                    <div className="fds-hero-left">
+                        <div className="fds-hero-icon"><Truck size={24} /></div>
+                        <div>
+                            <h3 className="fds-hero-title">Тээвэр</h3>
+                            <div className="fds-hero-desc">Тээврийн парк удирдлага</div>
+                        </div>
+                    </div>
+                    <button className="fds-add-btn" onClick={() => { setEditingItem(null); setShowModal(true) }}>
+                        + Шинэ машин
+                    </button>
+                </div>
+            </div>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 16, margin: '20px 0' }}>
                     <div className="card" style={{ padding: 16 }}><div style={{ display: 'flex', alignItems: 'center', gap: 10 }}><Truck size={20} color="var(--primary)" /><div><div style={{ fontWeight: 700 }}>{vehicles.length}</div><div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Нийт</div></div></div></div>
                     <div className="card" style={{ padding: 16 }}><div style={{ display: 'flex', alignItems: 'center', gap: 10 }}><CheckCircle2 size={20} color="#2ecc71" /><div><div style={{ fontWeight: 700 }}>{vehicles.filter(v => v.status === 'active').length}</div><div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Ашиглагдаж буй</div></div></div></div>

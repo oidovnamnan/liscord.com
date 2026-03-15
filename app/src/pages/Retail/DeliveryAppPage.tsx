@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
-import { Header } from '../../components/layout/Header';
 import { HubLayout } from '../../components/common/HubLayout';
-import { Truck, MapPin, CheckCircle2, Clock, Package, TrendingUp, Activity, Plus, Navigation, Phone, MessageCircle } from 'lucide-react';
+import { Truck, MapPin, CheckCircle2, Clock, Package, TrendingUp, Activity, Plus, Navigation, Phone, MessageCircle, Smartphone} from 'lucide-react';
 import { useBusinessStore } from '../../store';
 import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
 import { db } from '../../services/firebase';
 import { GenericCrudModal, type CrudField } from '../../components/common/GenericCrudModal';
+import '../Settings/components/FlashDealSettings.css';
 
 const F: CrudField[] = [
     { name: 'customer', label: 'Хэрэглэгч', type: 'text', required: true },
@@ -32,7 +32,20 @@ export function DeliveryAppPage() {
 
     return (
         <HubLayout hubId="retail-hub">
-            <Header title="Жолоочийн цонх" subtitle="Захиалга хүргэлтийн явц, жолоочийн ажлын орчин" action={{ label: 'Хүргэлт нэмэх', onClick: () => { setEditingItem(null); setShowModal(true); } }} />
+            <div className="fds-hero">
+                <div className="fds-hero-top">
+                    <div className="fds-hero-left">
+                        <div className="fds-hero-icon"><Smartphone size={24} /></div>
+                        <div>
+                            <h3 className="fds-hero-title">Хүргэлтийн Апп</h3>
+                            <div className="fds-hero-desc">Хүргэлтийн апп удирдлага</div>
+                        </div>
+                    </div>
+                    <button className="fds-add-btn" onClick={() => { setEditingItem(null); setShowModal(true) }}>
+                        Хүргэлт нэмэх
+                    </button>
+                </div>
+            </div>
             <div className="page-content mt-6 flex flex-col gap-8 animate-fade-in translate-y-0 opacity-100 h-full">
                 <div className="flex flex-col gap-6 stagger-children">
                     <div className="grid-3 gap-6">

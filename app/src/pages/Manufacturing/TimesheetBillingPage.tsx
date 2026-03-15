@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
-import { Header } from '../../components/layout/Header';
 import { HubLayout } from '../../components/common/HubLayout';
 import { Clock } from 'lucide-react';
 import { useBusinessStore } from '../../store';
 import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
 import { db } from '../../services/firebase';
 import { GenericCrudModal, type CrudField } from '../../components/common/GenericCrudModal';
+import '../Settings/components/FlashDealSettings.css';
 const TB_FIELDS: CrudField[] = [
     { name: 'projectName', label: 'Төсөл', type: 'text', required: true },
     { name: 'employeeName', label: 'Ажилтан', type: 'text', required: true },
@@ -25,7 +25,20 @@ export function TimesheetBillingPage() {
     useEffect(() => { if (!business?.id) return; const q = query(collection(db, `businesses/${business.id}/timesheetBilling`), orderBy('createdAt', 'desc')); const unsub = onSnapshot(q, (snap) => { setItems(snap.docs.map(d => ({ id: d.id, ...d.data() } as any))); setLoading(false); }); return () => unsub(); }, [business?.id]);
     const totalBilled = items.reduce((s, i) => s + (i.totalBilled || 0), 0);
     return (
-        <HubLayout hubId="manufacturing-hub"><div className="page-container animate-fade-in"><Header title="Цаг & Тооцоо" action={{ label: '+ Бүртгэл', onClick: () => { setEditingItem(null); setShowModal(true); } }} />
+        <HubLayout hubId="manufacturing-hub"><div className="page-container animate-fade-in"><div className="fds-hero">
+                <div className="fds-hero-top">
+                    <div className="fds-hero-left">
+                        <div className="fds-hero-icon"><Clock size={24} /></div>
+                        <div>
+                            <h3 className="fds-hero-title">Цагийн Тооцоо</h3>
+                            <div className="fds-hero-desc">Цагийн бүртгэл, нэхэмжлэл</div>
+                        </div>
+                    </div>
+                    <button className="fds-add-btn" onClick={() => { setEditingItem(null); setShowModal(true) }}>
+                        + Бүртгэл
+                    </button>
+                </div>
+            </div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, margin: '20px 0' }}>
                 <div className="card" style={{ padding: 20, textAlign: 'center' }}><div style={{ fontSize: '1.4rem', fontWeight: 700 }}>{items.length}</div><div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Нийт бүртгэл</div></div>
                 <div className="card" style={{ padding: 20, textAlign: 'center' }}><div style={{ fontSize: '1.4rem', fontWeight: 700, color: '#3498db' }}>{items.reduce((s, i) => s + (i.hours || 0), 0)}ц</div><div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Нийт цаг</div></div>

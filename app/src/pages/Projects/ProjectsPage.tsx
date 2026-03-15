@@ -1,13 +1,13 @@
 import { useState, useEffect } from 'react';
-import { Header } from '../../components/layout/Header';
 import { useBusinessStore } from '../../store';
 import { projectService, taskService, businessService } from '../../services/db';
 import type { Project, ProjectTask, Employee } from '../../types';
-import { Plus, Clock } from 'lucide-react';
+import { Plus, Clock, FolderKanban} from 'lucide-react';
 import { HubLayout } from '../../components/common/HubLayout';
 import { format } from 'date-fns';
 import { toast } from 'react-hot-toast';
 import './ProjectsPage.css';
+import '../Settings/components/FlashDealSettings.css';
 
 const COLUMNS = [
     { id: 'backlog', title: 'Хүлээгдэж буй', colorClass: 'status-todo' },
@@ -102,14 +102,17 @@ export function ProjectsPage() {
     return (
         <HubLayout hubId="projects-hub">
             <div className="page-container projects-page animate-fade-in">
-                <Header
-                    title="Төслийн хяналт"
-                    subtitle="Ажлын явц, самбар"
-                    action={{
-                        label: "Шинэ төсөл",
-                        onClick: () => toast('Төсөл нэмэх (Удахгүй)')
-                    }}
-                />
+                <div className="fds-hero">
+                <div className="fds-hero-top">
+                    <div className="fds-hero-left">
+                        <div className="fds-hero-icon"><FolderKanban size={24} /></div>
+                        <div>
+                            <h3 className="fds-hero-title">Төсөл</h3>
+                            <div className="fds-hero-desc">Төслийн удирдлага</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
                 <div className="project-controls">
                     <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>

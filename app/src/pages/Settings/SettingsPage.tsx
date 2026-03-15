@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, Suspense } from 'react';
 import { createPortal } from 'react-dom';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { Header } from '../../components/layout/Header';
+
 import { Building2, Palette, Bell, Shield, Users, Globe, Loader2, Share2, X, CheckSquare, ListOrdered, ShoppingBag, CreditCard, Sun, Moon, Monitor, CheckCircle2, Smartphone, ArrowLeft, Settings as SettingsIcon, GripVertical, ArrowUp, ArrowDown } from 'lucide-react';
 import { useBusinessStore, useUIStore } from '../../store';
 import { businessService, businessRequestService, moduleSettingsService, systemSettingsService } from '../../services/db';

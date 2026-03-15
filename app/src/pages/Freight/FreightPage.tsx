@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
-import { Header } from '../../components/layout/Header';
 import { HubLayout } from '../../components/common/HubLayout';
 import { Ship, Plane, Globe, Search, ChevronRight, Calendar, MapPin, Plus } from 'lucide-react';
 import { useBusinessStore } from '../../store';
 import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
 import { db } from '../../services/firebase';
 import { GenericCrudModal, type CrudField } from '../../components/common/GenericCrudModal';
+import '../Settings/components/FlashDealSettings.css';
 
 const F: CrudField[] = [
     { name: 'number', label: 'Тээвэр дугаар', type: 'text', required: true },
@@ -31,7 +31,17 @@ export function FreightPage() {
 
     return (
         <HubLayout hubId="logistics-hub">
-            <Header title="Олон Улсын Тээвэр" subtitle="Далай, агаар болон авто тээврийн аялалуудыг хянах" action={{ label: "Шинэ тээвэр", onClick: () => { setEditingItem(null); setShowModal(true); } }} />
+            <div className="fds-hero">
+                <div className="fds-hero-top">
+                    <div className="fds-hero-left">
+                        <div className="fds-hero-icon"><Ship size={24} /></div>
+                        <div>
+                            <h3 className="fds-hero-title">Тээвэрлэлт</h3>
+                            <div className="fds-hero-desc">Тээвэрлэлтийн удирдлага</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
             <div className="page-content mt-6 flex flex-col gap-6">
                 <div className="flex gap-4">
                     <div className="card flex-1 p-4 bg-surface-1 flex items-center gap-4"><div className="p-3 bg-primary-light rounded-lg text-primary"><Ship size={24} /></div><div><div className="text-xl font-bold">{items.filter(i => i.mode === 'sea').length}</div><div className="text-xs text-muted">Далайн тээвэр</div></div></div>

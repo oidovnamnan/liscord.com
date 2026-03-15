@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react';
-import { Header } from '../../components/layout/Header';
 import { useBusinessStore } from '../../store';
 import { teamService, payrollService } from '../../services/db';
 import type { Employee, PayrollEntry } from '../../types';
-import { Calculator, Save, User, DollarSign, Clock, Building2, Download } from 'lucide-react';
+import { Calculator, Save, User, DollarSign, Clock, Building2, Download, Wallet} from 'lucide-react';
 import { HubLayout } from '../../components/common/HubLayout';
 import { toast } from 'react-hot-toast';
 import './PayrollPage.css';
+import '../Settings/components/FlashDealSettings.css';
 
 export function PayrollPage() {
     const { business } = useBusinessStore();
@@ -127,7 +127,17 @@ export function PayrollPage() {
     return (
         <HubLayout hubId="staff-hub">
             <div style={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
-                <Header title="Цалин бодолт" />
+                <div className="fds-hero">
+                <div className="fds-hero-top">
+                    <div className="fds-hero-left">
+                        <div className="fds-hero-icon"><Wallet size={24} /></div>
+                        <div>
+                            <h3 className="fds-hero-title">Цалин</h3>
+                            <div className="fds-hero-desc">Цалингийн удирдлага</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
                 <div className="payroll-layout">
                     {/* LEFT SIDEBAR: EMPLOYEES */}

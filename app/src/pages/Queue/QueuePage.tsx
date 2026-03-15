@@ -1,14 +1,14 @@
 import { useState, useEffect } from 'react';
-import { Header } from '../../components/layout/Header';
 import { useBusinessStore } from '../../store';
 import { serviceQueueService } from '../../services/db';
 import type { ServiceTicket } from '../../types';
-import { Search, Filter, Clock, Play, Check, UserCheck, Loader2, Plus } from 'lucide-react';
+import { Search, Filter, Clock, Play, Check, UserCheck, Loader2, Plus, ListOrdered} from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { mn } from 'date-fns/locale';
 import { toast } from 'react-hot-toast';
 import { HubLayout } from '../../components/common/HubLayout';
 import './QueuePage.css';
+import '../Settings/components/FlashDealSettings.css';
 
 export function QueuePage() {
     const { business } = useBusinessStore();
@@ -91,14 +91,17 @@ export function QueuePage() {
     return (
         <HubLayout hubId="services-hub">
             <div className="page-container queue-page animate-fade-in">
-                <Header
-                    title="Үйлчилгээний Дараалал"
-                    subtitle="Угаалга, Засвар, Салон амьд хяналт"
-                    action={{
-                        label: "Тасалбар нэмэх",
-                        onClick: () => setShowAdd(true)
-                    }}
-                />
+                <div className="fds-hero">
+                <div className="fds-hero-top">
+                    <div className="fds-hero-left">
+                        <div className="fds-hero-icon"><ListOrdered size={24} /></div>
+                        <div>
+                            <h3 className="fds-hero-title">Дараалал</h3>
+                            <div className="fds-hero-desc">Дарааллын удирдлага</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
                 <div className="queue-toolbar">
                     <div className="search-bar">

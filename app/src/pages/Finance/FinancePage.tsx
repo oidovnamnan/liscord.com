@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useBusinessStore } from '../../store';
-import { Header } from '../../components/layout/Header';
+import '../Settings/components/FlashDealSettings.css';
 import { TrendingUp, TrendingDown, Wallet, Download, Building, CreditCard } from 'lucide-react';
 import { HubLayout } from '../../components/common/HubLayout';
 import { orderService } from '../../services/db';
@@ -34,14 +34,14 @@ export function FinancePage() {
     return (
         <HubLayout hubId="finance-hub">
             <div className="page animate-fade-in">
-                <div className="page-hero" style={{ marginBottom: 24 }}>
-                    <div className="page-hero-left">
-                        <div className="page-hero-icon">
-                            <Wallet size={24} />
-                        </div>
-                        <div>
-                            <h2 className="page-hero-title">Санхүү & Татвар</h2>
-                            <p className="page-hero-subtitle">Компанийн орлого, зарлага болон авлага өглөгийн нэгдсэн самбар</p>
+                <div className="fds-hero">
+                    <div className="fds-hero-top">
+                        <div className="fds-hero-left">
+                            <div className="fds-hero-icon"><Wallet size={24} /></div>
+                            <div>
+                                <h3 className="fds-hero-title">Санхүү & Татвар</h3>
+                                <div className="fds-hero-desc">Компанийн орлого, зарлага болон авлага өглөгийн нэгдсэн самбар</div>
+                            </div>
                         </div>
                     </div>
                 </div>

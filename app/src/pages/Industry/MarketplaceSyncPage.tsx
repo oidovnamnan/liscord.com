@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
-import { Header } from '../../components/layout/Header';
 import { HubLayout } from '../../components/common/HubLayout';
 import { RefreshCw, Plus, Globe, CheckCircle2, AlertTriangle, ShoppingBag } from 'lucide-react';
 import { useBusinessStore } from '../../store';
 import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
 import { db } from '../../services/firebase';
 import { GenericCrudModal, type CrudField } from '../../components/common/GenericCrudModal';
+import '../Settings/components/FlashDealSettings.css';
 const F: CrudField[] = [
     { name: 'platform', label: 'Платформ', type: 'select', required: true, options: [{ value: 'shopee', label: 'Shopee' }, { value: 'lazada', label: 'Lazada' }, { value: 'amazon', label: 'Amazon' }, { value: 'etsy', label: 'Etsy' }, { value: 'other', label: 'Бусад' }] },
     { name: 'productName', label: 'Бүтээгдэхүүн', type: 'text', required: true },
@@ -20,7 +20,20 @@ export function MarketplaceSyncPage() {
     const [items, setItems] = useState<any[]>([]); const [loading, setLoading] = useState(true); const [showModal, setShowModal] = useState(false); const [editingItem, setEditingItem] = useState<any>(null); // eslint-disable-line @typescript-eslint/no-explicit-any
     useEffect(() => { if (!business?.id) return; const q = query(collection(db, `businesses/${business.id}/marketplaceSync`), orderBy('createdAt', 'desc')); const unsub = onSnapshot(q, s => { setItems(s.docs.map(d => ({ id: d.id, ...d.data() } as any))); setLoading(false); }); return () => unsub(); }, [business?.id]); // eslint-disable-line
     return (
-        <HubLayout hubId="industry-hub"><Header title="Marketplace Sync" subtitle="Олон платформд бүтээгдэхүүн, үлдэгдэл, үнийг синхрончлох" action={{ label: 'Бүтээгдэхүүн нэмэх', onClick: () => { setEditingItem(null); setShowModal(true); } }} />
+        <HubLayout hubId="industry-hub"><div className="fds-hero">
+                <div className="fds-hero-top">
+                    <div className="fds-hero-left">
+                        <div className="fds-hero-icon"><RefreshCw size={24} /></div>
+                        <div>
+                            <h3 className="fds-hero-title">Marketplace Sync</h3>
+                            <div className="fds-hero-desc">Маркетплэйсийн синхрончлол</div>
+                        </div>
+                    </div>
+                    <button className="fds-add-btn" onClick={() => { setEditingItem(null); setShowModal(true) }}>
+                        Бүтээгдэхүүн нэмэх
+                    </button>
+                </div>
+            </div>
             <div className="page-content mt-6 flex flex-col gap-6">
                 <div className="grid grid-cols-4 gap-6">
                     <div className="card p-6 bg-surface-2 border-none shadow-sm flex items-center justify-between group hover:bg-surface-3 transition-all"><div><h4 className="text-[10px] text-muted font-black tracking-widest uppercase mb-1">Нийт</h4><div className="text-3xl font-black text-primary">{items.length}</div></div><div className="bg-primary/10 p-4 rounded-2xl text-primary group-hover:scale-110 transition-transform"><Globe size={28} /></div></div>

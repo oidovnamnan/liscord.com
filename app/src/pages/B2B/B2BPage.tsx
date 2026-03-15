@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
-import { Header } from '../../components/layout/Header';
-import { Building2, UserPlus, Filter, Link, ShieldCheck, Mail, Phone, Store, Search } from 'lucide-react';
+import { Building2, UserPlus, Filter, Link, ShieldCheck, Mail, Phone, Store, Search, Handshake} from 'lucide-react';
 import { HubLayout } from '../../components/common/HubLayout';
 import { useBusinessStore } from '../../store';
 import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
 import { db } from '../../services/firebase';
 import { GenericCrudModal, type CrudField } from '../../components/common/GenericCrudModal';
+import '../Settings/components/FlashDealSettings.css';
 
 const B2B_FIELDS: CrudField[] = [
     { name: 'name', label: 'Байгууллагын нэр', type: 'text', required: true },
@@ -50,7 +50,17 @@ export function B2BPage() {
     return (
         <HubLayout hubId="services-hub">
             <div className="page-container animate-fade-in">
-                <Header title="B2B Бөөний Портал" subtitle="Харилцагч байгууллагууд болон дистрибьютерийн тусгай эрхтэй сүлжээ" />
+                <div className="fds-hero">
+                <div className="fds-hero-top">
+                    <div className="fds-hero-left">
+                        <div className="fds-hero-icon"><Handshake size={24} /></div>
+                        <div>
+                            <h3 className="fds-hero-title">B2B</h3>
+                            <div className="fds-hero-desc">Бизнес хоорондын худалдаа</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
                 <div className="page-content">
                     <div style={{ background: 'linear-gradient(135deg, var(--primary), #8e44ad)', padding: '32px', borderRadius: 'var(--radius-lg)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'space-between', boxShadow: '0 10px 30px rgba(108, 92, 231, 0.2)', marginBottom: '32px' }}>

@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo } from 'react';
-import { Header } from '../../components/layout/Header';
+import '../Settings/components/FlashDealSettings.css';
 import { Search, MapPin, Clock, CheckCircle, Truck, Package, UserPlus, AlertCircle } from 'lucide-react';
 import { HubLayout } from '../../components/common/HubLayout';
 import { useBusinessStore } from '../../store';
@@ -73,14 +73,14 @@ export function DeliveryPage() {
     return (
         <HubLayout hubId="logistics-hub">
             <div className="page">
-                <div className="page-hero" style={{ marginBottom: 24 }}>
-                    <div className="page-hero-left">
-                        <div className="page-hero-icon">
-                            <Truck size={24} />
-                        </div>
-                        <div>
-                            <h2 className="page-hero-title">Хүргэлтийн удирдлага</h2>
-                            <p className="page-hero-subtitle">{`Өнөөдөр ${deliveries.length} хүргэлт системд байна`}</p>
+                <div className="fds-hero">
+                    <div className="fds-hero-top">
+                        <div className="fds-hero-left">
+                            <div className="fds-hero-icon"><Truck size={24} /></div>
+                            <div>
+                                <h3 className="fds-hero-title">Хүргэлтийн удирдлага</h3>
+                                <div className="fds-hero-desc">{`Өнөөдөр ${deliveries.length} хүргэлт системд байна`}</div>
+                            </div>
                         </div>
                     </div>
                 </div>

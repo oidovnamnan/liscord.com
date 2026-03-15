@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
-import { Header } from '../../components/layout/Header';
 import { Search, Loader2, MoreVertical, Flame, UserPlus } from 'lucide-react';
 import { useBusinessStore } from '../../store';
 import { leadService } from '../../services/db';
 import { GenericCrudModal, type CrudField } from '../../components/common/GenericCrudModal';
+import '../Settings/components/FlashDealSettings.css';
 
 const STATUSES = [
     { id: 'new', label: 'Шинэ', color: '#3498db' },
@@ -64,8 +64,21 @@ export function LeadsPage() {
     );
 
     return (
-        <>
-            <Header title="Борлуулалтын Боломж (Leads)" action={{ label: '+ Шинэ Lead', onClick: () => { setEditingItem(null); setShowModal(true); } }} />
+            <div className="animate-fade-in" style={{ padding: '24px clamp(16px, 3vw, 32px) 32px' }}>
+            <div className="fds-hero">
+                <div className="fds-hero-top">
+                    <div className="fds-hero-left">
+                        <div className="fds-hero-icon"><UserPlus size={24} /></div>
+                        <div>
+                            <h3 className="fds-hero-title">Лийд</h3>
+                            <div className="fds-hero-desc">Боломжит хэрэглэгчдийн удирдлага</div>
+                        </div>
+                    </div>
+                    <button className="fds-add-btn" onClick={() => { setEditingItem(null); setShowModal(true) }}>
+                        + Шинэ Lead
+                    </button>
+                </div>
+            </div>
             <div className="page" style={{ height: 'calc(100vh - 80px)', display: 'flex', flexDirection: 'column' }}>
                 <div className="page-header-actions" style={{ marginBottom: '20px' }}>
                     <div className="search-box" style={{ maxWidth: '400px' }}>
@@ -117,6 +130,6 @@ export function LeadsPage() {
                     onClose={() => setShowModal(false)}
                 />
             )}
-        </>
-    );
+            </div>
+        );
 }

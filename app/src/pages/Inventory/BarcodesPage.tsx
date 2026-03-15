@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
-import { Header } from '../../components/layout/Header';
 import { HubLayout } from '../../components/common/HubLayout';
-import { Barcode, Search } from 'lucide-react';
+import { Barcode, Search, ScanLine} from 'lucide-react';
 import { useBusinessStore } from '../../store';
 import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
 import { db } from '../../services/firebase';
 import { GenericCrudModal, type CrudField } from '../../components/common/GenericCrudModal';
+import '../Settings/components/FlashDealSettings.css';
 
 const BARCODE_FIELDS: CrudField[] = [
     { name: 'productName', label: 'Бүтээгдэхүүн', type: 'text', required: true },
@@ -45,7 +45,20 @@ export function BarcodesPage() {
     return (
         <HubLayout hubId="inventory-hub">
             <div className="page-container animate-fade-in">
-                <Header title="Баркод удирдлага" action={{ label: '+ Баркод', onClick: () => { setEditingItem(null); setShowModal(true); } }} />
+                <div className="fds-hero">
+                <div className="fds-hero-top">
+                    <div className="fds-hero-left">
+                        <div className="fds-hero-icon"><ScanLine size={24} /></div>
+                        <div>
+                            <h3 className="fds-hero-title">Баркод</h3>
+                            <div className="fds-hero-desc">Баркод сканнер, үүсгэгч</div>
+                        </div>
+                    </div>
+                    <button className="fds-add-btn" onClick={() => { setEditingItem(null); setShowModal(true) }}>
+                        + Баркод
+                    </button>
+                </div>
+            </div>
                 <div style={{ margin: '20px 0' }}><div className="search-box" style={{ maxWidth: 400 }}><Search size={18} /><input type="text" placeholder="Бүтээгдэхүүн, баркод хайх..." value={search} onChange={e => setSearch(e.target.value)} /></div></div>
                 <div className="card" style={{ padding: 0 }}>
                     {loading ? <div style={{ padding: 48, textAlign: 'center', color: 'var(--text-muted)' }}>Ачаалж байна...</div> : (

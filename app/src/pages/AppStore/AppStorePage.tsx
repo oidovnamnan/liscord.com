@@ -4,11 +4,11 @@ import { businessService, systemSettingsService } from '../../services/db';
 import { toast } from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 import * as Icons from 'lucide-react';
-import { Download, Trash2, Loader2, CheckCircle2, Palette, Sparkles, Package, TrendingUp, Zap } from 'lucide-react';
-import { Header } from '../../components/layout/Header';
+import { Download, Trash2, Loader2, CheckCircle2, Palette, Sparkles, Package, TrendingUp, Zap, Store} from 'lucide-react';
 import { LISCORD_MODULES } from '../../config/modules';
 import { STOREFRONT_THEMES } from '../../config/themes';
 import './AppStorePage.css';
+import '../Settings/components/FlashDealSettings.css';
 
 const CATEGORY_MAP: Record<string, string> = {
     'operations': 'Үйл ажиллагаа',
@@ -272,10 +272,17 @@ export function AppStorePage() {
 
     return (
         <div className="page-container animate-fade-in">
-            <Header
-                title="App Store"
-                subtitle="Танай бизнест зориулсан модулиуд"
-            />
+            <div className="fds-hero">
+                <div className="fds-hero-top">
+                    <div className="fds-hero-left">
+                        <div className="fds-hero-icon"><Store size={24} /></div>
+                        <div>
+                            <h3 className="fds-hero-title">App Store</h3>
+                            <div className="fds-hero-desc">Модулийн дэлгүүр</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
             <div className="page-content" style={{ padding: '24px 24px 40px' }}>
                 {/* ═══ Hero Stats ═══ */}

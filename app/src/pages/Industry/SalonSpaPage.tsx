@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
-import { Header } from '../../components/layout/Header';
 import { HubLayout } from '../../components/common/HubLayout';
 import { Scissors, Sparkles, Calendar, Plus, Search, Star, Clock, Zap, Heart, Smartphone, ArrowUpRight, ShoppingBag } from 'lucide-react';
 import { useBusinessStore } from '../../store';
 import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
 import { db } from '../../services/firebase';
 import { GenericCrudModal, type CrudField } from '../../components/common/GenericCrudModal';
+import '../Settings/components/FlashDealSettings.css';
 
 const APPOINTMENT_FIELDS: CrudField[] = [
     { name: 'customer', label: 'Үйлчлүүлэгч', type: 'text', required: true },
@@ -51,7 +51,17 @@ export function SalonSpaPage() {
 
     return (
         <HubLayout hubId="industry-hub">
-            <Header title="Салон & Спа" subtitle="Гоо сайханчдын хуваарь, үйлчилгээний төрөл болон харилцагчийн үнэлгээ хянах" />
+            <div className="fds-hero">
+                <div className="fds-hero-top">
+                    <div className="fds-hero-left">
+                        <div className="fds-hero-icon"><Scissors size={24} /></div>
+                        <div>
+                            <h3 className="fds-hero-title">Салон & Спа</h3>
+                            <div className="fds-hero-desc">Гоо сайхны салоны удирдлага</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
             <div className="page-content mt-6 h-full flex flex-col gap-8">
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                     <div className="card p-8 border shadow-lg bg-white rounded-[2.5rem] relative overflow-hidden group hover-lift animate-slide-up">

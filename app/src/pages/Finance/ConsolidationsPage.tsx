@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
-import { Header } from '../../components/layout/Header';
 import { HubLayout } from '../../components/common/HubLayout';
-import { LayoutDashboard, PieChart, BarChart3 } from 'lucide-react';
+import { LayoutDashboard, PieChart, BarChart3, Layers} from 'lucide-react';
 import { useBusinessStore } from '../../store';
 import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
 import { db } from '../../services/firebase';
 import { GenericCrudModal, type CrudField } from '../../components/common/GenericCrudModal';
+import '../Settings/components/FlashDealSettings.css';
 
 const CONSOLIDATION_FIELDS: CrudField[] = [
     { name: 'name', label: 'Нэр', type: 'text', required: true, span: 2, placeholder: 'Q1 2024 Нэгтгэл' },
@@ -47,7 +47,20 @@ export function ConsolidationsPage() {
     return (
         <HubLayout hubId="finance-hub">
             <div className="page-container animate-fade-in">
-                <Header title="Санхүүгийн Нэгтгэл" action={{ label: '+ Нэгтгэл', onClick: () => { setEditingItem(null); setShowModal(true); } }} />
+                <div className="fds-hero">
+                <div className="fds-hero-top">
+                    <div className="fds-hero-left">
+                        <div className="fds-hero-icon"><Layers size={24} /></div>
+                        <div>
+                            <h3 className="fds-hero-title">Нэгтгэл</h3>
+                            <div className="fds-hero-desc">Санхүүгийн нэгтгэл</div>
+                        </div>
+                    </div>
+                    <button className="fds-add-btn" onClick={() => { setEditingItem(null); setShowModal(true) }}>
+                        + Нэгтгэл
+                    </button>
+                </div>
+            </div>
                 <div className="card" style={{ padding: 0, marginTop: 20 }}>
                     {loading ? <div style={{ padding: 48, textAlign: 'center', color: 'var(--text-muted)' }}>Ачаалж байна...</div> : (
                         <table className="table"><thead><tr><th>Нэр</th><th>Хугацаа</th><th>Орлого</th><th>Зардал</th><th>Ашиг</th><th>Төлөв</th></tr></thead>

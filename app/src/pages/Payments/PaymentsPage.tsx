@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo } from 'react';
-import { Header } from '../../components/layout/Header';
+import '../Settings/components/FlashDealSettings.css';
 import { Search, DollarSign, ArrowDownRight, ArrowUpRight } from 'lucide-react';
 import { HubLayout } from '../../components/common/HubLayout';
 import { useBusinessStore } from '../../store';
@@ -69,14 +69,14 @@ export function PaymentsPage() {
     return (
         <HubLayout hubId="finance-hub">
             <div className="page">
-                <div className="page-hero" style={{ marginBottom: 24 }}>
-                    <div className="page-hero-left">
-                        <div className="page-hero-icon">
-                            <DollarSign size={24} />
-                        </div>
-                        <div>
-                            <h2 className="page-hero-title">Төлбөр тооцоо</h2>
-                            <p className="page-hero-subtitle">Орлого, зарлага бүртгэл</p>
+                <div className="fds-hero">
+                    <div className="fds-hero-top">
+                        <div className="fds-hero-left">
+                            <div className="fds-hero-icon"><DollarSign size={24} /></div>
+                            <div>
+                                <h3 className="fds-hero-title">Төлбөр тооцоо</h3>
+                                <div className="fds-hero-desc">Орлого, зарлага бүртгэл</div>
+                            </div>
                         </div>
                     </div>
                 </div>

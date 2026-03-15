@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
-import { Header } from '../../components/layout/Header';
 import { HubLayout } from '../../components/common/HubLayout';
 import { Wifi, MapPin, Clock, CheckCircle2 } from 'lucide-react';
 import { useBusinessStore } from '../../store';
 import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
 import { db } from '../../services/firebase';
 import { GenericCrudModal, type CrudField } from '../../components/common/GenericCrudModal';
+import '../Settings/components/FlashDealSettings.css';
 
 const REMOTE_FIELDS: CrudField[] = [
     { name: 'employeeName', label: 'Ажилтан', type: 'text', required: true },
@@ -44,7 +44,20 @@ export function RemoteTrackerPage() {
     return (
         <HubLayout hubId="hr-hub">
             <div className="page-container animate-fade-in">
-                <Header title="Зайнаас ажиллах" action={{ label: '+ Бүртгэх', onClick: () => { setEditingItem(null); setShowModal(true); } }} />
+                <div className="fds-hero">
+                <div className="fds-hero-top">
+                    <div className="fds-hero-left">
+                        <div className="fds-hero-icon"><Wifi size={24} /></div>
+                        <div>
+                            <h3 className="fds-hero-title">Зайнаас Ажиллах</h3>
+                            <div className="fds-hero-desc">Зайнаас ажиллах бүртгэл</div>
+                        </div>
+                    </div>
+                    <button className="fds-add-btn" onClick={() => { setEditingItem(null); setShowModal(true) }}>
+                        + Бүртгэх
+                    </button>
+                </div>
+            </div>
                 <div className="card" style={{ padding: 0, marginTop: 20 }}>
                     {loading ? <div style={{ padding: 48, textAlign: 'center', color: 'var(--text-muted)' }}>Ачаалж байна...</div> : (
                         <table className="table"><thead><tr><th>Ажилтан</th><th>Огноо</th><th>Байршил</th><th>Цаг</th><th>Төлөв</th></tr></thead>

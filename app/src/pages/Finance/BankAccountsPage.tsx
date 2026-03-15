@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
-import { Header } from '../../components/layout/Header';
-import { Landmark, Loader2, ShieldCheck, TrendingUp, CreditCard, Edit2 } from 'lucide-react';
+import { Landmark, Loader2, ShieldCheck, TrendingUp, CreditCard, Edit2, Building2} from 'lucide-react';
 import { useBusinessStore } from '../../store';
 import { bankService } from '../../services/db';
 import { GenericCrudModal, type CrudField } from '../../components/common/GenericCrudModal';
+import '../Settings/components/FlashDealSettings.css';
 
 const BANK_FIELDS: CrudField[] = [
     { name: 'accountName', label: 'Дансны нэр', type: 'text', required: true, placeholder: 'Үндсэн данс' },
@@ -50,9 +50,22 @@ export function BankAccountsPage() {
     }, [business?.id]);
 
     return (
-        <>
-            <Header title="Банкны Данс" action={{ label: '+ Данс нэмэх', onClick: () => { setEditingItem(null); setShowModal(true); } }} />
-            <div className="page">
+            <div className="animate-fade-in" style={{ padding: '24px clamp(16px, 3vw, 32px) 32px' }}>
+            <div className="fds-hero">
+                <div className="fds-hero-top">
+                    <div className="fds-hero-left">
+                        <div className="fds-hero-icon"><Building2 size={24} /></div>
+                        <div>
+                            <h3 className="fds-hero-title">Банк Данс</h3>
+                            <div className="fds-hero-desc">Банкны дансны удирдлага</div>
+                        </div>
+                    </div>
+                    <button className="fds-add-btn" onClick={() => { setEditingItem(null); setShowModal(true) }}>
+                        + Данс нэмэх
+                    </button>
+                </div>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(360px, 1fr))', gap: 20 }}>
                     {loading ? (
                         <div className="flex-center" style={{ gridColumn: '1 / -1', height: '200px' }}><Loader2 className="animate-spin" size={32} /></div>
@@ -109,6 +122,6 @@ export function BankAccountsPage() {
                     onClose={() => setShowModal(false)}
                 />
             )}
-        </>
-    );
+            </div>
+        );
 }

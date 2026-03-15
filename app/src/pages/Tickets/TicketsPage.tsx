@@ -1,13 +1,13 @@
 import { useState, useEffect } from 'react';
-import { Header } from '../../components/layout/Header';
 import { useBusinessStore } from '../../store';
 import { eventService, ticketService } from '../../services/db';
 import type { Event, Ticket } from '../../types';
-import { Users, MapPin, QrCode, Ticket as TicketIcon, CheckCircle } from 'lucide-react';
+import { Users, MapPin, QrCode, Ticket as TicketIcon, CheckCircle, Ticket} from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'react-hot-toast';
 import { HubLayout } from '../../components/common/HubLayout';
 import './TicketsPage.css';
+import '../Settings/components/FlashDealSettings.css';
 
 export function TicketsPage() {
     const { business } = useBusinessStore();
@@ -81,14 +81,17 @@ export function TicketsPage() {
     return (
         <HubLayout hubId="projects-hub">
             <div className="page-container tickets-page animate-fade-in">
-                <Header
-                    title="Тасалбар & Арга хэмжээ"
-                    subtitle="Тоглолт, Аялал, Эвэнт удирдлага"
-                    action={{
-                        label: "Шинэ эвэнт",
-                        onClick: () => toast('Арга хэмжээ нэмэх (Удахгүй)')
-                    }}
-                />
+                <div className="fds-hero">
+                <div className="fds-hero-top">
+                    <div className="fds-hero-left">
+                        <div className="fds-hero-icon"><Ticket size={24} /></div>
+                        <div>
+                            <h3 className="fds-hero-title">Тикет</h3>
+                            <div className="fds-hero-desc">Тикетийн удирдлага</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
                 <div className="tickets-toolbar">
                     <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>

@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
-import { Header } from '../../components/layout/Header';
 import { HubLayout } from '../../components/common/HubLayout';
-import { Search, ShoppingCart, Plus, Minus, Trash2, CreditCard, DollarSign, QrCode, Barcode, Save, User, Menu } from 'lucide-react';
+import { Search, ShoppingCart, Plus, Minus, Trash2, CreditCard, DollarSign, QrCode, Barcode, Save, User, Menu, Monitor} from 'lucide-react';
 import { useBusinessStore } from '../../store';
 import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
 import { db } from '../../services/firebase';
 import { GenericCrudModal, type CrudField } from '../../components/common/GenericCrudModal';
+import '../Settings/components/FlashDealSettings.css';
 
 const F: CrudField[] = [
     { name: 'name', label: 'Барааны нэр', type: 'text', required: true },
@@ -33,7 +33,17 @@ export function POSPage() {
     return (
         <HubLayout hubId="retail-hub">
             <div className="flex flex-col h-full gap-4 -mt-6">
-                <Header title="ПОС Касс" subtitle="Жижиглэн борлуулалт, кассын үйлчилгээ" action={{ label: "Бараа нэмэх", onClick: () => { setEditingItem(null); setShowModal(true); } }} />
+                <div className="fds-hero">
+                <div className="fds-hero-top">
+                    <div className="fds-hero-left">
+                        <div className="fds-hero-icon"><Monitor size={24} /></div>
+                        <div>
+                            <h3 className="fds-hero-title">POS</h3>
+                            <div className="fds-hero-desc">Тооцооны систем</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
                 <div className="flex-1 flex gap-6 overflow-hidden min-h-[600px] pb-6">
                     {/* Left: Product Grid */}
                     <div className="flex-1 flex flex-col gap-6 animate-fade-in">

@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
-import { Header } from '../../components/layout/Header';
 import { HubLayout } from '../../components/common/HubLayout';
-import { ArrowRightLeft, Truck, Clock } from 'lucide-react';
+import { ArrowRightLeft, Truck, Clock, ArrowLeftRight} from 'lucide-react';
 import { useBusinessStore } from '../../store';
 import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
 import { db } from '../../services/firebase';
 import { GenericCrudModal, type CrudField } from '../../components/common/GenericCrudModal';
+import '../Settings/components/FlashDealSettings.css';
 
 const CROSSDOCK_FIELDS: CrudField[] = [
     { name: 'shipmentId', label: 'Ачааны дугаар', type: 'text', required: true },
@@ -45,7 +45,20 @@ export function CrossDockingPage() {
     return (
         <HubLayout hubId="inventory-hub">
             <div className="page-container animate-fade-in">
-                <Header title="Cross-Docking" action={{ label: '+ Шинэ', onClick: () => { setEditingItem(null); setShowModal(true); } }} />
+                <div className="fds-hero">
+                <div className="fds-hero-top">
+                    <div className="fds-hero-left">
+                        <div className="fds-hero-icon"><ArrowLeftRight size={24} /></div>
+                        <div>
+                            <h3 className="fds-hero-title">Cross Docking</h3>
+                            <div className="fds-hero-desc">Шууд шилжүүлгийн удирдлага</div>
+                        </div>
+                    </div>
+                    <button className="fds-add-btn" onClick={() => { setEditingItem(null); setShowModal(true) }}>
+                        + Шинэ
+                    </button>
+                </div>
+            </div>
                 <div className="card" style={{ padding: 0, marginTop: 20 }}>
                     {loading ? <div style={{ padding: 48, textAlign: 'center', color: 'var(--text-muted)' }}>Ачаалж байна...</div> : (
                         <table className="table"><thead><tr><th>Ачаа №</th><th>Хаанаас</th><th>Хаашаа</th><th>Тоо</th><th>Огноо</th><th>Төлөв</th></tr></thead>
