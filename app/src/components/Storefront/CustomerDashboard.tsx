@@ -356,7 +356,7 @@ export function CustomerDashboard({ isOpen, onClose, business, phone, onOpenMemb
                                     <label>Утасны дугаар</label>
                                     <input
                                         type="tel"
-                                        placeholder="9911 2233"
+                                        placeholder=""
                                         value={loginPhone}
                                         onChange={e => setLoginPhone(e.target.value)}
                                         maxLength={12}
@@ -443,7 +443,7 @@ export function CustomerDashboard({ isOpen, onClose, business, phone, onOpenMemb
                                 <label>Таны нэр</label>
                                 <input
                                     type="text"
-                                    placeholder="Бат-Эрдэнэ"
+                                    placeholder=""
                                     value={nameInput}
                                     onChange={e => setNameInput(e.target.value)}
                                     onKeyDown={e => e.key === 'Enter' && saveCustomerName(nameInput)}
