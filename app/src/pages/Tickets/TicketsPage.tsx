@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useBusinessStore } from '../../store';
 import { eventService, ticketService } from '../../services/db';
 import type { Event, Ticket } from '../../types';
-import { Users, MapPin, QrCode, Ticket as TicketIcon, CheckCircle, Ticket} from 'lucide-react';
+import { Users, MapPin, QrCode, Ticket as TicketIcon, CheckCircle } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'react-hot-toast';
 import { HubLayout } from '../../components/common/HubLayout';
@@ -84,7 +84,7 @@ export function TicketsPage() {
                 <div className="fds-hero">
                 <div className="fds-hero-top">
                     <div className="fds-hero-left">
-                        <div className="fds-hero-icon"><Ticket size={24} /></div>
+                        <div className="fds-hero-icon"><TicketIcon size={24} /></div>
                         <div>
                             <h3 className="fds-hero-title">Тикет</h3>
                             <div className="fds-hero-desc">Тикетийн удирдлага</div>
