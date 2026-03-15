@@ -1,9 +1,8 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Header } from '../../components/layout/Header';
 import {
     ShoppingCart, Package, Loader2, ArrowRight, CheckCircle2, ScanLine,
     Truck as TruckIcon, AlertTriangle, Users, FileText, TrendingDown,
-    Clock, CreditCard, Radio, Wifi, Activity, Eye
+    Clock, CreditCard, Radio, Wifi, Activity, Eye, Sparkles, LayoutDashboard
 } from 'lucide-react';
 import { useBusinessStore, useAuthStore } from '../../store';
 import { dashboardService, systemSettingsService } from '../../services/db';
@@ -315,55 +314,51 @@ export function DashboardPage() {
     const preparingOrders = (ordersByStatus['preparing'] || 0) + (ordersByStatus['ready'] || 0);
     const shippingOrders = ordersByStatus['shipping'] || 0;
 
+    const displayName = isImpersonating && employee ? employee.name : (user?.displayName || 'Эзэн');
+
     return (
         <>
-            <Header title="Хянах самбар" />
-            <div className="page animate-fade-in" style={{ gap: 20 }}>
-                {/* Dashboard Hero */}
-                <div className="dashboard-hero stagger-item premium-glass-panel" style={{ '--index': 0 } as React.CSSProperties}>
-                    <div className="dashboard-hero-content">
-                        <div className="hero-badge">Эхлэх Цэг</div>
-                        <h1>Сайн байна уу, <span className="text-gradient">{isImpersonating && employee ? employee.name : (user?.displayName || 'Эзэн')}</span>! 👋</h1>
-                        <p className="text-secondary">{business?.name} бизнесийн өнөөдрийн тойм болон шуурхай үйлдлүүд.</p>
-                    </div>
-                    <div className="dashboard-hero-stats">
-                        {hasModule('orders') && (
-                            <div className="hero-stat-card">
-                                <div className="hero-stat-value">
-                                    ₮{todayRevenue > 999999 ? `${(todayRevenue / 1000000).toFixed(1)}M` : todayRevenue > 999 ? `${(todayRevenue / 1000).toFixed(0)}K` : todayRevenue.toLocaleString()}
-                                </div>
-                                <div className="hero-stat-label">Өнөөдрийн орлого</div>
-                            </div>
-                        )}
-                        {hasModule('orders') && (
-                            <div className="hero-stat-card">
-                                <div className="hero-stat-value">
-                                    {pendingOrders}
-                                    {pendingOrders > 0 && <span className="hero-stat-indicator orange">шинэ</span>}
-                                </div>
-                                <div className="hero-stat-label">Хүлээгдэж буй</div>
-                            </div>
-                        )}
-                        {hasModule('products') && (
-                            <div className="hero-stat-card">
-                                <div className="hero-stat-value">{stats?.totalProducts || 0}</div>
-                                <div className="hero-stat-label">Идэвхтэй бараа</div>
-                            </div>
-                        )}
-                        {hasModule('online-presence') && (
-                            <div className="hero-stat-card">
-                                <div className="hero-stat-value">
-                                    {onlineEmployees.length + visitorCount}
-                                    {(onlineEmployees.length + visitorCount) > 0 && <span className="hero-stat-indicator pulse"></span>}
-                                </div>
-                                <div className="hero-stat-label">
-                                    <Wifi size={10} style={{ opacity: 0.6 }} /> {onlineEmployees.length} ажилтан
-                                    {visitorCount > 0 && <> · <Eye size={10} style={{ opacity: 0.6 }} /> {visitorCount} зочин</>}
-                                </div>
-                            </div>
-                        )}
+            {/* ── Premium Gradient Hero ── */}
+            <div className="sa-hero" style={{ background: 'linear-gradient(135deg, #059669 0%, #0d9488 40%, #0891b2 100%)', boxShadow: '0 8px 32px rgba(5, 150, 105, 0.25)', margin: '24px clamp(16px, 3vw, 32px) 0' }}>
+                <div className="sa-hero-top">
+                    <div className="sa-hero-left">
+                        <div className="sa-hero-icon"><LayoutDashboard size={24} /></div>
+                        <div>
+                            <div className="sa-hero-badge"><Sparkles size={10} /> {business?.name}</div>
+                            <h1 className="sa-hero-title">Сайн байна уу, {displayName}! 👋</h1>
+                            <div className="sa-hero-desc">{business?.name} бизнесийн өнөөдрийн тойм болон шуурхай үйлдлүүд</div>
+                        </div>
                     </div>
                 </div>
+                <div className="sa-hero-stats">
+                    {hasModule('orders') && (
+                        <div className="sa-hero-stat">
+                            <div className="sa-hero-stat-value">₮{todayRevenue > 999999 ? `${(todayRevenue / 1000000).toFixed(1)}M` : todayRevenue > 999 ? `${(todayRevenue / 1000).toFixed(0)}K` : todayRevenue.toLocaleString()}</div>
+                            <div className="sa-hero-stat-label">Өнөөдрийн орлого</div>
+                        </div>
+                    )}
+                    {hasModule('orders') && (
+                        <div className="sa-hero-stat">
+                            <div className="sa-hero-stat-value">{pendingOrders}{pendingOrders > 0 && <span className="sa-hero-stat-growth down" style={{ background: 'rgba(251,191,36,0.3)', color: '#fde68a' }}>шинэ</span>}</div>
+                            <div className="sa-hero-stat-label">Хүлээгдэж буй</div>
+                        </div>
+                    )}
+                    {hasModule('products') && (
+                        <div className="sa-hero-stat">
+                            <div className="sa-hero-stat-value">{stats?.totalProducts || 0}</div>
+                            <div className="sa-hero-stat-label">Идэвхтэй бараа</div>
+                        </div>
+                    )}
+                    {hasModule('online-presence') && (
+                        <div className="sa-hero-stat">
+                            <div className="sa-hero-stat-value">{onlineEmployees.length + visitorCount}{(onlineEmployees.length + visitorCount) > 0 && <span className="sa-hero-stat-growth up">live</span>}</div>
+                            <div className="sa-hero-stat-label">{onlineEmployees.length} ажилтан{visitorCount > 0 && ` · ${visitorCount} зочин`}</div>
+                        </div>
+                    )}
+                </div>
+            </div>
+
+            <div className="page animate-fade-in" style={{ gap: 20 }}>
 
                 {/* KPI Cards — filtered by permissions */}
                 <KPICards stats={stats} category={business?.category} visibleModuleIds={visibleModuleIds} />
