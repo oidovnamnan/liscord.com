@@ -119,85 +119,54 @@ export function InventoryPage() {
 
     return (
         <HubLayout hubId="inventory-hub">
-            <div className="inventory-page animate-fade-in">
-                {/* Page Header — Premium */}
-                <div className="page-hero">
-                    <div className="page-hero-left">
-                        <div className="page-hero-icon">
-                            <Package size={24} />
-                        </div>
-                        <div>
-                            <h2 className="page-hero-title">Агуулах / Логистик</h2>
-                            <p className="page-hero-subtitle">Барааны орлого, зарлага, нөөцийн түүх</p>
-                        </div>
-                    </div>
-                    <PermissionGate permission="inventory.adjust">
-                        <button className="btn btn-primary btn-sm gradient-btn" onClick={() => setShowAdd(true)} style={{ gap: 6 }}>
-                            <Plus size={16} /> Нөөц нэмэх
-                        </button>
-                    </PermissionGate>
-                </div>
-
-                {/* ====== Stats Grid — Glassmorphism ====== */}
-                <div className="inv-stats-grid">
-                    <div className="inv-stat-card">
-                        <div className="inv-stat-content">
-                            <h4>Нийт орлого</h4>
-                            <div className="inv-stat-value">{totalIn.toLocaleString()}</div>
-                            <div className={`inv-stat-trend ${inPercent > 50 ? 'up' : 'neutral'}`}>
-                                <TrendingUp size={10} /> {inPercent}%
+            <div style={{ padding: '24px clamp(16px, 3vw, 32px) 32px' }}>
+                {/* ── Premium Hero ── */}
+                <div className="inv-hero">
+                    <div className="inv-hero-top">
+                        <div className="inv-hero-left">
+                            <div className="inv-hero-icon"><Package size={24} /></div>
+                            <div>
+                                <h2 className="inv-hero-title">Агуулах / Логистик</h2>
+                                <div className="inv-hero-desc">Барааны орлого, зарлага, нөөцийн түүх</div>
                             </div>
                         </div>
-                        <div className="inv-stat-icon icon-green">
-                            <TrendingUp size={24} />
-                        </div>
+                        <PermissionGate permission="inventory.adjust">
+                            <button className="inv-hero-btn" onClick={() => setShowAdd(true)}>
+                                <Plus size={16} />
+                                <span>Нөөц нэмэх</span>
+                            </button>
+                        </PermissionGate>
                     </div>
-
-                    <div className="inv-stat-card">
-                        <div className="inv-stat-content">
-                            <h4>Нийт зарлага</h4>
-                            <div className="inv-stat-value">{totalOut.toLocaleString()}</div>
-                            <div className={`inv-stat-trend ${countOut > countIn ? 'down' : 'neutral'}`}>
-                                <TrendingDown size={10} /> {100 - inPercent}%
-                            </div>
+                    <div className="inv-hero-stats">
+                        <div className="inv-hero-stat">
+                            <div className="inv-hero-stat-value">{totalIn.toLocaleString()}</div>
+                            <div className="inv-hero-stat-label">Нийт орлого</div>
+                            <div className="inv-hero-stat-sub">↗ {inPercent}%</div>
                         </div>
-                        <div className="inv-stat-icon icon-red">
-                            <TrendingDown size={24} />
+                        <div className="inv-hero-stat">
+                            <div className="inv-hero-stat-value">{totalOut.toLocaleString()}</div>
+                            <div className="inv-hero-stat-label">Нийт зарлага</div>
+                            <div className="inv-hero-stat-sub">↘ {100 - inPercent}%</div>
                         </div>
-                    </div>
-
-                    <div className="inv-stat-card">
-                        <div className="inv-stat-content">
-                            <h4>Барааны нэр төрөл</h4>
-                            <div className="inv-stat-value">{products.length}</div>
-                            <div className="inv-stat-trend neutral">
-                                <Package size={10} /> SKU
-                            </div>
+                        <div className="inv-hero-stat">
+                            <div className="inv-hero-stat-value">{products.length}</div>
+                            <div className="inv-hero-stat-label">Барааны нэр төрөл</div>
+                            <div className="inv-hero-stat-sub">⊕ SKU</div>
                         </div>
-                        <div className="inv-stat-icon icon-primary">
-                            <Package size={24} />
-                        </div>
-                    </div>
-
-                    <div className="inv-stat-card">
-                        <div className="inv-stat-content">
-                            <h4>Нөөц бага</h4>
-                            <div className="inv-stat-value">{lowStockItems.length}</div>
-                            {lowStockItems.length > 0 && (
-                                <div className="inv-stat-trend down">
-                                    <AlertTriangle size={10} /> Анхааруулга
-                                </div>
-                            )}
-                        </div>
-                        <div className="inv-stat-icon icon-orange">
-                            <AlertTriangle size={24} />
+                        <div className="inv-hero-stat">
+                            <div className="inv-hero-stat-value">{lowStockItems.length}</div>
+                            <div className="inv-hero-stat-label">Нөөц бага</div>
+                            {lowStockItems.length > 0 && <div className="inv-hero-stat-sub">⚠ Анхааруулга</div>}
                         </div>
                     </div>
                 </div>
+
+                {/* ── Card Container (low-stock + toolbar + movements) ── */}
+                <div className="inv-page-card">
 
                 {/* ====== Low Stock — Horizontal Carousel ====== */}
                 {!loading && lowStockItems.length > 0 && (
-                    <div className="inv-low-stock-premium">
+                    <div className="inv-low-stock-premium" style={{ marginBottom: 20 }}>
                         <div className="low-stock-header">
                             <AlertTriangle size={16} />
                             Нөөц бага байгаа бараа
@@ -328,6 +297,7 @@ export function InventoryPage() {
                         </div>
                     )}
                 </div>
+                </div>{/* /inv-page-card */}
             </div>
 
             {showAdd && <AddMovementModal products={products} onClose={() => setShowAdd(false)} />}
