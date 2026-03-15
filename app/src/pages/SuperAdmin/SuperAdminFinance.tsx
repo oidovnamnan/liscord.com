@@ -1,17 +1,19 @@
-import { useState, useEffect } from 'react';
-import { Header } from '../../components/layout/Header';
+import { useState, useEffect, useMemo } from 'react';
 import { platformFinanceService, businessService } from '../../services/db';
-import { TrendingUp, DollarSign, Calendar, Loader2, Search, Activity } from 'lucide-react';
+import { DollarSign, Loader2, Search, Activity, Sparkles, CheckCircle2, Clock, Tag } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import type { PlatformPayment, Business } from '../../types';
 import { SecurityModal } from '../../components/common/SecurityModal';
+import './SuperAdmin.css';
+
+type BizFilter = 'all' | 'active' | 'free' | 'expired';
 
 export function SuperAdminFinance() {
     const [payments, setPayments] = useState<PlatformPayment[]>([]);
     const [businesses, setBusinesses] = useState<Business[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
-    const [filter, setFilter] = useState<'all' | 'active' | 'expired' | 'free'>('all');
+    const [filter, setFilter] = useState<BizFilter>('all');
 
     // Extension modal state
     const [isExtendModalOpen, setIsExtendModalOpen] = useState(false);
@@ -57,10 +59,6 @@ export function SuperAdminFinance() {
 
     const handleExtendSubmit = async () => {
         if (!selectedBusiness) return;
-        setShowSecurityModal(true); // Keep it open for password check
-
-        // This function will be passed to SecurityModal.onSuccess
-        // which means the password was correct.
         setShowSecurityModal(false);
         setSaving(true);
         try {
@@ -71,7 +69,7 @@ export function SuperAdminFinance() {
             );
             toast.success('Хугацаа амжилттай сунгагдлаа');
             setIsExtendModalOpen(false);
-            fetchData(); // Refresh list
+            fetchData();
         } catch (error) {
             console.error('Failed to extend subscription:', error);
             toast.error('Сунгалт хийхэд алдаа гарлаа');
@@ -85,28 +83,46 @@ export function SuperAdminFinance() {
         .filter(p => p.status === 'success')
         .reduce((sum, p) => sum + p.amount, 0);
 
-    const activeCount = businesses.filter(b => {
-        const exp = b.subscription?.expiresAt;
-        return exp && new Date(exp) > new Date();
-    }).length;
-
-    const filteredBusinesses = businesses.filter(b => {
-        if (searchTerm) {
-            const term = searchTerm.toLowerCase();
-            if (!b.name.toLowerCase().includes(term) && !b.id.toLowerCase().includes(term)) {
-                return false;
-            }
-        }
+    const heroStats = useMemo(() => {
         const now = new Date();
-        const exp = b.subscription?.expiresAt ? new Date(b.subscription.expiresAt) : null;
+        const active = businesses.filter(b => {
+            const exp = b.subscription?.expiresAt;
+            return exp && new Date(exp) > now && b.subscription?.plan !== 'free';
+        }).length;
+        const free = businesses.filter(b => b.subscription?.plan === 'free').length;
+        const expired = businesses.filter(b => {
+            const exp = b.subscription?.expiresAt ? new Date(b.subscription.expiresAt) : null;
+            return !exp || exp <= now;
+        }).length;
+        return { total: businesses.length, active, free, expired };
+    }, [businesses]);
 
-        switch (filter) {
-            case 'active': return exp && exp > now && b.subscription?.plan !== 'free';
-            case 'expired': return !exp || exp <= now;
-            case 'free': return b.subscription?.plan === 'free';
-            default: return true;
-        }
-    });
+    const filteredBusinesses = useMemo(() => {
+        return businesses.filter(b => {
+            if (searchTerm) {
+                const term = searchTerm.toLowerCase();
+                if (!b.name.toLowerCase().includes(term) && !b.id.toLowerCase().includes(term)) {
+                    return false;
+                }
+            }
+            const now = new Date();
+            const exp = b.subscription?.expiresAt ? new Date(b.subscription.expiresAt) : null;
+
+            switch (filter) {
+                case 'active': return exp && exp > now && b.subscription?.plan !== 'free';
+                case 'expired': return !exp || exp <= now;
+                case 'free': return b.subscription?.plan === 'free';
+                default: return true;
+            }
+        });
+    }, [businesses, searchTerm, filter]);
+
+    const filterTabs: { id: BizFilter; label: string; count: number; icon?: React.ReactNode }[] = [
+        { id: 'all', label: 'Бүгд', count: heroStats.total },
+        { id: 'active', label: 'Идэвхтэй', count: heroStats.active, icon: <CheckCircle2 size={12} /> },
+        { id: 'free', label: 'Free', count: heroStats.free, icon: <Tag size={12} /> },
+        { id: 'expired', label: 'Дууссан', count: heroStats.expired, icon: <Clock size={12} /> },
+    ];
 
     if (loading) {
         return (
@@ -118,207 +134,204 @@ export function SuperAdminFinance() {
     }
 
     return (
-        <div className="page-container animate-fade-in">
-            <Header
-                title="Платформын Санхүү"
-                subtitle="Бизнесүүдийн эрх, сунгалт болон нийт орлогын хяналт"
-            />
-
-            <div className="page-content">
-                {/* Dashboard Cards */}
-                <div className="stats-grid">
-                    <div className="stat-card hover-card">
-                        <div className="stat-icon green">
-                            <DollarSign size={24} />
-                        </div>
-                        <div className="stat-info">
-                            <span className="stat-label">Нийт орлого</span>
-                            <div className="stat-value-row">
-                                <span className="stat-value">{totalRevenue.toLocaleString()} ₮</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="stat-card hover-card">
-                        <div className="stat-icon purple">
-                            <TrendingUp size={24} />
-                        </div>
-                        <div className="stat-info">
-                            <span className="stat-label">Идэвхтэй харилцагч (Төлбөртэй)</span>
-                            <div className="stat-value-row">
-                                <span className="stat-value">{activeCount} бизнес</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="stat-card hover-card">
-                        <div className="stat-icon blue">
-                            <Calendar size={24} />
-                        </div>
-                        <div className="stat-info">
-                            <span className="stat-label">Систем дэх нийт бизнес</span>
-                            <div className="stat-value-row">
-                                <span className="stat-value">{businesses.length}</span>
-                            </div>
+        <div className="page-container animate-fade-in" style={{ padding: '24px clamp(16px, 3vw, 32px) 32px' }}>
+            {/* ── Premium Hero ── */}
+            <div className="sa-hero" style={{ background: 'linear-gradient(135deg, #059669 0%, #0d9488 40%, #0ea5e9 100%)', boxShadow: '0 8px 32px rgba(5, 150, 105, 0.25)' }}>
+                <div className="sa-hero-top">
+                    <div className="sa-hero-left">
+                        <div className="sa-hero-icon"><DollarSign size={24} /></div>
+                        <div>
+                            <div className="sa-hero-badge"><Sparkles size={10} /> Санхүүгийн удирдлага</div>
+                            <h1 className="sa-hero-title">Санхүү (P&L)</h1>
+                            <div className="sa-hero-desc">Бизнесүүдийн эрх, сунгалт болон нийт орлогын хяналт</div>
                         </div>
                     </div>
                 </div>
-
-                {/* Subscriptions List */}
-                <div className="table-actions">
-                    <div className="section-header">
-                        <div className="stats-icon-wrapper active-tint">
-                            <Activity size={20} />
-                        </div>
-                        <h2 className="text-xl font-bold">Бизнесүүдийн эрх</h2>
+                <div className="sa-hero-stats">
+                    <div className="sa-hero-stat">
+                        <div className="sa-hero-stat-value">{totalRevenue.toLocaleString()}₮</div>
+                        <div className="sa-hero-stat-label">Нийт орлого</div>
                     </div>
-
-                    <div className="flex gap-3 flex-1 justify-end items-center max-w-4xl">
-                        <div className="search-box">
-                            <Search size={18} />
-                            <input
-                                type="text"
-                                placeholder="Бизнесийн нэр, ID-гаар хайх..."
-                                value={searchTerm}
-                                onChange={e => setSearchTerm(e.target.value)}
-                            />
-                        </div>
-                        <div className="filter-group">
-                            <button className={`filter-btn ${filter === 'all' ? 'active' : ''}`} onClick={() => setFilter('all')}>Бүгд</button>
-                            <button className={`filter-btn ${filter === 'active' ? 'active' : ''}`} onClick={() => setFilter('active')}>Идэвхтэй</button>
-                            <button className={`filter-btn ${filter === 'free' ? 'active' : ''}`} onClick={() => setFilter('free')}>Free</button>
-                            <button className={`filter-btn ${filter === 'expired' ? 'active' : ''}`} onClick={() => setFilter('expired')}>Дууссан</button>
-                        </div>
+                    <div className="sa-hero-stat">
+                        <div className="sa-hero-stat-value">{heroStats.active}</div>
+                        <div className="sa-hero-stat-label">Идэвхтэй (Төлбөртэй)</div>
+                    </div>
+                    <div className="sa-hero-stat">
+                        <div className="sa-hero-stat-value">{heroStats.free}</div>
+                        <div className="sa-hero-stat-label">Free план</div>
+                    </div>
+                    <div className="sa-hero-stat">
+                        <div className="sa-hero-stat-value">{heroStats.total}</div>
+                        <div className="sa-hero-stat-label">Нийт бизнес</div>
                     </div>
                 </div>
+            </div>
 
+            {/* ── Search & Filter Tabs ── */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, marginBottom: 20, flexWrap: 'wrap' }}>
+                <div className="search-bar-premium" style={{ maxWidth: 400 }}>
+                    <Search size={16} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
+                    <input
+                        type="text"
+                        placeholder="Бизнесийн нэр, ID-гаар хайх..."
+                        value={searchTerm}
+                        onChange={e => setSearchTerm(e.target.value)}
+                    />
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    {filterTabs.map(tab => (
+                        <button
+                            key={tab.id}
+                            onClick={() => setFilter(tab.id)}
+                            style={{
+                                display: 'flex', alignItems: 'center', gap: 5,
+                                padding: '6px 14px', borderRadius: 20,
+                                border: filter === tab.id ? '1.5px solid var(--primary)' : '1.5px solid var(--border-primary)',
+                                background: filter === tab.id ? 'var(--primary)' : 'var(--surface-1)',
+                                color: filter === tab.id ? '#fff' : 'var(--text-secondary)',
+                                fontSize: '0.78rem', fontWeight: 700, cursor: 'pointer',
+                                transition: 'all 0.2s', fontFamily: 'inherit',
+                            }}
+                        >
+                            {tab.icon} {tab.label} <span style={{
+                                background: filter === tab.id ? 'rgba(255,255,255,0.25)' : 'var(--bg-soft)',
+                                padding: '1px 7px', borderRadius: 10, fontSize: '0.7rem', fontWeight: 800,
+                            }}>{tab.count}</span>
+                        </button>
+                    ))}
+                </div>
+            </div>
+
+            {/* ── Subscriptions Table ── */}
+            <div className="card no-padding overflow-hidden">
+                <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border-primary)', display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <div style={{ width: 32, height: 32, borderRadius: 8, background: 'rgba(99,102,241,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#6366f1' }}>
+                        <Activity size={16} />
+                    </div>
+                    <h3 style={{ fontSize: '0.95rem', fontWeight: 700, margin: 0 }}>Бизнесүүдийн эрх</h3>
+                </div>
+                <table className="super-table">
+                    <thead>
+                        <tr>
+                            <th>Бизнес</th>
+                            <th>Утас / Эзэн</th>
+                            <th>Одоогийн Багц</th>
+                            <th>Дуусах хугацаа</th>
+                            <th>Төлөв</th>
+                            <th className="text-right">Үйлдэл</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {filteredBusinesses.map(b => {
+                            const exp = b.subscription?.expiresAt ? new Date(b.subscription.expiresAt) : null;
+                            const isExpired = !exp || exp <= new Date();
+                            const isFree = b.subscription?.plan === 'free';
+
+                            return (
+                                <tr key={b.id}>
+                                    <td>
+                                        <div className="font-bold">{b.name}</div>
+                                        <div className="text-secondary text-xs font-mono">{b.id.substring(0, 16)}...</div>
+                                    </td>
+                                    <td>
+                                        <div className="text-sm">{b.phone}</div>
+                                        <div className="text-secondary text-xs">{b.ownerName}</div>
+                                    </td>
+                                    <td>
+                                        <span className={`badge ${isFree ? 'badge-neutral' : 'badge-primary'} font-bold`}>
+                                            {b.subscription?.plan?.toUpperCase() || 'FREE'}
+                                        </span>
+                                    </td>
+                                    <td className={isExpired && !isFree ? 'text-danger font-bold' : 'text-secondary font-medium'}>
+                                        {exp ? exp.toLocaleDateString('mn-MN') : 'Хязгааргүй'}
+                                    </td>
+                                    <td>
+                                        {isFree ? (
+                                            <span className="badge badge-neutral">Free Plan</span>
+                                        ) : isExpired ? (
+                                            <span className="badge badge-danger">Дууссан</span>
+                                        ) : (
+                                            <span className="badge badge-delivered">Идэвхтэй</span>
+                                        )}
+                                    </td>
+                                    <td>
+                                        <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                                            <button
+                                                className="btn btn-primary btn-sm gradient-btn"
+                                                onClick={() => handleOpenExtendModal(b)}
+                                            >
+                                                Сунгах
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            )
+                        })}
+                        {filteredBusinesses.length === 0 && (
+                            <tr>
+                                <td colSpan={6} className="text-center py-12 text-secondary">
+                                    Илэрц олдсонгүй
+                                </td>
+                            </tr>
+                        )}
+                    </tbody>
+                </table>
+            </div>
+
+            {/* ── Recent Payments Log ── */}
+            <div style={{ marginTop: 28 }}>
                 <div className="card no-padding overflow-hidden">
+                    <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border-primary)', display: 'flex', alignItems: 'center', gap: 10 }}>
+                        <div style={{ width: 32, height: 32, borderRadius: 8, background: 'rgba(16,185,129,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#10b981' }}>
+                            <DollarSign size={16} />
+                        </div>
+                        <h3 style={{ fontSize: '0.95rem', fontWeight: 700, margin: 0 }}>Сүүлийн гүйлгээ (Төлөлтүүд)</h3>
+                    </div>
                     <table className="super-table">
                         <thead>
                             <tr>
+                                <th style={{ width: '180px' }}>Огноо</th>
                                 <th>Бизнес</th>
-                                <th>Утас / Эзэн</th>
-                                <th>Одоогийн Багц</th>
-                                <th>Дуусах хугацаа</th>
-                                <th>Төлөв</th>
-                                <th className="text-right">Үйлдэл</th>
+                                <th>Төрөл</th>
+                                <th>Сар</th>
+                                <th>Дүн</th>
+                                <th>Хэлбэр</th>
                             </tr>
                         </thead>
                         <tbody>
-                            {filteredBusinesses.map(b => {
-                                const exp = b.subscription?.expiresAt ? new Date(b.subscription.expiresAt) : null;
-                                const isExpired = !exp || exp <= new Date();
-                                const isFree = b.subscription?.plan === 'free';
-
-                                return (
-                                    <tr key={b.id}>
-                                        <td>
-                                            <div className="font-bold">{b.name}</div>
-                                            <div className="text-secondary text-xs font-mono">{b.id}</div>
-                                        </td>
-                                        <td>
-                                            <div className="text-sm">{b.phone}</div>
-                                            <div className="text-secondary text-xs">{b.ownerName}</div>
-                                        </td>
-                                        <td>
-                                            <span className={`badge ${isFree ? 'badge-neutral' : 'badge-primary'} font-bold`}>
-                                                {b.subscription?.plan?.toUpperCase() || 'FREE'}
-                                            </span>
-                                        </td>
-                                        <td className={isExpired && !isFree ? 'text-danger font-bold' : 'text-secondary font-medium'}>
-                                            {exp ? exp.toLocaleDateString('mn-MN') : 'Хязгааргүй'}
-                                        </td>
-                                        <td>
-                                            {isFree ? (
-                                                <span className="badge badge-neutral">Free Plan</span>
-                                            ) : isExpired ? (
-                                                <span className="badge badge-danger">Дууссан</span>
-                                            ) : (
-                                                <span className="badge badge-delivered">Идэвхтэй</span>
-                                            )}
-                                        </td>
-                                        <td>
-                                            <div className="row-actions justify-end">
-                                                <button
-                                                    className="btn btn-primary btn-sm gradient-btn"
-                                                    onClick={() => handleOpenExtendModal(b)}
-                                                >
-                                                    Сунгах
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                )
-                            })}
-                            {filteredBusinesses.length === 0 && (
+                            {payments.slice(0, 50).map(p => (
+                                <tr key={p.id}>
+                                    <td className="text-secondary text-xs">
+                                        {p.createdAt.toLocaleString('mn-MN')}
+                                    </td>
+                                    <td>
+                                        <div className="font-bold">{p.businessName}</div>
+                                    </td>
+                                    <td>
+                                        <span className="badge badge-primary">{p.plan?.toUpperCase()}</span>
+                                    </td>
+                                    <td>{p.months} сар</td>
+                                    <td>
+                                        <div className="font-bold text-success">
+                                            +{p.amount.toLocaleString()} ₮
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span className="text-[10px] font-bold uppercase tracking-wider bg-surface-2 px-2 py-1 rounded-md border border-primary-light/30">
+                                            {p.paymentMethod}
+                                        </span>
+                                    </td>
+                                </tr>
+                            ))}
+                            {payments.length === 0 && (
                                 <tr>
                                     <td colSpan={6} className="text-center py-12 text-secondary">
-                                        Илэрц олдсонгүй
+                                        Одоогоор төлөлт бүртгэгдээгүй байна
                                     </td>
                                 </tr>
                             )}
                         </tbody>
                     </table>
-                </div>
-
-                {/* Recent Payments Log */}
-                <div className="mt-8">
-                    <div className="table-actions">
-                        <div className="section-header">
-                            <div className="stats-icon-wrapper success-tint">
-                                <DollarSign size={20} />
-                            </div>
-                            <h2 className="text-xl font-bold">Сүүлийн гүйлгээ (Төлөлтүүд)</h2>
-                        </div>
-                    </div>
-
-                    <div className="card no-padding overflow-hidden">
-                        <table className="super-table">
-                            <thead>
-                                <tr>
-                                    <th style={{ width: '180px' }}>Огноо</th>
-                                    <th>Бизнес</th>
-                                    <th>Төрөл</th>
-                                    <th>Сар</th>
-                                    <th>Дүн</th>
-                                    <th>Хэлбэр</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {payments.slice(0, 50).map(p => (
-                                    <tr key={p.id}>
-                                        <td className="text-secondary text-xs">
-                                            {p.createdAt.toLocaleString('mn-MN')}
-                                        </td>
-                                        <td>
-                                            <div className="font-bold">{p.businessName}</div>
-                                        </td>
-                                        <td>
-                                            <span className="badge badge-primary">{p.plan?.toUpperCase()}</span>
-                                        </td>
-                                        <td>{p.months} сар</td>
-                                        <td>
-                                            <div className="font-bold text-success">
-                                                +{p.amount.toLocaleString()} ₮
-                                            </div>
-                                        </td>
-                                        <td>
-                                            <span className="text-[10px] font-bold uppercase tracking-wider bg-surface-2 px-2 py-1 rounded-md border border-primary-light/30">
-                                                {p.paymentMethod}
-                                            </span>
-                                        </td>
-                                    </tr>
-                                ))}
-                                {payments.length === 0 && (
-                                    <tr>
-                                        <td colSpan={6} className="text-center py-12 text-secondary">
-                                            Одоогоор төлөлт бүртгэгдээгүй байна
-                                        </td>
-                                    </tr>
-                                )}
-                            </tbody>
-                        </table>
-                    </div>
                 </div>
             </div>
 
