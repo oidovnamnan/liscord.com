@@ -318,9 +318,9 @@ export function DashboardPage() {
     const displayName = isImpersonating && employee ? employee.name : (user?.displayName || 'Эзэн');
 
     return (
-        <>
+        <div className="page-container animate-fade-in" style={{ padding: '24px clamp(16px, 3vw, 32px) 32px' }}>
             {/* ── Premium Gradient Hero ── */}
-            <div className="sa-hero" style={{ background: 'linear-gradient(135deg, #059669 0%, #0d9488 40%, #0891b2 100%)', boxShadow: '0 8px 32px rgba(5, 150, 105, 0.25)', margin: '24px clamp(16px, 3vw, 32px) 0' }}>
+            <div className="sa-hero" style={{ background: 'linear-gradient(135deg, #059669 0%, #0d9488 40%, #0891b2 100%)', boxShadow: '0 8px 32px rgba(5, 150, 105, 0.25)' }}>
                 <div className="sa-hero-top">
                     <div className="sa-hero-left">
                         <div className="sa-hero-icon"><LayoutDashboard size={24} /></div>
@@ -359,7 +359,7 @@ export function DashboardPage() {
                 </div>
             </div>
 
-            <div className="page animate-fade-in" style={{ gap: 20 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 20, marginTop: 20 }}>
 
                 {/* KPI Cards — filtered by permissions */}
                 <KPICards stats={stats} category={business?.category} visibleModuleIds={visibleModuleIds} />
@@ -687,6 +687,6 @@ export function DashboardPage() {
                     </div>
                 </div>
             </div>
-        </>
+        </div>
     );
 }
