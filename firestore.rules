@@ -31,7 +31,7 @@ service cloud.firestore {
     // system_settings (snake_case — used by services)
     match /system_settings/{docId} {
       allow read: if isAuth();
-      allow write: if isAuth(); // Super Admin writes module defaults
+      allow write: if false; // Admin SDK only — SuperAdmin writes via Cloud Function proxy
     }
 
     // === BUSINESS CATEGORIES (public read) ===
@@ -43,7 +43,7 @@ service cloud.firestore {
     // system_categories (snake_case — used by Module Settings page)
     match /system_categories/{catId} {
       allow read: if isAuth();
-      allow write: if isAuth(); // Super Admin writes category configs
+      allow write: if false; // Admin SDK only — SuperAdmin writes via Cloud Function proxy
     }
 
     // === BUSINESS REQUESTS ===
@@ -68,7 +68,8 @@ service cloud.firestore {
     
     // === SMS INBOX (Bridge App) ===
     match /sms_inbox/{smsId} {
-      allow create, update: if true;
+      allow create: if true;  // Bridge app creates without auth (Phase 4: add auth)
+      allow update: if isAuth();  // Only authenticated users can update (match/status)
       allow read, delete: if isAuth();
     }
     
@@ -77,8 +78,8 @@ service cloud.firestore {
       // Public read: allow listing businesses by slug (for storefront)
       // Firestore 'list' (query) requires access at collection level
       allow list: if true;
-      // Get: members OR storefront-enabled public access
-      allow get: if isMemberOf(bizId) || true;
+      // Get: members OR storefront slug lookup (public)
+      allow get: if isMemberOf(bizId) || resource.data.slug != null;
       // Create: any authenticated user (creating new business)
       allow create: if isAuth();
       // Update: only members
@@ -105,16 +106,17 @@ service cloud.firestore {
         allow delete: if false;
       }
 
-      // Orders: public CRUD (storefront checkout + payment + status monitoring)
+      // Orders: public read+create (storefront checkout), update members only
       match /orders/{docId} {
-        allow read, create, update: if true;  // Public: storefront needs full access
+        allow read, create: if true;  // Public: storefront checkout + order tracking
+        allow update: if isMemberOf(bizId);  // Only business members can update orders
         allow delete: if false;
       }
 
-      // Memberships: public read (storefront VIP check) + public create (after payment)
+      // Memberships: public read (storefront VIP check), create via Cloud Function only
       match /memberships/{docId} {
         allow read: if true;  // Public: storefront checks VIP access by phone
-        allow create: if true;  // Public: granted after QPay payment
+        allow create: if false;  // Cloud Function (grantMembershipFromOrder) only
         allow update: if isMemberOf(bizId);
         allow delete: if false;
       }

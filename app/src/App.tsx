@@ -557,7 +557,7 @@ export default function App() {
             <Route path="farm-mgt" element={<ModuleGuard moduleId="farm-mgt"><ShellPage title="Фермийн Удирдлага" moduleId="farm-mgt" /></ModuleGuard>} />
             <Route path="butchery" element={<ModuleGuard moduleId="butchery"><ShellPage title="Мал Төхөөрөх Үйлдвэр" moduleId="butchery" /></ModuleGuard>} />
             <Route path="mining" element={<ModuleGuard moduleId="mining"><ShellPage title="Уул Уурхай" moduleId="mining" /></ModuleGuard>} />
-            <Route path="micro-finance" element={<ModuleGuard moduleId="micro-finance"><ShellPage title="Бичил Санхүү (ББСБ)" moduleId="micro-finance" /></ModuleGuard>} />
+
             <Route path="stock-broker" element={<ModuleGuard moduleId="stock-broker"><ShellPage title="Хувьцаа & Арилжаа" moduleId="stock-broker" /></ModuleGuard>} />
             <Route path="crowdfunding" element={<ModuleGuard moduleId="crowdfunding"><ShellPage title="Хамтын Санхүүжилт" moduleId="crowdfunding" /></ModuleGuard>} />
             <Route path="hris" element={<ModuleGuard moduleId="hris"><ShellPage title="Нэгдсэн Ажилтан (HRIS)" moduleId="hris" /></ModuleGuard>} />
@@ -605,9 +605,7 @@ export default function App() {
             <Route path="tax-compliance" element={<ModuleGuard moduleId="tax-compliance"><ShellPage title="Татварын Тайлан" moduleId="tax-compliance" /></ModuleGuard>} />
             <Route path="rooms" element={<ModuleGuard moduleId="rooms"><RoomsPage /></ModuleGuard>} />
             <Route path="queue" element={<ModuleGuard moduleId="queue"><QueuePage /></ModuleGuard>} />
-            <Route path="rentals" element={<ModuleGuard moduleId="rentals"><ShellPage title="Түрээсийн Удирдлага" moduleId="rentals" /></ModuleGuard>} />
-            <Route path="salon" element={<ModuleGuard moduleId="salon"><ShellPage title="Гоо Сайхан & Салон" moduleId="salon" /></ModuleGuard>} />
-            <Route path="fitness" element={<ModuleGuard moduleId="fitness"><ShellPage title="Фитнес & Клуб" moduleId="fitness" /></ModuleGuard>} />
+
             <Route path="spa-wellness" element={<ModuleGuard moduleId="spa-wellness"><ShellPage title="Спа & Массаж" moduleId="spa-wellness" /></ModuleGuard>} />
             <Route path="event-tickets" element={<ModuleGuard moduleId="event-tickets"><TicketsPage /></ModuleGuard>} />
             <Route path="field-service" element={<ModuleGuard moduleId="field-service"><ShellPage title="Гадуур Засвар" moduleId="field-service" /></ModuleGuard>} />
@@ -629,10 +627,8 @@ export default function App() {
             <Route path="construction" element={<ModuleGuard moduleId="construction"><ConstructionPage /></ModuleGuard>} />
             <Route path="architecture-design" element={<ModuleGuard moduleId="architecture-design"><ArchitectureDesignPage /></ModuleGuard>} />
             <Route path="education" element={<ModuleGuard moduleId="education"><ShellPage title="Сургалт & Курс" moduleId="education" /></ModuleGuard>} />
-            <Route path="healthcare" element={<ModuleGuard moduleId="healthcare"><ShellPage title="Эмнэлэг & Клиник" moduleId="healthcare" /></ModuleGuard>} />
-            <Route path="microfinance" element={<ModuleGuard moduleId="microfinance"><ShellPage title="ББСБ / Ломбард" moduleId="microfinance" /></ModuleGuard>} />
             <Route path="vehicles" element={<ModuleGuard moduleId="vehicles"><VehiclesPage /></ModuleGuard>} />
-            <Route path="fleet" element={<ModuleGuard moduleId="fleet"><FleetPage /></ModuleGuard>} />
+            <Route path="microfinance" element={<ModuleGuard moduleId="microfinance"><ShellPage title="ББСБ / Ломбард" moduleId="microfinance" /></ModuleGuard>} />
             <Route path="agriculture" element={<ModuleGuard moduleId="agriculture"><ShellPage title="Газар Тариалан" moduleId="agriculture" /></ModuleGuard>} />
             <Route path="veterinary" element={<ModuleGuard moduleId="veterinary"><ShellPage title="Мал Эмнэлэг" moduleId="veterinary" /></ModuleGuard>} />
             <Route path="legal" element={<ModuleGuard moduleId="legal"><ShellPage title="Хуульч & Өмгөөлөгч" moduleId="legal" /></ModuleGuard>} />

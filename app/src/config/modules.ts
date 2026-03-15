@@ -1231,7 +1231,7 @@ export const LISCORD_MODULES: AppModule[] = [
         name: 'Түрээсийн Удирдлага',
         description: 'Техник, тоног төхөөрөмж',
         icon: 'Key',
-        route: '/app/rentals',
+        route: '/app/rental',
         isCore: false,
         category: 'services',
         isFree: false,
@@ -1273,7 +1273,7 @@ export const LISCORD_MODULES: AppModule[] = [
         name: 'Гоо Сайхан & Салон',
         description: 'Мастерийн хуваарь, комисс',
         icon: 'Scissors',
-        route: '/app/salon',
+        route: '/app/salon-spa',
         isCore: false,
         category: 'services',
         isFree: false,
@@ -1287,7 +1287,7 @@ export const LISCORD_MODULES: AppModule[] = [
         name: 'Фитнес & Клуб',
         description: 'Гишүүнчлэл, заалны ачаалал',
         icon: 'Dumbbell',
-        route: '/app/fitness',
+        route: '/app/gym-fitness',
         isCore: false,
         category: 'services',
         isFree: false,
@@ -3700,20 +3700,6 @@ export const LISCORD_MODULES: AppModule[] = [
         route: '/app/mining',
         isCore: false,
         category: 'industry',
-        isFree: false,
-        plans: [
-            { id: 'monthly', name: '30 хоног', price: 20000, durationDays: 30 },
-            { id: 'yearly', name: '1 жил', price: 192000, durationDays: 365 }
-        ]
-    },
-    {
-        id: 'micro-finance',
-        name: 'Бичил Санхүү (ББСБ)',
-        description: 'Эргэн төлөлт хуваарь гэрээ',
-        icon: 'Briefcase',
-        route: '/app/micro-finance',
-        isCore: false,
-        category: 'finance',
         isFree: false,
         plans: [
             { id: 'monthly', name: '30 хоног', price: 20000, durationDays: 30 },

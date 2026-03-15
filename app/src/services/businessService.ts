@@ -3,6 +3,7 @@ import {
     serverTimestamp, writeBatch, onSnapshot
 } from 'firebase/firestore';
 import { db } from './firebase';
+import { getFunctions, httpsCallable } from 'firebase/functions';
 import type { Business, Employee, AppModulePricingPlan } from '../types';
 import { convertTimestamps } from './helpers';
 import { getFeatures } from '../config/features';
@@ -20,7 +21,9 @@ export const systemSettingsService = {
     },
 
     async updateModuleDefaults(defaults: Record<string, Record<string, 'core' | 'addon'>>): Promise<void> {
-        await setDoc(doc(db, 'system_settings', 'modules'), defaults);
+        const functions = getFunctions();
+        const updateFn = httpsCallable(functions, 'updateSystemSettings');
+        await updateFn({ docId: 'modules', value: defaults });
     },
 
     async getAppStoreConfig(): Promise<Record<string, { isFree: boolean; plans: AppModulePricingPlan[] }>> {
@@ -50,7 +53,9 @@ export const systemSettingsService = {
     },
 
     async updateAppStoreConfig(config: Record<string, { isFree: boolean; plans: AppModulePricingPlan[] }>): Promise<void> {
-        await setDoc(doc(db, 'system_settings', 'app_store'), config);
+        const functions = getFunctions();
+        const updateFn = httpsCallable(functions, 'updateSystemSettings');
+        await updateFn({ docId: 'app_store', value: config });
     },
 
     async migrateLegacyBusinesses(): Promise<{ migratedCount: number }> {

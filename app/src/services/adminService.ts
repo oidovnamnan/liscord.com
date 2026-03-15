@@ -3,6 +3,7 @@ import {
     onSnapshot, serverTimestamp, writeBatch
 } from 'firebase/firestore';
 import { db } from './firebase';
+import { getFunctions, httpsCallable } from 'firebase/functions';
 import type {
     PayrollEntry, BusinessCategoryConfig, PlatformPayment,
     Warehouse, WarehouseZone, Shelf
@@ -336,24 +337,27 @@ export const businessCategoryService = {
     },
 
     async createCategory(category: BusinessCategoryConfig): Promise<void> {
-        await setDoc(doc(db, 'system_categories', category.id), category);
+        const functions = getFunctions();
+        const updateFn = httpsCallable(functions, 'updateSystemCategory');
+        await updateFn({ categoryId: category.id, value: category });
     },
 
     async updateCategory(id: string, updates: Partial<BusinessCategoryConfig>): Promise<void> {
-        await updateDoc(doc(db, 'system_categories', id), updates);
+        const functions = getFunctions();
+        const updateFn = httpsCallable(functions, 'updateSystemCategory');
+        await updateFn({ categoryId: id, value: updates });
     },
 
     async bulkUpdateCategories(ids: string[], updates: Partial<BusinessCategoryConfig>): Promise<void> {
-        const batch = writeBatch(db);
-        ids.forEach(id => {
-            const docRef = doc(db, 'system_categories', id);
-            batch.update(docRef, updates);
-        });
-        await batch.commit();
+        const functions = getFunctions();
+        const bulkFn = httpsCallable(functions, 'bulkUpdateSystemCategories');
+        await bulkFn({ ids, updates });
     },
 
     async deleteCategory(id: string): Promise<void> {
-        await deleteDoc(doc(db, 'system_categories', id));
+        const functions = getFunctions();
+        const deleteFn = httpsCallable(functions, 'updateSystemCategory');
+        await deleteFn({ categoryId: id, isDelete: true });
     }
 };
 
@@ -438,8 +442,9 @@ export const globalSettingsService = {
     },
 
     async updateSettings(updates: Partial<GlobalSettings>): Promise<void> {
-        const docRef = doc(db, 'system_settings', 'global');
-        await setDoc(docRef, updates, { merge: true });
+        const functions = getFunctions();
+        const updateFn = httpsCallable(functions, 'updateSystemSettings');
+        await updateFn({ docId: 'global', value: updates });
     },
 
     subscribeToSettings(callback: (settings: GlobalSettings) => void) {
