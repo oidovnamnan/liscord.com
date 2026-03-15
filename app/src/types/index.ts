@@ -555,6 +555,10 @@ export interface Order {
     isDeleted: boolean;
     cancelReason?: string;
 
+    // Returns
+    returnStatus?: 'none' | 'partial' | 'full';
+    returnIds?: string[];
+
     // Membership purchase order fields
     orderType?: 'standard' | 'membership';
     membershipCategoryId?: string;
@@ -1629,4 +1633,75 @@ export interface SmsSyncConfig {
     isEnabled: boolean;
     lastSyncAt?: Date;
     connectedDeviceName?: string;
+}
+
+// ============ RETURNS & REFUND ============
+
+export type ReturnType = 'source_return' | 'late_delivery' | 'product_issue';
+export type ReturnStatus = 'pending' | 'operator_review' | 'approved' | 'finance_review' | 'refunded' | 'rejected';
+export type ReturnReason = 'source_unavailable' | 'delivery_late' | 'defective' | 'wrong_item' | 'not_as_described' | 'other';
+export type ReturnAction = 'restock' | 'write_off' | 'return_to_source';
+
+export interface ReturnItem {
+    productId: string;
+    name: string;
+    image?: string;
+    quantity: number;
+    originalQuantity: number;
+    unitPrice: number;
+    proportionalRefund: number;
+    productType: 'ready' | 'preorder';
+    action: ReturnAction;
+}
+
+export interface ReturnRequest {
+    id: string;
+    orderId: string;
+    orderNumber: string;
+    customer: { id: string | null; name: string; phone: string };
+
+    refundAccount?: {
+        bankName: string;
+        accountNumber: string;
+        accountHolder: string;
+    };
+
+    type: ReturnType;
+    items: ReturnItem[];
+
+    includeDeliveryFee: boolean;
+    deliveryFeeRefund: number;
+
+    reason: ReturnReason;
+    reasonNote?: string;
+    evidenceUrls?: string[];
+
+    refundAmount: number;
+
+    status: ReturnStatus;
+    statusHistory: {
+        status: string;
+        at: Date;
+        by: string;
+        byName: string;
+        note?: string;
+    }[];
+
+    financeNote?: string;
+    refundedBy?: string;
+    refundedAt?: Date;
+
+    createdBy: string;
+    createdByName: string;
+    createdByRole: 'operator' | 'customer' | 'source_agent';
+    createdAt: Date;
+    updatedAt: Date;
+}
+
+export interface ReturnsConfig {
+    enabled: boolean;
+    arrivalWarningDays: number;
+    deliveryTimeoutDays: number;
+    productIssueDeadlineDays: number;
+    requireEvidence: boolean;
 }

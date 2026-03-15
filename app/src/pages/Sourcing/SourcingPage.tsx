@@ -2,9 +2,10 @@ import { useState, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import {
     Globe, Search, Loader2, Clock, Package, Truck, CheckCircle2, Copy, Check, X, ChevronDown,
-    Link2, ExternalLink, Plus, DollarSign, Trash2, EyeOff, Eye, Power, ChevronUp, Layers
+    Link2, ExternalLink, Plus, DollarSign, Trash2, EyeOff, Eye, Power, ChevronUp, Layers, AlertTriangle
 } from 'lucide-react';
 import { useBusinessStore } from '../../store';
+import { moduleSettingsService } from '../../services/db';
 import { collection, query, where, onSnapshot, doc, updateDoc, Timestamp } from 'firebase/firestore';
 import { db } from '../../services/firebase';
 import { productService } from '../../services/productService';
@@ -14,6 +15,7 @@ import { usePermissions } from '../../hooks/usePermissions';
 import './SourcingPage.css';
 
 type SourcingStatus = 'pending' | 'ordered' | 'arrived' | 'picked_up' | 'delivered' | 'fulfilled';
+type FilterStatus = 'all' | SourcingStatus | 'not_arrived';
 
 interface SourcingItem {
     ordered: boolean;
@@ -79,7 +81,8 @@ export function SourcingPage() {
     const [orders, setOrders] = useState<SourcingOrder[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
-    const [statusFilter, setStatusFilter] = useState<'all' | SourcingStatus>('all');
+    const [statusFilter, setStatusFilter] = useState<FilterStatus>('all');
+    const [arrivalWarningDays, setArrivalWarningDays] = useState(30);
     const [selectedOrder, setSelectedOrder] = useState<SourcingOrder | null>(null);
     const [inactiveProducts, setInactiveProducts] = useState<ProductInfo[]>([]);
     const [showInactive, setShowInactive] = useState(false);
@@ -139,6 +142,26 @@ export function SourcingPage() {
             setInactiveProducts(inactive);
         });
     }, [business?.id]);
+
+    // Load returns config for arrivalWarningDays
+    useEffect(() => {
+        if (!business?.id) return;
+        moduleSettingsService.getSettings(business.id, 'returns').then((data) => {
+            if (data?.arrivalWarningDays) setArrivalWarningDays(data.arrivalWarningDays);
+        }).catch(() => {});
+    }, [business?.id]);
+
+    // "Not arrived" orders: createdAt > arrivalWarningDays ago AND status NOT arrived/picked_up/delivered/fulfilled
+    const notArrivedOrders = useMemo(() => {
+        const thresholdMs = arrivalWarningDays * 24 * 60 * 60 * 1000;
+        const now = Date.now();
+        return orders.filter(o => {
+            const s = o.sourcing?.status || 'pending';
+            if (['arrived', 'picked_up', 'delivered', 'fulfilled'].includes(s)) return false;
+            if (!o.createdAt) return false;
+            return (now - o.createdAt.getTime()) > thresholdMs;
+        });
+    }, [orders, arrivalWarningDays]);
 
     const handleReactivate = async (productId: string) => {
         if (!business?.id) return;
@@ -207,15 +230,19 @@ export function SourcingPage() {
     }, [business?.id]);
 
     const filtered = useMemo(() => {
-        return orders.filter(o => {
+        let base = orders;
+        if (statusFilter === 'not_arrived') {
+            base = notArrivedOrders;
+        }
+        return base.filter(o => {
             const s = o.sourcing?.status || 'pending';
-            const matchStatus = statusFilter === 'all' || s === statusFilter;
+            if (statusFilter !== 'all' && statusFilter !== 'not_arrived' && s !== statusFilter) return false;
             const matchSearch = !searchQuery || 
                 (o.customerName || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
                 (o.orderNumber || o.id).toLowerCase().includes(searchQuery.toLowerCase());
-            return matchStatus && matchSearch;
+            return matchSearch;
         });
-    }, [orders, statusFilter, searchQuery]);
+    }, [orders, statusFilter, searchQuery, notArrivedOrders]);
 
     const stats = useMemo(() => ({
         pending: orders.filter(o => (o.sourcing?.status || 'pending') === 'pending').length,
@@ -280,6 +307,15 @@ export function SourcingPage() {
                     </div>
                     <div className="inv-stat-icon icon-green"><CheckCircle2 size={24} /></div>
                 </div>
+                {notArrivedOrders.length > 0 && (
+                    <div className="inv-stat-card" onClick={() => setStatusFilter('not_arrived')} style={{ cursor: 'pointer', border: statusFilter === 'not_arrived' ? '2px solid #ef4444' : undefined }}>
+                        <div className="inv-stat-content">
+                            <h4 style={{ color: '#ef4444' }}>⚠️ Ирээгүй</h4>
+                            <div className="inv-stat-value" style={{ color: '#ef4444' }}>{notArrivedOrders.length}</div>
+                        </div>
+                        <div className="inv-stat-icon" style={{ background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444' }}><AlertTriangle size={24} /></div>
+                    </div>
+                )}
             </div>
 
             {/* Toolbar */}
@@ -308,6 +344,7 @@ export function SourcingPage() {
                         <option value="picked_up">Ирж авсан</option>
                         <option value="delivered">Хүргэсэн</option>
                         <option value="fulfilled">Биелсэн</option>
+                        {notArrivedOrders.length > 0 && <option value="not_arrived">⚠️ Ирээгүй ({notArrivedOrders.length})</option>}
                     </select>
                 </div>
             </div>

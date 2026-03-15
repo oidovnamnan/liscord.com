@@ -88,7 +88,7 @@ const TasksPage = lazy(() => import('./pages/Manufacturing/TasksPage').then(m =>
 const PLMPage = lazy(() => import('./pages/Manufacturing/PLMPage').then(m => ({ default: m.PLMPage })));
 const SubContractingPage = lazy(() => import('./pages/Manufacturing/SubContractingPage').then(m => ({ default: m.SubContractingPage })));
 const WarrantyPage = lazy(() => import('./pages/Inventory/WarrantyPage').then(m => ({ default: m.WarrantyPage })));
-const RMAPage = lazy(() => import('./pages/Inventory/RMAPage').then(m => ({ default: m.RMAPage })));
+const ReturnsPage = lazy(() => import('./pages/Returns/ReturnsPage').then(m => ({ default: m.ReturnsPage })));
 const QualityControlPage = lazy(() => import('./pages/Inventory/QualityControlPage').then(m => ({ default: m.QualityControlPage })));
 const InventoryAuditPage = lazy(() => import('./pages/Inventory/InventoryAuditPage').then(m => ({ default: m.InventoryAuditPage })));
 const AIAgentPage = lazy(() => import('./pages/AIAgent/AIAgentPage').then(m => ({ default: m.AIAgentPage })));
@@ -178,6 +178,7 @@ const SuperAdminAppStore = lazy(() => import('./pages/SuperAdmin/SuperAdminAppSt
 const StorefrontWrapper = lazy(() => import('./pages/Storefront/StorefrontWrapper').then(m => ({ default: m.StorefrontWrapper })));
 const StoreCatalog = lazy(() => import('./pages/Storefront/StoreCatalog').then(m => ({ default: m.StoreCatalog })));
 const StoreCheckout = lazy(() => import('./pages/Storefront/StoreCheckout').then(m => ({ default: m.StoreCheckout })));
+const StoreMyOrders = lazy(() => import('./pages/Storefront/StoreMyOrders').then(m => ({ default: m.StoreMyOrders })));
 
 // Components
 import { BusinessWizard } from './components/auth/BusinessWizard';
@@ -397,6 +398,7 @@ export default function App() {
           <Route path="/:slug" element={<StorefrontWrapper />}>
             <Route index element={<StoreCatalog />} />
             <Route path="checkout" element={<StoreCheckout />} />
+            <Route path="my-orders" element={<StoreMyOrders />} />
           </Route>
 
           <Route path="/app" element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
@@ -428,7 +430,7 @@ export default function App() {
             <Route path="wms" element={<ModuleGuard moduleId="wms"><WarehouseManagementPage /></ModuleGuard>} />
             <Route path="drop-shipping" element={<ModuleGuard moduleId="drop-shipping"><DropShippingPage /></ModuleGuard>} />
             <Route path="cross-docking" element={<ModuleGuard moduleId="cross-docking"><CrossDockingPage /></ModuleGuard>} />
-            <Route path="rma" element={<ModuleGuard moduleId="rma"><RMAPage /></ModuleGuard>} />
+            <Route path="returns" element={<ModuleGuard moduleId="returns"><ReturnsPage /></ModuleGuard>} />
             <Route path="quality-control" element={<ModuleGuard moduleId="quality-control"><QualityControlPage /></ModuleGuard>} />
             <Route path="inventory-forecast" element={<ModuleGuard moduleId="inventory-forecast"><InventoryForecastPage /></ModuleGuard>} />
             <Route path="pricing-rules" element={<ModuleGuard moduleId="pricing-rules"><PricingRulesPage /></ModuleGuard>} />

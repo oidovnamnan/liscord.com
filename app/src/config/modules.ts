@@ -203,13 +203,15 @@ export const LISCORD_MODULES: AppModule[] = [
         ]
     },
     {
-        id: 'rma',
-        name: 'Буцаалтын Акт',
-        description: 'Барааны буцаалт, засварт илгээх',
+        id: 'returns',
+        name: 'Буцаалт & Refund',
+        description: 'Захиалгаас буцаалт хийх, мөнгө буцаах',
         icon: 'Undo2',
-        route: '/app/rma',
+        route: '/app/returns',
         isCore: false,
         category: 'operations',
+        hasSettings: true,
+        settingsRoute: '/app/settings?tab=returns',
         isFree: false,
         plans: [
             { id: 'monthly', name: '30 хоног', price: 20000, durationDays: 30 },

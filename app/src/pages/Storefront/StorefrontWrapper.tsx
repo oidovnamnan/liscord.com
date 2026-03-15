@@ -1,12 +1,14 @@
 import { useEffect, useState } from 'react';
-import { useParams, Outlet, Navigate } from 'react-router-dom';
+import { useParams, Outlet, Navigate, Link, useLocation } from 'react-router-dom';
 import { businessService } from '../../services/db';
 import { db } from '../../services/firebase';
 import { doc, getDoc, setDoc, deleteDoc, serverTimestamp } from 'firebase/firestore';
 import type { Business } from '../../types';
 import { CartDrawer } from '../../components/Storefront/CartDrawer';
 import { StorefrontFooter } from '../../components/Storefront/StorefrontFooter';
+import { User } from 'lucide-react';
 import './Storefront.css';
+import './StoreMyOrders.css';
 
 export function StorefrontWrapper() {
     const { slug } = useParams<{ slug: string }>();
@@ -142,6 +144,8 @@ export function StorefrontWrapper() {
     }
 
     const brandColor = business.brandColor || '#4a6bff';
+    const location = useLocation();
+    const isMyOrdersPage = location.pathname.endsWith('/my-orders');
 
     return (
         <div
@@ -155,6 +159,11 @@ export function StorefrontWrapper() {
             <Outlet context={{ business }} />
             <StorefrontFooter business={business} />
             <CartDrawer />
+            {!isMyOrdersPage && (
+                <Link to={`/${slug}/my-orders`} className="sf-my-orders-float">
+                    <User size={16} /> Миний захиалгууд
+                </Link>
+            )}
         </div>
     );
 }

@@ -183,11 +183,13 @@ export const MODULE_PERMISSIONS: Record<string, ModulePermission[]> = {
         { id: 'crossdock.assign', label: 'Жолооч хуваарилах' },
     ],
 
-    'rma': [
-        { id: 'rma.view', label: 'Буцаалт харах' },
-        { id: 'rma.create', label: 'Буцаалт үүсгэх' },
-        { id: 'rma.approve', label: 'Буцаалт зөвшөөрөх' },
-        { id: 'rma.process', label: 'Буцаалт гүйцэтгэх' },
+    'returns': [
+        { id: 'returns.view', label: 'Буцаалт харах' },
+        { id: 'returns.create', label: 'Буцаалт үүсгэх' },
+        { id: 'returns.review', label: 'Буцаалт хянах (оператор)' },
+        { id: 'returns.reject', label: 'Буцаалт татгалзах' },
+        { id: 'returns.process_refund', label: 'Мөнгө буцаах (санхүү)' },
+        { id: 'returns.configure', label: 'Буцаалтын тохиргоо' },
     ],
 
     'quality-control': [

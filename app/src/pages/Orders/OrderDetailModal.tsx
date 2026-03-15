@@ -1,4 +1,4 @@
-import { X, Printer, Clock, User, Package, CreditCard, CheckCircle2, ChevronDown, Loader2, ImageIcon } from 'lucide-react';
+import { X, Printer, Clock, User, Package, CreditCard, CheckCircle2, ChevronDown, Loader2, ImageIcon, Undo2 } from 'lucide-react';
 import { useState } from 'react';
 import { createPortal } from 'react-dom';
 import type { Order, OrderStatusConfig } from '../../types';
@@ -6,6 +6,7 @@ import { ebarimtService } from '../../services/ebarimt';
 import { orderService } from '../../services/db';
 import { toast } from 'react-hot-toast';
 import { useAuthStore, useBusinessStore } from '../../store';
+import { CreateReturnModal } from '../Returns/CreateReturnModal';
 import './OrderDetailModal.css';
 
 interface OrderDetailModalProps {
@@ -23,6 +24,7 @@ export function OrderDetailModal({ bizId, order, onClose, statuses }: OrderDetai
     const [ebarimtData, setEbarimtData] = useState<any>(null);
     const [generatingBarimt, setGeneratingBarimt] = useState(false);
     const [currentStatusId, setCurrentStatusId] = useState(order.status);
+    const [showReturnModal, setShowReturnModal] = useState(false);
     const fmt = (n: number) => '₮' + n.toLocaleString('mn-MN');
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -130,6 +132,11 @@ export function OrderDetailModal({ bizId, order, onClose, statuses }: OrderDetai
                         )}
                     </div>
                     <div className="header-actions">
+                        {order.paymentStatus !== 'unpaid' && !order.isDeleted && order.status !== 'cancelled' && (
+                            <button className="btn btn-sm" onClick={() => setShowReturnModal(true)} style={{ background: 'linear-gradient(135deg, #f87171, #ef4444)', color: '#fff', border: 'none', display: 'flex', alignItems: 'center', gap: 5 }}>
+                                <Undo2 size={14} /> Буцаалт
+                            </button>
+                        )}
                         <button className="btn btn-secondary btn-sm" onClick={handlePrint}>
                             <Printer size={16} /> Хэвлэх
                         </button>
@@ -383,6 +390,15 @@ export function OrderDetailModal({ bizId, order, onClose, statuses }: OrderDetai
                     )}
                 </div>
             </div>
+
+            {showReturnModal && (
+                <CreateReturnModal
+                    bizId={bizId}
+                    order={order}
+                    onClose={() => setShowReturnModal(false)}
+                    onCreated={() => setShowReturnModal(false)}
+                />
+            )}
         </div>,
         document.body
     );
