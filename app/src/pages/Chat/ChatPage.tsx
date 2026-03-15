@@ -119,38 +119,54 @@ export function ChatPage() {
 
     return (
         <HubLayout hubId="crm-hub">
+            <div className="chat-outer-wrap">
             <div className="chat-layout">
                 {/* Channel sidebar */}
                 <aside className={`chat-sidebar ${isSidebarOpen ? 'open' : ''}`}>
-                    <div className="chat-sidebar-header">
-                        <h3>
-                            <div className="chat-premium-icon-wrap">
-                                <span className="chat-premium-icon">💬</span>
+                    {/* ── Premium Hero Header ── */}
+                    <div className="chat-hero-header">
+                        <div className="chat-hero-top">
+                            <div className="chat-hero-left">
+                                <div className="chat-hero-icon">💬</div>
+                                <div>
+                                    <h3 className="chat-hero-title">Messenger</h3>
+                                    <div className="chat-hero-desc">Багийн харилцаа & мессеж</div>
+                                </div>
                             </div>
-                            <span className="text-gradient font-black">Messenger</span>
-                        </h3>
-                        <div style={{ display: 'flex', gap: '4px' }}>
-                            <button
-                                className="btn btn-ghost btn-icon btn-sm"
-                                title="Суваг үүсгэх"
-                                onClick={async () => {
-                                    const name = prompt('Сувгийн нэр:');
-                                    if (name && business?.id) {
-                                        await chatService.createChannel(business.id, {
-                                            name: name.toLowerCase(),
-                                            type: 'team',
-                                            icon: 'Hash'
-                                        });
-                                    }
-                                }}
-                            >
-                                <Plus size={18} />
-                            </button>
-                            <button className="btn btn-ghost btn-icon btn-sm show-mobile" onClick={() => setIsSidebarOpen(false)}>
-                                <X size={20} />
-                            </button>
+                            <div style={{ display: 'flex', gap: 4 }}>
+                                <button
+                                    className="chat-hero-add-btn"
+                                    title="Суваг үүсгэх"
+                                    onClick={async () => {
+                                        const name = prompt('Сувгийн нэр:');
+                                        if (name && business?.id) {
+                                            await chatService.createChannel(business.id, {
+                                                name: name.toLowerCase(),
+                                                type: 'team',
+                                                icon: 'Hash'
+                                            });
+                                        }
+                                    }}
+                                >
+                                    <Plus size={16} />
+                                </button>
+                                <button className="chat-hero-add-btn show-mobile" onClick={() => setIsSidebarOpen(false)}>
+                                    <X size={16} />
+                                </button>
+                            </div>
+                        </div>
+                        <div className="chat-hero-stats">
+                            <div className="chat-hero-stat">
+                                <div className="chat-hero-stat-value">{teamChannels.length}</div>
+                                <div className="chat-hero-stat-label">Сувгууд</div>
+                            </div>
+                            <div className="chat-hero-stat">
+                                <div className="chat-hero-stat-value">{dmChannels.length}</div>
+                                <div className="chat-hero-stat-label">Хувийн</div>
+                            </div>
                         </div>
                     </div>
+
                     <div className="chat-sidebar-search">
                         <div className="search-input-wrapper">
                             <Search size={14} />
@@ -370,6 +386,7 @@ export function ChatPage() {
                     </aside>
                 )}
             </div>
+            </div>{/* /chat-outer-wrap */}
         </HubLayout>
     );
 }
