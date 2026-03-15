@@ -177,55 +177,39 @@ export function MembershipPage() {
 
     return (
         <div className="membership-page">
-            {/* Header */}
-            <div className="page-header-row" style={{ marginBottom: 24 }}>
-                <div>
-                    <h1 className="page-title" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                        <Crown size={26} /> VIP Гишүүнчлэл
-                    </h1>
-                    <p className="page-subtitle">Гишүүнчлэлийн захиалга болон идэвхтэй гишүүдийг удирдах</p>
+            {/* ── Premium VIP Hero ── */}
+            <div className="vip-hero">
+                <div className="vip-hero-top">
+                    <div className="vip-hero-left">
+                        <div className="vip-hero-icon"><Crown size={24} /></div>
+                        <div>
+                            <h1 className="vip-hero-title">VIP Гишүүнчлэл</h1>
+                            <div className="vip-hero-desc">Гишүүнчлэлийн захиалга болон идэвхтэй гишүүдийг удирдах</div>
+                        </div>
+                    </div>
+                </div>
+                <div className="vip-hero-stats">
+                    <div className="vip-hero-stat">
+                        <div className="vip-hero-stat-value">{stats.totalOrders}</div>
+                        <div className="vip-hero-stat-label">Нийт захиалга</div>
+                    </div>
+                    <div className="vip-hero-stat">
+                        <div className="vip-hero-stat-value">{stats.paidOrders}</div>
+                        <div className="vip-hero-stat-label">Баталгаажсан</div>
+                    </div>
+                    <div className="vip-hero-stat">
+                        <div className="vip-hero-stat-value">{stats.unpaidOrders}</div>
+                        <div className="vip-hero-stat-label">Баталгаажаагүй</div>
+                    </div>
+                    <div className="vip-hero-stat">
+                        <div className="vip-hero-stat-value">{stats.activeMembers}</div>
+                        <div className="vip-hero-stat-label">Идэвхтэй гишүүн</div>
+                    </div>
                 </div>
             </div>
 
-            {/* Stats */}
-            <div className="membership-stats">
-                <div className="membership-stat-card">
-                    <div className="membership-stat-icon" style={{ background: 'rgba(108, 92, 231, 0.1)', color: 'var(--primary)' }}>
-                        <Package size={20} />
-                    </div>
-                    <div>
-                        <div className="membership-stat-value">{stats.totalOrders}</div>
-                        <div className="membership-stat-label">Нийт захиалга</div>
-                    </div>
-                </div>
-                <div className="membership-stat-card">
-                    <div className="membership-stat-icon" style={{ background: 'rgba(0, 184, 148, 0.1)', color: '#00b894' }}>
-                        <CheckCircle size={20} />
-                    </div>
-                    <div>
-                        <div className="membership-stat-value">{stats.paidOrders}</div>
-                        <div className="membership-stat-label">Баталгаажсан</div>
-                    </div>
-                </div>
-                <div className="membership-stat-card">
-                    <div className="membership-stat-icon" style={{ background: 'rgba(225, 112, 85, 0.1)', color: '#e17055' }}>
-                        <Clock size={20} />
-                    </div>
-                    <div>
-                        <div className="membership-stat-value">{stats.unpaidOrders}</div>
-                        <div className="membership-stat-label">Баталгаажаагүй</div>
-                    </div>
-                </div>
-                <div className="membership-stat-card">
-                    <div className="membership-stat-icon" style={{ background: 'rgba(253, 203, 110, 0.15)', color: '#f39c12' }}>
-                        <Users size={20} />
-                    </div>
-                    <div>
-                        <div className="membership-stat-value">{stats.activeMembers}</div>
-                        <div className="membership-stat-label">Идэвхтэй гишүүн</div>
-                    </div>
-                </div>
-            </div>
+            {/* ── Card: Toolbar + Content ── */}
+            <div className="vip-card">
 
             {/* Main Tabs + Search */}
             <div className="membership-toolbar">
@@ -372,6 +356,8 @@ export function MembershipPage() {
                     )}
                 </div>
             )}
+
+            </div>{/* /vip-card */}
         </div>
     );
 }
