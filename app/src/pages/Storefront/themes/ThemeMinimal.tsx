@@ -28,8 +28,9 @@ export function ThemeMinimal({ business }: { business: Business }) {
         setVisibleCount(PRODUCTS_PER_PAGE);
     }, [activeCategory, searchQuery]);
 
-    // Check if user has stored phone (logged in)
-    const storedPhone = localStorage.getItem(`membership_phone_${business.id}`) || '';
+    // Check if user has stored phone (logged in) — check both membership and customer phone
+    const storedPhone = localStorage.getItem(`membership_phone_${business.id}`) || localStorage.getItem('liscord_customer_phone') || '';
+    const [customerPhone, setCustomerPhone] = useState(storedPhone);
     const hasMembership = activeMemberships.length > 0;
 
     const extractBrand = (desc: string) => {
@@ -96,15 +97,13 @@ export function ThemeMinimal({ business }: { business: Business }) {
                         <ShoppingBag size={20} strokeWidth={2} />
                         {cartCount > 0 && <span className="cart-badge-minimal">{cartCount}</span>}
                     </button>
-                    {storedPhone && (
-                        <button
-                            className={`store-profile-btn ${hasMembership ? 'has-membership' : ''}`}
-                            onClick={() => setShowDashboard(true)}
-                        >
-                            <User size={18} strokeWidth={2.5} />
-                            {hasMembership && <span className="store-profile-vip-dot" />}
-                        </button>
-                    )}
+                    <button
+                        className={`store-profile-btn ${hasMembership ? 'has-membership' : ''}`}
+                        onClick={() => setShowDashboard(true)}
+                    >
+                        <User size={18} strokeWidth={2.5} />
+                        {hasMembership && <span className="store-profile-vip-dot" />}
+                    </button>
                 </div>
             </nav>
 
@@ -325,7 +324,12 @@ export function ThemeMinimal({ business }: { business: Business }) {
                 isOpen={showDashboard}
                 onClose={() => setShowDashboard(false)}
                 business={business}
-                phone={storedPhone}
+                phone={customerPhone}
+                onLogin={(phone) => {
+                    setCustomerPhone(phone);
+                    // Also verify membership with new phone
+                    verifyMembership(phone.replace(/[^\d]/g, ''));
+                }}
                 onOpenMembership={() => {
                     setShowDashboard(false);
                     // Show membership modal for any exclusive product

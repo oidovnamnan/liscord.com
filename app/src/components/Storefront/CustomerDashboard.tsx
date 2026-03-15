@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { X, User, Crown, Package, MapPin, Bell, Clock, CheckCircle, AlertTriangle, RefreshCw } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { X, User, Crown, Package, MapPin, Bell, Clock, CheckCircle, AlertTriangle, RefreshCw, Phone, Loader2, Edit3 } from 'lucide-react';
 import type { Business } from '../../types';
 import { Timestamp } from 'firebase/firestore';
 
@@ -7,8 +7,9 @@ interface CustomerDashboardProps {
     isOpen: boolean;
     onClose: () => void;
     business: Business;
-    phone: string;
+    phone: string; // may be empty if not logged in
     onOpenMembership?: () => void;
+    onLogin?: (phone: string) => void;
 }
 
 interface MembershipDetail {
@@ -59,7 +60,7 @@ const STATUS_LABELS: Record<string, { label: string; color: string; bg: string }
     cancelled: { label: 'Цуцлагдсан', color: '#e74c3c', bg: '#fdecea' },
 };
 
-export function CustomerDashboard({ isOpen, onClose, business, phone, onOpenMembership }: CustomerDashboardProps) {
+export function CustomerDashboard({ isOpen, onClose, business, phone, onOpenMembership, onLogin }: CustomerDashboardProps) {
     const [activeTab, setActiveTab] = useState<TabKey>('profile');
     const [memberships, setMemberships] = useState<MembershipDetail[]>([]);
     const [orders, setOrders] = useState<OrderItem[]>([]);
@@ -70,29 +71,62 @@ export function CustomerDashboard({ isOpen, onClose, business, phone, onOpenMemb
     const [loadingOrders, setLoadingOrders] = useState(false);
     const [addressSaved, setAddressSaved] = useState(false);
 
+    // ═══ Login state (built-in OTP) ═══
+    const [loginPhone, setLoginPhone] = useState('');
+    const [otpSent, setOtpSent] = useState(false);
+    const [otpCode, setOtpCode] = useState('');
+    const [authLoading, setAuthLoading] = useState(false);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const [confirmation, setConfirmation] = useState<any>(null);
+    const recaptchaRef = useRef<HTMLDivElement>(null);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const recaptchaVerifierRef = useRef<any>(null);
+
+    // ═══ Name collection (first login) ═══
+    const [showNamePrompt, setShowNamePrompt] = useState(false);
+    const [customerName, setCustomerName] = useState('');
+    const [editingName, setEditingName] = useState(false);
+
+    // Derive effective phone (from prop or after login)
+    const [loggedInPhone, setLoggedInPhone] = useState(phone);
+    const effectivePhone = loggedInPhone || phone;
+    const isLoggedIn = !!effectivePhone;
+
+    // Sync phone prop
+    useEffect(() => {
+        if (phone) setLoggedInPhone(phone);
+    }, [phone]);
+
+    // Load saved customer name
+    useEffect(() => {
+        if (!effectivePhone || !business?.id) return;
+        const savedName = localStorage.getItem(`customer_name_${business.id}_${effectivePhone.replace(/[^\d]/g, '')}`);
+        if (savedName) setCustomerName(savedName);
+    }, [effectivePhone, business?.id]);
+
     // Load memberships
     useEffect(() => {
-        if (!isOpen || !phone || !business?.id) return;
+        if (!isOpen || !effectivePhone || !business?.id) return;
         loadMemberships();
-    }, [isOpen, phone, business?.id]);
+    }, [isOpen, effectivePhone, business?.id]);
 
     // Load address from localStorage
     useEffect(() => {
-        if (!business?.id || !phone) return;
-        const saved = localStorage.getItem(`customer_address_${business.id}_${phone}`);
+        if (!business?.id || !effectivePhone) return;
+        const saved = localStorage.getItem(`customer_address_${business.id}_${effectivePhone}`);
         if (saved) {
             try { setAddress(JSON.parse(saved)); } catch { /* ignore */ }
         }
-    }, [business?.id, phone]);
+    }, [business?.id, effectivePhone]);
 
     const loadMemberships = async () => {
-        if (!business?.id || !phone) return;
+        if (!business?.id || !effectivePhone) return;
         setLoadingMemberships(true);
         try {
             const { collection, query, where, getDocs } = await import('firebase/firestore');
             const { db } = await import('../../services/firebase');
             const ref = collection(db, 'businesses', business.id, 'memberships');
-            const q = query(ref, where('customerPhone', '==', phone.replace(/[^\d]/g, '')));
+            const q = query(ref, where('customerPhone', '==', effectivePhone.replace(/[^\d]/g, '')));
             const snap = await getDocs(q);
             const now = new Date();
             const details: MembershipDetail[] = snap.docs.map(d => {
@@ -124,19 +158,18 @@ export function CustomerDashboard({ isOpen, onClose, business, phone, onOpenMemb
 
     // Load orders
     useEffect(() => {
-        if (!isOpen || !phone || !business?.id || activeTab !== 'orders') return;
+        if (!isOpen || !effectivePhone || !business?.id || activeTab !== 'orders') return;
         loadOrders();
-    }, [isOpen, phone, business?.id, activeTab]);
+    }, [isOpen, effectivePhone, business?.id, activeTab]);
 
     const loadOrders = async () => {
-        if (!business?.id || !phone) return;
+        if (!business?.id || !effectivePhone) return;
         setLoadingOrders(true);
         try {
             const { collection, query, where, getDocs } = await import('firebase/firestore');
             const { db } = await import('../../services/firebase');
             const ref = collection(db, 'businesses', business.id, 'orders');
-            const normalizedPhone = phone.replace(/[^\d]/g, '');
-            // Orders store phone as customer.phone (nested object)
+            const normalizedPhone = effectivePhone.replace(/[^\d]/g, '');
             const q = query(ref, where('customer.phone', '==', normalizedPhone));
             const snap = await getDocs(q);
             const items: OrderItem[] = snap.docs.map(d => {
@@ -162,15 +195,14 @@ export function CustomerDashboard({ isOpen, onClose, business, phone, onOpenMemb
     };
 
     const saveAddress = () => {
-        if (!business?.id || !phone) return;
-        localStorage.setItem(`customer_address_${business.id}_${phone}`, JSON.stringify(address));
-        // Also save to Firestore for cross-device access
+        if (!business?.id || !effectivePhone) return;
+        localStorage.setItem(`customer_address_${business.id}_${effectivePhone}`, JSON.stringify(address));
         (async () => {
             try {
                 const { doc, setDoc } = await import('firebase/firestore');
                 const { db } = await import('../../services/firebase');
-                const addrRef = doc(db, 'businesses', business.id, 'customer_addresses', phone.replace(/[^\d]/g, ''));
-                await setDoc(addrRef, { ...address, phone: phone.replace(/[^\d]/g, ''), updatedAt: new Date().toISOString() }, { merge: true });
+                const addrRef = doc(db, 'businesses', business.id, 'customer_addresses', effectivePhone.replace(/[^\d]/g, ''));
+                await setDoc(addrRef, { ...address, phone: effectivePhone.replace(/[^\d]/g, ''), updatedAt: new Date().toISOString() }, { merge: true });
             } catch { /* silent */ }
         })();
         setAddressSaved(true);
@@ -183,8 +215,258 @@ export function CustomerDashboard({ isOpen, onClose, business, phone, onOpenMemb
 
     const formatCurrency = (n: number) => `₮${n.toLocaleString()}`;
 
+    // ═══ OTP Login Flow ═══
+    const handleSendOtp = async () => {
+        const cleanPhone = loginPhone.trim().replace(/[\s\-]/g, '');
+        if (!cleanPhone || cleanPhone.length < 8) return;
+        setAuthLoading(true);
+        try {
+            const { RecaptchaVerifier, signInWithPhoneNumber } = await import('firebase/auth');
+            const { auth } = await import('../../services/firebase');
+            if (!recaptchaVerifierRef.current && recaptchaRef.current) {
+                recaptchaVerifierRef.current = new RecaptchaVerifier(auth, recaptchaRef.current, { size: 'invisible' });
+            }
+            const fullPhone = cleanPhone.startsWith('+') ? cleanPhone : cleanPhone.startsWith('976') ? `+${cleanPhone}` : `+976${cleanPhone}`;
+            const result = await signInWithPhoneNumber(auth, fullPhone, recaptchaVerifierRef.current);
+            setConfirmation(result);
+            setOtpSent(true);
+        } catch (err) {
+            console.error('OTP send error:', err);
+            recaptchaVerifierRef.current = null;
+        } finally {
+            setAuthLoading(false);
+        }
+    };
+
+    const handleVerifyOtp = async () => {
+        if (!confirmation || !otpCode || otpCode.length < 6) return;
+        setAuthLoading(true);
+        try {
+            await confirmation.confirm(otpCode);
+            // Sign out to restore Firestore access (anonymous → no admin auth needed)
+            try {
+                const { auth } = await import('../../services/firebase');
+                await auth.signOut();
+            } catch { /* ignore */ }
+
+            const cleanPhone = loginPhone.trim().replace(/[\s\-+]/g, '');
+            const normalizedPhone = cleanPhone.startsWith('976') ? cleanPhone : `976${cleanPhone}`;
+
+            // Save phone to localStorage
+            localStorage.setItem(`membership_phone_${business.id}`, normalizedPhone);
+            localStorage.setItem('liscord_customer_phone', normalizedPhone);
+
+            setLoggedInPhone(normalizedPhone);
+            onLogin?.(normalizedPhone);
+
+            // Check if name exists for this phone
+            const savedName = localStorage.getItem(`customer_name_${business.id}_${normalizedPhone}`);
+            if (!savedName) {
+                // Try Firestore
+                try {
+                    const { doc, getDoc } = await import('firebase/firestore');
+                    const { db } = await import('../../services/firebase');
+                    const profileDoc = await getDoc(doc(db, 'businesses', business.id, 'customer_profiles', normalizedPhone));
+                    if (profileDoc.exists() && profileDoc.data().name) {
+                        const name = profileDoc.data().name;
+                        setCustomerName(name);
+                        localStorage.setItem(`customer_name_${business.id}_${normalizedPhone}`, name);
+                    } else {
+                        setShowNamePrompt(true);
+                    }
+                } catch {
+                    setShowNamePrompt(true);
+                }
+            } else {
+                setCustomerName(savedName);
+            }
+        } catch (err) {
+            console.error('OTP verify error:', err);
+        } finally {
+            setAuthLoading(false);
+        }
+    };
+
+    const saveCustomerName = async (name: string) => {
+        if (!name.trim() || !business?.id || !effectivePhone) return;
+        const cleanName = name.trim();
+        setCustomerName(cleanName);
+        localStorage.setItem(`customer_name_${business.id}_${effectivePhone.replace(/[^\d]/g, '')}`, cleanName);
+        setShowNamePrompt(false);
+        setEditingName(false);
+        // Save to Firestore
+        try {
+            const { doc, setDoc } = await import('firebase/firestore');
+            const { db } = await import('../../services/firebase');
+            await setDoc(doc(db, 'businesses', business.id, 'customer_profiles', effectivePhone.replace(/[^\d]/g, '')), {
+                name: cleanName,
+                phone: effectivePhone.replace(/[^\d]/g, ''),
+                updatedAt: new Date().toISOString(),
+            }, { merge: true });
+        } catch { /* silent */ }
+    };
+
+    const handleLogout = () => {
+        if (effectivePhone) {
+            localStorage.removeItem(`membership_phone_${business.id}`);
+            localStorage.removeItem('liscord_customer_phone');
+        }
+        setLoggedInPhone('');
+        setOtpSent(false);
+        setOtpCode('');
+        setLoginPhone('');
+        setConfirmation(null);
+        setCustomerName('');
+        setShowNamePrompt(false);
+        onClose();
+        window.location.reload();
+    };
+
     if (!isOpen) return null;
 
+    const brandColor = business.brandColor || '#4a6bff';
+
+    // ═══ Not logged in → OTP Login ═══
+    if (!isLoggedIn) {
+        return (
+            <>
+                <div className="cd-backdrop" onClick={onClose} />
+                <div className="cd-drawer">
+                    <div className="cd-header">
+                        <div className="cd-header-user">
+                            <div className="cd-avatar"><User size={22} /></div>
+                            <div>
+                                <div className="cd-phone">Нэвтрэх</div>
+                                <div className="cd-member-badge">Утасны дугаараар нэвтрэнэ үү</div>
+                            </div>
+                        </div>
+                        <button className="cd-close" onClick={onClose}><X size={20} /></button>
+                    </div>
+
+                    <div className="cd-content" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 20 }}>
+                        <div style={{ textAlign: 'center', padding: '40px 0 20px' }}>
+                            <Phone size={40} strokeWidth={1.5} style={{ color: brandColor, marginBottom: 12 }} />
+                            <h3 style={{ fontWeight: 800, fontSize: '1.1rem', margin: '0 0 6px' }}>Утасны дугаараар нэвтрэх</h3>
+                            <p style={{ fontSize: '0.85rem', color: '#888', margin: 0 }}>Захиалга, хаяг, гишүүнчлэл удирдах</p>
+                        </div>
+
+                        {!otpSent ? (
+                            <div style={{ width: '100%', maxWidth: 320 }}>
+                                <div className="cd-form-group">
+                                    <label>Утасны дугаар</label>
+                                    <input
+                                        type="tel"
+                                        placeholder="9911 2233"
+                                        value={loginPhone}
+                                        onChange={e => setLoginPhone(e.target.value)}
+                                        maxLength={12}
+                                        onKeyDown={e => e.key === 'Enter' && handleSendOtp()}
+                                        style={{ textAlign: 'center', fontSize: '1.1rem', letterSpacing: '2px', fontWeight: 700 }}
+                                    />
+                                </div>
+                                <button
+                                    className="cd-btn-primary"
+                                    onClick={handleSendOtp}
+                                    disabled={authLoading || loginPhone.replace(/\D/g, '').length < 8}
+                                    style={{ width: '100%', marginTop: 12, background: brandColor, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, opacity: (authLoading || loginPhone.replace(/\D/g, '').length < 8) ? 0.5 : 1 }}
+                                >
+                                    {authLoading ? <Loader2 size={16} className="animate-spin" /> : 'Нэвтрэх код авах'}
+                                </button>
+                            </div>
+                        ) : (
+                            <div style={{ width: '100%', maxWidth: 320 }}>
+                                <p style={{ fontSize: '0.82rem', color: '#666', textAlign: 'center', marginBottom: 12 }}>
+                                    +976{loginPhone.replace(/\D/g, '')} руу код илгээлээ
+                                </p>
+                                <div className="cd-form-group">
+                                    <label>Баталгаажуулах код</label>
+                                    <input
+                                        type="text"
+                                        placeholder="123456"
+                                        value={otpCode}
+                                        onChange={e => setOtpCode(e.target.value)}
+                                        maxLength={6}
+                                        onKeyDown={e => e.key === 'Enter' && handleVerifyOtp()}
+                                        style={{ textAlign: 'center', fontSize: '1.2rem', letterSpacing: '6px', fontWeight: 800 }}
+                                    />
+                                </div>
+                                <button
+                                    className="cd-btn-primary"
+                                    onClick={handleVerifyOtp}
+                                    disabled={authLoading || otpCode.length < 6}
+                                    style={{ width: '100%', marginTop: 12, background: brandColor, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, opacity: (authLoading || otpCode.length < 6) ? 0.5 : 1 }}
+                                >
+                                    {authLoading ? <Loader2 size={16} className="animate-spin" /> : 'Баталгаажуулах'}
+                                </button>
+                                <button
+                                    onClick={() => { setOtpSent(false); setOtpCode(''); }}
+                                    style={{ width: '100%', marginTop: 10, background: 'none', border: 'none', color: '#888', fontSize: '0.82rem', cursor: 'pointer' }}
+                                >
+                                    ← Дахин оролдох
+                                </button>
+                            </div>
+                        )}
+                        <div ref={recaptchaRef} />
+                    </div>
+                </div>
+            </>
+        );
+    }
+
+    // ═══ Name prompt (first login) ═══
+    if (showNamePrompt) {
+        const [nameInput, setNameInput] = [customerName, setCustomerName];
+        return (
+            <>
+                <div className="cd-backdrop" onClick={() => {}} />
+                <div className="cd-drawer">
+                    <div className="cd-header">
+                        <div className="cd-header-user">
+                            <div className="cd-avatar"><User size={22} /></div>
+                            <div>
+                                <div className="cd-phone">{effectivePhone}</div>
+                                <div className="cd-member-badge">Бүртгэл</div>
+                            </div>
+                        </div>
+                        <button className="cd-close" onClick={onClose}><X size={20} /></button>
+                    </div>
+
+                    <div className="cd-content" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 20 }}>
+                        <div style={{ textAlign: 'center', padding: '40px 0 20px' }}>
+                            <User size={40} strokeWidth={1.5} style={{ color: brandColor, marginBottom: 12 }} />
+                            <h3 style={{ fontWeight: 800, fontSize: '1.1rem', margin: '0 0 6px' }}>Нэрээ оруулна уу</h3>
+                            <p style={{ fontSize: '0.85rem', color: '#888', margin: 0 }}>Захиалга хийхэд таны нэр шаардлагатай</p>
+                        </div>
+
+                        <div style={{ width: '100%', maxWidth: 320 }}>
+                            <div className="cd-form-group">
+                                <label>Таны нэр</label>
+                                <input
+                                    type="text"
+                                    placeholder="Бат-Эрдэнэ"
+                                    value={nameInput}
+                                    onChange={e => setNameInput(e.target.value)}
+                                    onKeyDown={e => e.key === 'Enter' && saveCustomerName(nameInput)}
+                                    style={{ fontSize: '1rem', fontWeight: 600 }}
+                                    autoFocus
+                                />
+                            </div>
+                            <button
+                                className="cd-btn-primary"
+                                onClick={() => saveCustomerName(nameInput)}
+                                disabled={!nameInput.trim()}
+                                style={{ width: '100%', marginTop: 12, background: brandColor, opacity: !nameInput.trim() ? 0.5 : 1 }}
+                            >
+                                Үргэлжлүүлэх
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </>
+        );
+    }
+
+    // ═══ Logged in — Full Dashboard ═══
     return (
         <>
             {/* Backdrop */}
@@ -198,11 +480,11 @@ export function CustomerDashboard({ isOpen, onClose, business, phone, onOpenMemb
                             <User size={22} />
                         </div>
                         <div>
-                            <div className="cd-phone">{phone}</div>
+                            <div className="cd-phone">{customerName || effectivePhone}</div>
                             <div className="cd-member-badge">
                                 {memberships.some(m => m.status === 'active')
                                     ? <><Crown size={12} /> VIP Гишүүн</>
-                                    : 'Хэрэглэгч'}
+                                    : customerName ? effectivePhone : 'Хэрэглэгч'}
                             </div>
                         </div>
                     </div>
@@ -227,6 +509,39 @@ export function CustomerDashboard({ isOpen, onClose, business, phone, onOpenMemb
                 <div className="cd-content">
                     {activeTab === 'profile' && (
                         <div className="cd-section">
+                            {/* Profile info - name edit */}
+                            <h3 className="cd-section-title">Хувийн мэдээлэл</h3>
+                            <div style={{ marginBottom: 20 }}>
+                                <div className="cd-detail-row" style={{ marginBottom: 10 }}>
+                                    <span>Нэр</span>
+                                    {editingName ? (
+                                        <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                                            <input
+                                                value={customerName}
+                                                onChange={e => setCustomerName(e.target.value)}
+                                                onKeyDown={e => e.key === 'Enter' && saveCustomerName(customerName)}
+                                                style={{ height: 30, padding: '0 8px', borderRadius: 6, border: '1px solid #ddd', fontSize: '0.85rem', width: 140, fontWeight: 600 }}
+                                                autoFocus
+                                            />
+                                            <button
+                                                onClick={() => saveCustomerName(customerName)}
+                                                style={{ height: 30, padding: '0 10px', borderRadius: 6, border: 'none', background: brandColor, color: '#fff', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer' }}
+                                            >✓</button>
+                                        </div>
+                                    ) : (
+                                        <span style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }} onClick={() => setEditingName(true)}>
+                                            {customerName || 'Нэр оруулах'}
+                                            <Edit3 size={12} style={{ color: '#999' }} />
+                                        </span>
+                                    )}
+                                </div>
+                                <div className="cd-detail-row">
+                                    <span>Утас</span>
+                                    <span>{effectivePhone}</span>
+                                </div>
+                            </div>
+
+                            {/* VIP Membership */}
                             <h3 className="cd-section-title">VIP Гишүүнчлэл</h3>
                             {loadingMemberships ? (
                                 <div className="cd-loading">Ачаалж байна...</div>
@@ -448,11 +763,7 @@ export function CustomerDashboard({ isOpen, onClose, business, phone, onOpenMemb
 
                 {/* Footer */}
                 <div className="cd-footer">
-                    <button className="cd-btn-logout" onClick={() => {
-                        localStorage.removeItem(`membership_phone_${business.id}`);
-                        onClose();
-                        window.location.reload();
-                    }}>
+                    <button className="cd-btn-logout" onClick={handleLogout}>
                         Гарах
                     </button>
                 </div>

@@ -178,7 +178,7 @@ const SuperAdminAppStore = lazy(() => import('./pages/SuperAdmin/SuperAdminAppSt
 const StorefrontWrapper = lazy(() => import('./pages/Storefront/StorefrontWrapper').then(m => ({ default: m.StorefrontWrapper })));
 const StoreCatalog = lazy(() => import('./pages/Storefront/StoreCatalog').then(m => ({ default: m.StoreCatalog })));
 const StoreCheckout = lazy(() => import('./pages/Storefront/StoreCheckout').then(m => ({ default: m.StoreCheckout })));
-const StoreMyOrders = lazy(() => import('./pages/Storefront/StoreMyOrders').then(m => ({ default: m.StoreMyOrders })));
+// StoreMyOrders removed — functionality moved into CustomerDashboard
 
 // Components
 import { BusinessWizard } from './components/auth/BusinessWizard';
@@ -398,7 +398,7 @@ export default function App() {
           <Route path="/:slug" element={<StorefrontWrapper />}>
             <Route index element={<StoreCatalog />} />
             <Route path="checkout" element={<StoreCheckout />} />
-            <Route path="my-orders" element={<StoreMyOrders />} />
+            <Route path="my-orders" element={<Navigate to={`/${window.location.pathname.split('/')[1]}`} replace />} />
           </Route>
 
           <Route path="/app" element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
