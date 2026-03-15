@@ -681,15 +681,15 @@ export function OrdersPage() {
                 />
             )}
 
-            {showDeleteModal && deleteOrderId && (
-                <div className="modal-overlay animate-fade-in" onClick={() => setShowDeleteModal(false)}>
-                    <div className="modal-content" onClick={e => e.stopPropagation()}>
+            {showDeleteModal && deleteOrderId && createPortal(
+                <div className="modal-backdrop animate-fade-in" onClick={() => setShowDeleteModal(false)}>
+                    <div className="modal" onClick={e => e.stopPropagation()} style={{ maxWidth: 480 }}>
                         <div className="modal-header">
                             <h2>Захиалга устгах</h2>
-                            <button className="btn-icon" onClick={() => setShowDeleteModal(false)}><X size={20} /></button>
+                            <button className="btn btn-ghost btn-icon" onClick={() => setShowDeleteModal(false)}><X size={20} /></button>
                         </div>
-                        <div className="modal-body p-6">
-                            <p className="mb-4 text-muted">Захиалгыг устгах шалтгаанаа бичнэ үү. Энэ нь аудитын түүхэнд үлдэнэ.</p>
+                        <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                            <p className="text-muted">Захиалгыг устгах шалтгаанаа бичнэ үү. Энэ нь аудитын түүхэнд үлдэнэ.</p>
                             <div className="input-group">
                                 <label className="input-label">Шалтгаан <span className="text-danger">*</span></label>
                                 <textarea
@@ -715,15 +715,16 @@ export function OrdersPage() {
                             </button>
                         </div>
                     </div>
-                </div>
+                </div>,
+                document.body
             )}
 
-            {showBulkStatusModal && (
-                <div className="modal-overlay animate-fade-in" onClick={() => setShowBulkStatusModal(false)}>
-                    <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '400px' }}>
+            {showBulkStatusModal && createPortal(
+                <div className="modal-backdrop animate-fade-in" onClick={() => setShowBulkStatusModal(false)}>
+                    <div className="modal" onClick={e => e.stopPropagation()} style={{ maxWidth: '400px' }}>
                         <div className="modal-header">
                             <h2>Олноор төлөв өөрчлөх</h2>
-                            <button className="btn-icon" onClick={() => setShowBulkStatusModal(false)}><X size={20} /></button>
+                            <button className="btn btn-ghost btn-icon" onClick={() => setShowBulkStatusModal(false)}><X size={20} /></button>
                         </div>
                         <div className="modal-body p-6">
                             <p className="mb-4 text-muted">Сонгосон {selectedOrderIds.size} захиалгуудын төлөвийг өөрчлөхдөө доорхоос сонгоно уу.</p>
@@ -770,7 +771,8 @@ export function OrdersPage() {
                             </button>
                         </div>
                     </div>
-                </div>
+                </div>,
+                document.body
             )}
 
             {showCreate && (
