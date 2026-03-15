@@ -265,58 +265,45 @@ export function SourcingPage() {
 
     return (
         <div className="sourcing-page animate-fade-in">
-            <div className="page-hero" style={{ marginBottom: 8 }}>
-                <div className="page-hero-left">
-                    <div className="page-hero-icon">
-                        <Globe size={24} />
+            {/* ── Premium Hero ── */}
+            <div className="src-hero">
+                <div className="src-hero-top">
+                    <div className="src-hero-left">
+                        <div className="src-hero-icon"><Globe size={24} /></div>
+                        <div>
+                            <h2 className="src-hero-title">Сорсинг Агент</h2>
+                            <div className="src-hero-desc">Хятадаас бараа захиалах, мөрдөх</div>
+                        </div>
                     </div>
-                    <div>
-                        <h2 className="page-hero-title">Сорсинг Агент</h2>
-                        <p className="page-hero-subtitle">Хятадаас бараа захиалах, мөрдөх</p>
+                </div>
+                <div className="src-hero-stats">
+                    <div className="src-hero-stat" onClick={() => setStatusFilter('pending')}>
+                        <div className="src-hero-stat-value">{stats.pending}</div>
+                        <div className="src-hero-stat-label">Хүлээгдэж буй</div>
                     </div>
+                    <div className="src-hero-stat" onClick={() => setStatusFilter('ordered')}>
+                        <div className="src-hero-stat-value">{stats.ordered}</div>
+                        <div className="src-hero-stat-label">Захиалсан</div>
+                    </div>
+                    <div className="src-hero-stat" onClick={() => setStatusFilter('arrived')}>
+                        <div className="src-hero-stat-value">{stats.arrived}</div>
+                        <div className="src-hero-stat-label">Ирсэн</div>
+                    </div>
+                    <div className="src-hero-stat" onClick={() => setStatusFilter('all')}>
+                        <div className="src-hero-stat-value">{stats.fulfilled}</div>
+                        <div className="src-hero-stat-label">Биелсэн</div>
+                    </div>
+                    {notArrivedOrders.length > 0 && (
+                        <div className="src-hero-stat warning" onClick={() => setStatusFilter('not_arrived')}>
+                            <div className="src-hero-stat-value">⚠️ {notArrivedOrders.length}</div>
+                            <div className="src-hero-stat-label">Ирээгүй</div>
+                        </div>
+                    )}
                 </div>
             </div>
 
-            {/* Stats */}
-            <div className="inv-stats-grid" style={{ marginBottom: 24 }}>
-                <div className="inv-stat-card" onClick={() => setStatusFilter('pending')} style={{ cursor: 'pointer' }}>
-                    <div className="inv-stat-content">
-                        <h4>Хүлээгдэж буй</h4>
-                        <div className="inv-stat-value">{stats.pending}</div>
-                    </div>
-                    <div className="inv-stat-icon icon-red"><Clock size={24} /></div>
-                </div>
-                <div className="inv-stat-card" onClick={() => setStatusFilter('ordered')} style={{ cursor: 'pointer' }}>
-                    <div className="inv-stat-content">
-                        <h4>Захиалсан</h4>
-                        <div className="inv-stat-value">{stats.ordered}</div>
-                    </div>
-                    <div className="inv-stat-icon icon-primary"><Package size={24} /></div>
-                </div>
-                <div className="inv-stat-card" onClick={() => setStatusFilter('arrived')} style={{ cursor: 'pointer' }}>
-                    <div className="inv-stat-content">
-                        <h4>Ирсэн</h4>
-                        <div className="inv-stat-value">{stats.arrived}</div>
-                    </div>
-                    <div className="inv-stat-icon" style={{ background: 'rgba(108,92,231,0.1)', color: '#6c5ce7' }}><Truck size={24} /></div>
-                </div>
-                <div className="inv-stat-card" onClick={() => setStatusFilter('all')} style={{ cursor: 'pointer' }}>
-                    <div className="inv-stat-content">
-                        <h4>Биелсэн</h4>
-                        <div className="inv-stat-value">{stats.fulfilled}</div>
-                    </div>
-                    <div className="inv-stat-icon icon-green"><CheckCircle2 size={24} /></div>
-                </div>
-                {notArrivedOrders.length > 0 && (
-                    <div className="inv-stat-card" onClick={() => setStatusFilter('not_arrived')} style={{ cursor: 'pointer', border: statusFilter === 'not_arrived' ? '2px solid #ef4444' : undefined }}>
-                        <div className="inv-stat-content">
-                            <h4 style={{ color: '#ef4444' }}>⚠️ Ирээгүй</h4>
-                            <div className="inv-stat-value" style={{ color: '#ef4444' }}>{notArrivedOrders.length}</div>
-                        </div>
-                        <div className="inv-stat-icon" style={{ background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444' }}><AlertTriangle size={24} /></div>
-                    </div>
-                )}
-            </div>
+            {/* ── Card: Toolbar + Orders List ── */}
+            <div className="src-page-card">
 
             {/* Toolbar */}
             <div className="inv-toolbar">
@@ -438,6 +425,7 @@ export function SourcingPage() {
                     })
                 )}
             </div>
+            </div>{/* /src-page-card */}
 
             {/* Inactive Products Panel */}
             {inactiveProducts.length > 0 && (
