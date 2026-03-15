@@ -893,7 +893,7 @@ function MembershipModal({
                                         <Phone size={16} />
                                         <input
                                             type="tel"
-                                            placeholder="9900 1234"
+                                            placeholder=""
                                             value={phone}
                                             onChange={e => setPhone(e.target.value)}
                                             maxLength={12}
