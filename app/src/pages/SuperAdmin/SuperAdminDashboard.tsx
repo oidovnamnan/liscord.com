@@ -46,16 +46,20 @@ export function SuperAdminDashboard() {
                             <div className="sa-hero-desc">Liscord систем удирдлага</div>
                         </div>
                     </div>
-                    <div style={{ display: 'flex', gap: 8 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
                         <div className="system-status online-tint" style={{ background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.2)', color: '#fff' }}>
                             <CheckCircle2 size={14} />
                             Систем хэвийн
                         </div>
-                        <button className="sa-hero-btn" onClick={() => navigate('/super/global-settings')}>
-                            <Globe size={16} />
+                        <button className="sa-hero-btn" onClick={() => navigate('/super/global-settings')}
+                            style={{ background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.25)' }}
+                        >
+                            <Globe size={14} />
+                            Тохиргоо
                         </button>
                         <button className="sa-hero-btn" onClick={() => navigate('/super/settings')}>
-                            <Settings size={16} />
+                            <Settings size={14} />
+                            Модуль
                         </button>
                     </div>
                 </div>
