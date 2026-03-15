@@ -226,7 +226,7 @@ export function SuperAdminSettings() {
                         <button
                             className="sa-hero-btn"
                             onClick={() => navigate('/super/app-store')}
-                            style={{ background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.25)', whiteSpace: 'nowrap', flexShrink: 0 }}
+                            style={{ background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.25)' }}
                         >
                             <Icons.DollarSign size={14} />
                             App Store
@@ -235,7 +235,6 @@ export function SuperAdminSettings() {
                             className="sa-hero-btn"
                             onClick={handleSaveClick}
                             disabled={saving}
-                            style={{ whiteSpace: 'nowrap', flexShrink: 0 }}
                         >
                             {saving ? <Loader2 className="animate-spin" size={14} /> : <Icons.Save size={14} />}
                             {saving ? 'Хадгалж...' : 'Хадгалах'}

@@ -77,17 +77,23 @@
     margin-top: 2px;
 }
 .sa-hero-btn {
-    width: 38px; height: 38px;
+    padding: 8px 16px;
     border-radius: 10px;
     background: rgba(255,255,255,0.15);
     backdrop-filter: blur(10px);
     border: 1px solid rgba(255,255,255,0.2);
     color: #fff;
-    display: flex;
+    display: inline-flex;
     align-items: center;
     justify-content: center;
+    gap: 6px;
     cursor: pointer;
     transition: all 0.2s;
+    font-size: 0.82rem;
+    font-weight: 700;
+    font-family: inherit;
+    white-space: nowrap;
+    flex-shrink: 0;
 }
 .sa-hero-btn:hover {
     background: rgba(255,255,255,0.3);
