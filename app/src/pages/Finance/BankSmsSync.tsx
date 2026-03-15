@@ -306,65 +306,44 @@ export function BankSmsSyncPage() {
 
     return (
         <>
-        <div className="inventory-page animate-fade-in">
-            <div className="page-hero" style={{ marginBottom: 8 }}>
-                <div className="page-hero-left">
-                    <div className="page-hero-icon">
-                        <Smartphone size={24} />
+        <div style={{ padding: '24px clamp(16px, 3vw, 32px) 32px' }}>
+            {/* ── Premium Hero ── */}
+            <div className="inv-hero sms-hero">
+                <div className="inv-hero-top">
+                    <div className="inv-hero-left">
+                        <div className="inv-hero-icon"><Smartphone size={24} /></div>
+                        <div>
+                            <h2 className="inv-hero-title">SMS Банк Орлого</h2>
+                            <div className="inv-hero-desc">Банкны SMS орлогыг хянах, захиалгатай холбох</div>
+                        </div>
                     </div>
-                    <div>
-                        <h2 className="page-hero-title">SMS Банк Орлого</h2>
-                        <p className="page-hero-subtitle">Банкны SMS орлогыг хянах, захиалгатай холбох</p>
+                    <button className="inv-hero-btn" onClick={() => navigate('/app/settings?tab=sms-income-sync')}>
+                        <Settings size={16} />
+                        <span>Тохиргоо</span>
+                    </button>
+                </div>
+                <div className="inv-hero-stats">
+                    <div className="inv-hero-stat">
+                        <div className="inv-hero-stat-value">{stats.total >= 1000000 ? (stats.total / 1000000).toFixed(1) + 'M₮' : stats.total > 0 ? (stats.total / 1000).toFixed(0) + 'K₮' : '0₮'}</div>
+                        <div className="inv-hero-stat-label">Нийт орлого</div>
+                    </div>
+                    <div className="inv-hero-stat">
+                        <div className="inv-hero-stat-value">{stats.matched}</div>
+                        <div className="inv-hero-stat-label">Холбогдсон</div>
+                    </div>
+                    <div className="inv-hero-stat">
+                        <div className="inv-hero-stat-value">{stats.pending}</div>
+                        <div className="inv-hero-stat-label">Хүлээгдэж буй</div>
+                    </div>
+                    <div className="inv-hero-stat">
+                        <div className="inv-hero-stat-value">{logs.length}</div>
+                        <div className="inv-hero-stat-label">Нийт гүйлгээ</div>
                     </div>
                 </div>
-                <button
-                    className="btn btn-secondary btn-sm"
-                    onClick={() => navigate('/app/settings?tab=sms-income-sync')}
-                    style={{ gap: 6 }}
-                >
-                    <Settings size={16} /> Тохиргоо
-                </button>
             </div>
 
-            {/* Stats Grid */}
-            <div className="inv-stats-grid" style={{ marginBottom: 10 }}>
-                <div className="inv-stat-card">
-                    <div className="inv-stat-content">
-                        <h4>Нийт орлого</h4>
-                        <div className="inv-stat-value">{stats.total >= 1000000 ? (stats.total / 1000000).toFixed(1) + 'M₮' : stats.total > 0 ? (stats.total / 1000).toFixed(0) + 'K₮' : '0₮'}</div>
-                    </div>
-                    <div className="inv-stat-icon icon-green">
-                        <TrendingUp size={24} />
-                    </div>
-                </div>
-                <div className="inv-stat-card">
-                    <div className="inv-stat-content">
-                        <h4>Холбогдсон</h4>
-                        <div className="inv-stat-value">{stats.matched}</div>
-                    </div>
-                    <div className="inv-stat-icon icon-primary">
-                        <CircleCheck size={24} />
-                    </div>
-                </div>
-                <div className="inv-stat-card">
-                    <div className="inv-stat-content">
-                        <h4>Хүлээгдэж буй</h4>
-                        <div className="inv-stat-value">{stats.pending}</div>
-                    </div>
-                    <div className="inv-stat-icon icon-orange">
-                        <Clock size={24} />
-                    </div>
-                </div>
-                <div className="inv-stat-card">
-                    <div className="inv-stat-content">
-                        <h4>Нийт гүйлгээ</h4>
-                        <div className="inv-stat-value">{logs.length}</div>
-                    </div>
-                    <div className="inv-stat-icon icon-red">
-                        <Banknote size={24} />
-                    </div>
-                </div>
-            </div>
+            {/* ── Card: Toolbar + Content ── */}
+            <div className="inv-page-card">
 
             {/* Toolbar */}
             <div className="inv-toolbar">
@@ -516,6 +495,7 @@ export function BankSmsSyncPage() {
                     )}
                 </div>
             )}
+            </div>{/* /inv-page-card */}
 
             {/* ═══════════════════════════════════════════ */}
             {/* Manual Match Modal */}
