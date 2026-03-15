@@ -322,7 +322,7 @@ export function SettingsPage() {
     const activeTabLabel = [...tabs.core, ...tabs.plugins].find(t => t.id === activeTab)?.label || 'Ерөнхий';
 
     return (
-        <>
+        <div className="page settings-page">
             <div className="settings-page-hero">
                 <div className="settings-hero-top">
                     <button className="settings-back-btn" onClick={() => navigate('/app')}>
@@ -358,7 +358,6 @@ export function SettingsPage() {
                     </div>
                 </div>
             </div>
-            <div className="page settings-page">
                 <div className="settings-layout">
                     <div className="settings-sidebar">
                         <div className="settings-sidebar-group">
@@ -885,8 +884,7 @@ export function SettingsPage() {
                             return null;
                         })()}
 
-                    </div>
-                </div >
+                </div>
             </div >
 
             {/* Request Modal */}
@@ -941,7 +939,7 @@ export function SettingsPage() {
                     document.body
                 )
             }
-        </>
+        </div>
     );
 }
 
