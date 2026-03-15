@@ -1,6 +1,6 @@
 import { HubLayout } from '../../components/common/HubLayout';
-import {
 import '../Settings/components/FlashDealSettings.css';
+import {
     Search,
     Zap,
     Layout,
