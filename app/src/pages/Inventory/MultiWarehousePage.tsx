@@ -73,79 +73,48 @@ export function MultiWarehousePage() {
 
     return (
         <>
-            <div className="inventory-page animate-fade-in">
-                {/* ═══ Page Hero ═══ */}
-                <div className="page-hero">
-                    <div className="page-hero-left">
-                        <div className="page-hero-icon">
-                            <Warehouse size={24} />
-                        </div>
-                        <div>
-                            <h2 className="page-hero-title">Агуулах</h2>
-                            <p className="page-hero-subtitle">Агуулахын удирдлага, бүртгэл, багтаамж</p>
-                        </div>
-                    </div>
-                    <button className="btn btn-primary btn-sm gradient-btn" onClick={() => { setEditingItem(null); setShowModal(true); }} style={{ gap: 6 }}>
-                        <Plus size={16} /> Агуулах нэмэх
-                    </button>
-                </div>
-
-                {/* ═══ Stats Grid — Glassmorphism ═══ */}
-                <div className="inv-stats-grid">
-                    <div className="inv-stat-card">
-                        <div className="inv-stat-content">
-                            <h4>Нийт агуулах</h4>
-                            <div className="inv-stat-value">{totalWarehouses}</div>
-                            <div className="inv-stat-trend neutral">
-                                <Warehouse size={10} /> {activeWarehouses} идэвхтэй
+            <div style={{ padding: '24px clamp(16px, 3vw, 32px) 32px' }}>
+                {/* ── Premium Hero ── */}
+                <div className="inv-hero wh-hero">
+                    <div className="inv-hero-top">
+                        <div className="inv-hero-left">
+                            <div className="inv-hero-icon"><Warehouse size={24} /></div>
+                            <div>
+                                <h2 className="inv-hero-title">Агуулах</h2>
+                                <div className="inv-hero-desc">Агуулахын удирдлага, бүртгэл, багтаамж</div>
                             </div>
                         </div>
-                        <div className="inv-stat-icon icon-primary">
-                            <Warehouse size={24} />
-                        </div>
+                        <button className="inv-hero-btn" onClick={() => { setEditingItem(null); setShowModal(true); }}>
+                            <Plus size={16} />
+                            <span>Агуулах нэмэх</span>
+                        </button>
                     </div>
-
-                    <div className="inv-stat-card">
-                        <div className="inv-stat-content">
-                            <h4>Нийт багтаамж</h4>
-                            <div className="inv-stat-value">{totalCapacity.toLocaleString()}</div>
-                            <div className="inv-stat-trend neutral">
-                                <Package size={10} /> ш багтана
-                            </div>
+                    <div className="inv-hero-stats">
+                        <div className="inv-hero-stat">
+                            <div className="inv-hero-stat-value">{totalWarehouses}</div>
+                            <div className="inv-hero-stat-label">Нийт агуулах</div>
+                            <div className="inv-hero-stat-sub">⊕ {activeWarehouses} идэвхтэй</div>
                         </div>
-                        <div className="inv-stat-icon icon-green">
-                            <TrendingUp size={24} />
+                        <div className="inv-hero-stat">
+                            <div className="inv-hero-stat-value">{totalCapacity.toLocaleString()}</div>
+                            <div className="inv-hero-stat-label">Нийт багтаамж</div>
+                            <div className="inv-hero-stat-sub">📦 ш багтана</div>
                         </div>
-                    </div>
-
-                    <div className="inv-stat-card">
-                        <div className="inv-stat-content">
-                            <h4>Нийт нөөц</h4>
-                            <div className="inv-stat-value">{totalStock.toLocaleString()}</div>
-                            <div className="inv-stat-trend neutral">
-                                <Package size={10} /> ш хадгалсан
-                            </div>
+                        <div className="inv-hero-stat">
+                            <div className="inv-hero-stat-value">{totalStock.toLocaleString()}</div>
+                            <div className="inv-hero-stat-label">Нийт нөөц</div>
+                            <div className="inv-hero-stat-sub">📦 ш хадгалсан</div>
                         </div>
-                        <div className="inv-stat-icon icon-primary">
-                            <Package size={24} />
-                        </div>
-                    </div>
-
-                    <div className="inv-stat-card">
-                        <div className="inv-stat-content">
-                            <h4>Дүүрсэн</h4>
-                            <div className="inv-stat-value">{lowCapacity}</div>
-                            {lowCapacity > 0 && (
-                                <div className="inv-stat-trend down">
-                                    <AlertTriangle size={10} /> Анхааруулга
-                                </div>
-                            )}
-                        </div>
-                        <div className="inv-stat-icon icon-orange">
-                            <AlertTriangle size={24} />
+                        <div className="inv-hero-stat">
+                            <div className="inv-hero-stat-value">{lowCapacity}</div>
+                            <div className="inv-hero-stat-label">Дүүрсэн</div>
+                            {lowCapacity > 0 && <div className="inv-hero-stat-sub">⚠ Анхааруулга</div>}
                         </div>
                     </div>
                 </div>
+
+                {/* ── Card Container (toolbar + warehouse cards) ── */}
+                <div className="inv-page-card">
 
                 {/* ═══ Search & Filter Toolbar ═══ */}
                 <div className="inv-toolbar">
@@ -251,6 +220,7 @@ export function MultiWarehousePage() {
                         })
                     )}
                 </div>
+                </div>{/* /inv-page-card */}
             </div>
 
             {showModal && <GenericCrudModal title="Агуулах" icon={<Warehouse size={20} />} collectionPath="businesses/{bizId}/warehouses" fields={WH_FIELDS} editingItem={editingItem} onClose={() => setShowModal(false)} />}
