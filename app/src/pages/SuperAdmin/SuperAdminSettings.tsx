@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Sparkles } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { Header } from '../../components/layout/Header';
 import { toast } from 'react-hot-toast';
 import { systemSettingsService } from '../../services/db';
 import { useSystemCategoriesStore } from '../../store';
@@ -206,11 +205,18 @@ export function SuperAdminSettings() {
 
     return (
         <div className="super-admin-page animate-fade-in">
-            <Header
-                title="Модуль Тохиргоо"
-                subtitle={`${totalModules} модуль · ${activeCategories}/${totalCategories} салбар идэвхтэй`}
-                extra={
-                    <div className="flex items-center gap-2">
+            {/* ── Premium Hero ── */}
+            <div className="sa-hero" style={{ background: 'linear-gradient(135deg, #0891b2 0%, #3b82f6 50%, #6366f1 100%)', boxShadow: '0 8px 32px rgba(59, 130, 246, 0.25)', margin: '24px clamp(16px, 3vw, 32px) 0' }}>
+                <div className="sa-hero-top">
+                    <div className="sa-hero-left">
+                        <div className="sa-hero-icon"><Icons.Puzzle size={24} /></div>
+                        <div>
+                            <div className="sa-hero-badge"><Sparkles size={10} /> Модуль удирдлага</div>
+                            <h1 className="sa-hero-title">Модуль Тохиргоо</h1>
+                            <div className="sa-hero-desc">Бизнес салбар тус бүрт модулийн хандалт тохируулах</div>
+                        </div>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                         {hasUnsavedChanges && (
                             <span className="ms-unsaved-indicator">
                                 <span className="ms-unsaved-dot" />
@@ -218,24 +224,38 @@ export function SuperAdminSettings() {
                             </span>
                         )}
                         <button
-                            className="btn btn-sm btn-ghost"
+                            className="sa-hero-btn"
                             onClick={() => navigate('/super/app-store')}
-                            style={{ fontSize: '0.8rem', gap: '5px' }}
+                            style={{ background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.25)' }}
                         >
                             <Icons.DollarSign size={14} />
-                            <span className="hide-mobile">App Store Үнэ</span>
+                            App Store
                         </button>
                         <button
-                            className="btn-pro btn-pro-primary"
+                            className="sa-hero-btn"
                             onClick={handleSaveClick}
                             disabled={saving}
                         >
                             {saving ? <Loader2 className="animate-spin" size={14} /> : <Icons.Save size={14} />}
-                            <span>{saving ? 'Хадгалж байна...' : 'Хадгалах'}</span>
+                            {saving ? 'Хадгалж...' : 'Хадгалах'}
                         </button>
                     </div>
-                }
-            />
+                </div>
+                <div className="sa-hero-stats">
+                    <div className="sa-hero-stat">
+                        <div className="sa-hero-stat-value">{totalModules}</div>
+                        <div className="sa-hero-stat-label">Нийт модуль</div>
+                    </div>
+                    <div className="sa-hero-stat">
+                        <div className="sa-hero-stat-value">{activeCategories}</div>
+                        <div className="sa-hero-stat-label">Идэвхтэй салбар</div>
+                    </div>
+                    <div className="sa-hero-stat">
+                        <div className="sa-hero-stat-value">{totalCategories}</div>
+                        <div className="sa-hero-stat-label">Нийт салбар</div>
+                    </div>
+                </div>
+            </div>
 
             <div className="page-content-pro">
                 {/* ─── Sidebar ─── */}
