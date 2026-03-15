@@ -249,10 +249,10 @@ export function CustomerDashboard({ isOpen, onClose, business, phone, onOpenMemb
                 await auth.signOut();
             } catch { /* ignore */ }
 
-            const cleanPhone = loginPhone.trim().replace(/[\s\-+]/g, '');
-            const normalizedPhone = cleanPhone.startsWith('976') ? cleanPhone : `976${cleanPhone}`;
+            const cleanPhone = loginPhone.trim().replace(/[\s\-+]/g, '').replace(/^976/, '');
+            const normalizedPhone = cleanPhone.replace(/[^\d]/g, '');
 
-            // Save phone to localStorage
+            // Save phone to localStorage (8-digit format to match membership records)
             localStorage.setItem(`membership_phone_${business.id}`, normalizedPhone);
             localStorage.setItem('liscord_customer_phone', normalizedPhone);
 
