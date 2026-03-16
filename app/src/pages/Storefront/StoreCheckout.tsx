@@ -302,6 +302,62 @@ export function StoreCheckout() {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [successId, business?.id]);
 
+    // ──────── POLL QPAY PAYMENT STATUS ────────
+    useEffect(() => {
+        if (!qpayInvoice?.invoice_id || !successId || !business?.id || paymentConfirmed) return;
+
+        const qpaySettings = business.settings?.qpay;
+        const creds = paymentMethod === 'qpay' && qpaySettings?.username && qpaySettings?.password
+            ? { username: qpaySettings.username, password: qpaySettings.password }
+            : null;
+
+        if (!creds) return;
+
+        let stopped = false;
+        const poll = async () => {
+            if (stopped || paymentConfirmed) return;
+            try {
+                const resp = await fetch('/api/qpay-check', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        invoiceId: qpayInvoice.invoice_id,
+                        qpayUsername: creds.username,
+                        qpayPassword: creds.password,
+                    }),
+                });
+                const data = await resp.json();
+                if (data.paid && !stopped) {
+                    // Update order as paid from frontend
+                    const { doc: firestoreDoc, updateDoc, Timestamp } = await import('firebase/firestore');
+                    const totalAmount = savedTotal || 0;
+                    await updateDoc(firestoreDoc(db, `businesses/${business.id}/orders`, successId), {
+                        paymentStatus: 'paid',
+                        paymentVerifiedAt: Timestamp.now(),
+                        paymentVerifiedBy: 'qpay',
+                        'financials.paidAmount': totalAmount,
+                        'financials.balanceDue': 0,
+                    });
+                    stopped = true;
+                }
+            } catch (e) {
+                console.error('QPay poll error', e);
+            }
+        };
+
+        // Poll every 5 seconds
+        const interval = setInterval(poll, 5000);
+        // First check after 3 seconds
+        const timeout = setTimeout(poll, 3000);
+
+        return () => {
+            stopped = true;
+            clearInterval(interval);
+            clearTimeout(timeout);
+        };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [qpayInvoice?.invoice_id, successId, business?.id, paymentConfirmed]);
+
     // ──────── SUCCESS SCREEN ────────
     if (successId) {
         return (
