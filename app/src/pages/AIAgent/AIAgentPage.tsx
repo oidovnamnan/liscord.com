@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Sparkles, Brain, Zap, BarChart3, Bot, ChevronDown, AlertTriangle, Send, Loader2, Target, ShieldCheck, Package, TrendingUp, MessageSquare } from 'lucide-react';
 import { useAuthStore, useBusinessStore } from '../../store';
 import { globalSettingsService } from '../../services/adminService';
-import { sendChatMessage, type ChatMessage, type BusinessContext } from '../../services/ai/aiChatService';
+import { sendChatMessage, auditProducts, type ChatMessage, type BusinessContext, type ProductAuditIssue, type AuditResult } from '../../services/ai/aiChatService';
 import { productService, customerService, teamService } from '../../services/db';
 import { orderService } from '../../services/db';
 import { collection, onSnapshot, Timestamp } from 'firebase/firestore';
@@ -10,6 +10,16 @@ import { db } from '../../services/firebase';
 import type { Product, Order, Customer } from '../../types';
 import toast from 'react-hot-toast';
 import './AIAgentPage.css';
+
+const ISSUE_TYPE_LABELS: Record<string, { icon: string; label: string; color: string }> = {
+    missing_description: { icon: '📝', label: 'Тайлбар хоосон', color: '#ef4444' },
+    short_description: { icon: '📄', label: 'Тайлбар богино', color: '#f59e0b' },
+    wrong_category: { icon: '🏷️', label: 'Ангилал буруу', color: '#f59e0b' },
+    duplicate: { icon: '👯', label: 'Давхардсан', color: '#ef4444' },
+    not_product: { icon: '❌', label: 'Бараа биш', color: '#ef4444' },
+    missing_price: { icon: '💰', label: 'Үнэ дутуу', color: '#f59e0b' },
+    bad_name: { icon: '✏️', label: 'Нэр оновчгүй', color: '#f59e0b' },
+};
 
 interface Message {
     id: string;
@@ -64,6 +74,10 @@ export const AIAgentPage: React.FC = () => {
         }
     ]);
     const chatEndRef = useRef<HTMLDivElement>(null);
+    const [auditResult, setAuditResult] = useState<AuditResult | null>(null);
+    const [appliedFixes, setAppliedFixes] = useState<Set<string>>(new Set());
+    const [applyingFix, setApplyingFix] = useState<string | null>(null);
+    const productsRef = useRef<Product[]>([]);
 
     // Fetch Gemini API key
     useEffect(() => {
@@ -145,7 +159,7 @@ export const AIAgentPage: React.FC = () => {
             setDataLoaded(true);
         };
 
-        const unsub1 = productService.subscribeProducts(bizId, (p) => { products = p; buildContext(); });
+        const unsub1 = productService.subscribeProducts(bizId, (p) => { products = p; productsRef.current = p; buildContext(); });
         const unsub2 = orderService.subscribeOrders(bizId, (o) => { orders = o; buildContext(); });
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const unsub3 = customerService.subscribeCustomers(bizId, (c: any) => { customers = c; buildContext(); });
@@ -235,6 +249,109 @@ export const AIAgentPage: React.FC = () => {
         } finally {
             setIsTyping(false);
         }
+    };
+
+    // ── Product Audit Handler ──
+    const handleProductAudit = async () => {
+        if (!geminiApiKey) {
+            toast.error('AI API Key тохируулаагүй байна.');
+            return;
+        }
+        if (productsRef.current.length === 0) {
+            toast.error('Бараа мэдээлэл ачаалагдаагүй байна.');
+            return;
+        }
+
+        const userMsg: Message = {
+            id: Date.now().toString(),
+            role: 'user',
+            text: '🧹 Бараа цэгцлэх — бүх барааг шалгаж, асуудалтайг олоорой',
+            timestamp: new Date()
+        };
+        setMessages(prev => [...prev, userMsg]);
+        setIsTyping(true);
+        setAuditResult(null);
+        setAppliedFixes(new Set());
+
+        try {
+            const products = productsRef.current
+                .filter(p => !p.isDeleted)
+                .map(p => ({
+                    id: p.id,
+                    name: p.name,
+                    description: p.description || '',
+                    categoryName: p.categoryName || '',
+                    salePrice: p.pricing?.salePrice || 0,
+                    costPrice: p.pricing?.costPrice || 0,
+                    images: p.images?.length || 0,
+                }));
+
+            const categories = [...new Set(productsRef.current.map(p => p.categoryName).filter(Boolean))] as string[];
+            const result = await auditProducts(geminiApiKey, products, categories);
+            setAuditResult(result);
+
+            const summaryText = result.issueCount === 0
+                ? '✅ Бүх бараа хэвийн байна! Асуудал олдсонгүй.'
+                : `🔍 **Шалгалтын дүн:** ${result.totalProducts} бараанаас **${result.issueCount}** асуудал олдлоо.\n\n${result.summary}\n\nДоорх жагсаалтаас нэг нэгээр засах эсвэл "Бүгдийг засах" товч дарна уу.`;
+
+            setMessages(prev => [...prev, {
+                id: 'audit-result',
+                role: 'bot',
+                text: summaryText,
+                timestamp: new Date()
+            }]);
+        } catch (error: unknown) {
+            const msg = error instanceof Error ? error.message : 'Бараа шалгахад алдаа гарлаа.';
+            toast.error(msg);
+            setMessages(prev => [...prev, {
+                id: (Date.now() + 1).toString(),
+                role: 'bot',
+                text: `⚠️ ${msg}`,
+                timestamp: new Date()
+            }]);
+        } finally {
+            setIsTyping(false);
+        }
+    };
+
+    // ── Apply single fix ──
+    const handleApplyFix = async (issue: ProductAuditIssue) => {
+        if (!business?.id || !issue.action) return;
+        const fixKey = `${issue.productId}-${issue.type}`;
+        setApplyingFix(fixKey);
+
+        try {
+            if (issue.action.type === 'delete') {
+                await productService.updateProduct(business.id, issue.productId, { isDeleted: true } as any);
+                toast.success(`"${issue.productName}" устгагдлаа`);
+            } else if (issue.action.type === 'update' && issue.action.field && issue.action.value) {
+                const updates: any = {};
+                if (issue.action.field === 'categoryName') {
+                    updates.categoryName = issue.action.value;
+                } else if (issue.action.field === 'name') {
+                    updates.name = issue.action.value;
+                } else if (issue.action.field === 'description') {
+                    updates.description = issue.action.value;
+                }
+                await productService.updateProduct(business.id, issue.productId, updates);
+                toast.success(`"${issue.productName}" засагдлаа`);
+            }
+            setAppliedFixes(prev => new Set([...prev, fixKey]));
+        } catch (error) {
+            toast.error('Засахад алдаа гарлаа');
+        } finally {
+            setApplyingFix(null);
+        }
+    };
+
+    // ── Apply all fixes ──
+    const handleApplyAllFixes = async () => {
+        if (!auditResult || !business?.id) return;
+        const fixable = auditResult.issues.filter(i => i.action && !appliedFixes.has(`${i.productId}-${i.type}`));
+        for (const issue of fixable) {
+            await handleApplyFix(issue);
+        }
+        toast.success(`${fixable.length} засвар хийгдлээ ✅`);
     };
 
     const handleActionToggle = (name: string, value: boolean) => {
@@ -367,6 +484,58 @@ export const AIAgentPage: React.FC = () => {
                                 </div>
                             </div>
                         )}
+
+                        {/* ── Audit Result Cards ── */}
+                        {auditResult && auditResult.issueCount > 0 && (
+                            <div className="audit-results-container">
+                                <div className="audit-header-bar">
+                                    <span>🔍 {auditResult.issueCount} асуудал олдлоо</span>
+                                    <button
+                                        className="btn btn-primary"
+                                        style={{ padding: '6px 16px', fontSize: '0.8rem' }}
+                                        onClick={handleApplyAllFixes}
+                                        disabled={auditResult.issues.every(i => appliedFixes.has(`${i.productId}-${i.type}`))}
+                                    >
+                                        ✨ Бүгдийг засах
+                                    </button>
+                                </div>
+                                {auditResult.issues.map((issue, idx) => {
+                                    const fixKey = `${issue.productId}-${issue.type}`;
+                                    const isApplied = appliedFixes.has(fixKey);
+                                    const isApplying = applyingFix === fixKey;
+                                    const meta = ISSUE_TYPE_LABELS[issue.type] || { icon: '⚠️', label: issue.type, color: '#888' };
+
+                                    return (
+                                        <div key={idx} className={`audit-issue-card ${isApplied ? 'applied' : ''}`} style={{ borderLeftColor: meta.color }}>
+                                            <div className="audit-issue-top">
+                                                <span className="audit-issue-icon">{meta.icon}</span>
+                                                <div className="audit-issue-info">
+                                                    <div className="audit-issue-name">{issue.productName}</div>
+                                                    <div className="audit-issue-type" style={{ color: meta.color }}>{meta.label}</div>
+                                                </div>
+                                                <span className={`audit-severity ${issue.severity}`}>{issue.severity}</span>
+                                            </div>
+                                            <div className="audit-issue-msg">{issue.message}</div>
+                                            {issue.suggestion && (
+                                                <div className="audit-issue-suggestion">💡 {issue.suggestion}</div>
+                                            )}
+                                            {issue.action && !isApplied && (
+                                                <button
+                                                    className="audit-fix-btn"
+                                                    onClick={() => handleApplyFix(issue)}
+                                                    disabled={isApplying}
+                                                >
+                                                    {isApplying ? <Loader2 size={14} className="animate-spin" /> : '✅'}
+                                                    {isApplying ? ' Засаж байна...' : issue.action.type === 'delete' ? ' Устгах' : ' Засах'}
+                                                </button>
+                                            )}
+                                            {isApplied && <span className="audit-applied-badge">✅ Засагдсан</span>}
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        )}
+
                         <div ref={chatEndRef} />
                     </div>
 
@@ -385,6 +554,7 @@ export const AIAgentPage: React.FC = () => {
                         </div>
                         <div className="chat-suggestions">
                             {[
+                                { t: '🧹 Бараа цэгцлэх', i: <Sparkles size={14} />, action: handleProductAudit },
                                 { t: 'Борлуулалтын тайлан гарга', i: <BarChart3 size={14} /> },
                                 { t: 'Үлдэгдэл бага барааг мэдэгд', i: <Package size={14} /> },
                                 { t: 'Маркетингийн зөвлөгөө өг', i: <TrendingUp size={14} /> },
@@ -392,7 +562,7 @@ export const AIAgentPage: React.FC = () => {
                                 { t: 'Шилдэг борлуулалттай бараа', i: <Target size={14} /> },
                                 { t: 'Бизнесийн зөвлөгөө өг', i: <Sparkles size={14} /> },
                             ].map((s, idx) => (
-                                <button key={idx} className="suggestion-chip" onClick={() => handleSendMessage(s.t)}>
+                                <button key={idx} className="suggestion-chip" onClick={() => s.action ? s.action() : handleSendMessage(s.t)}>
                                     {s.i} {s.t}
                                 </button>
                             ))}

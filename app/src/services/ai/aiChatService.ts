@@ -137,3 +137,146 @@ export async function sendChatMessage(
         throw new Error('AI хариулт авахад алдаа гарлаа. Дахин оролдоно уу.');
     }
 }
+
+// ============ Product Audit ============
+
+export type AuditIssueType =
+    | 'missing_description'
+    | 'short_description'
+    | 'wrong_category'
+    | 'duplicate'
+    | 'not_product'
+    | 'missing_price'
+    | 'bad_name';
+
+export interface ProductAuditIssue {
+    productId: string;
+    productName: string;
+    type: AuditIssueType;
+    severity: 'low' | 'medium' | 'high';
+    message: string;
+    suggestion?: string;
+    action?: {
+        type: 'update' | 'delete' | 'merge';
+        field?: string;
+        value?: string;
+        mergeIntoId?: string;
+    };
+}
+
+export interface AuditResult {
+    totalProducts: number;
+    issueCount: number;
+    issues: ProductAuditIssue[];
+    summary: string;
+}
+
+interface AuditProduct {
+    id: string;
+    name: string;
+    description: string;
+    categoryName: string;
+    salePrice: number;
+    costPrice: number;
+    images: number;
+}
+
+/**
+ * Audit all products using Gemini AI.
+ * Scans for: missing descriptions, wrong categories, duplicates, non-products, bad names, missing prices.
+ */
+export async function auditProducts(
+    apiKey: string,
+    products: AuditProduct[],
+    existingCategories: string[]
+): Promise<AuditResult> {
+    const client = getClient(apiKey);
+
+    // Build compact product table for AI
+    const productRows = products.map((p, i) =>
+        `${i + 1}. [${p.id}] "${p.name}" | Тайлбар: ${p.description ? (p.description.length > 80 ? p.description.substring(0, 80) + '...' : p.description) : '(хоосон)'} | Ангилал: ${p.categoryName || '(байхгүй)'} | Үнэ: ${p.salePrice}₮ | Өртөг: ${p.costPrice}₮ | Зураг: ${p.images}`
+    ).join('\n');
+
+    const prompt = `Чи бараа бүтээгдэхүүний чанарын шалгагч (Product Quality Auditor).
+
+БҮТЭЭГДЭХҮҮНИЙ ЖАГСААЛТ (${products.length} бараа):
+${productRows}
+
+ОДОО БАЙГАА АНГИЛАЛУУД:
+${existingCategories.map(c => `- "${c}"`).join('\n')}
+
+ДААЛГАВАР: Дээрх бүх барааг нэг бүрчлэн шалгаж, асуудалтай бараа бүрийг олж мэдэгд.
+
+ШАЛГАХ ЗҮЙЛС:
+
+1. **missing_description** (high): Тайлбар хоосон эсвэл "(хоосон)" бол
+2. **short_description** (medium): Тайлбар 50 тэмдэгтээс бага бол
+3. **bad_name** (medium): Нэр нь эможи, зар текст ("ЯРААРАЙ!", "ШИН ИРЛЭЭ!"), код (#123) агуулж байвал → цэвэр нэр санал болго
+4. **wrong_category** (medium): Ангилал нь барааны төрөлтэй тохирохгүй бол → зөв ангилалыг ОДОО БАЙГАА жагсаалтаас сонгож санал болго
+5. **duplicate** (high): Хоёр бараа ижил зүйл бол (нэр ижил, жаахан өөр бичигдсэн) → аль нэгийг нь тэмдэглэ
+6. **not_product** (high): Энэ нь бараа биш (зар мэдэгдэл, мэндчилгээ, мэдээлэл) бол
+7. **missing_price** (medium): Зарах үнэ 0 бол
+
+ДҮРЭМ:
+- Зөвхөн БОДИТ асуудалтай барааг тэмдэглэ, хэвийн барааг тэмдэглэхГҮЙ
+- duplicate шалгахдаа нэрний ижил утгыг анхааралтай хар (жнь "Hershey's Kisses 100г" ба "Hershey's Kisses Milk Chocolate 100g" = давхардал)
+- wrong_category: ЗААВАЛ одоо байгаа ангилалуудаас нэрийг ТОДОРХОЙ бич
+- suggestion-д ЗОХИОСОН мэдээлэл бичихГҮЙ, зөвхөн барааны нэрнээс гаргаж чадах мэдээллийг бич
+- missing_description / short_description-д suggestion-д "Энэ барааны тайлбар дутуу байна, нэмж бичнэ үү" гэж бич (AI зохиохгүй)
+- JSON формат ЗААВАЛ дагах
+
+JSON ХАРИУ:
+{
+  "issues": [
+    {
+      "productId": "id_here",
+      "productName": "нэр",
+      "type": "missing_description",
+      "severity": "high",
+      "message": "Тайлбар хоосон байна",
+      "suggestion": "Тайлбар нэмж бичнэ үү",
+      "action": { "type": "update", "field": "description", "value": "" }
+    }
+  ],
+  "summary": "Нийт X бараанаас Y-д асуудал олдлоо: ... товч дүгнэлт"
+}
+
+Хэрэв БҮГД хэвийн бол: {"issues": [], "summary": "Бүх бараа хэвийн байна ✅"}`;
+
+    try {
+        const response = await client.models.generateContent({
+            model: 'gemini-2.5-flash',
+            contents: [{ role: 'user', parts: [{ text: prompt }] }],
+            config: { responseMimeType: 'application/json' }
+        });
+
+        const rawText = response.text || '{}';
+        let parsed: any;
+        try {
+            parsed = JSON.parse(rawText);
+        } catch {
+            const cleaned = rawText.replace(/```json\n?|\n?```/g, '').trim();
+            parsed = JSON.parse(cleaned);
+        }
+
+        const issues: ProductAuditIssue[] = (parsed.issues || []).map((issue: any) => ({
+            productId: issue.productId || '',
+            productName: issue.productName || '',
+            type: issue.type || 'missing_description',
+            severity: issue.severity || 'medium',
+            message: issue.message || '',
+            suggestion: issue.suggestion || undefined,
+            action: issue.action || undefined,
+        }));
+
+        return {
+            totalProducts: products.length,
+            issueCount: issues.length,
+            issues,
+            summary: parsed.summary || `${issues.length} асуудал олдлоо`,
+        };
+    } catch (error: unknown) {
+        console.error('Product Audit Error:', error);
+        throw new Error('Бараа шалгахад алдаа гарлаа. Дахин оролдоно уу.');
+    }
+}
