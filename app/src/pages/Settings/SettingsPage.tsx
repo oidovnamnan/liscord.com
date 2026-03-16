@@ -75,10 +75,12 @@ export function SettingsPage() {
 
     const isStorefrontLocked = useMemo(() => {
         if (isInGracePeriod) return false;
-        if (!business?.lastStorefrontChangeAt) return false;
-        const daysSince = (Date.now() - business.lastStorefrontChangeAt.getTime()) / (1000 * 3600 * 24);
+        // Reference: last change, or creation date if never changed
+        const referenceDate = business?.lastStorefrontChangeAt || business?.createdAt;
+        if (!referenceDate) return false;
+        const daysSince = (Date.now() - referenceDate.getTime()) / (1000 * 3600 * 24);
         return daysSince < 365;
-    }, [business?.lastStorefrontChangeAt, isInGracePeriod]);
+    }, [business?.lastStorefrontChangeAt, business?.createdAt, isInGracePeriod]);
 
     useEffect(() => {
         setIsDirty(false);
