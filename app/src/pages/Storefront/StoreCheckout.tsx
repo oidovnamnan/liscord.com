@@ -534,7 +534,7 @@ export function StoreCheckout() {
 
     // ──────── CHECKOUT FORM ────────
     return (
-        <div className="store-bg" style={{ minHeight: '100vh', paddingBottom: 60 }}>
+        <div className="store-bg checkout-page" style={{ minHeight: '100vh', paddingBottom: 60 }}>
             <nav className="store-nav" style={{ borderBottom: '1px solid var(--border-color)', background: 'var(--surface-1)', padding: 0 }}>
                 <div style={{ maxWidth: 1100, margin: '0 auto', width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 20px' }}>
                     <button className="btn btn-ghost" onClick={() => navigate(`/${slug}`)} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: 0 }}>
@@ -929,6 +929,10 @@ export function StoreCheckout() {
                         }
                     }
                     @media (max-width: 768px) {
+                        .checkout-page {
+                            min-height: auto !important;
+                            padding-bottom: 0 !important;
+                        }
                         .checkout-grid .settings-card {
                             padding: 16px !important;
                             border-radius: 16px !important;
