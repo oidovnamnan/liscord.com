@@ -645,9 +645,17 @@ function SourcingDetailModal({ order, businessId, settings, onClose, onUpdate }:
                 notes,
                 updatedAt: Timestamp.now(),
             };
-            await updateDoc(doc(db, 'businesses', businessId, 'orders', order.id), {
+            const orderUpdate: Record<string, unknown> = {
                 sourcing: sourcingData,
-            });
+            };
+            // Auto-advance order status: sourcing ordered/arrived → order 'sourced'
+            if (['ordered', 'arrived', 'picked_up', 'delivered', 'fulfilled'].includes(finalStatus)) {
+                const currentOrderStatus = order.status || 'new';
+                if (['new', 'confirmed'].includes(currentOrderStatus)) {
+                    orderUpdate.status = 'sourced';
+                }
+            }
+            await updateDoc(doc(db, 'businesses', businessId, 'orders', order.id), orderUpdate);
             const updated: SourcingOrder = {
                 ...order,
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -1050,9 +1058,17 @@ function BatchSourcingModal({ orders, allOrders, businessId, settings, generateB
                     updatedAt: Timestamp.now(),
                 };
 
-                return updateDoc(doc(db, 'businesses', businessId, 'orders', order.id), {
+                const orderUpdate: Record<string, unknown> = {
                     sourcing: sourcingData,
-                });
+                };
+                // Auto-advance order status: sourcing ordered → order 'sourced'
+                if (['ordered', 'arrived', 'picked_up', 'delivered', 'fulfilled'].includes(statusOverride)) {
+                    const currentOrderStatus = order.status || 'new';
+                    if (['new', 'confirmed'].includes(currentOrderStatus)) {
+                        orderUpdate.status = 'sourced';
+                    }
+                }
+                return updateDoc(doc(db, 'businesses', businessId, 'orders', order.id), orderUpdate);
             });
 
             await Promise.all(promises);
