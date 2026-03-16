@@ -633,12 +633,36 @@
 
 @media (max-width: 768px) {
     .sf-footer {
-        padding: 48px 20px 32px;
+        padding: 16px 16px 12px;
+        margin-top: 24px;
+    }
+
+    .sf-footer-content {
+        gap: 12px;
+    }
+
+    .sf-footer-biz-name {
+        display: none;
+    }
+
+    .sf-footer-info {
+        margin-bottom: 0;
+    }
+
+    .sf-footer-details {
+        gap: 12px;
+    }
+
+    .sf-footer-item {
+        font-size: 0.78rem;
     }
 
     .sf-footer-bottom {
         flex-direction: column;
         text-align: center;
+        padding-top: 12px;
+        gap: 4px;
+        font-size: 0.72rem;
     }
 }
 
