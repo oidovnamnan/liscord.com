@@ -243,7 +243,6 @@ export function StoreCheckout() {
             const newId = await orderService.createOrder(business.id, orderPayload);
             setSavedTotal(finalTotal);
             window.scrollTo(0, 0);
-            clearCart();
 
             if (name) localStorage.setItem(`customer_name_${business.id}`, name);
             if (phone) localStorage.setItem(`customer_phone_${business.id}`, phone);
@@ -279,6 +278,7 @@ export function StoreCheckout() {
             }
 
             setSuccessId(newId);
+            clearCart();
         } catch (error) {
             console.error('Failed to create order', error);
             toast.error('Захиалга үүсгэхэд алдаа гарлаа');
@@ -693,7 +693,7 @@ export function StoreCheckout() {
     }
 
     // ──────── EMPTY CART ────────
-    if (items.length === 0) {
+    if (items.length === 0 && !loading) {
         return (
             <div className="store-bg" style={{ minHeight: '100vh', padding: 40, textAlign: 'center' }}>
                 <h2>Таны сагс хоосон байна</h2>
