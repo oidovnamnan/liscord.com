@@ -280,3 +280,149 @@ JSON ХАРИУ:
         throw new Error('Бараа шалгахад алдаа гарлаа. Дахин оролдоно уу.');
     }
 }
+
+// ============ Category Audit ============
+
+export interface CategoryMergeSuggestion {
+    sourceId: string;
+    sourceName: string;
+    sourceProductCount: number;
+    targetId: string;
+    targetName: string;
+    targetProductCount: number;
+    reason: string;
+}
+
+export interface CategoryAuditResult {
+    totalCategories: number;
+    mergeGroups: CategoryMergeSuggestion[];
+    summary: string;
+}
+
+interface AuditCategory {
+    id: string;
+    name: string;
+    productCount: number;
+}
+
+/**
+ * Audit categories for duplicates using both exact-match and AI semantic matching.
+ */
+export async function auditCategories(
+    apiKey: string,
+    categories: AuditCategory[]
+): Promise<CategoryAuditResult> {
+    // Phase 1: exact duplicates (same name, different IDs)
+    const exactDuplicates: CategoryMergeSuggestion[] = [];
+    const nameGroups = new Map<string, AuditCategory[]>();
+
+    for (const cat of categories) {
+        const key = cat.name.trim().toLowerCase();
+        if (!nameGroups.has(key)) nameGroups.set(key, []);
+        nameGroups.get(key)!.push(cat);
+    }
+
+    for (const [, group] of nameGroups) {
+        if (group.length <= 1) continue;
+        // Keep the one with most products as target
+        const sorted = [...group].sort((a, b) => b.productCount - a.productCount);
+        const target = sorted[0];
+        for (let i = 1; i < sorted.length; i++) {
+            exactDuplicates.push({
+                sourceId: sorted[i].id,
+                sourceName: sorted[i].name,
+                sourceProductCount: sorted[i].productCount,
+                targetId: target.id,
+                targetName: target.name,
+                targetProductCount: target.productCount,
+                reason: `Нэр яг ижил: "${sorted[i].name}"`,
+            });
+        }
+    }
+
+    // Phase 2: AI semantic similarity check (only for unique-name categories)
+    const uniqueCategories = [...nameGroups.entries()]
+        .filter(([, g]) => g.length === 1)
+        .map(([, g]) => g[0]);
+
+    let aiMerges: CategoryMergeSuggestion[] = [];
+
+    if (uniqueCategories.length > 1) {
+        const client = getClient(apiKey);
+        const catList = uniqueCategories
+            .map(c => `[${c.id}] "${c.name}" (${c.productCount} бараа)`)
+            .join('\n');
+
+        const prompt = `Дараах ангилалуудыг шалгаж, УТГА ИЖИЛ ангилалуудыг нэгтгэхийг санал болго.
+
+АНГИЛАЛУУД:
+${catList}
+
+ДҮРЭМ:
+- Зөвхөн УТГА НЬ БОДИТООР ИЖИЛ ангилалуудыг нэгтгэ
+- Жишээ: "Гэр ахуйн бараа" ба "Гэр ахуйн хэрэгсэл" = ИЖИЛ
+- Жишээ: "Алкоголь" ба "Спирттэй ундаа" = ИЖИЛ
+- Жишээ: "Хүнс" ба "Нэмэлт тэжээл" = ӨӨР (нэгтгэхгүй)
+- Бараа тоо ихтэйг нь TARGET болгох (source → target руу нэгтгэнэ)
+- Илт ижил биш бол нэгтгэхгүй
+
+JSON ХАРИУ:
+{
+  "merges": [
+    {
+      "sourceId": "...",
+      "sourceName": "...",
+      "targetId": "...",
+      "targetName": "...",
+      "reason": "Утга ижил: ..."
+    }
+  ],
+  "summary": "X ангилал нэгтгэх санал"
+}
+
+Нэгтгэх зүйл олдохгүй бол: {"merges": [], "summary": "Давхардал олдсонгүй"}`;
+
+        try {
+            const response = await client.models.generateContent({
+                model: 'gemini-2.5-flash',
+                contents: [{ role: 'user', parts: [{ text: prompt }] }],
+                config: { responseMimeType: 'application/json' }
+            });
+
+            const rawText = response.text || '{}';
+            let parsed: any;
+            try {
+                parsed = JSON.parse(rawText);
+            } catch {
+                const cleaned = rawText.replace(/```json\n?|\n?```/g, '').trim();
+                parsed = JSON.parse(cleaned);
+            }
+
+            aiMerges = (parsed.merges || []).map((m: any) => {
+                const source = uniqueCategories.find(c => c.id === m.sourceId);
+                const target = uniqueCategories.find(c => c.id === m.targetId);
+                return {
+                    sourceId: m.sourceId,
+                    sourceName: m.sourceName || source?.name || '',
+                    sourceProductCount: source?.productCount || 0,
+                    targetId: m.targetId,
+                    targetName: m.targetName || target?.name || '',
+                    targetProductCount: target?.productCount || 0,
+                    reason: m.reason || 'Утга ижил',
+                };
+            }).filter((m: CategoryMergeSuggestion) => m.sourceId && m.targetId);
+        } catch (e) {
+            console.warn('AI category audit failed, using exact matches only:', e);
+        }
+    }
+
+    const allMerges = [...exactDuplicates, ...aiMerges];
+
+    return {
+        totalCategories: categories.length,
+        mergeGroups: allMerges,
+        summary: allMerges.length === 0
+            ? 'Давхардсан ангилал олдсонгүй ✅'
+            : `${allMerges.length} ангилал нэгтгэх санал байна`,
+    };
+}

@@ -2,12 +2,12 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Sparkles, Brain, Zap, BarChart3, Bot, ChevronDown, AlertTriangle, Send, Loader2, Target, ShieldCheck, Package, TrendingUp, MessageSquare } from 'lucide-react';
 import { useAuthStore, useBusinessStore } from '../../store';
 import { globalSettingsService } from '../../services/adminService';
-import { sendChatMessage, auditProducts, type ChatMessage, type BusinessContext, type ProductAuditIssue, type AuditResult } from '../../services/ai/aiChatService';
-import { productService, customerService, teamService } from '../../services/db';
+import { sendChatMessage, auditProducts, auditCategories, type ChatMessage, type BusinessContext, type ProductAuditIssue, type AuditResult, type CategoryAuditResult, type CategoryMergeSuggestion } from '../../services/ai/aiChatService';
+import { productService, customerService, teamService, categoryService } from '../../services/db';
 import { orderService } from '../../services/db';
 import { collection, onSnapshot, Timestamp } from 'firebase/firestore';
 import { db } from '../../services/firebase';
-import type { Product, Order, Customer } from '../../types';
+import type { Product, Order, Customer, Category } from '../../types';
 import toast from 'react-hot-toast';
 import './AIAgentPage.css';
 
@@ -78,6 +78,10 @@ export const AIAgentPage: React.FC = () => {
     const [appliedFixes, setAppliedFixes] = useState<Set<string>>(new Set());
     const [applyingFix, setApplyingFix] = useState<string | null>(null);
     const productsRef = useRef<Product[]>([]);
+    const categoriesRef = useRef<Category[]>([]);
+    const [categoryAudit, setCategoryAudit] = useState<CategoryAuditResult | null>(null);
+    const [mergedCategories, setMergedCategories] = useState<Set<string>>(new Set());
+    const [mergingCategory, setMergingCategory] = useState<string | null>(null);
 
     // Fetch Gemini API key
     useEffect(() => {
@@ -163,8 +167,9 @@ export const AIAgentPage: React.FC = () => {
         const unsub2 = orderService.subscribeOrders(bizId, (o) => { orders = o; buildContext(); });
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const unsub3 = customerService.subscribeCustomers(bizId, (c: any) => { customers = c; buildContext(); });
+        const unsub4 = categoryService.subscribeCategories(bizId, (cats) => { categoriesRef.current = cats; });
 
-        return () => { unsub1(); unsub2(); unsub3(); };
+        return () => { unsub1(); unsub2(); unsub3(); unsub4(); };
     }, [business?.id, business?.name]);
 
     // Load VIP memberships count
@@ -354,6 +359,88 @@ export const AIAgentPage: React.FC = () => {
         toast.success(`${fixable.length} засвар хийгдлээ ✅`);
     };
 
+    // ── Category Audit Handler ──
+    const handleCategoryAudit = async () => {
+        if (!geminiApiKey) { toast.error('AI API Key тохируулаагүй байна.'); return; }
+        if (categoriesRef.current.length === 0) { toast.error('Ангилал ачаалагдаагүй байна.'); return; }
+
+        const userMsg: Message = {
+            id: Date.now().toString(), role: 'user',
+            text: '🏷️ Ангилал цэгцлэх — давхардсан ангилалуудыг олж нэгтгэх',
+            timestamp: new Date()
+        };
+        setMessages(prev => [...prev, userMsg]);
+        setIsTyping(true);
+        setCategoryAudit(null);
+        setMergedCategories(new Set());
+
+        try {
+            const cats = categoriesRef.current
+                .filter(c => !c.isDeleted)
+                .map(c => ({ id: c.id, name: c.name, productCount: c.productCount || 0 }));
+
+            const result = await auditCategories(geminiApiKey, cats);
+            setCategoryAudit(result);
+
+            const summaryText = result.mergeGroups.length === 0
+                ? '✅ Давхардсан ангилал олдсонгүй! Бүгд хэвийн.'
+                : `🏷️ **Ангилал шалгалт:** ${result.totalCategories} ангилалаас **${result.mergeGroups.length}** нэгтгэх санал олдлоо.\n\n${result.summary}\n\nДоорх жагсаалтаас нэг нэгээр нэгтгэх эсвэл "Бүгдийг нэгтгэх" товч дарна уу.`;
+
+            setMessages(prev => [...prev, {
+                id: 'cat-audit-result', role: 'bot', text: summaryText, timestamp: new Date()
+            }]);
+        } catch (error: unknown) {
+            const msg = error instanceof Error ? error.message : 'Ангилал шалгахад алдаа гарлаа.';
+            toast.error(msg);
+            setMessages(prev => [...prev, { id: (Date.now() + 1).toString(), role: 'bot', text: `⚠️ ${msg}`, timestamp: new Date() }]);
+        } finally {
+            setIsTyping(false);
+        }
+    };
+
+    // ── Merge single category ──
+    const handleMergeCategory = async (merge: CategoryMergeSuggestion) => {
+        if (!business?.id) return;
+        const mergeKey = merge.sourceId;
+        setMergingCategory(mergeKey);
+
+        try {
+            // Find products in source category
+            const productsInSource = productsRef.current.filter(
+                p => !p.isDeleted && (p.categoryId === merge.sourceId || p.categoryName === merge.sourceName)
+            );
+
+            // Move products to target category
+            if (productsInSource.length > 0) {
+                const productIds = productsInSource.map(p => p.id);
+                await productService.bulkUpdateProducts(business.id, productIds, {
+                    categoryId: merge.targetId,
+                    categoryName: merge.targetName,
+                } as any);
+            }
+
+            // Delete source category
+            await categoryService.deleteCategory(business.id, merge.sourceId);
+
+            toast.success(`"${merge.sourceName}" → "${merge.targetName}" нэгтгэгдлээ (${productsInSource.length} бараа)`);
+            setMergedCategories(prev => new Set([...prev, mergeKey]));
+        } catch (error) {
+            toast.error('Нэгтгэхэд алдаа гарлаа');
+        } finally {
+            setMergingCategory(null);
+        }
+    };
+
+    // ── Merge all categories ──
+    const handleMergeAllCategories = async () => {
+        if (!categoryAudit) return;
+        const pending = categoryAudit.mergeGroups.filter(m => !mergedCategories.has(m.sourceId));
+        for (const merge of pending) {
+            await handleMergeCategory(merge);
+        }
+        toast.success(`${pending.length} ангилал нэгтгэгдлээ ✅`);
+    };
+
     const handleActionToggle = (name: string, value: boolean) => {
         toast.success(`${name} ${value ? 'идэвхжлээ' : 'идэвхгүй боллоо'}`, {
             icon: value ? '🚀' : '🔒',
@@ -536,6 +623,53 @@ export const AIAgentPage: React.FC = () => {
                             </div>
                         )}
 
+                        {/* ── Category Audit Result Cards ── */}
+                        {categoryAudit && categoryAudit.mergeGroups.length > 0 && (
+                            <div className="audit-results-container">
+                                <div className="audit-header-bar">
+                                    <span>🏷️ {categoryAudit.mergeGroups.length} ангилал нэгтгэх</span>
+                                    <button
+                                        className="btn btn-primary"
+                                        style={{ padding: '6px 16px', fontSize: '0.8rem' }}
+                                        onClick={handleMergeAllCategories}
+                                        disabled={categoryAudit.mergeGroups.every(m => mergedCategories.has(m.sourceId))}
+                                    >
+                                        ✨ Бүгдийг нэгтгэх
+                                    </button>
+                                </div>
+                                {categoryAudit.mergeGroups.map((merge, idx) => {
+                                    const isMerged = mergedCategories.has(merge.sourceId);
+                                    const isMerging = mergingCategory === merge.sourceId;
+
+                                    return (
+                                        <div key={idx} className={`audit-issue-card ${isMerged ? 'applied' : ''}`} style={{ borderLeftColor: '#a855f7' }}>
+                                            <div className="audit-issue-top">
+                                                <span className="audit-issue-icon">🔀</span>
+                                                <div className="audit-issue-info">
+                                                    <div className="audit-issue-name">
+                                                        "{merge.sourceName}" ({merge.sourceProductCount} бараа) → "{merge.targetName}" ({merge.targetProductCount} бараа)
+                                                    </div>
+                                                    <div className="audit-issue-type" style={{ color: '#a855f7' }}>Нэгтгэх</div>
+                                                </div>
+                                            </div>
+                                            <div className="audit-issue-msg">{merge.reason}</div>
+                                            {!isMerged && (
+                                                <button
+                                                    className="audit-fix-btn"
+                                                    onClick={() => handleMergeCategory(merge)}
+                                                    disabled={isMerging}
+                                                >
+                                                    {isMerging ? <Loader2 size={14} className="animate-spin" /> : '🔀'}
+                                                    {isMerging ? ' Нэгтгэж байна...' : ' Нэгтгэх'}
+                                                </button>
+                                            )}
+                                            {isMerged && <span className="audit-applied-badge">✅ Нэгтгэгдсэн</span>}
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        )}
+
                         <div ref={chatEndRef} />
                     </div>
 
@@ -555,6 +689,7 @@ export const AIAgentPage: React.FC = () => {
                         <div className="chat-suggestions">
                             {[
                                 { t: '🧹 Бараа цэгцлэх', i: <Sparkles size={14} />, action: handleProductAudit },
+                                { t: '🏷️ Ангилал цэгцлэх', i: <Sparkles size={14} />, action: handleCategoryAudit },
                                 { t: 'Борлуулалтын тайлан гарга', i: <BarChart3 size={14} /> },
                                 { t: 'Үлдэгдэл бага барааг мэдэгд', i: <Package size={14} /> },
                                 { t: 'Маркетингийн зөвлөгөө өг', i: <TrendingUp size={14} /> },
