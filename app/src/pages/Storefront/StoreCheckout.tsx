@@ -545,15 +545,15 @@ export function StoreCheckout() {
                 </div>
             </nav>
 
-            <main className="store-container" style={{ maxWidth: 1100, marginTop: 40, margin: '40px auto 0' }}>
+            <main className="store-container" style={{ maxWidth: 1100, marginTop: 24, margin: '24px auto 0' }}>
                 <form onSubmit={handleSubmit} style={{ display: 'grid', gridTemplateColumns: '1fr 420px', gap: 40, alignItems: 'start' }} className="checkout-grid">
 
                     {/* Left Column */}
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
                         {/* Delivery Info */}
                         <div className="settings-card animate-slide-up" style={{ padding: 32, borderRadius: 24, boxShadow: 'var(--shadow-sm)', border: '1px solid var(--border-color)', background: 'var(--surface-1)' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24 }}>
-                                <div style={{ width: 44, height: 44, borderRadius: 12, background: 'rgba(var(--primary-rgb), 0.1)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <div className="checkout-section-header" style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24 }}>
+                                <div className="checkout-section-icon" style={{ width: 44, height: 44, borderRadius: 12, background: 'rgba(var(--primary-rgb), 0.1)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                                     <MapPin size={22} />
                                 </div>
                                 <h2 style={{ fontSize: '1.25rem', fontWeight: 800, margin: 0 }}>Хүргэлтийн мэдээлэл</h2>
@@ -652,8 +652,8 @@ export function StoreCheckout() {
 
                         {/* ──────── PAYMENT METHOD ──────── */}
                         <div className="settings-card animate-slide-up" style={{ padding: 32, borderRadius: 24, boxShadow: 'var(--shadow-sm)', border: '1px solid var(--border-color)', background: 'var(--surface-1)', animationDelay: '0.1s' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
-                                <div style={{ width: 44, height: 44, borderRadius: 12, background: 'rgba(var(--primary-rgb), 0.1)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <div className="checkout-section-header" style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
+                                <div className="checkout-section-icon" style={{ width: 44, height: 44, borderRadius: 12, background: 'rgba(var(--primary-rgb), 0.1)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                                     <CreditCard size={22} />
                                 </div>
                                 <h2 style={{ fontSize: '1.25rem', fontWeight: 800, margin: 0 }}>Төлбөрийн хэлбэр</h2>
@@ -662,6 +662,7 @@ export function StoreCheckout() {
                             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                                 {/* Bank Transfer - Active */}
                                 <div
+                                    className="payment-option"
                                     onClick={() => setPaymentMethod('bank_transfer')}
                                     style={{
                                         padding: '16px 20px', borderRadius: 16, cursor: 'pointer',
@@ -670,7 +671,7 @@ export function StoreCheckout() {
                                         display: 'flex', alignItems: 'center', gap: 14, transition: 'all 0.2s ease',
                                     }}
                                 >
-                                    <div style={{
+                                    <div className="payment-option-icon" style={{
                                         width: 42, height: 42, borderRadius: 12,
                                         background: paymentMethod === 'bank_transfer' ? 'var(--primary)' : 'var(--bg-soft)',
                                         color: paymentMethod === 'bank_transfer' ? '#fff' : 'var(--text-muted)',
@@ -691,8 +692,7 @@ export function StoreCheckout() {
                                     </div>
                                 </div>
 
-                                {/* QPay - Coming Soon */}
-                                <div style={{
+                                <div className="payment-disabled" style={{
                                     padding: '16px 20px', borderRadius: 16,
                                     border: '1px solid var(--border-color)',
                                     background: 'var(--bg-soft)',
@@ -716,8 +716,7 @@ export function StoreCheckout() {
                                     }}>Тун удахгүй</span>
                                 </div>
 
-                                {/* Social Pay - Coming Soon */}
-                                <div style={{
+                                <div className="payment-disabled" style={{
                                     padding: '16px 20px', borderRadius: 16,
                                     border: '1px solid var(--border-color)',
                                     background: 'var(--bg-soft)',
@@ -764,7 +763,7 @@ export function StoreCheckout() {
 
                                     {/* Selected bank details card */}
                                     {selectedBank && (
-                                        <div style={{
+                                        <div className="bank-details-card" style={{
                                             padding: 20, borderRadius: 16,
                                             background: 'var(--bg-soft)',
                                             border: '1px solid var(--border-primary)',
@@ -860,8 +859,8 @@ export function StoreCheckout() {
                         <div className="custom-scrollbar" style={{ padding: '24px 32px', maxHeight: '45vh', overflowY: 'auto' }}>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
                                 {items.map((item, idx) => (
-                                    <div key={`${item.product.id}-${idx}`} style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
-                                        <div style={{ width: 64, height: 64, flexShrink: 0, position: 'relative' }}>
+                                    <div key={`${item.product.id}-${idx}`} style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+                                        <div className="summary-item-image" style={{ width: 64, height: 64, flexShrink: 0, position: 'relative' }}>
                                             <div style={{ width: '100%', height: '100%', borderRadius: 12, background: 'var(--bg-soft)', overflow: 'hidden', border: '1px solid var(--border-color)' }}>
                                                 {item.product.images?.[0] ? (
                                                     <img src={item.product.images[0]} alt={item.product.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
@@ -871,14 +870,14 @@ export function StoreCheckout() {
                                                     </div>
                                                 )}
                                             </div>
-                                            <div style={{ position: 'absolute', top: -8, right: -8, background: 'var(--text-primary)', color: 'white', fontSize: '0.75rem', fontWeight: 800, minWidth: 22, height: 22, padding: '0 6px', borderRadius: 11, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px solid var(--surface-1)', zIndex: 2, boxShadow: '0 2px 4px rgba(0,0,0,0.2)' }}>
+                                            <div className="summary-item-badge" style={{ position: 'absolute', top: -8, right: -8, background: 'var(--text-primary)', color: 'white', fontSize: '0.75rem', fontWeight: 800, minWidth: 22, height: 22, padding: '0 6px', borderRadius: 11, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px solid var(--surface-1)', zIndex: 2, boxShadow: '0 2px 4px rgba(0,0,0,0.2)' }}>
                                                 {item.quantity}
                                             </div>
                                         </div>
                                         <div style={{ flex: 1, minWidth: 0 }}>
-                                            <div style={{ fontWeight: 700, fontSize: '0.95rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: 'var(--text-primary)' }}>{item.product.name}</div>
+                                            <div className="summary-item-name" style={{ fontWeight: 700, fontSize: '0.95rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: 'var(--text-primary)' }}>{item.product.name}</div>
                                             {item.variant && <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: 2, fontWeight: 500 }}>{Object.values(item.variant).join(' - ')}</div>}
-                                            <div style={{ fontWeight: 800, color: 'var(--text-main)', marginTop: 4 }}>{(item.price * item.quantity).toLocaleString()} ₮</div>
+                                            <div className="summary-item-price" style={{ fontWeight: 800, color: 'var(--text-main)', marginTop: 4 }}>{(item.price * item.quantity).toLocaleString()} ₮</div>
                                         </div>
                                     </div>
                                 ))}
@@ -894,7 +893,7 @@ export function StoreCheckout() {
                                 <span style={{ fontWeight: 500 }}>Хүргэлтийн төлбөр:</span>
                                 <span style={{ fontWeight: 700, color: 'var(--text-primary)' }}>{currentFee.toLocaleString()} ₮</span>
                             </div>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: 20, borderTop: '1px dashed var(--border-primary)', fontWeight: 900, fontSize: '1.4rem', color: 'var(--text-primary)' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: 16, borderTop: '1px dashed var(--border-primary)', fontWeight: 900, fontSize: '1.4rem', color: 'var(--text-primary)' }} className="summary-total-row">
                                 <span>Нийт төлөх:</span>
                                 <div style={{ textAlign: 'right' }}>
                                     <div style={{ color: 'var(--primary)' }}>{finalTotal.toLocaleString()} ₮</div>
@@ -902,8 +901,8 @@ export function StoreCheckout() {
                             </div>
                         </div>
 
-                        <div style={{ padding: '24px 32px', background: 'var(--surface-1)' }}>
-                            <button type="submit" className="btn btn-primary gradient-btn premium-btn" style={{ width: '100%', height: 56, fontSize: '1.1rem', borderRadius: 16, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, transition: 'all 0.3s ease', opacity: !isFormValid ? 0.5 : 1 }} disabled={loading || !isFormValid}>
+                        <div className="summary-footer" style={{ padding: '24px 32px', background: 'var(--surface-1)' }}>
+                            <button type="submit" className="btn btn-primary gradient-btn premium-btn summary-submit-btn" style={{ width: '100%', height: 56, fontSize: '1.1rem', borderRadius: 16, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, transition: 'all 0.3s ease', opacity: !isFormValid ? 0.5 : 1 }} disabled={loading || !isFormValid}>
                                 {loading ? 'Уншиж байна...' : (
                                     <>
                                         <ShieldCheck size={20} />
@@ -922,10 +921,105 @@ export function StoreCheckout() {
                     @media (max-width: 900px) {
                         .checkout-grid {
                             grid-template-columns: 1fr !important;
+                            gap: 12px !important;
                         }
                         .summary-sidebar {
                             position: static !important;
-                            margin-top: 24px;
+                            margin-top: 0 !important;
+                        }
+                    }
+                    @media (max-width: 768px) {
+                        .checkout-grid .settings-card {
+                            padding: 16px !important;
+                            border-radius: 16px !important;
+                        }
+                        .checkout-grid .settings-card h2 {
+                            font-size: 1rem !important;
+                        }
+                        /* Hide section header icons on mobile */
+                        .checkout-section-icon {
+                            display: none !important;
+                        }
+                        /* Compact section headers */
+                        .checkout-section-header {
+                            margin-bottom: 14px !important;
+                            gap: 0 !important;
+                        }
+                        /* Compact inputs */
+                        .checkout-grid .input-group {
+                            margin-bottom: 0 !important;
+                        }
+                        .checkout-grid .grid-2-gap {
+                            gap: 10px !important;
+                            margin-bottom: 12px !important;
+                        }
+                        .checkout-grid .input {
+                            height: 42px !important;
+                            font-size: 0.9rem !important;
+                        }
+                        .checkout-grid .input-label {
+                            font-size: 0.72rem !important;
+                            margin-bottom: 4px !important;
+                        }
+                        /* Hide disabled payment methods */
+                        .payment-disabled {
+                            display: none !important;
+                        }
+                        /* Compact payment option */
+                        .payment-option {
+                            padding: 12px 14px !important;
+                            border-radius: 12px !important;
+                        }
+                        .payment-option-icon {
+                            width: 34px !important;
+                            height: 34px !important;
+                            border-radius: 8px !important;
+                        }
+                        /* Compact bank details */
+                        .bank-details-card {
+                            padding: 14px !important;
+                            border-radius: 12px !important;
+                        }
+                        /* Compact summary */
+                        .summary-sidebar {
+                            border-radius: 16px !important;
+                        }
+                        .summary-sidebar > div {
+                            padding-left: 16px !important;
+                            padding-right: 16px !important;
+                        }
+                        .summary-item-image {
+                            width: 48px !important;
+                            height: 48px !important;
+                        }
+                        .summary-item-badge {
+                            min-width: 18px !important;
+                            height: 18px !important;
+                            font-size: 0.65rem !important;
+                            top: -6px !important;
+                            right: -6px !important;
+                        }
+                        .summary-item-name {
+                            font-size: 0.85rem !important;
+                        }
+                        .summary-item-price {
+                            font-size: 0.85rem !important;
+                        }
+                        .summary-total-row {
+                            font-size: 1.15rem !important;
+                            padding-top: 12px !important;
+                        }
+                        .summary-submit-btn {
+                            height: 48px !important;
+                            font-size: 0.95rem !important;
+                            border-radius: 12px !important;
+                        }
+                        .summary-footer {
+                            padding: 16px !important;
+                        }
+                        .summary-footer p {
+                            margin-top: 10px !important;
+                            font-size: 0.72rem !important;
                         }
                     }
                     .custom-scrollbar::-webkit-scrollbar {
