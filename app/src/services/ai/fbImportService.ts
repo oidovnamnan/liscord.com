@@ -499,7 +499,7 @@ export function detectDuplicates(
 
         // 55%+ combined score = duplicate
         if (dbMatch && dbMatch.score >= 55) {
-            console.log(`[FB Import] DB duplicate: "${product.name}" ≈ "${dbMatch.name}" (${dbMatch.score.toFixed(0)}%)`);
+
             result.push({
                 ...product,
                 status: 'duplicate' as const,
@@ -534,7 +534,7 @@ export function detectDuplicates(
         }
 
         if (batchMatch && batchMatch.score >= 55) {
-            console.log(`[FB Import] Batch duplicate: "${product.name}" ≈ "${batchMatch.name}" (${batchMatch.score.toFixed(0)}%) — skipping`);
+
             const firstProduct = result[batchMatch.index];
             if (firstProduct) {
                 const mergedImages = [...firstProduct.images];

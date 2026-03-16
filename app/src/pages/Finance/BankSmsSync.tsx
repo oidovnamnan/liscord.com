@@ -194,7 +194,7 @@ export function BankSmsSyncPage() {
                     });
                     const idx = unpaidOrders.indexOf(matched);
                     if (idx > -1) unpaidOrders.splice(idx, 1);
-                    console.log(`Auto-matched SMS ${sms.id} → Order ${matched.id}`);
+                    // Auto-matched successfully
                 }
             } catch (err) {
                 console.error('Auto-match error for SMS:', sms.id, err);

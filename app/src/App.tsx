@@ -358,7 +358,7 @@ export default function App() {
                     fcmTokens: arrayUnion(fcmToken),
                     fcmLastRegistered: serverTimestamp(),
                   });
-                  console.log('[FCM] Token registered successfully');
+                  // FCM token registered
                 }
               }
             }

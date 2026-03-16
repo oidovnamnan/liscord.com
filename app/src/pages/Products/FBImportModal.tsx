@@ -268,7 +268,7 @@ export function FBImportModal({ onClose }: FBImportModalProps) {
                     }
                 }
 
-                console.log('[FB Import] Creating product:', product.name, 'images:', finalImages.length);
+
 
                 // Build product data, removing undefined values (Firestore rejects them)
                 const productData: Record<string, any> = {
@@ -309,7 +309,7 @@ export function FBImportModal({ onClose }: FBImportModalProps) {
                 }
 
                 await productService.createProduct(business.id, productData);
-                console.log('[FB Import] Product created successfully:', product.name);
+
                 success++;
             } catch (error: any) {
                 console.error('[FB Import] Product creation FAILED:', product.name, error);
