@@ -993,13 +993,7 @@ export function StoreCheckout() {
                             padding: 14px !important;
                             border-radius: 12px !important;
                         }
-                        /* Hide summary items list on mobile */
-                        .summary-header {
-                            display: none !important;
-                        }
-                        .summary-items {
-                            display: none !important;
-                        }
+                        /* Compact summary */
                         .summary-sidebar {
                             border-radius: 16px !important;
                         }
