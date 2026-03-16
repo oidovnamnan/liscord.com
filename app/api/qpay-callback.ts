@@ -5,12 +5,11 @@ import * as admin from 'firebase-admin';
  * QPay V2 Callback — Vercel Serverless Function
  * 
  * QPay hits this URL when payment is completed.
- * Verifies payment with QPay API, updates order status in Firestore.
+ * Verifies payment with QPay API using per-business credentials,
+ * updates order status in Firestore.
  */
 
 const QPAY_API_URL = 'https://merchant.qpay.mn/v2';
-const QPAY_USERNAME = 'GATE_SIM';
-const QPAY_PASSWORD = '8r3bvsa3';
 
 // Initialize Firebase Admin (only once)
 if (!admin.apps.length) {
@@ -25,15 +24,17 @@ if (!admin.apps.length) {
 
 const db = admin.firestore();
 
-let accessToken: string | null = null;
-let tokenExpiry = 0;
+// Token cache per business
+const tokenCache: Record<string, { token: string; expiresAt: number }> = {};
 
-async function getAccessToken(): Promise<string> {
-    if (accessToken && Date.now() < tokenExpiry - 300000) {
-        return accessToken;
+async function getAccessToken(username: string, password: string): Promise<string> {
+    const cacheKey = `${username}:${password}`;
+    const cached = tokenCache[cacheKey];
+    if (cached && Date.now() < cached.expiresAt - 300000) {
+        return cached.token;
     }
 
-    const credentials = Buffer.from(`${QPAY_USERNAME}:${QPAY_PASSWORD}`).toString('base64');
+    const credentials = Buffer.from(`${username}:${password}`).toString('base64');
     const response = await fetch(`${QPAY_API_URL}/auth/token`, {
         method: 'POST',
         headers: {
@@ -45,9 +46,11 @@ async function getAccessToken(): Promise<string> {
     if (!response.ok) throw new Error(`QPay auth failed: ${response.status}`);
 
     const data = await response.json();
-    accessToken = data.access_token;
-    tokenExpiry = Date.now() + (data.expires_in * 1000);
-    return accessToken!;
+    tokenCache[cacheKey] = {
+        token: data.access_token,
+        expiresAt: Date.now() + (data.expires_in * 1000),
+    };
+    return data.access_token;
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -61,7 +64,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     try {
-        // 1. Get order
+        // 1. Get business credentials
+        const bizDoc = await db.doc(`businesses/${bizId}`).get();
+        if (!bizDoc.exists) return res.status(404).json({ error: 'Business not found' });
+
+        const qpay = bizDoc.data()!.settings?.qpay;
+        if (!qpay?.username || !qpay?.password) {
+            return res.status(400).json({ error: 'QPay credentials not configured' });
+        }
+
+        // 2. Get order
         const orderRef = db.doc(`businesses/${bizId}/orders/${orderId}`);
         const orderSnap = await orderRef.get();
         if (!orderSnap.exists) {
@@ -73,13 +85,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             return res.status(200).json({ message: 'Already paid' });
         }
 
-        // 2. Verify payment with QPay
+        // 3. Verify payment with QPay
         const invoiceId = orderData.qpayInvoiceId;
         if (!invoiceId) {
             return res.status(400).json({ error: 'No QPay invoice ID on order' });
         }
 
-        const token = await getAccessToken();
+        const token = await getAccessToken(qpay.username, qpay.password);
         const checkResp = await fetch(`${QPAY_API_URL}/payment/check`, {
             method: 'POST',
             headers: {
@@ -101,7 +113,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             return res.status(200).json({ message: 'Payment not confirmed yet' });
         }
 
-        // 3. Update order as paid
+        // 4. Update order as paid
         const now = admin.firestore.FieldValue.serverTimestamp();
         const totalAmount = orderData.financials?.totalAmount || 0;
 
@@ -122,7 +134,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             updatedAt: now,
         });
 
-        // 4. Grant membership if applicable
+        // 5. Grant membership if applicable
         if (orderData.orderType === 'membership' && orderData.membershipCategoryId) {
             const phone = orderData.customer?.phone || '';
             const durationDays = orderData.membershipDurationDays || 30;
@@ -140,7 +152,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             });
         }
 
-        // 5. Create notification
+        // 6. Create notification
         const orderNumber = orderData.orderNumber || orderId.slice(0, 6);
         await db.collection(`businesses/${bizId}/notifications`).add({
             templateId: 'payment.received',

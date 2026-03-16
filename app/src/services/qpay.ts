@@ -49,4 +49,25 @@ export const qpayService = {
 
         return response.json();
     },
+
+    /**
+     * Check if payment has been made for an invoice
+     */
+    async checkPayment(
+        bizId: string,
+        invoiceId: string
+    ): Promise<{ paid: boolean; payment: any; count: number }> {
+        const response = await fetch('/api/qpay-check', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ bizId, invoiceId }),
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.error || `QPay check failed: ${response.status}`);
+        }
+
+        return response.json();
+    },
 };

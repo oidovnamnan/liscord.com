@@ -215,6 +215,8 @@ export interface BusinessSettings {
         enabled: boolean;
         merchantId: string;
         username: string;
+        password: string;
+        invoiceCode: string;
     };
     bankTransferAccounts?: Array<{
         id: string;

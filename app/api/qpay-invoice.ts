@@ -1,26 +1,39 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
+import * as admin from 'firebase-admin';
 
 /**
  * QPay V2 Create Invoice — Vercel Serverless Function
  * 
- * Called from frontend to generate QPay QR code for payment.
- * Credentials are handled server-side, never exposed to browser.
+ * Reads QPay credentials from Firestore per-business.
+ * Creates QPay invoice and returns QR code data.
  */
 
 const QPAY_API_URL = 'https://merchant.qpay.mn/v2';
-const QPAY_USERNAME = 'GATE_SIM';
-const QPAY_PASSWORD = '8r3bvsa3';
-const QPAY_INVOICE_CODE = 'GATE_SIM_INVOICE';
 
-let accessToken: string | null = null;
-let tokenExpiry = 0;
+// Initialize Firebase Admin (only once)
+if (!admin.apps.length) {
+    admin.initializeApp({
+        credential: admin.credential.cert({
+            projectId: process.env.FIREBASE_PROJECT_ID || 'liscord-2b529',
+            clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+            privateKey: (process.env.FIREBASE_PRIVATE_KEY || '').replace(/\\n/g, '\n'),
+        }),
+    });
+}
 
-async function getAccessToken(): Promise<string> {
-    if (accessToken && Date.now() < tokenExpiry - 300000) {
-        return accessToken;
+const db = admin.firestore();
+
+// Token cache per business
+const tokenCache: Record<string, { token: string; expiresAt: number }> = {};
+
+async function getAccessToken(username: string, password: string): Promise<string> {
+    const cacheKey = `${username}:${password}`;
+    const cached = tokenCache[cacheKey];
+    if (cached && Date.now() < cached.expiresAt - 300000) {
+        return cached.token;
     }
 
-    const credentials = Buffer.from(`${QPAY_USERNAME}:${QPAY_PASSWORD}`).toString('base64');
+    const credentials = Buffer.from(`${username}:${password}`).toString('base64');
 
     const response = await fetch(`${QPAY_API_URL}/auth/token`, {
         method: 'POST',
@@ -35,10 +48,28 @@ async function getAccessToken(): Promise<string> {
     }
 
     const data = await response.json();
-    accessToken = data.access_token;
-    tokenExpiry = Date.now() + (data.expires_in * 1000);
+    tokenCache[cacheKey] = {
+        token: data.access_token,
+        expiresAt: Date.now() + (data.expires_in * 1000),
+    };
 
-    return accessToken!;
+    return data.access_token;
+}
+
+async function getQPayCredentials(bizId: string) {
+    const bizDoc = await db.doc(`businesses/${bizId}`).get();
+    if (!bizDoc.exists) throw new Error('Business not found');
+
+    const biz = bizDoc.data()!;
+    const qpay = biz.settings?.qpay;
+    if (!qpay?.enabled) throw new Error('QPay is not enabled for this business');
+    if (!qpay.username || !qpay.password) throw new Error('QPay credentials missing');
+
+    return {
+        username: qpay.username,
+        password: qpay.password,
+        invoiceCode: qpay.invoiceCode || `${qpay.username}_INVOICE`,
+    };
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -62,7 +93,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     try {
-        const token = await getAccessToken();
+        const creds = await getQPayCredentials(bizId);
+        const token = await getAccessToken(creds.username, creds.password);
 
         // Callback URL pointing to our qpay-callback serverless function
         const host = req.headers.host || 'www.liscord.com';
@@ -76,7 +108,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-                invoice_code: QPAY_INVOICE_CODE,
+                invoice_code: creds.invoiceCode,
                 sender_invoice_no: orderId,
                 invoice_receiver_code: customerPhone || 'guest',
                 invoice_description: description || `Liscord #${orderId.slice(-6)}`,
@@ -88,13 +120,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         if (!invoiceResponse.ok) {
             const errorData = await invoiceResponse.json().catch(() => ({}));
             console.error('QPay invoice creation failed:', invoiceResponse.status, errorData);
-            return res.status(500).json({ error: 'QPay invoice creation failed' });
+            return res.status(500).json({ error: 'QPay invoice creation failed', details: errorData });
         }
 
         const result = await invoiceResponse.json();
-
-        // Update order with qpayInvoiceId via Firebase Admin
-        // (We'll handle this from the frontend instead — simpler for Vercel)
 
         return res.status(200).json({
             invoice_id: result.invoice_id,

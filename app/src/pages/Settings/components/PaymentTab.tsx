@@ -43,6 +43,8 @@ export function PaymentTab() {
                         enabled: fd.get('qpayEnabled') === 'on',
                         merchantId: (fd.get('qpayMerchantId') as string)?.trim() || '',
                         username: (fd.get('qpayUsername') as string)?.trim() || '',
+                        password: (fd.get('qpayPassword') as string)?.trim() || '',
+                        invoiceCode: (fd.get('qpayInvoiceCode') as string)?.trim() || '',
                     },
                     bankTransferAccounts: bankAccounts,
                 }
@@ -149,12 +151,22 @@ export function PaymentTab() {
 
                         <div className="grid-2-gap">
                             <div className="input-group">
-                                <label className="input-label">Мерчант ID (Merchant ID)</label>
-                                <input className="input" name="qpayMerchantId" defaultValue={qpay?.merchantId} placeholder="Байгууллагын дугаар" />
+                                <label className="input-label">Нэвтрэх нэр (Username)</label>
+                                <input className="input" name="qpayUsername" defaultValue={qpay?.username} placeholder="QPay username" />
                             </div>
                             <div className="input-group">
-                                <label className="input-label">Нэвтрэх нэр (Username)</label>
-                                <input className="input" name="qpayUsername" defaultValue={qpay?.username} placeholder="Qpay username" />
+                                <label className="input-label">Нууц үг (Password)</label>
+                                <input className="input" name="qpayPassword" type="password" defaultValue={qpay?.password} placeholder="QPay password" />
+                            </div>
+                        </div>
+                        <div className="grid-2-gap" style={{ marginTop: 12 }}>
+                            <div className="input-group">
+                                <label className="input-label">Invoice Code</label>
+                                <input className="input" name="qpayInvoiceCode" defaultValue={qpay?.invoiceCode} placeholder="MERCHANT_INVOICE" />
+                            </div>
+                            <div className="input-group">
+                                <label className="input-label">Мерчант ID</label>
+                                <input className="input" name="qpayMerchantId" defaultValue={qpay?.merchantId} placeholder="Байгууллагын дугаар (заавал биш)" />
                             </div>
                         </div>
                     </div>
