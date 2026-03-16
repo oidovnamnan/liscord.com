@@ -67,14 +67,18 @@ export function useStorefrontData(business: Business | undefined) {
         return map;
     }, [categoryList]);
 
-    // Categories for filter tabs
+    // Categories for filter tabs — use categories collection (same as admin)
+    // Only show categories that have at least one visible product
     const categories = useMemo(() => {
-        const cats = new Set<string>();
+        const productCatIds = new Set<string>();
         products.forEach(p => {
-            if (p.categoryName) cats.add(p.categoryName);
+            if (p.categoryId) productCatIds.add(p.categoryId);
         });
-        return ['all', ...Array.from(cats)];
-    }, [products]);
+        const activeCats = categoryList
+            .filter(c => productCatIds.has(c.id))
+            .map(c => c.name);
+        return ['all', ...activeCats];
+    }, [products, categoryList]);
 
     // Enrich products with exclusive/locked flags
     const enrichedProducts: StorefrontProduct[] = useMemo(() => {
@@ -96,12 +100,17 @@ export function useStorefrontData(business: Business | undefined) {
     }, [products, linkedToExclusiveMap, activeMemberships]);
 
     const filteredProducts = useMemo(() => {
+        // Build name→id map for category filter matching
+        const catNameToId: Record<string, string> = {};
+        categoryList.forEach(c => { catNameToId[c.name] = c.id; });
+        const activeCatId = activeCategory !== 'all' ? catNameToId[activeCategory] : null;
+
         return enrichedProducts.filter(p => {
             const matchesSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase());
-            const matchesCat = activeCategory === 'all' || p.categoryName === activeCategory;
+            const matchesCat = activeCategory === 'all' || p.categoryId === activeCatId;
             return matchesSearch && matchesCat;
         });
-    }, [enrichedProducts, searchQuery, activeCategory]);
+    }, [enrichedProducts, searchQuery, activeCategory, categoryList]);
 
     // Membership verification function
     const verifyMembership = async (phone: string) => {

@@ -16,6 +16,80 @@ import { globalSettingsService } from '../../services/db';
 import type { Product, Category, CargoType } from '../../types';
 import { toast } from 'react-hot-toast';
 
+// ===== Robust category matching to prevent duplicates =====
+// Known semantic equivalents (Mongolian category synonyms)
+const CATEGORY_SYNONYMS: Record<string, string[]> = {
+    'алкоголь': ['спирттэй ундаа', 'архи', 'согтууруулах ундаа'],
+    'спирттэй ундаа': ['алкоголь', 'архи', 'согтууруулах ундаа'],
+    'гэр ахуйн бараа': ['гэр ахуйн хэрэгсэл', 'гэрийн бараа', 'ахуйн бараа'],
+    'гэр ахуйн хэрэгсэл': ['гэр ахуйн бараа', 'гэрийн хэрэгсэл', 'ахуйн хэрэгсэл'],
+    'хувийн ариун цэвэр': ['хувийн арчилгаа', 'биеийн арчилгаа'],
+    'хувийн арчилгаа': ['хувийн ариун цэвэр', 'биеийн арчилгаа'],
+    'гоо сайхны хэрэгсэл': ['гоо сайхан', 'эрүүл мэнд, гоо сайхан', 'косметик'],
+    'эрүүл мэнд, гоо сайхан': ['гоо сайхны хэрэгсэл', 'гоо сайхан'],
+    'хүүхдийн тоглоом': ['тоглоом'],
+    'тоглоом': ['хүүхдийн тоглоом'],
+    'гар ахуйн бараа': ['гар ахуйн хэрэгсэл'],
+    'гар ахуйн хэрэгсэл': ['гар ахуйн бараа'],
+    'бичиг хэрэг': ['бичиг хэрэгсэл', 'бичгийн хэрэг'],
+    'эрүүл ахуй': ['эрүүл мэнд', 'эмийн бараа'],
+};
+
+function tokenizeCategory(name: string): string[] {
+    return name.toLowerCase().replace(/[^а-яөүёa-z0-9\s,]/gi, ' ').split(/[\s,]+/).filter(w => w.length > 1);
+}
+
+function findBestCategoryMatch(aiCategoryName: string, existingCategories: Category[]): Category | null {
+    if (!aiCategoryName || existingCategories.length === 0) return null;
+    const aiLower = aiCategoryName.toLowerCase().trim();
+    const aiWords = tokenizeCategory(aiCategoryName);
+
+    let bestMatch: Category | null = null;
+    let bestScore = 0;
+
+    for (const cat of existingCategories) {
+        const catLower = cat.name.toLowerCase().trim();
+        let score = 0;
+
+        // Signal 1: Exact match (100%)
+        if (aiLower === catLower) return cat;
+
+        // Signal 2: Synonym match (90%)
+        const synonyms = CATEGORY_SYNONYMS[aiLower] || [];
+        if (synonyms.includes(catLower)) { score = 90; }
+
+        // Signal 3: Substring containment (70%)
+        if (score < 70) {
+            if (aiLower.includes(catLower) || catLower.includes(aiLower)) {
+                score = Math.max(score, 70);
+            }
+        }
+
+        // Signal 4: Word overlap (proportional)
+        if (score < 60) {
+            const catWords = tokenizeCategory(cat.name);
+            if (catWords.length > 0 && aiWords.length > 0) {
+                let matches = 0;
+                for (const w of aiWords) {
+                    if (catWords.some(cw => cw === w || (w.length > 3 && cw.length > 3 && (cw.includes(w) || w.includes(cw))))) {
+                        matches++;
+                    }
+                }
+                const overlap = matches / Math.max(aiWords.length, catWords.length);
+                score = Math.max(score, overlap * 80);
+            }
+        }
+
+        if (score > bestScore) {
+            bestScore = score;
+            bestMatch = cat;
+        }
+    }
+
+    // Threshold: 40%+ → match, under 40% → truly new category
+    return bestScore >= 40 ? bestMatch : null;
+}
+
 type ImportStep = 'setup' | 'fetching' | 'processing' | 'review' | 'importing' | 'done';
 
 interface FBImportModalProps {
@@ -241,31 +315,20 @@ export function FBImportModal({ onClose }: FBImportModalProps) {
                     finalImages = product.images;
                 }
 
-                // Find or create category (fuzzy match)
+                // Find or create category (robust multi-signal match)
                 let categoryId = '';
                 let matchedCatName = product.categoryName || 'Бусад';
 
-                // Exact match first
-                const exactCat = categories.find(c => c.name.toLowerCase() === matchedCatName.toLowerCase());
-                if (exactCat) {
-                    categoryId = exactCat.id;
-                    matchedCatName = exactCat.name;
+                const bestMatch = findBestCategoryMatch(matchedCatName, categories);
+                if (bestMatch) {
+                    categoryId = bestMatch.id;
+                    matchedCatName = bestMatch.name;
                 } else {
-                    // Fuzzy: check if category name contains or is contained
-                    const fuzzyCat = categories.find(c =>
-                        c.name.toLowerCase().includes(matchedCatName.toLowerCase()) ||
-                        matchedCatName.toLowerCase().includes(c.name.toLowerCase())
-                    );
-                    if (fuzzyCat) {
-                        categoryId = fuzzyCat.id;
-                        matchedCatName = fuzzyCat.name;
-                    } else {
-                        // Create new category
-                        categoryId = await categoryService.createCategory(business.id, {
-                            name: matchedCatName,
-                            description: ''
-                        });
-                    }
+                    // Truly new category — no existing match found
+                    categoryId = await categoryService.createCategory(business.id, {
+                        name: matchedCatName,
+                        description: ''
+                    });
                 }
 
 
