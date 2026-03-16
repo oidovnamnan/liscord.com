@@ -188,11 +188,22 @@ export function OrderDetailModal({ bizId, order, onClose, statuses }: OrderDetai
                             </div>
                         )}
                     </div>
-                    <div className="header-actions">
+                    <div className="header-actions" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                         {canCreateReturn && order.paymentStatus !== 'unpaid' && !order.isDeleted && order.status !== 'cancelled' && (
-                            <button className="btn btn-sm" onClick={() => setShowReturnModal(true)} style={{ background: ['new', 'confirmed'].includes(order.status) ? 'linear-gradient(135deg, #f59e0b, #d97706)' : 'linear-gradient(135deg, #f87171, #ef4444)', color: '#fff', border: 'none', display: 'flex', alignItems: 'center', gap: 5 }}>
-                                <Undo2 size={14} /> {['new', 'confirmed'].includes(order.status) ? 'Цуцлах' : 'Буцаалт'}
-                            </button>
+                            order.returnStatus === 'full' ? (
+                                <button className="btn btn-sm" disabled style={{ background: '#6b7280', color: '#fff', border: 'none', display: 'flex', alignItems: 'center', gap: 5, opacity: 0.5, cursor: 'not-allowed' }}>
+                                    <Undo2 size={14} /> Буцаасан
+                                </button>
+                            ) : (
+                                <button className="btn btn-sm" onClick={() => {
+                                    const label = ['new', 'confirmed'].includes(order.status) ? 'цуцлах' : 'буцаалт хийх';
+                                    if (window.confirm(`Та энэ захиалгыг ${label} гэж байна. Үргэлжлүүлэх үү?`)) {
+                                        setShowReturnModal(true);
+                                    }
+                                }} style={{ background: ['new', 'confirmed'].includes(order.status) ? 'linear-gradient(135deg, #f59e0b, #d97706)' : 'linear-gradient(135deg, #f87171, #ef4444)', color: '#fff', border: 'none', display: 'flex', alignItems: 'center', gap: 5 }}>
+                                    <Undo2 size={14} /> {['new', 'confirmed'].includes(order.status) ? 'Цуцлах' : 'Буцаалт'}
+                                </button>
+                            )
                         )}
                         <button className="btn btn-secondary btn-sm" onClick={handlePrint}>
                             <Printer size={16} /> Хэвлэх
