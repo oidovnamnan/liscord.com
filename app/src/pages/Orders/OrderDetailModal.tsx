@@ -5,7 +5,9 @@ import type { Order, OrderStatusConfig } from '../../types';
 import { ebarimtService } from '../../services/ebarimt';
 import { orderService } from '../../services/db';
 import { toast } from 'react-hot-toast';
-import { useAuthStore, useBusinessStore } from '../../store';
+import { useAuthStore, useBusinessStore, useModuleDefaultsStore } from '../../store';
+import { usePermissions } from '../../hooks/usePermissions';
+import { isModuleAccessible } from '../../utils/moduleUtils';
 import { CreateReturnModal } from '../Returns/CreateReturnModal';
 import './OrderDetailModal.css';
 
@@ -19,6 +21,10 @@ interface OrderDetailModalProps {
 export function OrderDetailModal({ bizId, order, onClose, statuses }: OrderDetailModalProps) {
     const { user } = useAuthStore();
     const { business } = useBusinessStore();
+    const { hasPermission } = usePermissions();
+    const { defaults: moduleDefaults } = useModuleDefaultsStore();
+    const returnsModuleActive = business ? isModuleAccessible('returns', business, moduleDefaults).accessible : false;
+    const canCreateReturn = returnsModuleActive && hasPermission('returns.create');
     const [updating, setUpdating] = useState(false);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const [ebarimtData, setEbarimtData] = useState<any>(null);
@@ -180,7 +186,7 @@ export function OrderDetailModal({ bizId, order, onClose, statuses }: OrderDetai
                         )}
                     </div>
                     <div className="header-actions">
-                        {order.paymentStatus !== 'unpaid' && !order.isDeleted && order.status !== 'cancelled' && (
+                        {canCreateReturn && order.paymentStatus !== 'unpaid' && !order.isDeleted && order.status !== 'cancelled' && (
                             <button className="btn btn-sm" onClick={() => setShowReturnModal(true)} style={{ background: order.status === 'confirmed' ? 'linear-gradient(135deg, #f59e0b, #d97706)' : 'linear-gradient(135deg, #f87171, #ef4444)', color: '#fff', border: 'none', display: 'flex', alignItems: 'center', gap: 5 }}>
                                 <Undo2 size={14} /> {order.status === 'confirmed' ? 'Цуцлах' : 'Буцаалт'}
                             </button>
