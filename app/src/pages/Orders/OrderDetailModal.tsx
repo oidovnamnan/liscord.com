@@ -156,24 +156,26 @@ export function OrderDetailModal({ bizId, order, onClose, statuses }: OrderDetai
                         {order.isDeleted ? (
                             <span className="badge badge-cancelled">Цуцалсан</span>
                         ) : (
-                            <div className="status-selector-wrapper">
-                                <select
+                            <div className="status-selector-wrapper" title="Статус автоматаар шилжинэ: Төлбөр → Баталгаажсан → Захиалагдсан → Ирсэн → Биелсэн">
+                                <span
                                     className="status-badge-select"
-                                    value={currentStatusId}
-                                    onChange={(e) => handleStatusChange(e.target.value)}
-                                    disabled={updating}
                                     style={{
                                         background: (activeStatus?.color || '#3b82f6') + '20',
                                         color: activeStatus?.color || '#3b82f6',
                                         border: `1px solid ${(activeStatus?.color || '#3b82f6')}40`,
+                                        cursor: 'default',
+                                        pointerEvents: 'none',
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        gap: 4,
+                                        padding: '4px 12px',
+                                        borderRadius: 8,
+                                        fontSize: '0.78rem',
+                                        fontWeight: 800,
                                     }}
                                 >
-                                    {statuses.filter(s => (s.isActive || s.id.toLowerCase() === order.status?.toLowerCase()) && s.id !== 'all').map(s => (
-                                        <option key={s.id} value={s.id}>{s.label}</option>
-                                    ))}
-                                </select>
-                                {updating && <Loader2 size={12} className="animate-spin status-loader" />}
-                                <ChevronDown size={12} className="status-chevron" style={{ color: activeStatus?.color }} />
+                                    {activeStatus?.label || currentStatusId}
+                                </span>
                             </div>
                         )}
                     </div>
