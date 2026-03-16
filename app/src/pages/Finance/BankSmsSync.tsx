@@ -18,10 +18,16 @@ import {
     Phone,
     Hash,
     User,
+    Trash2,
+    ShieldAlert,
 } from 'lucide-react';
-import { collection, query, where, orderBy, onSnapshot, doc, getDoc, getDocs, updateDoc } from 'firebase/firestore';
+import { collection, query, where, orderBy, onSnapshot, doc, getDoc, getDocs, updateDoc, writeBatch } from 'firebase/firestore';
 import { db } from '../../services/firebase';
 import { useBusinessStore } from '../../store';
+import { usePermissions } from '../../hooks/usePermissions';
+import { SecurityModal } from '../../components/common/SecurityModal';
+import { SmsOtpModal } from '../../components/common/SmsOtpModal';
+import { toast } from 'react-hot-toast';
 import '../Inventory/InventoryPage.css';
 import './BankSmsSync.css';
 
@@ -51,6 +57,7 @@ interface MatchCandidate {
 export function BankSmsSyncPage() {
     const navigate = useNavigate();
     const { business } = useBusinessStore();
+    const { isOwner } = usePermissions();
     const [search, setSearch] = useState('');
     const [statusFilter, setStatusFilter] = useState<'all' | 'matched' | 'pending' | 'ignored'>('all');
     const [logs, setLogs] = useState<SmsLog[]>([]);
@@ -62,6 +69,13 @@ export function BankSmsSyncPage() {
     const [candidates, setCandidates] = useState<MatchCandidate[]>([]);
     const [loadingCandidates, setLoadingCandidates] = useState(false);
     const [matchingOrderId, setMatchingOrderId] = useState<string | null>(null);
+
+    // Bulk delete state
+    const [showSecurityModal, setShowSecurityModal] = useState(false);
+    const [showSmsOtp, setShowSmsOtp] = useState(false);
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+    const [deleteConfirmText, setDeleteConfirmText] = useState('');
+    const [isDeleting, setIsDeleting] = useState(false);
 
     useEffect(() => {
         if (!business?.id) return;
@@ -310,6 +324,32 @@ export function BankSmsSyncPage() {
         }
     };
 
+    // ── Bulk Delete Handler ──
+    const handleBulkDelete = async () => {
+        if (!pairingKey || logs.length === 0) return;
+        setIsDeleting(true);
+        try {
+            const q = query(collection(db, 'sms_inbox'), where('pairingKey', '==', pairingKey));
+            const snap = await getDocs(q);
+            const docs = snap.docs;
+            let deleted = 0;
+            for (let i = 0; i < docs.length; i += 500) {
+                const batch = writeBatch(db);
+                docs.slice(i, i + 500).forEach(d => batch.delete(doc(db, 'sms_inbox', d.id)));
+                await batch.commit();
+                deleted += Math.min(500, docs.length - i);
+            }
+            toast.success(`${deleted} орлогын бүртгэл устгагдлаа`);
+            setShowDeleteConfirm(false);
+            setDeleteConfirmText('');
+        } catch (e) {
+            console.error('Bulk delete error:', e);
+            toast.error('Устгахад алдаа гарлаа');
+        } finally {
+            setIsDeleting(false);
+        }
+    };
+
     const filteredLogs = logs.filter(log => {
         const matchSearch = !search ||
             log.note.toLowerCase().includes(search.toLowerCase()) ||
@@ -347,10 +387,22 @@ export function BankSmsSyncPage() {
                             <div className="inv-hero-desc">Банкны SMS орлогыг хянах, захиалгатай холбох</div>
                         </div>
                     </div>
-                    <button className="inv-hero-btn" onClick={() => navigate('/app/settings?tab=sms-income-sync')}>
-                        <Settings size={16} />
-                        <span>Тохиргоо</span>
-                    </button>
+                    <div style={{ display: 'flex', gap: 8 }}>
+                        {logs.length > 0 && isOwner && (
+                            <button
+                                className="inv-hero-btn"
+                                onClick={() => setShowSecurityModal(true)}
+                                style={{ background: 'rgba(239,68,68,0.15)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.3)' }}
+                            >
+                                <Trash2 size={16} />
+                                <span>Бүгдийг устгах</span>
+                            </button>
+                        )}
+                        <button className="inv-hero-btn" onClick={() => navigate('/app/settings?tab=sms-income-sync')}>
+                            <Settings size={16} />
+                            <span>Тохиргоо</span>
+                        </button>
+                    </div>
                 </div>
                 <div className="inv-hero-stats">
                     <div className="inv-hero-stat">
@@ -619,6 +671,88 @@ export function BankSmsSyncPage() {
                                 ))}
                             </>
                         )}
+                    </div>
+                </div>
+            </div>,
+            document.body
+        )}
+
+        {/* ═══ Security Modal (Step 1: PIN) ═══ */}
+        {showSecurityModal && (
+            <SecurityModal
+                title="⚠️ Орлого устгах баталгаажуулалт"
+                description="Энэ үйлдэл бүх SMS орлогын бүртгэлийг бүрмөсөн устгана. Системийн нууц үгээ оруулна уу."
+                onSuccess={() => {
+                    setShowSecurityModal(false);
+                    setShowSmsOtp(true);
+                }}
+                onClose={() => setShowSecurityModal(false)}
+            />
+        )}
+
+        {/* ═══ SMS OTP Modal (Step 2: Phone Verification) ═══ */}
+        {showSmsOtp && business?.phone && (
+            <SmsOtpModal
+                phone={business.phone}
+                title="📱 SMS баталгаажуулалт"
+                description="Админ утас руу баталгаажуулах код илгээнэ."
+                onSuccess={() => {
+                    setShowSmsOtp(false);
+                    setShowDeleteConfirm(true);
+                }}
+                onClose={() => setShowSmsOtp(false)}
+            />
+        )}
+
+        {/* ═══ Delete Confirmation (Step 2) ═══ */}
+        {showDeleteConfirm && createPortal(
+            <div className="modal-backdrop" onClick={() => { setShowDeleteConfirm(false); setDeleteConfirmText(''); }} style={{ zIndex: 9999 }}>
+                <div className="modal" onClick={e => e.stopPropagation()} style={{ maxWidth: 440, borderRadius: 24, padding: 32 }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', gap: 16 }}>
+                        <div style={{
+                            width: 64, height: 64,
+                            background: 'rgba(239,68,68,0.1)',
+                            color: '#ef4444',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            borderRadius: 16
+                        }}>
+                            <ShieldAlert size={32} />
+                        </div>
+                        <div>
+                            <h3 style={{ color: '#ef4444', fontSize: '1.15rem', fontWeight: 700, marginBottom: 4 }}>Сүүлчийн баталгаажуулалт</h3>
+                            <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', lineHeight: 1.5 }}>
+                                <strong>{logs.length}</strong> орлогын бүртгэл бүрмөсөн устах болно.<br />
+                                Буцаах <strong>боломжгүй</strong>. Баталгаажуулахын тулд <strong>УСТГАХ</strong> гэж бичнэ үү.
+                            </p>
+                        </div>
+
+                        <input
+                            className="input"
+                            style={{ textAlign: 'center', fontSize: '1.1rem', fontWeight: 700, letterSpacing: 2 }}
+                            placeholder="УСТГАХ"
+                            value={deleteConfirmText}
+                            onChange={e => setDeleteConfirmText(e.target.value)}
+                            autoFocus
+                        />
+
+                        <div style={{ display: 'flex', gap: 12, width: '100%', marginTop: 8 }}>
+                            <button className="btn btn-secondary" onClick={() => { setShowDeleteConfirm(false); setDeleteConfirmText(''); }} style={{ flex: 1, height: 48 }}>
+                                Цуцлах
+                            </button>
+                            <button
+                                className="btn"
+                                onClick={handleBulkDelete}
+                                disabled={deleteConfirmText !== 'УСТГАХ' || isDeleting}
+                                style={{
+                                    flex: 1, height: 48,
+                                    background: deleteConfirmText === 'УСТГАХ' ? '#ef4444' : '#ccc',
+                                    color: '#fff', fontWeight: 700, border: 'none', borderRadius: 14,
+                                    cursor: deleteConfirmText === 'УСТГАХ' ? 'pointer' : 'not-allowed'
+                                }}
+                            >
+                                {isDeleting ? <Loader2 size={18} className="spin" /> : <><Trash2 size={16} /> Устгах ({logs.length})</>}
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>,
