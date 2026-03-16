@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { Plus, Search, MoreVertical, Loader2, X, User, Package, CreditCard, Trash2, CheckSquare, Settings, ShoppingCart, List, LayoutGrid } from 'lucide-react';
+import { Plus, Search, MoreVertical, Loader2, X, User, Package, CreditCard, Trash2, CheckSquare, Settings, ShoppingCart, List, LayoutGrid, ShieldAlert } from 'lucide-react';
 import '../Inventory/InventoryPage.css';
 import { useBusinessStore, useAuthStore } from '../../store';
 import { toast } from 'react-hot-toast';
@@ -19,6 +19,7 @@ import type { Order } from '../../types';
 import { fmt } from '../../utils/format';
 import { usePermissions } from '../../hooks/usePermissions';
 import { PermissionGate } from '../../components/common/PermissionGate';
+import { SecurityModal } from '../../components/common/SecurityModal';
 import './OrdersPage.css';
 
 
@@ -52,6 +53,10 @@ export function OrdersPage() {
     const [deleteOrderId, setDeleteOrderId] = useState<string | null>(null);
     const [deleteReason, setDeleteReason] = useState('');
     const [showDeleteModal, setShowDeleteModal] = useState(false);
+    const [showDeletePin, setShowDeletePin] = useState(false);
+    const [pendingDeleteAction, setPendingDeleteAction] = useState<'single' | 'bulk' | null>(null);
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+    const [deleteConfirmText, setDeleteConfirmText] = useState('');
     const [selectedOrderIds, setSelectedOrderIds] = useState<Set<string>>(new Set());
     const [showBulkStatusModal, setShowBulkStatusModal] = useState(false);
     const [showSendToProviderModal, setShowSendToProviderModal] = useState(false);
@@ -179,14 +184,20 @@ export function OrdersPage() {
         }
     };
 
-    const handleBulkDelete = async () => {
+    const startBulkDelete = () => {
         if (!business || selectedOrderIds.size === 0) return;
-        const confirm = window.confirm(`Сонгосон ${selectedOrderIds.size} захиалгыг устгах уу?`);
-        if (!confirm) return;
+        setPendingDeleteAction('bulk');
+        setShowDeletePin(true);
+    };
+
+    const executeBulkDelete = async () => {
+        if (!business || selectedOrderIds.size === 0) return;
         setLoading(true);
         try {
             await orderService.batchDeleteOrders(business.id, Array.from(selectedOrderIds), 'Олноор устгав', user);
             setSelectedOrderIds(new Set());
+            setShowDeleteConfirm(false);
+            setDeleteConfirmText('');
             toast.success('Захиалгуудыг устгалаа');
         } catch (e) {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -451,7 +462,8 @@ export function OrdersPage() {
                                                                         onClick={(e) => {
                                                                             e.stopPropagation();
                                                                             setDeleteOrderId(order.id);
-                                                                            setShowDeleteModal(true);
+                                                                            setPendingDeleteAction('single');
+                                                                            setShowDeletePin(true);
                                                                             setOpenMenuId(null);
                                                                         }}
                                                                     >
@@ -542,7 +554,8 @@ export function OrdersPage() {
                                                                         onClick={(e) => {
                                                                             e.stopPropagation();
                                                                             setDeleteOrderId(order.id);
-                                                                            setShowDeleteModal(true);
+                                                                            setPendingDeleteAction('single');
+                                                                            setShowDeletePin(true);
                                                                             setOpenMenuId(null);
                                                                         }}
                                                                     >
@@ -652,7 +665,7 @@ export function OrdersPage() {
                                 </button>
                             )}
                             {hasPermission('orders.delete') && (
-                                <button className="btn btn-danger btn-sm" onClick={handleBulkDelete}>
+                                <button className="btn btn-danger btn-sm" onClick={startBulkDelete}>
                                     <Trash2 size={14} /> Устгах
                                 </button>
                             )}
@@ -681,6 +694,26 @@ export function OrdersPage() {
                 />
             )}
 
+            {/* ═══ Step 1: PIN Security Gate ═══ */}
+            {showDeletePin && (
+                <SecurityModal
+                    title="🔒 Захиалга устгах баталгаажуулалт"
+                    description={pendingDeleteAction === 'bulk'
+                        ? `Сонгосон ${selectedOrderIds.size} захиалгыг устгахын тулд нууц үгээ оруулна уу.`
+                        : 'Захиалга устгахын тулд системийн нууц үгээ оруулна уу.'}
+                    onSuccess={() => {
+                        setShowDeletePin(false);
+                        if (pendingDeleteAction === 'single') {
+                            setShowDeleteModal(true);
+                        } else {
+                            setShowDeleteConfirm(true);
+                        }
+                    }}
+                    onClose={() => { setShowDeletePin(false); setPendingDeleteAction(null); setDeleteOrderId(null); }}
+                />
+            )}
+
+            {/* ═══ Step 2a: Single Delete — Reason Modal ═══ */}
             {showDeleteModal && deleteOrderId && createPortal(
                 <div className="modal-backdrop animate-fade-in" onClick={() => setShowDeleteModal(false)}>
                     <div className="modal" onClick={e => e.stopPropagation()} style={{ maxWidth: 480 }}>
@@ -713,6 +746,61 @@ export function OrdersPage() {
                             >
                                 <Trash2 size={18} /> Устгах
                             </button>
+                        </div>
+                    </div>
+                </div>,
+                document.body
+            )}
+
+            {/* ═══ Step 2b: Bulk Delete — Type УСТГАХ Confirm ═══ */}
+            {showDeleteConfirm && createPortal(
+                <div className="modal-backdrop" onClick={() => { setShowDeleteConfirm(false); setDeleteConfirmText(''); }} style={{ zIndex: 9999 }}>
+                    <div className="modal" onClick={e => e.stopPropagation()} style={{ maxWidth: 440, borderRadius: 24, padding: 32 }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', gap: 16 }}>
+                            <div style={{
+                                width: 64, height: 64,
+                                background: 'rgba(239,68,68,0.1)',
+                                color: '#ef4444',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                borderRadius: 16
+                            }}>
+                                <ShieldAlert size={32} />
+                            </div>
+                            <div>
+                                <h3 style={{ color: '#ef4444', fontSize: '1.15rem', fontWeight: 700, marginBottom: 4 }}>Сүүлчийн баталгаажуулалт</h3>
+                                <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', lineHeight: 1.5 }}>
+                                    <strong>{selectedOrderIds.size}</strong> захиалга бүрмөсөн устах болно.<br />
+                                    Буцаах <strong>боломжгүй</strong>. Баталгаажуулахын тулд <strong>УСТГАХ</strong> гэж бичнэ үү.
+                                </p>
+                            </div>
+
+                            <input
+                                className="input"
+                                style={{ textAlign: 'center', fontSize: '1.1rem', fontWeight: 700, letterSpacing: 2 }}
+                                placeholder="УСТГАХ"
+                                value={deleteConfirmText}
+                                onChange={e => setDeleteConfirmText(e.target.value)}
+                                autoFocus
+                            />
+
+                            <div style={{ display: 'flex', gap: 12, width: '100%', marginTop: 8 }}>
+                                <button className="btn btn-secondary" onClick={() => { setShowDeleteConfirm(false); setDeleteConfirmText(''); }} style={{ flex: 1, height: 48 }}>
+                                    Цуцлах
+                                </button>
+                                <button
+                                    className="btn"
+                                    onClick={executeBulkDelete}
+                                    disabled={deleteConfirmText !== 'УСТГАХ' || loading}
+                                    style={{
+                                        flex: 1, height: 48,
+                                        background: deleteConfirmText === 'УСТГАХ' ? '#ef4444' : '#ccc',
+                                        color: '#fff', fontWeight: 700, border: 'none', borderRadius: 14,
+                                        cursor: deleteConfirmText === 'УСТГАХ' ? 'pointer' : 'not-allowed'
+                                    }}
+                                >
+                                    {loading ? <Loader2 size={18} className="spin" /> : <><Trash2 size={16} /> Устгах ({selectedOrderIds.size})</>}
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>,
