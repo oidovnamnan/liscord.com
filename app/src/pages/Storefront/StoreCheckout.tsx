@@ -399,7 +399,7 @@ export function StoreCheckout() {
                                 <h2 style={{ marginBottom: 4, fontSize: '1.4rem', fontWeight: 900, color: '#4BB543', letterSpacing: '-0.02em' }}>Төлбөр баталгаажлаа!</h2>
                                 <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', fontWeight: 500, marginBottom: 8 }}>Таны шилжүүлэг амжилттай хүлээн авлаа.</p>
                             </>
-                        ) : (
+                        ) : !qpayInvoice && (
                             <>
                                 <div style={{ width: 56, height: 56, borderRadius: '50%', background: 'rgba(75, 181, 67, 0.1)', color: '#4BB543', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 12px' }}>
                                     <CheckCircle size={28} />
