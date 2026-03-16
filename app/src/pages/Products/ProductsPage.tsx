@@ -15,7 +15,7 @@ import { FBImportModal } from './FBImportModal';
 import { toast } from 'react-hot-toast';
 import { usePermissions } from '../../hooks/usePermissions';
 import { PermissionGate } from '../../components/common/PermissionGate';
-import { collection, query, where, getCountFromServer } from 'firebase/firestore';
+import { collection, query, where, getCountFromServer, limit, onSnapshot, type QueryConstraint } from 'firebase/firestore';
 import { db } from '../../services/firebase';
 import './ProductsPage.css';
 
@@ -51,16 +51,42 @@ export function ProductsPage() {
 
     useEffect(() => {
         if (!business?.id) return;
+        const bizId = business.id;
 
         setTimeout(() => setLoading(true), 0);
-        const unsubscribe = productService.subscribeProducts(business.id, (data) => {
+
+        // Build Firestore query with category filter
+        const ref = collection(db, 'businesses', bizId, 'products');
+        const constraints: QueryConstraint[] = [where('isDeleted', '==', false)];
+
+        // When a category is selected, filter at Firestore level
+        if (categoryFilter !== 'all') {
+            const selectedCat = categories.find(c => c.id === categoryFilter);
+            if (selectedCat) {
+                constraints.push(where('categoryName', '==', selectedCat.name));
+            }
+        }
+
+        constraints.push(limit(productsLimit));
+        const q = query(ref, ...constraints);
+
+        const unsubscribe = onSnapshot(q, (snapshot) => {
+            const data = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as Product));
+            data.sort((a, b) => {
+                const timeA = a.createdAt instanceof Date ? a.createdAt.getTime() : 0;
+                const timeB = b.createdAt instanceof Date ? b.createdAt.getTime() : 0;
+                return timeB - timeA;
+            });
             setProducts(data);
             setHasMore(data.length === productsLimit);
             setLoading(false);
-        }, productsLimit);
+        }, () => {
+            setProducts([]);
+            setLoading(false);
+        });
 
         return () => unsubscribe();
-    }, [business?.id, productsLimit]);
+    }, [business?.id, productsLimit, categoryFilter, categories]);
 
     // Subscribe to all categories independently
     useEffect(() => {
