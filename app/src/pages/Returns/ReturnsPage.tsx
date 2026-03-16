@@ -16,8 +16,9 @@ const STATUS_LABELS: Record<ReturnStatus, string> = {
 };
 
 const TYPE_LABELS: Record<string, { label: string; emoji: string }> = {
+    cancellation: { label: 'Цуцлалт', emoji: '🚫' },
     source_return: { label: 'Сорс буцаалт', emoji: '📦' },
-    late_delivery: { label: 'Хүргэлт удааширсан', emoji: '⏱️' },
+    late_delivery: { label: 'Удааширсан', emoji: '⏱️' },
     product_issue: { label: 'Бараа асуудалтай', emoji: '📸' },
 };
 

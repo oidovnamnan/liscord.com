@@ -14,27 +14,50 @@ interface Props {
     onCreated?: () => void;
 }
 
-const REASON_OPTIONS: { value: ReturnReason; label: string }[] = [
-    { value: 'source_unavailable', label: 'Сорс нөөц дууссан' },
-    { value: 'delivery_late', label: 'Хүргэлт удааширсан' },
-    { value: 'defective', label: 'Эвдэрч хэмхэрсэн' },
-    { value: 'wrong_item', label: 'Буруу бараа ирсэн' },
-    { value: 'not_as_described', label: 'Тайлбарт нийцээгүй' },
-    { value: 'other', label: 'Бусад' },
+// ── All options (filtered by order status below) ──
+const ALL_REASON_OPTIONS: { value: ReturnReason; label: string; statuses: string[] }[] = [
+    { value: 'customer_cancelled', label: 'Хэрэглэгч цуцалсан', statuses: ['confirmed', 'sourced', 'arrived'] },
+    { value: 'source_unavailable', label: 'Сорс нөөц дууссан', statuses: ['sourced'] },
+    { value: 'source_delayed', label: 'Нийлүүлэлт удааширсан', statuses: ['sourced'] },
+    { value: 'delivery_late', label: 'Хүргэлт удааширсан', statuses: ['fulfilled'] },
+    { value: 'defective', label: 'Эвдэрч хэмхэрсэн', statuses: ['arrived', 'fulfilled'] },
+    { value: 'wrong_item', label: 'Буруу бараа ирсэн', statuses: ['arrived', 'fulfilled'] },
+    { value: 'not_as_described', label: 'Тайлбарт нийцээгүй', statuses: ['arrived', 'fulfilled'] },
+    { value: 'other', label: 'Бусад', statuses: ['confirmed', 'sourced', 'arrived', 'fulfilled'] },
 ];
 
-const TYPE_OPTIONS: { value: ReturnType; label: string; desc: string }[] = [
-    { value: 'source_return', label: '📦 Сорс буцаалт', desc: 'Сорсинг хийхэд нөөц дууссан / хугацаа хэтэрсэн' },
-    { value: 'late_delivery', label: '⏱️ Хүргэлт удааширсан', desc: 'Хүргэлт хугацаандаа хийгдээгүй' },
-    { value: 'product_issue', label: '📸 Бараа асуудалтай', desc: 'Эвдэрсэн, буруу бараа ирсэн' },
+const ALL_TYPE_OPTIONS: { value: ReturnType; label: string; desc: string; statuses: string[] }[] = [
+    { value: 'cancellation', label: '🚫 Цуцлалт', desc: 'Бараа ирээгүй, мөнгө буцаах', statuses: ['confirmed'] },
+    { value: 'source_return', label: '📦 Сорс буцаалт', desc: 'Сорсинг хийхэд нөөц дууссан / хугацаа хэтэрсэн', statuses: ['sourced', 'arrived'] },
+    { value: 'late_delivery', label: '⏱️ Удааширсан', desc: 'Нийлүүлэлт/хүргэлт удааширсан', statuses: ['sourced', 'fulfilled'] },
+    { value: 'product_issue', label: '📸 Бараа асуудалтай', desc: 'Эвдэрсэн, буруу бараа ирсэн', statuses: ['arrived', 'fulfilled'] },
+];
+
+const ALL_ACTION_OPTIONS: { value: ReturnAction; label: string; statuses: string[] }[] = [
+    { value: 'refund_only', label: 'Мөнгө буцаах', statuses: ['confirmed', 'sourced'] },
+    { value: 'restock', label: 'Нөөцөд', statuses: ['arrived', 'fulfilled'] },
+    { value: 'write_off', label: 'Актлах', statuses: ['arrived', 'fulfilled'] },
+    { value: 'return_to_source', label: 'Сорс руу', statuses: ['sourced', 'arrived', 'fulfilled'] },
 ];
 
 export function CreateReturnModal({ bizId, order, onClose, onCreated }: Props) {
     const { user } = useAuthStore();
     const employee = useBusinessStore(s => s.employee);
 
-    const [returnType, setReturnType] = useState<ReturnType>('source_return');
-    const [reason, setReason] = useState<ReturnReason>('source_unavailable');
+    const orderStatus = order.status || 'confirmed';
+    const isPreArrival = ['confirmed', 'sourced'].includes(orderStatus); // Бараа ирээгүй
+
+    // Filter options by order status
+    const typeOptions = ALL_TYPE_OPTIONS.filter(t => t.statuses.includes(orderStatus));
+    const reasonOptions = ALL_REASON_OPTIONS.filter(r => r.statuses.includes(orderStatus));
+    const actionOptions = ALL_ACTION_OPTIONS.filter(a => a.statuses.includes(orderStatus));
+
+    const defaultType = typeOptions[0]?.value || 'source_return';
+    const defaultReason = reasonOptions[0]?.value || 'other';
+    const defaultAction = actionOptions[0]?.value || 'refund_only';
+
+    const [returnType, setReturnType] = useState<ReturnType>(defaultType);
+    const [reason, setReason] = useState<ReturnReason>(defaultReason);
     const [reasonNote, setReasonNote] = useState('');
     const [includeDelivery, setIncludeDelivery] = useState(false);
     const [saving, setSaving] = useState(false);
@@ -80,7 +103,8 @@ export function CreateReturnModal({ bizId, order, onClose, onCreated }: Props) {
         (order.items || []).forEach((item, i) => {
             const alreadyReturned = returnedQtyMap[item.productId || ''] || 0;
             const remainingQty = Math.max(0, item.quantity - alreadyReturned);
-            initial[i] = { selected: false, quantity: remainingQty, action: 'restock' };
+            // Pre-arrival: auto-select all items with refund_only
+            initial[i] = { selected: isPreArrival, quantity: remainingQty, action: defaultAction };
         });
         return initial;
     });
@@ -214,7 +238,7 @@ export function CreateReturnModal({ bizId, order, onClose, onCreated }: Props) {
                             Буцаалтын төрөл
                         </label>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                            {TYPE_OPTIONS.map(opt => (
+                            {typeOptions.map(opt => (
                                 <label key={opt.value} style={{
                                     display: 'flex', alignItems: 'center', gap: 12,
                                     padding: '12px 16px', borderRadius: 12, cursor: 'pointer',
@@ -245,6 +269,11 @@ export function CreateReturnModal({ bizId, order, onClose, onCreated }: Props) {
                             Буцаах бараа
                         </label>
                         <div style={{ border: '1px solid var(--border-color)', borderRadius: 12, overflow: 'hidden' }}>
+                            {isPreArrival && (
+                                <div style={{ padding: '10px 16px', background: 'rgba(59, 130, 246, 0.06)', fontSize: '0.78rem', color: '#1d4ed8', fontWeight: 600, borderBottom: '1px solid var(--border-color)' }}>
+                                    ℹ️ Бараа ирээгүй учир бүх барааг автомат сонгосон. Мөнгө бүрэн буцаагдана.
+                                </div>
+                            )}
                             {order.items.map((item, i) => {
                                 const alreadyReturned = returnedQtyMap[item.productId || ''] || 0;
                                 const maxReturnable = Math.max(0, item.quantity - alreadyReturned);
@@ -259,7 +288,7 @@ export function CreateReturnModal({ bizId, order, onClose, onCreated }: Props) {
                                     <input
                                         type="checkbox"
                                         checked={selectedItems[i]?.selected || false}
-                                        disabled={isFullyReturned}
+                                        disabled={isFullyReturned || isPreArrival}
                                         onChange={e => setSelectedItems(prev => ({
                                             ...prev, [i]: { ...prev[i], selected: e.target.checked }
                                         }))}
@@ -282,7 +311,7 @@ export function CreateReturnModal({ bizId, order, onClose, onCreated }: Props) {
                                             )}
                                         </div>
                                     </div>
-                                    {selectedItems[i]?.selected && !isFullyReturned && (
+                                    {selectedItems[i]?.selected && !isFullyReturned && !isPreArrival && (
                                         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                                             <input
                                                 type="number"
@@ -301,9 +330,9 @@ export function CreateReturnModal({ bizId, order, onClose, onCreated }: Props) {
                                                 }))}
                                                 style={{ height: 32, borderRadius: 6, fontSize: '0.75rem', border: '1px solid var(--border-color)', padding: '0 8px' }}
                                             >
-                                                <option value="restock">Нөөцөд</option>
-                                                <option value="write_off">Актлах</option>
-                                                <option value="return_to_source">Сорс руу</option>
+                                                {actionOptions.map(a => (
+                                                    <option key={a.value} value={a.value}>{a.label}</option>
+                                                ))}
                                             </select>
                                         </div>
                                     )}
@@ -339,7 +368,7 @@ export function CreateReturnModal({ bizId, order, onClose, onCreated }: Props) {
                             onChange={e => setReason(e.target.value as ReturnReason)}
                             style={{ height: 42, borderRadius: 10, fontSize: '0.85rem' }}
                         >
-                            {REASON_OPTIONS.map(r => (
+                            {reasonOptions.map(r => (
                                 <option key={r.value} value={r.value}>{r.label}</option>
                             ))}
                         </select>

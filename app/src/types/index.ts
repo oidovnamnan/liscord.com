@@ -1648,10 +1648,10 @@ export interface SmsSyncConfig {
 
 // ============ RETURNS & REFUND ============
 
-export type ReturnType = 'source_return' | 'late_delivery' | 'product_issue';
+export type ReturnType = 'cancellation' | 'source_return' | 'late_delivery' | 'product_issue';
 export type ReturnStatus = 'pending' | 'operator_review' | 'approved' | 'finance_review' | 'refunded' | 'rejected';
-export type ReturnReason = 'source_unavailable' | 'delivery_late' | 'defective' | 'wrong_item' | 'not_as_described' | 'other';
-export type ReturnAction = 'restock' | 'write_off' | 'return_to_source';
+export type ReturnReason = 'customer_cancelled' | 'source_unavailable' | 'source_delayed' | 'delivery_late' | 'defective' | 'wrong_item' | 'not_as_described' | 'other';
+export type ReturnAction = 'refund_only' | 'restock' | 'write_off' | 'return_to_source';
 
 export interface ReturnItem {
     productId: string;
