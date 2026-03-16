@@ -42,7 +42,7 @@ export function OrdersPage() {
     const { business } = useBusinessStore();
     const { hasPermission } = usePermissions();
     const [search, setSearch] = useState('');
-    const [statusFilter, setStatusFilter] = useState<string>('new');
+    const [statusFilter, setStatusFilter] = useState<string>('all');
     const [showCreate, setShowCreate] = useState(false);
     const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
     const [orders, setOrders] = useState<Order[]>([]);
