@@ -938,6 +938,12 @@ export function StoreCheckout() {
                             min-height: auto !important;
                             padding-bottom: 0 !important;
                         }
+                        .checkout-page .store-container {
+                            margin-top: 8px !important;
+                        }
+                        .checkout-grid .grid-2-gap {
+                            gap: 10px !important;
+                        }
                         .checkout-grid .settings-card {
                             padding: 16px !important;
                             border-radius: 16px !important;
