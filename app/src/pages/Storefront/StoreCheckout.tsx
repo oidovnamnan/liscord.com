@@ -242,7 +242,6 @@ export function StoreCheckout() {
 
             const newId = await orderService.createOrder(business.id, orderPayload);
             setSavedTotal(finalTotal);
-            setSuccessId(newId);
             window.scrollTo(0, 0);
             clearCart();
 
@@ -263,6 +262,8 @@ export function StoreCheckout() {
                     console.error('QPay generation failed', e);
                 }
             }
+
+            setSuccessId(newId);
         } catch (error) {
             console.error('Failed to create order', error);
             toast.error('Захиалга үүсгэхэд алдаа гарлаа');
@@ -410,14 +411,18 @@ export function StoreCheckout() {
                             <div className="animate-fade-in" style={{ margin: '32px 0', background: 'var(--bg-soft)', padding: 32, borderRadius: 24, border: '1px solid var(--border-primary)' }}>
                                 <p style={{ fontWeight: 800, marginBottom: 20, fontSize: '0.95rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Төлбөр төлөх (QPay)</p>
                                 <div style={{
-                                    width: 200, height: 200, margin: '0 auto',
+                                    width: 220, height: 220, margin: '0 auto',
                                     background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center',
                                     border: '2px solid var(--primary-light)', borderRadius: 20, boxShadow: 'var(--shadow-md)', padding: 10
                                 }}>
-                                    <div style={{ textAlign: 'center' }}>
-                                        <div style={{ fontSize: '2.5rem', marginBottom: 12 }}>📲</div>
-                                        <div style={{ color: 'var(--text-muted)', fontSize: '0.8rem', fontWeight: 600, lineHeight: 1.4 }}>QPay QR<br />энд харагдана</div>
-                                    </div>
+                                    {qpayInvoice.qr_image ? (
+                                        <img src={`data:image/png;base64,${qpayInvoice.qr_image}`} alt="QPay QR" style={{ width: '100%', height: '100%', objectFit: 'contain', borderRadius: 12 }} />
+                                    ) : (
+                                        <div style={{ textAlign: 'center' }}>
+                                            <div style={{ fontSize: '2.5rem', marginBottom: 12 }}>📲</div>
+                                            <div style={{ color: 'var(--text-muted)', fontSize: '0.8rem', fontWeight: 600, lineHeight: 1.4 }}>QR код<br />ачааллаж байна...</div>
+                                        </div>
+                                    )}
                                 </div>
                                 <div className="custom-scrollbar" style={{ display: 'flex', gap: 12, marginTop: 24, overflowX: 'auto', paddingBottom: 12, justifyContent: 'center' }}>
                                     {qpayInvoice.urls.map(url => (
@@ -432,6 +437,66 @@ export function StoreCheckout() {
                                 <p style={{ color: 'var(--text-muted)', fontSize: '1rem', lineHeight: 1.6, fontWeight: 500 }}>
                                     Таны захиалга хүлээн авлаа. Манай менежер тун удахгүй тантай холбогдож захиалгыг баталгаажуулна.
                                 </p>
+                            </div>
+                        )}
+
+                        {/* QPay Payment Status */}
+                        {qpayInvoice && !paymentConfirmed && (
+                            <div className="animate-fade-in" style={{
+                                margin: '12px 0 16px',
+                                background: 'linear-gradient(135deg, #ede9fe, #e0e7ff)',
+                                border: '1px solid #8b5cf633',
+                                borderRadius: 16,
+                                padding: '14px 18px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 16,
+                            }}>
+                                <div style={{
+                                    width: 36, height: 36, borderRadius: '50%',
+                                    border: '3px solid #8b5cf6',
+                                    borderTopColor: 'transparent',
+                                    animation: 'paymentSpin 1s linear infinite',
+                                    flexShrink: 0,
+                                }} />
+                                <div>
+                                    <div style={{ fontWeight: 800, fontSize: '0.85rem', color: '#5b21b6', marginBottom: 1 }}>
+                                        QPay төлбөр хүлээж байна...
+                                    </div>
+                                    <div style={{ fontSize: '0.72rem', color: '#6d28d9', lineHeight: 1.3 }}>
+                                        QR уншуулсны дараа автоматаар баталгаажна
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {qpayInvoice && paymentConfirmed && (
+                            <div className="animate-fade-in" style={{
+                                margin: '12px 0 16px',
+                                background: 'linear-gradient(135deg, #dcfce7, #d1fae5)',
+                                border: '1px solid #4ade8033',
+                                borderRadius: 16,
+                                padding: '14px 18px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 16,
+                            }}>
+                                <div style={{
+                                    width: 36, height: 36, borderRadius: '50%',
+                                    background: '#4BB543', color: '#fff',
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                    flexShrink: 0, animation: 'popIn 0.5s cubic-bezier(0.16, 1, 0.3, 1)',
+                                }}>
+                                    <CheckCircle size={18} />
+                                </div>
+                                <div>
+                                    <div style={{ fontWeight: 800, fontSize: '0.85rem', color: '#166534', marginBottom: 1 }}>
+                                        QPay төлбөр баталгаажсан ✅
+                                    </div>
+                                    <div style={{ fontSize: '0.72rem', color: '#15803d', lineHeight: 1.3 }}>
+                                        Таны төлбөр амжилттай хүлээн авлаа
+                                    </div>
+                                </div>
                             </div>
                         )}
 
