@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { ShoppingBag, Search, Plus, Lock, Crown, X, Phone, User } from 'lucide-react';
 import type { Business, Product } from '../../../types';
 import { useCartStore } from '../../../store';
@@ -22,6 +23,21 @@ export function ThemeMinimal({ business }: { business: Business }) {
     const [showDashboard, setShowDashboard] = useState(false);
     const [visibleCount, setVisibleCount] = useState(20);
     const PRODUCTS_PER_PAGE = 20;
+
+    // Deep-link: auto-open product from ?product= URL query param
+    const [searchParams, setSearchParams] = useSearchParams();
+    useEffect(() => {
+        const productId = searchParams.get('product');
+        if (productId && products.length > 0 && !selectedProduct) {
+            const target = products.find(p => p.id === productId);
+            if (target) {
+                setSelectedProduct(target);
+                // Clean up the URL param after opening
+                searchParams.delete('product');
+                setSearchParams(searchParams, { replace: true });
+            }
+        }
+    }, [products, searchParams]);
 
     // Reset visible count when filters change
     useEffect(() => {

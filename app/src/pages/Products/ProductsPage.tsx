@@ -5,7 +5,7 @@ import { ImageUpload } from '../../components/common/ImageUpload';
 import {
     Grid3X3, List, Plus, Search, MoreVertical, AlertTriangle, Loader2,
     Eye, EyeOff, Bot, Target, ShieldCheck, Sparkles, CheckCircle2, Facebook,
-    Package, Clock, Check, Trash2, Image as ImageIcon
+    Package, Clock, Check, Trash2, Image as ImageIcon, Link2
 } from 'lucide-react';
 import { useBusinessStore, useAuthStore } from '../../store';
 import { productService, categoryService, cargoService } from '../../services/db';
@@ -333,6 +333,15 @@ export function ProductsPage() {
 
                                                 {openDropdownId === p.id && (
                                                     <div className="product-card-dropdown" onClick={e => e.stopPropagation()}>
+                                                        {business?.slug && (
+                                                            <div className="dropdown-action-item" onClick={() => {
+                                                                const url = `${window.location.origin}/${business.slug}?product=${p.id}`;
+                                                                navigator.clipboard.writeText(url).then(() => toast.success('Линк хуулагдлаа!')).catch(() => toast.error('Хуулж чадсангүй'));
+                                                                setOpenDropdownId(null);
+                                                            }}>
+                                                                <Link2 size={14} /> Линк хуулах
+                                                            </div>
+                                                        )}
                                                         {hasPermission('products.edit') && (
                                                             <div className="dropdown-action-item" onClick={() => { setEditingProduct(p); setOpenDropdownId(null); }}>
                                                                 <Plus size={14} style={{ transform: 'rotate(45deg)' }} /> Засах
