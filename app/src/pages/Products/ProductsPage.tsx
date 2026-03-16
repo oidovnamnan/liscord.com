@@ -98,7 +98,8 @@ export function ProductsPage() {
             (p.sku || '').toLowerCase().includes(search.toLowerCase()) ||
             (p.categoryName || '').toLowerCase().includes(search.toLowerCase());
 
-        const matchCategory = categoryFilter === 'all' || p.categoryId === categoryFilter;
+        const selectedCat = categoryFilter !== 'all' ? categories.find(c => c.id === categoryFilter) : null;
+        const matchCategory = categoryFilter === 'all' || p.categoryId === categoryFilter || (selectedCat && p.categoryName === selectedCat.name);
 
         return matchSearch && matchCategory;
     });
