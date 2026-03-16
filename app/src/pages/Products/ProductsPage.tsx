@@ -15,6 +15,8 @@ import { FBImportModal } from './FBImportModal';
 import { toast } from 'react-hot-toast';
 import { usePermissions } from '../../hooks/usePermissions';
 import { PermissionGate } from '../../components/common/PermissionGate';
+import { collection, query, where, getCountFromServer } from 'firebase/firestore';
+import { db } from '../../services/firebase';
 import './ProductsPage.css';
 
 function fmt(n: number) { return '₮' + n.toLocaleString('mn-MN'); }
@@ -45,6 +47,7 @@ export function ProductsPage() {
     const [selectedIds, setSelectedIds] = useState<string[]>([]);
     const [isBulkUpdating, setIsBulkUpdating] = useState(false);
     const [categories, setCategories] = useState<Category[]>([]);
+    const [totalCount, setTotalCount] = useState<number | null>(null);
 
     useEffect(() => {
         if (!business?.id) return;
@@ -66,16 +69,28 @@ export function ProductsPage() {
         return () => unsub();
     }, [business?.id]);
 
+    // Fetch real total product count (not limited by pagination)
     useEffect(() => {
-        const total = products.length;
+        if (!business?.id) return;
+        const q = query(
+            collection(db, 'businesses', business.id, 'products'),
+            where('isDeleted', '==', false)
+        );
+        getCountFromServer(q).then(snap => {
+            setTotalCount(snap.data().count);
+        }).catch(() => { /* fallback to products.length */ });
+    }, [business?.id, products.length]);
+
+    useEffect(() => {
+        const realTotal = totalCount ?? products.length;
         // Preorder бараа нь агуулахын нөөцтэй хамааралгүй — шүүнэ
         const stockTracked = products.filter(p => p.productType !== 'preorder' && !p.isDeleted && p.stock?.trackInventory !== false);
         const low = stockTracked.filter(p => (p.stock?.quantity || 0) <= (p.stock?.lowStockThreshold || 0) && (p.stock?.quantity || 0) > 0).length;
         const out = stockTracked.filter(p => (p.stock?.quantity || 0) === 0).length;
         const value = stockTracked.reduce((sum, p) => sum + ((p.pricing?.costPrice || 0) * (p.stock?.quantity || 0)), 0);
 
-        setStats({ total, low, out, value });
-    }, [products]);
+        setStats({ total: realTotal, low, out, value });
+    }, [products, totalCount]);
 
     const filtered = products.filter(p => {
         const matchSearch = !search ||
@@ -158,7 +173,7 @@ export function ProductsPage() {
                             <div>
                                 <h3 className="prd-hero-title">Бараа Материал</h3>
                                 <div className="prd-hero-desc">
-                                    {loading ? 'Уншиж байна...' : `Нийт ${products.length} төрлийн бараа`}
+                                    {loading ? 'Уншиж байна...' : `Нийт ${totalCount ?? products.length} төрлийн бараа`}
                                 </div>
                             </div>
                         </div>
