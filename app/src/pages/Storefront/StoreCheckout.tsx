@@ -552,26 +552,18 @@ export function StoreCheckout() {
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
                         {/* Delivery Info */}
                         <div className="settings-card animate-slide-up" style={{ padding: 32, borderRadius: 24, boxShadow: 'var(--shadow-sm)', border: '1px solid var(--border-color)', background: 'var(--surface-1)' }}>
-                            <div className="checkout-section-header" style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24 }}>
-                                <div className="checkout-section-icon" style={{ width: 44, height: 44, borderRadius: 12, background: 'rgba(var(--primary-rgb), 0.1)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                    <MapPin size={22} />
-                                </div>
-                                <h2 style={{ fontSize: '1.25rem', fontWeight: 800, margin: 0 }}>Хүргэлтийн мэдээлэл</h2>
-                            </div>
-
                             <div className="grid-2-gap" style={{ marginBottom: 20 }}>
                                 <div className="input-group">
-                                    <label className="input-label" style={{ fontSize: '0.8rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Хүлээн авагчийн нэр *</label>
-                                    <input className="input" name="name" required value={customerName} onChange={e => setCustomerName(e.target.value)} style={{ height: 48, borderRadius: 12, background: 'var(--bg-soft)', border: '1px solid var(--border-primary)' }} />
+                                    <input className="input" name="name" required placeholder="Захиалагчийн нэр" value={customerName} onChange={e => setCustomerName(e.target.value)} style={{ height: 48, borderRadius: 12, background: 'var(--bg-soft)', border: '1px solid var(--border-primary)' }} />
                                 </div>
                                 <div className="input-group">
-                                    <label className="input-label" style={{ fontSize: '0.8rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Утасны дугаар *</label>
                                     <input
                                         className="input"
                                         name="phone"
                                         required
                                         type="tel"
                                         maxLength={8}
+                                        placeholder="Утасны дугаар"
                                         value={customerPhone}
                                         onChange={e => setCustomerPhone(e.target.value.replace(/\D/g, ''))}
                                         onFocus={() => setPhoneError(false)}
@@ -643,10 +635,6 @@ export function StoreCheckout() {
                                         </div>
                                     )}
                                 </>
-                            ) : hasPreorderItems ? (
-                                <div style={{ padding: '20px', borderRadius: 16, background: 'var(--bg-soft)', border: '1px dotted var(--border-color)', textAlign: 'center' }}>
-                                    <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', margin: 0, fontWeight: 600 }}>Захиалгын бараа тул хүргэлтийн сонголтгүй.</p>
-                                </div>
                             ) : null}
                         </div>
 
