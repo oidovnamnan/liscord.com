@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { collection, onSnapshot, query, orderBy, doc, updateDoc, Timestamp, where, getDocs } from 'firebase/firestore';
 import { db } from '../../services/firebase';
 import { useBusinessStore, useAuthStore } from '../../store';
+import { usePermissions } from '../../hooks/usePermissions';
 import { Undo2, Clock, CheckCircle, XCircle, DollarSign, Search, X, Eye, AlertTriangle, CreditCard, Users, FileText, Package } from 'lucide-react';
 import type { ReturnRequest, ReturnStatus, Order } from '../../types';
 import { toast } from 'react-hot-toast';
@@ -35,6 +36,7 @@ export function ReturnsPage() {
     const { business } = useBusinessStore();
     const { user } = useAuthStore();
     const employee = useBusinessStore(s => s.employee);
+    const { hasPermission } = usePermissions();
 
     const [returns, setReturns] = useState<ReturnRequest[]>([]);
     const [loading, setLoading] = useState(true);
@@ -497,7 +499,7 @@ export function ReturnsPage() {
                                     rows={2}
                                 />
                                 <div className="rtn-action-row">
-                                    {selectedReturn.status === 'pending' && (
+                                    {selectedReturn.status === 'pending' && hasPermission('returns.review') && (
                                         <button
                                             className="rtn-btn rtn-btn-review"
                                             disabled={actionLoading}
@@ -508,23 +510,27 @@ export function ReturnsPage() {
                                     )}
                                     {selectedReturn.status === 'operator_review' && (
                                         <>
-                                            <button
-                                                className="rtn-btn rtn-btn-approve"
-                                                disabled={actionLoading}
-                                                onClick={() => handleStatusChange(selectedReturn, 'finance_review', actionNote)}
-                                            >
-                                                <CheckCircle size={16} /> Зөвшөөрөх
-                                            </button>
-                                            <button
-                                                className="rtn-btn rtn-btn-reject"
-                                                disabled={actionLoading}
-                                                onClick={() => handleStatusChange(selectedReturn, 'rejected', actionNote)}
-                                            >
-                                                <XCircle size={16} /> Татгалзах
-                                            </button>
+                                            {hasPermission('returns.review') && (
+                                                <button
+                                                    className="rtn-btn rtn-btn-approve"
+                                                    disabled={actionLoading}
+                                                    onClick={() => handleStatusChange(selectedReturn, 'finance_review', actionNote)}
+                                                >
+                                                    <CheckCircle size={16} /> Зөвшөөрөх
+                                                </button>
+                                            )}
+                                            {hasPermission('returns.reject') && (
+                                                <button
+                                                    className="rtn-btn rtn-btn-reject"
+                                                    disabled={actionLoading}
+                                                    onClick={() => handleStatusChange(selectedReturn, 'rejected', actionNote)}
+                                                >
+                                                    <XCircle size={16} /> Татгалзах
+                                                </button>
+                                            )}
                                         </>
                                     )}
-                                    {(selectedReturn.status === 'approved' || selectedReturn.status === 'finance_review') && (
+                                    {(selectedReturn.status === 'approved' || selectedReturn.status === 'finance_review') && hasPermission('returns.process_refund') && (
                                         selectedReturn.refundAccount?.bankName && selectedReturn.refundAccount?.accountNumber ? (
                                             <button
                                                 className="rtn-btn rtn-btn-refund"
@@ -535,7 +541,7 @@ export function ReturnsPage() {
                                             </button>
                                         ) : (
                                             <div style={{ fontSize: '0.78rem', color: '#ef4444', fontWeight: 600, padding: '8px 12px', background: 'rgba(239, 68, 68, 0.06)', borderRadius: 8 }}>
-                                                ⚠️ Буцаах данс тодорхойгүй байна. Буцаалт үүсгэхдээ данс бөглөх шаардлагатай.
+                                                ⚠️ Буцаах данс тодорхойгүй байна. Данс нэмнэ үү!
                                             </div>
                                         )
                                     )}

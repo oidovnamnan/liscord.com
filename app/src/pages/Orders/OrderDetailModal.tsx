@@ -190,8 +190,8 @@ export function OrderDetailModal({ bizId, order, onClose, statuses }: OrderDetai
                     </div>
                     <div className="header-actions">
                         {canCreateReturn && order.paymentStatus !== 'unpaid' && !order.isDeleted && order.status !== 'cancelled' && (
-                            <button className="btn btn-sm" onClick={() => setShowReturnModal(true)} style={{ background: order.status === 'confirmed' ? 'linear-gradient(135deg, #f59e0b, #d97706)' : 'linear-gradient(135deg, #f87171, #ef4444)', color: '#fff', border: 'none', display: 'flex', alignItems: 'center', gap: 5 }}>
-                                <Undo2 size={14} /> {order.status === 'confirmed' ? 'Цуцлах' : 'Буцаалт'}
+                            <button className="btn btn-sm" onClick={() => setShowReturnModal(true)} style={{ background: ['new', 'confirmed'].includes(order.status) ? 'linear-gradient(135deg, #f59e0b, #d97706)' : 'linear-gradient(135deg, #f87171, #ef4444)', color: '#fff', border: 'none', display: 'flex', alignItems: 'center', gap: 5 }}>
+                                <Undo2 size={14} /> {['new', 'confirmed'].includes(order.status) ? 'Цуцлах' : 'Буцаалт'}
                             </button>
                         )}
                         <button className="btn btn-secondary btn-sm" onClick={handlePrint}>

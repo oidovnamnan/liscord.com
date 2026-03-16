@@ -16,25 +16,25 @@ interface Props {
 
 // ── All options (filtered by order status below) ──
 const ALL_REASON_OPTIONS: { value: ReturnReason; label: string; statuses: string[] }[] = [
-    { value: 'customer_cancelled', label: 'Хэрэглэгч цуцалсан', statuses: ['confirmed', 'sourced', 'arrived'] },
+    { value: 'customer_cancelled', label: 'Хэрэглэгч цуцалсан', statuses: ['new', 'confirmed', 'sourced', 'arrived'] },
     { value: 'source_unavailable', label: 'Сорс нөөц дууссан', statuses: ['sourced'] },
     { value: 'source_delayed', label: 'Нийлүүлэлт удааширсан', statuses: ['sourced'] },
     { value: 'delivery_late', label: 'Хүргэлт удааширсан', statuses: ['fulfilled'] },
     { value: 'defective', label: 'Эвдэрч хэмхэрсэн', statuses: ['arrived', 'fulfilled'] },
     { value: 'wrong_item', label: 'Буруу бараа ирсэн', statuses: ['arrived', 'fulfilled'] },
     { value: 'not_as_described', label: 'Тайлбарт нийцээгүй', statuses: ['arrived', 'fulfilled'] },
-    { value: 'other', label: 'Бусад', statuses: ['confirmed', 'sourced', 'arrived', 'fulfilled'] },
+    { value: 'other', label: 'Бусад', statuses: ['new', 'confirmed', 'sourced', 'arrived', 'fulfilled'] },
 ];
 
 const ALL_TYPE_OPTIONS: { value: ReturnType; label: string; desc: string; statuses: string[] }[] = [
-    { value: 'cancellation', label: '🚫 Цуцлалт', desc: 'Бараа ирээгүй, мөнгө буцаах', statuses: ['confirmed'] },
+    { value: 'cancellation', label: '🚫 Цуцлалт', desc: 'Бараа ирээгүй, мөнгө буцаах', statuses: ['new', 'confirmed'] },
     { value: 'source_return', label: '📦 Сорс буцаалт', desc: 'Сорсинг хийхэд нөөц дууссан / хугацаа хэтэрсэн', statuses: ['sourced', 'arrived'] },
     { value: 'late_delivery', label: '⏱️ Удааширсан', desc: 'Нийлүүлэлт/хүргэлт удааширсан', statuses: ['sourced', 'fulfilled'] },
     { value: 'product_issue', label: '📸 Бараа асуудалтай', desc: 'Эвдэрсэн, буруу бараа ирсэн', statuses: ['arrived', 'fulfilled'] },
 ];
 
 const ALL_ACTION_OPTIONS: { value: ReturnAction; label: string; statuses: string[] }[] = [
-    { value: 'refund_only', label: 'Мөнгө буцаах', statuses: ['confirmed', 'sourced'] },
+    { value: 'refund_only', label: 'Мөнгө буцаах', statuses: ['new', 'confirmed', 'sourced'] },
     { value: 'restock', label: 'Нөөцөд', statuses: ['arrived', 'fulfilled'] },
     { value: 'write_off', label: 'Актлах', statuses: ['arrived', 'fulfilled'] },
     { value: 'return_to_source', label: 'Сорс руу', statuses: ['sourced', 'arrived', 'fulfilled'] },
@@ -45,7 +45,7 @@ export function CreateReturnModal({ bizId, order, onClose, onCreated }: Props) {
     const employee = useBusinessStore(s => s.employee);
 
     const orderStatus = order.status || 'confirmed';
-    const isPreArrival = ['confirmed', 'sourced'].includes(orderStatus); // Бараа ирээгүй
+    const isPreArrival = ['new', 'confirmed', 'sourced'].includes(orderStatus); // Бараа ирээгүй
 
     // Filter options by order status
     const typeOptions = ALL_TYPE_OPTIONS.filter(t => t.statuses.includes(orderStatus));
