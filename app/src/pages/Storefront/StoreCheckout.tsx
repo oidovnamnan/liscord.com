@@ -946,6 +946,9 @@ export function StoreCheckout() {
                             gap: 12px !important;
                             row-gap: 12px !important;
                         }
+                        .checkout-grid .input-group + .input-group {
+                            margin-top: 12px !important;
+                        }
                         .checkout-grid .settings-card {
                             padding: 16px !important;
                             border-radius: 16px !important;
