@@ -192,6 +192,12 @@ export const MODULE_PERMISSIONS: Record<string, ModulePermission[]> = {
         { id: 'returns.configure', label: 'Буцаалтын тохиргоо' },
     ],
 
+    'stock-inquiry': [
+        { id: 'stock-inquiry.view', label: 'Лавлагаа харах' },
+        { id: 'stock-inquiry.respond', label: 'Лавлагаанд хариулах' },
+        { id: 'stock-inquiry.configure', label: 'Тохиргоо өөрчлөх' },
+    ],
+
     'quality-control': [
         { id: 'qc.inspect', label: 'Шалгалт хийх' },
         { id: 'qc.approve', label: 'Чанар баталгаажуулах' },

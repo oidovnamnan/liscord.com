@@ -219,6 +219,21 @@ export const LISCORD_MODULES: AppModule[] = [
         ]
     },
     {
+        id: 'stock-inquiry',
+        name: 'Бараа Лавлагаа',
+        description: 'Захиалгын өмнө нөөц, үнийн лавлагаа',
+        icon: 'SearchCheck',
+        route: '/app/stock-inquiry',
+        isCore: false,
+        category: 'operations',
+        hasSettings: true,
+        isFree: false,
+        plans: [
+            { id: 'monthly', name: '30 хоног', price: 15000, durationDays: 30 },
+            { id: 'yearly', name: '1 жил', price: 150000, durationDays: 365 }
+        ]
+    },
+    {
         id: 'quality-control',
         name: 'Чанарын Хяналт',
         description: 'Ирсэн барааны шалгалт',

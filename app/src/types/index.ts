@@ -1716,3 +1716,28 @@ export interface ReturnsConfig {
     productIssueDeadlineDays: number;
     requireEvidence: boolean;
 }
+
+// ============ STOCK INQUIRY ============
+
+export type StockInquiryStatus = 'pending' | 'checking' | 'no_change' | 'updated' | 'inactive' | 'expired';
+
+export interface StockInquiry {
+    id: string;
+    productId: string;
+    productName: string;
+    productImage: string | null;
+    currentPrice: number;
+    customerPhone: string;
+    status: StockInquiryStatus;
+    changes?: {
+        newPrice?: number;
+        newName?: string;
+        note?: string;
+    };
+    respondedBy?: string;
+    respondedByName?: string;
+    timeoutSeconds: number;
+    createdAt: Date;
+    respondedAt?: Date;
+}
+

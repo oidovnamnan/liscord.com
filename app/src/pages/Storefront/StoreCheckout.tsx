@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, useParams, useOutletContext } from 'react-router-dom';
 import { useCartStore } from '../../store';
 import { orderService } from '../../services/db';
@@ -8,6 +8,7 @@ import { doc, onSnapshot, getDoc, setDoc, updateDoc, arrayUnion } from 'firebase
 import { db } from '../../services/firebase';
 import type { Business, Order } from '../../types';
 import { toast } from 'react-hot-toast';
+import { StockInquiryPopup } from './StockInquiryPopup';
 
 async function getUniqueRefCode(businessId: string): Promise<string> {
     const counterRef = doc(db, `businesses/${businessId}/counters`, 'refCodes');
@@ -66,6 +67,10 @@ export function StoreCheckout() {
     }, [business?.id]);
     const [savedTotal, setSavedTotal] = useState(0);
     const [paymentConfirmed, setPaymentConfirmed] = useState(false);
+
+    // Stock Inquiry
+    const [showInquiryPopup, setShowInquiryPopup] = useState(false);
+    const pendingFormRef = useRef<HTMLFormElement | null>(null);
 
     // Payment method
     const [paymentMethod, setPaymentMethod] = useState<'bank_transfer' | 'qpay' | 'social_pay'>('bank_transfer');
@@ -170,10 +175,22 @@ export function StoreCheckout() {
         }
         setPhoneError(false);
 
-        setLoading(true);
+        // Check if stock-inquiry module is enabled
+        const hasSIModule = !!(business as any).moduleSubscriptions?.['stock-inquiry'];
+        const siEnabled = (business.settings as any)?.stockInquiry?.enabled;
 
+        if (hasSIModule && siEnabled && !showInquiryPopup) {
+            pendingFormRef.current = e.currentTarget;
+            setShowInquiryPopup(true);
+            return;
+        }
+
+        await executeOrder(name, phone, address);
+    };
+
+    const executeOrder = async (name: string, phone: string, address: string) => {
+        setLoading(true);
         try {
-            // Ensure ref code is available (should already be set on mount)
             let code = refCode;
             if (paymentMethod === 'bank_transfer' && !code) {
                 code = await getUniqueRefCode(business.id);
@@ -229,11 +246,9 @@ export function StoreCheckout() {
             window.scrollTo(0, 0);
             clearCart();
 
-            // Save customer info for auto-fill on next visit
             if (name) localStorage.setItem(`customer_name_${business.id}`, name);
             if (phone) localStorage.setItem(`customer_phone_${business.id}`, phone);
 
-            // Generate QPay QR if enabled
             if (business.settings?.qpay?.enabled && paymentMethod === 'qpay') {
                 try {
                     const invoice = await qpayService.createInvoice(
@@ -928,6 +943,38 @@ export function StoreCheckout() {
                     }
                 `}
                 </style>
+
+                {/* Stock Inquiry Popup */}
+                {showInquiryPopup && (
+                    <StockInquiryPopup
+                        businessId={business.id}
+                        cartItems={items.map(i => ({
+                            productId: i.product.id,
+                            productName: i.product.name,
+                            productImage: i.product.images?.[0] || null,
+                            currentPrice: i.price,
+                        }))}
+                        customerPhone={customerPhone}
+                        timeoutSeconds={(business.settings as any)?.stockInquiry?.timeoutSeconds || 60}
+                        inactiveDays={(business.settings as any)?.stockInquiry?.inactiveDays || 30}
+                        onProceed={() => {
+                            setShowInquiryPopup(false);
+                            // Re-submit the form
+                            const form = pendingFormRef.current;
+                            if (form) {
+                                const fd = new FormData(form);
+                                const name = fd.get('name') as string || customerName;
+                                const phone = (fd.get('phone') as string || customerPhone).replace(/\D/g, '');
+                                const address = fd.get('address') as string || '';
+                                executeOrder(name, phone, address);
+                            }
+                        }}
+                        onCancel={() => {
+                            setShowInquiryPopup(false);
+                            toast('Захиалга цуцлагдлаа', { icon: '🚫' });
+                        }}
+                    />
+                )}
             </main>
         </div>
     );
