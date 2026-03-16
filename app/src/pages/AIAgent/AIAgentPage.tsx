@@ -262,8 +262,8 @@ export const AIAgentPage: React.FC = () => {
             toast.error('AI API Key тохируулаагүй байна.');
             return;
         }
-        if (productsRef.current.length === 0) {
-            toast.error('Бараа мэдээлэл ачаалагдаагүй байна.');
+        if (!business?.id) {
+            toast.error('Бизнес мэдээлэл ачаалагдаагүй байна.');
             return;
         }
 
@@ -279,19 +279,21 @@ export const AIAgentPage: React.FC = () => {
         setAppliedFixes(new Set());
 
         try {
-            const products = productsRef.current
-                .filter(p => !p.isDeleted)
-                .map(p => ({
-                    id: p.id,
-                    name: p.name,
-                    description: p.description || '',
-                    categoryName: p.categoryName || '',
-                    salePrice: p.pricing?.salePrice || 0,
-                    costPrice: p.pricing?.costPrice || 0,
-                    images: p.images?.length || 0,
-                }));
+            // Fetch ALL products (no limit) for full audit
+            const allProducts = await productService.getProducts(business.id);
+            productsRef.current = allProducts; // Update ref for fix actions
 
-            const categories = [...new Set(productsRef.current.map(p => p.categoryName).filter(Boolean))] as string[];
+            const products = allProducts.map(p => ({
+                id: p.id,
+                name: p.name,
+                description: p.description || '',
+                categoryName: p.categoryName || '',
+                salePrice: p.pricing?.salePrice || 0,
+                costPrice: p.pricing?.costPrice || 0,
+                images: p.images?.length || 0,
+            }));
+
+            const categories = [...new Set(allProducts.map(p => p.categoryName).filter(Boolean))] as string[];
             const result = await auditProducts(geminiApiKey, products, categories);
             setAuditResult(result);
 

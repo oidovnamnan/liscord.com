@@ -77,7 +77,7 @@ export const productService = {
     async getProducts(bizId: string): Promise<Product[]> {
         const q = query(this.getProductsRef(bizId), where('isDeleted', '==', false));
         const snap = await getDocs(q);
-        return snap.docs.map(d => convertTimestamps(d.data()) as Product);
+        return snap.docs.map(d => ({ id: d.id, ...convertTimestamps(d.data()) } as Product));
     },
 
     subscribeProducts(bizId: string, callback: (products: Product[]) => void, limitCount: number = 200) {
