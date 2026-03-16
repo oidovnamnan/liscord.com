@@ -186,6 +186,39 @@ function generateSKU(categoryName: string): string {
 
 // ============ AI Product Extraction ============
 
+const IMAGE_ENRICHMENT_THRESHOLD = 300; // chars — posts shorter than this get image analysis
+
+/**
+ * Fetch a remote image and convert to base64 for Gemini Vision.
+ * Returns null if fetch fails (CORS, timeout, etc).
+ */
+async function fetchImageAsBase64(imageUrl: string): Promise<{ data: string; mimeType: string } | null> {
+    try {
+        const resp = await fetch(imageUrl);
+        if (!resp.ok) return null;
+        const blob = await resp.blob();
+        const mimeType = blob.type || 'image/jpeg';
+
+        return new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                const result = reader.result as string;
+                // Strip data:image/xxx;base64, prefix
+                const base64 = result.split(',')[1];
+                if (base64) {
+                    resolve({ data: base64, mimeType });
+                } else {
+                    resolve(null);
+                }
+            };
+            reader.onerror = () => resolve(null);
+            reader.readAsDataURL(blob);
+        });
+    } catch {
+        return null;
+    }
+}
+
 export async function extractProductFromPost(
     post: FBPost,
     apiKey: string,
@@ -194,6 +227,9 @@ export async function extractProductFromPost(
 ): Promise<FBExtractedProduct | null> {
     const message = post.message || '';
     const images = extractImagesFromPost(post);
+
+    // Determine if we need image enrichment (short text = likely missing details)
+    const needsImageEnrichment = message.length < IMAGE_ENRICHMENT_THRESHOLD && images.length > 0;
 
     // Skip posts without any text AND no images
     if ((!message || message.trim().length < 3) && images.length === 0) return null;
@@ -208,7 +244,15 @@ export async function extractProductFromPost(
 ${message}
 """
 
-ZУРАГ ТОО: ${images.length}
+ЗУРАГ ТОО: ${images.length}
+${needsImageEnrichment ? `
+ЗУРАГ ХАВСАРГАСАН — дараах НЭМЭЛТ мэдээллийг зургаас задлах:
+- Бүтээгдэхүүний савлагаа дээрх текстийг уншиж, нэр, жин, хэмжээ, найрлага, гарал үүслийг тайлбарт бичих
+- Barcode/QR код, серийн дугаар харагдвал тэмдэглэх
+- Хадгалах хугацаа, хэрэглэх заавар зэрэг бүх мэдээллийг задлах
+- ЗОХИОХГҮЙ — ЗӨВХӨН зурагт бодитоор харагдаж байгаа мэдээллийг бичих
+- Текст бага байгаа тул зургаас аль болох дэлгэрэнгүй мэдээлэл задлахыг ЭН ТЭРГҮҮНД тавих
+` : ''}
 
 ${existingCategories.length > 0 ? `ОДОО БАЙГАА АНГИЛАЛУУД — ЗААВАЛ эдгээрээс сонгох ЁСТОЙ:
 ${existingCategories.map(c => `- "${c}"`).join('\n')}
@@ -300,9 +344,19 @@ JSON ХАРИУ:
 `;
 
     try {
+        // Build content parts — add image if text is short
+        const parts: any[] = [{ text: prompt }];
+
+        if (needsImageEnrichment) {
+            const imageData = await fetchImageAsBase64(images[0]);
+            if (imageData) {
+                parts.push({ inlineData: imageData });
+            }
+        }
+
         const response = await client.models.generateContent({
             model: 'gemini-2.5-flash',
-            contents: [{ role: 'user', parts: [{ text: prompt }] }],
+            contents: [{ role: 'user', parts }],
             config: { responseMimeType: 'application/json' }
         });
 
