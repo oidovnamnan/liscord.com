@@ -345,10 +345,10 @@ export function StoreCheckout() {
             }
         };
 
-        // Poll every 5 seconds
-        const interval = setInterval(poll, 5000);
-        // First check after 3 seconds
-        const timeout = setTimeout(poll, 3000);
+        // Poll every 2 seconds
+        const interval = setInterval(poll, 2000);
+        // First check after 1.5 seconds
+        const timeout = setTimeout(poll, 1500);
 
         return () => {
             stopped = true;
