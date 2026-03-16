@@ -66,11 +66,19 @@ export function SettingsPage() {
     const [teamCount, setTeamCount] = useState(0);
     const [deviceCount, setDeviceCount] = useState(0);
 
+    // Grace period: 30 days after creation → can change freely once
+    const isInGracePeriod = useMemo(() => {
+        if (!business?.createdAt) return false;
+        const daysSinceCreation = (Date.now() - business.createdAt.getTime()) / (1000 * 3600 * 24);
+        return daysSinceCreation <= 30 && !business.lastStorefrontChangeAt;
+    }, [business?.createdAt, business?.lastStorefrontChangeAt]);
+
     const isStorefrontLocked = useMemo(() => {
+        if (isInGracePeriod) return false;
         if (!business?.lastStorefrontChangeAt) return false;
-        const daysSince = (new Date().getTime() - business.lastStorefrontChangeAt.getTime()) / (1000 * 3600 * 24);
+        const daysSince = (Date.now() - business.lastStorefrontChangeAt.getTime()) / (1000 * 3600 * 24);
         return daysSince < 365;
-    }, [business?.lastStorefrontChangeAt]);
+    }, [business?.lastStorefrontChangeAt, isInGracePeriod]);
 
     useEffect(() => {
         setIsDirty(false);
@@ -239,9 +247,10 @@ export function SettingsPage() {
 
                 const slugChanged = slug !== business.slug;
                 if (slugChanged) {
-                    if (!business.slug) {
+                    if (!business.slug || isInGracePeriod) {
+                        // First time OR grace period → allow direct change with duplicate check
                         const existing = await businessService.getBusinessBySlug(slug);
-                        if (existing) {
+                        if (existing && existing.id !== business.id) {
                             toast.error('Энэ дэлгүүрийн холбоос давхардсан байна. Өөр үг сонгоно уу.');
                             setLoading(false);
                             return;
@@ -255,8 +264,13 @@ export function SettingsPage() {
             }
 
             // Update business core fields + storefront settings on main doc
+            const isNameOrSlugChanged = (slug !== undefined && slug !== business.slug) ||
+                (storefrontName !== undefined && storefrontName !== (business.settings?.storefront?.name || ''));
+
             await businessService.updateBusiness(business.id, {
                 slug: slug !== undefined ? (slug || business.slug || '') : (business.slug || ''),
+                // Mark grace period as used if name/slug changed
+                ...(isInGracePeriod && isNameOrSlugChanged ? { lastStorefrontChangeAt: new Date() } : {}),
                 settings: {
                     ...business.settings,
                     unpaidOrderExpiryHours: unpaidExpiry,
@@ -524,14 +538,14 @@ export function SettingsPage() {
                                     <form className="settings-form" onSubmit={handleUpdateStorefront} onChange={() => setIsDirty(true)}>
                                         <div className="input-group">
                                             <label className="settings-label">Дэлгүүрийн нэр <span style={{ color: 'var(--danger)', fontSize: '0.7rem' }}>(жилд 1 удаа)</span></label>
-                                            <input className="input" name="storefrontName" defaultValue={business?.settings?.storefront?.name || ''} placeholder="NamShop" disabled={!!business?.slug || !!pendingRequest} />
+                                            <input className="input" name="storefrontName" defaultValue={business?.settings?.storefront?.name || ''} placeholder="NamShop" disabled={(!!business?.slug && !isInGracePeriod) || !!pendingRequest} />
                                             <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: '8px 0 0 0' }}>Дэлгүүрийн хуудсан дээр харагдах нэр. Хоосон орхивол бизнесийн нэр харагдана.</p>
                                         </div>
                                         <div className="input-group">
                                             <label className="settings-label">Дэлгүүрийн холбоос (Slug) <span style={{ color: 'var(--danger)', fontSize: '0.7rem' }}>(жилд 1 удаа)</span></label>
                                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                                 <span style={{ color: 'var(--text-muted)', fontWeight: 600 }}>{window.location.origin}/</span>
-                                                <input className="input" name="slug" value={storefrontSlug} onChange={(e) => { setStorefrontSlug(e.target.value.toLowerCase()); setIsDirty(true); }} placeholder="zara-mongolia" required pattern="[a-z0-9-]+" title="Зөвхөн жижиг англи үсэг, тоо болон зураас ашиглана уу" style={{ flex: 1 }} disabled={!!business?.slug || !!pendingRequest} />
+                                                <input className="input" name="slug" value={storefrontSlug} onChange={(e) => { setStorefrontSlug(e.target.value.toLowerCase()); setIsDirty(true); }} placeholder="zara-mongolia" required pattern="[a-z0-9-]+" title="Зөвхөн жижиг англи үсэг, тоо болон зураас ашиглана уу" style={{ flex: 1 }} disabled={(!!business?.slug && !isInGracePeriod) || !!pendingRequest} />
                                             </div>
                                             <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: '8px 0 0 0' }}>Зөвхөн жижиг англи үсэг, тоо болон дундуур зураас орж болно.</p>
                                         </div>
