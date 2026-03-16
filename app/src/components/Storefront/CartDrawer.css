@@ -25,6 +25,7 @@
     width: 400px;
     max-width: 100vw;
     height: 100vh;
+    height: 100dvh;
     background: #fff;
     display: flex;
     flex-direction: column;
@@ -231,8 +232,10 @@
 
 .cart-footer {
     padding: 24px;
+    padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px));
     background: #fcfcfc;
     border-top: 1px solid #eee;
+    flex-shrink: 0;
 }
 
 .cart-summary {
