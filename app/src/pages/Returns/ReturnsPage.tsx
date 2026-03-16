@@ -4,6 +4,7 @@ import { db } from '../../services/firebase';
 import { useBusinessStore, useAuthStore } from '../../store';
 import { Undo2, Clock, CheckCircle, XCircle, DollarSign, Search, X, Eye, AlertTriangle, CreditCard, Users, FileText, Package } from 'lucide-react';
 import type { ReturnRequest, ReturnStatus, Order } from '../../types';
+import { toast } from 'react-hot-toast';
 import './ReturnsPage.css';
 
 const STATUS_LABELS: Record<ReturnStatus, string> = {
@@ -43,6 +44,12 @@ export function ReturnsPage() {
     const [actionNote, setActionNote] = useState('');
     const [financeNote, setFinanceNote] = useState('');
     const [actionLoading, setActionLoading] = useState(false);
+    // Bank account editing
+    const [editingBank, setEditingBank] = useState(false);
+    const [editBankName, setEditBankName] = useState('');
+    const [editAccountNumber, setEditAccountNumber] = useState('');
+    const [editAccountHolder, setEditAccountHolder] = useState('');
+    const [savingBank, setSavingBank] = useState(false);
 
     // Subscribe to returns
     useEffect(() => {
@@ -144,6 +151,32 @@ export function ReturnsPage() {
             setActionLoading(false);
             setActionNote('');
             setFinanceNote('');
+        }
+    };
+
+    const handleSaveBank = async () => {
+        if (!business?.id || !selectedReturn) return;
+        if (!editBankName.trim() || !editAccountNumber.trim()) {
+            toast.error('Банк болон дансны дугаар заавал бөглөнө үү!');
+            return;
+        }
+        setSavingBank(true);
+        try {
+            const ref = doc(db, `businesses/${business.id}/returns`, selectedReturn.id);
+            const refundAccount = {
+                bankName: editBankName.trim(),
+                accountNumber: editAccountNumber.trim(),
+                accountHolder: editAccountHolder.trim(),
+            };
+            await updateDoc(ref, { refundAccount, updatedAt: new Date() });
+            setSelectedReturn(prev => prev ? { ...prev, refundAccount } as ReturnRequest : null);
+            setEditingBank(false);
+            toast.success('Данс хадгалагдлаа!');
+        } catch (e) {
+            console.error('Failed to save bank:', e);
+            toast.error('Алдаа гарлаа');
+        } finally {
+            setSavingBank(false);
         }
     };
 
@@ -298,22 +331,60 @@ export function ReturnsPage() {
                                     <span className="rtn-info-label">Утас:</span>
                                     <span className="rtn-info-value">{selectedReturn.customer.phone}</span>
                                 </div>
-                                {selectedReturn.refundAccount && (
+                                {selectedReturn.refundAccount?.bankName ? (
+                                    <>
+                                        <div style={{ borderTop: '1px solid var(--border-color)', margin: '10px 0' }} />
+                                        <div className="rtn-section-title" style={{ marginTop: 0, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                            <span><CreditCard size={14} /> Буцаалтын данс</span>
+                                            <button onClick={() => { setEditBankName(selectedReturn.refundAccount?.bankName || ''); setEditAccountNumber(selectedReturn.refundAccount?.accountNumber || ''); setEditAccountHolder(selectedReturn.refundAccount?.accountHolder || ''); setEditingBank(true); }} style={{ background: 'none', border: 'none', color: 'var(--primary)', cursor: 'pointer', fontSize: '0.72rem', fontWeight: 700 }}>Засах</button>
+                                        </div>
+                                        {!editingBank ? (
+                                            <>
+                                                <div className="rtn-info-row">
+                                                    <span className="rtn-info-label">Банк:</span>
+                                                    <span className="rtn-info-value">{selectedReturn.refundAccount.bankName}</span>
+                                                </div>
+                                                <div className="rtn-info-row">
+                                                    <span className="rtn-info-label">Данс:</span>
+                                                    <span className="rtn-info-value mono">{selectedReturn.refundAccount.accountNumber}</span>
+                                                </div>
+                                                <div className="rtn-info-row">
+                                                    <span className="rtn-info-label">Нэр:</span>
+                                                    <span className="rtn-info-value">{selectedReturn.refundAccount.accountHolder}</span>
+                                                </div>
+                                            </>
+                                        ) : (
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 6 }}>
+                                                <input placeholder="Банк" value={editBankName} onChange={e => setEditBankName(e.target.value)} style={{ height: 34, borderRadius: 8, border: '1px solid var(--border-color)', padding: '0 10px', fontSize: '0.82rem' }} />
+                                                <input placeholder="Дансны дугаар" value={editAccountNumber} onChange={e => setEditAccountNumber(e.target.value)} style={{ height: 34, borderRadius: 8, border: '1px solid var(--border-color)', padding: '0 10px', fontSize: '0.82rem' }} />
+                                                <input placeholder="Данс эзэмшигч" value={editAccountHolder} onChange={e => setEditAccountHolder(e.target.value)} style={{ height: 34, borderRadius: 8, border: '1px solid var(--border-color)', padding: '0 10px', fontSize: '0.82rem' }} />
+                                                <div style={{ display: 'flex', gap: 6 }}>
+                                                    <button onClick={() => setEditingBank(false)} style={{ flex: 1, height: 32, borderRadius: 8, border: '1px solid var(--border-color)', background: 'transparent', fontSize: '0.78rem', cursor: 'pointer' }}>Болих</button>
+                                                    <button onClick={handleSaveBank} disabled={savingBank} style={{ flex: 1, height: 32, borderRadius: 8, border: 'none', background: 'var(--primary)', color: '#fff', fontSize: '0.78rem', fontWeight: 700, cursor: 'pointer' }}>{savingBank ? '...' : 'Хадгалах'}</button>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </>
+                                ) : (
                                     <>
                                         <div style={{ borderTop: '1px solid var(--border-color)', margin: '10px 0' }} />
                                         <div className="rtn-section-title" style={{ marginTop: 0 }}><CreditCard size={14} /> Буцаалтын данс</div>
-                                        <div className="rtn-info-row">
-                                            <span className="rtn-info-label">Банк:</span>
-                                            <span className="rtn-info-value">{selectedReturn.refundAccount.bankName}</span>
-                                        </div>
-                                        <div className="rtn-info-row">
-                                            <span className="rtn-info-label">Данс:</span>
-                                            <span className="rtn-info-value mono">{selectedReturn.refundAccount.accountNumber}</span>
-                                        </div>
-                                        <div className="rtn-info-row">
-                                            <span className="rtn-info-label">Нэр:</span>
-                                            <span className="rtn-info-value">{selectedReturn.refundAccount.accountHolder}</span>
-                                        </div>
+                                        {!editingBank ? (
+                                            <div style={{ padding: '10px 0' }}>
+                                                <div style={{ fontSize: '0.78rem', color: '#f59e0b', fontWeight: 600, marginBottom: 8 }}>⚠️ Данс бөглөгдөөгүй</div>
+                                                <button onClick={() => { setEditBankName(''); setEditAccountNumber(''); setEditAccountHolder(''); setEditingBank(true); }} style={{ width: '100%', height: 34, borderRadius: 8, border: '1px dashed var(--border-color)', background: 'transparent', color: 'var(--primary)', fontSize: '0.78rem', fontWeight: 700, cursor: 'pointer' }}>+ Данс нэмэх</button>
+                                            </div>
+                                        ) : (
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 6 }}>
+                                                <input placeholder="Банк" value={editBankName} onChange={e => setEditBankName(e.target.value)} style={{ height: 34, borderRadius: 8, border: '1px solid var(--border-color)', padding: '0 10px', fontSize: '0.82rem' }} />
+                                                <input placeholder="Дансны дугаар" value={editAccountNumber} onChange={e => setEditAccountNumber(e.target.value)} style={{ height: 34, borderRadius: 8, border: '1px solid var(--border-color)', padding: '0 10px', fontSize: '0.82rem' }} />
+                                                <input placeholder="Данс эзэмшигч" value={editAccountHolder} onChange={e => setEditAccountHolder(e.target.value)} style={{ height: 34, borderRadius: 8, border: '1px solid var(--border-color)', padding: '0 10px', fontSize: '0.82rem' }} />
+                                                <div style={{ display: 'flex', gap: 6 }}>
+                                                    <button onClick={() => setEditingBank(false)} style={{ flex: 1, height: 32, borderRadius: 8, border: '1px solid var(--border-color)', background: 'transparent', fontSize: '0.78rem', cursor: 'pointer' }}>Болих</button>
+                                                    <button onClick={handleSaveBank} disabled={savingBank} style={{ flex: 1, height: 32, borderRadius: 8, border: 'none', background: 'var(--primary)', color: '#fff', fontSize: '0.78rem', fontWeight: 700, cursor: 'pointer' }}>{savingBank ? '...' : 'Хадгалах'}</button>
+                                                </div>
+                                            </div>
+                                        )}
                                     </>
                                 )}
                             </div>
