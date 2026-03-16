@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useMemo } from 'react';
+import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { ShoppingBag, Search, Plus, Lock, Crown, X, Phone, User } from 'lucide-react';
 import type { Business, Product } from '../../../types';
@@ -23,6 +23,52 @@ export function ThemeMinimal({ business }: { business: Business }) {
     const [showDashboard, setShowDashboard] = useState(false);
     const [visibleCount, setVisibleCount] = useState(20);
     const PRODUCTS_PER_PAGE = 20;
+
+    // ── Auto-scroll categories ──
+    const catScrollRef = useRef<HTMLDivElement>(null);
+    const catPausedRef = useRef(false);
+    const catPauseTimer = useRef<ReturnType<typeof setTimeout>>(null);
+
+    useEffect(() => {
+        const el = catScrollRef.current;
+        if (!el) return;
+        // Only auto-scroll if content overflows
+        if (el.scrollWidth <= el.clientWidth) return;
+
+        let raf: number;
+        const speed = 0.5; // px per frame
+
+        const step = () => {
+            if (!catPausedRef.current && el) {
+                el.scrollLeft += speed;
+                // Loop: when reaching the end, jump back to start
+                if (el.scrollLeft >= el.scrollWidth - el.clientWidth - 1) {
+                    el.scrollLeft = 0;
+                }
+            }
+            raf = requestAnimationFrame(step);
+        };
+        raf = requestAnimationFrame(step);
+
+        // Pause on user interaction
+        const pause = () => {
+            catPausedRef.current = true;
+            if (catPauseTimer.current) clearTimeout(catPauseTimer.current);
+            catPauseTimer.current = setTimeout(() => { catPausedRef.current = false; }, 3000);
+        };
+
+        el.addEventListener('touchstart', pause, { passive: true });
+        el.addEventListener('mouseenter', pause);
+        el.addEventListener('wheel', pause, { passive: true });
+
+        return () => {
+            cancelAnimationFrame(raf);
+            if (catPauseTimer.current) clearTimeout(catPauseTimer.current);
+            el.removeEventListener('touchstart', pause);
+            el.removeEventListener('mouseenter', pause);
+            el.removeEventListener('wheel', pause);
+        };
+    }, [categories]);
 
     // Deep-link: auto-open product from ?product= URL query param
     const [searchParams, setSearchParams] = useSearchParams();
@@ -150,9 +196,9 @@ export function ThemeMinimal({ business }: { business: Business }) {
                     </div>
                 </div>
 
-                {/* Categories */}
+                {/* Categories — auto-scrolling */}
                 {categories.length > 2 && (
-                    <div className="store-categories">
+                    <div className="store-categories" ref={catScrollRef}>
                         {categories.map(cat => (
                             <button
                                 key={cat}

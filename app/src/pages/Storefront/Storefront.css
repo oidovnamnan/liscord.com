@@ -232,10 +232,20 @@
    ============================================ */
 .store-categories {
     display: flex;
-    justify-content: center;
     gap: 8px;
     padding: 0 clamp(20px, 5vw, 48px) 48px;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    scroll-behavior: auto;
+    mask-image: linear-gradient(to right, transparent 0, #000 24px, #000 calc(100% - 24px), transparent 100%);
+    -webkit-mask-image: linear-gradient(to right, transparent 0, #000 24px, #000 calc(100% - 24px), transparent 100%);
+}
+
+.store-categories::-webkit-scrollbar {
+    display: none;
 }
 
 .category-pill {
