@@ -111,18 +111,23 @@ export function ReturnsPage() {
                 update.refundedAt = new Date();
                 update.financeNote = financeNote || note || '';
                 try {
-                    const orderRef = doc(db, `businesses/${business.id}/orders`, returnReq.orderId);
                     const orderSnap = await getDocs(query(collection(db, `businesses/${business.id}/orders`), where('__name__', '==', returnReq.orderId)));
                     if (!orderSnap.empty) {
                         const orderData = orderSnap.docs[0].data() as Order;
                         const newPaidAmount = Math.max(0, (orderData.financials?.paidAmount || 0) - returnReq.refundAmount);
                         const newBalanceDue = (orderData.financials?.totalAmount || 0) - newPaidAmount;
-                        await updateDoc(orderRef, {
+                        const isFullRefund = returnReq.refundAmount >= (orderData.financials?.totalAmount || 0);
+                        const orderUpdateData: Record<string, unknown> = {
                             'financials.paidAmount': newPaidAmount,
                             'financials.balanceDue': newBalanceDue,
-                            returnStatus: returnReq.refundAmount >= (orderData.financials?.totalAmount || 0) ? 'full' : 'partial',
+                            returnStatus: isFullRefund ? 'full' : 'partial',
                             returnIds: [...(orderData.returnIds || []), returnReq.id],
-                        });
+                        };
+                        // Full refund → order status becomes 'returned'
+                        if (isFullRefund) {
+                            orderUpdateData.status = 'returned';
+                        }
+                        await updateDoc(doc(db, `businesses/${business.id}/orders`, returnReq.orderId), orderUpdateData);
                     }
                 } catch (e) {
                     console.error('Failed to update order financials:', e);
@@ -449,13 +454,19 @@ export function ReturnsPage() {
                                         </>
                                     )}
                                     {(selectedReturn.status === 'approved' || selectedReturn.status === 'finance_review') && (
-                                        <button
-                                            className="rtn-btn rtn-btn-refund"
-                                            disabled={actionLoading}
-                                            onClick={() => handleStatusChange(selectedReturn, 'refunded', financeNote)}
-                                        >
-                                            <DollarSign size={16} /> Мөнгө буцаах
-                                        </button>
+                                        selectedReturn.refundAccount?.bankName && selectedReturn.refundAccount?.accountNumber ? (
+                                            <button
+                                                className="rtn-btn rtn-btn-refund"
+                                                disabled={actionLoading}
+                                                onClick={() => handleStatusChange(selectedReturn, 'refunded', financeNote)}
+                                            >
+                                                <DollarSign size={16} /> Мөнгө буцаах
+                                            </button>
+                                        ) : (
+                                            <div style={{ fontSize: '0.78rem', color: '#ef4444', fontWeight: 600, padding: '8px 12px', background: 'rgba(239, 68, 68, 0.06)', borderRadius: 8 }}>
+                                                ⚠️ Буцаах данс тодорхойгүй байна. Буцаалт үүсгэхдээ данс бөглөх шаардлагатай.
+                                            </div>
+                                        )
                                     )}
                                 </div>
                             </div>
