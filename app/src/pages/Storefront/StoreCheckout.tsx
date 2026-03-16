@@ -941,6 +941,8 @@ export function StoreCheckout() {
                         .checkout-grid .settings-card {
                             padding: 16px !important;
                             border-radius: 16px !important;
+                            box-shadow: 0 2px 12px rgba(0,0,0,0.08) !important;
+                            border: 1px solid rgba(0,0,0,0.06) !important;
                         }
                         .checkout-grid .settings-card h2 {
                             font-size: 1rem !important;
