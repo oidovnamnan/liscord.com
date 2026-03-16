@@ -84,8 +84,8 @@ export function OrdersPage() {
         const newStats = {
             revenue: todayOrders.reduce((sum, o) => sum + (o.financials?.totalAmount || 0), 0),
             new: orders.filter(o => o.status === 'new' && !o.isDeleted).length,
-            processing: orders.filter(o => (o.status === 'confirmed' || o.status === 'preparing') && !o.isDeleted).length,
-            delivered: orders.filter(o => o.status === 'delivered' && !o.isDeleted).length
+            processing: orders.filter(o => (o.status === 'confirmed' || o.status === 'sourced') && !o.isDeleted).length,
+            delivered: orders.filter(o => (o.status === 'arrived') && !o.isDeleted).length
         };
         setStats(newStats);
     }, [orders]);
@@ -244,11 +244,11 @@ export function OrdersPage() {
                         </div>
                         <div className="ord-hero-stat">
                             <div className="ord-hero-stat-value">{stats.processing}</div>
-                            <div className="ord-hero-stat-label">Боловсруулагдаж буй</div>
+                            <div className="ord-hero-stat-label">Захиалагдсан</div>
                         </div>
                         <div className="ord-hero-stat">
                             <div className="ord-hero-stat-value">{stats.delivered}</div>
-                            <div className="ord-hero-stat-label">Хүргэгдсэн</div>
+                            <div className="ord-hero-stat-label">Бараа ирсэн</div>
                         </div>
                     </div>
                 </div>

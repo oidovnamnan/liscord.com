@@ -467,8 +467,10 @@ export interface OrderStatusConfig {
 }
 
 export type OrderStatus =
-    | 'new' | 'confirmed' | 'preparing' | 'ready'
-    | 'shipping' | 'delivered' | 'completed' | 'cancelled'
+    | 'new' | 'confirmed' | 'sourced' | 'arrived'
+    | 'fulfilled' | 'returned' | 'cancelled'
+    // Legacy (backward compat)
+    | 'preparing' | 'ready' | 'shipping' | 'delivered' | 'completed'
     | string;
 
 export type LegacyOrderSource = 'facebook' | 'instagram' | 'tiktok' | 'website' | 'phone' | 'pos' | 'other';
@@ -485,6 +487,10 @@ export interface OrderItem {
     costPrice: number;
     totalPrice: number;
     image?: string | null;
+    // Per-item fulfillment tracking
+    arrivedQuantity?: number;    // Скан хийж ирсэн тоо (default: 0)
+    pickedUpQuantity?: number;   // Хэрэглэгч авсан тоо (default: 0)
+    itemStatus?: 'pending' | 'partial_arrived' | 'arrived' | 'picked_up';
 }
 
 export interface OrderPayment {
@@ -554,6 +560,11 @@ export interface Order {
     updatedAt: Date;
     isDeleted: boolean;
     cancelReason?: string;
+
+    // Fulfillment tracking
+    fulfillmentStatus?: 'none' | 'partial' | 'full';
+    fulfillmentNote?: string;   // e.g. "3/5 бараа ирсэн"
+    pickupMethod?: 'pickup' | 'delivery';
 
     // Returns
     returnStatus?: 'none' | 'partial' | 'full';

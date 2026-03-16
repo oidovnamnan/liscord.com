@@ -25,6 +25,16 @@ export function OrderDetailModal({ bizId, order, onClose, statuses }: OrderDetai
     const [generatingBarimt, setGeneratingBarimt] = useState(false);
     const [currentStatusId, setCurrentStatusId] = useState(order.status);
     const [showReturnModal, setShowReturnModal] = useState(false);
+
+    // Fulfillment state
+    const [showArrivalPanel, setShowArrivalPanel] = useState(false);
+    const [arrivalQuantities, setArrivalQuantities] = useState<number[]>([]);
+    const [savingArrival, setSavingArrival] = useState(false);
+    const [showPickupPanel, setShowPickupPanel] = useState(false);
+    const [pickupQuantities, setPickupQuantities] = useState<number[]>([]);
+    const [savingPickup, setSavingPickup] = useState(false);
+    const [pickupMethod, setPickupMethod] = useState<'pickup' | 'delivery'>(order.pickupMethod || 'pickup');
+
     const fmt = (n: number) => '₮' + n.toLocaleString('mn-MN');
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -76,6 +86,42 @@ export function OrderDetailModal({ bizId, order, onClose, statuses }: OrderDetai
     };
     const handlePrint = () => {
         window.print();
+    };
+
+    const handleSaveArrival = async () => {
+        if (!business) return;
+        setSavingArrival(true);
+        try {
+            const itemUpdates = arrivalQuantities.map((qty, index) => ({ index, arrivedQuantity: qty }));
+            await orderService.markItemsArrived(bizId, order.id, itemUpdates, {
+                uid: user?.uid,
+                displayName: user?.displayName
+            });
+            setShowArrivalPanel(false);
+            toast.success('Бараа ирсэн тэмдэглэгдлээ');
+        } catch {
+            toast.error('Алдаа гарлаа');
+        } finally {
+            setSavingArrival(false);
+        }
+    };
+
+    const handleSavePickup = async () => {
+        if (!business) return;
+        setSavingPickup(true);
+        try {
+            const itemUpdates = pickupQuantities.map((qty, index) => ({ index, pickedUpQuantity: qty }));
+            await orderService.markItemsPickedUp(bizId, order.id, itemUpdates, pickupMethod, {
+                uid: user?.uid,
+                displayName: user?.displayName
+            });
+            setShowPickupPanel(false);
+            toast.success(pickupMethod === 'delivery' ? 'Хүргэлт тэмдэглэгдлээ' : 'Авсан тэмдэглэгдлээ');
+        } catch {
+            toast.error('Алдаа гарлаа');
+        } finally {
+            setSavingPickup(false);
+        }
     };
 
     const handleGenerateEbarimt = async () => {
@@ -196,6 +242,17 @@ export function OrderDetailModal({ bizId, order, onClose, statuses }: OrderDetai
 
                             <section className="info-section">
                                 <h3 className="section-title"><Package size={16} /> Бараанууд <span style={{ fontWeight: 500, fontSize: '0.72rem', color: 'var(--text-muted)', textTransform: 'none', letterSpacing: 0, marginLeft: '4px' }}>({order.items.length})</span></h3>
+
+                                {/* Fulfillment progress summary */}
+                                {order.items.some(i => (i.arrivedQuantity || 0) > 0) && (
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', borderRadius: 10, background: order.fulfillmentStatus === 'full' ? '#d1fae520' : '#fef3c720', border: `1px solid ${order.fulfillmentStatus === 'full' ? '#10b98130' : '#f59e0b30'}`, marginBottom: 10, fontSize: '0.82rem', fontWeight: 600 }}>
+                                        <span>{order.fulfillmentStatus === 'full' ? '✅' : '📦'}</span>
+                                        <span style={{ color: order.fulfillmentStatus === 'full' ? '#10b981' : '#f59e0b' }}>
+                                            {order.fulfillmentNote || 'Хүлээж буй'}
+                                        </span>
+                                    </div>
+                                )}
+
                                 <div className="table-responsive-wrapper">
                                     <table className="items-table">
                                         <thead>
@@ -203,36 +260,175 @@ export function OrderDetailModal({ bizId, order, onClose, statuses }: OrderDetai
                                                 <th style={{ width: '44px' }}></th>
                                                 <th>Нэр</th>
                                                 <th className="text-right">Тоо</th>
+                                                <th className="text-right">Ирсэн</th>
                                                 <th className="text-right">Нэгж үнэ</th>
                                                 <th className="text-right">Нийт</th>
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            {order.items.map((item, idx) => (
-                                                <tr key={idx}>
-                                                    <td>
-                                                        <div className="item-thumb-cell">
-                                                            {item.image ? (
-                                                                <img src={item.image} alt="" />
-                                                            ) : (
-                                                                <ImageIcon size={14} />
+                                            {order.items.map((item, idx) => {
+                                                const arrived = item.arrivedQuantity || 0;
+                                                const pickedUp = item.pickedUpQuantity || 0;
+                                                const arrivalColor = arrived >= item.quantity ? '#10b981' : arrived > 0 ? '#f59e0b' : '#94a3b8';
+                                                return (
+                                                    <tr key={idx}>
+                                                        <td>
+                                                            <div className="item-thumb-cell">
+                                                                {item.image ? (
+                                                                    <img src={item.image} alt="" />
+                                                                ) : (
+                                                                    <ImageIcon size={14} />
+                                                                )}
+                                                            </div>
+                                                        </td>
+                                                        <td>
+                                                            <div className="item-name-cell">
+                                                                {item.name}
+                                                                {item.variant && <span className="item-variant">{item.variant}</span>}
+                                                            </div>
+                                                        </td>
+                                                        <td className="text-right" style={{ fontWeight: 700 }}>{item.quantity}</td>
+                                                        <td className="text-right">
+                                                            <span style={{ fontWeight: 700, color: arrivalColor, fontSize: '0.82rem' }}>
+                                                                {arrived}/{item.quantity}
+                                                            </span>
+                                                            {pickedUp > 0 && (
+                                                                <div style={{ fontSize: '0.68rem', color: '#8b5cf6', fontWeight: 600 }}>
+                                                                    авсан: {pickedUp}
+                                                                </div>
                                                             )}
-                                                        </div>
-                                                    </td>
-                                                    <td>
-                                                        <div className="item-name-cell">
-                                                            {item.name}
-                                                            {item.variant && <span className="item-variant">{item.variant}</span>}
-                                                        </div>
-                                                    </td>
-                                                    <td className="text-right" style={{ fontWeight: 700 }}>{item.quantity}</td>
-                                                    <td className="text-right">{fmt(item.unitPrice)}</td>
-                                                    <td className="text-right" style={{ fontWeight: 700 }}>{fmt(item.totalPrice)}</td>
-                                                </tr>
-                                            ))}
+                                                        </td>
+                                                        <td className="text-right">{fmt(item.unitPrice)}</td>
+                                                        <td className="text-right" style={{ fontWeight: 700 }}>{fmt(item.totalPrice)}</td>
+                                                    </tr>
+                                                );
+                                            })}
                                         </tbody>
                                     </table>
                                 </div>
+
+                                {/* Arrival marking panel */}
+                                {!order.isDeleted && ['confirmed', 'sourced', 'arrived'].includes(currentStatusId) && (
+                                    <div style={{ marginTop: 12, border: '1px solid var(--border-primary)', borderRadius: 12, padding: 14, background: 'var(--surface-1)' }}>
+                                        <div style={{ fontWeight: 700, fontSize: '0.82rem', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6 }}>
+                                            📥 Бараа ирсэн тэмдэглэх
+                                        </div>
+                                        {!showArrivalPanel ? (
+                                            <button
+                                                className="btn btn-sm btn-secondary"
+                                                onClick={() => {
+                                                    setArrivalQuantities(order.items.map(i => i.arrivedQuantity || 0));
+                                                    setShowArrivalPanel(true);
+                                                }}
+                                                style={{ width: '100%' }}
+                                            >
+                                                Ирсэн бараа тэмдэглэх
+                                            </button>
+                                        ) : (
+                                            <div>
+                                                {order.items.map((item, idx) => (
+                                                    <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 0', borderBottom: idx < order.items.length - 1 ? '1px solid var(--border-primary)' : 'none' }}>
+                                                        <span style={{ flex: 1, fontSize: '0.82rem', fontWeight: 600 }}>{item.name}</span>
+                                                        <input
+                                                            type="number"
+                                                            min={0}
+                                                            max={item.quantity}
+                                                            value={arrivalQuantities[idx] ?? 0}
+                                                            onChange={e => {
+                                                                const val = Math.min(Number(e.target.value), item.quantity);
+                                                                setArrivalQuantities(prev => { const n = [...prev]; n[idx] = val; return n; });
+                                                            }}
+                                                            style={{ width: 60, height: 32, borderRadius: 8, border: '1px solid var(--border-primary)', textAlign: 'center', fontWeight: 700, fontSize: '0.85rem' }}
+                                                        />
+                                                        <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>/ {item.quantity}</span>
+                                                    </div>
+                                                ))}
+                                                <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
+                                                    <button className="btn btn-sm btn-secondary" onClick={() => setShowArrivalPanel(false)} style={{ flex: 1 }}>Болих</button>
+                                                    <button
+                                                        className="btn btn-sm btn-primary"
+                                                        disabled={savingArrival}
+                                                        onClick={handleSaveArrival}
+                                                        style={{ flex: 1 }}
+                                                    >
+                                                        {savingArrival ? <Loader2 size={14} className="animate-spin" /> : '💾 Хадгалах'}
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+
+                                {/* Pickup marking panel */}
+                                {!order.isDeleted && (currentStatusId === 'arrived' || order.fulfillmentStatus === 'full' || order.fulfillmentStatus === 'partial') && (
+                                    <div style={{ marginTop: 12, border: '1px solid var(--border-primary)', borderRadius: 12, padding: 14, background: 'var(--surface-1)' }}>
+                                        <div style={{ fontWeight: 700, fontSize: '0.82rem', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6 }}>
+                                            🛒 Хэрэглэгч авсан тэмдэглэх
+                                        </div>
+                                        {!showPickupPanel ? (
+                                            <button
+                                                className="btn btn-sm btn-secondary"
+                                                onClick={() => {
+                                                    setPickupQuantities(order.items.map(i => i.pickedUpQuantity || 0));
+                                                    setShowPickupPanel(true);
+                                                }}
+                                                style={{ width: '100%' }}
+                                            >
+                                                Авсан бараа тэмдэглэх
+                                            </button>
+                                        ) : (
+                                            <div>
+                                                <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
+                                                    <button
+                                                        className={`btn btn-sm ${pickupMethod === 'pickup' ? 'btn-primary' : 'btn-secondary'}`}
+                                                        onClick={() => setPickupMethod('pickup')}
+                                                        style={{ flex: 1, fontSize: '0.78rem' }}
+                                                    >
+                                                        🏬 Ирж авсан
+                                                    </button>
+                                                    <button
+                                                        className={`btn btn-sm ${pickupMethod === 'delivery' ? 'btn-primary' : 'btn-secondary'}`}
+                                                        onClick={() => setPickupMethod('delivery')}
+                                                        style={{ flex: 1, fontSize: '0.78rem' }}
+                                                    >
+                                                        🚚 Хүргэсэн
+                                                    </button>
+                                                </div>
+                                                {order.items.map((item, idx) => {
+                                                    const maxPickup = item.arrivedQuantity || 0;
+                                                    return (
+                                                        <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 0', borderBottom: idx < order.items.length - 1 ? '1px solid var(--border-primary)' : 'none' }}>
+                                                            <span style={{ flex: 1, fontSize: '0.82rem', fontWeight: 600 }}>{item.name}</span>
+                                                            <input
+                                                                type="number"
+                                                                min={0}
+                                                                max={maxPickup}
+                                                                value={pickupQuantities[idx] ?? 0}
+                                                                onChange={e => {
+                                                                    const val = Math.min(Number(e.target.value), maxPickup);
+                                                                    setPickupQuantities(prev => { const n = [...prev]; n[idx] = val; return n; });
+                                                                }}
+                                                                style={{ width: 60, height: 32, borderRadius: 8, border: '1px solid var(--border-primary)', textAlign: 'center', fontWeight: 700, fontSize: '0.85rem' }}
+                                                            />
+                                                            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>/ {maxPickup} ирсэн</span>
+                                                        </div>
+                                                    );
+                                                })}
+                                                <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
+                                                    <button className="btn btn-sm btn-secondary" onClick={() => setShowPickupPanel(false)} style={{ flex: 1 }}>Болих</button>
+                                                    <button
+                                                        className="btn btn-sm btn-primary"
+                                                        disabled={savingPickup}
+                                                        onClick={handleSavePickup}
+                                                        style={{ flex: 1 }}
+                                                    >
+                                                        {savingPickup ? <Loader2 size={14} className="animate-spin" /> : '💾 Хадгалах'}
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
                             </section>
                         </div>
 

@@ -24,6 +24,20 @@ const PAYMENT_LABELS: Record<string, { label: string; bg: string; color: string 
     partial: { label: 'Хэсэгчлэн', bg: '#dbeafe', color: '#1e40af' },
 };
 
+const STATUS_LABELS: Record<string, { label: string; bg: string; color: string }> = {
+    new: { label: 'Шинэ', bg: '#dbeafe', color: '#1e40af' },
+    confirmed: { label: 'Баталгаажсан', bg: '#ede9fe', color: '#6d28d9' },
+    sourced: { label: 'Захиалагдсан', bg: '#fef3c7', color: '#92400e' },
+    arrived: { label: 'Бараа ирсэн', bg: '#cffafe', color: '#155e75' },
+    fulfilled: { label: 'Биелсэн', bg: '#d1fae5', color: '#065f46' },
+    returned: { label: 'Буцаасан', bg: '#ffedd5', color: '#c2410c' },
+    cancelled: { label: 'Цуцлагдсан', bg: '#fee2e2', color: '#dc2626' },
+    // Legacy
+    completed: { label: 'Биелсэн', bg: '#d1fae5', color: '#065f46' },
+    preparing: { label: 'Бэлтгэж байна', bg: '#fef3c7', color: '#92400e' },
+    delivered: { label: 'Хүргэгдсэн', bg: '#d1fae5', color: '#065f46' },
+};
+
 const RETURN_REASONS: { value: ReturnReason; label: string }[] = [
     { value: 'delivery_late', label: 'Хүргэлт удааширсан' },
     { value: 'defective', label: 'Эвдэрч хэмхэрсэн' },
@@ -320,10 +334,26 @@ export function StoreMyOrders() {
                             </div>
                             <div className="my-order-card-bottom">
                                 <span className="my-order-total">{(order.financials?.totalAmount || 0).toLocaleString()}₮</span>
-                                <span className="my-order-status-badge" style={{ background: payInfo.bg, color: payInfo.color }}>
-                                    {payInfo.label}
-                                </span>
+                                <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
+                                    {(() => {
+                                        const statusInfo = STATUS_LABELS[order.status] || STATUS_LABELS.new;
+                                        return (
+                                            <span className="my-order-status-badge" style={{ background: statusInfo.bg, color: statusInfo.color }}>
+                                                {statusInfo.label}
+                                            </span>
+                                        );
+                                    })()}
+                                    <span className="my-order-status-badge" style={{ background: payInfo.bg, color: payInfo.color }}>
+                                        {payInfo.label}
+                                    </span>
+                                </div>
                             </div>
+                            {/* Fulfillment indicator */}
+                            {order.fulfillmentNote && (
+                                <div style={{ marginTop: 6, padding: '4px 10px', borderRadius: 6, background: order.fulfillmentStatus === 'full' ? '#d1fae5' : '#fef3c7', color: order.fulfillmentStatus === 'full' ? '#065f46' : '#92400e', fontSize: '0.72rem', fontWeight: 700, display: 'inline-block' }}>
+                                    {order.fulfillmentStatus === 'full' ? '✅' : '📦'} {order.fulfillmentNote}
+                                </div>
+                            )}
                             {order.returnStatus && order.returnStatus !== 'none' && (
                                 <div style={{ marginTop: 8, padding: '4px 10px', borderRadius: 6, background: '#fef2f2', color: '#dc2626', fontSize: '0.72rem', fontWeight: 700, display: 'inline-block' }}>
                                     🔄 {order.returnStatus === 'full' ? 'Бүрэн буцаалт' : 'Хэсэгчлэн буцаалт'}
@@ -348,22 +378,32 @@ export function StoreMyOrders() {
                         </div>
 
                         <div className="my-return-body">
-                            {/* Items */}
+                            {/* Items with fulfillment */}
                             <div>
                                 <h4 style={{ fontSize: '0.78rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#999', marginBottom: 8 }}>Бараа</h4>
-                                {selectedOrder.items.map((item, i) => (
-                                    <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0', borderBottom: i < selectedOrder.items.length - 1 ? '1px solid #f0f0f0' : 'none' }}>
-                                        {item.image ?
-                                            <img src={item.image} alt="" style={{ width: 40, height: 40, borderRadius: 8, objectFit: 'cover' }} /> :
-                                            <div style={{ width: 40, height: 40, borderRadius: 8, background: '#f5f5f5', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Package size={16} color="#ccc" /></div>
-                                        }
-                                        <div style={{ flex: 1 }}>
-                                            <div style={{ fontWeight: 600, fontSize: '0.85rem' }}>{item.name}</div>
-                                            <div style={{ fontSize: '0.75rem', color: '#999' }}>{item.quantity}ш × {item.unitPrice.toLocaleString()}₮</div>
+                                {selectedOrder.items.map((item, i) => {
+                                    const arrived = item.arrivedQuantity || 0;
+                                    const pickedUp = item.pickedUpQuantity || 0;
+                                    return (
+                                        <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0', borderBottom: i < selectedOrder.items.length - 1 ? '1px solid #f0f0f0' : 'none' }}>
+                                            {item.image ?
+                                                <img src={item.image} alt="" style={{ width: 40, height: 40, borderRadius: 8, objectFit: 'cover' }} /> :
+                                                <div style={{ width: 40, height: 40, borderRadius: 8, background: '#f5f5f5', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Package size={16} color="#ccc" /></div>
+                                            }
+                                            <div style={{ flex: 1 }}>
+                                                <div style={{ fontWeight: 600, fontSize: '0.85rem' }}>{item.name}</div>
+                                                <div style={{ fontSize: '0.75rem', color: '#999' }}>{item.quantity}ш × {item.unitPrice.toLocaleString()}₮</div>
+                                                {arrived > 0 && (
+                                                    <div style={{ fontSize: '0.72rem', fontWeight: 700, color: arrived >= item.quantity ? '#10b981' : '#f59e0b', marginTop: 2 }}>
+                                                        {arrived >= item.quantity ? '✅ Ирсэн' : `📦 ${arrived}/${item.quantity} ирсэн`}
+                                                        {pickedUp > 0 && <span style={{ marginLeft: 6, color: '#8b5cf6' }}>· {pickedUp}ш авсан</span>}
+                                                    </div>
+                                                )}
+                                            </div>
+                                            <div style={{ fontWeight: 700, fontSize: '0.85rem' }}>{(item.quantity * item.unitPrice).toLocaleString()}₮</div>
                                         </div>
-                                        <div style={{ fontWeight: 700, fontSize: '0.85rem' }}>{(item.quantity * item.unitPrice).toLocaleString()}₮</div>
-                                    </div>
-                                ))}
+                                    );
+                                })}
                                 <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: 10, fontWeight: 800, fontSize: '1rem' }}>
                                     <span>Нийт:</span>
                                     <span style={{ color: brandColor }}>{(selectedOrder.financials?.totalAmount || 0).toLocaleString()}₮</span>

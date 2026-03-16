@@ -13,9 +13,12 @@ import { convertTimestamps } from './helpers';
 export const DEFAULT_STATUSES: Partial<OrderStatusConfig>[] = [
     { id: 'all', label: 'Бүгд', color: '#64748b', order: 0, isSystem: true, isActive: true },
     { id: 'new', label: 'Шинэ', color: '#3b82f6', order: 1, isSystem: true, isActive: true },
-    { id: 'completed', label: 'Биелсэн', color: '#10b981', order: 2, isSystem: true, isActive: true },
-    { id: 'returned', label: 'Буцаасан', color: '#f59e0b', order: 3, isSystem: true, isActive: true },
-    { id: 'cancelled', label: 'Цуцлагдсан', color: '#ef4444', order: 4, isSystem: true, isActive: true },
+    { id: 'confirmed', label: 'Баталгаажсан', color: '#8b5cf6', order: 2, isSystem: true, isActive: true },
+    { id: 'sourced', label: 'Захиалагдсан', color: '#f59e0b', order: 3, isSystem: true, isActive: true },
+    { id: 'arrived', label: 'Бараа ирсэн', color: '#06b6d4', order: 4, isSystem: true, isActive: true },
+    { id: 'fulfilled', label: 'Биелсэн', color: '#10b981', order: 5, isSystem: true, isActive: true },
+    { id: 'returned', label: 'Буцаасан', color: '#f97316', order: 6, isSystem: true, isActive: true },
+    { id: 'cancelled', label: 'Цуцлагдсан', color: '#ef4444', order: 7, isSystem: true, isActive: true },
 ];
 
 export const orderStatusService = {
@@ -291,5 +294,157 @@ export const orderService = {
             severity: 'warning',
             metadata: { reason }
         }, employeeProfile);
+    },
+
+    /**
+     * Mark items as arrived (after barcode scan or manual entry)
+     * Updates each item's arrivedQuantity and auto-computes order fulfillment
+     */
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    async markItemsArrived(bizId: string, orderId: string, itemUpdates: { index: number; arrivedQuantity: number }[], employeeProfile?: any): Promise<void> {
+        const docRef = doc(db, 'businesses', bizId, 'orders', orderId);
+        const snap = await getDoc(docRef);
+        if (!snap.exists()) return;
+
+        const data = snap.data();
+        const items = [...(data.items || [])];
+
+        for (const upd of itemUpdates) {
+            if (items[upd.index]) {
+                items[upd.index] = {
+                    ...items[upd.index],
+                    arrivedQuantity: upd.arrivedQuantity,
+                    itemStatus: upd.arrivedQuantity >= items[upd.index].quantity ? 'arrived'
+                        : upd.arrivedQuantity > 0 ? 'partial_arrived' : 'pending'
+                };
+            }
+        }
+
+        const { status: fulfillmentStatus, note: fulfillmentNote } = computeFulfillmentStatus(items);
+
+        // Auto-advance order status to 'arrived' if all items arrived and order is in 'sourced'
+        const statusUpdate: Record<string, unknown> = {
+            items,
+            fulfillmentStatus,
+            fulfillmentNote,
+            updatedAt: serverTimestamp()
+        };
+
+        if (fulfillmentStatus === 'full' && (data.status === 'sourced' || data.status === 'confirmed')) {
+            statusUpdate.status = 'arrived';
+            const history = Array.isArray(data.statusHistory) ? data.statusHistory : [];
+            statusUpdate.statusHistory = [...history, {
+                status: 'arrived',
+                at: new Date(),
+                by: employeeProfile?.uid || 'system',
+                byName: employeeProfile?.displayName || 'Систем',
+                note: 'Бүх бараа ирсэн — автомат шилжүүлсэн'
+            }];
+        }
+
+        await updateDoc(docRef, statusUpdate);
+
+        await auditService.writeLog(bizId, {
+            action: 'order.items_arrived',
+            module: 'orders',
+            targetType: 'order',
+            targetId: orderId,
+            targetLabel: `#${data.orderNumber || orderId}`,
+            severity: 'normal',
+            metadata: { fulfillmentStatus, fulfillmentNote }
+        }, employeeProfile);
+    },
+
+    /**
+     * Mark items as picked up by customer
+     */
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    async markItemsPickedUp(bizId: string, orderId: string, itemUpdates: { index: number; pickedUpQuantity: number }[], pickupMethod: 'pickup' | 'delivery', employeeProfile?: any): Promise<void> {
+        const docRef = doc(db, 'businesses', bizId, 'orders', orderId);
+        const snap = await getDoc(docRef);
+        if (!snap.exists()) return;
+
+        const data = snap.data();
+        const items = [...(data.items || [])];
+
+        for (const upd of itemUpdates) {
+            if (items[upd.index]) {
+                items[upd.index] = {
+                    ...items[upd.index],
+                    pickedUpQuantity: upd.pickedUpQuantity,
+                    itemStatus: upd.pickedUpQuantity >= items[upd.index].quantity ? 'picked_up'
+                        : items[upd.index].itemStatus
+                };
+            }
+        }
+
+        // Check if ALL items are fully picked up → auto-advance to 'fulfilled'
+        const allPickedUp = items.every((item: { quantity: number; pickedUpQuantity?: number }) =>
+            (item.pickedUpQuantity || 0) >= item.quantity
+        );
+
+        const statusUpdate: Record<string, unknown> = {
+            items,
+            pickupMethod,
+            updatedAt: serverTimestamp()
+        };
+
+        if (allPickedUp) {
+            statusUpdate.status = 'fulfilled';
+            const history = Array.isArray(data.statusHistory) ? data.statusHistory : [];
+            statusUpdate.statusHistory = [...history, {
+                status: 'fulfilled',
+                at: new Date(),
+                by: employeeProfile?.uid || 'system',
+                byName: employeeProfile?.displayName || 'Систем',
+                note: pickupMethod === 'delivery' ? 'Хүргэгдсэн' : 'Хэрэглэгч авсан'
+            }];
+        }
+
+        await updateDoc(docRef, statusUpdate);
+
+        await auditService.writeLog(bizId, {
+            action: 'order.items_picked_up',
+            module: 'orders',
+            targetType: 'order',
+            targetId: orderId,
+            targetLabel: `#${data.orderNumber || orderId}`,
+            severity: 'normal',
+            metadata: { pickupMethod, allPickedUp }
+        }, employeeProfile);
     }
 };
+
+// ============ FULFILLMENT HELPERS ============
+
+interface FulfillmentItem {
+    quantity: number;
+    arrivedQuantity?: number;
+}
+
+export function computeFulfillmentStatus(items: FulfillmentItem[]): { status: 'none' | 'partial' | 'full'; note: string } {
+    if (!items || items.length === 0) return { status: 'none', note: '' };
+
+    const totalItems = items.length;
+    let arrivedCount = 0;
+    let totalQuantity = 0;
+    let arrivedQuantity = 0;
+
+    for (const item of items) {
+        const arrived = item.arrivedQuantity || 0;
+        totalQuantity += item.quantity;
+        arrivedQuantity += Math.min(arrived, item.quantity);
+        if (arrived >= item.quantity) arrivedCount++;
+    }
+
+    if (arrivedCount === 0 && arrivedQuantity === 0) {
+        return { status: 'none', note: '' };
+    }
+    if (arrivedCount === totalItems) {
+        return { status: 'full', note: `Бүх бараа ирсэн (${totalItems})` };
+    }
+    return {
+        status: 'partial',
+        note: `${arrivedCount}/${totalItems} бараа ирсэн (${arrivedQuantity}/${totalQuantity}ш)`
+    };
+}
