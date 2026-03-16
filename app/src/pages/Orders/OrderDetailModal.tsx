@@ -34,6 +34,7 @@ export function OrderDetailModal({ bizId, order, onClose, statuses }: OrderDetai
     const [generatingBarimt, setGeneratingBarimt] = useState(false);
     const [currentStatusId, setCurrentStatusId] = useState(order.status);
     const [showReturnModal, setShowReturnModal] = useState(false);
+    const [showReturnConfirm, setShowReturnConfirm] = useState(false);
 
     // Fulfillment state
     const [showArrivalPanel, setShowArrivalPanel] = useState(false);
@@ -195,12 +196,7 @@ export function OrderDetailModal({ bizId, order, onClose, statuses }: OrderDetai
                                     <Undo2 size={14} /> Буцаасан
                                 </button>
                             ) : (
-                                <button className="btn btn-sm" onClick={() => {
-                                    const label = ['new', 'confirmed'].includes(order.status) ? 'цуцлах' : 'буцаалт хийх';
-                                    if (window.confirm(`Та энэ захиалгыг ${label} гэж байна. Үргэлжлүүлэх үү?`)) {
-                                        setShowReturnModal(true);
-                                    }
-                                }} style={{ background: ['new', 'confirmed'].includes(order.status) ? 'linear-gradient(135deg, #f59e0b, #d97706)' : 'linear-gradient(135deg, #f87171, #ef4444)', color: '#fff', border: 'none', display: 'flex', alignItems: 'center', gap: 5 }}>
+                                <button className="btn btn-sm" onClick={() => setShowReturnConfirm(true)} style={{ background: ['new', 'confirmed'].includes(order.status) ? 'linear-gradient(135deg, #f59e0b, #d97706)' : 'linear-gradient(135deg, #f87171, #ef4444)', color: '#fff', border: 'none', display: 'flex', alignItems: 'center', gap: 5 }}>
                                     <Undo2 size={14} /> {['new', 'confirmed'].includes(order.status) ? 'Цуцлах' : 'Буцаалт'}
                                 </button>
                             )
@@ -608,6 +604,24 @@ export function OrderDetailModal({ bizId, order, onClose, statuses }: OrderDetai
                     )}
                 </div>
             </div>
+
+            {showReturnConfirm && (
+                <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 10001, display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={() => setShowReturnConfirm(false)}>
+                    <div onClick={e => e.stopPropagation()} style={{ background: 'var(--bg-card, #fff)', borderRadius: 16, padding: '28px 32px', maxWidth: 380, width: '90%', textAlign: 'center', boxShadow: '0 20px 60px rgba(0,0,0,0.3)' }}>
+                        <div style={{ fontSize: '2.2rem', marginBottom: 12 }}>⚠️</div>
+                        <h3 style={{ margin: '0 0 8px', fontSize: '1.05rem', fontWeight: 800, color: 'var(--text-main)' }}>
+                            {['new', 'confirmed'].includes(order.status) ? 'Захиалга цуцлах уу?' : 'Буцаалт хийх үү?'}
+                        </h3>
+                        <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: '0 0 20px', lineHeight: 1.5 }}>
+                            Захиалга #{order.orderNumber} дээр {['new', 'confirmed'].includes(order.status) ? 'цуцлалт' : 'буцаалт'} үүсгэх гэж байна.
+                        </p>
+                        <div style={{ display: 'flex', gap: 10 }}>
+                            <button onClick={() => setShowReturnConfirm(false)} style={{ flex: 1, height: 42, borderRadius: 10, border: '1px solid var(--border-color)', background: 'transparent', fontWeight: 700, fontSize: '0.88rem', cursor: 'pointer', color: 'var(--text-main)' }}>Үгүй</button>
+                            <button onClick={() => { setShowReturnConfirm(false); setShowReturnModal(true); }} style={{ flex: 1, height: 42, borderRadius: 10, border: 'none', background: ['new', 'confirmed'].includes(order.status) ? 'linear-gradient(135deg, #f59e0b, #d97706)' : 'linear-gradient(135deg, #f87171, #ef4444)', color: '#fff', fontWeight: 700, fontSize: '0.88rem', cursor: 'pointer' }}>Тийм</button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {showReturnModal && (
                 <CreateReturnModal
