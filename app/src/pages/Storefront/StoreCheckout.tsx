@@ -250,13 +250,19 @@ export function StoreCheckout() {
 
             if (business.settings?.qpay?.enabled && paymentMethod === 'qpay') {
                 try {
+                    const qpaySettings = business.settings?.qpay;
                     const invoice = await qpayService.createInvoice(
                         business.id,
                         newId,
                         finalTotal,
                         `${business.name} захиалга #${newId.slice(-4)}`,
                         phone,
-                        'product'
+                        'product',
+                        {
+                            username: qpaySettings?.username || '',
+                            password: qpaySettings?.password || '',
+                            invoiceCode: qpaySettings?.invoiceCode || '',
+                        }
                     );
                     setQpayInvoice(invoice);
                 } catch (e) {

@@ -1,33 +1,18 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import * as admin from 'firebase-admin';
 
 /**
  * QPay V2 Payment Check — Vercel Serverless Function
  * 
- * Frontend polls this endpoint to check if payment has been made.
- * Reads credentials from Firestore per-business.
+ * Frontend passes credentials directly. No Firebase Admin needed.
  */
 
 const QPAY_API_URL = 'https://merchant.qpay.mn/v2';
 
-// Initialize Firebase Admin (only once)
-if (!admin.apps.length) {
-    admin.initializeApp({
-        credential: admin.credential.cert({
-            projectId: process.env.FIREBASE_PROJECT_ID || 'liscord-2b529',
-            clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-            privateKey: (process.env.FIREBASE_PRIVATE_KEY || '').replace(/\\n/g, '\n'),
-        }),
-    });
-}
-
-const db = admin.firestore();
-
-// Token cache per business
+// Token cache
 const tokenCache: Record<string, { token: string; expiresAt: number }> = {};
 
 async function getAccessToken(username: string, password: string): Promise<string> {
-    const cacheKey = `${username}:${password}`;
+    const cacheKey = `${username}`;
     const cached = tokenCache[cacheKey];
     if (cached && Date.now() < cached.expiresAt - 300000) {
         return cached.token;
@@ -52,12 +37,7 @@ async function getAccessToken(username: string, password: string): Promise<strin
     return data.access_token;
 }
 
-// Platform-level credentials (VIP/membership ONLY)
-const PLATFORM_USERNAME = 'GATE_SIM';
-const PLATFORM_PASSWORD = '8r3bvsa3';
-
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-    // CORS
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -65,32 +45,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (req.method === 'OPTIONS') return res.status(204).end();
     if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
-    const { invoiceId, bizId, purpose } = req.body;
+    const { invoiceId, qpayUsername, qpayPassword } = req.body;
 
-    if (!invoiceId || !bizId) {
-        return res.status(400).json({ error: 'Missing invoiceId or bizId' });
+    if (!invoiceId || !qpayUsername || !qpayPassword) {
+        return res.status(400).json({ error: 'Missing invoiceId or QPay credentials' });
     }
 
     try {
-        let username: string;
-        let password: string;
-
-        if (purpose === 'vip') {
-            username = PLATFORM_USERNAME;
-            password = PLATFORM_PASSWORD;
-        } else {
-            // Product → use business credentials
-            const bizDoc = await db.doc(`businesses/${bizId}`).get();
-            if (!bizDoc.exists) return res.status(404).json({ error: 'Business not found' });
-            const qpay = bizDoc.data()!.settings?.qpay;
-            if (!qpay?.username || !qpay?.password) {
-                return res.status(400).json({ error: 'QPay credentials not configured' });
-            }
-            username = qpay.username;
-            password = qpay.password;
-        }
-
-        const token = await getAccessToken(username, password);
+        const token = await getAccessToken(qpayUsername, qpayPassword);
 
         const checkResp = await fetch(`${QPAY_API_URL}/payment/check`, {
             method: 'POST',

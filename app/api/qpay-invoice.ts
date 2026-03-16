@@ -1,33 +1,21 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import * as admin from 'firebase-admin';
 
 /**
  * QPay V2 Create Invoice — Vercel Serverless Function
  * 
- * Reads QPay credentials from Firestore per-business.
- * Creates QPay invoice and returns QR code data.
+ * Frontend passes QPay credentials directly.
+ * For VIP: passes platform credentials (GATE_SIM)
+ * For Product: passes business's own QPay credentials
+ * No Firebase Admin needed — credentials come from frontend.
  */
 
 const QPAY_API_URL = 'https://merchant.qpay.mn/v2';
 
-// Initialize Firebase Admin (only once)
-if (!admin.apps.length) {
-    admin.initializeApp({
-        credential: admin.credential.cert({
-            projectId: process.env.FIREBASE_PROJECT_ID || 'liscord-2b529',
-            clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-            privateKey: (process.env.FIREBASE_PRIVATE_KEY || '').replace(/\\n/g, '\n'),
-        }),
-    });
-}
-
-const db = admin.firestore();
-
-// Token cache per business
+// Token cache per credential set
 const tokenCache: Record<string, { token: string; expiresAt: number }> = {};
 
 async function getAccessToken(username: string, password: string): Promise<string> {
-    const cacheKey = `${username}:${password}`;
+    const cacheKey = `${username}`;
     const cached = tokenCache[cacheKey];
     if (cached && Date.now() < cached.expiresAt - 300000) {
         return cached.token;
@@ -56,39 +44,6 @@ async function getAccessToken(username: string, password: string): Promise<strin
     return data.access_token;
 }
 
-// Platform-level credentials (VIP/membership ONLY)
-const PLATFORM_USERNAME = 'GATE_SIM';
-const PLATFORM_PASSWORD = '8r3bvsa3';
-const PLATFORM_INVOICE_CODE = 'GATE_SIM_INVOICE';
-
-async function getQPayCredentials(bizId: string, purpose: 'vip' | 'product' = 'product') {
-    // VIP/membership → always use platform credentials
-    if (purpose === 'vip') {
-        return {
-            username: PLATFORM_USERNAME,
-            password: PLATFORM_PASSWORD,
-            invoiceCode: PLATFORM_INVOICE_CODE,
-        };
-    }
-
-    // Product → strictly use business's own credentials
-    const bizDoc = await db.doc(`businesses/${bizId}`).get();
-    if (!bizDoc.exists) throw new Error('Business not found');
-
-    const biz = bizDoc.data()!;
-    const qpay = biz.settings?.qpay;
-
-    if (!qpay?.username || !qpay?.password) {
-        throw new Error('Бизнесийн QPay credentials тохируулаагүй байна');
-    }
-
-    return {
-        username: qpay.username,
-        password: qpay.password,
-        invoiceCode: qpay.invoiceCode || `${qpay.username}_INVOICE`,
-    };
-}
-
 export default async function handler(req: VercelRequest, res: VercelResponse) {
     // CORS
     res.setHeader('Access-Control-Allow-Origin', '*');
@@ -103,15 +58,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return res.status(405).json({ error: 'Method not allowed' });
     }
 
-    const { bizId, orderId, amount, description, customerPhone, purpose } = req.body;
+    const { bizId, orderId, amount, description, customerPhone, qpayUsername, qpayPassword, qpayInvoiceCode } = req.body;
 
     if (!bizId || !orderId || !amount) {
         return res.status(400).json({ error: 'Missing required fields: bizId, orderId, amount' });
     }
 
+    if (!qpayUsername || !qpayPassword || !qpayInvoiceCode) {
+        return res.status(400).json({ error: 'Missing QPay credentials' });
+    }
+
     try {
-        const creds = await getQPayCredentials(bizId, purpose || 'product');
-        const token = await getAccessToken(creds.username, creds.password);
+        const token = await getAccessToken(qpayUsername, qpayPassword);
 
         // Callback URL pointing to our qpay-callback serverless function
         const host = req.headers.host || 'www.liscord.com';
@@ -125,7 +83,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-                invoice_code: creds.invoiceCode,
+                invoice_code: qpayInvoiceCode,
                 sender_invoice_no: orderId,
                 invoice_receiver_code: customerPhone || 'guest',
                 invoice_description: description || `Liscord #${orderId.slice(-6)}`,
