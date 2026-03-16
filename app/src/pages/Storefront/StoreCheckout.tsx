@@ -415,28 +415,64 @@ export function StoreCheckout() {
                         )}
 
                         {qpayInvoice ? (
-                            <div className="animate-fade-in" style={{ margin: '32px 0', background: 'var(--bg-soft)', padding: 32, borderRadius: 24, border: '1px solid var(--border-primary)' }}>
-                                <p style={{ fontWeight: 800, marginBottom: 20, fontSize: '0.95rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Төлбөр төлөх (QPay)</p>
-                                <div style={{
-                                    width: 220, height: 220, margin: '0 auto',
-                                    background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                    border: '2px solid var(--primary-light)', borderRadius: 20, boxShadow: 'var(--shadow-md)', padding: 10
-                                }}>
-                                    {qpayInvoice.qr_image ? (
-                                        <img src={`data:image/png;base64,${qpayInvoice.qr_image}`} alt="QPay QR" style={{ width: '100%', height: '100%', objectFit: 'contain', borderRadius: 12 }} />
-                                    ) : (
-                                        <div style={{ textAlign: 'center' }}>
-                                            <div style={{ fontSize: '2.5rem', marginBottom: 12 }}>📲</div>
-                                            <div style={{ color: 'var(--text-muted)', fontSize: '0.8rem', fontWeight: 600, lineHeight: 1.4 }}>QR код<br />ачааллаж байна...</div>
-                                        </div>
-                                    )}
-                                </div>
-                                <div className="custom-scrollbar" style={{ display: 'flex', gap: 12, marginTop: 24, overflowX: 'auto', paddingBottom: 12, justifyContent: 'center' }}>
-                                    {qpayInvoice.urls.map(url => (
-                                        <a key={url.name} href={url.link} className="btn btn-outline btn-sm" style={{ flexShrink: 0, textDecoration: 'none', borderRadius: 10, fontWeight: 700, padding: '8px 16px' }}>
-                                            {url.name}
-                                        </a>
-                                    ))}
+                            <div className="animate-fade-in" style={{ margin: '20px 0', background: 'var(--bg-soft)', padding: '24px 20px', borderRadius: 24, border: '1px solid var(--border-primary)' }}>
+                                <p style={{ fontWeight: 800, marginBottom: 6, fontSize: '0.95rem', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'center' }}>Төлбөр төлөх</p>
+                                <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', textAlign: 'center', marginBottom: 16, fontWeight: 500 }}>Банкны апп-аа сонгоно уу</p>
+
+                                {/* Bank app deeplinks — prominent grid */}
+                                {qpayInvoice.urls.length > 0 && (
+                                    <div style={{
+                                        display: 'grid',
+                                        gridTemplateColumns: 'repeat(4, 1fr)',
+                                        gap: 10,
+                                        marginBottom: 20,
+                                    }}>
+                                        {qpayInvoice.urls.map(url => (
+                                            <a
+                                                key={url.name}
+                                                href={url.link}
+                                                style={{
+                                                    display: 'flex',
+                                                    flexDirection: 'column',
+                                                    alignItems: 'center',
+                                                    gap: 6,
+                                                    padding: '12px 4px',
+                                                    borderRadius: 16,
+                                                    border: '1px solid var(--border-color)',
+                                                    background: 'var(--surface-1)',
+                                                    textDecoration: 'none',
+                                                    color: 'var(--text-primary)',
+                                                    transition: 'all 0.2s ease',
+                                                    cursor: 'pointer',
+                                                }}
+                                            >
+                                                {url.logo ? (
+                                                    <img src={url.logo} alt={url.name} style={{ width: 36, height: 36, borderRadius: 10, objectFit: 'contain' }} />
+                                                ) : (
+                                                    <div style={{ width: 36, height: 36, borderRadius: 10, background: 'var(--primary-light)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.2rem' }}>🏦</div>
+                                                )}
+                                                <span style={{ fontSize: '0.62rem', fontWeight: 700, textAlign: 'center', lineHeight: 1.2, maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' as any }}>
+                                                    {url.description || url.name}
+                                                </span>
+                                            </a>
+                                        ))}
+                                    </div>
+                                )}
+
+                                {/* QR code — smaller, below as fallback */}
+                                <div style={{ textAlign: 'center', marginTop: 8 }}>
+                                    <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 600, marginBottom: 8 }}>Эсвэл QR код уншуулах</p>
+                                    <div style={{
+                                        width: 160, height: 160, margin: '0 auto',
+                                        background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                        border: '1.5px solid var(--border-color)', borderRadius: 16, padding: 8
+                                    }}>
+                                        {qpayInvoice.qr_image ? (
+                                            <img src={`data:image/png;base64,${qpayInvoice.qr_image}`} alt="QPay QR" style={{ width: '100%', height: '100%', objectFit: 'contain', borderRadius: 8 }} />
+                                        ) : (
+                                            <div style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>Ачааллаж байна...</div>
+                                        )}
+                                    </div>
                                 </div>
                             </div>
                         ) : paymentMethod !== 'bank_transfer' && (
