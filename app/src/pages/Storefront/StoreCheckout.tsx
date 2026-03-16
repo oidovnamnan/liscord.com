@@ -852,11 +852,11 @@ export function StoreCheckout() {
 
                     {/* Right Column: Order Summary */}
                     <div className="settings-card summary-sidebar animate-slide-up" style={{ padding: 0, borderRadius: 24, boxShadow: 'var(--shadow-xl)', border: '1px solid var(--border-color)', background: 'var(--surface-1)', overflow: 'hidden', animationDelay: '0.2s', position: 'sticky', top: 100 }}>
-                        <div style={{ padding: '24px 32px', background: 'var(--bg-secondary)', borderBottom: '1px solid var(--border-color)' }}>
+                        <div className="summary-header" style={{ padding: '24px 32px', background: 'var(--bg-secondary)', borderBottom: '1px solid var(--border-color)' }}>
                             <h2 style={{ fontSize: '1.1rem', fontWeight: 800, margin: 0, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary)' }}>Захиалгын хураангуй ({totalItems()})</h2>
                         </div>
 
-                        <div className="custom-scrollbar" style={{ padding: '24px 32px', maxHeight: '45vh', overflowY: 'auto' }}>
+                        <div className="summary-items custom-scrollbar" style={{ padding: '24px 32px', maxHeight: '45vh', overflowY: 'auto' }}>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
                                 {items.map((item, idx) => (
                                     <div key={`${item.product.id}-${idx}`} style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
@@ -980,7 +980,13 @@ export function StoreCheckout() {
                             padding: 14px !important;
                             border-radius: 12px !important;
                         }
-                        /* Compact summary */
+                        /* Hide summary items list on mobile */
+                        .summary-header {
+                            display: none !important;
+                        }
+                        .summary-items {
+                            display: none !important;
+                        }
                         .summary-sidebar {
                             border-radius: 16px !important;
                         }
