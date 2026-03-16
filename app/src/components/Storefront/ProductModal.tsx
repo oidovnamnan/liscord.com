@@ -280,29 +280,69 @@ export function ProductModal({ product, onClose, preorderTerms }: ProductModalPr
                                 <div className="sf-modal-terms">
                                     <div
                                         className="sf-modal-terms-header"
-                                        onClick={() => setShowTerms(!showTerms)}
+                                        onClick={() => setShowTerms(true)}
                                     >
                                         <span style={{ fontWeight: 700, fontSize: '0.82rem' }}>⚠️ Захиалгын нөхцөл</span>
-                                        <ChevronRight size={16} style={{ transform: showTerms ? 'rotate(90deg)' : 'none', transition: 'transform 0.2s' }} />
+                                        <ChevronRight size={16} />
                                     </div>
-                                    {showTerms && (
-                                        <div className="sf-modal-terms-body">
-                                            <ul>
-                                                {(preorderTerms || 'Урьдчилсан захиалга нь бараа ирсний дараа хүргэгдэнэ\nХүргэлтийн хугацаа дунджаар 14 хоног\nЗахиалга цуцлах боломжгүй, буцаалт хийгдэхгүй\nБараа ирсэн даруй утсаар мэдэгдэнэ\nТөлбөрийг захиалга өгөх үед бүрэн төлнө')
-                                                    .split('\n')
-                                                    .filter(line => line.trim())
-                                                    .map((term, i) => <li key={i}>{term.trim()}</li>)}
-                                            </ul>
-                                        </div>
-                                    )}
-                                    <label className="sf-modal-terms-check">
+                                    <label
+                                        className="sf-modal-terms-check"
+                                        onClick={(e) => {
+                                            if (!termsAccepted) {
+                                                e.preventDefault();
+                                                setShowTerms(true);
+                                            }
+                                        }}
+                                    >
                                         <input
                                             type="checkbox"
                                             checked={termsAccepted}
-                                            onChange={e => setTermsAccepted(e.target.checked)}
+                                            onChange={e => {
+                                                if (!e.target.checked) setTermsAccepted(false);
+                                            }}
+                                            readOnly={!termsAccepted}
                                         />
-                                        <span>Захиалгын нөхцөлтэй танилцаж, зөвшөөрч байна</span>
+                                        <span>{termsAccepted ? 'Нөхцөлийг зөвшөөрсөн ✓' : 'Захиалгын нөхцөлтэй танилцаж, зөвшөөрч байна'}</span>
                                     </label>
+
+                                    {/* ═══ Terms Popup ═══ */}
+                                    {showTerms && (
+                                        <div
+                                            className="sf-terms-popup-backdrop"
+                                            onClick={() => setShowTerms(false)}
+                                        >
+                                            <div
+                                                className="sf-terms-popup"
+                                                onClick={e => e.stopPropagation()}
+                                            >
+                                                <div className="sf-terms-popup-header">
+                                                    <h3>📋 Захиалгын нөхцөл</h3>
+                                                    <button onClick={() => setShowTerms(false)} className="sf-terms-popup-close">
+                                                        <X size={18} />
+                                                    </button>
+                                                </div>
+                                                <div className="sf-terms-popup-body">
+                                                    <ul>
+                                                        {(preorderTerms || 'Урьдчилсан захиалга нь бараа ирсний дараа хүргэгдэнэ\nХүргэлтийн хугацаа дунджаар 14 хоног\nЗахиалга цуцлах боломжгүй, буцаалт хийгдэхгүй\nБараа ирсэн даруй утсаар мэдэгдэнэ\nТөлбөрийг захиалга өгөх үед бүрэн төлнө')
+                                                            .split('\n')
+                                                            .filter(line => line.trim())
+                                                            .map((term, i) => <li key={i}>{term.trim()}</li>)}
+                                                    </ul>
+                                                </div>
+                                                <div className="sf-terms-popup-footer">
+                                                    <button
+                                                        className="sf-terms-accept-btn"
+                                                        onClick={() => {
+                                                            setTermsAccepted(true);
+                                                            setShowTerms(false);
+                                                        }}
+                                                    >
+                                                        ✓ Зөвшөөрч байна
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
                             )}
                         </div>

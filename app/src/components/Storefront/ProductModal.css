@@ -733,3 +733,138 @@
         left: 8px;
     }
 }
+
+/* ============================================
+   TERMS POPUP
+   ============================================ */
+.sf-terms-popup-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    z-index: 3000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    animation: modalFadeIn 0.2s ease-out;
+}
+
+.sf-terms-popup {
+    background: #fff;
+    width: 100%;
+    max-width: 480px;
+    max-height: 80vh;
+    border-radius: 20px;
+    box-shadow: 0 24px 64px -16px rgba(0, 0, 0, 0.25);
+    display: flex;
+    flex-direction: column;
+    animation: modalSlideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    overflow: hidden;
+}
+
+.sf-terms-popup-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 24px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+    flex-shrink: 0;
+}
+
+.sf-terms-popup-header h3 {
+    margin: 0;
+    font-size: 1.05rem;
+    font-weight: 800;
+    color: #111;
+}
+
+.sf-terms-popup-close {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: none;
+    background: #f3f3f1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: #666;
+    transition: all 0.2s;
+}
+
+.sf-terms-popup-close:hover {
+    background: #e5e5e3;
+    color: #111;
+}
+
+.sf-terms-popup-body {
+    padding: 20px 24px;
+    overflow-y: auto;
+    flex: 1;
+    -webkit-overflow-scrolling: touch;
+}
+
+.sf-terms-popup-body ul {
+    margin: 0;
+    padding: 0 0 0 20px;
+    font-size: 0.88rem;
+    color: #444;
+    line-height: 1.9;
+}
+
+.sf-terms-popup-body ul li {
+    margin-bottom: 8px;
+}
+
+.sf-terms-popup-body ul li::marker {
+    color: var(--sf-brand-color, #6366f1);
+}
+
+.sf-terms-popup-footer {
+    padding: 16px 24px 20px;
+    border-top: 1px solid rgba(0, 0, 0, 0.06);
+    flex-shrink: 0;
+}
+
+.sf-terms-accept-btn {
+    width: 100%;
+    height: 50px;
+    background: var(--sf-brand-color, #111);
+    color: #fff;
+    border: none;
+    border-radius: 14px;
+    font-size: 0.95rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.25s;
+    font-family: inherit;
+    letter-spacing: -0.01em;
+}
+
+.sf-terms-accept-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 20px -6px rgba(0, 0, 0, 0.25);
+}
+
+.sf-terms-accept-btn:active {
+    transform: translateY(0);
+}
+
+@media (max-width: 768px) {
+    .sf-terms-popup-backdrop {
+        padding: 0;
+        align-items: flex-end;
+    }
+
+    .sf-terms-popup {
+        max-width: 100%;
+        max-height: 85vh;
+        border-radius: 20px 20px 0 0;
+    }
+
+    .sf-terms-popup-footer {
+        padding-bottom: calc(16px + env(safe-area-inset-bottom, 8px));
+    }
+}
