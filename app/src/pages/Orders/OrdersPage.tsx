@@ -1013,9 +1013,14 @@ function CreateOrderModal({ onClose, nextNumber, statuses }: {
             const paid = Number(paidAmount);
             const cargoTotal = calculateCargoTotal();
 
+            // Auto-set status: if fully paid → confirmed, else → new
+            const initialStatus = paid >= finalTotal
+                ? 'confirmed'
+                : (statuses.find(s => s.isActive && s.id !== 'all')?.id || 'new');
+
             await orderService.createOrder(business.id, {
                 orderNumber: nextNumber,
-                status: statuses.find(s => s.isActive && s.id !== 'all')?.id || 'new',
+                status: initialStatus,
                 paymentStatus: paid >= finalTotal ? 'paid' : paid > 0 ? 'partial' : 'unpaid',
                 customer: {
                     id: selectedCustomerId,

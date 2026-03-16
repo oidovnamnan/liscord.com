@@ -186,12 +186,26 @@ export function BankSmsSyncPage() {
                         autoMatched: true,
                     });
                     const orderRef = doc(db, `businesses/${business.id}/orders`, matched.id);
-                    await updateDoc(orderRef, {
+                    const currentStatus = matched.status || 'new';
+                    const statusUpdate: Record<string, unknown> = {
                         paymentStatus: 'paid',
                         paymentVerifiedAt: new Date(),
                         paymentVerifiedBy: 'auto-match',
                         paymentSmsId: sms.id,
-                    });
+                    };
+                    // Auto-advance: new → confirmed when payment is verified
+                    if (currentStatus === 'new') {
+                        statusUpdate.status = 'confirmed';
+                        const history = Array.isArray(matched.statusHistory) ? matched.statusHistory : [];
+                        statusUpdate.statusHistory = [...history, {
+                            status: 'confirmed',
+                            at: new Date(),
+                            by: 'system',
+                            byName: 'SMS Auto-Match',
+                            note: 'Төлбөр баталгаажсан — автомат шилжүүлсэн'
+                        }];
+                    }
+                    await updateDoc(orderRef, statusUpdate);
                     const idx = unpaidOrders.indexOf(matched);
                     if (idx > -1) unpaidOrders.splice(idx, 1);
                     // Auto-matched successfully
@@ -261,14 +275,30 @@ export function BankSmsSyncPage() {
                 manualMatch: true,
             });
 
-            // Update order payment status
+            // Update order payment status + auto-advance status
             const orderRef = doc(db, `businesses/${business.id}/orders`, orderId);
-            await updateDoc(orderRef, {
+            const orderSnap = await getDoc(orderRef);
+            const orderData = orderSnap.exists() ? orderSnap.data() : null;
+            const currentStatus = orderData?.status || 'new';
+            const statusUpdate: Record<string, unknown> = {
                 paymentStatus: 'paid',
                 paymentVerifiedAt: new Date(),
                 paymentVerifiedBy: 'manual-match',
                 paymentSmsId: matchingSms.id,
-            });
+            };
+            // Auto-advance: new → confirmed when payment is verified
+            if (currentStatus === 'new') {
+                statusUpdate.status = 'confirmed';
+                const history = Array.isArray(orderData?.statusHistory) ? orderData.statusHistory : [];
+                statusUpdate.statusHistory = [...history, {
+                    status: 'confirmed',
+                    at: new Date(),
+                    by: 'system',
+                    byName: 'SMS Manual-Match',
+                    note: 'Төлбөр баталгаажсан — гараар холбосон'
+                }];
+            }
+            await updateDoc(orderRef, statusUpdate);
 
             // Close modal
             setMatchingSms(null);
