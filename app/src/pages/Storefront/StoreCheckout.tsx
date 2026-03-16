@@ -265,6 +265,14 @@ export function StoreCheckout() {
                         }
                     );
                     setQpayInvoice(invoice);
+
+                    // Save invoice_id to order for callback verification
+                    if (invoice.invoice_id) {
+                        const { doc: firestoreDoc, updateDoc } = await import('firebase/firestore');
+                        await updateDoc(firestoreDoc(db, `businesses/${business.id}/orders`, newId), {
+                            qpayInvoiceId: invoice.invoice_id,
+                        });
+                    }
                 } catch (e) {
                     console.error('QPay generation failed', e);
                 }
