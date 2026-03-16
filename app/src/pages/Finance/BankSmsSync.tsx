@@ -26,7 +26,6 @@ import { db } from '../../services/firebase';
 import { useBusinessStore } from '../../store';
 import { usePermissions } from '../../hooks/usePermissions';
 import { SecurityModal } from '../../components/common/SecurityModal';
-import { SmsOtpModal } from '../../components/common/SmsOtpModal';
 import { toast } from 'react-hot-toast';
 import '../Inventory/InventoryPage.css';
 import './BankSmsSync.css';
@@ -684,23 +683,9 @@ export function BankSmsSyncPage() {
                 description="Энэ үйлдэл бүх SMS орлогын бүртгэлийг бүрмөсөн устгана. Системийн нууц үгээ оруулна уу."
                 onSuccess={() => {
                     setShowSecurityModal(false);
-                    setShowSmsOtp(true);
-                }}
-                onClose={() => setShowSecurityModal(false)}
-            />
-        )}
-
-        {/* ═══ SMS OTP Modal (Step 2: Phone Verification) ═══ */}
-        {showSmsOtp && business?.phone && (
-            <SmsOtpModal
-                phone={business.phone}
-                title="📱 SMS баталгаажуулалт"
-                description="Админ утас руу баталгаажуулах код илгээнэ."
-                onSuccess={() => {
-                    setShowSmsOtp(false);
                     setShowDeleteConfirm(true);
                 }}
-                onClose={() => setShowSmsOtp(false)}
+                onClose={() => setShowSecurityModal(false)}
             />
         )}
 
