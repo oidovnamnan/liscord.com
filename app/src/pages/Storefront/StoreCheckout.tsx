@@ -692,7 +692,7 @@ export function StoreCheckout() {
                                     </div>
                                 </div>
 
-                                <div className="payment-disabled" style={{
+                                <div className="payment-option" style={{
                                     padding: '16px 20px', borderRadius: 16,
                                     border: '1px solid var(--border-color)',
                                     background: 'var(--bg-soft)',
