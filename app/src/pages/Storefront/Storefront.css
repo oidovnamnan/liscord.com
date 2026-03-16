@@ -670,6 +670,9 @@
     .store-bg {
         min-height: auto;
     }
+    .sf-footer {
+        margin-top: 4px !important;
+    }
 }
 
 /* ============================================

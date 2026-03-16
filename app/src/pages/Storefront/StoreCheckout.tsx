@@ -941,6 +941,7 @@ export function StoreCheckout() {
                         .checkout-page .store-container {
                             margin-top: 0 !important;
                             padding-top: 8px !important;
+                            padding-bottom: 8px !important;
                         }
                         .checkout-grid .grid-2-gap {
                             gap: 12px !important;
