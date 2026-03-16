@@ -28,7 +28,8 @@ export const qpayService = {
         orderId: string,
         amount: number,
         description: string,
-        customerPhone?: string
+        customerPhone?: string,
+        purpose: 'vip' | 'product' = 'product'
     ): Promise<QPayInvoiceResponse> {
         const response = await fetch('/api/qpay-invoice', {
             method: 'POST',
@@ -39,6 +40,7 @@ export const qpayService = {
                 amount,
                 description,
                 customerPhone,
+                purpose,
             }),
         });
 

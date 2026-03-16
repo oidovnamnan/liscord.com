@@ -52,6 +52,10 @@ async function getAccessToken(username: string, password: string): Promise<strin
     return data.access_token;
 }
 
+// Platform-level credentials (VIP/membership ONLY)
+const PLATFORM_USERNAME = 'GATE_SIM';
+const PLATFORM_PASSWORD = '8r3bvsa3';
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
     // CORS
     res.setHeader('Access-Control-Allow-Origin', '*');
@@ -61,23 +65,32 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (req.method === 'OPTIONS') return res.status(204).end();
     if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
-    const { invoiceId, bizId } = req.body;
+    const { invoiceId, bizId, purpose } = req.body;
 
     if (!invoiceId || !bizId) {
         return res.status(400).json({ error: 'Missing invoiceId or bizId' });
     }
 
     try {
-        // Read credentials from Firestore
-        const bizDoc = await db.doc(`businesses/${bizId}`).get();
-        if (!bizDoc.exists) return res.status(404).json({ error: 'Business not found' });
+        let username: string;
+        let password: string;
 
-        const qpay = bizDoc.data()!.settings?.qpay;
-        if (!qpay?.username || !qpay?.password) {
-            return res.status(400).json({ error: 'QPay credentials not configured' });
+        if (purpose === 'vip') {
+            username = PLATFORM_USERNAME;
+            password = PLATFORM_PASSWORD;
+        } else {
+            // Product → use business credentials
+            const bizDoc = await db.doc(`businesses/${bizId}`).get();
+            if (!bizDoc.exists) return res.status(404).json({ error: 'Business not found' });
+            const qpay = bizDoc.data()!.settings?.qpay;
+            if (!qpay?.username || !qpay?.password) {
+                return res.status(400).json({ error: 'QPay credentials not configured' });
+            }
+            username = qpay.username;
+            password = qpay.password;
         }
 
-        const token = await getAccessToken(qpay.username, qpay.password);
+        const token = await getAccessToken(username, password);
 
         const checkResp = await fetch(`${QPAY_API_URL}/payment/check`, {
             method: 'POST',

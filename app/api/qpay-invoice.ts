@@ -56,14 +56,31 @@ async function getAccessToken(username: string, password: string): Promise<strin
     return data.access_token;
 }
 
-async function getQPayCredentials(bizId: string) {
+// Platform-level credentials (VIP/membership ONLY)
+const PLATFORM_USERNAME = 'GATE_SIM';
+const PLATFORM_PASSWORD = '8r3bvsa3';
+const PLATFORM_INVOICE_CODE = 'GATE_SIM_INVOICE';
+
+async function getQPayCredentials(bizId: string, purpose: 'vip' | 'product' = 'product') {
+    // VIP/membership → always use platform credentials
+    if (purpose === 'vip') {
+        return {
+            username: PLATFORM_USERNAME,
+            password: PLATFORM_PASSWORD,
+            invoiceCode: PLATFORM_INVOICE_CODE,
+        };
+    }
+
+    // Product → strictly use business's own credentials
     const bizDoc = await db.doc(`businesses/${bizId}`).get();
     if (!bizDoc.exists) throw new Error('Business not found');
 
     const biz = bizDoc.data()!;
     const qpay = biz.settings?.qpay;
-    if (!qpay?.enabled) throw new Error('QPay is not enabled for this business');
-    if (!qpay.username || !qpay.password) throw new Error('QPay credentials missing');
+
+    if (!qpay?.username || !qpay?.password) {
+        throw new Error('Бизнесийн QPay credentials тохируулаагүй байна');
+    }
 
     return {
         username: qpay.username,
@@ -86,14 +103,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return res.status(405).json({ error: 'Method not allowed' });
     }
 
-    const { bizId, orderId, amount, description, customerPhone } = req.body;
+    const { bizId, orderId, amount, description, customerPhone, purpose } = req.body;
 
     if (!bizId || !orderId || !amount) {
         return res.status(400).json({ error: 'Missing required fields: bizId, orderId, amount' });
     }
 
     try {
-        const creds = await getQPayCredentials(bizId);
+        const creds = await getQPayCredentials(bizId, purpose || 'product');
         const token = await getAccessToken(creds.username, creds.password);
 
         // Callback URL pointing to our qpay-callback serverless function

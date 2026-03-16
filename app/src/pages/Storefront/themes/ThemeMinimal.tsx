@@ -656,7 +656,8 @@ function MembershipModal({
                 targetOrderId,
                 price,
                 `VIP гишүүнчлэл — ${product.exclusiveCategoryName || 'Онцгой'}`,
-                phone || ''
+                phone || '',
+                'vip'
             );
             setQpayData({
                 qr_image: invoice.qr_image,

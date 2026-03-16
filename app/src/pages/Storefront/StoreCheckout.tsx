@@ -255,7 +255,8 @@ export function StoreCheckout() {
                         newId,
                         finalTotal,
                         `${business.name} захиалга #${newId.slice(-4)}`,
-                        phone
+                        phone,
+                        'product'
                     );
                     setQpayInvoice(invoice);
                 } catch (e) {
