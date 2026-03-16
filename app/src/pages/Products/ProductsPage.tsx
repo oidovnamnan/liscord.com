@@ -44,6 +44,7 @@ export function ProductsPage() {
     });
     const [selectedIds, setSelectedIds] = useState<string[]>([]);
     const [isBulkUpdating, setIsBulkUpdating] = useState(false);
+    const [categories, setCategories] = useState<Category[]>([]);
 
     useEffect(() => {
         if (!business?.id) return;
@@ -57,6 +58,13 @@ export function ProductsPage() {
 
         return () => unsubscribe();
     }, [business?.id, productsLimit]);
+
+    // Subscribe to all categories independently
+    useEffect(() => {
+        if (!business?.id) return;
+        const unsub = categoryService.subscribeCategories(business.id, setCategories);
+        return () => unsub();
+    }, [business?.id]);
 
     useEffect(() => {
         const total = products.length;
@@ -79,9 +87,6 @@ export function ProductsPage() {
 
         return matchSearch && matchCategory;
     });
-
-    const categories = Array.from(new Set(products.map(p => ({ id: p.categoryId || 'general', name: p.categoryName || 'АНГИЛАЛГҮЙ' }))))
-        .filter((v, i, a) => a.findIndex(t => t.id === v.id) === i);
 
     const handleDelete = async (id: string) => {
         if (!business || !confirm('Энэ барааг устгахдаа итгэлтэй байна уу?')) return;
