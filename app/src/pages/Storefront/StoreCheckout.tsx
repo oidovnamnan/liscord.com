@@ -73,7 +73,7 @@ export function StoreCheckout() {
     const pendingFormRef = useRef<HTMLFormElement | null>(null);
 
     // Payment method
-    const [paymentMethod, setPaymentMethod] = useState<'bank_transfer' | 'qpay' | 'social_pay'>('bank_transfer');
+    const [paymentMethod, setPaymentMethod] = useState<'bank_transfer' | 'qpay' | 'social_pay'>('qpay');
     const [selectedBankId, setSelectedBankId] = useState<string>('');
 
     const hasReadyItems = items.some(item => item.product.productType === 'ready');
@@ -660,62 +660,177 @@ export function StoreCheckout() {
                             </div>
 
                             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                                {/* Bank Transfer - Active */}
+                                {/* QPay - Primary */}
                                 <div
                                     className="payment-option"
-                                    onClick={() => setPaymentMethod('bank_transfer')}
+                                    onClick={() => setPaymentMethod('qpay')}
                                     style={{
                                         padding: '16px 20px', borderRadius: 16, cursor: 'pointer',
-                                        border: `2px solid ${paymentMethod === 'bank_transfer' ? 'var(--primary)' : 'var(--border-color)'}`,
-                                        background: paymentMethod === 'bank_transfer' ? 'rgba(var(--primary-rgb), 0.05)' : 'var(--surface-1)',
+                                        border: `2px solid ${paymentMethod === 'qpay' ? 'var(--primary)' : 'var(--border-color)'}`,
+                                        background: paymentMethod === 'qpay' ? 'rgba(var(--primary-rgb), 0.05)' : 'var(--surface-1)',
                                         display: 'flex', alignItems: 'center', gap: 14, transition: 'all 0.2s ease',
                                     }}
                                 >
                                     <div className="payment-option-icon" style={{
                                         width: 42, height: 42, borderRadius: 12,
-                                        background: paymentMethod === 'bank_transfer' ? 'var(--primary)' : 'var(--bg-soft)',
-                                        color: paymentMethod === 'bank_transfer' ? '#fff' : 'var(--text-muted)',
-                                        display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0
-                                    }}>
-                                        <Landmark size={20} />
-                                    </div>
-                                    <div style={{ flex: 1 }}>
-                                        <div style={{ fontWeight: 700, fontSize: '1rem', color: 'var(--text-primary)' }}>Банкны шилжүүлэг</div>
-                                        <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 500, marginTop: 2 }}>Дансаар шилжүүлэг хийх</div>
-                                    </div>
-                                    <div style={{
-                                        width: 20, height: 20, borderRadius: '50%',
-                                        border: `2px solid ${paymentMethod === 'bank_transfer' ? 'var(--primary)' : 'var(--border-color)'}`,
-                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                    }}>
-                                        {paymentMethod === 'bank_transfer' && <div style={{ width: 10, height: 10, borderRadius: '50%', background: 'var(--primary)' }} />}
-                                    </div>
-                                </div>
-
-                                <div className="payment-option" style={{
-                                    padding: '16px 20px', borderRadius: 16,
-                                    border: '1px solid var(--border-color)',
-                                    background: 'var(--bg-soft)',
-                                    display: 'flex', alignItems: 'center', gap: 14,
-                                    opacity: 0.5, cursor: 'not-allowed',
-                                }}>
-                                    <div style={{
-                                        width: 42, height: 42, borderRadius: 12,
-                                        background: 'var(--bg-secondary)', color: 'var(--text-muted)',
+                                        background: paymentMethod === 'qpay' ? 'var(--primary)' : 'var(--bg-soft)',
+                                        color: paymentMethod === 'qpay' ? '#fff' : 'var(--text-muted)',
                                         display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0
                                     }}>
                                         <QrCode size={20} />
                                     </div>
                                     <div style={{ flex: 1 }}>
-                                        <div style={{ fontWeight: 700, fontSize: '1rem', color: 'var(--text-secondary)' }}>QPay</div>
+                                        <div style={{ fontWeight: 700, fontSize: '1rem', color: 'var(--text-primary)' }}>QPay</div>
                                         <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 500, marginTop: 2 }}>QR кодоор төлөх</div>
                                     </div>
-                                    <span style={{
-                                        fontSize: '0.7rem', fontWeight: 700, padding: '4px 10px', borderRadius: 100,
-                                        background: 'var(--bg-secondary)', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em'
-                                    }}>Тун удахгүй</span>
+                                    <div style={{
+                                        width: 20, height: 20, borderRadius: '50%',
+                                        border: `2px solid ${paymentMethod === 'qpay' ? 'var(--primary)' : 'var(--border-color)'}`,
+                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                    }}>
+                                        {paymentMethod === 'qpay' && <div style={{ width: 10, height: 10, borderRadius: '50%', background: 'var(--primary)' }} />}
+                                    </div>
                                 </div>
 
+                                {/* Bank Transfer - Secondary / Collapsible */}
+                                <div style={{ borderRadius: 16, border: `2px solid ${paymentMethod === 'bank_transfer' ? 'var(--primary)' : 'var(--border-color)'}`, overflow: 'hidden', transition: 'all 0.2s ease' }}>
+                                    <div
+                                        className="payment-option"
+                                        onClick={() => setPaymentMethod('bank_transfer')}
+                                        style={{
+                                            padding: '16px 20px', cursor: 'pointer',
+                                            background: paymentMethod === 'bank_transfer' ? 'rgba(var(--primary-rgb), 0.05)' : 'var(--surface-1)',
+                                            display: 'flex', alignItems: 'center', gap: 14, transition: 'all 0.2s ease',
+                                        }}
+                                    >
+                                        <div className="payment-option-icon" style={{
+                                            width: 42, height: 42, borderRadius: 12,
+                                            background: paymentMethod === 'bank_transfer' ? 'var(--primary)' : 'var(--bg-soft)',
+                                            color: paymentMethod === 'bank_transfer' ? '#fff' : 'var(--text-muted)',
+                                            display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0
+                                        }}>
+                                            <Landmark size={20} />
+                                        </div>
+                                        <div style={{ flex: 1 }}>
+                                            <div style={{ fontWeight: 700, fontSize: '1rem', color: 'var(--text-primary)' }}>Банкны шилжүүлэг</div>
+                                            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 500, marginTop: 2 }}>Дансаар шилжүүлэг хийх</div>
+                                        </div>
+                                        <div style={{
+                                            width: 20, height: 20, borderRadius: '50%',
+                                            border: `2px solid ${paymentMethod === 'bank_transfer' ? 'var(--primary)' : 'var(--border-color)'}`,
+                                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                        }}>
+                                            {paymentMethod === 'bank_transfer' && <div style={{ width: 10, height: 10, borderRadius: '50%', background: 'var(--primary)' }} />}
+                                        </div>
+                                    </div>
+
+                                    {/* Bank details — shown only when bank_transfer selected */}
+                                    {paymentMethod === 'bank_transfer' && enabledBanks.length > 0 && (
+                                        <div className="animate-fade-in" style={{ padding: '0 20px 20px', borderTop: '1px solid var(--border-color)' }}>
+                                            {enabledBanks.length > 1 && (
+                                                <div className="input-group" style={{ marginTop: 16, marginBottom: 12 }}>
+                                                    <label className="input-label" style={{ fontSize: '0.8rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Банк сонгох</label>
+                                                    <select
+                                                        className="input"
+                                                        value={selectedBank?.id || ''}
+                                                        onChange={e => setSelectedBankId(e.target.value)}
+                                                        style={{ height: 48, borderRadius: 12, background: 'var(--bg-soft)', border: '1px solid var(--border-primary)' }}
+                                                    >
+                                                        {enabledBanks.map(b => (
+                                                            <option key={b.id} value={b.id}>{b.bankName} - {b.accountNumber}</option>
+                                                        ))}
+                                                    </select>
+                                                </div>
+                                            )}
+
+                                            {selectedBank && (
+                                                <div className="bank-details-card" style={{
+                                                    padding: 16, borderRadius: 12, marginTop: 12,
+                                                    background: 'var(--bg-soft)',
+                                                    border: '1px solid var(--border-primary)',
+                                                }}>
+                                                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                                                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem' }}>
+                                                            <span style={{ color: 'var(--text-muted)', fontWeight: 500 }}>Банк:</span>
+                                                            <span style={{ fontWeight: 700 }}>{selectedBank.bankName}</span>
+                                                        </div>
+                                                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem' }}>
+                                                            <span style={{ color: 'var(--text-muted)', fontWeight: 500 }}>Данс:</span>
+                                                            <span
+                                                                style={{ fontWeight: 700, letterSpacing: '0.05em', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}
+                                                                onClick={() => copyToClipboard(selectedBank.accountNumber, 'Дансны дугаар')}
+                                                            >
+                                                                {selectedBank.accountNumber}
+                                                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.4 }}><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                                                            </span>
+                                                        </div>
+                                                        {selectedBank.iban && (
+                                                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem' }}>
+                                                                <span style={{ color: 'var(--text-muted)', fontWeight: 500 }}>IBAN:</span>
+                                                                <span
+                                                                    style={{ fontWeight: 700, letterSpacing: '0.03em', fontSize: '0.8rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}
+                                                                    onClick={() => copyToClipboard(selectedBank.iban!, 'IBAN')}
+                                                                >
+                                                                    {selectedBank.iban}
+                                                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.4 }}><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                                                                </span>
+                                                            </div>
+                                                        )}
+                                                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem' }}>
+                                                            <span style={{ color: 'var(--text-muted)', fontWeight: 500 }}>Хүлээн авагч:</span>
+                                                            <span style={{ fontWeight: 700 }}>{selectedBank.accountName}</span>
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Reference Code */}
+                                                    <div style={{
+                                                        marginTop: 12, paddingTop: 12,
+                                                        borderTop: '1px dashed var(--border-color)',
+                                                        textAlign: 'center',
+                                                    }}>
+                                                        <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 600, marginBottom: 6 }}>
+                                                            ГҮЙЛГЭЭНИЙ УТГА ДЭЭР БИЧНЭ ҮҮ
+                                                        </p>
+                                                        <div style={{
+                                                            display: 'inline-flex', alignItems: 'center', gap: 10,
+                                                            background: 'var(--surface-1)', borderRadius: 10, padding: '8px 16px',
+                                                            border: '2px dashed var(--primary)',
+                                                        }}>
+                                                            <span style={{
+                                                                fontSize: '1.4rem', fontWeight: 900,
+                                                                letterSpacing: '0.15em', color: 'var(--primary)',
+                                                                fontFamily: 'monospace',
+                                                            }}>
+                                                                {refCode}
+                                                            </span>
+                                                            <button
+                                                                type="button"
+                                                                onClick={copyRefCode}
+                                                                style={{
+                                                                    background: copied ? '#4BB543' : 'var(--primary)',
+                                                                    color: '#fff', border: 'none', borderRadius: 8,
+                                                                    padding: '5px 10px', fontWeight: 700, fontSize: '0.75rem',
+                                                                    cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4,
+                                                                    transition: 'all 0.2s',
+                                                                }}
+                                                            >
+                                                                {copied ? <Check size={13} /> : <Copy size={13} />}
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            {enabledBanks.length === 0 && (
+                                                <div style={{ marginTop: 12, padding: 16, borderRadius: 12, background: 'var(--bg-soft)', textAlign: 'center', border: '1px dashed var(--border-color)' }}>
+                                                    <p style={{ color: 'var(--text-muted)', fontSize: '0.82rem', margin: 0 }}>Банкны данс тохируулаагүй байна.</p>
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Social Pay - Hidden on mobile */}
                                 <div className="payment-disabled" style={{
                                     padding: '16px 20px', borderRadius: 16,
                                     border: '1px solid var(--border-color)',
@@ -740,113 +855,6 @@ export function StoreCheckout() {
                                     }}>Тун удахгүй</span>
                                 </div>
                             </div>
-
-                            {/* Bank Transfer Details */}
-                            {paymentMethod === 'bank_transfer' && enabledBanks.length > 0 && (
-                                <div className="animate-fade-in" style={{ marginTop: 20 }}>
-                                    {/* Bank selector */}
-                                    {enabledBanks.length > 1 && (
-                                        <div className="input-group" style={{ marginBottom: 16 }}>
-                                            <label className="input-label" style={{ fontSize: '0.8rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Банк сонгох</label>
-                                            <select
-                                                className="input"
-                                                value={selectedBank?.id || ''}
-                                                onChange={e => setSelectedBankId(e.target.value)}
-                                                style={{ height: 48, borderRadius: 12, background: 'var(--bg-soft)', border: '1px solid var(--border-primary)' }}
-                                            >
-                                                {enabledBanks.map(b => (
-                                                    <option key={b.id} value={b.id}>{b.bankName} - {b.accountNumber}</option>
-                                                ))}
-                                            </select>
-                                        </div>
-                                    )}
-
-                                    {/* Selected bank details card */}
-                                    {selectedBank && (
-                                        <div className="bank-details-card" style={{
-                                            padding: 20, borderRadius: 16,
-                                            background: 'var(--bg-soft)',
-                                            border: '1px solid var(--border-primary)',
-                                        }}>
-                                            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                                                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.88rem' }}>
-                                                    <span style={{ color: 'var(--text-muted)', fontWeight: 500 }}>Банк:</span>
-                                                    <span style={{ fontWeight: 700 }}>{selectedBank.bankName}</span>
-                                                </div>
-                                                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.88rem' }}>
-                                                    <span style={{ color: 'var(--text-muted)', fontWeight: 500 }}>Данс:</span>
-                                                    <span
-                                                        style={{ fontWeight: 700, letterSpacing: '0.05em', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}
-                                                        onClick={() => copyToClipboard(selectedBank.accountNumber, 'Дансны дугаар')}
-                                                    >
-                                                        {selectedBank.accountNumber}
-                                                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.4 }}><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-                                                    </span>
-                                                </div>
-                                                {selectedBank.iban && (
-                                                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.88rem' }}>
-                                                        <span style={{ color: 'var(--text-muted)', fontWeight: 500 }}>IBAN:</span>
-                                                        <span
-                                                            style={{ fontWeight: 700, letterSpacing: '0.03em', fontSize: '0.82rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}
-                                                            onClick={() => copyToClipboard(selectedBank.iban!, 'IBAN')}
-                                                        >
-                                                            {selectedBank.iban}
-                                                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.4 }}><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-                                                        </span>
-                                                    </div>
-                                                )}
-                                                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.88rem' }}>
-                                                    <span style={{ color: 'var(--text-muted)', fontWeight: 500 }}>Хүлээн авагч:</span>
-                                                    <span style={{ fontWeight: 700 }}>{selectedBank.accountName}</span>
-                                                </div>
-                                            </div>
-
-                                            {/* Reference Code */}
-                                            <div style={{
-                                                marginTop: 16, paddingTop: 16,
-                                                borderTop: '1px dashed var(--border-color)',
-                                                textAlign: 'center',
-                                            }}>
-                                                <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 600, marginBottom: 8 }}>
-                                                    ГҮЙЛГЭЭНИЙ УТГА ДЭЭР БИЧНЭ ҮҮ
-                                                </p>
-                                                <div style={{
-                                                    display: 'inline-flex', alignItems: 'center', gap: 10,
-                                                    background: 'var(--surface-1)', borderRadius: 12, padding: '10px 20px',
-                                                    border: '2px dashed var(--primary)',
-                                                }}>
-                                                    <span style={{
-                                                        fontSize: '1.6rem', fontWeight: 900,
-                                                        letterSpacing: '0.15em', color: 'var(--primary)',
-                                                        fontFamily: 'monospace',
-                                                    }}>
-                                                        {refCode}
-                                                    </span>
-                                                    <button
-                                                        type="button"
-                                                        onClick={copyRefCode}
-                                                        style={{
-                                                            background: copied ? '#4BB543' : 'var(--primary)',
-                                                            color: '#fff', border: 'none', borderRadius: 8,
-                                                            padding: '6px 12px', fontWeight: 700, fontSize: '0.8rem',
-                                                            cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4,
-                                                            transition: 'all 0.2s',
-                                                        }}
-                                                    >
-                                                        {copied ? <Check size={14} /> : <Copy size={14} />}
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    )}
-                                </div>
-                            )}
-
-                            {paymentMethod === 'bank_transfer' && enabledBanks.length === 0 && (
-                                <div style={{ marginTop: 16, padding: 20, borderRadius: 16, background: 'var(--bg-soft)', textAlign: 'center', border: '1px dashed var(--border-color)' }}>
-                                    <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', margin: 0 }}>Банкны данс тохируулаагүй байна.</p>
-                                </div>
-                            )}
                         </div>
                     </div>
 
