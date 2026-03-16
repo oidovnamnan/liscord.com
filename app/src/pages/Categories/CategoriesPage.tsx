@@ -329,7 +329,29 @@ function CategoryModal({
             }
 
             if (isEditing) {
+                const oldName = category.name;
+                const newName = name.trim();
                 await categoryService.updateCategory(business.id, category.id, data);
+
+                // If name changed, propagate to all products in this category
+                if (oldName !== newName) {
+                    try {
+                        const allProducts = await productService.getProducts(business.id);
+                        const affected = allProducts.filter(
+                            p => p.categoryId === category.id || p.categoryName === oldName
+                        );
+                        if (affected.length > 0) {
+                            await productService.bulkUpdateProducts(
+                                business.id,
+                                affected.map(p => p.id),
+                                { categoryName: newName, categoryId: category.id } as any
+                            );
+                            toast.success(`${affected.length} барааны ангилал шинэчлэгдлээ`);
+                        }
+                    } catch (e) {
+                        console.error('Failed to update product categoryNames:', e);
+                    }
+                }
                 toast.success('Ангилал шинэчлэгдлээ');
             } else {
                 await categoryService.createCategory(business.id, data);

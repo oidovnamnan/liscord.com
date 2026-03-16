@@ -59,12 +59,9 @@ export function ProductsPage() {
         const ref = collection(db, 'businesses', bizId, 'products');
         const constraints: QueryConstraint[] = [where('isDeleted', '==', false)];
 
-        // When a category is selected, filter at Firestore level
+        // When a category is selected, filter at Firestore level by ID (stable)
         if (categoryFilter !== 'all') {
-            const selectedCat = categories.find(c => c.id === categoryFilter);
-            if (selectedCat) {
-                constraints.push(where('categoryName', '==', selectedCat.name));
-            }
+            constraints.push(where('categoryId', '==', categoryFilter));
         }
 
         constraints.push(limit(productsLimit));
