@@ -694,7 +694,7 @@ export function SettingsPage() {
                                             })}
 
                                             <div
-                                                onClick={() => setSearchParams({ tab: 'modules' })}
+                                                onClick={() => navigate('/app/app-store')}
                                                 style={{
                                                     border: '1px dashed var(--primary)',
                                                     borderRadius: '16px',
