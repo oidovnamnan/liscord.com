@@ -278,13 +278,6 @@ export function ProductModal({ product, onClose, preorderTerms }: ProductModalPr
                             {/* Preorder Terms */}
                             {isPreorder && (
                                 <div className="sf-modal-terms">
-                                    <div
-                                        className="sf-modal-terms-header"
-                                        onClick={() => setShowTerms(true)}
-                                    >
-                                        <span style={{ fontWeight: 700, fontSize: '0.82rem' }}>⚠️ Захиалгын нөхцөл</span>
-                                        <ChevronRight size={16} />
-                                    </div>
                                     <label
                                         className="sf-modal-terms-check"
                                         onClick={(e) => {
@@ -375,7 +368,7 @@ export function ProductModal({ product, onClose, preorderTerms }: ProductModalPr
                                     {added ? (
                                         <><Check size={16} /> Нэмэгдлээ!</>
                                     ) : (
-                                        <><ShoppingBag size={16} /> Сагслах</>
+                                        <><ShoppingBag size={16} /> <span className="sf-btn-label">Сагслах</span></>
                                     )}
                                 </button>
                                 <button
@@ -384,7 +377,7 @@ export function ProductModal({ product, onClose, preorderTerms }: ProductModalPr
                                     disabled={isPreorder && !termsAccepted}
                                     style={(isPreorder && !termsAccepted) ? { opacity: 0.5, cursor: 'not-allowed' } : undefined}
                                 >
-                                    <Zap size={16} /> Захиалах
+                                    <Zap size={16} /> <span className="sf-btn-label">Захиалах</span>
                                 </button>
                             </div>
                         </div>
