@@ -1,5 +1,5 @@
 import { X, Printer, Clock, User, Package, CreditCard, CheckCircle2, ChevronDown, Loader2, ImageIcon, Undo2 } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import type { Order, OrderStatusConfig } from '../../types';
 import { ebarimtService } from '../../services/ebarimt';
@@ -22,8 +22,11 @@ export function OrderDetailModal({ bizId, order, onClose, statuses }: OrderDetai
     const { user } = useAuthStore();
     const { business } = useBusinessStore();
     const { hasPermission } = usePermissions();
-    const { defaults: moduleDefaults } = useModuleDefaultsStore();
-    const returnsModuleActive = business ? isModuleAccessible('returns', business, moduleDefaults).accessible : false;
+    const { defaults: moduleDefaults, fetched: defaultsLoaded, fetchDefaults } = useModuleDefaultsStore();
+
+    useEffect(() => { fetchDefaults(); }, [fetchDefaults]);
+
+    const returnsModuleActive = defaultsLoaded && business ? isModuleAccessible('returns', business, moduleDefaults).accessible : false;
     const canCreateReturn = returnsModuleActive && hasPermission('returns.create');
     const [updating, setUpdating] = useState(false);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
