@@ -30,11 +30,13 @@ export function StockInquiryPopup({ businessId, cartItems, customerPhone, timeou
     const [changes, setChanges] = useState<{ newPrice?: number; newName?: string; note?: string } | null>(null);
     const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-    // Step 1: Check which items haven't had a successful stock inquiry within `inactiveDays`
+    // Step 1: Check which items haven't had a successful stock inquiry within 30 days
+    // or haven't had a confirmed order in the last 30 days
     useEffect(() => {
         async function checkActivity() {
-            const cutoff = new Date();
-            cutoff.setDate(cutoff.getDate() - inactiveDays);
+            const FRESHNESS_DAYS = 30;
+            const freshnessCutoff = new Date();
+            freshnessCutoff.setDate(freshnessCutoff.getDate() - FRESHNESS_DAYS);
             const staleThreshold = new Date(Date.now() - (timeoutSeconds + 60) * 1000);
 
             const needInquiry: InquiryItem[] = [];
@@ -52,31 +54,73 @@ export function StockInquiryPopup({ businessId, cartItems, customerPhone, timeou
 
                     if (snap.empty) {
                         needInquiry.push(item);
-                    } else {
-                        const lastInquiry = snap.docs[0].data();
-                        const lastStatus = lastInquiry.status as StockInquiryStatus;
-                        const createdAt = lastInquiry.createdAt?.toDate?.() || new Date(0);
-
-                        if (['pending', 'checking'].includes(lastStatus)) {
-                            if (createdAt < staleThreshold) {
-                                try {
-                                    const staleRef = doc(db, `businesses/${businessId}/stockInquiries`, snap.docs[0].id);
-                                    await updateDoc(staleRef, { status: 'expired' });
-                                } catch (_) { /* ignore */ }
-                                needInquiry.push(item);
-                            }
-                            continue;
-                        }
-
-                        if (lastStatus === 'expired' || lastStatus === 'inactive') {
-                            needInquiry.push(item);
-                            continue;
-                        }
-
-                        if (createdAt < cutoff) {
-                            needInquiry.push(item);
-                        }
+                        continue;
                     }
+
+                    const lastInquiry = snap.docs[0].data();
+                    const lastStatus = lastInquiry.status as StockInquiryStatus;
+                    const createdAt = lastInquiry.createdAt?.toDate?.() || new Date(0);
+
+                    // ── pending/checking: someone is working on it ──
+                    if (['pending', 'checking'].includes(lastStatus)) {
+                        if (createdAt < staleThreshold) {
+                            // Stale — mark expired and re-inquire
+                            try {
+                                const staleRef = doc(db, `businesses/${businessId}/stockInquiries`, snap.docs[0].id);
+                                await updateDoc(staleRef, { status: 'expired' });
+                            } catch (_) { /* ignore */ }
+                            needInquiry.push(item);
+                        }
+                        // Fresh pending/checking → skip (don't show popup)
+                        continue;
+                    }
+
+                    // ── expired: admin never responded → re-inquire ──
+                    if (lastStatus === 'expired') {
+                        needInquiry.push(item);
+                        continue;
+                    }
+
+                    // ── Terminal responses: no_change, updated, inactive ──
+                    // These are "admin answered" statuses — check freshness
+                    const respondedAt = lastInquiry.respondedAt?.toDate?.() || createdAt;
+
+                    if (respondedAt >= freshnessCutoff) {
+                        // Response is within 30 days — product info is fresh, skip
+                        continue;
+                    }
+
+                    // Response is older than 30 days — check if confirmed order exists
+                    try {
+                        const ordersRef = collection(db, `businesses/${businessId}/orders`);
+                        const oq = query(
+                            ordersRef,
+                            where('createdAt', '>=', Timestamp.fromDate(freshnessCutoff)),
+                            orderBy('createdAt', 'desc'),
+                            limit(50)
+                        );
+                        const orderSnap = await getDocs(oq);
+                        const hasConfirmedOrder = orderSnap.docs.some(od => {
+                            const o = od.data();
+                            if (o.isDeleted) return false;
+                            // Check if any non-new/non-cancelled status (= confirmed+)
+                            const confirmedStatuses = ['confirmed', 'sourced', 'arrived', 'delivered', 'completed'];
+                            if (!confirmedStatuses.includes(o.status)) return false;
+                            // Check if this product is in the order items
+                            return o.items?.some((oi: { productId?: string }) => oi.productId === item.productId);
+                        });
+
+                        if (hasConfirmedOrder) {
+                            // Confirmed order exists within 30 days — product is active, skip
+                            continue;
+                        }
+                    } catch (orderErr) {
+                        console.debug('[StockInquiry] Order check failed:', orderErr);
+                        // If order check fails, fall through to re-inquire
+                    }
+
+                    // 30+ days old response AND no confirmed order → re-inquire
+                    needInquiry.push(item);
                 } catch (e) {
                     console.error('[StockInquiry] Query failed (probably missing composite index):', e);
                     needInquiry.push(item);
