@@ -30,17 +30,18 @@ export function StockInquiryPopup({ businessId, cartItems, customerPhone, timeou
     const [changes, setChanges] = useState<{ newPrice?: number; newName?: string; note?: string } | null>(null);
     const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-    // Step 1: Check which items haven't had a resolved stock inquiry within `inactiveDays`
+    // Step 1: Check which items haven't had a successful stock inquiry within `inactiveDays`
     useEffect(() => {
         async function checkActivity() {
             const cutoff = new Date();
             cutoff.setDate(cutoff.getDate() - inactiveDays);
+            // Stale threshold: pending inquiry older than timeoutSeconds + 60s buffer
+            const staleThreshold = new Date(Date.now() - (timeoutSeconds + 60) * 1000);
 
             const needInquiry: InquiryItem[] = [];
 
             for (const item of cartItems) {
                 try {
-                    // Query stockInquiries for this product — check if resolved recently
                     const inquiriesRef = collection(db, `businesses/${businessId}/stockInquiries`);
                     const q = query(
                         inquiriesRef,
@@ -58,17 +59,31 @@ export function StockInquiryPopup({ businessId, cartItems, customerPhone, timeou
                         const lastStatus = lastInquiry.status as StockInquiryStatus;
                         const createdAt = lastInquiry.createdAt?.toDate?.() || new Date(0);
 
-                        // If last inquiry is still pending/checking — don't create duplicate
+                        // If pending/checking but STALE (older than timeout) — mark expired & allow new
                         if (['pending', 'checking'].includes(lastStatus)) {
-                            // Active inquiry exists, skip this product
+                            if (createdAt < staleThreshold) {
+                                // Stale inquiry — mark it expired and allow new one
+                                try {
+                                    const staleRef = doc(db, `businesses/${businessId}/stockInquiries`, snap.docs[0].id);
+                                    await updateDoc(staleRef, { status: 'expired' });
+                                } catch (_) { /* ignore */ }
+                                needInquiry.push(item);
+                            }
+                            // else: genuinely active inquiry, skip this product
                             continue;
                         }
 
-                        // If last resolved inquiry is older than inactiveDays — needs re-inquiry
+                        // Expired = business never responded — ALWAYS needs new inquiry
+                        if (lastStatus === 'expired' || lastStatus === 'inactive') {
+                            needInquiry.push(item);
+                            continue;
+                        }
+
+                        // Successfully resolved (no_change, updated) — only re-inquiry if older than cutoff
                         if (createdAt < cutoff) {
                             needInquiry.push(item);
                         }
-                        // Otherwise: recently resolved, no need
+                        // Otherwise: recently resolved successfully, no need
                     }
                 } catch (e) {
                     console.warn('[StockInquiry] Failed to check inquiry history:', e);
@@ -78,7 +93,7 @@ export function StockInquiryPopup({ businessId, cartItems, customerPhone, timeou
             }
 
             if (needInquiry.length === 0) {
-                // All items have recent inquiries, no popup needed
+                // All items have recent successful inquiries, no popup needed
                 onProceed();
                 return;
             }
