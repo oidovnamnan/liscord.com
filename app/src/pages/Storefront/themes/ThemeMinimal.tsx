@@ -865,20 +865,11 @@ function MembershipModal({
 
                         {paymentTab === 'qpay' && qpayData ? (
                             <div className="sf-membership-qpay">
-                                <div className="sf-membership-qr">
-                                    <img
-                                        src={`data:image/png;base64,${qpayData.qr_image}`}
-                                        alt="QPay QR"
-                                        style={{ width: '200px', height: '200px', borderRadius: '12px' }}
-                                    />
-                                </div>
-                                <p className="sf-membership-qpay-hint">
-                                    Банкны аппаараа QR уншуулна уу
-                                </p>
+                                {/* Bank apps first — primary action on mobile */}
                                 {qpayData.urls.length > 0 && (
                                     <div className="sf-qpay-banks-section">
                                         <div className="sf-qpay-banks-divider">
-                                            <span>эсвэл аппаар нээх</span>
+                                            <span>банкны аппаар төлөх</span>
                                         </div>
                                         <div className="sf-qpay-banks-grid">
                                             {qpayData.urls.map((url, i) => (
@@ -899,6 +890,17 @@ function MembershipModal({
                                         </div>
                                     </div>
                                 )}
+                                {/* QR code — secondary option */}
+                                <div className="sf-qpay-banks-divider" style={{ marginTop: 16 }}>
+                                    <span>эсвэл QR уншуулах</span>
+                                </div>
+                                <div className="sf-membership-qr">
+                                    <img
+                                        src={`data:image/png;base64,${qpayData.qr_image}`}
+                                        alt="QPay QR"
+                                        style={{ width: '160px', height: '160px', borderRadius: '12px' }}
+                                    />
+                                </div>
                                 <div className="sf-membership-waiting">
                                     <div className="sf-membership-spinner" />
                                     Төлбөр хүлээж байна...
