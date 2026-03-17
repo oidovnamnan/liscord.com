@@ -414,6 +414,26 @@ export function ThemeMinimal({ business }: { business: Business }) {
 // Membership Purchase Modal
 // QPay + Bank Transfer dual payment
 // ═══════════════════════════════════════════
+
+// ── Deeplink State Persistence for VIP (sessionStorage) ──
+const VIP_CHECKOUT_STATE_KEY = 'liscord_vip_checkout_state';
+
+function saveVipCheckoutState(data: { orderId: string; qpayData: any; phone: string; refCode: string }) {
+    try {
+        sessionStorage.setItem(VIP_CHECKOUT_STATE_KEY, JSON.stringify(data));
+    } catch { /* quota error or Safari private mode — ignore */ }
+}
+
+function loadVipCheckoutState(): { orderId: string; qpayData: any; phone: string; refCode: string } | null {
+    try {
+        const raw = sessionStorage.getItem(VIP_CHECKOUT_STATE_KEY);
+        return raw ? JSON.parse(raw) : null;
+    } catch { return null; }
+}
+
+function clearVipCheckoutState() {
+    try { sessionStorage.removeItem(VIP_CHECKOUT_STATE_KEY); } catch {}
+}
 function MembershipModal({
     product,
     onClose,
@@ -444,10 +464,27 @@ function MembershipModal({
     const [creatingOrder, setCreatingOrder] = useState(false);
     const [orderId, setOrderId] = useState('');
     const [refCode, setRefCode] = useState('');
-    const [qpayData, setQpayData] = useState<{ qr_image: string; qPay_shortUrl: string; urls: Array<{ name: string; description: string; link: string; logo: string }> } | null>(null);
+    const [qpayData, setQpayData] = useState<{ invoice_id: string; qr_image: string; qPay_shortUrl: string; urls: Array<{ name: string; description: string; link: string; logo: string }> } | null>(null);
     const [qpayError, setQpayError] = useState(false);
     const [qpayLoading, setQpayLoading] = useState(false);
     const [paymentConfirmed, setPaymentConfirmed] = useState(false);
+
+    // Restore state if returning from bank app deeplink
+    const restoredRef = useRef(false);
+    useEffect(() => {
+        if (restoredRef.current) return;
+        const saved = loadVipCheckoutState();
+        if (saved?.orderId && saved?.qpayData) {
+            restoredRef.current = true;
+            setOrderId(saved.orderId);
+            setQpayData(saved.qpayData);
+            setPhone(saved.phone || '');
+            setRefCode(saved.refCode || '');
+            setShowPayment(true);
+            setPaymentTab('qpay');
+        }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     const enabledBanks = (business.settings?.bankTransferAccounts || []).filter((a: { enabled: boolean }) => a.enabled);
     const selectedBank = enabledBanks[0] || null;
@@ -664,6 +701,7 @@ function MembershipModal({
                 'vip'
             );
             setQpayData({
+                invoice_id: invoice.invoice_id,
                 qr_image: invoice.qr_image,
                 qPay_shortUrl: invoice.qPay_shortUrl,
                 urls: invoice.urls || [],
@@ -758,6 +796,7 @@ function MembershipModal({
 
                     // Directly confirm payment (don't rely only on onSnapshot)
                     setPaymentConfirmed(true);
+                    clearVipCheckoutState();
                     setTimeout(() => onClose(), 2500);
                 }
             } catch (pollErr) {
@@ -773,6 +812,14 @@ function MembershipModal({
             if (pollingRef.current) clearInterval(pollingRef.current);
         };
     }, []);
+
+    // Re-start polling after deeplink restore (qpayData set by restore useEffect)
+    useEffect(() => {
+        if (restoredRef.current && qpayData?.invoice_id && orderId && !paymentConfirmed) {
+            startPaymentPolling(qpayData.invoice_id, orderId);
+        }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [qpayData?.invoice_id, orderId]);
 
     return (
         <div className="sf-membership-backdrop" onClick={onClose}>
@@ -847,7 +894,18 @@ function MembershipModal({
                                         </div>
                                         <div className="sf-qpay-banks-grid">
                                             {qpayData.urls.map((url, i) => (
-                                                <a key={i} href={url.link} className="sf-qpay-bank-item">
+                                                <a key={i} href={url.link} className="sf-qpay-bank-item"
+                                                    onClick={(e) => {
+                                                        e.preventDefault();
+                                                        saveVipCheckoutState({
+                                                            orderId,
+                                                            qpayData,
+                                                            phone,
+                                                            refCode,
+                                                        });
+                                                        window.location.href = url.link;
+                                                    }}
+                                                >
                                                     <img
                                                         src={url.logo}
                                                         alt={url.name}
