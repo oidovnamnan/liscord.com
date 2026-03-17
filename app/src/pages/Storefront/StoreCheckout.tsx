@@ -38,43 +38,15 @@ async function getUniqueRefCode(businessId: string): Promise<string> {
     return String(code).padStart(4, '0');
 }
 
-// ── Deeplink State Persistence (sessionStorage) ──
-const CHECKOUT_STATE_KEY = 'liscord_checkout_state';
-
-function saveCheckoutState(data: { orderId: string; invoice: any; savedTotal: number; paymentMethod: string }) {
-    try {
-        sessionStorage.setItem(CHECKOUT_STATE_KEY, JSON.stringify(data));
-    } catch { /* quota error or Safari private mode — ignore */ }
-}
-
-function loadCheckoutState(): { orderId: string; invoice: any; savedTotal: number; paymentMethod: string } | null {
-    try {
-        const raw = sessionStorage.getItem(CHECKOUT_STATE_KEY);
-        return raw ? JSON.parse(raw) : null;
-    } catch { return null; }
-}
-
-function clearCheckoutState() {
-    try { sessionStorage.removeItem(CHECKOUT_STATE_KEY); } catch {}
-}
-
 export function StoreCheckout() {
     const { slug } = useParams();
     const navigate = useNavigate();
     const { business } = useOutletContext<{ business: Business }>();
     const { items, totalAmount, totalItems, clearCart } = useCartStore();
 
-    // Scroll to top on mount + restore deeplink state
+    // Scroll to top on mount
     useEffect(() => {
         window.scrollTo(0, 0);
-        // Restore state if returning from bank app deeplink
-        const saved = loadCheckoutState();
-        if (saved?.orderId && saved?.invoice) {
-            setSuccessId(saved.orderId);
-            setQpayInvoice(saved.invoice);
-            setSavedTotal(saved.savedTotal || 0);
-            if (saved.paymentMethod) setPaymentMethod(saved.paymentMethod as any);
-        }
     }, []);
 
     const [loading, setLoading] = useState(false);
@@ -323,7 +295,6 @@ export function StoreCheckout() {
             const data = snap.data();
             if (data?.paymentStatus === 'paid' && !paymentConfirmed) {
                 setPaymentConfirmed(true);
-                clearCheckoutState();
                 toast.success('Төлбөр баталгаажлаа! 🎉');
             }
         });
@@ -524,16 +495,6 @@ export function StoreCheckout() {
                                             <a
                                                 key={url.name}
                                                 href={url.link}
-                                                onClick={(e) => {
-                                                    e.preventDefault();
-                                                    saveCheckoutState({
-                                                        orderId: successId!,
-                                                        invoice: qpayInvoice,
-                                                        savedTotal,
-                                                        paymentMethod,
-                                                    });
-                                                    window.location.href = url.link;
-                                                }}
                                                 style={{
                                                     display: 'flex',
                                                     flexDirection: 'column',
