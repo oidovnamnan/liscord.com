@@ -1,11 +1,17 @@
-/* ══════════════════════════════════════════
-   Stock Inquiry — Premium Design (FDS Style)
-   ══════════════════════════════════════════ */
+/* ══════════════════════════════════════════════════════════════
+   Stock Inquiry — SUPER PREMIUM Design
+   ══════════════════════════════════════════════════════════════ */
 
 .sinq-page {
     padding: 24px clamp(16px, 3vw, 32px) 32px;
     max-width: 1400px;
     margin: 0 auto;
+    animation: sinqFadeIn 0.4s ease;
+}
+
+@keyframes sinqFadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
 }
 
 .sinq-loading {
@@ -13,8 +19,8 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 12px;
-    padding: 80px 0;
+    gap: 16px;
+    padding: 100px 0;
     color: var(--text-muted);
 }
 
@@ -27,15 +33,19 @@
     100% { transform: rotate(360deg); }
 }
 
-/* ── Hero Header (FDS style) ── */
+/* ═══════════════════════════════════════
+   HERO HEADER — Gradient Glass
+   ═══════════════════════════════════════ */
 .sinq-header {
-    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 40%, #1d4ed8 100%);
-    border-radius: 16px;
-    padding: 28px 24px 24px;
-    margin-bottom: 24px;
+    background: linear-gradient(135deg, #4f46e5 0%, #3b82f6 40%, #0ea5e9 100%);
+    border-radius: 20px;
+    padding: 28px 28px 24px;
+    margin-bottom: 20px;
     position: relative;
     overflow: hidden;
-    box-shadow: 0 8px 32px rgba(59, 130, 246, 0.25);
+    box-shadow:
+        0 12px 40px rgba(79, 70, 229, 0.25),
+        0 4px 12px rgba(59, 130, 246, 0.15);
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -46,53 +56,62 @@
 .sinq-header::before {
     content: '';
     position: absolute;
-    top: -40px; right: -40px;
-    width: 150px; height: 150px;
+    top: -60px; right: -40px;
+    width: 200px; height: 200px;
     border-radius: 50%;
     background: rgba(255, 255, 255, 0.08);
+    animation: sinqOrbFloat 6s ease-in-out infinite;
 }
 
 .sinq-header::after {
     content: '';
     position: absolute;
-    bottom: -30px; left: 20%;
-    width: 100px; height: 100px;
+    bottom: -40px; left: 15%;
+    width: 140px; height: 140px;
     border-radius: 50%;
     background: rgba(255, 255, 255, 0.05);
+    animation: sinqOrbFloat 8s ease-in-out infinite reverse;
+}
+
+@keyframes sinqOrbFloat {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    50% { transform: translate(10px, -12px) scale(1.05); }
 }
 
 .sinq-header-info {
     display: flex;
     align-items: center;
-    gap: 14px;
+    gap: 16px;
     position: relative;
     z-index: 1;
 }
 
 .sinq-icon-wrap {
-    width: 48px;
-    height: 48px;
-    border-radius: 14px;
+    width: 52px;
+    height: 52px;
+    border-radius: 16px;
     background: rgba(255, 255, 255, 0.2);
-    backdrop-filter: blur(10px);
+    backdrop-filter: blur(12px);
     display: flex;
     align-items: center;
     justify-content: center;
     color: #fff;
     flex-shrink: 0;
+    border: 1px solid rgba(255, 255, 255, 0.15);
 }
 
 .sinq-header h1 {
     color: #fff;
-    font-size: 1.25rem;
-    font-weight: 800;
+    font-size: 1.3rem;
+    font-weight: 900;
     margin: 0;
     letter-spacing: 0.02em;
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .sinq-header p {
-    color: rgba(255, 255, 255, 0.7);
-    font-size: 0.78rem;
+    color: rgba(255, 255, 255, 0.75);
+    font-size: 0.8rem;
     margin: 4px 0 0;
 }
 
@@ -107,32 +126,113 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 10px 18px;
-    border-radius: 12px;
+    padding: 12px 20px;
+    border-radius: 14px;
     background: rgba(255, 255, 255, 0.15);
-    backdrop-filter: blur(10px);
+    backdrop-filter: blur(12px);
     border: 1px solid rgba(255, 255, 255, 0.15);
-    min-width: 72px;
+    min-width: 78px;
+    transition: transform 0.2s, background 0.2s;
+}
+
+.sinq-stat:hover {
+    transform: translateY(-2px);
+    background: rgba(255, 255, 255, 0.22);
 }
 
 .sinq-stat-num {
-    font-size: 1.3rem;
+    font-size: 1.4rem;
     font-weight: 900;
     color: #fff;
+    line-height: 1;
 }
 
 .sinq-stat-label {
     font-size: 0.68rem;
     font-weight: 600;
     color: rgba(255, 255, 255, 0.7);
-    margin-top: 2px;
+    margin-top: 4px;
 }
 
-.sinq-stat.pending .sinq-stat-num { color: #fbbf24; }
-.sinq-stat.checking .sinq-stat-num { color: #93c5fd; }
-.sinq-stat.done .sinq-stat-num { color: #86efac; }
+.sinq-stat.pending .sinq-stat-num { color: #fef08a; }
+.sinq-stat.checking .sinq-stat-num { color: #bfdbfe; }
+.sinq-stat.done .sinq-stat-num { color: #bbf7d0; }
 
-/* ── Filter Bar (FDS style) ── */
+/* ═══════════════════════════════════════
+   URGENT BANNER — Pulsing Alert
+   ═══════════════════════════════════════ */
+.sinq-urgent-banner {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 16px 22px;
+    margin-bottom: 20px;
+    border-radius: 16px;
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    color: #fff;
+    box-shadow:
+        0 6px 24px rgba(245, 158, 11, 0.3),
+        inset 0 1px 0 rgba(255, 255, 255, 0.15);
+    animation: sinqBannerPulse 2s ease-in-out infinite;
+}
+
+@keyframes sinqBannerPulse {
+    0%, 100% { box-shadow: 0 6px 24px rgba(245, 158, 11, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.15); }
+    50% { box-shadow: 0 6px 32px rgba(245, 158, 11, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.15); }
+}
+
+.sinq-urgent-bell {
+    animation: sinqBellRing 1.2s ease-in-out infinite;
+    flex-shrink: 0;
+}
+
+@keyframes sinqBellRing {
+    0%, 100% { transform: rotate(0deg); }
+    10% { transform: rotate(16deg); }
+    20% { transform: rotate(-16deg); }
+    30% { transform: rotate(10deg); }
+    40% { transform: rotate(-10deg); }
+    50% { transform: rotate(4deg); }
+    60% { transform: rotate(0deg); }
+}
+
+.sinq-urgent-text {
+    flex: 1;
+    font-size: 0.9rem;
+    font-weight: 600;
+    line-height: 1.4;
+}
+
+.sinq-urgent-text strong {
+    font-size: 1.15rem;
+    font-weight: 900;
+}
+
+.sinq-urgent-btn {
+    padding: 10px 24px;
+    border: 2px solid rgba(255, 255, 255, 0.4);
+    background: rgba(255, 255, 255, 0.18);
+    backdrop-filter: blur(8px);
+    color: #fff;
+    font-weight: 800;
+    font-size: 0.85rem;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+    font-family: inherit;
+}
+
+.sinq-urgent-btn:hover {
+    background: rgba(255, 255, 255, 0.35);
+    border-color: #fff;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* ═══════════════════════════════════════
+   FILTER BAR
+   ═══════════════════════════════════════ */
 .sinq-filter-bar {
     display: flex;
     gap: 8px;
@@ -140,8 +240,8 @@
 }
 
 .sinq-filter-btn {
-    padding: 8px 16px;
-    border-radius: 10px;
+    padding: 9px 18px;
+    border-radius: 12px;
     border: 1.5px solid var(--border-color, #e5e7eb);
     background: var(--surface-1, #fff);
     color: var(--text-secondary);
@@ -151,32 +251,36 @@
     display: flex;
     align-items: center;
     gap: 6px;
-    transition: all 0.2s;
+    transition: all 0.25s;
     font-family: inherit;
 }
 
 .sinq-filter-btn:hover {
-    border-color: #3b82f6;
-    color: #3b82f6;
-    background: rgba(59, 130, 246, 0.04);
+    border-color: #4f46e5;
+    color: #4f46e5;
+    background: rgba(79, 70, 229, 0.04);
 }
 
 .sinq-filter-btn.active {
-    background: linear-gradient(135deg, #3b82f6, #2563eb);
+    background: linear-gradient(135deg, #4f46e5, #3b82f6);
     color: #fff;
     border-color: transparent;
-    box-shadow: 0 3px 12px rgba(59, 130, 246, 0.25);
+    box-shadow: 0 4px 14px rgba(79, 70, 229, 0.25);
 }
 
-/* ── Content Layout ── */
+/* ═══════════════════════════════════════
+   CONTENT LAYOUT
+   ═══════════════════════════════════════ */
 .sinq-content {
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 20px;
+    grid-template-columns: 1fr 1.1fr;
+    gap: 24px;
     min-height: 500px;
 }
 
-/* ── Inquiry List ── */
+/* ═══════════════════════════════════════
+   INQUIRY LIST
+   ═══════════════════════════════════════ */
 .sinq-list {
     display: flex;
     flex-direction: column;
@@ -188,36 +292,80 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 12px;
-    padding: 80px 0;
+    gap: 16px;
+    padding: 80px 20px;
     color: var(--text-muted);
-    font-size: 0.85rem;
+    font-size: 0.9rem;
+    font-weight: 600;
+    background: var(--surface-1, #fff);
+    border-radius: 20px;
+    border: 2px dashed var(--border-color, #e5e7eb);
 }
 
-/* ── Inquiry Cards (FDS style) ── */
+.sinq-empty svg {
+    opacity: 0.3;
+}
+
+/* ═══════════════════════════════════════
+   INQUIRY CARDS — Glass + Hover Magic
+   ═══════════════════════════════════════ */
 .sinq-card {
     background: var(--surface-1, #fff);
     border: 1px solid var(--border-color, #e5e7eb);
-    border-radius: 14px;
-    padding: 14px 16px;
+    border-radius: 16px;
+    padding: 16px 18px;
     cursor: pointer;
-    transition: border-color 0.2s, box-shadow 0.2s, transform 0.15s;
+    transition: border-color 0.25s, box-shadow 0.25s, transform 0.2s;
+    position: relative;
+}
+
+.sinq-card::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 16px;
+    opacity: 0;
+    transition: opacity 0.3s;
+    background: linear-gradient(135deg, rgba(79, 70, 229, 0.02), rgba(59, 130, 246, 0.02));
+    pointer-events: none;
 }
 
 .sinq-card:hover {
-    border-color: rgba(59, 130, 246, 0.3);
-    box-shadow: 0 4px 16px rgba(59, 130, 246, 0.08);
-    transform: translateY(-1px);
+    border-color: rgba(79, 70, 229, 0.25);
+    box-shadow: 0 6px 20px rgba(79, 70, 229, 0.08);
+    transform: translateY(-2px);
+}
+
+.sinq-card:hover::after {
+    opacity: 1;
 }
 
 .sinq-card.selected {
-    border-color: #3b82f6;
-    background: rgba(59, 130, 246, 0.04);
-    box-shadow: 0 4px 16px rgba(59, 130, 246, 0.12);
+    border-color: #4f46e5;
+    background: rgba(79, 70, 229, 0.03);
+    box-shadow: 0 6px 20px rgba(79, 70, 229, 0.12);
+}
+
+.sinq-card.selected::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 50%;
+    transform: translateY(-50%);
+    width: 4px;
+    height: 40%;
+    border-radius: 0 4px 4px 0;
+    background: linear-gradient(180deg, #4f46e5, #3b82f6);
 }
 
 .sinq-card.urgent {
     border-left: 3px solid #f59e0b;
+    box-shadow: 0 0 0 1px rgba(245, 158, 11, 0.12);
+    animation: sinqCardGlow 2.5s ease-in-out infinite;
+}
+
+@keyframes sinqCardGlow {
+    0%, 100% { box-shadow: 0 0 0 1px rgba(245, 158, 11, 0.12); }
+    50% { box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.2), 0 4px 16px rgba(245, 158, 11, 0.1); }
 }
 
 .sinq-card-top {
@@ -225,31 +373,31 @@
     align-items: center;
     justify-content: space-between;
     gap: 12px;
-    margin-bottom: 8px;
+    margin-bottom: 10px;
 }
 
 .sinq-card-product {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 12px;
     flex: 1;
     min-width: 0;
 }
 
 .sinq-card-img {
-    width: 40px;
-    height: 40px;
-    border-radius: 10px;
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
     object-fit: cover;
     border: 1px solid var(--border-color, #e5e7eb);
     flex-shrink: 0;
 }
 
 .sinq-card-img-placeholder {
-    width: 40px;
-    height: 40px;
-    border-radius: 10px;
-    background: var(--bg-soft, #f5f5f5);
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #f1f5f9, #e2e8f0);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -263,21 +411,24 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    line-height: 1.3;
 }
 
 .sinq-card-price {
     font-size: 0.78rem;
-    color: #3b82f6;
-    font-weight: 600;
+    color: #4f46e5;
+    font-weight: 700;
+    margin-top: 2px;
 }
 
 .sinq-badge {
-    padding: 4px 10px;
-    border-radius: 8px;
+    padding: 5px 12px;
+    border-radius: 10px;
     font-size: 0.72rem;
     font-weight: 700;
     white-space: nowrap;
     flex-shrink: 0;
+    letter-spacing: 0.02em;
 }
 
 .sinq-card-bottom {
@@ -287,23 +438,28 @@
     font-size: 0.75rem;
     color: var(--text-muted);
     font-weight: 500;
+    padding-top: 8px;
+    border-top: 1px solid var(--border-color, #f1f5f9);
 }
 
 .sinq-card-bottom span {
     display: flex;
     align-items: center;
-    gap: 4px;
+    gap: 5px;
 }
 
-/* ── Detail Panel (FDS card style) ── */
+/* ═══════════════════════════════════════
+   DETAIL PANEL — Premium Glass Card
+   ═══════════════════════════════════════ */
 .sinq-detail {
     background: var(--surface-1, #fff);
     border: 1px solid var(--border-color, #e5e7eb);
-    border-radius: 16px;
-    padding: 24px;
+    border-radius: 20px;
+    padding: 0;
     position: sticky;
     top: 80px;
-    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+    overflow: hidden;
 }
 
 .sinq-detail-empty {
@@ -311,17 +467,23 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 12px;
-    padding: 80px 0;
+    gap: 16px;
+    padding: 100px 20px;
     color: var(--text-muted);
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.sinq-detail-empty svg {
+    opacity: 0.2;
 }
 
 .sinq-detail-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-bottom: 20px;
-    padding-bottom: 12px;
+    padding: 20px 24px;
+    background: linear-gradient(135deg, rgba(79, 70, 229, 0.04), rgba(59, 130, 246, 0.02));
     border-bottom: 1px solid var(--border-color, #e5e7eb);
 }
 
@@ -334,27 +496,26 @@
 .sinq-detail-product {
     display: flex;
     align-items: center;
-    gap: 14px;
-    padding: 16px;
-    background: var(--bg-soft, #f9fafb);
-    border-radius: 14px;
-    margin-bottom: 16px;
-    border: 1px solid var(--border-color, #e5e7eb);
+    gap: 16px;
+    padding: 20px 24px;
+    margin: 0;
+    border-bottom: 1px solid var(--border-color, #f1f5f9);
 }
 
 .sinq-detail-img {
-    width: 60px;
-    height: 60px;
-    border-radius: 12px;
+    width: 64px;
+    height: 64px;
+    border-radius: 14px;
     object-fit: cover;
-    border: 1px solid var(--border-color, #e5e7eb);
+    border: 2px solid var(--border-color, #e5e7eb);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
 }
 
 .sinq-detail-img-placeholder {
-    width: 60px;
-    height: 60px;
-    border-radius: 12px;
-    background: var(--surface-2, var(--bg-soft));
+    width: 64px;
+    height: 64px;
+    border-radius: 14px;
+    background: linear-gradient(135deg, #f1f5f9, #e2e8f0);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -362,15 +523,15 @@
 }
 
 .sinq-detail-name {
-    font-size: 1rem;
+    font-size: 1.05rem;
     font-weight: 800;
     margin-bottom: 4px;
 }
 
 .sinq-detail-price {
-    font-size: 0.95rem;
-    font-weight: 700;
-    color: #3b82f6;
+    font-size: 1rem;
+    font-weight: 800;
+    color: #4f46e5;
 }
 
 .sinq-detail-phone {
@@ -379,21 +540,21 @@
     display: flex;
     align-items: center;
     gap: 6px;
-    margin-top: 4px;
+    margin-top: 6px;
 }
 
-/* ── Changes Card (FDS style) ── */
+/* ── Changes Card ── */
 .sinq-changes-card {
     background: rgba(139, 92, 246, 0.04);
-    border: 1px solid rgba(139, 92, 246, 0.2);
+    border: 1px solid rgba(139, 92, 246, 0.15);
     border-radius: 14px;
-    padding: 16px;
-    margin-bottom: 16px;
+    padding: 16px 20px;
+    margin: 16px 24px;
 }
 
 .sinq-changes-card h4 {
     margin: 0 0 12px;
-    font-size: 0.85rem;
+    font-size: 0.88rem;
     font-weight: 700;
 }
 
@@ -401,40 +562,42 @@
     display: flex;
     justify-content: space-between;
     font-size: 0.85rem;
-    padding: 4px 0;
+    padding: 5px 0;
 }
 
-/* ── Update Form (FDS inputs) ── */
+/* ── Update Form ── */
 .sinq-update-form {
     background: var(--bg-soft, #f9fafb);
-    border-radius: 14px;
-    padding: 16px;
-    margin-bottom: 16px;
+    border-radius: 16px;
+    padding: 20px;
+    margin: 16px 24px;
     border: 1px solid var(--border-color, #e5e7eb);
 }
 
 .sinq-update-form h4 {
-    margin: 0 0 12px;
-    font-size: 0.88rem;
-    font-weight: 700;
+    margin: 0 0 14px;
+    font-size: 0.92rem;
+    font-weight: 800;
 }
 
 .sinq-form-row {
-    margin-bottom: 10px;
+    margin-bottom: 12px;
 }
 
 .sinq-form-row label {
     display: block;
     font-size: 0.75rem;
-    font-weight: 600;
+    font-weight: 700;
     color: var(--text-secondary);
     margin-bottom: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
 }
 
 .sinq-input {
     width: 100%;
-    padding: 10px 12px;
-    border-radius: 10px;
+    padding: 11px 14px;
+    border-radius: 12px;
     border: 1.5px solid var(--border-color, #e5e7eb);
     background: var(--surface-1, #fff);
     font-size: 0.88rem;
@@ -446,21 +609,24 @@
 }
 
 .sinq-input:focus {
-    border-color: #3b82f6;
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    border-color: #4f46e5;
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.08);
 }
 
 .sinq-form-actions {
     display: flex;
     gap: 8px;
-    margin-top: 12px;
+    margin-top: 14px;
 }
 
-/* ── Action Buttons (FDS gradient buttons) ── */
+/* ═══════════════════════════════════════
+   ACTION BUTTONS — Super Gradient
+   ═══════════════════════════════════════ */
 .sinq-actions {
     display: flex;
-    gap: 8px;
-    margin-bottom: 16px;
+    gap: 10px;
+    padding: 0 24px;
+    margin-bottom: 20px;
     flex-wrap: wrap;
 }
 
@@ -468,16 +634,26 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 6px;
-    padding: 10px 16px;
+    gap: 7px;
+    padding: 11px 18px;
     border-radius: 12px;
     border: none;
-    font-size: 0.82rem;
+    font-size: 0.84rem;
     font-weight: 700;
     cursor: pointer;
     transition: all 0.2s;
     font-family: inherit;
     letter-spacing: 0.02em;
+    position: relative;
+    overflow: hidden;
+}
+
+.sinq-btn::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(255,255,255,0.15), transparent);
+    pointer-events: none;
 }
 
 .sinq-btn:disabled {
@@ -486,40 +662,45 @@
 }
 
 .sinq-btn:not(:disabled):hover {
-    opacity: 0.88;
-    transform: translateY(-1px);
+    transform: translateY(-2px);
 }
 
 .sinq-btn:not(:disabled):active {
-    transform: scale(0.98);
+    transform: scale(0.97);
 }
 
 .sinq-btn.check {
-    background: linear-gradient(135deg, #3b82f6, #2563eb);
+    background: linear-gradient(135deg, #4f46e5, #3b82f6);
     color: #fff;
     flex: 1;
-    box-shadow: 0 3px 12px rgba(59, 130, 246, 0.25);
+    box-shadow: 0 4px 16px rgba(79, 70, 229, 0.3);
+    font-size: 0.95rem;
+    padding: 14px;
+}
+
+.sinq-btn.check:not(:disabled):hover {
+    box-shadow: 0 6px 24px rgba(79, 70, 229, 0.4);
 }
 
 .sinq-btn.no-change {
     background: linear-gradient(135deg, #22c55e, #16a34a);
     color: #fff;
     flex: 1;
-    box-shadow: 0 3px 12px rgba(34, 197, 94, 0.25);
+    box-shadow: 0 4px 14px rgba(34, 197, 94, 0.25);
 }
 
 .sinq-btn.update-btn {
     background: linear-gradient(135deg, #8b5cf6, #7c3aed);
     color: #fff;
     flex: 1;
-    box-shadow: 0 3px 12px rgba(139, 92, 246, 0.25);
+    box-shadow: 0 4px 14px rgba(139, 92, 246, 0.25);
 }
 
 .sinq-btn.inactive-btn {
     background: linear-gradient(135deg, #ef4444, #dc2626);
     color: #fff;
     flex: 1;
-    box-shadow: 0 3px 12px rgba(239, 68, 68, 0.25);
+    box-shadow: 0 4px 14px rgba(239, 68, 68, 0.25);
 }
 
 .sinq-btn.cancel {
@@ -527,13 +708,14 @@
     border: 1.5px solid var(--border-color, #e5e7eb);
     color: var(--text-secondary);
     flex: 1;
+    box-shadow: none;
 }
 
 .sinq-btn.update {
     background: linear-gradient(135deg, #8b5cf6, #7c3aed);
     color: #fff;
     flex: 1;
-    box-shadow: 0 3px 12px rgba(139, 92, 246, 0.25);
+    box-shadow: 0 4px 14px rgba(139, 92, 246, 0.25);
 }
 
 /* ── Responded Info ── */
@@ -543,96 +725,35 @@
     align-items: center;
     font-size: 0.78rem;
     color: var(--text-muted);
-    padding: 10px 14px;
+    padding: 14px 24px;
     background: var(--bg-soft, #f9fafb);
-    border-radius: 12px;
-    border: 1px solid var(--border-color, #e5e7eb);
+    border-top: 1px solid var(--border-color, #e5e7eb);
 }
 
-/* ── Urgent Banner ── */
-.sinq-urgent-banner {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 14px 20px;
-    margin-bottom: 16px;
-    border-radius: 14px;
-    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
-    color: #fff;
-    box-shadow: 0 4px 20px rgba(245, 158, 11, 0.3);
-    animation: sinqBannerPulse 2s ease-in-out infinite;
+/* ═══════════════════════════════════════
+   RESPONSIVE
+   ═══════════════════════════════════════ */
+@media (max-width: 900px) {
+    .sinq-content { grid-template-columns: 1fr; }
+    .sinq-detail { position: static; }
 }
 
-@keyframes sinqBannerPulse {
-    0%, 100% { box-shadow: 0 4px 20px rgba(245, 158, 11, 0.3); }
-    50% { box-shadow: 0 4px 28px rgba(245, 158, 11, 0.5); }
-}
-
-.sinq-urgent-bell {
-    animation: sinqBellRing 1s ease-in-out infinite;
-    flex-shrink: 0;
-}
-
-@keyframes sinqBellRing {
-    0%, 100% { transform: rotate(0deg); }
-    15% { transform: rotate(14deg); }
-    30% { transform: rotate(-14deg); }
-    45% { transform: rotate(8deg); }
-    60% { transform: rotate(-8deg); }
-    75% { transform: rotate(0deg); }
-}
-
-.sinq-urgent-text {
-    flex: 1;
-    font-size: 0.88rem;
-    font-weight: 600;
-    line-height: 1.3;
-}
-
-.sinq-urgent-text strong {
-    font-size: 1.1rem;
-    font-weight: 900;
-}
-
-.sinq-urgent-btn {
-    padding: 8px 20px;
-    border: 2px solid rgba(255, 255, 255, 0.5);
-    background: rgba(255, 255, 255, 0.2);
-    backdrop-filter: blur(8px);
-    color: #fff;
-    font-weight: 800;
-    font-size: 0.82rem;
-    border-radius: 10px;
-    cursor: pointer;
-    transition: all 0.2s;
-    white-space: nowrap;
-    font-family: inherit;
-}
-
-.sinq-urgent-btn:hover {
-    background: rgba(255, 255, 255, 0.35);
-    border-color: #fff;
-    transform: translateY(-1px);
-}
-
-/* Enhanced urgent card */
-.sinq-card.urgent {
-    border-left: 3px solid #f59e0b;
-    box-shadow: 0 0 0 1px rgba(245, 158, 11, 0.15), 0 2px 8px rgba(245, 158, 11, 0.08);
-    animation: sinqCardGlow 2s ease-in-out infinite;
-}
-
-@keyframes sinqCardGlow {
-    0%, 100% { box-shadow: 0 0 0 1px rgba(245, 158, 11, 0.15), 0 2px 8px rgba(245, 158, 11, 0.08); }
-    50% { box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.25), 0 4px 16px rgba(245, 158, 11, 0.15); }
-}
-
-/* Responsive */
 @media (max-width: 768px) {
     .sinq-page { padding: 16px; }
-    .sinq-content { grid-template-columns: 1fr; }
-    .sinq-header { flex-direction: column; align-items: flex-start; }
-    .sinq-detail { position: static; }
+    .sinq-header {
+        flex-direction: column;
+        align-items: flex-start;
+        padding: 20px;
+        border-radius: 16px;
+    }
     .sinq-stats-row { width: 100%; }
-    .sinq-stat { flex: 1; }
+    .sinq-stat { flex: 1; min-width: 0; padding: 10px 8px; }
+    .sinq-stat-num { font-size: 1.1rem; }
+    .sinq-urgent-banner { flex-wrap: wrap; }
+    .sinq-urgent-btn { width: 100%; text-align: center; }
+    .sinq-detail-header { padding: 16px 18px; }
+    .sinq-detail-product { padding: 16px 18px; }
+    .sinq-actions { padding: 0 18px; }
+    .sinq-changes-card, .sinq-update-form { margin: 12px 18px; }
+    .sinq-responded { padding: 12px 18px; }
 }
