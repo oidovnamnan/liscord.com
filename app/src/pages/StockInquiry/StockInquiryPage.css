@@ -1,5 +1,9 @@
+/* ══════════════════════════════════════════
+   Stock Inquiry — Premium Design (FDS Style)
+   ══════════════════════════════════════════ */
+
 .sinq-page {
-    padding: 24px;
+    padding: 24px clamp(16px, 3vw, 32px) 32px;
     max-width: 1400px;
     margin: 0 auto;
 }
@@ -23,106 +27,148 @@
     100% { transform: rotate(360deg); }
 }
 
-/* Header */
+/* ── Hero Header (FDS style) ── */
 .sinq-header {
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 40%, #1d4ed8 100%);
+    border-radius: 16px;
+    padding: 28px 24px 24px;
+    margin-bottom: 24px;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 8px 32px rgba(59, 130, 246, 0.25);
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-bottom: 24px;
     flex-wrap: wrap;
     gap: 16px;
+}
+
+.sinq-header::before {
+    content: '';
+    position: absolute;
+    top: -40px; right: -40px;
+    width: 150px; height: 150px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.sinq-header::after {
+    content: '';
+    position: absolute;
+    bottom: -30px; left: 20%;
+    width: 100px; height: 100px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.05);
 }
 
 .sinq-header-info {
     display: flex;
     align-items: center;
     gap: 14px;
+    position: relative;
+    z-index: 1;
 }
 
 .sinq-icon-wrap {
     width: 48px;
     height: 48px;
     border-radius: 14px;
-    background: linear-gradient(135deg, rgba(var(--primary-rgb), 0.15), rgba(var(--primary-rgb), 0.05));
-    color: var(--primary);
+    background: rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(10px);
     display: flex;
     align-items: center;
     justify-content: center;
+    color: #fff;
+    flex-shrink: 0;
 }
 
 .sinq-header h1 {
+    color: #fff;
+    font-size: 1.25rem;
+    font-weight: 800;
     margin: 0;
-    font-size: 1.4rem;
-    font-weight: 900;
+    letter-spacing: 0.02em;
 }
 
 .sinq-header p {
-    margin: 2px 0 0;
-    font-size: 0.82rem;
-    color: var(--text-muted);
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 0.78rem;
+    margin: 4px 0 0;
 }
 
 .sinq-stats-row {
     display: flex;
-    gap: 12px;
+    gap: 10px;
+    position: relative;
+    z-index: 1;
 }
 
 .sinq-stat {
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 10px 20px;
-    border-radius: 14px;
-    background: var(--surface-1);
-    border: 1px solid var(--border-color);
-    min-width: 80px;
+    padding: 10px 18px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    min-width: 72px;
 }
 
 .sinq-stat-num {
     font-size: 1.3rem;
     font-weight: 900;
+    color: #fff;
 }
 
 .sinq-stat-label {
-    font-size: 0.7rem;
+    font-size: 0.68rem;
     font-weight: 600;
-    color: var(--text-muted);
+    color: rgba(255, 255, 255, 0.7);
     margin-top: 2px;
 }
 
-.sinq-stat.pending .sinq-stat-num { color: #f59e0b; }
-.sinq-stat.checking .sinq-stat-num { color: #3b82f6; }
-.sinq-stat.done .sinq-stat-num { color: #22c55e; }
+.sinq-stat.pending .sinq-stat-num { color: #fbbf24; }
+.sinq-stat.checking .sinq-stat-num { color: #93c5fd; }
+.sinq-stat.done .sinq-stat-num { color: #86efac; }
 
-/* Filter */
+/* ── Filter Bar (FDS style) ── */
 .sinq-filter-bar {
     display: flex;
     gap: 8px;
-    margin-bottom: 16px;
+    margin-bottom: 20px;
 }
 
 .sinq-filter-btn {
     padding: 8px 16px;
     border-radius: 10px;
-    border: 1px solid var(--border-color);
-    background: var(--surface-1);
+    border: 1.5px solid var(--border-color, #e5e7eb);
+    background: var(--surface-1, #fff);
+    color: var(--text-secondary);
     font-size: 0.82rem;
     font-weight: 700;
     cursor: pointer;
     display: flex;
     align-items: center;
     gap: 6px;
-    color: var(--text-secondary);
     transition: all 0.2s;
+    font-family: inherit;
+}
+
+.sinq-filter-btn:hover {
+    border-color: #3b82f6;
+    color: #3b82f6;
+    background: rgba(59, 130, 246, 0.04);
 }
 
 .sinq-filter-btn.active {
-    background: var(--primary);
+    background: linear-gradient(135deg, #3b82f6, #2563eb);
     color: #fff;
-    border-color: var(--primary);
+    border-color: transparent;
+    box-shadow: 0 3px 12px rgba(59, 130, 246, 0.25);
 }
 
-/* Content layout */
+/* ── Content Layout ── */
 .sinq-content {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -130,7 +176,7 @@
     min-height: 500px;
 }
 
-/* List */
+/* ── Inquiry List ── */
 .sinq-list {
     display: flex;
     flex-direction: column;
@@ -145,25 +191,29 @@
     gap: 12px;
     padding: 80px 0;
     color: var(--text-muted);
+    font-size: 0.85rem;
 }
 
+/* ── Inquiry Cards (FDS style) ── */
 .sinq-card {
-    background: var(--surface-1);
-    border: 1px solid var(--border-color);
+    background: var(--surface-1, #fff);
+    border: 1px solid var(--border-color, #e5e7eb);
     border-radius: 14px;
     padding: 14px 16px;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: border-color 0.2s, box-shadow 0.2s, transform 0.15s;
 }
 
 .sinq-card:hover {
-    border-color: var(--primary);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+    border-color: rgba(59, 130, 246, 0.3);
+    box-shadow: 0 4px 16px rgba(59, 130, 246, 0.08);
+    transform: translateY(-1px);
 }
 
 .sinq-card.selected {
-    border-color: var(--primary);
-    background: rgba(var(--primary-rgb), 0.04);
+    border-color: #3b82f6;
+    background: rgba(59, 130, 246, 0.04);
+    box-shadow: 0 4px 16px rgba(59, 130, 246, 0.12);
 }
 
 .sinq-card.urgent {
@@ -191,7 +241,7 @@
     height: 40px;
     border-radius: 10px;
     object-fit: cover;
-    border: 1px solid var(--border-color);
+    border: 1px solid var(--border-color, #e5e7eb);
     flex-shrink: 0;
 }
 
@@ -199,7 +249,7 @@
     width: 40px;
     height: 40px;
     border-radius: 10px;
-    background: var(--bg-soft);
+    background: var(--bg-soft, #f5f5f5);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -217,7 +267,7 @@
 
 .sinq-card-price {
     font-size: 0.78rem;
-    color: var(--primary);
+    color: #3b82f6;
     font-weight: 600;
 }
 
@@ -245,14 +295,15 @@
     gap: 4px;
 }
 
-/* Detail Panel */
+/* ── Detail Panel (FDS card style) ── */
 .sinq-detail {
-    background: var(--surface-1);
-    border: 1px solid var(--border-color);
+    background: var(--surface-1, #fff);
+    border: 1px solid var(--border-color, #e5e7eb);
     border-radius: 16px;
-    padding: 20px;
+    padding: 24px;
     position: sticky;
     top: 80px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
 }
 
 .sinq-detail-empty {
@@ -269,7 +320,9 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-bottom: 16px;
+    margin-bottom: 20px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border-color, #e5e7eb);
 }
 
 .sinq-detail-header h3 {
@@ -283,9 +336,10 @@
     align-items: center;
     gap: 14px;
     padding: 16px;
-    background: var(--bg-soft);
+    background: var(--bg-soft, #f9fafb);
     border-radius: 14px;
     margin-bottom: 16px;
+    border: 1px solid var(--border-color, #e5e7eb);
 }
 
 .sinq-detail-img {
@@ -293,7 +347,7 @@
     height: 60px;
     border-radius: 12px;
     object-fit: cover;
-    border: 1px solid var(--border-color);
+    border: 1px solid var(--border-color, #e5e7eb);
 }
 
 .sinq-detail-img-placeholder {
@@ -316,7 +370,7 @@
 .sinq-detail-price {
     font-size: 0.95rem;
     font-weight: 700;
-    color: var(--primary);
+    color: #3b82f6;
 }
 
 .sinq-detail-phone {
@@ -328,17 +382,17 @@
     margin-top: 4px;
 }
 
-/* Changes card */
+/* ── Changes Card (FDS style) ── */
 .sinq-changes-card {
-    background: rgba(139, 92, 246, 0.06);
+    background: rgba(139, 92, 246, 0.04);
     border: 1px solid rgba(139, 92, 246, 0.2);
-    border-radius: 12px;
-    padding: 14px;
+    border-radius: 14px;
+    padding: 16px;
     margin-bottom: 16px;
 }
 
 .sinq-changes-card h4 {
-    margin: 0 0 10px;
+    margin: 0 0 12px;
     font-size: 0.85rem;
     font-weight: 700;
 }
@@ -350,12 +404,13 @@
     padding: 4px 0;
 }
 
-/* Update form */
+/* ── Update Form (FDS inputs) ── */
 .sinq-update-form {
-    background: var(--bg-soft);
-    border-radius: 12px;
+    background: var(--bg-soft, #f9fafb);
+    border-radius: 14px;
     padding: 16px;
     margin-bottom: 16px;
+    border: 1px solid var(--border-color, #e5e7eb);
 }
 
 .sinq-update-form h4 {
@@ -371,26 +426,28 @@
 .sinq-form-row label {
     display: block;
     font-size: 0.75rem;
-    font-weight: 700;
-    margin-bottom: 4px;
+    font-weight: 600;
     color: var(--text-secondary);
+    margin-bottom: 6px;
 }
 
 .sinq-input {
     width: 100%;
     padding: 10px 12px;
     border-radius: 10px;
-    border: 1px solid var(--border-color);
-    background: var(--surface-1);
+    border: 1.5px solid var(--border-color, #e5e7eb);
+    background: var(--surface-1, #fff);
     font-size: 0.88rem;
     font-family: inherit;
     outline: none;
-    transition: border-color 0.2s;
+    transition: border-color 0.2s, box-shadow 0.2s;
     box-sizing: border-box;
+    color: var(--text-primary);
 }
 
 .sinq-input:focus {
-    border-color: var(--primary);
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
 .sinq-form-actions {
@@ -399,7 +456,7 @@
     margin-top: 12px;
 }
 
-/* Actions */
+/* ── Action Buttons (FDS gradient buttons) ── */
 .sinq-actions {
     display: flex;
     gap: 8px;
@@ -410,15 +467,17 @@
 .sinq-btn {
     display: flex;
     align-items: center;
+    justify-content: center;
     gap: 6px;
     padding: 10px 16px;
-    border-radius: 10px;
+    border-radius: 12px;
     border: none;
     font-size: 0.82rem;
     font-weight: 700;
     cursor: pointer;
     transition: all 0.2s;
     font-family: inherit;
+    letter-spacing: 0.02em;
 }
 
 .sinq-btn:disabled {
@@ -426,33 +485,46 @@
     cursor: not-allowed;
 }
 
+.sinq-btn:not(:disabled):hover {
+    opacity: 0.88;
+    transform: translateY(-1px);
+}
+
+.sinq-btn:not(:disabled):active {
+    transform: scale(0.98);
+}
+
 .sinq-btn.check {
     background: linear-gradient(135deg, #3b82f6, #2563eb);
     color: #fff;
     flex: 1;
+    box-shadow: 0 3px 12px rgba(59, 130, 246, 0.25);
 }
 
 .sinq-btn.no-change {
     background: linear-gradient(135deg, #22c55e, #16a34a);
     color: #fff;
     flex: 1;
+    box-shadow: 0 3px 12px rgba(34, 197, 94, 0.25);
 }
 
 .sinq-btn.update-btn {
     background: linear-gradient(135deg, #8b5cf6, #7c3aed);
     color: #fff;
     flex: 1;
+    box-shadow: 0 3px 12px rgba(139, 92, 246, 0.25);
 }
 
 .sinq-btn.inactive-btn {
     background: linear-gradient(135deg, #ef4444, #dc2626);
     color: #fff;
     flex: 1;
+    box-shadow: 0 3px 12px rgba(239, 68, 68, 0.25);
 }
 
 .sinq-btn.cancel {
-    background: var(--surface-1);
-    border: 1px solid var(--border-color);
+    background: var(--surface-1, #fff);
+    border: 1.5px solid var(--border-color, #e5e7eb);
     color: var(--text-secondary);
     flex: 1;
 }
@@ -461,18 +533,20 @@
     background: linear-gradient(135deg, #8b5cf6, #7c3aed);
     color: #fff;
     flex: 1;
+    box-shadow: 0 3px 12px rgba(139, 92, 246, 0.25);
 }
 
-/* Responded */
+/* ── Responded Info ── */
 .sinq-responded {
     display: flex;
     justify-content: space-between;
     align-items: center;
     font-size: 0.78rem;
     color: var(--text-muted);
-    padding: 8px 12px;
-    background: var(--bg-soft);
-    border-radius: 10px;
+    padding: 10px 14px;
+    background: var(--bg-soft, #f9fafb);
+    border-radius: 12px;
+    border: 1px solid var(--border-color, #e5e7eb);
 }
 
 /* Responsive */
@@ -481,4 +555,6 @@
     .sinq-content { grid-template-columns: 1fr; }
     .sinq-header { flex-direction: column; align-items: flex-start; }
     .sinq-detail { position: static; }
+    .sinq-stats-row { width: 100%; }
+    .sinq-stat { flex: 1; }
 }
