@@ -148,7 +148,7 @@ export function SettingsPage() {
             { id: 'qr-login', label: 'Төхөөрөмжүүд', icon: Smartphone },
             { id: 'storefront', label: 'Дэлгүүр', icon: ShoppingBag },
             ...(isStorefrontEnabled ? [{ id: 'themes', label: 'Загварууд', icon: Palette }] : []),
-            ...(isStorefrontEnabled ? [{ id: 'flash-deal', label: 'Flash Deal', icon: Icons.Zap }] : []),
+            ...(isStorefrontEnabled && allModuleIds.has('flash-deal') ? [{ id: 'flash-deal', label: 'Flash Deal', icon: Icons.Zap }] : []),
             { id: 'payment', label: 'Төлбөр & НӨАТ', icon: CreditCard },
             { id: 'appearance', label: 'Харагдац', icon: Palette },
             { id: 'notifications', label: 'Мэдэгдэл', icon: Bell },
