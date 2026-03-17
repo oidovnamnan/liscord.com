@@ -65,6 +65,13 @@ export function StockInquiryPage() {
     // Track previous pending count for new-arrival detection
     const prevPendingCountRef = useRef<number | null>(null);
 
+    // Tick every second (for live countdown timer in detail panel)
+    const [, setTick] = useState(0);
+    useEffect(() => {
+        const id = setInterval(() => setTick(t => t + 1), 1000);
+        return () => clearInterval(id);
+    }, []);
+
     // Request notification permission on mount
     useEffect(() => {
         if ('Notification' in window && Notification.permission === 'default') {
@@ -355,8 +362,36 @@ export function StockInquiryPage() {
                                 </div>
                             )}
 
-                            {/* Action Buttons */}
-                            {hasPermission('stock-inquiry.respond') && ['pending', 'checking', 'expired'].includes(selectedInquiry.status) && (
+                            {/* Countdown Timer — shows how much time customer has left */}
+                            {['pending', 'checking'].includes(selectedInquiry.status) && selectedInquiry.timeoutSeconds && (() => {
+                                const created = selectedInquiry.createdAt instanceof Date
+                                    ? selectedInquiry.createdAt
+                                    : (selectedInquiry.createdAt as any)?.toDate?.() || new Date();
+                                const elapsed = Math.floor((Date.now() - created.getTime()) / 1000);
+                                const remaining = Math.max(0, selectedInquiry.timeoutSeconds - elapsed);
+                                const isExpired = remaining <= 0;
+                                return (
+                                    <div className="sinq-countdown-card" style={{
+                                        background: isExpired ? '#fef2f2' : '#fffbeb',
+                                        border: `1px solid ${isExpired ? '#fecaca' : '#fde68a'}`,
+                                        borderRadius: 10, padding: '12px 16px', margin: '0 24px 12px',
+                                        display: 'flex', alignItems: 'center', gap: 10,
+                                    }}>
+                                        <Clock size={16} style={{ color: isExpired ? '#ef4444' : '#f59e0b' }} />
+                                        <div>
+                                            <div style={{ fontWeight: 700, fontSize: '0.85rem', color: isExpired ? '#ef4444' : '#92400e' }}>
+                                                {isExpired ? '⏰ Хэрэглэгчийн хүлээх хугацаа дууссан' : `⏳ ${remaining} сек хүлээж байна`}
+                                            </div>
+                                            <div style={{ fontSize: '0.78rem', color: '#6b7280', marginTop: 2 }}>
+                                                {isExpired ? 'Хоцорч хариулж болно — хэрэглэгчид мэдэгдэнэ' : 'Хэрэглэгч popup дээр хариу хүлээж байна'}
+                                            </div>
+                                        </div>
+                                    </div>
+                                );
+                            })()}
+
+                            {/* Action Buttons — always shown for this page's users */}
+                            {['pending', 'checking', 'expired'].includes(selectedInquiry.status) && (
                                 <div className="sinq-actions">
                                     {selectedInquiry.status === 'expired' && (
                                         <div className="sinq-late-banner">
@@ -365,13 +400,36 @@ export function StockInquiryPage() {
                                         </div>
                                     )}
                                     {(selectedInquiry.status === 'pending' || selectedInquiry.status === 'expired') && (
-                                        <button
-                                            className="sinq-btn check"
-                                            disabled={actionLoading}
-                                            onClick={() => handleAction(selectedInquiry, 'checking')}
-                                        >
-                                            <Eye size={16} /> Шалгах
-                                        </button>
+                                        <>
+                                            <button
+                                                className="sinq-btn check"
+                                                disabled={actionLoading}
+                                                onClick={() => handleAction(selectedInquiry, 'checking')}
+                                            >
+                                                <Eye size={16} /> Шалгах
+                                            </button>
+                                            <button
+                                                className="sinq-btn no-change"
+                                                disabled={actionLoading}
+                                                onClick={() => handleAction(selectedInquiry, 'no_change')}
+                                            >
+                                                <CheckCircle size={16} /> Өөрчлөлтгүй
+                                            </button>
+                                            <button
+                                                className="sinq-btn update-btn"
+                                                disabled={actionLoading}
+                                                onClick={() => setShowUpdateForm(true)}
+                                            >
+                                                <RefreshCw size={16} /> Шинэчлэх
+                                            </button>
+                                            <button
+                                                className="sinq-btn inactive-btn"
+                                                disabled={actionLoading}
+                                                onClick={() => handleAction(selectedInquiry, 'inactive')}
+                                            >
+                                                <XCircle size={16} /> Нөөц дууссан
+                                            </button>
+                                        </>
                                     )}
                                     {selectedInquiry.status === 'checking' && (
                                         <>
