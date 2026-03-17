@@ -4,7 +4,7 @@ import { useCartStore } from '../../store';
 import { orderService } from '../../services/db';
 import { qpayService, type QPayInvoiceResponse } from '../../services/qpay';
 import { ChevronLeft, CheckCircle, MapPin, Truck, ImageIcon, ShieldCheck, CreditCard, QrCode, Landmark, Copy, Check, Smartphone, PartyPopper } from 'lucide-react';
-import { doc, onSnapshot, getDoc, setDoc, updateDoc, arrayUnion } from 'firebase/firestore';
+import { doc, onSnapshot, getDoc, setDoc, updateDoc, arrayUnion, serverTimestamp } from 'firebase/firestore';
 import { db } from '../../services/firebase';
 import type { Business, Order } from '../../types';
 import { toast } from 'react-hot-toast';
@@ -305,8 +305,7 @@ export function StoreCheckout() {
     }, [successId, business?.id]);
 
     // ──────── POLL QPAY PAYMENT STATUS ────────
-    // Note: Actual order update is handled by server callback (qpay-callback.ts).
-    // Frontend polling is a fallback to detect payment for UI update.
+    // Fallback: if QPay callback doesn't fire, poll and update Firestore directly.
     useEffect(() => {
         if (!qpayInvoice?.invoice_id || !successId || !business?.id || paymentConfirmed) return;
 
@@ -329,9 +328,24 @@ export function StoreCheckout() {
                 });
                 const data = await resp.json();
                 if (data.paid && !stopped) {
-                    // Don't write to Firestore — server callback handles that.
-                    // Just update UI state. onSnapshot will also catch it.
                     stopped = true;
+                    // Update Firestore directly as fallback (if callback didn't already)
+                    try {
+                        const orderRef = doc(db, `businesses/${business.id}/orders`, successId);
+                        const totalAmount = items.reduce((s, i) => s + i.price * i.quantity, 0);
+                        await updateDoc(orderRef, {
+                            paymentStatus: 'paid',
+                            paymentVerifiedAt: serverTimestamp(),
+                            paymentVerifiedBy: 'qpay_poll',
+                            'financials.paidAmount': totalAmount,
+                            'financials.balanceDue': 0,
+                        });
+                    } catch (e) {
+                        console.error('Failed to update order payment status:', e);
+                    }
+                    // Also update UI immediately
+                    setPaymentConfirmed(true);
+                    toast.success('Төлбөр баталгаажлаа! 🎉');
                 }
             } catch (e) {
                 console.error('QPay poll error', e);
