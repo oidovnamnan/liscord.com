@@ -1,7 +1,7 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { collection, addDoc, onSnapshot, query, where, orderBy, getDocs, Timestamp, doc, updateDoc, limit } from 'firebase/firestore';
 import { db } from '../../services/firebase';
-import { Clock, Package, AlertTriangle, CheckCircle, XCircle, RefreshCw, Loader2 } from 'lucide-react';
+import { Package, AlertTriangle, CheckCircle, XCircle, RefreshCw, Loader2 } from 'lucide-react';
 import type { StockInquiryStatus } from '../../types';
 
 interface InquiryItem {
@@ -11,27 +11,42 @@ interface InquiryItem {
     currentPrice: number;
 }
 
+interface ItemInquiryState {
+    inquiryId: string | null;
+    status: StockInquiryStatus;
+    changes?: { newPrice?: number; newName?: string; note?: string };
+}
+
 interface Props {
     businessId: string;
     cartItems: InquiryItem[];
     customerPhone: string;
     timeoutSeconds: number;
     inactiveDays: number;
-    onProceed: () => void;   // User proceeds with order
-    onCancel: () => void;    // User cancels (stock unavailable)
+    onProceed: () => void;
+    onCancel: () => void;
 }
 
 export function StockInquiryPopup({ businessId, cartItems, customerPhone, timeoutSeconds, inactiveDays, onProceed, onCancel }: Props) {
     const [checking, setChecking] = useState(true);
     const [itemsToInquire, setItemsToInquire] = useState<InquiryItem[]>([]);
-    const [inquiryId, setInquiryId] = useState<string | null>(null);
-    const [status, setStatus] = useState<StockInquiryStatus>('pending');
+    // Per-item inquiry state: productId → state
+    const [itemStates, setItemStates] = useState<Map<string, ItemInquiryState>>(new Map());
     const [secondsLeft, setSecondsLeft] = useState(timeoutSeconds);
-    const [changes, setChanges] = useState<{ newPrice?: number; newName?: string; note?: string } | null>(null);
+    const [timerPaused, setTimerPaused] = useState(false);
     const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+    const proceededRef = useRef(false);
+    const unsubsRef = useRef<(() => void)[]>([]);
 
-    // Step 1: Check which items haven't had a successful stock inquiry within 30 days
-    // or haven't had a confirmed order in the last 30 days
+    // Helper: safe proceed (only once)
+    const safeProceed = () => {
+        if (proceededRef.current) return;
+        proceededRef.current = true;
+        if (timerRef.current) clearInterval(timerRef.current);
+        onProceed();
+    };
+
+    // Step 1: Check which items need inquiry
     useEffect(() => {
         async function checkActivity() {
             const FRESHNESS_DAYS = 30;
@@ -61,36 +76,27 @@ export function StockInquiryPopup({ businessId, cartItems, customerPhone, timeou
                     const lastStatus = lastInquiry.status as StockInquiryStatus;
                     const createdAt = lastInquiry.createdAt?.toDate?.() || new Date(0);
 
-                    // ── pending/checking: someone is working on it ──
                     if (['pending', 'checking'].includes(lastStatus)) {
                         if (createdAt < staleThreshold) {
-                            // Stale — mark expired and re-inquire
                             try {
                                 const staleRef = doc(db, `businesses/${businessId}/stockInquiries`, snap.docs[0].id);
                                 await updateDoc(staleRef, { status: 'expired' });
                             } catch (_) { /* ignore */ }
                             needInquiry.push(item);
                         }
-                        // Fresh pending/checking → skip (don't show popup)
                         continue;
                     }
 
-                    // ── expired: admin never responded → re-inquire ──
                     if (lastStatus === 'expired') {
                         needInquiry.push(item);
                         continue;
                     }
 
-                    // ── Terminal responses: no_change, updated, inactive ──
-                    // These are "admin answered" statuses — check freshness
+                    // Terminal responses: check freshness
                     const respondedAt = lastInquiry.respondedAt?.toDate?.() || createdAt;
+                    if (respondedAt >= freshnessCutoff) continue;
 
-                    if (respondedAt >= freshnessCutoff) {
-                        // Response is within 30 days — product info is fresh, skip
-                        continue;
-                    }
-
-                    // Response is older than 30 days — check if confirmed order exists
+                    // Check confirmed orders
                     try {
                         const ordersRef = collection(db, `businesses/${businessId}/orders`);
                         const oq = query(
@@ -103,26 +109,18 @@ export function StockInquiryPopup({ businessId, cartItems, customerPhone, timeou
                         const hasConfirmedOrder = orderSnap.docs.some(od => {
                             const o = od.data();
                             if (o.isDeleted) return false;
-                            // Check if any non-new/non-cancelled status (= confirmed+)
                             const confirmedStatuses = ['confirmed', 'sourced', 'arrived', 'delivered', 'completed'];
                             if (!confirmedStatuses.includes(o.status)) return false;
-                            // Check if this product is in the order items
                             return o.items?.some((oi: { productId?: string }) => oi.productId === item.productId);
                         });
-
-                        if (hasConfirmedOrder) {
-                            // Confirmed order exists within 30 days — product is active, skip
-                            continue;
-                        }
+                        if (hasConfirmedOrder) continue;
                     } catch (orderErr) {
                         console.debug('[StockInquiry] Order check failed:', orderErr);
-                        // If order check fails, fall through to re-inquire
                     }
 
-                    // 30+ days old response AND no confirmed order → re-inquire
                     needInquiry.push(item);
                 } catch (e) {
-                    console.error('[StockInquiry] Query failed (probably missing composite index):', e);
+                    console.error('[StockInquiry] Query failed:', e);
                     needInquiry.push(item);
                 }
             }
@@ -132,77 +130,117 @@ export function StockInquiryPopup({ businessId, cartItems, customerPhone, timeou
                 return;
             }
 
-            // Show popup IMMEDIATELY — don't wait for Firestore write
+            // Show popup immediately
             setItemsToInquire(needInquiry);
             setChecking(false);
 
-            // Try to create inquiry doc (non-blocking — popup works even without it)
-            try {
-                const firstItem = needInquiry[0];
-                const docRef = await addDoc(collection(db, `businesses/${businessId}/stockInquiries`), {
-                    productId: firstItem.productId,
-                    productName: firstItem.productName,
-                    productImage: firstItem.productImage || null,
-                    currentPrice: firstItem.currentPrice,
-                    customerPhone: customerPhone,
-                    status: 'pending',
-                    timeoutSeconds,
-                    createdAt: Timestamp.now(),
-                });
-                setInquiryId(docRef.id);
-            } catch (e) {
-                console.error('[StockInquiry] Failed to create inquiry doc (will run in fallback mode):', e);
-                // IMPORTANT: Do NOT call onProceed() here!
-                // Popup stays visible in "fallback mode" — timer runs locally without Firestore doc
-                // Set a fake inquiryId to start the timer
-                setInquiryId('__fallback__');
+            // Create inquiry docs for ALL items
+            const newStates = new Map<string, ItemInquiryState>();
+            for (const item of needInquiry) {
+                try {
+                    const docRef = await addDoc(collection(db, `businesses/${businessId}/stockInquiries`), {
+                        productId: item.productId,
+                        productName: item.productName,
+                        productImage: item.productImage || null,
+                        currentPrice: item.currentPrice,
+                        customerPhone: customerPhone,
+                        status: 'pending',
+                        timeoutSeconds,
+                        createdAt: Timestamp.now(),
+                    });
+                    newStates.set(item.productId, { inquiryId: docRef.id, status: 'pending' });
+                } catch (e) {
+                    console.error('[StockInquiry] Failed to create inquiry doc:', e);
+                    newStates.set(item.productId, { inquiryId: null, status: 'pending' });
+                }
             }
+            setItemStates(newStates);
         }
 
         checkActivity();
     }, []);
 
-    // Step 2: Listen for agent response (skip in fallback mode)
+    // Step 2: Listen for agent responses on ALL inquiry docs
     useEffect(() => {
-        if (!inquiryId || inquiryId === '__fallback__') return;
-        const docRef = doc(db, `businesses/${businessId}/stockInquiries`, inquiryId);
-        const unsub = onSnapshot(docRef, (snap) => {
-            const data = snap.data();
-            if (!data) return;
-            const newStatus = data.status as StockInquiryStatus;
-            setStatus(newStatus);
+        if (itemStates.size === 0) return;
 
-            if (data.changes) setChanges(data.changes);
+        // Clean up previous listeners
+        unsubsRef.current.forEach(u => u());
+        unsubsRef.current = [];
 
-            // Auto-handle terminal statuses
-            if (newStatus === 'no_change') {
-                // No change — proceed after 2s
-                setTimeout(onProceed, 2000);
-            }
-            // 'updated' and 'inactive' require user action (shown via buttons)
+        itemStates.forEach((state, productId) => {
+            if (!state.inquiryId) return;
+            const docRef = doc(db, `businesses/${businessId}/stockInquiries`, state.inquiryId);
+            const unsub = onSnapshot(docRef, (snap) => {
+                const data = snap.data();
+                if (!data) return;
+                const newStatus = data.status as StockInquiryStatus;
+
+                setItemStates(prev => {
+                    const next = new Map(prev);
+                    next.set(productId, {
+                        ...next.get(productId)!,
+                        status: newStatus,
+                        changes: data.changes || undefined,
+                    });
+                    return next;
+                });
+            });
+            unsubsRef.current.push(unsub);
         });
-        return () => unsub();
-    }, [inquiryId, businessId]);
 
-    // Step 3: Countdown timer
+        return () => {
+            unsubsRef.current.forEach(u => u());
+        };
+    }, [itemStates.size, businessId]);
+
+    // Step 3: React to status changes — pause timer, auto-proceed
     useEffect(() => {
-        if (checking || !inquiryId) return;
+        if (itemStates.size === 0) return;
+
+        const statuses = Array.from(itemStates.values()).map(s => s.status);
+
+        // If ANY item is 'checking' → pause timer
+        if (statuses.includes('checking')) {
+            setTimerPaused(true);
+            if (timerRef.current) {
+                clearInterval(timerRef.current);
+                timerRef.current = null;
+            }
+        }
+
+        // If ALL items have a terminal response → auto-proceed
+        const terminalStatuses: StockInquiryStatus[] = ['no_change', 'updated', 'inactive'];
+        const allTerminal = statuses.length > 0 && statuses.every(s => terminalStatuses.includes(s));
+        const hasInactive = statuses.includes('inactive');
+        const hasUpdated = statuses.includes('updated');
+
+        if (allTerminal && !hasInactive && !hasUpdated) {
+            // All no_change → auto-proceed after 1.5s
+            setTimeout(safeProceed, 1500);
+        }
+        // If has 'updated' or 'inactive' → user decides via buttons
+    }, [itemStates]);
+
+    // Step 4: Countdown timer
+    useEffect(() => {
+        if (checking || itemStates.size === 0 || timerPaused) return;
 
         timerRef.current = setInterval(() => {
             setSecondsLeft(prev => {
                 if (prev <= 1) {
-                    // Time expired — popup closes but inquiry stays PENDING for admin to respond
                     if (timerRef.current) clearInterval(timerRef.current);
-                    // DO NOT mark as expired — keep as 'pending' so admin sees it in real-time
-                    // Save to localStorage for late-response notification
-                    if (inquiryId && inquiryId !== '__fallback__') {
-                        try {
-                            const pending = JSON.parse(localStorage.getItem('pendingInquiries') || '[]');
-                            pending.push({ inquiryId, businessId, createdAt: Date.now() });
-                            localStorage.setItem('pendingInquiries', JSON.stringify(pending));
-                        } catch (_) { /* ignore */ }
-                    }
-                    setTimeout(onProceed, 500);
+                    // Save all inquiry IDs to localStorage for late-response notifications
+                    try {
+                        const pending = JSON.parse(localStorage.getItem('pendingInquiries') || '[]');
+                        itemStates.forEach((state) => {
+                            if (state.inquiryId) {
+                                pending.push({ inquiryId: state.inquiryId, businessId, createdAt: Date.now() });
+                            }
+                        });
+                        localStorage.setItem('pendingInquiries', JSON.stringify(pending));
+                    } catch (_) { /* ignore */ }
+                    setTimeout(safeProceed, 500);
                     return 0;
                 }
                 return prev - 1;
@@ -212,14 +250,15 @@ export function StockInquiryPopup({ businessId, cartItems, customerPhone, timeou
         return () => {
             if (timerRef.current) clearInterval(timerRef.current);
         };
-    }, [checking, inquiryId]);
+    }, [checking, itemStates.size, timerPaused]);
 
-    // Stop timer on terminal status
+    // Cleanup listeners on unmount
     useEffect(() => {
-        if (['no_change', 'updated', 'inactive', 'expired'].includes(status)) {
+        return () => {
+            unsubsRef.current.forEach(u => u());
             if (timerRef.current) clearInterval(timerRef.current);
-        }
-    }, [status]);
+        };
+    }, []);
 
     // Loading state
     if (checking) {
@@ -236,7 +275,40 @@ export function StockInquiryPopup({ businessId, cartItems, customerPhone, timeou
         );
     }
 
+    // Derive overall status from all items
+    const allStatuses = Array.from(itemStates.values()).map(s => s.status);
+    const hasChecking = allStatuses.includes('checking');
+    const hasInactive = allStatuses.includes('inactive');
+    const hasUpdated = allStatuses.includes('updated');
+    const allNoChange = allStatuses.length > 0 && allStatuses.every(s => s === 'no_change');
+    const allResolved = allStatuses.length > 0 && allStatuses.every(s => ['no_change', 'updated', 'inactive'].includes(s));
+
     const progressPercent = Math.round((secondsLeft / timeoutSeconds) * 100);
+
+    // Get items with their current status for per-item display
+    const getItemStatus = (productId: string): ItemInquiryState => {
+        return itemStates.get(productId) || { inquiryId: null, status: 'pending' };
+    };
+
+    const statusIcon = (s: StockInquiryStatus) => {
+        switch (s) {
+            case 'no_change': return <CheckCircle size={16} style={{ color: '#22c55e' }} />;
+            case 'updated': return <RefreshCw size={16} style={{ color: '#8b5cf6' }} />;
+            case 'inactive': return <XCircle size={16} style={{ color: '#ef4444' }} />;
+            case 'checking': return <Loader2 size={16} className="sinq-spin" style={{ color: '#3b82f6' }} />;
+            default: return <Loader2 size={16} className="sinq-spin" style={{ color: '#f59e0b', opacity: 0.5 }} />;
+        }
+    };
+
+    const statusLabel = (s: StockInquiryStatus) => {
+        switch (s) {
+            case 'no_change': return 'Өөрчлөлтгүй ✅';
+            case 'updated': return 'Шинэчлэгдсэн 🔄';
+            case 'inactive': return 'Нөөц дууссан ❌';
+            case 'checking': return 'Шалгаж байна...';
+            default: return 'Хүлээж байна...';
+        }
+    };
 
     return (
         <div className="sinq-popup-overlay">
@@ -248,29 +320,56 @@ export function StockInquiryPopup({ businessId, cartItems, customerPhone, timeou
                 </div>
 
                 <p className="sinq-popup-desc">
-                    Доорх бараанд өмнө нь нөөц шалгуулах хүсэлт гаргаагүй, эсвэл {inactiveDays} хоногоос удсан байна. Барааны үлдэгдэл болон мэдээллийг лавлаж байна, түр хүлээнэ үү.
+                    Доорх бараанд өмнө нь нөөц шалгуулах хүсэлт гаргаагүй, эсвэл 30 хоногоос удсан байна. Барааны үлдэгдэл болон мэдээллийг лавлаж байна, түр хүлээнэ үү.
                 </p>
 
-                {/* Products needing inquiry */}
+                {/* Products with per-item status */}
                 <div className="sinq-popup-products">
-                    {itemsToInquire.map(item => (
-                        <div key={item.productId} className="sinq-popup-product">
-                            {item.productImage ? (
-                                <img src={item.productImage} alt="" className="sinq-popup-pimg" />
-                            ) : (
-                                <div className="sinq-popup-pimg-ph"><Package size={16} /></div>
-                            )}
-                            <div>
-                                <div style={{ fontWeight: 700, fontSize: '0.88rem' }}>{item.productName}</div>
-                                <div style={{ fontSize: '0.82rem', color: 'var(--primary)', fontWeight: 600 }}>₮{item.currentPrice.toLocaleString()}</div>
+                    {itemsToInquire.map(item => {
+                        const is = getItemStatus(item.productId);
+                        return (
+                            <div key={item.productId} className="sinq-popup-product" style={{
+                                borderLeft: is.status === 'no_change' ? '3px solid #22c55e'
+                                    : is.status === 'updated' ? '3px solid #8b5cf6'
+                                    : is.status === 'inactive' ? '3px solid #ef4444'
+                                    : is.status === 'checking' ? '3px solid #3b82f6'
+                                    : '3px solid transparent',
+                                transition: 'border-color 0.3s ease',
+                            }}>
+                                {item.productImage ? (
+                                    <img src={item.productImage} alt="" className="sinq-popup-pimg" />
+                                ) : (
+                                    <div className="sinq-popup-pimg-ph"><Package size={16} /></div>
+                                )}
+                                <div style={{ flex: 1 }}>
+                                    <div style={{ fontWeight: 700, fontSize: '0.88rem' }}>{item.productName}</div>
+                                    <div style={{ fontSize: '0.82rem', color: 'var(--primary)', fontWeight: 600 }}>
+                                        {is.status === 'updated' && is.changes?.newPrice != null
+                                            ? <><s style={{ color: '#999', fontWeight: 400 }}>₮{item.currentPrice.toLocaleString()}</s> → <span style={{ color: '#8b5cf6' }}>₮{is.changes.newPrice.toLocaleString()}</span></>
+                                            : `₮${item.currentPrice.toLocaleString()}`
+                                        }
+                                    </div>
+                                    {is.changes?.note && (
+                                        <div style={{ fontSize: '0.75rem', color: '#6b7280', fontStyle: 'italic', marginTop: 2 }}>
+                                            {is.changes.note}
+                                        </div>
+                                    )}
+                                </div>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: '0.72rem', fontWeight: 600, whiteSpace: 'nowrap' }}>
+                                    {statusIcon(is.status)}
+                                    <span style={{ color: is.status === 'pending' ? '#999' : undefined }}>
+                                        {statusLabel(is.status)}
+                                    </span>
+                                </div>
                             </div>
-                        </div>
-                    ))}
+                        );
+                    })}
                 </div>
 
-                {/* Status display */}
+                {/* Status area */}
                 <div className="sinq-popup-status">
-                    {status === 'pending' && (
+                    {/* Timer — pending/running */}
+                    {!allResolved && !hasChecking && (
                         <>
                             <div className="sinq-popup-timer">
                                 <svg width="56" height="56" viewBox="0 0 56 56">
@@ -292,70 +391,47 @@ export function StockInquiryPopup({ businessId, cartItems, customerPhone, timeou
                         </>
                     )}
 
-                    {status === 'checking' && (
+                    {/* Checking — timer paused */}
+                    {hasChecking && !allResolved && (
                         <>
                             <Loader2 size={28} className="sinq-spin" style={{ color: '#3b82f6' }} />
-                            <p style={{ fontWeight: 700, color: '#3b82f6', marginTop: 8 }}>🔍 Шалгаж байна, хүлээнэ үү...</p>
+                            <p style={{ fontWeight: 700, color: '#3b82f6', marginTop: 8 }}>🔍 Шалгаж байна, түр хүлээнэ үү...</p>
+                            <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginTop: 4 }}>
+                                Агент барааг шалгаж байна
+                            </p>
                         </>
                     )}
 
-                    {status === 'no_change' && (
+                    {/* All resolved — show summary */}
+                    {allNoChange && (
                         <>
                             <CheckCircle size={32} style={{ color: '#22c55e' }} />
-                            <p style={{ fontWeight: 700, color: '#22c55e', marginTop: 8 }}>✅ Мэдээлэл өөрчлөгдөөгүй!</p>
+                            <p style={{ fontWeight: 700, color: '#22c55e', marginTop: 8 }}>✅ Бүх бараа шалгагдлаа — өөрчлөлтгүй!</p>
                             <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>Захиалга үргэлжлүүлж байна...</p>
                         </>
                     )}
 
-                    {status === 'updated' && changes && (
+                    {allResolved && !allNoChange && (
                         <>
-                            <RefreshCw size={28} style={{ color: '#8b5cf6' }} />
-                            <p style={{ fontWeight: 700, color: '#8b5cf6', marginTop: 8 }}>🔄 Мэдээлэл шинэчлэгдлээ</p>
-                            <div className="sinq-popup-changes">
-                                {changes.newPrice != null && (
-                                    <div className="sinq-popup-change-row">
-                                        <span>Шинэ үнэ:</span>
-                                        <strong style={{ color: '#8b5cf6' }}>₮{changes.newPrice.toLocaleString()}</strong>
-                                    </div>
-                                )}
-                                {changes.newName && (
-                                    <div className="sinq-popup-change-row">
-                                        <span>Шинэ нэр:</span>
-                                        <strong>{changes.newName}</strong>
-                                    </div>
-                                )}
-                                {changes.note && (
-                                    <div className="sinq-popup-change-row">
-                                        <span>Тэмдэглэл:</span>
-                                        <strong>{changes.note}</strong>
-                                    </div>
-                                )}
+                            <div style={{ marginBottom: 8 }}>
+                                {hasInactive
+                                    ? <XCircle size={28} style={{ color: '#ef4444' }} />
+                                    : <RefreshCw size={28} style={{ color: '#8b5cf6' }} />
+                                }
                             </div>
-                            <div className="sinq-popup-btns">
-                                <button className="sinq-popup-btn proceed" onClick={onProceed}>
-                                    <CheckCircle size={16} /> Зөвшөөрч, үргэлжлүүлэх
-                                </button>
-                                <button className="sinq-popup-btn cancel-btn" onClick={onCancel}>Цуцлах</button>
-                            </div>
-                        </>
-                    )}
-
-                    {status === 'inactive' && (
-                        <>
-                            <XCircle size={32} style={{ color: '#ef4444' }} />
-                            <p style={{ fontWeight: 700, color: '#ef4444', marginTop: 8 }}>❌ Нөөц дууссан байна</p>
-                            <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>Энэ бараа одоогоор захиалах боломжгүй.</p>
+                            <p style={{ fontWeight: 700, color: hasInactive ? '#ef4444' : '#8b5cf6', marginTop: 4 }}>
+                                {hasInactive ? '⚠️ Зарим бараа нөөцгүй байна' : '🔄 Мэдээлэл шинэчлэгдлээ'}
+                            </p>
                             <div className="sinq-popup-btns" style={{ marginTop: 16 }}>
-                                <button className="sinq-popup-btn cancel-btn" onClick={onCancel} style={{ flex: 1 }}>Буцах</button>
+                                {!allStatuses.every(s => s === 'inactive') && (
+                                    <button className="sinq-popup-btn proceed" onClick={safeProceed}>
+                                        <CheckCircle size={16} /> {hasInactive ? 'Нөөцтэй бараагаа үргэлжлүүлэх' : 'Зөвшөөрч, үргэлжлүүлэх'}
+                                    </button>
+                                )}
+                                <button className="sinq-popup-btn cancel-btn" onClick={onCancel}>
+                                    {allStatuses.every(s => s === 'inactive') ? 'Буцах' : 'Цуцлах'}
+                                </button>
                             </div>
-                        </>
-                    )}
-
-                    {status === 'expired' && (
-                        <>
-                            <Clock size={28} style={{ color: '#6b7280' }} />
-                            <p style={{ fontWeight: 700, color: '#6b7280', marginTop: 8 }}>Хугацаа дууслаа</p>
-                            <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>Захиалга автомат үргэлжлүүлж байна...</p>
                         </>
                     )}
                 </div>
