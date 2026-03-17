@@ -35,7 +35,6 @@ export function StockInquiryPopup({ businessId, cartItems, customerPhone, timeou
         async function checkActivity() {
             const cutoff = new Date();
             cutoff.setDate(cutoff.getDate() - inactiveDays);
-            // Stale threshold: pending inquiry older than timeoutSeconds + 60s buffer
             const staleThreshold = new Date(Date.now() - (timeoutSeconds + 60) * 1000);
 
             const needInquiry: InquiryItem[] = [];
@@ -52,56 +51,48 @@ export function StockInquiryPopup({ businessId, cartItems, customerPhone, timeou
                     const snap = await getDocs(q);
 
                     if (snap.empty) {
-                        // Never inquired — needs inquiry (new product)
                         needInquiry.push(item);
                     } else {
                         const lastInquiry = snap.docs[0].data();
                         const lastStatus = lastInquiry.status as StockInquiryStatus;
                         const createdAt = lastInquiry.createdAt?.toDate?.() || new Date(0);
 
-                        // If pending/checking but STALE (older than timeout) — mark expired & allow new
                         if (['pending', 'checking'].includes(lastStatus)) {
                             if (createdAt < staleThreshold) {
-                                // Stale inquiry — mark it expired and allow new one
                                 try {
                                     const staleRef = doc(db, `businesses/${businessId}/stockInquiries`, snap.docs[0].id);
                                     await updateDoc(staleRef, { status: 'expired' });
                                 } catch (_) { /* ignore */ }
                                 needInquiry.push(item);
                             }
-                            // else: genuinely active inquiry, skip this product
                             continue;
                         }
 
-                        // Expired = business never responded — ALWAYS needs new inquiry
                         if (lastStatus === 'expired' || lastStatus === 'inactive') {
                             needInquiry.push(item);
                             continue;
                         }
 
-                        // Successfully resolved (no_change, updated) — only re-inquiry if older than cutoff
                         if (createdAt < cutoff) {
                             needInquiry.push(item);
                         }
-                        // Otherwise: recently resolved successfully, no need
                     }
                 } catch (e) {
-                    console.warn('[StockInquiry] Failed to check inquiry history:', e);
-                    // On error, assume product needs inquiry (safer)
+                    console.error('[StockInquiry] Query failed (probably missing composite index):', e);
                     needInquiry.push(item);
                 }
             }
 
             if (needInquiry.length === 0) {
-                // All items have recent successful inquiries, no popup needed
                 onProceed();
                 return;
             }
 
+            // Show popup IMMEDIATELY — don't wait for Firestore write
             setItemsToInquire(needInquiry);
             setChecking(false);
 
-            // Create inquiry doc in Firestore for the first item (primary inquiry)
+            // Try to create inquiry doc (non-blocking — popup works even without it)
             try {
                 const firstItem = needInquiry[0];
                 const docRef = await addDoc(collection(db, `businesses/${businessId}/stockInquiries`), {
@@ -116,18 +107,20 @@ export function StockInquiryPopup({ businessId, cartItems, customerPhone, timeou
                 });
                 setInquiryId(docRef.id);
             } catch (e) {
-                console.error('[StockInquiry] Failed to create inquiry:', e);
-                // Don't block checkout on error
-                onProceed();
+                console.error('[StockInquiry] Failed to create inquiry doc (will run in fallback mode):', e);
+                // IMPORTANT: Do NOT call onProceed() here!
+                // Popup stays visible in "fallback mode" — timer runs locally without Firestore doc
+                // Set a fake inquiryId to start the timer
+                setInquiryId('__fallback__');
             }
         }
 
         checkActivity();
     }, []);
 
-    // Step 2: Listen for agent response
+    // Step 2: Listen for agent response (skip in fallback mode)
     useEffect(() => {
-        if (!inquiryId) return;
+        if (!inquiryId || inquiryId === '__fallback__') return;
         const docRef = doc(db, `businesses/${businessId}/stockInquiries`, inquiryId);
         const unsub = onSnapshot(docRef, (snap) => {
             const data = snap.data();
@@ -156,8 +149,8 @@ export function StockInquiryPopup({ businessId, cartItems, customerPhone, timeou
                 if (prev <= 1) {
                     // Time expired — auto proceed
                     if (timerRef.current) clearInterval(timerRef.current);
-                    // Mark as expired
-                    if (inquiryId) {
+                    // Mark as expired (skip in fallback mode)
+                    if (inquiryId && inquiryId !== '__fallback__') {
                         const docRef = doc(db, `businesses/${businessId}/stockInquiries`, inquiryId);
                         updateDoc(docRef, { status: 'expired' }).catch(() => {});
                     }
