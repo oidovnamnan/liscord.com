@@ -97,7 +97,9 @@ export const orderService = {
         }
 
         return onSnapshot(q, (snapshot) => {
-            const orders = snapshot.docs.map(d => ({ id: d.id, ...convertTimestamps(d.data()) } as Order));
+            const allOrders = snapshot.docs.map(d => ({ id: d.id, ...convertTimestamps(d.data()) } as Order));
+            // Filter out membership orders — they belong in VIP module, not sales orders
+            const orders = allOrders.filter(o => o.orderType !== 'membership');
             const lastDoc = snapshot.docs[snapshot.docs.length - 1];
             callback(orders, lastDoc);
         });
@@ -120,7 +122,9 @@ export const orderService = {
         }
 
         const snapshot = await getDocs(q);
-        const orders = snapshot.docs.map(d => ({ id: d.id, ...convertTimestamps(d.data()) } as Order));
+        const allOrders = snapshot.docs.map(d => ({ id: d.id, ...convertTimestamps(d.data()) } as Order));
+        // Filter out membership orders — they belong in VIP module
+        const orders = allOrders.filter(o => o.orderType !== 'membership');
         const lastDoc = snapshot.docs[snapshot.docs.length - 1];
 
         return { orders, lastDoc };
