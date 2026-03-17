@@ -158,11 +158,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             expDate.setDate(expDate.getDate() + durationDays);
 
             await db.collection(`businesses/${bizId}/memberships`).add({
-                phone,
+                customerPhone: phone,
                 categoryId: orderData.membershipCategoryId,
                 orderId,
+                purchasedAt: now,
                 grantedAt: now,
                 expiresAt: admin.firestore.Timestamp.fromDate(expDate),
+                amountPaid: totalAmount,
                 status: 'active',
                 createdBy: 'qpay_auto',
             });
