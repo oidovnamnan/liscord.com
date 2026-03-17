@@ -3,7 +3,9 @@
  * 
  * Calls /api/qpay-invoice on the same domain (Vercel).
  * No CORS issues since it's same-origin.
- * Credentials are passed from business settings.
+ * 
+ * VIP credentials are stored server-side only (env vars).
+ * Product credentials come from business settings.
  */
 
 export interface QPayInvoiceResponse {
@@ -19,16 +21,11 @@ export interface QPayInvoiceResponse {
     }>;
 }
 
-// Platform credentials for VIP/membership
-const PLATFORM_QPAY = {
-    username: 'GATE_SIM',
-    password: '8r3bvsa3',
-    invoiceCode: 'GATE_SIM_INVOICE',
-};
-
 export const qpayService = {
     /**
      * Create QPay invoice via Vercel serverless function
+     * VIP: credentials resolved server-side from env vars
+     * Product: credentials passed from business settings
      */
     async createInvoice(
         bizId: string,
@@ -39,28 +36,30 @@ export const qpayService = {
         purpose: 'vip' | 'product' = 'product',
         businessQpaySettings?: { username: string; password: string; invoiceCode: string }
     ): Promise<QPayInvoiceResponse> {
-        // Determine credentials based on purpose
-        const creds = purpose === 'vip'
-            ? PLATFORM_QPAY
-            : businessQpaySettings;
+        // For VIP: server resolves credentials from env vars
+        // For Product: pass business credentials
+        const body: Record<string, any> = {
+            bizId,
+            orderId,
+            amount,
+            description,
+            customerPhone,
+            purpose,
+        };
 
-        if (!creds?.username || !creds?.password) {
-            throw new Error('QPay credentials not configured');
+        if (purpose === 'product') {
+            if (!businessQpaySettings?.username || !businessQpaySettings?.password) {
+                throw new Error('QPay credentials not configured');
+            }
+            body.qpayUsername = businessQpaySettings.username;
+            body.qpayPassword = businessQpaySettings.password;
+            body.qpayInvoiceCode = businessQpaySettings.invoiceCode || `${businessQpaySettings.username}_INVOICE`;
         }
 
         const response = await fetch('/api/qpay-invoice', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                bizId,
-                orderId,
-                amount,
-                description,
-                customerPhone,
-                qpayUsername: creds.username,
-                qpayPassword: creds.password,
-                qpayInvoiceCode: creds.invoiceCode || `${creds.username}_INVOICE`,
-            }),
+            body: JSON.stringify(body),
         });
 
         if (!response.ok) {
@@ -73,28 +72,33 @@ export const qpayService = {
 
     /**
      * Check if payment has been made for an invoice
+     * VIP: credentials resolved server-side
+     * Product: credentials passed from business settings
      */
     async checkPayment(
+        bizId: string,
         invoiceId: string,
         purpose: 'vip' | 'product' = 'product',
         businessQpaySettings?: { username: string; password: string }
     ): Promise<{ paid: boolean; payment: any; count: number }> {
-        const creds = purpose === 'vip'
-            ? PLATFORM_QPAY
-            : businessQpaySettings;
+        const body: Record<string, any> = {
+            invoiceId,
+            bizId,
+            purpose,
+        };
 
-        if (!creds?.username || !creds?.password) {
-            throw new Error('QPay credentials not configured');
+        if (purpose === 'product') {
+            if (!businessQpaySettings?.username || !businessQpaySettings?.password) {
+                throw new Error('QPay credentials not configured');
+            }
+            body.qpayUsername = businessQpaySettings.username;
+            body.qpayPassword = businessQpaySettings.password;
         }
 
         const response = await fetch('/api/qpay-check', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                invoiceId,
-                qpayUsername: creds.username,
-                qpayPassword: creds.password,
-            }),
+            body: JSON.stringify(body),
         });
 
         if (!response.ok) {

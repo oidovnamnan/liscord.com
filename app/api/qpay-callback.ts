@@ -54,6 +54,11 @@ async function getAccessToken(username: string, password: string): Promise<strin
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
+    // QPay sends GET or POST callbacks
+    if (req.method !== 'GET' && req.method !== 'POST') {
+        return res.status(405).json({ error: 'Method not allowed' });
+    }
+
     const bizId = req.query.bizId as string;
     const orderId = req.query.orderId as string;
 
@@ -81,9 +86,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         let password: string;
 
         if (orderData.orderType === 'membership') {
-            // VIP/membership → platform credentials
-            username = 'GATE_SIM';
-            password = '8r3bvsa3';
+            // VIP/membership → server-side env credentials
+            username = process.env.QPAY_VIP_USERNAME || 'GATE_SIM';
+            password = process.env.QPAY_VIP_PASSWORD || '8r3bvsa3';
         } else {
             // Product → business credentials
             const bizDoc = await db.doc(`businesses/${bizId}`).get();

@@ -303,15 +303,13 @@ export function StoreCheckout() {
     }, [successId, business?.id]);
 
     // ──────── POLL QPAY PAYMENT STATUS ────────
+    // Note: Actual order update is handled by server callback (qpay-callback.ts).
+    // Frontend polling is a fallback to detect payment for UI update.
     useEffect(() => {
         if (!qpayInvoice?.invoice_id || !successId || !business?.id || paymentConfirmed) return;
 
         const qpaySettings = business.settings?.qpay;
-        const creds = paymentMethod === 'qpay' && qpaySettings?.username && qpaySettings?.password
-            ? { username: qpaySettings.username, password: qpaySettings.password }
-            : null;
-
-        if (!creds) return;
+        if (!qpaySettings?.username || !qpaySettings?.password) return;
 
         let stopped = false;
         const poll = async () => {
@@ -322,22 +320,15 @@ export function StoreCheckout() {
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         invoiceId: qpayInvoice.invoice_id,
-                        qpayUsername: creds.username,
-                        qpayPassword: creds.password,
+                        qpayUsername: qpaySettings.username,
+                        qpayPassword: qpaySettings.password,
+                        purpose: 'product',
                     }),
                 });
                 const data = await resp.json();
                 if (data.paid && !stopped) {
-                    // Update order as paid from frontend
-                    const { doc: firestoreDoc, updateDoc, Timestamp } = await import('firebase/firestore');
-                    const totalAmount = savedTotal || 0;
-                    await updateDoc(firestoreDoc(db, `businesses/${business.id}/orders`, successId), {
-                        paymentStatus: 'paid',
-                        paymentVerifiedAt: Timestamp.now(),
-                        paymentVerifiedBy: 'qpay',
-                        'financials.paidAmount': totalAmount,
-                        'financials.balanceDue': 0,
-                    });
+                    // Don't write to Firestore — server callback handles that.
+                    // Just update UI state. onSnapshot will also catch it.
                     stopped = true;
                 }
             } catch (e) {
@@ -345,10 +336,10 @@ export function StoreCheckout() {
             }
         };
 
-        // Poll every 2 seconds
-        const interval = setInterval(poll, 2000);
-        // First check after 1.5 seconds
-        const timeout = setTimeout(poll, 1500);
+        // Poll every 3 seconds
+        const interval = setInterval(poll, 3000);
+        // First check after 2 seconds
+        const timeout = setTimeout(poll, 2000);
 
         return () => {
             stopped = true;

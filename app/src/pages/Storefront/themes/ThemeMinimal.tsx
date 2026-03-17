@@ -691,7 +691,7 @@ function MembershipModal({
     // Poll QPay every 3s to detect payment
     const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-    const startPaymentPolling = (invoiceId: string, oid: string) => {
+    const startPaymentPolling = (invoiceId: string, _oid: string) => {
         // Clear any existing polling
         if (pollingRef.current) clearInterval(pollingRef.current);
 
@@ -709,54 +709,14 @@ function MembershipModal({
                 const resp = await fetch('/api/qpay-check', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ invoiceId }),
+                    body: JSON.stringify({ invoiceId, purpose: 'vip' }),
                 });
                 const data = await resp.json();
 
                 if (data.paid) {
-                    // Payment confirmed! Update Firestore order
+                    // Payment confirmed! Server callback handles Firestore update + membership grant.
+                    // We just update UI here.
                     if (pollingRef.current) clearInterval(pollingRef.current);
-
-                    try {
-                        const { doc, updateDoc, arrayUnion, serverTimestamp } = await import('firebase/firestore');
-                        const { db } = await import('../../../services/firebase');
-                        const orderRef = doc(db, 'businesses', business.id, 'orders', oid);
-                        await updateDoc(orderRef, {
-                            paymentStatus: 'paid',
-                            paymentVerifiedAt: serverTimestamp(),
-                            paymentVerifiedBy: 'qpay',
-                            'financials.paidAmount': price,
-                            'financials.balanceDue': 0,
-                            'financials.payments': arrayUnion({
-                                id: `qpay_${data.payment?.payment_id || Date.now()}`,
-                                amount: price,
-                                method: 'qpay',
-                                note: 'QPay төлбөр',
-                                paidAt: new Date().toISOString(),
-                                recordedBy: 'qpay_auto',
-                            }),
-                        });
-
-                        // Grant membership!
-                        const categoryId = product.exclusiveCategoryId || '';
-                        const memberPhone = phone || localStorage.getItem(`membership_phone_${business.id}`) || '';
-                        if (categoryId && memberPhone) {
-                            const { membershipService } = await import('../../../services/membershipService');
-                            await membershipService.grantMembership(
-                                business.id,
-                                categoryId,
-                                memberPhone,
-                                price,
-                                durationDays
-                            );
-                            // Refresh membership status so products unlock
-                            onVerify(memberPhone);
-                        }
-                    } catch (updateErr) {
-                        console.error('Failed to update order:', updateErr);
-                    }
-
-                    // Directly confirm payment (don't rely only on onSnapshot)
                     setPaymentConfirmed(true);
                     setTimeout(() => onClose(), 2500);
                 }

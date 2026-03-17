@@ -3,13 +3,12 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 /**
  * QPay V2 Create Invoice — Vercel Serverless Function
  * 
- * Frontend passes QPay credentials directly.
- * For VIP: passes platform credentials (GATE_SIM)
- * For Product: passes business's own QPay credentials
- * No Firebase Admin needed — credentials come from frontend.
+ * For VIP: uses server-side env credentials (QPAY_VIP_USERNAME, QPAY_VIP_PASSWORD)
+ * For Product: uses business's own QPay credentials passed from frontend
  */
 
 const QPAY_API_URL = 'https://merchant.qpay.mn/v2';
+const ALLOWED_ORIGINS = ['https://www.liscord.com', 'https://liscord.com', 'http://localhost:5173', 'http://localhost:3000'];
 
 // Token cache per credential set
 const tokenCache: Record<string, { token: string; expiresAt: number }> = {};
@@ -45,8 +44,11 @@ async function getAccessToken(username: string, password: string): Promise<strin
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-    // CORS
-    res.setHeader('Access-Control-Allow-Origin', '*');
+    // CORS — restricted origins
+    const origin = req.headers.origin || '';
+    if (ALLOWED_ORIGINS.includes(origin)) {
+        res.setHeader('Access-Control-Allow-Origin', origin);
+    }
     res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
@@ -58,18 +60,34 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return res.status(405).json({ error: 'Method not allowed' });
     }
 
-    const { bizId, orderId, amount, description, customerPhone, qpayUsername, qpayPassword, qpayInvoiceCode } = req.body;
+    const { bizId, orderId, amount, description, customerPhone, qpayUsername, qpayPassword, qpayInvoiceCode, purpose } = req.body;
 
     if (!bizId || !orderId || !amount) {
         return res.status(400).json({ error: 'Missing required fields: bizId, orderId, amount' });
     }
 
-    if (!qpayUsername || !qpayPassword || !qpayInvoiceCode) {
-        return res.status(400).json({ error: 'Missing QPay credentials' });
+    // Resolve credentials based on purpose
+    let username: string;
+    let password: string;
+    let invoiceCode: string;
+
+    if (purpose === 'vip') {
+        // VIP/membership → server-side env credentials
+        username = process.env.QPAY_VIP_USERNAME || 'GATE_SIM';
+        password = process.env.QPAY_VIP_PASSWORD || '8r3bvsa3';
+        invoiceCode = process.env.QPAY_VIP_INVOICE_CODE || 'GATE_SIM_INVOICE';
+    } else {
+        // Product → business credentials from frontend
+        if (!qpayUsername || !qpayPassword || !qpayInvoiceCode) {
+            return res.status(400).json({ error: 'Missing QPay credentials' });
+        }
+        username = qpayUsername;
+        password = qpayPassword;
+        invoiceCode = qpayInvoiceCode;
     }
 
     try {
-        const token = await getAccessToken(qpayUsername, qpayPassword);
+        const token = await getAccessToken(username, password);
 
         // Callback URL pointing to our qpay-callback serverless function
         const host = req.headers.host || 'www.liscord.com';
@@ -83,7 +101,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-                invoice_code: qpayInvoiceCode,
+                invoice_code: invoiceCode,
                 sender_invoice_no: orderId,
                 invoice_receiver_code: customerPhone || 'guest',
                 invoice_description: description || `Liscord #${orderId.slice(-6)}`,
