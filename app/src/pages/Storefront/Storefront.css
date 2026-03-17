@@ -1335,10 +1335,10 @@
     margin-bottom: 6px;
 }
 .fd-card-timer .fd-flip-digit {
-    min-width: 20px;
-    height: 24px;
-    font-size: 0.75rem;
-    border-radius: 5px;
+    min-width: 17px;
+    height: 20px;
+    font-size: 0.65rem;
+    border-radius: 4px;
     background: #fff7ed;
     border: 1px solid #fed7aa;
     color: #ea580c;
