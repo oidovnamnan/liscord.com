@@ -3,7 +3,7 @@ import { collection, onSnapshot, query, orderBy, doc, updateDoc, Timestamp, wher
 import { db } from '../../services/firebase';
 import { useBusinessStore, useAuthStore } from '../../store';
 import { usePermissions } from '../../hooks/usePermissions';
-import { Undo2, Clock, CheckCircle, XCircle, DollarSign, Search, X, Eye, AlertTriangle, CreditCard, Users, FileText, Package } from 'lucide-react';
+import { Undo2, Clock, CheckCircle, XCircle, DollarSign, Search, X, Eye, AlertTriangle, CreditCard, Users, FileText, Package, Trash2 } from 'lucide-react';
 import type { ReturnRequest, ReturnStatus, Order } from '../../types';
 import { toast } from 'react-hot-toast';
 import './ReturnsPage.css';
@@ -52,6 +52,10 @@ export function ReturnsPage() {
     const [editAccountNumber, setEditAccountNumber] = useState('');
     const [editAccountHolder, setEditAccountHolder] = useState('');
     const [savingBank, setSavingBank] = useState(false);
+    // Delete
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+    const [deleteConfirmText, setDeleteConfirmText] = useState('');
+    const [deleteLoading, setDeleteLoading] = useState(false);
 
     // Subscribe to returns
     useEffect(() => {
@@ -85,6 +89,7 @@ export function ReturnsPage() {
     // Filtered
     const filtered = useMemo(() => {
         return returns.filter(r => {
+            if ((r as any).isDeleted) return false;
             if (filterStatus !== 'all' && r.status !== filterStatus) return false;
             if (searchQuery) {
                 const q = searchQuery.toLowerCase();
@@ -179,6 +184,30 @@ export function ReturnsPage() {
             toast.error('Алдаа гарлаа');
         } finally {
             setSavingBank(false);
+        }
+    };
+
+    // ── Delete handler ──
+    const handleDeleteReturn = async (returnReq: ReturnRequest) => {
+        if (!business?.id) return;
+        setDeleteLoading(true);
+        try {
+            const ref = doc(db, `businesses/${business.id}/returns`, returnReq.id);
+            await updateDoc(ref, {
+                isDeleted: true,
+                deletedAt: new Date(),
+                deletedBy: currentUserId,
+                deletedByName: currentUserName,
+            });
+            setSelectedReturn(null);
+            setShowDeleteConfirm(false);
+            setDeleteConfirmText('');
+            toast.success('Буцаалт устгагдлаа');
+        } catch (e) {
+            console.error('Failed to delete return:', e);
+            toast.error('Устгахад алдаа гарлаа');
+        } finally {
+            setDeleteLoading(false);
         }
     };
 
@@ -490,7 +519,7 @@ export function ReturnsPage() {
                         </div>
 
                         {/* Actions */}
-                        {selectedReturn.status !== 'refunded' && selectedReturn.status !== 'rejected' && (
+                        {selectedReturn.status !== 'refunded' && selectedReturn.status !== 'rejected' && !showDeleteConfirm && (
                             <div className="rtn-actions">
                                 <textarea
                                     placeholder={selectedReturn.status === 'finance_review' ? 'Санхүүгийн тайлбар бичнэ үү...' : 'Тайлбар (заавал биш)...'}
@@ -548,6 +577,59 @@ export function ReturnsPage() {
                                 </div>
                             </div>
                         )}
+                        {/* Delete Button */}
+                        <div style={{ padding: '12px 20px', borderTop: '1px solid var(--border-color)' }}>
+                            {!showDeleteConfirm ? (
+                                <button
+                                    onClick={() => setShowDeleteConfirm(true)}
+                                    style={{
+                                        width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                                        padding: '10px 16px', borderRadius: 10, border: '1px solid #fecaca',
+                                        background: 'rgba(239, 68, 68, 0.04)', color: '#ef4444',
+                                        fontSize: '0.82rem', fontWeight: 600, cursor: 'pointer',
+                                    }}
+                                >
+                                    <Trash2 size={15} /> Буцаалт устгах
+                                </button>
+                            ) : (
+                                <div style={{ background: '#fef2f2', borderRadius: 10, padding: 14, border: '1px solid #fecaca' }}>
+                                    <div style={{ fontSize: '0.82rem', fontWeight: 700, color: '#dc2626', marginBottom: 8 }}>
+                                        ⚠️ Устгахдаа итгэлтэй байна уу?
+                                    </div>
+                                    <div style={{ fontSize: '0.78rem', color: '#6b7280', marginBottom: 10 }}>
+                                        Баталгаажуулахын тулд доор <strong>"устгах"</strong> гэж бичнэ үү
+                                    </div>
+                                    <input
+                                        value={deleteConfirmText}
+                                        onChange={e => setDeleteConfirmText(e.target.value)}
+                                        placeholder='"устгах" гэж бичнэ үү'
+                                        style={{
+                                            width: '100%', height: 36, borderRadius: 8, border: '1px solid #fecaca',
+                                            padding: '0 10px', fontSize: '0.82rem', marginBottom: 8, boxSizing: 'border-box',
+                                        }}
+                                    />
+                                    <div style={{ display: 'flex', gap: 8 }}>
+                                        <button
+                                            onClick={() => { setShowDeleteConfirm(false); setDeleteConfirmText(''); }}
+                                            style={{
+                                                flex: 1, height: 36, borderRadius: 8, border: '1px solid var(--border-color)',
+                                                background: '#fff', fontSize: '0.82rem', cursor: 'pointer',
+                                            }}
+                                        >Болих</button>
+                                        <button
+                                            disabled={deleteConfirmText !== 'устгах' || deleteLoading}
+                                            onClick={() => handleDeleteReturn(selectedReturn)}
+                                            style={{
+                                                flex: 1, height: 36, borderRadius: 8, border: 'none',
+                                                background: deleteConfirmText === 'устгах' ? '#ef4444' : '#fca5a5',
+                                                color: '#fff', fontWeight: 700, fontSize: '0.82rem', cursor: 'pointer',
+                                                opacity: deleteConfirmText !== 'устгах' ? 0.5 : 1,
+                                            }}
+                                        >{deleteLoading ? '...' : 'Устгах'}</button>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </div>
             )}
