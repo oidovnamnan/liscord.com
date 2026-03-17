@@ -330,14 +330,19 @@ export function StoreCheckout() {
                 const data = await resp.json();
                 if (data.paid && !stopped) {
                     stopped = true;
-                    // Trigger the callback endpoint (server-side Admin SDK)
-                    // This handles order update + notifications properly
+                    // Update order as paid (client-side)
                     try {
-                        await fetch(`/api/qpay-callback?bizId=${business.id}&orderId=${successId}`);
+                        const orderRef = doc(db, `businesses/${business.id}/orders`, successId);
+                        await updateDoc(orderRef, {
+                            paymentStatus: 'paid',
+                            paymentVerifiedAt: serverTimestamp(),
+                            paymentVerifiedBy: 'qpay_poll',
+                            'financials.paidAmount': savedTotal,
+                            'financials.balanceDue': 0,
+                        });
                     } catch (e) {
-                        console.error('Failed to trigger qpay-callback:', e);
+                        console.error('Failed to update order:', e);
                     }
-                    // UI update is handled by onSnapshot listener
                     setPaymentConfirmed(true);
                     toast.success('Төлбөр баталгаажлаа! 🎉');
                 }

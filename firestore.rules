@@ -113,10 +113,10 @@ service cloud.firestore {
         allow delete: if false;
       }
 
-      // Memberships: public read (storefront VIP check), create via Cloud Function only
+      // Memberships: public read + create (storefront VIP purchase flow)
+      // QPay callback (Admin SDK) is unavailable on Vercel — client creates membership
       match /memberships/{docId} {
-        allow read: if true;  // Public: storefront checks VIP access by phone
-        allow create: if false;  // Cloud Function (grantMembershipFromOrder) only
+        allow read, create: if true;
         allow update: if isMemberOf(bizId);
         allow delete: if false;
       }

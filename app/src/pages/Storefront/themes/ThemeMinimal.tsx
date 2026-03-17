@@ -810,15 +810,45 @@ function MembershipModal({
                 if (data.paid) {
                     if (pollingRef.current) clearInterval(pollingRef.current);
 
-                    // Trigger the callback endpoint (server-side Admin SDK)
-                    // This updates order status AND creates membership
+                    // Update order as paid + create membership (client-side)
                     try {
-                        await fetch(`/api/qpay-callback?bizId=${business.id}&orderId=${_oid}`);
+                        const { doc: firestoreDoc, updateDoc, addDoc, collection, serverTimestamp, Timestamp } = await import('firebase/firestore');
+                        const { db } = await import('../../../services/firebase');
+
+                        // 1. Mark order as paid
+                        const orderRef = firestoreDoc(db, `businesses/${business.id}/orders`, _oid);
+                        await updateDoc(orderRef, {
+                            paymentStatus: 'paid',
+                            paymentVerifiedAt: serverTimestamp(),
+                            paymentVerifiedBy: 'qpay_poll',
+                            'financials.paidAmount': price,
+                            'financials.balanceDue': 0,
+                        });
+
+                        // 2. Grant membership
+                        if (product.exclusiveCategoryId) {
+                            const cleanPhone = phone.trim().replace(/[\s\-+]/g, '').replace(/^976/, '');
+                            const expDate = new Date();
+                            expDate.setDate(expDate.getDate() + durationDays);
+
+                            await addDoc(collection(db, 'businesses', business.id, 'memberships'), {
+                                customerPhone: cleanPhone,
+                                categoryId: product.exclusiveCategoryId,
+                                orderId: _oid,
+                                purchasedAt: serverTimestamp(),
+                                expiresAt: Timestamp.fromDate(expDate),
+                                amountPaid: price,
+                                status: 'active',
+                                createdBy: 'qpay_auto',
+                            });
+
+                            // Refresh membership status
+                            onVerify(cleanPhone);
+                        }
                     } catch (e) {
-                        console.error('Failed to trigger qpay-callback:', e);
+                        console.error('Failed to update order/membership:', e);
                     }
 
-                    // UI update is handled by onSnapshot listener on the order doc
                     setPaymentConfirmed(true);
                     setTimeout(() => onClose(), 2500);
                 }
