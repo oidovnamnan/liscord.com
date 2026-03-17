@@ -128,6 +128,13 @@ service cloud.firestore {
         allow delete: if false;
       }
 
+      // Stock inquiries: public create+read (storefront popup), update members only
+      match /stockInquiries/{docId} {
+        allow read, create: if true;  // Public: storefront creates inquiry + listens for response
+        allow update: if isMemberOf(bizId);  // Only agents can respond
+        allow delete: if false;
+      }
+
       // All other subcollections: member read/write only
       match /{subcollection}/{docId} {
         allow read: if isMemberOf(bizId);
