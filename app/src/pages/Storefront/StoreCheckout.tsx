@@ -176,8 +176,10 @@ export function StoreCheckout() {
         setPhoneError(false);
 
         // Check if stock-inquiry module is enabled
-        const hasSIModule = !!(business as any).moduleSubscriptions?.['stock-inquiry'];
-        const siEnabled = (business.settings as any)?.stockInquiry?.enabled;
+        const biz = business as any;
+        const hasSIModule = !!(biz.moduleSubscriptions?.['stock-inquiry']) || 
+                            !!(biz.activeModules?.includes?.('stock-inquiry'));
+        const siEnabled = biz.settings?.stockInquiry?.enabled;
 
         if (hasSIModule && siEnabled && !showInquiryPopup) {
             pendingFormRef.current = e.currentTarget;

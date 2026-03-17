@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { collection, addDoc, onSnapshot, query, where, orderBy, getDocs, Timestamp, doc, updateDoc, limit } from 'firebase/firestore';
+import { collection, addDoc, onSnapshot, query, orderBy, getDocs, Timestamp, doc, updateDoc, limit } from 'firebase/firestore';
 import { db } from '../../services/firebase';
 import { Clock, Package, AlertTriangle, CheckCircle, XCircle, RefreshCw, Loader2 } from 'lucide-react';
 import type { StockInquiryStatus } from '../../types';
@@ -40,11 +40,10 @@ export function StockInquiryPopup({ businessId, cartItems, customerPhone, timeou
 
             for (const item of cartItems) {
                 try {
-                    // Query orders for this product within cutoff period
+                    // Query recent orders — no where on 'items' (avoids composite index requirement)
                     const ordersRef = collection(db, `businesses/${businessId}/orders`);
                     const q = query(
                         ordersRef,
-                        where('items', '!=', null), // require items field
                         orderBy('createdAt', 'desc'),
                         limit(50)
                     );
@@ -68,7 +67,8 @@ export function StockInquiryPopup({ businessId, cartItems, customerPhone, timeou
                     }
                 } catch (e) {
                     console.warn('[StockInquiry] Failed to check order activity:', e);
-                    // Skip this item on error — don't block the order
+                    // On error, assume product needs inquiry (safer than skipping)
+                    needInquiry.push(item);
                 }
             }
 
