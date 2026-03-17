@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { productService, categoryService } from '../../../services/db';
 import { membershipService } from '../../../services/membershipService';
 import type { Business, Product, Category } from '../../../types';
@@ -19,12 +19,27 @@ export function useStorefrontData(business: Business | undefined) {
     const [searchQuery, setSearchQuery] = useState('');
     const [activeCategory, setActiveCategory] = useState<string>('all');
 
+    // Shuffle helper (Fisher-Yates) — randomizes once per session
+    const shuffleSeed = useRef(Date.now());
+    const shuffle = <T,>(arr: T[]): T[] => {
+        const a = [...arr];
+        // Seeded pseudo-random for stable shuffle within session
+        let seed = shuffleSeed.current;
+        const random = () => { seed = (seed * 16807 + 0) % 2147483647; return seed / 2147483647; };
+        for (let i = a.length - 1; i > 0; i--) {
+            const j = Math.floor(random() * (i + 1));
+            [a[i], a[j]] = [a[j], a[i]];
+        }
+        return a;
+    };
+
     // Load products
     useEffect(() => {
         if (!business) return;
         setTimeout(() => setLoading(true), 0);
         const unsubscribe = productService.subscribeProducts(business.id, (data) => {
-            setProducts(data.filter(p => !p.isDeleted && p.isActive !== false && !p.isHidden));
+            const visible = data.filter(p => !p.isDeleted && p.isActive !== false && !p.isHidden);
+            setProducts(shuffle(visible));
             setLoading(false);
         }, 5000);
         return () => unsubscribe();
