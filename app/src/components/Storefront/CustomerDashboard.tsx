@@ -46,8 +46,8 @@ interface CustomerAddress {
 type TabKey = 'profile' | 'orders' | 'address' | 'notifications';
 
 const TABS: { key: TabKey; label: string; icon: typeof User }[] = [
-    { key: 'profile', label: 'Бүртгэл', icon: User },
     { key: 'orders', label: 'Захиалга', icon: Package },
+    { key: 'profile', label: 'Бүртгэл', icon: User },
     { key: 'address', label: 'Хаяг', icon: MapPin },
     { key: 'notifications', label: 'Мэдэгдэл', icon: Bell },
 ];
@@ -61,7 +61,7 @@ const STATUS_LABELS: Record<string, { label: string; color: string; bg: string }
 };
 
 export function CustomerDashboard({ isOpen, onClose, business, phone, onOpenMembership, onLogin }: CustomerDashboardProps) {
-    const [activeTab, setActiveTab] = useState<TabKey>('profile');
+    const [activeTab, setActiveTab] = useState<TabKey>('orders');
     const [memberships, setMemberships] = useState<MembershipDetail[]>([]);
     const [orders, setOrders] = useState<OrderItem[]>([]);
     const [address, setAddress] = useState<CustomerAddress>({
