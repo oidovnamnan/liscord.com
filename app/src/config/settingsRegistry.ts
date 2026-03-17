@@ -17,5 +17,6 @@ export const SettingsRegistry: Record<string, React.LazyExoticComponent<any>> = 
     'cargo_fee': lazy(() => import('../pages/Settings/components/CargoSettings').then(m => ({ default: m.CargoSettings }))),
     'sourcing': lazy(() => import('../pages/Settings/components/SourcingSettings').then(m => ({ default: m.SourcingSettings }))),
     'returns': lazy(() => import('../pages/Settings/components/ReturnsSettings').then(m => ({ default: m.ReturnsSettings }))),
+    'stock-inquiry': lazy(() => import('../pages/Settings/components/StockInquirySettings').then(m => ({ default: m.StockInquirySettings }))),
 
 };

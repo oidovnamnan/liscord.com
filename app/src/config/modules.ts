@@ -227,6 +227,7 @@ export const LISCORD_MODULES: AppModule[] = [
         isCore: false,
         category: 'operations',
         hasSettings: true,
+        settingsRoute: '/app/settings?tab=stock-inquiry',
         isFree: false,
         plans: [
             { id: 'monthly', name: '30 хоног', price: 15000, durationDays: 30 },
