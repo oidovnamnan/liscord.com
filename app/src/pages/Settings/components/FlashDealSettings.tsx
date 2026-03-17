@@ -11,6 +11,8 @@ interface FlashProduct {
     flashPrice: number;
     maxQuantity: number;
     soldCount: number;
+    durationHours: number;
+    endsAt?: string;
     addedAt?: string;
 }
 
@@ -76,16 +78,32 @@ export function FlashDealSettings({ bizId }: { bizId: string }) {
         try {
             const { doc: docRef, setDoc } = await import('firebase/firestore');
             const now = new Date();
-            const endsAt = new Date(now.getTime() + config.durationHours * 60 * 60 * 1000);
+            // Calculate per-product endsAt
+            const productsWithEnds = config.products.map(p => {
+                // If product already has a future endsAt, keep it; otherwise calculate new
+                const existingEnd = p.endsAt ? new Date(p.endsAt) : null;
+                const keepExisting = existingEnd && existingEnd.getTime() > now.getTime();
+                const endsAt = keepExisting
+                    ? existingEnd!.toISOString()
+                    : new Date(now.getTime() + p.durationHours * 60 * 60 * 1000).toISOString();
+                return { ...p, endsAt };
+            });
+            // Global endsAt = latest product endsAt (for backward compat)
+            const latestEnd = productsWithEnds.reduce((max, p) => {
+                const t = new Date(p.endsAt!).getTime();
+                return t > max ? t : max;
+            }, now.getTime());
             await setDoc(docRef(db, 'businesses', bizId, 'module_settings', 'storefront'), {
                 flashDeal: {
                     enabled: config.enabled,
                     title: config.title,
                     startsAt: Timestamp.fromDate(now),
-                    endsAt: Timestamp.fromDate(endsAt),
-                    products: config.products,
+                    endsAt: Timestamp.fromDate(new Date(latestEnd)),
+                    products: productsWithEnds,
                 },
             }, { merge: true });
+            // Update local state with endsAt values
+            setConfig(prev => ({ ...prev, products: productsWithEnds }));
             toast.success('Flash Deal тохиргоо хадгалагдлаа!');
         } catch (e) {
             console.error(e);
@@ -109,6 +127,7 @@ export function FlashDealSettings({ bizId }: { bizId: string }) {
                 flashPrice,
                 maxQuantity: 10,
                 soldCount: 0,
+                durationHours: config.durationHours,
                 addedAt: new Date().toISOString(),
             }],
         }));
@@ -278,7 +297,7 @@ export function FlashDealSettings({ bizId }: { bizId: string }) {
                                                 <span className="fds-product-flash">{fp.flashPrice.toLocaleString()}₮</span>
                                                 {discount > 0 && <span className="fds-product-badge">-{discount}%</span>}
                                             </div>
-                                            <div className="fds-product-inputs">
+                                            <div className="fds-product-inputs" style={{ gridTemplateColumns: '1fr 1fr 1fr' }}>
                                                 <div>
                                                     <label>Flash үнэ (₮)</label>
                                                     <input
@@ -295,7 +314,22 @@ export function FlashDealSettings({ bizId }: { bizId: string }) {
                                                         onChange={e => updateProduct(fp.productId, 'maxQuantity', Number(e.target.value))}
                                                     />
                                                 </div>
+                                                <div>
+                                                    <label>⏱️ Хугацаа (ц)</label>
+                                                    <input
+                                                        type="number"
+                                                        min={1}
+                                                        max={168}
+                                                        value={fp.durationHours || config.durationHours}
+                                                        onChange={e => updateProduct(fp.productId, 'durationHours', Math.max(1, Number(e.target.value)))}
+                                                    />
+                                                </div>
                                             </div>
+                                            {fp.endsAt && new Date(fp.endsAt) > new Date() && (
+                                                <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)', marginTop: 4 }}>
+                                                    ⏰ {new Date(fp.endsAt).toLocaleString('mn-MN')} хүртэл
+                                                </div>
+                                            )}
                                         </div>
                                     );
                                 })}

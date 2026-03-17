@@ -1354,6 +1354,30 @@
     50% { opacity: 0.2; }
 }
 
+/* Per-card countdown timer */
+.fd-card-timer {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    margin-bottom: 6px;
+    color: rgba(255, 255, 255, 0.5);
+}
+.fd-card-timer .fd-flip-digit {
+    min-width: 16px;
+    height: 20px;
+    font-size: 0.65rem;
+    border-radius: 4px;
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+.fd-flip-sep-sm {
+    color: rgba(255, 255, 255, 0.3);
+    font-weight: 800;
+    font-size: 0.6rem;
+    margin: 0 1px;
+    animation: fdBlink 1s step-end infinite;
+}
+
 /* ── Product Cards ── */
 .fd-products {
     position: relative;

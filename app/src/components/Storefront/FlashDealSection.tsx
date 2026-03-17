@@ -8,6 +8,8 @@ export interface FlashDealProduct {
     flashPrice: number;
     maxQuantity: number;
     soldCount: number;
+    durationHours?: number;
+    endsAt?: string;
     addedAt?: string;
 }
 
@@ -25,9 +27,11 @@ interface FlashDealSectionProps {
     onProductClick?: (product: Product) => void;
 }
 
-function useCountdown(targetDate: Date) {
+/** Per-card countdown hook */
+function useCardCountdown(endsAt: Date | null) {
     const calcTimeLeft = useCallback(() => {
-        const diff = targetDate.getTime() - Date.now();
+        if (!endsAt) return { hours: 0, minutes: 0, seconds: 0, expired: true };
+        const diff = endsAt.getTime() - Date.now();
         if (diff <= 0) return { hours: 0, minutes: 0, seconds: 0, expired: true };
         return {
             hours: Math.floor(diff / (1000 * 60 * 60)),
@@ -35,7 +39,7 @@ function useCountdown(targetDate: Date) {
             seconds: Math.floor((diff / 1000) % 60),
             expired: false,
         };
-    }, [targetDate]);
+    }, [endsAt]);
 
     const [timeLeft, setTimeLeft] = useState(calcTimeLeft);
 
@@ -52,18 +56,34 @@ function FlipDigit({ value }: { value: string }) {
     return <span className="fd-flip-digit">{value}</span>;
 }
 
-export function FlashDealSection({ config, allProducts, onProductClick }: FlashDealSectionProps) {
-    const { hours, minutes, seconds, expired } = useCountdown(config.endsAt);
-    const now = new Date();
-
-
-    if (!config.enabled) return null;
+/** Per-card countdown display */
+function CardCountdown({ endsAt }: { endsAt: Date }) {
+    const { hours, minutes, seconds, expired } = useCardCountdown(endsAt);
     if (expired) return null;
-
     const pad = (n: number) => String(n).padStart(2, '0');
     const h = pad(hours);
     const m = pad(minutes);
     const s = pad(seconds);
+
+    return (
+        <div className="fd-card-timer">
+            <Clock size={11} />
+            <FlipDigit value={h[0]} />
+            <FlipDigit value={h[1]} />
+            <span className="fd-flip-sep-sm">:</span>
+            <FlipDigit value={m[0]} />
+            <FlipDigit value={m[1]} />
+            <span className="fd-flip-sep-sm">:</span>
+            <FlipDigit value={s[0]} />
+            <FlipDigit value={s[1]} />
+        </div>
+    );
+}
+
+export function FlashDealSection({ config, allProducts, onProductClick }: FlashDealSectionProps) {
+    const now = new Date();
+
+    if (!config.enabled) return null;
 
     const handleAddToCart = (e: React.MouseEvent, product: Product, flashPrice: number) => {
         e.stopPropagation();
@@ -78,9 +98,13 @@ export function FlashDealSection({ config, allProducts, onProductClick }: FlashD
         .map(fp => {
             const product = allProducts.find(p => p.id === fp.productId);
             if (!product) return null;
-            return { ...fp, product };
+            // Per-product expiry check
+            const productEndsAt = fp.endsAt ? new Date(fp.endsAt) : config.endsAt;
+            const isExpired = productEndsAt.getTime() <= now.getTime();
+            if (isExpired) return null;
+            return { ...fp, product, productEndsAt };
         })
-        .filter(Boolean) as (FlashDealProduct & { product: Product })[];
+        .filter(Boolean) as (FlashDealProduct & { product: Product; productEndsAt: Date })[];
 
     if (dealProducts.length === 0) return null;
 
@@ -101,7 +125,7 @@ export function FlashDealSection({ config, allProducts, onProductClick }: FlashD
             <div className="fd-glow fd-glow-1" />
             <div className="fd-glow fd-glow-2" />
 
-            {/* Premium Header */}
+            {/* Header — title only, no global timer */}
             <div className="fd-header">
                 <div className="fd-title-row">
                     <div className="fd-icon-pulse">
@@ -109,22 +133,12 @@ export function FlashDealSection({ config, allProducts, onProductClick }: FlashD
                     </div>
                     <h2 className="fd-title">{config.title || 'FLASH DEAL'}</h2>
                 </div>
-                <div className="fd-flip-timer">
-                    <FlipDigit value={h[0]} />
-                    <FlipDigit value={h[1]} />
-                    <span className="fd-flip-sep">:</span>
-                    <FlipDigit value={m[0]} />
-                    <FlipDigit value={m[1]} />
-                    <span className="fd-flip-sep">:</span>
-                    <FlipDigit value={s[0]} />
-                    <FlipDigit value={s[1]} />
-                </div>
             </div>
 
             {/* Product cards carousel */}
             <div className="fd-products" onScroll={handleScroll}>
                 {dealProducts.map(deal => {
-                    const { product, flashPrice, maxQuantity, soldCount } = deal;
+                    const { product, flashPrice, maxQuantity, soldCount, productEndsAt } = deal;
                     const originalPrice = product.pricing?.salePrice || 0;
                     const discountPercent = originalPrice > 0
                         ? Math.round((1 - flashPrice / originalPrice) * 100)
@@ -169,6 +183,9 @@ export function FlashDealSection({ config, allProducts, onProductClick }: FlashD
                                         </span>
                                     )}
                                 </div>
+
+                                {/* Per-product countdown */}
+                                <CardCountdown endsAt={productEndsAt} />
 
                                 <div className="fd-progress-wrap">
                                     <div className="fd-progress-bar">
