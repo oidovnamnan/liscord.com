@@ -146,7 +146,7 @@ export function StockInquiryPage() {
     };
 
     const filtered = filter === 'active'
-        ? inquiries.filter(i => ['pending', 'checking'].includes(i.status))
+        ? inquiries.filter(i => ['pending', 'checking', 'expired'].includes(i.status))
         : inquiries;
 
     const formatTime = (date: Date | { toDate?: () => Date }) => {
@@ -185,8 +185,12 @@ export function StockInquiryPage() {
                         <span className="sinq-stat-num">{inquiries.filter(i => i.status === 'checking').length}</span>
                         <span className="sinq-stat-label">Шалгаж байна</span>
                     </div>
+                    <div className="sinq-stat expired">
+                        <span className="sinq-stat-num">{inquiries.filter(i => i.status === 'expired').length}</span>
+                        <span className="sinq-stat-label">Хоцорсон</span>
+                    </div>
                     <div className="sinq-stat done">
-                        <span className="sinq-stat-num">{inquiries.filter(i => !['pending', 'checking'].includes(i.status)).length}</span>
+                        <span className="sinq-stat-num">{inquiries.filter(i => ['no_change', 'updated', 'inactive'].includes(i.status)).length}</span>
                         <span className="sinq-stat-label">Шийдсэн</span>
                     </div>
                 </div>

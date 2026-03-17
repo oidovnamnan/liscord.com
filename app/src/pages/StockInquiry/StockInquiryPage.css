@@ -156,6 +156,7 @@
 
 .sinq-stat.pending .sinq-stat-num { color: #fef08a; }
 .sinq-stat.checking .sinq-stat-num { color: #bfdbfe; }
+.sinq-stat.expired .sinq-stat-num { color: #fed7aa; }
 .sinq-stat.done .sinq-stat-num { color: #bbf7d0; }
 
 /* ═══════════════════════════════════════
