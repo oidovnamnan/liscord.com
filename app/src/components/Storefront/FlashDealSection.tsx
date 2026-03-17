@@ -123,9 +123,6 @@ export function FlashDealSection({ config, allProducts, onProductClick }: FlashD
         <div className="fd-wrapper">
             {/* Title — OUTSIDE the dark section */}
             <div className="fd-header-outer">
-                <div className="fd-icon-pulse">
-                    <Zap size={16} />
-                </div>
                 <h2 className="fd-title-outer">{config.title || 'FLASH DEAL'}</h2>
             </div>
 
