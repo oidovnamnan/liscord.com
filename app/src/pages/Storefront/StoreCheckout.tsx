@@ -266,14 +266,7 @@ export function StoreCheckout() {
                         }
                     );
                     setQpayInvoice(invoice);
-
-                    // Save invoice_id to order for callback verification
-                    if (invoice.invoice_id) {
-                        const { doc: firestoreDoc, updateDoc } = await import('firebase/firestore');
-                        await updateDoc(firestoreDoc(db, `businesses/${business.id}/orders`, newId), {
-                            qpayInvoiceId: invoice.invoice_id,
-                        });
-                    }
+                    // qpayInvoiceId is saved server-side by qpay-invoice API
                 } catch (e) {
                     console.error('QPay generation failed', e);
                 }
@@ -324,26 +317,14 @@ export function StoreCheckout() {
                         qpayUsername: qpaySettings.username,
                         qpayPassword: qpaySettings.password,
                         purpose: 'product',
+                        bizId: business.id,
+                        orderId: successId,
                     }),
                 });
                 const data = await resp.json();
                 if (data.paid && !stopped) {
                     stopped = true;
-                    // Update Firestore directly as fallback (if callback didn't already)
-                    try {
-                        const orderRef = doc(db, `businesses/${business.id}/orders`, successId);
-                        const totalAmount = items.reduce((s, i) => s + i.price * i.quantity, 0);
-                        await updateDoc(orderRef, {
-                            paymentStatus: 'paid',
-                            paymentVerifiedAt: serverTimestamp(),
-                            paymentVerifiedBy: 'qpay_poll',
-                            'financials.paidAmount': totalAmount,
-                            'financials.balanceDue': 0,
-                        });
-                    } catch (e) {
-                        console.error('Failed to update order payment status:', e);
-                    }
-                    // Also update UI immediately
+                    // Server-side already updated order via Admin SDK
                     setPaymentConfirmed(true);
                     toast.success('Төлбөр баталгаажлаа! 🎉');
                 }
