@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { collection, addDoc, onSnapshot, query, orderBy, getDocs, Timestamp, doc, updateDoc, limit } from 'firebase/firestore';
+import { collection, addDoc, onSnapshot, query, where, orderBy, getDocs, Timestamp, doc, updateDoc, limit } from 'firebase/firestore';
 import { db } from '../../services/firebase';
 import { Clock, Package, AlertTriangle, CheckCircle, XCircle, RefreshCw, Loader2 } from 'lucide-react';
 import type { StockInquiryStatus } from '../../types';
@@ -30,7 +30,7 @@ export function StockInquiryPopup({ businessId, cartItems, customerPhone, timeou
     const [changes, setChanges] = useState<{ newPrice?: number; newName?: string; note?: string } | null>(null);
     const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-    // Step 1: Check which items haven't been ordered in `inactiveDays`
+    // Step 1: Check which items haven't had a resolved stock inquiry within `inactiveDays`
     useEffect(() => {
         async function checkActivity() {
             const cutoff = new Date();
@@ -40,40 +40,45 @@ export function StockInquiryPopup({ businessId, cartItems, customerPhone, timeou
 
             for (const item of cartItems) {
                 try {
-                    // Query recent orders — no where on 'items' (avoids composite index requirement)
-                    const ordersRef = collection(db, `businesses/${businessId}/orders`);
+                    // Query stockInquiries for this product — check if resolved recently
+                    const inquiriesRef = collection(db, `businesses/${businessId}/stockInquiries`);
                     const q = query(
-                        ordersRef,
+                        inquiriesRef,
+                        where('productId', '==', item.productId),
                         orderBy('createdAt', 'desc'),
-                        limit(50)
+                        limit(1)
                     );
                     const snap = await getDocs(q);
 
-                    let recentlyOrdered = false;
-                    for (const d of snap.docs) {
-                        const data = d.data();
-                        const createdAt = data.createdAt?.toDate?.() || new Date(0);
-                        if (createdAt < cutoff) break; // Past cutoff, no need to check older
-
-                        const orderItems = data.items || [];
-                        if (orderItems.some((oi: { productId: string }) => oi.productId === item.productId)) {
-                            recentlyOrdered = true;
-                            break;
-                        }
-                    }
-
-                    if (!recentlyOrdered) {
+                    if (snap.empty) {
+                        // Never inquired — needs inquiry (new product)
                         needInquiry.push(item);
+                    } else {
+                        const lastInquiry = snap.docs[0].data();
+                        const lastStatus = lastInquiry.status as StockInquiryStatus;
+                        const createdAt = lastInquiry.createdAt?.toDate?.() || new Date(0);
+
+                        // If last inquiry is still pending/checking — don't create duplicate
+                        if (['pending', 'checking'].includes(lastStatus)) {
+                            // Active inquiry exists, skip this product
+                            continue;
+                        }
+
+                        // If last resolved inquiry is older than inactiveDays — needs re-inquiry
+                        if (createdAt < cutoff) {
+                            needInquiry.push(item);
+                        }
+                        // Otherwise: recently resolved, no need
                     }
                 } catch (e) {
-                    console.warn('[StockInquiry] Failed to check order activity:', e);
-                    // On error, assume product needs inquiry (safer than skipping)
+                    console.warn('[StockInquiry] Failed to check inquiry history:', e);
+                    // On error, assume product needs inquiry (safer)
                     needInquiry.push(item);
                 }
             }
 
             if (needInquiry.length === 0) {
-                // All items are recently ordered, no inquiry needed
+                // All items have recent inquiries, no popup needed
                 onProceed();
                 return;
             }
@@ -187,7 +192,7 @@ export function StockInquiryPopup({ businessId, cartItems, customerPhone, timeou
                 </div>
 
                 <p className="sinq-popup-desc">
-                    Доорх бараа сүүлийн {inactiveDays} хоногт захиалга ороогүй байна. Барааны үлдэгдэл болон мэдээллийг лавлаж байна, түр хүлээнэ үү.
+                    Доорх бараанд өмнө нь нөөц шалгуулах хүсэлт гаргаагүй, эсвэл {inactiveDays} хоногоос удсан байна. Барааны үлдэгдэл болон мэдээллийг лавлаж байна, түр хүлээнэ үү.
                 </p>
 
                 {/* Products needing inquiry */}
