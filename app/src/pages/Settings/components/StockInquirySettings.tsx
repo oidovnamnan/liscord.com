@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
-import { SearchCheck, Save, Info, Loader2 } from 'lucide-react';
+import { SearchCheck, Save, Info, Loader2, Settings, Clock, CalendarDays } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { db } from '../../../services/firebase';
+import '../components/FlashDealSettings.css';
 
 interface StockInquiryConfig {
     enabled: boolean;
@@ -56,8 +57,8 @@ export function StockInquirySettings({ bizId }: { bizId: string }) {
     if (loading) {
         return (
             <div className="settings-section animate-fade-in">
-                <div style={{ textAlign: 'center', padding: 40 }}>
-                    <Loader2 size={24} className="animate-spin" style={{ color: 'var(--primary)' }} />
+                <div className="flex-center" style={{ minHeight: '200px' }}>
+                    <Loader2 className="animate-spin" size={24} />
                 </div>
             </div>
         );
@@ -65,95 +66,121 @@ export function StockInquirySettings({ bizId }: { bizId: string }) {
 
     return (
         <div className="settings-section animate-fade-in">
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
-                <div className="icon-badge" style={{ background: 'var(--primary)', color: 'white' }}><SearchCheck size={20} /></div>
-                <div>
-                    <h2 style={{ margin: 0 }}>Бараа лавлагааны тохиргоо</h2>
-                    <p style={{ margin: '4px 0 0', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-                        Захиалга хийх үед барааны үлдэгдэл, үнийн мэдээллийг лавлах
-                    </p>
-                </div>
-            </div>
-
-            {/* Enable toggle */}
-            <div className="settings-card" style={{ padding: 24, marginTop: 20, borderRadius: 16 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <div>
-                        <div style={{ fontWeight: 700, fontSize: '0.95rem' }}>Бараа лавлагаа идэвхжүүлэх</div>
-                        <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginTop: 4 }}>
-                            Идэвхгүй бараа захиалах үед бизнесээс үлдэгдэл лавлана
+            {/* ── Hero Header (FDS style — blue) ── */}
+            <div className="fds-hero" style={{ background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 40%, #1d4ed8 100%)', boxShadow: '0 8px 32px rgba(59, 130, 246, 0.25)' }}>
+                <div className="fds-hero-top">
+                    <div className="fds-hero-left">
+                        <div className="fds-hero-icon">
+                            <SearchCheck size={24} />
+                        </div>
+                        <div>
+                            <h3 className="fds-hero-title">Бараа лавлагааны тохиргоо</h3>
+                            <div className="fds-hero-desc">Захиалга хийх үед барааны үлдэгдэл, үнийн мэдээллийг лавлах</div>
                         </div>
                     </div>
-                    <label className="toggle">
-                        <input
-                            type="checkbox"
-                            checked={config.enabled}
-                            onChange={e => setConfig(c => ({ ...c, enabled: e.target.checked }))}
-                        />
-                        <span className="toggle-slider" />
+                    <label className="fds-toggle">
+                        <input type="checkbox" checked={config.enabled} onChange={e => setConfig(c => ({ ...c, enabled: e.target.checked }))} />
+                        <span className="fds-toggle-track" />
                     </label>
                 </div>
             </div>
 
-            {/* Settings */}
             {config.enabled && (
-                <div className="settings-card" style={{ padding: 24, marginTop: 16, borderRadius: 16 }}>
-                    <h4 style={{ margin: '0 0 16px', fontSize: '0.95rem', fontWeight: 700 }}>⚙️ Лавлагааны тохиргоо</h4>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-                        <div className="input-group">
-                            <label className="input-label">Идэвхгүй хоног (inactiveDays)</label>
-                            <input
-                                type="number"
-                                className="input"
-                                value={config.inactiveDays}
-                                onChange={e => setConfig(c => ({ ...c, inactiveDays: Math.max(1, parseInt(e.target.value) || 30) }))}
-                                min={1}
-                                max={365}
-                                style={{ height: 44 }}
-                            />
-                            <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: 4 }}>
-                                Энэ хоногийн дотор захиалга ороогүй бараанд лавлагаа асуулга гарна
-                            </div>
+                <>
+                    {/* ── Settings Card ── */}
+                    <div className="fds-card">
+                        <div className="fds-card-title">
+                            <Settings size={16} />
+                            Лавлагааны тохиргоо
                         </div>
-                        <div className="input-group">
-                            <label className="input-label">Хүлээх хугацаа (секунд)</label>
-                            <input
-                                type="number"
-                                className="input"
-                                value={config.timeoutSeconds}
-                                onChange={e => setConfig(c => ({ ...c, timeoutSeconds: Math.max(10, parseInt(e.target.value) || 60) }))}
-                                min={10}
-                                max={300}
-                                style={{ height: 44 }}
-                            />
-                            <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: 4 }}>
-                                Хариу ирэхгүй бол автоматаар захиалга үргэлжлүүлнэ
+
+                        <div className="fds-row">
+                            <div>
+                                <label className="fds-label">
+                                    <CalendarDays size={12} style={{ verticalAlign: 'middle', marginRight: 4 }} />
+                                    Идэвхгүй хоног
+                                </label>
+                                <div className="fds-duration-presets">
+                                    {[7, 14, 30, 60, 90].map(d => (
+                                        <button
+                                            key={d}
+                                            className={`fds-duration-btn ${config.inactiveDays === d ? 'active' : ''}`}
+                                            onClick={() => setConfig(c => ({ ...c, inactiveDays: d }))}
+                                        >
+                                            {d} хоног
+                                        </button>
+                                    ))}
+                                    <div className="fds-duration-custom">
+                                        <input
+                                            type="number"
+                                            min={1}
+                                            max={365}
+                                            value={config.inactiveDays}
+                                            onChange={e => setConfig(c => ({ ...c, inactiveDays: Math.max(1, parseInt(e.target.value) || 30) }))}
+                                        />
+                                        <span>хоног</span>
+                                    </div>
+                                </div>
+                                <div className="fds-slider-info">
+                                    Энэ хоногийн дотор захиалга ороогүй бараанд лавлагаа асуулга гарна
+                                </div>
+                            </div>
+                            <div>
+                                <label className="fds-label">
+                                    <Clock size={12} style={{ verticalAlign: 'middle', marginRight: 4 }} />
+                                    Хүлээх хугацаа
+                                </label>
+                                <div className="fds-duration-presets">
+                                    {[30, 60, 120, 180, 300].map(s => (
+                                        <button
+                                            key={s}
+                                            className={`fds-duration-btn ${config.timeoutSeconds === s ? 'active' : ''}`}
+                                            onClick={() => setConfig(c => ({ ...c, timeoutSeconds: s }))}
+                                        >
+                                            {s}с
+                                        </button>
+                                    ))}
+                                    <div className="fds-duration-custom">
+                                        <input
+                                            type="number"
+                                            min={10}
+                                            max={600}
+                                            value={config.timeoutSeconds}
+                                            onChange={e => setConfig(c => ({ ...c, timeoutSeconds: Math.max(10, parseInt(e.target.value) || 60) }))}
+                                        />
+                                        <span>сек</span>
+                                    </div>
+                                </div>
+                                <div className="fds-slider-info">
+                                    Хариу ирэхгүй бол автоматаар захиалга үргэлжлүүлнэ
+                                </div>
                             </div>
                         </div>
                     </div>
 
-                    {/* Info box */}
-                    <div style={{ marginTop: 20, padding: 16, background: 'rgba(108,92,231,0.04)', borderRadius: 12, border: '1px solid rgba(108,92,231,0.1)' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8, color: 'var(--primary)', fontWeight: 700, fontSize: '0.78rem' }}>
-                            <Info size={14} /> ХЭРХЭН АЖИЛЛАДАГ
+                    {/* ── How it works card ── */}
+                    <div className="fds-card" style={{ background: 'rgba(59, 130, 246, 0.03)', borderColor: 'rgba(59, 130, 246, 0.12)' }}>
+                        <div className="fds-card-title" style={{ color: '#3b82f6' }}>
+                            <Info size={16} />
+                            ХЭРХЭН АЖИЛЛАДАГ
                         </div>
-                        <div style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', lineHeight: 1.6 }}>
+                        <div style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', lineHeight: 1.7 }}>
                             <div>1️⃣ Захиалагч checkout дарахад сагсан дахь бараа бүрийн сүүлийн захиалгыг шалгана</div>
                             <div>2️⃣ <strong>{config.inactiveDays} хоног</strong>+ захиалга ороогүй эсвэл шинэ бараа бол popup гарна</div>
                             <div>3️⃣ Бизнес руу лавлагаа илгээгдэж, <strong>{config.timeoutSeconds} секунд</strong> дотор хариу хүлээнэ</div>
                             <div>4️⃣ Хугацаа дуусвал автоматаар захиалга үргэлжлүүлнэ</div>
                         </div>
                     </div>
-                </div>
-            )}
 
-            {/* Save */}
-            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 20 }}>
-                <button className="btn btn-primary gradient-btn" onClick={handleSave} disabled={saving} style={{ gap: 8, padding: '0 28px' }}>
-                    <Save size={16} />
-                    {saving ? 'Хадгалж байна...' : 'Хадгалах'}
-                </button>
-            </div>
+                    {/* ── Save Button ── */}
+                    <div className="fds-save-wrap">
+                        <button className="fds-save-btn" onClick={handleSave} disabled={saving} style={{ background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 50%, #1d4ed8 100%)', boxShadow: '0 6px 24px rgba(59, 130, 246, 0.3)' }}>
+                            {saving ? <Loader2 className="animate-spin" size={18} /> : <Save size={18} />}
+                            Хадгалах
+                        </button>
+                    </div>
+                </>
+            )}
         </div>
     );
 }
