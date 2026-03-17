@@ -380,7 +380,21 @@ export function Sidebar() {
 
                 {/* Navigation */}
                 <nav className="sidebar-nav">
-                    {/* Dashboard Header Link */}
+                    {/* App Store - top of sidebar, hidden during impersonation */}
+                    {!isImpersonating && (
+                        <NavLink
+                            to="/app/app-store"
+                            className={`sidebar-link ${location.pathname.startsWith('/app/app-store') ? 'active' : ''}`}
+                            onClick={() => sidebarOpen && toggleSidebar()}
+                            title={sidebarCollapsed ? 'Апп Стор' : undefined}
+                        >
+                            <Blocks size={20} />
+                            {!sidebarCollapsed && <span>Апп Стор</span>}
+                            {location.pathname.startsWith('/app/app-store') && <div className="sidebar-link-indicator" />}
+                        </NavLink>
+                    )}
+
+                    {/* Dashboard */}
                     <NavLink
                         to="/app"
                         className={`sidebar-link ${location.pathname === '/app' ? 'active' : ''}`}
@@ -435,20 +449,6 @@ export function Sidebar() {
                             <Settings size={20} />
                             {!sidebarCollapsed && <span>Тохиргоо</span>}
                             {location.pathname.startsWith('/app/settings') && <div className="sidebar-link-indicator" />}
-                        </NavLink>
-                    )}
-
-                    {/* App Store - hidden during impersonation */}
-                    {!isImpersonating && (
-                        <NavLink
-                            to="/app/app-store"
-                            className={`sidebar-link ${location.pathname.startsWith('/app/app-store') ? 'active' : ''}`}
-                            onClick={() => sidebarOpen && toggleSidebar()}
-                            title={sidebarCollapsed ? 'Апп Стор' : undefined}
-                        >
-                            <Blocks size={20} />
-                            {!sidebarCollapsed && <span>Апп Стор</span>}
-                            {location.pathname.startsWith('/app/app-store') && <div className="sidebar-link-indicator" />}
                         </NavLink>
                     )}
 
