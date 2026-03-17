@@ -442,6 +442,7 @@ export function ThemeMinimal({ business }: { business: Business }) {
                     onClose={() => { setShowMembershipModal(false); setMembershipTarget(null); }}
                     onVerify={verifyMembership}
                     business={business}
+                    customerPhone={customerPhone}
                 />
             )}
 
@@ -479,13 +480,16 @@ function MembershipModal({
     onClose,
     onVerify,
     business,
+    customerPhone: loggedInPhone,
 }: {
     product: StorefrontProduct;
     onClose: () => void;
     onVerify: (phone: string) => Promise<boolean>;
     business: Business;
+    customerPhone?: string;
 }) {
-    const [phone, setPhone] = useState('');
+    const [phone, setPhone] = useState(loggedInPhone || '');
+    const isAlreadyVerified = !!loggedInPhone;
     const [checking, setChecking] = useState(false);
     const [error, setError] = useState('');
     const [success, setSuccess] = useState(false);
@@ -522,6 +526,31 @@ function MembershipModal({
         for (let i = 0; i < 6; i++) code += chars.charAt(Math.floor(Math.random() * chars.length));
         return code;
     };
+
+    // Auto-check membership for logged-in users (skip OTP entirely)
+    useEffect(() => {
+        if (!isAlreadyVerified || !loggedInPhone) return;
+        let cancelled = false;
+        (async () => {
+            setChecking(true);
+            try {
+                const hasMembership = await onVerify(loggedInPhone);
+                if (cancelled) return;
+                if (hasMembership) {
+                    setSuccess(true);
+                    setTimeout(() => onClose(), 1500);
+                } else {
+                    // No membership → go straight to payment
+                    setShowPayment(true);
+                }
+            } catch {
+                if (!cancelled) setShowPayment(true);
+            } finally {
+                if (!cancelled) setChecking(false);
+            }
+        })();
+        return () => { cancelled = true; };
+    }, []);
 
     // Step 1: Send OTP to phone
     const handleSendOTP = async () => {
