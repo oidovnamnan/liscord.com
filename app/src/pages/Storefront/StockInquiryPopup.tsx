@@ -167,7 +167,8 @@ export function StockInquiryPopup({ businessId, cartItems, customerPhone, timeou
                 <div className="sinq-popup-card">
                     <div style={{ textAlign: 'center', padding: '40px 20px' }}>
                         <Loader2 size={32} className="sinq-spin" style={{ color: 'var(--primary)' }} />
-                        <p style={{ marginTop: 12, fontWeight: 600, fontSize: '0.9rem' }}>Барааны мэдээлэл шалгаж байна...</p>
+                        <p style={{ marginTop: 12, fontWeight: 700, fontSize: '0.95rem' }}>Барааны үлдэгдэл шалгаж байна...</p>
+                        <p style={{ marginTop: 6, fontSize: '0.82rem', color: 'var(--text-muted)' }}>Түр хүлээнэ үү</p>
                     </div>
                 </div>
             </div>
@@ -182,11 +183,11 @@ export function StockInquiryPopup({ businessId, cartItems, customerPhone, timeou
                 {/* Header */}
                 <div className="sinq-popup-header">
                     <AlertTriangle size={20} style={{ color: '#f59e0b' }} />
-                    <h3>Бараа лавлагаа</h3>
+                    <h3>Барааны үлдэгдэл лавлагаа</h3>
                 </div>
 
                 <p className="sinq-popup-desc">
-                    Доорх бараа сүүлийн {inactiveDays} хоногт захиалга ороогүй тул мэдээлэл өөрчлөгдсөн байж болзошгүй. Лавлагаа илгээгдэж байна.
+                    Доорх бараа сүүлийн {inactiveDays} хоногт захиалга ороогүй байна. Барааны үлдэгдэл болон мэдээллийг лавлаж байна, түр хүлээнэ үү.
                 </p>
 
                 {/* Products needing inquiry */}
@@ -223,8 +224,8 @@ export function StockInquiryPopup({ businessId, cartItems, customerPhone, timeou
                                     <text x="28" y="33" textAnchor="middle" fontSize="14" fontWeight="900" fill="var(--text-primary)">{secondsLeft}</text>
                                 </svg>
                             </div>
-                            <p style={{ fontWeight: 600, color: '#f59e0b' }}>⏳ Хариу хүлээж байна...</p>
-                            <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                            <p style={{ fontWeight: 700, color: '#f59e0b' }}>⏳ Барааны үлдэгдэл лавлаж байна...</p>
+                            <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginTop: 4 }}>
                                 {secondsLeft} секундын дараа автоматаар үргэлжлүүлнэ
                             </p>
                         </>
