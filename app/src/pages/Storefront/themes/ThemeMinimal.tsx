@@ -1012,8 +1012,14 @@ function MembershipModal({
                         </button>
                         {error && <div className="sf-membership-error">{error}</div>}
                     </div>
+                ) : isAlreadyVerified ? (
+                    /* Logged-in user — auto-checking membership, will auto-redirect to payment */
+                    <div className="sf-membership-waiting" style={{ padding: '30px 0' }}>
+                        <div className="sf-membership-spinner" />
+                        Гишүүнчлэл шалгаж байна...
+                    </div>
                 ) : (
-                    /* ═══ Phone + OTP verification ═══ */
+                    /* ═══ Phone + OTP verification (non-logged-in users only) ═══ */
                     <>
                         {!otpSent ? (
                             /* Step 1: Phone input */
