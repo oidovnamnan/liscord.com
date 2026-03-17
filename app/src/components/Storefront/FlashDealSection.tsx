@@ -120,19 +120,24 @@ export function FlashDealSection({ config, allProducts, onProductClick }: FlashD
         setActiveIdx(Math.round(el.scrollLeft / (cardW * 2)));
     };
 
-    // Slow auto-scroll when more than 2 products
+    const shouldAutoScroll = totalCards >= 2;
+
+    // Slow auto-scroll — duplicate cards for seamless loop
     useEffect(() => {
-        if (totalCards <= 2 || !scrollRef.current) return;
+        if (!shouldAutoScroll || !scrollRef.current) return;
         const el = scrollRef.current;
-        const speed = 0.6; // pixels per frame (~36px/sec at 60fps)
+        // Disable scroll-snap for auto-scroll
+        el.style.scrollSnapType = 'none';
+        const speed = 0.5; // pixels per frame (~30px/sec at 60fps)
         let animId: number;
 
         const step = () => {
             if (!autoScrollPaused.current && el) {
                 el.scrollLeft += speed;
-                // Loop: when reached end, jump back to start
-                if (el.scrollLeft >= el.scrollWidth - el.clientWidth - 1) {
-                    el.scrollLeft = 0;
+                // When we've scrolled past the first set of cards, jump back
+                const halfScroll = el.scrollWidth / 2;
+                if (el.scrollLeft >= halfScroll) {
+                    el.scrollLeft -= halfScroll;
                 }
             }
             animId = requestAnimationFrame(step);
@@ -154,7 +159,7 @@ export function FlashDealSection({ config, allProducts, onProductClick }: FlashD
             el.removeEventListener('mouseenter', pause);
             el.removeEventListener('mouseleave', resume);
         };
-    }, [totalCards]);
+    }, [shouldAutoScroll]);
 
     return (
         <div className="fd-wrapper">
@@ -170,7 +175,8 @@ export function FlashDealSection({ config, allProducts, onProductClick }: FlashD
 
             {/* Product cards carousel */}
             <div className="fd-products" ref={scrollRef} onScroll={handleScroll}>
-                {dealProducts.map(deal => {
+                {/* Render cards — duplicated for seamless auto-scroll */}
+                {(shouldAutoScroll ? [...dealProducts, ...dealProducts] : dealProducts).map((deal, idx) => {
                     const { product, flashPrice, maxQuantity, soldCount, productEndsAt } = deal;
                     const originalPrice = product.pricing?.salePrice || 0;
                     const discountPercent = originalPrice > 0
@@ -182,7 +188,7 @@ export function FlashDealSection({ config, allProducts, onProductClick }: FlashD
 
                     return (
                         <div
-                            key={product.id}
+                            key={`${product.id}-${idx}`}
                             className={`fd-card ${isSoldOut ? 'sold-out' : ''}`}
                             onClick={() => !isSoldOut && onProductClick?.(product)}
                         >
