@@ -1,9 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { collection, onSnapshot, query, orderBy, doc, updateDoc, Timestamp, where } from 'firebase/firestore';
 import { db } from '../../services/firebase';
 import { useBusinessStore, useAuthStore } from '../../store';
 import { usePermissions } from '../../hooks/usePermissions';
-import { SearchCheck, Clock, CheckCircle, XCircle, RefreshCw, Eye, Package, Phone, DollarSign, AlertTriangle } from 'lucide-react';
+import { SearchCheck, Clock, CheckCircle, XCircle, RefreshCw, Eye, Package, Phone, DollarSign, AlertTriangle, BellRing } from 'lucide-react';
 import type { StockInquiry, StockInquiryStatus } from '../../types';
 import { toast } from 'react-hot-toast';
 import './StockInquiryPage.css';
@@ -16,6 +16,33 @@ const STATUS_LABELS: Record<StockInquiryStatus, { label: string; color: string; 
     inactive: { label: 'Нөөц дууссан', color: '#ef4444', icon: '❌' },
     expired: { label: 'Хугацаа дууссан', color: '#6b7280', icon: '⏰' },
 };
+
+/** Beep sound via Web Audio API */
+function playAlertSound() {
+    try {
+        const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+        // Play two quick beeps
+        [0, 0.2].forEach(offset => {
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.frequency.value = 880;
+            osc.type = 'sine';
+            gain.gain.value = 0.3;
+            osc.start(ctx.currentTime + offset);
+            osc.stop(ctx.currentTime + offset + 0.12);
+        });
+    } catch (_) { /* no audio context */ }
+}
+
+/** Browser push notification */
+function sendBrowserNotification(title: string, body: string) {
+    if (!('Notification' in window) || Notification.permission !== 'granted') return;
+    try {
+        new Notification(title, { body, icon: '🔍', tag: 'stock-inquiry' });
+    } catch (_) { /* silent */ }
+}
 
 export function StockInquiryPage() {
     const { business } = useBusinessStore();
@@ -35,7 +62,17 @@ export function StockInquiryPage() {
     const [updateNote, setUpdateNote] = useState('');
     const [showUpdateForm, setShowUpdateForm] = useState(false);
 
-    // Real-time listener
+    // Track previous pending count for new-arrival detection
+    const prevPendingCountRef = useRef<number | null>(null);
+
+    // Request notification permission on mount
+    useEffect(() => {
+        if ('Notification' in window && Notification.permission === 'default') {
+            Notification.requestPermission();
+        }
+    }, []);
+
+    // Real-time listener with alert for new pending inquiries
     useEffect(() => {
         if (!business?.id) return;
         const q = query(
@@ -44,6 +81,30 @@ export function StockInquiryPage() {
         );
         const unsub = onSnapshot(q, (snap) => {
             const data = snap.docs.map(d => ({ id: d.id, ...d.data() } as StockInquiry));
+            const pendingCount = data.filter(i => i.status === 'pending').length;
+
+            // Detect NEW pending arrivals (not first load)
+            if (prevPendingCountRef.current !== null && pendingCount > prevPendingCountRef.current) {
+                const newCount = pendingCount - prevPendingCountRef.current;
+                playAlertSound();
+                sendBrowserNotification(
+                    '🔔 Бараа лавлагаа хүсэлт!',
+                    `${newCount} шинэ нөөц шалгах хүсэлт ирлээ!`
+                );
+                toast('🔔 Шинэ нөөц шалгах хүсэлт ирлээ!', {
+                    duration: 5000,
+                    style: { background: '#f59e0b', color: '#fff', fontWeight: 700 },
+                });
+
+                // Auto-select the first pending inquiry for fast response
+                const firstPending = data.find(i => i.status === 'pending');
+                if (firstPending) {
+                    setSelectedInquiry(firstPending);
+                    setShowUpdateForm(false);
+                }
+            }
+            prevPendingCountRef.current = pendingCount;
+
             setInquiries(data);
             setLoading(false);
 
@@ -130,6 +191,25 @@ export function StockInquiryPage() {
                     </div>
                 </div>
             </div>
+
+            {/* ── Urgent Banner ── */}
+            {inquiries.filter(i => i.status === 'pending').length > 0 && (
+                <div className="sinq-urgent-banner">
+                    <BellRing size={18} className="sinq-urgent-bell" />
+                    <span className="sinq-urgent-text">
+                        <strong>{inquiries.filter(i => i.status === 'pending').length}</strong> хүсэлт хариу хүлээж байна — хурдан хариулна уу!
+                    </span>
+                    <button
+                        className="sinq-urgent-btn"
+                        onClick={() => {
+                            const first = inquiries.find(i => i.status === 'pending');
+                            if (first) { setSelectedInquiry(first); setShowUpdateForm(false); }
+                        }}
+                    >
+                        Шалгах
+                    </button>
+                </div>
+            )}
 
             {/* Filter */}
             <div className="sinq-filter-bar">
