@@ -141,6 +141,7 @@ const MultiWarehousePage = lazy(() => import('./pages/Inventory/MultiWarehousePa
 const PackagingPage = lazy(() => import('./pages/Inventory/PackagingPage').then(m => ({ default: m.PackagingPage })));
 const SerialTrackingPage = lazy(() => import('./pages/Inventory/SerialTrackingPage').then(m => ({ default: m.SerialTrackingPage })));
 const FlashDealPage = lazy(() => import('./pages/FlashDeal/FlashDealPage').then(m => ({ default: m.FlashDealPage })));
+const FacebookMessengerPage = lazy(() => import('./pages/FacebookMessenger/FacebookMessengerPage').then(m => ({ default: m.FacebookMessengerPage })));
 
 const EBarimtPage = lazy(() => import('./pages/Finance/EBarimtPage').then(m => ({ default: m.EBarimtPage })));
 const AssetsPage = lazy(() => import('./pages/Finance/AssetsPage').then(m => ({ default: m.AssetsPage })));
@@ -687,6 +688,7 @@ export default function App() {
             <Route path="khan-bank-api" element={<ModuleGuard moduleId="khan-bank-api"><ShellPage title="Хаан Банк API" moduleId="khan-bank-api" /></ModuleGuard>} />
             <Route path="golomt-api" element={<ModuleGuard moduleId="golomt-api"><ShellPage title="Голомт Банк API" moduleId="golomt-api" /></ModuleGuard>} />
             <Route path="ebarimt-api" element={<ModuleGuard moduleId="ebarimt-api"><ShellPage title="И-Баримт API" moduleId="ebarimt-api" /></ModuleGuard>} />
+            <Route path="fb-messenger" element={<ModuleGuard moduleId="fb-messenger"><FacebookMessengerPage /></ModuleGuard>} />
             <Route path="facebook-shop" element={<ModuleGuard moduleId="facebook-shop"><ShellPage title="Facebook Дэлгүүр" moduleId="facebook-shop" /></ModuleGuard>} />
             <Route path="instagram-api" element={<ModuleGuard moduleId="instagram-api"><ShellPage title="Instagram API" moduleId="instagram-api" /></ModuleGuard>} />
             <Route path="tiktok-shop" element={<ModuleGuard moduleId="tiktok-shop"><ShellPage title="TikTok Shop" moduleId="tiktok-shop" /></ModuleGuard>} />

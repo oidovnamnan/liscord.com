@@ -807,6 +807,20 @@ export const LISCORD_MODULES: AppModule[] = [
         ]
     },
     {
+        id: 'fb-messenger',
+        name: 'Facebook Messenger',
+        description: 'FB Page чатыг нэг цонхноос удирдах',
+        icon: 'MessageSquare',
+        route: '/app/fb-messenger',
+        isCore: false,
+        category: 'sales',
+        isFree: false,
+        plans: [
+            { id: 'monthly', name: '30 хоног', price: 20000, durationDays: 30 },
+            { id: 'yearly', name: '1 жил', price: 192000, durationDays: 365 }
+        ]
+    },
+    {
         id: 'campaigns',
         name: 'Маркетинг',
         description: 'Промо, бөөн Email/SMS',
