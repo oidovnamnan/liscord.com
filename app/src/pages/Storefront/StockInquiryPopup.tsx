@@ -147,12 +147,18 @@ export function StockInquiryPopup({ businessId, cartItems, customerPhone, timeou
         timerRef.current = setInterval(() => {
             setSecondsLeft(prev => {
                 if (prev <= 1) {
-                    // Time expired — auto proceed
+                    // Time expired — save to localStorage for late-response notifications
                     if (timerRef.current) clearInterval(timerRef.current);
                     // Mark as expired (skip in fallback mode)
                     if (inquiryId && inquiryId !== '__fallback__') {
                         const docRef = doc(db, `businesses/${businessId}/stockInquiries`, inquiryId);
                         updateDoc(docRef, { status: 'expired' }).catch(() => {});
+                        // Save for late-response listener
+                        try {
+                            const pending = JSON.parse(localStorage.getItem('pendingInquiries') || '[]');
+                            pending.push({ inquiryId, businessId, createdAt: Date.now() });
+                            localStorage.setItem('pendingInquiries', JSON.stringify(pending));
+                        } catch (_) { /* ignore */ }
                     }
                     setTimeout(onProceed, 500);
                     return 0;

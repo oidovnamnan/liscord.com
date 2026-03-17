@@ -630,6 +630,21 @@
     flex-wrap: wrap;
 }
 
+.sinq-late-banner {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    background: #fef3c7;
+    border: 1px solid #fcd34d;
+    border-radius: 10px;
+    color: #92400e;
+    font-size: 0.82rem;
+    font-weight: 600;
+    margin-bottom: 4px;
+}
+
 .sinq-btn {
     display: flex;
     align-items: center;

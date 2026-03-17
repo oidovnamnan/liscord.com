@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
+import { toast } from 'react-hot-toast';
 import { useSearchParams } from 'react-router-dom';
 import { ShoppingBag, Search, Plus, Lock, Crown, X, Phone, User } from 'lucide-react';
 import type { Business, Product } from '../../../types';
@@ -89,6 +90,65 @@ export function ThemeMinimal({ business }: { business: Business }) {
     useEffect(() => {
         setVisibleCount(PRODUCTS_PER_PAGE);
     }, [activeCategory, searchQuery]);
+
+    // Late-response listener: check if agent responded to expired inquiries
+    useEffect(() => {
+        let unsubscribers: (() => void)[] = [];
+        try {
+            const raw = localStorage.getItem('pendingInquiries');
+            if (!raw) return;
+            const pending: { inquiryId: string; businessId: string; createdAt: number }[] = JSON.parse(raw);
+            if (!pending.length) return;
+
+            // Clean entries older than 24 hours
+            const cutoff = Date.now() - 24 * 60 * 60 * 1000;
+            const valid = pending.filter(p => p.createdAt > cutoff);
+            if (valid.length !== pending.length) {
+                localStorage.setItem('pendingInquiries', JSON.stringify(valid));
+            }
+            if (!valid.length) return;
+
+            // Dynamic import to avoid loading firebase for all visitors
+            import('firebase/firestore').then(({ doc: firestoreDoc, onSnapshot: fsOnSnapshot }) => {
+                import('../../../services/firebase').then(({ db: fsDb }) => {
+                    valid.forEach(entry => {
+                        const ref = firestoreDoc(fsDb, `businesses/${entry.businessId}/stockInquiries`, entry.inquiryId);
+                        const unsub = fsOnSnapshot(ref, (snap) => {
+                            const data = snap.data();
+                            if (!data) return;
+                            const st = data.status as string;
+                            // Agent responded — notify customer
+                            if (['no_change', 'updated', 'inactive', 'checking'].includes(st)) {
+                                let message = '✅ Барааны лавлагаа хүсэлтэд хариу ирлээ!';
+                                if (st === 'no_change') message = '✅ Барааны мэдээлэл өөрчлөгдөөгүй — захиалга хийх боломжтой!';
+                                if (st === 'updated') message = '🔄 Барааны мэдээлэл шинэчлэгдлээ — шалгана уу!';
+                                if (st === 'inactive') message = '❌ Бараа одоогоор нөөцөд байхгүй байна.';
+                                if (st === 'checking') return; // still in progress
+
+                                toast(message, {
+                                    duration: 8000,
+                                    style: { background: '#1e293b', color: '#fff', fontWeight: 600, fontSize: '0.88rem' },
+                                    icon: st === 'inactive' ? '❌' : '🔔',
+                                });
+
+                                // Remove from pending
+                                try {
+                                    const current = JSON.parse(localStorage.getItem('pendingInquiries') || '[]');
+                                    const filtered = current.filter((p: any) => p.inquiryId !== entry.inquiryId);
+                                    localStorage.setItem('pendingInquiries', JSON.stringify(filtered));
+                                } catch (_) {}
+
+                                unsub();
+                            }
+                        });
+                        unsubscribers.push(unsub);
+                    });
+                });
+            });
+        } catch (_) {}
+
+        return () => { unsubscribers.forEach(u => u()); };
+    }, []);
 
     // Check if user has stored phone (logged in) — check both membership and customer phone
     const storedPhone = localStorage.getItem(`membership_phone_${business.id}`) || localStorage.getItem('liscord_customer_phone') || '';

@@ -352,9 +352,15 @@ export function StockInquiryPage() {
                             )}
 
                             {/* Action Buttons */}
-                            {hasPermission('stock-inquiry.respond') && ['pending', 'checking'].includes(selectedInquiry.status) && (
+                            {hasPermission('stock-inquiry.respond') && ['pending', 'checking', 'expired'].includes(selectedInquiry.status) && (
                                 <div className="sinq-actions">
-                                    {selectedInquiry.status === 'pending' && (
+                                    {selectedInquiry.status === 'expired' && (
+                                        <div className="sinq-late-banner">
+                                            <AlertTriangle size={15} />
+                                            <span>Хугацаа дууссан — хоцорч хариу өгөх боломжтой</span>
+                                        </div>
+                                    )}
+                                    {(selectedInquiry.status === 'pending' || selectedInquiry.status === 'expired') && (
                                         <button
                                             className="sinq-btn check"
                                             disabled={actionLoading}
