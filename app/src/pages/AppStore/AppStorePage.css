@@ -83,12 +83,12 @@
     align-items: center;
     justify-content: space-between;
     gap: 12px;
-    padding: 10px 0;
+    padding: 12px 0;
     margin-bottom: 20px;
     border-bottom: 1px solid var(--border-glass);
     flex-wrap: wrap;
     position: sticky;
-    top: 64px;
+    top: 0;
     z-index: 190;
     background: var(--bg-primary);
     backdrop-filter: blur(12px);
