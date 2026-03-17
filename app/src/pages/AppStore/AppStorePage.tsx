@@ -269,7 +269,7 @@ export function AppStorePage() {
 
     return (
         <div className="page-container animate-fade-in">
-            <div className="fds-hero">
+            <div className="fds-hero" style={{ margin: '0 24px' }}>
                 <div className="fds-hero-top">
                     <div className="fds-hero-left">
                         <div className="fds-hero-icon"><Store size={24} /></div>
