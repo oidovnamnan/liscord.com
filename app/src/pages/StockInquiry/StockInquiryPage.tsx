@@ -146,7 +146,7 @@ export function StockInquiryPage() {
     };
 
     const filtered = filter === 'active'
-        ? inquiries.filter(i => ['pending', 'checking', 'expired'].includes(i.status))
+        ? inquiries.filter(i => ['pending', 'checking'].includes(i.status))
         : inquiries;
 
     const formatTime = (date: Date | { toDate?: () => Date }) => {
