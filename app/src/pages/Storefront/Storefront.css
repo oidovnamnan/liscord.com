@@ -1238,7 +1238,7 @@
 .fd-section {
     position: relative;
     padding: 10px 8px 8px;
-    border-radius: 14px;
+    border-radius: 0;
     background: #fff;
     overflow: hidden;
     border: 1px solid #f0f0f0;
@@ -1273,7 +1273,7 @@
 
 .fd-icon-pulse {
     width: 28px; height: 28px;
-    border-radius: 8px;
+    border-radius: 0;
     background: #f97316;
     color: #fff;
     display: flex; align-items: center; justify-content: center;
@@ -1307,7 +1307,7 @@
     height: 26px;
     background: #f5f5f5;
     border: 1px solid #e5e5e5;
-    border-radius: 5px;
+    border-radius: 0;
     color: #333;
     font-size: 0.82rem;
     font-weight: 800;
@@ -1338,7 +1338,7 @@
     min-width: 17px;
     height: 20px;
     font-size: 0.65rem;
-    border-radius: 4px;
+    border-radius: 0;
     background: #fff7ed;
     border: 1px solid #fed7aa;
     color: #ea580c;
@@ -1371,7 +1371,7 @@
     scroll-snap-align: start;
     background: #fff;
     border: 1px solid #f0f0f0;
-    border-radius: 14px;
+    border-radius: 0;
     overflow: hidden;
     cursor: pointer;
     transition: transform 0.2s, box-shadow 0.2s;
@@ -1396,7 +1396,7 @@
 .fd-card-img {
     width: 100%;
     aspect-ratio: 1;
-    border-radius: 10px;
+    border-radius: 0;
     overflow: hidden;
     background: #fafafa;
 }
@@ -1425,14 +1425,14 @@
     font-size: 0.62rem;
     font-weight: 800;
     padding: 3px 7px;
-    border-radius: 6px;
+    border-radius: 0;
     z-index: 2;
 }
 
 .fd-sold-out-overlay {
     position: absolute;
-    inset: 6px 6px 0 6px;
-    border-radius: 10px;
+    inset: 4px 4px 0 4px;
+    border-radius: 0;
     background: rgba(0, 0, 0, 0.5);
     display: flex; align-items: center; justify-content: center;
     color: #fff;
@@ -1484,7 +1484,7 @@
 .fd-progress-bar {
     height: 3px;
     background: #f0f0f0;
-    border-radius: 2px;
+    border-radius: 0;
     overflow: hidden;
     margin-bottom: 3px;
 }
@@ -1492,7 +1492,7 @@
 .fd-progress-fill {
     height: 100%;
     background: #f97316;
-    border-radius: 2px;
+    border-radius: 0;
     transition: width 0.5s ease;
     animation: none;
 }
@@ -1510,7 +1510,7 @@
     background: #f97316;
     color: #fff;
     border: none;
-    border-radius: 8px;
+    border-radius: 0;
     font-size: 0.72rem;
     font-weight: 700;
     cursor: pointer;

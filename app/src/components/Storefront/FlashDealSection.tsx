@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { ShoppingBag, Zap, Clock } from 'lucide-react';
 import type { Product } from '../../types';
 import { useCartStore } from '../../store';
@@ -111,6 +111,8 @@ export function FlashDealSection({ config, allProducts, onProductClick }: FlashD
     const [activeIdx, setActiveIdx] = useState(0);
     const totalCards = dealProducts.length;
     const pageCount = Math.max(1, Math.ceil(totalCards / 2));
+    const scrollRef = useRef<HTMLDivElement>(null);
+    const autoScrollPaused = useRef(false);
 
     const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
         const el = e.currentTarget;
@@ -118,9 +120,45 @@ export function FlashDealSection({ config, allProducts, onProductClick }: FlashD
         setActiveIdx(Math.round(el.scrollLeft / (cardW * 2)));
     };
 
+    // Slow auto-scroll when more than 2 products
+    useEffect(() => {
+        if (totalCards <= 2 || !scrollRef.current) return;
+        const el = scrollRef.current;
+        const speed = 0.6; // pixels per frame (~36px/sec at 60fps)
+        let animId: number;
+
+        const step = () => {
+            if (!autoScrollPaused.current && el) {
+                el.scrollLeft += speed;
+                // Loop: when reached end, jump back to start
+                if (el.scrollLeft >= el.scrollWidth - el.clientWidth - 1) {
+                    el.scrollLeft = 0;
+                }
+            }
+            animId = requestAnimationFrame(step);
+        };
+        animId = requestAnimationFrame(step);
+
+        const pause = () => { autoScrollPaused.current = true; };
+        const resume = () => { autoScrollPaused.current = false; };
+
+        el.addEventListener('touchstart', pause, { passive: true });
+        el.addEventListener('touchend', resume, { passive: true });
+        el.addEventListener('mouseenter', pause);
+        el.addEventListener('mouseleave', resume);
+
+        return () => {
+            cancelAnimationFrame(animId);
+            el.removeEventListener('touchstart', pause);
+            el.removeEventListener('touchend', resume);
+            el.removeEventListener('mouseenter', pause);
+            el.removeEventListener('mouseleave', resume);
+        };
+    }, [totalCards]);
+
     return (
         <div className="fd-wrapper">
-            {/* Title — OUTSIDE the dark section */}
+            {/* Title */}
             <div className="fd-header-outer">
                 <h2 className="fd-title-outer">{config.title || 'FLASH DEAL'}</h2>
             </div>
@@ -131,7 +169,7 @@ export function FlashDealSection({ config, allProducts, onProductClick }: FlashD
                 <div className="fd-glow fd-glow-2" />
 
             {/* Product cards carousel */}
-            <div className="fd-products" onScroll={handleScroll}>
+            <div className="fd-products" ref={scrollRef} onScroll={handleScroll}>
                 {dealProducts.map(deal => {
                     const { product, flashPrice, maxQuantity, soldCount, productEndsAt } = deal;
                     const originalPrice = product.pricing?.salePrice || 0;
