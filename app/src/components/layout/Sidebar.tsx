@@ -11,6 +11,7 @@ import {
     ArrowRightLeft,
     CornerDownLeft,
     Shield,
+    Blocks,
 } from 'lucide-react';
 import { useUIStore, useBusinessStore, useAuthStore, useModuleDefaultsStore } from '../../store';
 import { doc, updateDoc, collection, query, where, limit, onSnapshot } from 'firebase/firestore';
@@ -434,6 +435,20 @@ export function Sidebar() {
                             <Settings size={20} />
                             {!sidebarCollapsed && <span>Тохиргоо</span>}
                             {location.pathname.startsWith('/app/settings') && <div className="sidebar-link-indicator" />}
+                        </NavLink>
+                    )}
+
+                    {/* App Store - hidden during impersonation */}
+                    {!isImpersonating && (
+                        <NavLink
+                            to="/app/app-store"
+                            className={`sidebar-link ${location.pathname.startsWith('/app/app-store') ? 'active' : ''}`}
+                            onClick={() => sidebarOpen && toggleSidebar()}
+                            title={sidebarCollapsed ? 'Апп Стор' : undefined}
+                        >
+                            <Blocks size={20} />
+                            {!sidebarCollapsed && <span>Апп Стор</span>}
+                            {location.pathname.startsWith('/app/app-store') && <div className="sidebar-link-indicator" />}
                         </NavLink>
                     )}
 
