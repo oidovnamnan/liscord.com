@@ -26,7 +26,7 @@ export function useStorefrontData(business: Business | undefined) {
         const unsubscribe = productService.subscribeProducts(business.id, (data) => {
             setProducts(data.filter(p => !p.isDeleted && p.isActive !== false && !p.isHidden));
             setLoading(false);
-        }, 1000);
+        }, 5000);
         return () => unsubscribe();
     }, [business]);
 
