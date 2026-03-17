@@ -8,9 +8,10 @@ interface ProductModalProps {
     product: Product;
     onClose: () => void;
     preorderTerms?: string;
+    onCategoryClick?: (categoryName: string) => void;
 }
 
-export function ProductModal({ product, onClose, preorderTerms }: ProductModalProps) {
+export function ProductModal({ product, onClose, preorderTerms, onCategoryClick }: ProductModalProps) {
     const [quantity, setQuantity] = useState(1);
     const [added, setAdded] = useState(false);
     const [activeImage, setActiveImage] = useState(0);
@@ -210,7 +211,16 @@ export function ProductModal({ product, onClose, preorderTerms }: ProductModalPr
                         {/* Sticky Header: Category + Name + Price */}
                         <div className="sf-modal-info-header">
                             {(brand || product.categoryName) && (
-                                <span className="sf-modal-category">
+                                <span
+                                    className="sf-modal-category"
+                                    style={onCategoryClick && product.categoryName ? { cursor: 'pointer' } : undefined}
+                                    onClick={() => {
+                                        if (onCategoryClick && product.categoryName) {
+                                            onClose();
+                                            onCategoryClick(product.categoryName);
+                                        }
+                                    }}
+                                >
                                     {brand || product.categoryName}
                                 </span>
                             )}

@@ -369,6 +369,10 @@ export function ThemeMinimal({ business }: { business: Business }) {
                     product={selectedProduct}
                     onClose={() => setSelectedProduct(null)}
                     preorderTerms={business.settings?.storefront?.preorderTerms}
+                    onCategoryClick={(catName) => {
+                        setActiveCategory(catName);
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }}
                 />
             )}
 
