@@ -106,7 +106,8 @@ service cloud.firestore {
         allow delete: if false;
       }
 
-      // Orders: public read+create+update (storefront checkout + QPay payment flow)
+      // Orders: public CRUD (storefront checkout + QPay invoice ID save)
+      // Payment verification goes through /api/qpay-callback (Admin SDK)
       match /orders/{docId} {
         allow read, create, update: if true;
         allow delete: if false;

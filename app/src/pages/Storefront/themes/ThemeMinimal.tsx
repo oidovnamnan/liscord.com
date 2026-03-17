@@ -781,22 +781,15 @@ function MembershipModal({
                 if (data.paid) {
                     if (pollingRef.current) clearInterval(pollingRef.current);
 
-                    // Update Firestore directly as fallback (if callback didn't already)
+                    // Trigger the callback endpoint (server-side Admin SDK)
+                    // This updates order status AND creates membership
                     try {
-                        const { doc: firestoreDoc, updateDoc, serverTimestamp } = await import('firebase/firestore');
-                        const { db } = await import('../../../services/firebase');
-                        const orderRef = firestoreDoc(db, `businesses/${business.id}/orders`, _oid);
-                        await updateDoc(orderRef, {
-                            paymentStatus: 'paid',
-                            paymentVerifiedAt: serverTimestamp(),
-                            paymentVerifiedBy: 'qpay_poll',
-                            'financials.paidAmount': price,
-                            'financials.balanceDue': 0,
-                        });
+                        await fetch(`/api/qpay-callback?bizId=${business.id}&orderId=${_oid}`);
                     } catch (e) {
-                        console.error('Failed to update VIP order payment status:', e);
+                        console.error('Failed to trigger qpay-callback:', e);
                     }
 
+                    // UI update is handled by onSnapshot listener on the order doc
                     setPaymentConfirmed(true);
                     setTimeout(() => onClose(), 2500);
                 }
