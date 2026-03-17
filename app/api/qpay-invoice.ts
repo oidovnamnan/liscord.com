@@ -1,30 +1,14 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import * as admin from 'firebase-admin';
 
 /**
  * QPay V2 Create Invoice — Vercel Serverless Function
  * 
  * For VIP: uses server-side env credentials (QPAY_VIP_USERNAME, QPAY_VIP_PASSWORD)
  * For Product: uses business's own QPay credentials passed from frontend
- * 
- * Also saves qpayInvoiceId to the order doc server-side (guest users can't update orders)
  */
 
 const QPAY_API_URL = 'https://merchant.qpay.mn/v2';
 const ALLOWED_ORIGINS = ['https://www.liscord.com', 'https://liscord.com', 'http://localhost:5173', 'http://localhost:3000'];
-
-// Initialize Firebase Admin (only once)
-if (!admin.apps.length) {
-    admin.initializeApp({
-        credential: admin.credential.cert({
-            projectId: process.env.FIREBASE_PROJECT_ID || 'liscord-2b529',
-            clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-            privateKey: (process.env.FIREBASE_PRIVATE_KEY || '').replace(/\\n/g, '\n'),
-        }),
-    });
-}
-
-const db = admin.firestore();
 
 // Token cache per credential set
 const tokenCache: Record<string, { token: string; expiresAt: number }> = {};
@@ -133,20 +117,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         }
 
         const result = await invoiceResponse.json();
-
-        // Save qpayInvoiceId to the order doc SERVER-SIDE
-        // (Guest users can't update orders via Firestore client SDK due to security rules)
-        if (result.invoice_id && bizId && orderId) {
-            try {
-                await db.doc(`businesses/${bizId}/orders/${orderId}`).update({
-                    qpayInvoiceId: result.invoice_id,
-                });
-                console.log(`Saved qpayInvoiceId ${result.invoice_id} to order ${orderId}`);
-            } catch (saveErr) {
-                console.error('Failed to save qpayInvoiceId to order:', saveErr);
-                // Don't fail the whole request — polling can still work
-            }
-        }
 
         return res.status(200).json({
             invoice_id: result.invoice_id,

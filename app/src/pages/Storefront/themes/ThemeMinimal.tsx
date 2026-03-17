@@ -729,9 +729,15 @@ function MembershipModal({
                 urls: invoice.urls || [],
             });
 
-            // qpayInvoiceId is saved server-side by the qpay-invoice API
-            // Start polling QPay for payment confirmation
+            // Save invoice_id to order for callback verification
             if (invoice.invoice_id) {
+                const { doc, updateDoc } = await import('firebase/firestore');
+                const { db } = await import('../../../services/firebase');
+                await updateDoc(doc(db, 'businesses', business.id, 'orders', targetOrderId), {
+                    qpayInvoiceId: invoice.invoice_id,
+                });
+
+                // Start polling QPay for payment confirmation
                 startPaymentPolling(invoice.invoice_id, targetOrderId);
             }
         } catch (qpayErr) {
@@ -774,8 +780,23 @@ function MembershipModal({
 
                 if (data.paid) {
                     if (pollingRef.current) clearInterval(pollingRef.current);
-                    // Server-side already updated order & granted membership via Admin SDK
-                    // Just update UI
+
+                    // Update Firestore directly as fallback (if callback didn't already)
+                    try {
+                        const { doc: firestoreDoc, updateDoc, serverTimestamp } = await import('firebase/firestore');
+                        const { db } = await import('../../../services/firebase');
+                        const orderRef = firestoreDoc(db, `businesses/${business.id}/orders`, _oid);
+                        await updateDoc(orderRef, {
+                            paymentStatus: 'paid',
+                            paymentVerifiedAt: serverTimestamp(),
+                            paymentVerifiedBy: 'qpay_poll',
+                            'financials.paidAmount': price,
+                            'financials.balanceDue': 0,
+                        });
+                    } catch (e) {
+                        console.error('Failed to update VIP order payment status:', e);
+                    }
+
                     setPaymentConfirmed(true);
                     setTimeout(() => onClose(), 2500);
                 }

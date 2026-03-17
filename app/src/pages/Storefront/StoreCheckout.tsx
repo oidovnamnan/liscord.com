@@ -266,7 +266,13 @@ export function StoreCheckout() {
                         }
                     );
                     setQpayInvoice(invoice);
-                    // qpayInvoiceId is saved server-side by qpay-invoice API
+
+                    // Save invoice_id to order for callback verification
+                    if (invoice.invoice_id) {
+                        await updateDoc(doc(db, `businesses/${business.id}/orders`, newId), {
+                            qpayInvoiceId: invoice.invoice_id,
+                        });
+                    }
                 } catch (e) {
                     console.error('QPay generation failed', e);
                 }
@@ -324,7 +330,20 @@ export function StoreCheckout() {
                 const data = await resp.json();
                 if (data.paid && !stopped) {
                     stopped = true;
-                    // Server-side already updated order via Admin SDK
+                    // Update Firestore directly as fallback (if callback didn't already)
+                    try {
+                        const orderRef = doc(db, `businesses/${business.id}/orders`, successId);
+                        await updateDoc(orderRef, {
+                            paymentStatus: 'paid',
+                            paymentVerifiedAt: serverTimestamp(),
+                            paymentVerifiedBy: 'qpay_poll',
+                            'financials.paidAmount': savedTotal,
+                            'financials.balanceDue': 0,
+                        });
+                    } catch (e) {
+                        console.error('Failed to update order payment status:', e);
+                    }
+                    // Update UI
                     setPaymentConfirmed(true);
                     toast.success('Төлбөр баталгаажлаа! 🎉');
                 }

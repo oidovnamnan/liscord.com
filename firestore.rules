@@ -106,10 +106,9 @@ service cloud.firestore {
         allow delete: if false;
       }
 
-      // Orders: public read+create (storefront checkout), update members only
+      // Orders: public read+create+update (storefront checkout + QPay payment flow)
       match /orders/{docId} {
-        allow read, create: if true;  // Public: storefront checkout + order tracking
-        allow update: if isMemberOf(bizId);  // Only business members can update orders
+        allow read, create, update: if true;
         allow delete: if false;
       }
 
