@@ -1237,7 +1237,6 @@
    ============================================ */
 .fd-section {
     position: relative;
-    margin: 0 clamp(12px, 4vw, 32px) 24px;
     padding: 20px 16px 14px;
     border-radius: 20px;
     background: linear-gradient(145deg, #0d0221 0%, #1a0a3e 35%, #2d1250 65%, #150830 100%);
@@ -1274,22 +1273,28 @@
     50% { transform: translate(8px, -10px) scale(1.08); }
 }
 
-/* ── Header ── */
-.fd-header {
-    position: relative;
-    z-index: 2;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    margin-bottom: 14px;
-    padding-bottom: 12px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+/* ── Wrapper (title + dark section) ── */
+.fd-wrapper {
+    margin: 0 clamp(12px, 4vw, 32px) 24px;
 }
 
-.fd-title-row {
+/* ── Title header (OUTSIDE dark section) ── */
+.fd-header-outer {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 10px;
+    margin-bottom: 12px;
+    padding: 0 4px;
+}
+
+.fd-title-outer {
+    font-family: var(--sf-font-title);
+    font-size: 1.05rem;
+    font-weight: 900;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin: 0;
+    color: var(--sf-text-primary, #111);
 }
 
 .fd-icon-pulse {

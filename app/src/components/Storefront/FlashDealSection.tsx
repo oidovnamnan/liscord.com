@@ -120,20 +120,19 @@ export function FlashDealSection({ config, allProducts, onProductClick }: FlashD
     };
 
     return (
-        <div className="fd-section">
-            {/* Glow orbs */}
-            <div className="fd-glow fd-glow-1" />
-            <div className="fd-glow fd-glow-2" />
-
-            {/* Header — title only, no global timer */}
-            <div className="fd-header">
-                <div className="fd-title-row">
-                    <div className="fd-icon-pulse">
-                        <Zap size={16} />
-                    </div>
-                    <h2 className="fd-title">{config.title || 'FLASH DEAL'}</h2>
+        <div className="fd-wrapper">
+            {/* Title — OUTSIDE the dark section */}
+            <div className="fd-header-outer">
+                <div className="fd-icon-pulse">
+                    <Zap size={16} />
                 </div>
+                <h2 className="fd-title-outer">{config.title || 'FLASH DEAL'}</h2>
             </div>
+
+            <div className="fd-section">
+                {/* Glow orbs */}
+                <div className="fd-glow fd-glow-1" />
+                <div className="fd-glow fd-glow-2" />
 
             {/* Product cards carousel */}
             <div className="fd-products" onScroll={handleScroll}>
@@ -219,6 +218,7 @@ export function FlashDealSection({ config, allProducts, onProductClick }: FlashD
                     ))}
                 </div>
             )}
-        </div>
+            </div>{/* end fd-section */}
+        </div>/* end fd-wrapper */
     );
 }
