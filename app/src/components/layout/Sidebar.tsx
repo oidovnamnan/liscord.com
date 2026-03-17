@@ -82,6 +82,16 @@ export function Sidebar() {
             }, () => {}));
         }
 
+        // 3. Stock inquiries: pending (not yet responded)
+        const inquiryQ = query(
+            collection(db, 'businesses', business.id, 'stockInquiries'),
+            where('status', '==', 'pending'),
+            limit(50),
+        );
+        unsubs.push(onSnapshot(inquiryQ, (snap) => {
+            setModuleBadges(prev => ({ ...prev, 'stock-inquiry': snap.size }));
+        }, () => {}));
+
         return () => unsubs.forEach(u => u());
     }, [business?.id]);
 
