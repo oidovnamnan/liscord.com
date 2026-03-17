@@ -67,7 +67,6 @@ function CardCountdown({ endsAt }: { endsAt: Date }) {
 
     return (
         <div className="fd-card-timer">
-            <Clock size={11} />
             <FlipDigit value={h[0]} />
             <FlipDigit value={h[1]} />
             <span className="fd-flip-sep-sm">:</span>

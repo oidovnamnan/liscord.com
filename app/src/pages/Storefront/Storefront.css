@@ -1237,8 +1237,8 @@
    ============================================ */
 .fd-section {
     position: relative;
-    padding: 16px 12px 12px;
-    border-radius: 16px;
+    padding: 10px 8px 8px;
+    border-radius: 14px;
     background: #fff;
     overflow: hidden;
     border: 1px solid #f0f0f0;
@@ -1249,7 +1249,7 @@
 
 /* ── Wrapper ── */
 .fd-wrapper {
-    margin: 0 clamp(12px, 4vw, 32px) 20px;
+    margin: 0 clamp(8px, 3vw, 28px) 16px;
 }
 
 /* ── Title header ── */
@@ -1331,16 +1331,8 @@
 .fd-card-timer {
     display: flex;
     align-items: center;
-    gap: 3px;
-    margin-bottom: 8px;
-    color: #888;
-}
-.fd-card-timer svg {
-    color: #f97316;
-    flex-shrink: 0;
-    width: 13px;
-    height: 13px;
-    margin-right: 2px;
+    gap: 2px;
+    margin-bottom: 6px;
 }
 .fd-card-timer .fd-flip-digit {
     min-width: 20px;
@@ -1375,7 +1367,7 @@
 .fd-products::-webkit-scrollbar { display: none; }
 
 .fd-card {
-    flex: 0 0 47%;
+    flex: 0 0 48.5%;
     scroll-snap-align: start;
     background: #fff;
     border: 1px solid #f0f0f0;
@@ -1398,7 +1390,7 @@
 /* Image */
 .fd-card-img-wrap {
     position: relative;
-    padding: 6px 6px 0;
+    padding: 4px 4px 0;
 }
 
 .fd-card-img {
@@ -1452,7 +1444,7 @@
 
 /* Card info */
 .fd-card-info {
-    padding: 10px 10px 10px;
+    padding: 8px 8px 8px;
 }
 
 .fd-card-name {
