@@ -321,7 +321,6 @@ export function ThemeMinimal({ business }: { business: Business }) {
                                         style={{ animationDelay: `${Math.min(index * 0.05, 0.5)}s` }}
                                     >
                                         <div className="product-image-wrap">
-                                            {brand && !sfp.isLocked && <div className="product-brand-badge">{brand}</div>}
 
                                             {sfp.isExclusive && !sfp.isLocked && (
                                                 <div className="sf-vip-badge">
