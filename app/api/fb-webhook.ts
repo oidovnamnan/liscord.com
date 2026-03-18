@@ -218,14 +218,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                         if (settingsData) {
                             // Check pages array first
                             const pagesArr = (settingsData.pages as Array<{ pageId: string; pageName: string; pageAccessToken: string }>) || [];
+                            console.log(`[fb-webhook] pageId=${pageId}, available pages: [${pagesArr.map(p => p.pageId).join(', ')}]`);
                             const matchedPage = pagesArr.find(p => p.pageId === pageId);
                             if (matchedPage) {
                                 pageAccessToken = matchedPage.pageAccessToken;
                                 pageName = matchedPage.pageName || '';
+                                console.log(`[fb-webhook] Matched page: ${pageName}, token length: ${pageAccessToken?.length}`);
                             } else if (settingsData.pageId === pageId) {
                                 pageAccessToken = settingsData.pageAccessToken as string;
                                 pageName = (settingsData.pageName as string) || '';
+                                console.log(`[fb-webhook] Matched legacy page: ${pageName}`);
+                            } else {
+                                console.warn(`[fb-webhook] No page matched! pageId=${pageId}, settingsData.pageId=${settingsData.pageId}`);
                             }
+                        } else {
+                            console.warn(`[fb-webhook] No fbSettings/config found for bizId=${bizId}`);
                         }
                     } catch (err) {
                         console.error(`Error fetching settings for bizId=${bizId}:`, err);
