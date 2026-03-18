@@ -200,10 +200,11 @@ function buildSystemPrompt(
 - Хямдралтай бол → хуучин/шинэ үнэ хэлэх
 
 ЗУРАГ/ХАВСРАЛТ:
-- ЧИ ЗУРАГ ХАРАХ ЧАДВАРГҮЙ! "📷 Зураг илгээлээ" гэсэн мессеж ирвэл → зураг дээр юу байгааг МЭДЭХГҮЙ
-- ХЭЗЭЭ Ч зургаас бараа ТАНИХ гэж ОРОЛДОХГҮЙ, бараа нэрийг ЗОХИОХГҮЙ
-- Зураг ирвэл → "Та сонирхож буй барааныхаа нэрийг бичээрэй, би мэдээлэл өгье 😊"
-- Facebook пост share ирвэл → мөн адилаар нэрийг нь асуух
+- Чи зураг ХАРЖ ЧАДНА! Хэрэглэгч зураг илгээвэл зураг дээрх бараа, бүтээгдэхүүнийг тодорхойл
+- Зураг дээрх бараа жагсаалтад байвал → нэр, үнэ, ангиллын линк хэлэх
+- Зураг дээрх бараа жагсаалтад байхгүй бол → "Энэ бараа одоогоор манайд байхгүй байна" гэх
+- Зураг тодорхойгүй, эсвэл бараа биш бол → "Та ямар барааны талаар сонирхож байна вэ?"
+- ЖАГСААЛТАД БАЙХГҮЙ барааг байгаа гэж ХЭЛЭХГҮЙ
 
 БИЗНЕСИЙН МЭДЭЭЛЭЛ:
 ${bizInfo.phone ? `• Утас: ${bizInfo.phone}` : ''}
@@ -271,7 +272,7 @@ function parseAIResponse(text: string): AIResponse {
 export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
-    const { bizId, senderId, senderName, messageText } = req.body;
+    const { bizId, senderId, senderName, messageText, imageUrls } = req.body;
     if (!bizId || !senderId || !messageText) {
         return res.status(400).json({ error: 'Missing required fields' });
     }
@@ -456,6 +457,29 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         const { GoogleGenAI } = await import('@google/genai');
         const client = new GoogleGenAI({ apiKey });
 
+        // Build user message parts (text + optional images)
+        const userParts: Array<{ text: string } | { inlineData: { mimeType: string; data: string } }> = [];
+        
+        // Add images if provided
+        if (imageUrls?.length) {
+            for (const imgUrl of imageUrls.slice(0, 3)) { // Max 3 images
+                try {
+                    const imgResp = await fetch(imgUrl);
+                    if (imgResp.ok) {
+                        const buffer = await imgResp.arrayBuffer();
+                        const base64 = Buffer.from(buffer).toString('base64');
+                        const contentType = imgResp.headers.get('content-type') || 'image/jpeg';
+                        userParts.push({ inlineData: { mimeType: contentType, data: base64 } });
+                        console.log(`[fb-ai-reply] Added image: ${contentType}, ${Math.round(buffer.byteLength / 1024)}KB`);
+                    }
+                } catch (imgErr) {
+                    console.error('[fb-ai-reply] Image download error:', imgErr);
+                }
+            }
+        }
+        
+        userParts.push({ text: messageText });
+
         const contents = [
             { role: 'user' as const, parts: [{ text: systemPrompt + '\n\nДээрх мэдээллийг анхааралтай уншаад бэлэн болоорой.' }] },
             { role: 'model' as const, parts: [{ text: 'Ойлголоо! Бүх бараа мэдээлэл, дүрмийг мэдэж байна. Бэлэн! 🙂' }] },
@@ -463,7 +487,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 role: msg.role as 'user' | 'model',
                 parts: [{ text: msg.text }]
             })),
-            { role: 'user' as const, parts: [{ text: messageText }] }
+            { role: 'user' as const, parts: userParts }
         ];
 
         const response = await client.models.generateContent({

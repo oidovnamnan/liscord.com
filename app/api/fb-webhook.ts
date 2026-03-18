@@ -368,6 +368,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                             // For attachment-only messages, create a descriptive text for AI
                             const aiMessageText = msg.text || (msg.attachments?.length ? `Хэрэглэгч ${messageText} илгээлээ` : '');
                             
+                            // Extract image URLs for multimodal AI
+                            const imageUrls: string[] = [];
+                            if (msg.attachments?.length) {
+                                for (const att of msg.attachments) {
+                                    if (att.type === 'image' && att.payload?.url) {
+                                        imageUrls.push(att.payload.url);
+                                    }
+                                }
+                            }
+                            
                             try {
                                 // Call AI reply endpoint
                                 const host = req.headers.host || 'www.liscord.com';
@@ -375,7 +385,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                                 const aiResp = await fetch(`${protocol}://${host}/api/fb-ai-reply`, {
                                     method: 'POST',
                                     headers: { 'Content-Type': 'application/json' },
-                                    body: JSON.stringify({ bizId, senderId, senderName, messageText: aiMessageText }),
+                                    body: JSON.stringify({ bizId, senderId, senderName, messageText: aiMessageText, imageUrls }),
                                 });
                                 const aiResult = await aiResp.json();
 
