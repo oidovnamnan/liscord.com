@@ -5,7 +5,8 @@
 .fbm-page {
     display: flex;
     flex-direction: column;
-    height: calc(100vh - 64px);
+    height: 100%;
+    min-height: 0;
     overflow: hidden;
     background: var(--bg-primary);
 }
@@ -23,18 +24,18 @@
 }
 .fbm-toolbar-left { display: flex; align-items: center; gap: 10px; }
 .fbm-toolbar-icon {
-    width: 32px; height: 32px; border-radius: 8px;
+    width: 30px; height: 30px; border-radius: 8px;
     background: rgba(255,255,255,0.18);
     display: flex; align-items: center; justify-content: center;
 }
-.fbm-toolbar-text { display: flex; flex-direction: column; }
-.fbm-toolbar-title { font-weight: 800; font-size: 0.92rem; line-height: 1.1; }
-.fbm-toolbar-sub { font-size: 0.68rem; opacity: 0.8; display: flex; align-items: center; gap: 5px; }
+.fbm-toolbar-text { display: flex; align-items: center; gap: 10px; }
+.fbm-toolbar-title { font-weight: 800; font-size: 0.95rem; }
+.fbm-toolbar-sub { font-size: 0.7rem; opacity: 0.85; display: flex; align-items: center; gap: 6px; }
 .fbm-dot { width: 6px; height: 6px; border-radius: 50%; background: #ef4444; display: inline-block; }
 .fbm-dot.connected { background: #10b981; }
 .fbm-ai-toolbar-badge {
-    background: rgba(255,255,255,0.2); padding: 1px 8px; border-radius: 8px;
-    font-size: 0.6rem; font-weight: 700; letter-spacing: 0.3px;
+    background: rgba(255,255,255,0.2); padding: 2px 8px; border-radius: 8px;
+    font-size: 0.62rem; font-weight: 700; letter-spacing: 0.3px;
 }
 .fbm-toolbar-right { display: flex; align-items: center; gap: 6px; }
 .fbm-toolbar-badge {

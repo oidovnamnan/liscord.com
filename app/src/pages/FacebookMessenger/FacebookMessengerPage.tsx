@@ -238,7 +238,17 @@ export function FacebookMessengerPage() {
         if (diff < 60000) return 'Дөнгө';
         if (diff < 3600000) return `${Math.floor(diff / 60000)} мин`;
         if (diff < 86400000) return d.toLocaleTimeString('mn-MN', { hour: '2-digit', minute: '2-digit' });
+        const now = new Date();
+        const y = new Date(now); y.setDate(now.getDate() - 1);
+        if (d.toDateString() === y.toDateString()) return 'Өчигдөр';
         return d.toLocaleDateString('mn-MN', { month: 'short', day: 'numeric' });
+    };
+
+    // Display name: if raw FB PSID (all digits, 15+ chars), show "FB User"
+    const displayName = (name: string | undefined) => {
+        if (!name) return 'Хэрэглэгч';
+        if (/^\d{15,}$/.test(name)) return `FB #${name.slice(-4)}`;
+        return name;
     };
 
     const getDateLabel = (d: Date | null) => {
@@ -288,10 +298,11 @@ export function FacebookMessengerPage() {
             {/* ── Compact Toolbar ── */}
             <div className="fbm-toolbar">
                 <div className="fbm-toolbar-left">
-                    <div className="fbm-toolbar-icon"><MessageSquare size={18} /></div>
+                    <div className="fbm-toolbar-icon"><MessageSquare size={16} /></div>
                     <div className="fbm-toolbar-text">
                         <span className="fbm-toolbar-title">Messenger</span>
                         <span className="fbm-toolbar-sub">
+                            <span className={`fbm-dot ${settings?.isConnected ? 'connected' : ''}`} />
                             {pages.length > 1 ? (
                                 <span className="fbm-page-selector" onClick={() => setShowPageDropdown(!showPageDropdown)}>
                                     {selectedPageName} <ChevronDown size={12} />
@@ -307,7 +318,6 @@ export function FacebookMessengerPage() {
                                     )}
                                 </span>
                             ) : (selectedPageName)}
-                            <span className={`fbm-dot ${settings?.isConnected ? 'connected' : ''}`} />
                             {aiModeLabel && <span className="fbm-ai-toolbar-badge">{aiModeLabel}</span>}
                         </span>
                     </div>
@@ -358,7 +368,7 @@ export function FacebookMessengerPage() {
                                 </div>
                                 <div className="fbm-conv-info">
                                     <div className="fbm-conv-name">
-                                        {c.senderName}
+                                        {displayName(c.senderName)}
                                         {c.tags?.includes('VIP') && <span className="fbm-mini-tag blue">VIP</span>}
                                         {c.tags?.includes('Яаралтай') && <span className="fbm-mini-tag red">❗</span>}
                                     </div>
@@ -390,7 +400,7 @@ export function FacebookMessengerPage() {
                                         {activeConv.senderProfilePic ? <img src={activeConv.senderProfilePic} alt="" /> : (activeConv.senderName?.charAt(0) || '?')}
                                     </div>
                                     <div>
-                                        <div className="fbm-chat-name">{activeConv.senderName}</div>
+                                        <div className="fbm-chat-name">{displayName(activeConv.senderName)}</div>
                                         <div className="fbm-chat-platform">
                                         <span className="fbm-dot connected" /> Facebook Messenger
                                         {activeConv.pageName && <span className="fbm-page-badge">{activeConv.pageName}</span>}
