@@ -332,6 +332,67 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             return res.status(200).json({ success: true, messageId: (fbResult as Record<string, unknown>).message_id });
         }
 
+        // ── SEND CAROUSEL (Generic Template — Product Cards) ──
+        if (action === 'send_carousel') {
+            const { elements } = req.body;
+            if (!elements?.length) return res.status(400).json({ error: 'Missing elements' });
+
+            // Facebook Generic Template: max 10 elements
+            const templateElements = (elements as Array<{
+                title: string; subtitle?: string; image_url?: string;
+                default_url?: string; buttons?: Array<{ title: string; url?: string; payload?: string }>;
+            }>).slice(0, 10).map(el => {
+                const item: Record<string, unknown> = {
+                    title: el.title.substring(0, 80),
+                };
+                if (el.subtitle) item.subtitle = el.subtitle.substring(0, 80);
+                if (el.image_url) item.image_url = el.image_url;
+                if (el.default_url) item.default_action = { type: 'web_url', url: el.default_url };
+                if (el.buttons?.length) {
+                    item.buttons = el.buttons.slice(0, 3).map(b =>
+                        b.url
+                            ? { type: 'web_url', url: b.url, title: b.title }
+                            : { type: 'postback', title: b.title, payload: b.payload || b.title }
+                    );
+                }
+                return item;
+            });
+
+            const fbResult = await sendToFacebook(token, {
+                recipient: { id: recipientId },
+                message: {
+                    attachment: {
+                        type: 'template',
+                        payload: {
+                            template_type: 'generic',
+                            elements: templateElements,
+                        },
+                    },
+                },
+            });
+
+            const convPath = `businesses/${bizId}/fbConversations/${recipientId}`;
+            await fsMerge(convPath, {
+                lastMessage: `🛍️ ${templateElements.length} бараа`,
+                lastMessageAt: now,
+            });
+
+            await fsAdd(`${convPath}/messages`, {
+                text: `🛍️ ${templateElements.length} бараа санал болгож байна`,
+                direction: 'outbound',
+                senderId: 'page',
+                senderName: senderName || 'AI Туслах',
+                timestamp: now,
+                fbMessageId: (fbResult as Record<string, unknown>).message_id || '',
+                isTemplate: true,
+                isAI: true,
+                deliveredAt: null,
+                readAt: null,
+            });
+
+            return res.status(200).json({ success: true, messageId: (fbResult as Record<string, unknown>).message_id });
+        }
+
         // ── SEND PAYMENT (QPay Invoice + Button Template) ──
         if (action === 'send_payment') {
             if (!amount) return res.status(400).json({ error: 'Missing amount' });

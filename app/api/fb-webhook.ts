@@ -345,6 +345,32 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                                         body: JSON.stringify(sendBody),
                                     });
 
+                                    // Send product carousel if AI suggested products with images
+                                    if (aiResult.suggestedProducts?.length) {
+                                        const carouselElements = aiResult.suggestedProducts
+                                            .filter((p: Record<string, string>) => p.image_url)
+                                            .map((p: Record<string, string>) => ({
+                                                title: p.title,
+                                                subtitle: p.subtitle,
+                                                image_url: p.image_url,
+                                                default_url: p.default_url,
+                                                buttons: [{ title: '🛒 Захиалах', payload: `ORDER_${p.id}` }],
+                                            }));
+
+                                        if (carouselElements.length > 0) {
+                                            await fetch(`${protocol}://${host}/api/fb-send`, {
+                                                method: 'POST',
+                                                headers: { 'Content-Type': 'application/json' },
+                                                body: JSON.stringify({
+                                                    bizId, recipientId: senderId,
+                                                    action: 'send_carousel',
+                                                    elements: carouselElements,
+                                                    senderName: 'AI Туслах',
+                                                }),
+                                            });
+                                        }
+                                    }
+
                                     // If there was an order action AND a text message, send text too
                                     if (aiResult.action?.type === 'create_order' && aiResult.text) {
                                         await fetch(`${protocol}://${host}/api/fb-send`, {
@@ -358,10 +384,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                                         });
                                     }
                                 } else if (aiMode === 'assist' && aiResult.text) {
-                                    // ASSIST: Save suggestion to conversation doc
+                                    // ASSIST: Save suggestion + products to conversation doc
                                     await fsMerge(convPath, {
                                         aiSuggestion: aiResult.text,
                                         aiAction: aiResult.action || null,
+                                        aiSuggestedProducts: aiResult.suggestedProducts || null,
                                     });
                                 }
                             } catch (aiErr) {

@@ -327,9 +327,35 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         const rawText = response.text || 'Уучлаарай, хариулт бэлдэж чадсангүй. Оператор тан руу холбогдоно.';
         const parsed = parseAIResponse(rawText);
 
+        // 7. Match mentioned products → return with images for carousel
+        const suggestedProducts: Array<{
+            id: string; title: string; subtitle: string;
+            image_url: string; default_url: string;
+        }> = [];
+
+        for (const prod of products) {
+            const name = prod.data.name as string;
+            if (name && rawText.includes(name)) {
+                const pricing = prod.data.pricing as Record<string, unknown> | undefined;
+                const price = (pricing?.salePrice as number) || 0;
+                const images = prod.data.images as string[] | undefined;
+                const imageUrl = images?.[0] || '';
+
+                suggestedProducts.push({
+                    id: prod.id,
+                    title: name.substring(0, 80),
+                    subtitle: `₮${price.toLocaleString()} • Захиалгаар авах боломжтой`,
+                    image_url: imageUrl,
+                    default_url: storeUrl || '',
+                });
+            }
+            if (suggestedProducts.length >= 5) break;
+        }
+
         return res.status(200).json({
             text: parsed.text,
             action: parsed.action || null,
+            suggestedProducts: suggestedProducts.length > 0 ? suggestedProducts : null,
         });
 
     } catch (err: unknown) {
