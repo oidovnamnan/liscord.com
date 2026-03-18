@@ -399,6 +399,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         const suggestedProducts: Array<{
             id: string; title: string; subtitle: string;
             image_url: string; default_url: string;
+            buttons?: Array<{ title: string; payload: string }>;
         }> = [];
 
         for (const prod of products) {
@@ -415,6 +416,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                     subtitle: `₮${price.toLocaleString()} • Захиалгаар авах боломжтой`,
                     image_url: imageUrl,
                     default_url: storeUrl || '',
+                    buttons: [
+                        { title: '🛒 Захиалах', payload: `ORDER:${prod.id}:1` },
+                    ],
                 });
             }
             if (suggestedProducts.length >= 5) break;

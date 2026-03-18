@@ -403,15 +403,29 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
                     // ── 3. POSTBACK EVENT ──
                     if (event.postback) {
-                        const payload = event.postback.payload;
+                        const payload = event.postback.payload as string;
                         const title = event.postback.title;
+
+                        // Get sender name for postback
+                        let postbackSenderName = senderId;
+                        if (pageAccessToken) {
+                            try {
+                                const profileResp = await fetch(
+                                    `https://graph.facebook.com/v21.0/${senderId}?fields=first_name,last_name&access_token=${pageAccessToken}`
+                                );
+                                if (profileResp.ok) {
+                                    const profile = await profileResp.json();
+                                    postbackSenderName = `${profile.first_name || ''} ${profile.last_name || ''}`.trim() || senderId;
+                                }
+                            } catch { /* non-critical */ }
+                        }
 
                         const convPath = `businesses/${bizId}/fbConversations/${senderId}`;
                         await fsAdd(`${convPath}/messages`, {
                             text: `[Товч дарсан] ${title || payload}`,
                             direction: 'inbound',
                             senderId,
-                            senderName: senderId,
+                            senderName: postbackSenderName,
                             timestamp: tsDate,
                             isPostback: true,
                             postbackPayload: payload,
@@ -424,6 +438,29 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                             pageId,
                             pageName,
                         });
+
+                        // Handle ORDER postback from carousel buttons
+                        if (payload.startsWith('ORDER:')) {
+                            const host = req.headers.host || 'www.liscord.com';
+                            const protocol = host.includes('localhost') ? 'http' : 'https';
+                            try {
+                                const orderResp = await fetch(`${protocol}://${host}/api/fb-send`, {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({
+                                        bizId,
+                                        action: 'create_order_and_pay',
+                                        recipientId: senderId,
+                                        orderTag: payload.replace('ORDER:', ''),
+                                        senderName: postbackSenderName,
+                                    }),
+                                });
+                                const orderResult = await orderResp.json();
+                                console.log(`[Postback ORDER] Created order:`, orderResult);
+                            } catch (orderErr) {
+                                console.error('[Postback ORDER] Error creating order:', orderErr);
+                            }
+                        }
                     }
                 }
             }
