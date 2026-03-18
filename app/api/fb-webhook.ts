@@ -81,29 +81,50 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             for (const entry of body.entry || []) {
                 const pageId = entry.id;
 
-                // Find the business that has this pageId
-                // Try legacy single-page field first
-                let bizQuery = await getDb().collectionGroup('fbSettings')
-                    .where('pageId', '==', pageId)
-                    .limit(1)
-                    .get();
-
-                let bizId: string | undefined;
+                // Find the business and page token
+                let bizId: string | undefined = req.query.bizId as string;
                 let pageAccessToken: string | undefined;
                 let pageName: string = '';
 
-                if (!bizQuery.empty) {
-                    bizId = bizQuery.docs[0].ref.parent.parent?.id;
-                    const settingsData = bizQuery.docs[0].data();
-                    // Check pages array first for matching token
-                    const pagesArr = settingsData?.pages || [];
-                    const matchedPage = pagesArr.find((p: { pageId: string }) => p.pageId === pageId);
-                    if (matchedPage) {
-                        pageAccessToken = matchedPage.pageAccessToken;
-                        pageName = matchedPage.pageName || '';
-                    } else {
-                        pageAccessToken = settingsData?.pageAccessToken;
-                        pageName = settingsData?.pageName || '';
+                if (bizId) {
+                    // Direct lookup using bizId from webhook URL query param
+                    try {
+                        const configSnap = await getDb().doc(`businesses/${bizId}/fbSettings/config`).get();
+                        const settingsData = configSnap.data();
+                        if (settingsData) {
+                            // Check pages array first
+                            const pagesArr = settingsData.pages || [];
+                            const matchedPage = pagesArr.find((p: { pageId: string }) => p.pageId === pageId);
+                            if (matchedPage) {
+                                pageAccessToken = matchedPage.pageAccessToken;
+                                pageName = matchedPage.pageName || '';
+                            } else if (settingsData.pageId === pageId) {
+                                pageAccessToken = settingsData.pageAccessToken;
+                                pageName = settingsData.pageName || '';
+                            }
+                        }
+                    } catch (err) {
+                        console.error(`Error fetching settings for bizId=${bizId}:`, err);
+                    }
+                }
+
+                // Fallback: collectionGroup search if bizId not in URL
+                if (!bizId || !pageAccessToken) {
+                    try {
+                        const bizQuery = await getDb().collectionGroup('fbSettings')
+                            .where('pageId', '==', pageId)
+                            .limit(1)
+                            .get();
+                        if (!bizQuery.empty) {
+                            bizId = bizQuery.docs[0].ref.parent.parent?.id;
+                            const settingsData = bizQuery.docs[0].data();
+                            const pagesArr = settingsData?.pages || [];
+                            const matchedPage = pagesArr.find((p: { pageId: string }) => p.pageId === pageId);
+                            pageAccessToken = matchedPage?.pageAccessToken || settingsData?.pageAccessToken;
+                            pageName = matchedPage?.pageName || settingsData?.pageName || '';
+                        }
+                    } catch (err) {
+                        console.error('CollectionGroup fallback error:', err);
                     }
                 }
 
@@ -197,8 +218,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                         await convRef.collection('messages').add(messageData);
 
                         // ── AI MODE ROUTING ──
-                        const settings = bizQuery.docs[0].data();
-                        const aiMode = settings?.aiMode || 'manual';
+                        const settingsDoc = await getDb().doc(`businesses/${bizId}/fbSettings/config`).get();
+                        const aiMode = settingsDoc.data()?.aiMode || 'manual';
 
                         if (aiMode !== 'manual' && msg.text) {
                             try {
