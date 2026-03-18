@@ -136,6 +136,8 @@ export const fbMessengerService = {
                     tags: data.tags || [],
                     notes: data.notes || '',
                     assignedTo: data.assignedTo || '',
+                    aiSuggestion: data.aiSuggestion || null,
+                    aiAction: data.aiAction || null,
                     pageId: data.pageId || '',
                     pageName: data.pageName || '',
                 } as FbConversation;
