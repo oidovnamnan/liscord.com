@@ -2557,3 +2557,100 @@
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
 }
+
+/* FB Browser: Checkout page optimizations */
+.is-fb-browser .checkout-page {
+    padding-bottom: 24px !important;
+}
+
+.is-fb-browser .checkout-page .store-nav {
+    height: 48px !important;
+    padding: 0 !important;
+}
+
+.is-fb-browser .checkout-page .store-nav > div {
+    padding: 0 12px !important;
+}
+
+/* Single column on FB browser */
+.is-fb-browser .checkout-grid {
+    grid-template-columns: 1fr !important;
+    gap: 16px !important;
+}
+
+/* Compact form cards */
+.is-fb-browser .checkout-page .settings-card {
+    padding: 20px 16px !important;
+    border-radius: 16px !important;
+}
+
+.is-fb-browser .checkout-page .checkout-section-header h2 {
+    font-size: 1rem !important;
+}
+
+.is-fb-browser .checkout-page .checkout-section-icon {
+    width: 36px !important;
+    height: 36px !important;
+    border-radius: 10px !important;
+}
+
+/* Compact inputs */
+.is-fb-browser .checkout-page .input {
+    height: 44px !important;
+    border-radius: 10px !important;
+    font-size: 0.88rem !important;
+}
+
+.is-fb-browser .checkout-page .checkout-label {
+    font-size: 0.72rem !important;
+}
+
+/* Grid 2-col on FB */
+.is-fb-browser .checkout-page .grid-2-gap {
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+}
+
+/* Payment method selector compact */
+.is-fb-browser .checkout-page .payment-option {
+    padding: 12px 14px !important;
+    border-radius: 12px !important;
+}
+
+/* QPay bank app grid — 3 columns on FB */
+.is-fb-browser .checkout-page .qpay-bank-grid {
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 8px !important;
+}
+
+/* Order summary compact */
+.is-fb-browser .checkout-page .order-summary-card {
+    padding: 20px 16px !important;
+    border-radius: 16px !important;
+}
+
+/* Submit button */
+.is-fb-browser .checkout-page .checkout-submit-btn {
+    height: 48px !important;
+    border-radius: 12px !important;
+    font-size: 0.9rem !important;
+}
+
+/* ── Success page on FB Browser ── */
+.is-fb-browser .checkout-page .animate-slide-up {
+    padding: 24px 16px !important;
+    border-radius: 20px !important;
+    max-width: 100% !important;
+}
+
+/* Bank transfer info compact */
+.is-fb-browser .checkout-page .bank-transfer-info {
+    padding: 16px !important;
+    border-radius: 14px !important;
+}
+
+/* Ref code area compact */
+.is-fb-browser .checkout-page .ref-code-box {
+    padding: 12px !important;
+    border-radius: 10px !important;
+}
