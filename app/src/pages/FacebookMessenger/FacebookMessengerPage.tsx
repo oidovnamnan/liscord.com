@@ -558,6 +558,7 @@ export function FacebookMessengerPage() {
                                         <button key={mode} className={`fbm-ai-mode-btn ${(settings?.aiMode || 'manual') === mode ? 'active' : ''}`}
                                             onClick={async () => {
                                                 await fbMessengerService.updateAIMode(business!.id, mode);
+                                                setSettings(prev => prev ? { ...prev, aiMode: mode } : prev);
                                                 toast.success(`AI горим: ${mode === 'manual' ? 'Гар' : mode === 'assist' ? 'Туслах' : 'Автомат'}`);
                                             }}>
                                             <span className="fbm-ai-mode-icon">{mode === 'manual' ? '🔴' : mode === 'assist' ? '🟡' : '🟢'}</span>
