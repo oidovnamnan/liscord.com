@@ -548,6 +548,19 @@ function SourcingDetailModal({ order, businessId, settings, onClose, onUpdate }:
     const [statusOverride, setStatusOverride] = useState<SourcingStatus>(order.sourcing?.status || 'ordered');
     const [copiedField, setCopiedField] = useState<string | null>(null);
 
+    // Dirty state tracking: save button disabled when no changes
+    const [lastSavedSnapshot, setLastSavedSnapshot] = useState<string>(() => {
+        const snap = JSON.stringify({
+            items: Object.fromEntries(Object.entries(
+                (() => { const s: Record<string, SourcingItem> = {}; const existing = order.sourcing?.items || {}; const hasExisting = Object.keys(existing).length > 0; order.items.forEach(it => { s[it.productId] = existing[it.productId] || { ordered: !hasExisting }; }); return s; })()
+            ).map(([k, v]) => [k, v.ordered])),
+            status: order.sourcing?.status || 'ordered',
+            tracking: order.sourcing?.trackingNumber || '',
+            notes: order.sourcing?.notes || '',
+        });
+        return snap;
+    });
+
     // Products info for source links + price editing
     const [productsInfo, setProductsInfo] = useState<Record<string, ProductInfo>>({});
     const [editingPrice, setEditingPrice] = useState<Record<string, string>>({});
@@ -663,6 +676,13 @@ function SourcingDetailModal({ order, businessId, settings, onClose, onUpdate }:
             };
             onUpdate(updated);
             toast.success('Хадгалагдлаа');
+            // Update saved snapshot so button becomes disabled
+            setLastSavedSnapshot(JSON.stringify({
+                items: Object.fromEntries(Object.entries(itemsState).map(([k, v]) => [k, v.ordered])),
+                status: statusOverride,
+                tracking: trackingNumber,
+                notes,
+            }));
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         } catch (_e) {
             toast.error('Алдаа гарлаа');
@@ -943,7 +963,7 @@ function SourcingDetailModal({ order, businessId, settings, onClose, onUpdate }:
 
                 <div className="modal-footer" style={{ padding: '16px 28px' }}>
                     <button className="btn btn-secondary" onClick={onClose}>Болих</button>
-                    <button className="btn btn-primary gradient-btn" onClick={handleSave} disabled={saving || (!anyItemOrdered && !order.sourcing?.status)}>
+                    <button className="btn btn-primary gradient-btn" onClick={handleSave} disabled={saving || (!anyItemOrdered && !order.sourcing?.status) || JSON.stringify({ items: Object.fromEntries(Object.entries(itemsState).map(([k, v]) => [k, v.ordered])), status: statusOverride, tracking: trackingNumber, notes }) === lastSavedSnapshot}>
                         {saving ? 'Хадгалж байна...' : '💾 Хадгалах'}
                     </button>
                 </div>
