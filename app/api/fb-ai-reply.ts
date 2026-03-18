@@ -194,11 +194,17 @@ ${categoryTable || '(Ангилал оруулаагүй)'}
 БАРААНЫ ЖАГСААЛТ:
 ${productTable || '(Бараа оруулаагүй)'}
 
+VIP ГИШҮҮНЧЛЭЛ:
+- 🔒VIP тэмдэгтэй бараа, ангилал = гишүүнчлэлийн төлбөр шаардлагатай
+- Хэрэглэгч VIP бараа асуувал → "Энэ бараа VIP гишүүнчлэл шаардлагатай. Гишүүнчлэлийн бүртгэл хийхийн тулд ангиллын линк дээр дарна уу" гэж хэлэх
+- VIP бус бараа санал болгох, VIP линк зааж өгөх
+
 ЗАХИАЛГА:
 - Бараа асуувал → нэр, үнэ, ангиллын линк хэлэх
 - "Захиалах уу?" асуух
 - Баталвал → [ORDER:productId:quantity] оруулах
 - Олон бараа: [ORDER:id1:1,id2:2]
+- VIP бараа захиалахад → эхлээд гишүүнчлэл бүртгүүлэх шаардлагатай гэж хэлэх
 
 ХАРИУЛАХГҮЙ:
 - Буцаалт/гомдол → "Операторт шилжүүлж байна 🙏"
@@ -271,11 +277,28 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
         // 3. Get categories (for context)
         const categories = await fsListWithFilter(`businesses/${bizId}/categories`, 'isDeleted', false, 50);
+
+        // Build exclusive category ID set and linked map
+        const exclusiveCatIds = new Set<string>();
+        const linkedToExclusiveMap: Record<string, string> = {};
+        categories.forEach(d => {
+            if (d.data.categoryType === 'exclusive') {
+                exclusiveCatIds.add(d.id);
+                // Also map linked normal categories to this exclusive
+                const linkedIds = d.data.linkedCategoryIds as string[] | undefined;
+                if (linkedIds) {
+                    linkedIds.forEach(lid => { linkedToExclusiveMap[lid] = d.data.name as string; });
+                }
+            }
+        });
+
         const categoryTable = categories.map(d => {
             const c = d.data;
             const catName = c.name as string;
+            const isExclusive = c.categoryType === 'exclusive';
             const catLink = storeUrl ? `${storeUrl}?cat=${encodeURIComponent(catName)}` : '';
-            return `• "${catName}" → ${catLink}`;
+            const vipTag = isExclusive ? ' 🔒VIP (гишүүнчлэл шаардлагатай)' : '';
+            return `• "${catName}"${vipTag} → ${catLink}`;
         }).join('\n');
 
         // 4. Get products (compact table for AI)
@@ -295,7 +318,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 : `₮${salePrice.toLocaleString()}`;
             const desc = p.description as string;
             const catName = p.categoryName as string;
-            return `[${d.id}] "${p.name}" | ${priceLabel} | ${stockLabel}${catName ? ` | ${catName}` : ''}${desc ? ` | ${desc.substring(0, 50)}` : ''}`;
+            const catId = p.categoryId as string;
+            const isVip = catId && (exclusiveCatIds.has(catId) || linkedToExclusiveMap[catId]);
+            const vipTag = isVip ? ' 🔒VIP' : '';
+            return `[${d.id}] "${p.name}" | ${priceLabel} | ${stockLabel}${vipTag}${catName ? ` | ${catName}` : ''}${desc ? ` | ${desc.substring(0, 50)}` : ''}`;
         }).join('\n');
 
         // 5. Get conversation history (last 10 messages)
