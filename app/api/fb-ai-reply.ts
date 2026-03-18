@@ -215,12 +215,9 @@ VIP ГИШҮҮНЧЛЭЛ:
 
 ЗАХИАЛГА:
 - Бараа асуувал → нэр, үнэ, ангиллын линк хэлэх
-- "Захиалах уу?" асуух
-- Баталвал → [ORDER:productId:quantity] оруулах
-- Олон бараа: [ORDER:id1:1,id2:2]
-- VIP бараа захиалахад → эхлээд гишүүнчлэл бүртгүүлэх шаардлагатай гэж хэлэх
-- Захиалга үүссэний дараа систем төлбөрийн мэдээллийг автомат илгээнэ (банкны данс, гүйлгээний утга = захиалгын дугаар)
-- Чи юуны түрүүнд [ORDER:...] форматаар захиалга үүсгэхэд хангалттай, төлбөр орсон эсэхийг админ хянана
+- Захиалах бол дэлгүүрийн линк өгөх (хэрэглэгч өөрөө дэлгүүрээс захиална)
+- VIP бараа захиалахад → гишүүнчлэл бүртгүүлэх шаардлагатай гэж хэлэх
+- [ORDER:...] формат ХЭРЭГЛЭХГҮЙ. Зөвхөн линк өгөх
 
 ХАРИУЛАХГҮЙ:
 - Буцаалт/гомдол → "Операторт шилжүүлж байна 🙏"
@@ -399,7 +396,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         const suggestedProducts: Array<{
             id: string; title: string; subtitle: string;
             image_url: string; default_url: string;
-            buttons?: Array<{ title: string; payload: string }>;
+            buttons?: Array<{ title: string; payload?: string; url?: string }>;
         }> = [];
 
         for (const prod of products) {
@@ -417,7 +414,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                     image_url: imageUrl,
                     default_url: storeUrl || '',
                     buttons: [
-                        { title: '🛒 Захиалах', payload: `ORDER:${prod.id}:1` },
+                        { title: '🛒 Дэлгүүр үзэх', url: storeUrl || '' },
                     ],
                 });
             }
