@@ -8,27 +8,122 @@
  *   action=send_payment — Create QPay invoice + send payment button
  *   action=typing_on    — Show typing indicator
  *   action=mark_seen    — Mark message as seen
+ * 
+ * Uses Firestore REST API (no firebase-admin SDK needed)
  */
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import * as admin from 'firebase-admin';
 
-// Initialize Firebase Admin
-if (!admin.apps.length) {
-    const projectId = process.env.FIREBASE_PROJECT_ID || 'liscord-2b529';
-    try {
-        admin.initializeApp({
-            credential: admin.credential.cert({
-                projectId,
-                clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-                privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
-            }),
-        });
-    } catch {
-        admin.initializeApp({ projectId });
+const PROJECT_ID = 'liscord-2b529';
+const FIRESTORE_BASE = `https://firestore.googleapis.com/v1/projects/${PROJECT_ID}/databases/(default)/documents`;
+const API_KEY = process.env.VITE_FIREBASE_API_KEY || process.env.FIREBASE_API_KEY || 'AIzaSyCuaNXSfhQt_dtNgoBs_Uz6IXN8qzZkONs';
+
+// ═══ Firestore REST API Helpers ═══
+
+function toFirestoreValue(val: unknown): Record<string, unknown> {
+    if (val === null || val === undefined) return { nullValue: null };
+    if (typeof val === 'string') return { stringValue: val };
+    if (typeof val === 'number') return Number.isInteger(val) ? { integerValue: String(val) } : { doubleValue: val };
+    if (typeof val === 'boolean') return { booleanValue: val };
+    if (val instanceof Date) return { timestampValue: val.toISOString() };
+    if (Array.isArray(val)) return { arrayValue: { values: val.map(v => toFirestoreValue(v)) } };
+    if (typeof val === 'object') {
+        const fields: Record<string, unknown> = {};
+        for (const [k, v] of Object.entries(val as Record<string, unknown>)) {
+            fields[k] = toFirestoreValue(v);
+        }
+        return { mapValue: { fields } };
     }
+    return { stringValue: String(val) };
 }
 
-const db = admin.firestore();
+function buildFirestoreDoc(data: Record<string, unknown>): Record<string, unknown> {
+    const fields: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(data)) {
+        fields[k] = toFirestoreValue(v);
+    }
+    return { fields };
+}
+
+function fromFirestoreValue(val: Record<string, unknown>): unknown {
+    if ('stringValue' in val) return val.stringValue;
+    if ('integerValue' in val) return Number(val.integerValue);
+    if ('doubleValue' in val) return val.doubleValue;
+    if ('booleanValue' in val) return val.booleanValue;
+    if ('nullValue' in val) return null;
+    if ('timestampValue' in val) return val.timestampValue;
+    if ('arrayValue' in val) {
+        const arr = val.arrayValue as { values?: Record<string, unknown>[] };
+        return (arr.values || []).map(v => fromFirestoreValue(v));
+    }
+    if ('mapValue' in val) {
+        const map = val.mapValue as { fields?: Record<string, Record<string, unknown>> };
+        const result: Record<string, unknown> = {};
+        for (const [k, v] of Object.entries(map.fields || {})) {
+            result[k] = fromFirestoreValue(v);
+        }
+        return result;
+    }
+    return null;
+}
+
+function fromFirestoreDoc(doc: { fields?: Record<string, Record<string, unknown>> }): Record<string, unknown> {
+    const result: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(doc.fields || {})) {
+        result[k] = fromFirestoreValue(v);
+    }
+    return result;
+}
+
+async function fsGet(path: string): Promise<Record<string, unknown> | null> {
+    try {
+        const resp = await fetch(`${FIRESTORE_BASE}/${path}?key=${API_KEY}`);
+        if (!resp.ok) return null;
+        const doc = await resp.json();
+        return fromFirestoreDoc(doc);
+    } catch { return null; }
+}
+
+async function fsMerge(path: string, data: Record<string, unknown>): Promise<boolean> {
+    try {
+        data.updatedAt = new Date();
+        const fieldPaths = Object.keys(data).map(k => `updateMask.fieldPaths=${k}`).join('&');
+        const resp = await fetch(`${FIRESTORE_BASE}/${path}?key=${API_KEY}&${fieldPaths}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(buildFirestoreDoc(data)),
+        });
+        if (!resp.ok) console.error(`[fsMerge] FAILED ${path}: ${resp.status}`);
+        return resp.ok;
+    } catch (err) { console.error(`[fsMerge] ERROR:`, err); return false; }
+}
+
+async function fsAdd(collectionPath: string, data: Record<string, unknown>): Promise<string | null> {
+    try {
+        const resp = await fetch(`${FIRESTORE_BASE}/${collectionPath}?key=${API_KEY}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(buildFirestoreDoc(data)),
+        });
+        if (!resp.ok) { console.error(`[fsAdd] FAILED ${collectionPath}: ${resp.status}`); return null; }
+        const result = await resp.json();
+        // Extract doc ID from name
+        const name = result.name as string;
+        return name.split('/').pop() || null;
+    } catch (err) { console.error(`[fsAdd] ERROR:`, err); return null; }
+}
+
+async function fsUpdate(path: string, data: Record<string, unknown>): Promise<boolean> {
+    try {
+        const fieldPaths = Object.keys(data).map(k => `updateMask.fieldPaths=${k}`).join('&');
+        const resp = await fetch(`${FIRESTORE_BASE}/${path}?key=${API_KEY}&${fieldPaths}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(buildFirestoreDoc(data)),
+        });
+        return resp.ok;
+    } catch { return false; }
+}
+
 const QPAY_API_URL = 'https://merchant.qpay.mn/v2';
 
 // QPay token cache
@@ -66,7 +161,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return res.status(405).json({ error: 'Method not allowed' });
     }
 
-    const { bizId, recipientId, action = 'send_text', message, senderName, imageUrl, buttons, title, subtitle, amount, description } = req.body;
+    const { bizId, recipientId, action = 'send_text', message, senderName, imageUrl, buttons, title, description, amount } = req.body;
 
     if (!bizId || !recipientId) {
         return res.status(400).json({ error: 'Missing bizId or recipientId' });
@@ -74,12 +169,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     try {
         // 1. Get Page Access Token
-        const settingsSnap = await db.doc(`businesses/${bizId}/fbSettings/config`).get();
-        const settings = settingsSnap.data();
-        if (!settings?.pageAccessToken) {
+        const settings = await fsGet(`businesses/${bizId}/fbSettings/config`);
+        if (!settings) {
+            return res.status(400).json({ error: 'Settings not found' });
+        }
+
+        // Multi-page support: Find the correct page token
+        let token = settings.pageAccessToken as string;
+        const pagesArr = (settings.pages as Array<{ pageId: string; pageAccessToken: string }>) || [];
+        if (pagesArr.length > 0 && pagesArr[0].pageAccessToken) {
+            // Use the first active page's token (or the legacy token)
+            token = pagesArr[0].pageAccessToken;
+        }
+
+        if (!token) {
             return res.status(400).json({ error: 'Facebook Page Access Token not configured' });
         }
-        const token = settings.pageAccessToken;
 
         // ── TYPING ON ──
         if (action === 'typing_on') {
@@ -96,6 +201,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         // Show typing before any message
         await sendToFacebook(token, { recipient: { id: recipientId }, sender_action: 'typing_on' });
 
+        const now = new Date();
+
         // ── SEND TEXT ──
         if (action === 'send_text') {
             if (!message) return res.status(400).json({ error: 'Missing message' });
@@ -106,25 +213,24 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             });
 
             // Save to Firestore
-            const convRef = db.doc(`businesses/${bizId}/fbConversations/${recipientId}`);
-            await convRef.set({
+            const convPath = `businesses/${bizId}/fbConversations/${recipientId}`;
+            await fsMerge(convPath, {
                 lastMessage: message,
-                lastMessageAt: admin.firestore.FieldValue.serverTimestamp(),
-                updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-            }, { merge: true });
+                lastMessageAt: now,
+            });
 
-            await convRef.collection('messages').add({
+            await fsAdd(`${convPath}/messages`, {
                 text: message,
                 direction: 'outbound',
                 senderId: 'page',
                 senderName: senderName || 'Оператор',
-                timestamp: admin.firestore.FieldValue.serverTimestamp(),
-                fbMessageId: (fbResult as any).message_id || '',
+                timestamp: now,
+                fbMessageId: (fbResult as Record<string, unknown>).message_id || '',
                 deliveredAt: null,
                 readAt: null,
             });
 
-            return res.status(200).json({ success: true, messageId: (fbResult as any).message_id });
+            return res.status(200).json({ success: true, messageId: (fbResult as Record<string, unknown>).message_id });
         }
 
         // ── SEND IMAGE ──
@@ -138,26 +244,25 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 },
             });
 
-            const convRef = db.doc(`businesses/${bizId}/fbConversations/${recipientId}`);
-            await convRef.set({
+            const convPath = `businesses/${bizId}/fbConversations/${recipientId}`;
+            await fsMerge(convPath, {
                 lastMessage: '📷 Зураг',
-                lastMessageAt: admin.firestore.FieldValue.serverTimestamp(),
-                updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-            }, { merge: true });
+                lastMessageAt: now,
+            });
 
-            await convRef.collection('messages').add({
+            await fsAdd(`${convPath}/messages`, {
                 text: '📷 Зураг',
                 direction: 'outbound',
                 senderId: 'page',
                 senderName: senderName || 'Оператор',
-                timestamp: admin.firestore.FieldValue.serverTimestamp(),
-                fbMessageId: (fbResult as any).message_id || '',
+                timestamp: now,
+                fbMessageId: (fbResult as Record<string, unknown>).message_id || '',
                 attachments: [{ type: 'image', url: imageUrl }],
                 deliveredAt: null,
                 readAt: null,
             });
 
-            return res.status(200).json({ success: true, messageId: (fbResult as any).message_id });
+            return res.status(200).json({ success: true, messageId: (fbResult as Record<string, unknown>).message_id });
         }
 
         // ── SEND BUTTON TEMPLATE ──
@@ -182,27 +287,26 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 },
             });
 
-            const convRef = db.doc(`businesses/${bizId}/fbConversations/${recipientId}`);
-            await convRef.set({
+            const convPath = `businesses/${bizId}/fbConversations/${recipientId}`;
+            await fsMerge(convPath, {
                 lastMessage: `📋 ${title}`,
-                lastMessageAt: admin.firestore.FieldValue.serverTimestamp(),
-                updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-            }, { merge: true });
+                lastMessageAt: now,
+            });
 
-            await convRef.collection('messages').add({
+            await fsAdd(`${convPath}/messages`, {
                 text: `📋 ${title}`,
                 direction: 'outbound',
                 senderId: 'page',
                 senderName: senderName || 'Оператор',
-                timestamp: admin.firestore.FieldValue.serverTimestamp(),
-                fbMessageId: (fbResult as any).message_id || '',
+                timestamp: now,
+                fbMessageId: (fbResult as Record<string, unknown>).message_id || '',
                 isTemplate: true,
                 templateType: 'button',
                 deliveredAt: null,
                 readAt: null,
             });
 
-            return res.status(200).json({ success: true, messageId: (fbResult as any).message_id });
+            return res.status(200).json({ success: true, messageId: (fbResult as Record<string, unknown>).message_id });
         }
 
         // ── SEND PAYMENT (QPay Invoice + Button Template) ──
@@ -210,18 +314,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             if (!amount) return res.status(400).json({ error: 'Missing amount' });
 
             // Get business QPay credentials
-            const paymentSnap = await db.doc(`businesses/${bizId}/payment_settings/qpay`).get();
-            const paySettings = paymentSnap.data();
+            const paySettings = await fsGet(`businesses/${bizId}/payment_settings/qpay`);
 
-            const qpayUsername = paySettings?.username || process.env.QPAY_VIP_USERNAME;
-            const qpayPassword = paySettings?.password || process.env.QPAY_VIP_PASSWORD;
-            const invoiceCode = paySettings?.invoiceCode || process.env.QPAY_VIP_INVOICE_CODE || 'GATE_SIM_INVOICE';
+            const qpayUsername = (paySettings?.username as string) || process.env.QPAY_VIP_USERNAME;
+            const qpayPassword = (paySettings?.password as string) || process.env.QPAY_VIP_PASSWORD;
+            const invoiceCode = (paySettings?.invoiceCode as string) || process.env.QPAY_VIP_INVOICE_CODE || 'GATE_SIM_INVOICE';
 
             if (!qpayUsername || !qpayPassword) {
                 return res.status(400).json({ error: 'QPay credentials not configured' });
             }
 
-            // Create QPay invoice
             const qpayToken = await getQPayToken(qpayUsername, qpayPassword);
             const invoiceId = `fb_${recipientId.slice(-6)}_${Date.now().toString(36)}`;
 
@@ -231,10 +333,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
             const invoiceResp = await fetch(`${QPAY_API_URL}/invoice`, {
                 method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${qpayToken}`,
-                    'Content-Type': 'application/json',
-                },
+                headers: { 'Authorization': `Bearer ${qpayToken}`, 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     invoice_code: invoiceCode,
                     sender_invoice_no: invoiceId,
@@ -252,8 +351,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             }
 
             const invoice = await invoiceResp.json();
-
-            // Send button template with payment link
             const paymentText = `💳 Төлбөр: ${Number(amount).toLocaleString()}₮\n${description || 'Messenger-ээр илгээсэн нэхэмжлэх'}`;
 
             const fbResult = await sendToFacebook(token, {
@@ -272,21 +369,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 },
             });
 
-            // Save to Firestore
-            const convRef = db.doc(`businesses/${bizId}/fbConversations/${recipientId}`);
-            await convRef.set({
+            const convPath = `businesses/${bizId}/fbConversations/${recipientId}`;
+            await fsMerge(convPath, {
                 lastMessage: `💳 Төлбөр: ${Number(amount).toLocaleString()}₮`,
-                lastMessageAt: admin.firestore.FieldValue.serverTimestamp(),
-                updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-            }, { merge: true });
+                lastMessageAt: now,
+            });
 
-            await convRef.collection('messages').add({
+            await fsAdd(`${convPath}/messages`, {
                 text: paymentText,
                 direction: 'outbound',
                 senderId: 'page',
                 senderName: senderName || 'Оператор',
-                timestamp: admin.firestore.FieldValue.serverTimestamp(),
-                fbMessageId: (fbResult as any).message_id || '',
+                timestamp: now,
+                fbMessageId: (fbResult as Record<string, unknown>).message_id || '',
                 isPayment: true,
                 paymentAmount: amount,
                 paymentInvoiceId: invoice.invoice_id,
@@ -298,7 +393,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
             return res.status(200).json({
                 success: true,
-                messageId: (fbResult as any).message_id,
+                messageId: (fbResult as Record<string, unknown>).message_id,
                 invoiceId: invoice.invoice_id,
                 qrImage: invoice.qr_image,
                 shortUrl: invoice.qPay_shortUrl,
@@ -310,28 +405,28 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             const { productIds, quantities, customerName, customerPsid } = req.body;
             if (!productIds?.length) return res.status(400).json({ error: 'Missing productIds' });
 
-            // 1. Fetch products from Firestore
+            // 1. Fetch products
             const items: Array<{ productId: string; name: string; variant: string; quantity: number; unitPrice: number; costPrice: number; totalPrice: number; image: string | null }> = [];
             let subtotal = 0;
 
             for (let i = 0; i < productIds.length; i++) {
-                const prodSnap = await db.doc(`businesses/${bizId}/products/${productIds[i]}`).get();
-                if (!prodSnap.exists) continue;
-                const p = prodSnap.data()!;
+                const p = await fsGet(`businesses/${bizId}/products/${productIds[i]}`);
+                if (!p) continue;
                 const qty = quantities?.[i] || 1;
-                const price = p.pricing?.salePrice || 0;
-                const cost = p.pricing?.costPrice || 0;
+                const pricing = p.pricing as Record<string, number> | undefined;
+                const price = pricing?.salePrice || 0;
+                const cost = pricing?.costPrice || 0;
                 const total = price * qty;
 
                 items.push({
-                    productId: prodSnap.id,
-                    name: p.name || 'Бараа',
+                    productId: productIds[i],
+                    name: (p.name as string) || 'Бараа',
                     variant: '',
                     quantity: qty,
                     unitPrice: price,
                     costPrice: cost,
                     totalPrice: total,
-                    image: p.images?.[0] || null,
+                    image: ((p.images as string[]) || [])[0] || null,
                 });
                 subtotal += total;
             }
@@ -341,16 +436,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             }
 
             // 2. Generate order number
-            const bizSnap = await db.doc(`businesses/${bizId}`).get();
-            const bizData = bizSnap.data();
-            const prefix = bizData?.settings?.orderPrefix || 'ORD';
-            const counter = (bizData?.settings?.orderCounter || 0) + 1;
+            const bizData = await fsGet(`businesses/${bizId}`);
+            const bizSettings = bizData?.settings as Record<string, unknown> | undefined;
+            const prefix = (bizSettings?.orderPrefix as string) || 'ORD';
+            const counter = ((bizSettings?.orderCounter as number) || 0) + 1;
             const orderNumber = `${prefix}-${String(counter).padStart(4, '0')}`;
 
             // Update counter
-            await db.doc(`businesses/${bizId}`).update({ 'settings.orderCounter': counter });
+            await fsUpdate(`businesses/${bizId}`, { 'settings.orderCounter': counter });
 
-            // 3. Create Order in Firestore
+            // 3. Create Order
             const orderData = {
                 orderNumber,
                 status: 'new',
@@ -383,116 +478,56 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 deliveryAddress: '',
                 statusHistory: [{
                     status: 'new',
-                    at: new Date(),
+                    at: now,
                     by: 'ai_messenger',
                     byName: 'AI Туслах',
                 }],
                 tags: ['messenger', 'ai'],
                 createdBy: 'ai_messenger',
                 createdByName: 'AI Туслах',
-                createdAt: admin.firestore.FieldValue.serverTimestamp(),
-                updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+                createdAt: now,
+                updatedAt: now,
                 isDeleted: false,
                 orderType: 'standard',
                 messengerPsid: customerPsid,
             };
 
-            const orderRef = await db.collection(`businesses/${bizId}/orders`).add(orderData);
-            const orderId = orderRef.id;
+            const orderId = await fsAdd(`businesses/${bizId}/orders`, orderData);
 
-            // 4. Create QPay Invoice
-            const qpay = bizData?.settings?.qpay;
-            const qpayUsername = qpay?.username || process.env.QPAY_VIP_USERNAME;
-            const qpayPassword = qpay?.password || process.env.QPAY_VIP_PASSWORD;
-            const invoiceCode = qpay?.invoiceCode || process.env.QPAY_VIP_INVOICE_CODE || 'GATE_SIM_INVOICE';
-
-            if (!qpayUsername || !qpayPassword) {
-                // No QPay — just send order confirmation without payment
-                const confirmText = `🛒 Захиалга #${orderNumber} үүслээ!\n\n${items.map(it => `• ${it.name} x${it.quantity} — ₮${it.totalPrice.toLocaleString()}`).join('\n')}\n\nНийт: ₮${subtotal.toLocaleString()}\n\nТөлбөрийн мэдээллийг оператор илгээнэ.`;
-
-                const fbResult = await sendToFacebook(token, {
-                    recipient: { id: recipientId },
-                    message: { text: confirmText },
-                });
-
-                const convRef = db.doc(`businesses/${bizId}/fbConversations/${recipientId}`);
-                await convRef.set({ lastMessage: `🛒 Захиалга #${orderNumber}`, lastMessageAt: admin.firestore.FieldValue.serverTimestamp(), updatedAt: admin.firestore.FieldValue.serverTimestamp() }, { merge: true });
-                await convRef.collection('messages').add({
-                    text: confirmText, direction: 'outbound', senderId: 'page', senderName: senderName || 'AI Туслах',
-                    timestamp: admin.firestore.FieldValue.serverTimestamp(), fbMessageId: (fbResult as any).message_id || '',
-                    isAI: true, orderId, deliveredAt: null, readAt: null,
-                });
-
-                return res.status(200).json({ success: true, orderId, orderNumber });
-            }
-
-            // QPay invoice
-            const qpayToken = await getQPayToken(qpayUsername, qpayPassword);
-            const host = req.headers.host || 'www.liscord.com';
-            const protocol = host.includes('localhost') ? 'http' : 'https';
-            const callbackUrl = `${protocol}://${host}/api/qpay-callback?bizId=${bizId}&orderId=${orderId}`;
-
-            const invoiceResp = await fetch(`${QPAY_API_URL}/invoice`, {
-                method: 'POST',
-                headers: { 'Authorization': `Bearer ${qpayToken}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    invoice_code: invoiceCode,
-                    sender_invoice_no: orderId,
-                    invoice_receiver_code: customerPsid || 'messenger',
-                    invoice_description: `Захиалга #${orderNumber} — ₮${subtotal.toLocaleString()}`,
-                    amount: subtotal,
-                    callback_url: callbackUrl,
-                }),
-            });
-
-            if (!invoiceResp.ok) {
-                return res.status(500).json({ error: 'QPay invoice failed' });
-            }
-
-            const invoice = await invoiceResp.json();
-
-            // Save qpayInvoiceId to order
-            await orderRef.update({ qpayInvoiceId: invoice.invoice_id });
-
-            // 5. Send payment button via Messenger
-            const payText = `🛒 Захиалга #${orderNumber}\n\n${items.map(it => `• ${it.name} x${it.quantity} — ₮${it.totalPrice.toLocaleString()}`).join('\n')}\n\nНийт: ₮${subtotal.toLocaleString()}`;
+            // 4. Send confirmation
+            const confirmText = `🛒 Захиалга #${orderNumber} үүслээ!\n\n${items.map(it => `• ${it.name} x${it.quantity} — ₮${it.totalPrice.toLocaleString()}`).join('\n')}\n\nНийт: ₮${subtotal.toLocaleString()}`;
 
             const fbResult = await sendToFacebook(token, {
                 recipient: { id: recipientId },
-                message: {
-                    attachment: {
-                        type: 'template',
-                        payload: {
-                            template_type: 'button',
-                            text: payText,
-                            buttons: [
-                                { type: 'web_url', url: invoice.qPay_shortUrl || `https://qpay.mn/payment/${invoice.invoice_id}`, title: '💳 Төлбөр төлөх' },
-                            ],
-                        },
-                    },
-                },
+                message: { text: confirmText },
             });
 
-            // Save to chat
-            const convRef = db.doc(`businesses/${bizId}/fbConversations/${recipientId}`);
-            await convRef.set({ lastMessage: `🛒 #${orderNumber} — ₮${subtotal.toLocaleString()}`, lastMessageAt: admin.firestore.FieldValue.serverTimestamp(), updatedAt: admin.firestore.FieldValue.serverTimestamp() }, { merge: true });
-            await convRef.collection('messages').add({
-                text: payText, direction: 'outbound', senderId: 'page', senderName: senderName || 'AI Туслах',
-                timestamp: admin.firestore.FieldValue.serverTimestamp(), fbMessageId: (fbResult as any).message_id || '',
-                isAI: true, isPayment: true, paymentAmount: subtotal, paymentInvoiceId: invoice.invoice_id,
-                paymentUrl: invoice.qPay_shortUrl, orderId, deliveredAt: null, readAt: null,
+            const convPath = `businesses/${bizId}/fbConversations/${recipientId}`;
+            await fsMerge(convPath, {
+                lastMessage: `🛒 Захиалга #${orderNumber}`,
+                lastMessageAt: now,
+            });
+            await fsAdd(`${convPath}/messages`, {
+                text: confirmText,
+                direction: 'outbound',
+                senderId: 'page',
+                senderName: senderName || 'AI Туслах',
+                timestamp: now,
+                fbMessageId: (fbResult as Record<string, unknown>).message_id || '',
+                isAI: true,
+                orderId,
+                deliveredAt: null,
+                readAt: null,
             });
 
-            return res.status(200).json({
-                success: true, orderId, orderNumber,
-                invoiceId: invoice.invoice_id, shortUrl: invoice.qPay_shortUrl,
-            });
+            return res.status(200).json({ success: true, orderId, orderNumber });
         }
 
         return res.status(400).json({ error: `Unknown action: ${action}` });
 
-    } catch (err: any) {
+    } catch (err: unknown) {
+        const errMsg = err instanceof Error ? err.message : 'Internal server error';
         console.error('FB send error:', err);
-        return res.status(500).json({ error: err.message || 'Internal server error' });
+        return res.status(500).json({ error: errMsg });
     }
 }
