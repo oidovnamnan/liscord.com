@@ -43,15 +43,26 @@ export function EmployeesPage() {
     const handleReinvite = async (emp: Employee) => {
         if (!business) return;
         const loginUrl = `https://www.liscord.com/app`;
-        try {
-            await navigator.clipboard.writeText(loginUrl);
-            toast.success(
-                `Линк хуулагдлаа! ${emp.name}-д илгээнэ үү:\n${loginUrl}\n\nУтас: ${emp.phone}`,
-                { duration: 6000 }
-            );
-        } catch {
-            // Fallback for browsers without clipboard API
-            toast.success(`Нэвтрэх линк: ${loginUrl}\n${emp.name} (${emp.phone})`, { duration: 6000 });
+        const message = `Сайн байна уу ${emp.name}! ${business.name} бизнесийн багт таныг урьсан байна. Доорх линкээр нэвтэрнэ үү: ${loginUrl}`;
+        
+        // Try to open SMS app with pre-filled message
+        const isMobile = /iPhone|iPad|Android/i.test(navigator.userAgent);
+        if (isMobile && emp.phone) {
+            // iOS uses &body=, Android uses ?body=
+            const isIOS = /iPhone|iPad/i.test(navigator.userAgent);
+            const smsUrl = isIOS 
+                ? `sms:${emp.phone}&body=${encodeURIComponent(message)}`
+                : `sms:${emp.phone}?body=${encodeURIComponent(message)}`;
+            window.open(smsUrl, '_self');
+            toast.success('SMS апп нээгдлээ');
+        } else {
+            // Desktop: copy link to clipboard
+            try {
+                await navigator.clipboard.writeText(message);
+                toast.success(`Мессеж хуулагдлаа! ${emp.name} (${emp.phone})-д илгээнэ үү`, { duration: 5000 });
+            } catch {
+                toast.success(`Нэвтрэх линк: ${loginUrl}`, { duration: 5000 });
+            }
         }
         setMenuId(null);
     };

@@ -213,18 +213,25 @@
     color: #fff;
     position: relative;
     flex-shrink: 0;
+    overflow: visible;
 }
 
 .emp-status-dot {
     position: absolute;
-    bottom: 0; right: 0;
+    bottom: -1px; right: -1px;
     width: 12px; height: 12px;
     border-radius: 50%;
     border: 2.5px solid var(--surface-1, #fff);
+    background: #94a3b8;
+    z-index: 2;
 }
 .emp-status-dot.active {
     background: #22c55e;
     box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.2);
+}
+.emp-status-dot.pending_invite {
+    background: #f59e0b;
+    box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.2);
 }
 .emp-status-dot.inactive {
     background: #94a3b8;
