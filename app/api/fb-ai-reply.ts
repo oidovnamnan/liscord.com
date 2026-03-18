@@ -229,11 +229,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     try {
-        // 1. Get Gemini API key from system settings
-        const sysSettings = await fsGet('system/settings');
-        const apiKey = sysSettings?.geminiApiKey as string;
+        // 1. Get Gemini API key — env var first, then Firestore
+        let apiKey = process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY || '';
         if (!apiKey) {
-            return res.status(400).json({ error: 'Gemini API Key тохируулаагүй', fallback: true });
+            // Primary: system_settings/global (used by adminService)
+            const sysSettings = await fsGet('system_settings/global');
+            apiKey = (sysSettings?.geminiApiKey as string) || '';
+        }
+        if (!apiKey) {
+            // Fallback: systemSettings/general
+            const sysSettings2 = await fsGet('systemSettings/general');
+            apiKey = (sysSettings2?.geminiApiKey as string) || '';
+        }
+        if (!apiKey) {
+            return res.status(400).json({ error: 'Gemini API Key тохируулаагүй. GEMINI_API_KEY env var эсвэл system_settings/global-д тохируулна уу.', fallback: true });
         }
 
         // 2. Get business info
