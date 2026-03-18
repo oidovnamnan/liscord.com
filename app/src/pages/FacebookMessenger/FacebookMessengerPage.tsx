@@ -2,7 +2,8 @@ import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import {
     Send, Search, MessageSquare, X, Copy, Check, Loader2, Save,
     ExternalLink, Settings, Link2, Shield, Tag, StickyNote,
-    Zap, User, CreditCard, DollarSign, ChevronDown, XCircle, CheckCircle
+    Zap, User, CreditCard, DollarSign, ChevronDown, XCircle, CheckCircle,
+    Smile, Paperclip, Image as ImageIcon, ShoppingBag, Bot, Mic, ArrowRight
 } from 'lucide-react';
 import { useBusinessStore, useAuthStore, useUIStore } from '../../store';
 import { fbMessengerService, type FbConversation, type FbMessage, type FbSettings, type FbCannedResponse, type AiMode } from '../../services/fbMessengerService';
@@ -10,6 +11,7 @@ import toast from 'react-hot-toast';
 import './FacebookMessengerPage.css';
 
 type ConvFilter = 'all' | 'unread' | 'open' | 'closed';
+type SettingsTab = 'connection' | 'ai' | 'canned';
 
 const DEFAULT_CANNED: FbCannedResponse[] = [
     { key: '/баярлалаа', text: 'Баярлалаа! Манай дэлгүүрээр зочлоорой 🙏' },
@@ -18,6 +20,8 @@ const DEFAULT_CANNED: FbCannedResponse[] = [
     { key: '/цаг', text: 'Ажлын цаг: Даваа-Баасан 09:00-18:00' },
     { key: '/холбоо', text: 'Холбоо барих утас: ...' },
 ];
+
+const EMOJI_QUICK = ['👍', '❤️', '😊', '🙏', '🔥', '✅', '📦', '💳', '🎉', '👋', '😍', '🤔'];
 
 export function FacebookMessengerPage() {
     const { business } = useBusinessStore();
@@ -49,7 +53,13 @@ export function FacebookMessengerPage() {
     const [paymentAmount, setPaymentAmount] = useState('');
     const [paymentDesc, setPaymentDesc] = useState('');
     const [sendingPayment, setSendingPayment] = useState(false);
+    const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+    const [settingsTab, setSettingsTab] = useState<SettingsTab>('connection');
+    const [editingCanned, setEditingCanned] = useState<FbCannedResponse[]>([]);
+    const [newCannedKey, setNewCannedKey] = useState('');
+    const [newCannedText, setNewCannedText] = useState('');
     const messagesEndRef = useRef<HTMLDivElement>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     // Settings
     const [settings, setSettings] = useState<FbSettings | null>(null);
@@ -99,6 +109,7 @@ export function FacebookMessengerPage() {
         const text = newMessage;
         setNewMessage('');
         setShowCanned(false);
+        setShowEmojiPicker(false);
         setSending(true);
         try {
             const r = await fbMessengerService.sendMessage(business.id, activeConvId, text, user?.displayName || 'Оператор');
@@ -162,6 +173,30 @@ export function FacebookMessengerPage() {
         toast.success(newStatus === 'closed' ? 'Харилцаа хаагдлаа' : 'Харилцаа нээгдлээ');
     }, [business?.id, activeConvId, activeConv]);
 
+    const handleSendImage = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file || !business?.id || !activeConvId) return;
+        // For now just send as text placeholder — real implementation would upload to storage
+        toast.success(`📷 ${file.name} — Зураг илгээх (удахгүй нэмэгдэнэ)`);
+        e.target.value = '';
+    };
+
+    const handleAddCanned = () => {
+        if (!newCannedKey || !newCannedText) return;
+        const key = newCannedKey.startsWith('/') ? newCannedKey : `/${newCannedKey}`;
+        const updated = [...editingCanned, { key, text: newCannedText }];
+        setEditingCanned(updated);
+        setNewCannedKey('');
+        setNewCannedText('');
+    };
+
+    const handleSaveCanned = async () => {
+        if (!business?.id) return;
+        await fbMessengerService.saveCannedResponses(business.id, editingCanned);
+        setCannedResponses(editingCanned);
+        toast.success('Түргэн хариулт хадгалагдлаа!');
+    };
+
     const webhookUrl = `https://www.liscord.com/api/fb-webhook?bizId=${business?.id || ''}`;
     const copyText = (text: string, key: string) => { navigator.clipboard.writeText(text); setCopied(key); setTimeout(() => setCopied(''), 2000); };
 
@@ -221,6 +256,8 @@ export function FacebookMessengerPage() {
     const TAGS = ['VIP', 'Шинэ', 'Яаралтай', 'Хүлээгдэж буй'];
     const TAG_COLORS: Record<string, string> = { 'VIP': 'blue', 'Шинэ': 'green', 'Яаралтай': 'red', 'Хүлээгдэж буй': 'yellow' };
 
+    const aiModeLabel = settings?.aiMode === 'auto' ? '🟢 AI Auto' : settings?.aiMode === 'assist' ? '🟡 AI Туслах' : null;
+
     // ═══ RENDER ═══
     return (
         <div className="fbm-page animate-fade-in">
@@ -233,6 +270,7 @@ export function FacebookMessengerPage() {
                         <span className="fbm-toolbar-sub">
                             {settings?.pageName || 'Facebook Page'}
                             <span className={`fbm-dot ${settings?.isConnected ? 'connected' : ''}`} />
+                            {aiModeLabel && <span className="fbm-ai-toolbar-badge">{aiModeLabel}</span>}
                         </span>
                     </div>
                 </div>
@@ -260,7 +298,17 @@ export function FacebookMessengerPage() {
                     </div>
                     <div className="fbm-conv-list">
                         {loading ? (
-                            <div className="flex-center" style={{ padding: 40 }}><Loader2 size={18} className="animate-spin" style={{ color: '#1877F2' }} /></div>
+                            <div className="fbm-skeleton-list">
+                                {[1,2,3,4,5].map(i => (
+                                    <div key={i} className="fbm-skeleton-row">
+                                        <div className="fbm-skeleton-avatar" />
+                                        <div className="fbm-skeleton-lines">
+                                            <div className="fbm-skeleton-line w60" />
+                                            <div className="fbm-skeleton-line w80" />
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
                         ) : filteredConvs.length === 0 ? (
                             <div className="fbm-conv-empty">{convFilter !== 'all' ? 'Шүүлтэд тохирох алга' : settings?.isConnected ? '📭 Мессеж ирээгүй' : '⚙️ Тохиргоо хийнэ үү'}</div>
                         ) : filteredConvs.map(c => (
@@ -268,11 +316,13 @@ export function FacebookMessengerPage() {
                                 onClick={() => setActiveConvId(c.id)}>
                                 <div className="fbm-conv-avatar">
                                     {c.senderProfilePic ? <img src={c.senderProfilePic} alt="" /> : (c.senderName?.charAt(0) || '?')}
+                                    <span className="fbm-online-dot" />
                                 </div>
                                 <div className="fbm-conv-info">
                                     <div className="fbm-conv-name">
                                         {c.senderName}
                                         {c.tags?.includes('VIP') && <span className="fbm-mini-tag blue">VIP</span>}
+                                        {c.tags?.includes('Яаралтай') && <span className="fbm-mini-tag red">❗</span>}
                                     </div>
                                     <div className="fbm-conv-preview">{c.lastMessage}</div>
                                 </div>
@@ -314,11 +364,14 @@ export function FacebookMessengerPage() {
                                 {messagesWithDates.map((item, i) => item.type === 'date' ? (
                                     <div key={`d-${i}`} className="fbm-date-sep"><span>{item.label}</span></div>
                                 ) : (
-                                    <div key={item.msg.id} className={`fbm-msg ${item.msg.direction} ${item.msg.isPostback ? 'postback' : ''}`}>
+                                    <div key={item.msg.id} className={`fbm-msg ${item.msg.direction} ${item.msg.isPostback ? 'postback' : ''} ${item.msg.isAI ? 'ai-msg' : ''} msg-animate`}>
                                         {item.msg.direction === 'inbound' && (
                                             <div className="fbm-msg-av">
                                                 {activeConv.senderProfilePic ? <img src={activeConv.senderProfilePic} alt="" /> : (activeConv.senderName?.charAt(0) || '?')}
                                             </div>
+                                        )}
+                                        {item.msg.isAI && item.msg.direction === 'outbound' && (
+                                            <div className="fbm-msg-av ai-av"><Bot size={14} /></div>
                                         )}
                                         <div className="fbm-msg-content">
                                             {/* Payment message */}
@@ -382,7 +435,7 @@ export function FacebookMessengerPage() {
                             {activeConv?.aiSuggestion && (
                                 <div className="fbm-ai-suggestion">
                                     <div className="fbm-ai-suggestion-header">
-                                        <span>🤖 AI санал болгож байна:</span>
+                                        <span><Bot size={14} /> AI санал болгож байна:</span>
                                         <div className="fbm-ai-suggestion-actions">
                                             <button className="fbm-ai-approve" onClick={async () => {
                                                 try {
@@ -399,9 +452,23 @@ export function FacebookMessengerPage() {
                                 </div>
                             )}
 
+                            {/* Emoji Picker */}
+                            {showEmojiPicker && (
+                                <div className="fbm-emoji-picker">
+                                    {EMOJI_QUICK.map(e => (
+                                        <button key={e} className="fbm-emoji-btn" onClick={() => { setNewMessage(prev => prev + e); setShowEmojiPicker(false); }}>
+                                            {e}
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
+
                             {/* Input */}
                             <div className="fbm-input">
-                                <input placeholder="Мессеж бичих... ( / түргэн хариу)" value={newMessage}
+                                <button className="fbm-input-action" onClick={() => setShowEmojiPicker(!showEmojiPicker)} title="Emoji"><Smile size={18} /></button>
+                                <button className="fbm-input-action" onClick={() => fileInputRef.current?.click()} title="Файл хавсаргах"><Paperclip size={18} /></button>
+                                <input type="file" ref={fileInputRef} hidden accept="image/*,video/*,.pdf,.doc,.docx" onChange={handleSendImage} />
+                                <input className="fbm-input-text" placeholder="Мессеж бичих... ( / түргэн хариу)" value={newMessage}
                                     onChange={e => { setNewMessage(e.target.value); setShowCanned(e.target.value.startsWith('/')); }}
                                     onKeyDown={e => e.key === 'Enter' && handleSend()} disabled={sending} />
                                 <button className="fbm-send" onClick={handleSend} disabled={!newMessage.trim() || sending}>
@@ -410,11 +477,61 @@ export function FacebookMessengerPage() {
                             </div>
                         </>
                     ) : (
+                        /* ── Empty State ── */
                         <div className="fbm-empty">
-                            <div className="fbm-empty-icon"><MessageSquare size={32} /></div>
-                            <h3>Facebook Messenger</h3>
-                            <p>{settings?.isConnected ? 'Зүүн талаас харилцагч сонгоно уу' : 'Эхлээд ⚙️ Тохиргоо хийж Page-ээ холбоно уу'}</p>
-                            {!settings?.isConnected && <button className="fbm-empty-btn" onClick={() => setShowDrawer(true)}>⚙️ Тохиргоо</button>}
+                            {settings?.isConnected ? (
+                                <>
+                                    <div className="fbm-empty-icon connected"><MessageSquare size={32} /></div>
+                                    <h3>Бэлэн!</h3>
+                                    <p>Зүүн талаас харилцагч сонгоно уу</p>
+                                    <div className="fbm-empty-stats">
+                                        <div className="fbm-empty-stat">
+                                            <span className="fbm-empty-stat-value">{conversations.length}</span>
+                                            <span className="fbm-empty-stat-label">Харилцагч</span>
+                                        </div>
+                                        <div className="fbm-empty-stat">
+                                            <span className="fbm-empty-stat-value">{totalUnread}</span>
+                                            <span className="fbm-empty-stat-label">Уншаагүй</span>
+                                        </div>
+                                        <div className="fbm-empty-stat">
+                                            <span className="fbm-empty-stat-value">{settings?.aiMode === 'auto' ? '🟢' : settings?.aiMode === 'assist' ? '🟡' : '🔴'}</span>
+                                            <span className="fbm-empty-stat-label">AI горим</span>
+                                        </div>
+                                    </div>
+                                </>
+                            ) : (
+                                <>
+                                    <div className="fbm-empty-icon"><MessageSquare size={32} /></div>
+                                    <h3>Facebook Messenger</h3>
+                                    <p>Page-ээ холбож чатаа эхлүүлээрэй</p>
+                                    <div className="fbm-setup-steps">
+                                        <div className="fbm-setup-step">
+                                            <div className="fbm-step-num">1</div>
+                                            <div>
+                                                <strong>Page Token авах</strong>
+                                                <span>Facebook Developer → Graph API Explorer</span>
+                                            </div>
+                                        </div>
+                                        <div className="fbm-setup-step">
+                                            <div className="fbm-step-num">2</div>
+                                            <div>
+                                                <strong>Webhook тохируулах</strong>
+                                                <span>Facebook App → Webhooks → Callback URL</span>
+                                            </div>
+                                        </div>
+                                        <div className="fbm-setup-step">
+                                            <div className="fbm-step-num">3</div>
+                                            <div>
+                                                <strong>Тохиргоо хадгалах</strong>
+                                                <span>Доорх товч дарж Token, Page ID оруулах</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <button className="fbm-empty-btn" onClick={() => setShowDrawer(true)}>
+                                        <Settings size={16} /> Тохиргоо хийх
+                                    </button>
+                                </>
+                            )}
                         </div>
                     )}
                 </div>
@@ -434,9 +551,34 @@ export function FacebookMessengerPage() {
                             <div className="fbm-info-id">PSID: {activeConv.id}</div>
                         </div>
 
+                        {/* Stats */}
                         <div className="fbm-info-section">
-                            <div className="fbm-info-label"><MessageSquare size={12} /> Статистик</div>
-                            <div className="fbm-info-value">{messages.length} мессеж</div>
+                            <div className="fbm-info-stats-grid">
+                                <div className="fbm-info-stat-card">
+                                    <span className="fbm-info-stat-value">{messages.length}</span>
+                                    <span className="fbm-info-stat-label">Мессеж</span>
+                                </div>
+                                <div className="fbm-info-stat-card">
+                                    <span className="fbm-info-stat-value">{messages.filter(m => m.isPayment).length}</span>
+                                    <span className="fbm-info-stat-label">Төлбөр</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Quick Actions */}
+                        <div className="fbm-info-section">
+                            <div className="fbm-info-label"><Zap size={12} /> Хурдан үйлдэл</div>
+                            <div className="fbm-quick-actions">
+                                <button className="fbm-quick-action" onClick={() => toggleTag('VIP')}>
+                                    ⭐ {activeConv.tags?.includes('VIP') ? 'VIP хасах' : 'VIP тэмдэглэх'}
+                                </button>
+                                <button className="fbm-quick-action" onClick={() => setShowPaymentModal(true)}>
+                                    💳 Төлбөр илгээх
+                                </button>
+                                <button className="fbm-quick-action" onClick={toggleConvStatus}>
+                                    {activeConv.status === 'open' ? '🔒 Хаах' : '🔓 Нээх'}
+                                </button>
+                            </div>
                         </div>
 
                         <div className="fbm-info-section">
@@ -505,76 +647,132 @@ export function FacebookMessengerPage() {
                             <h3><Settings size={18} /> Тохиргоо</h3>
                             <button className="fbm-toolbar-btn" onClick={() => setShowDrawer(false)}><X size={16} /></button>
                         </div>
-                        <div className="fbm-drawer-body">
-                            <div className="fbm-drawer-section">
-                                <div className="fbm-drawer-section-title"><Shield size={14} /> Холболт</div>
-                                <span className={`fbm-conn-badge ${settings?.isConnected ? 'connected' : ''}`}>
-                                    ● {settings?.isConnected ? 'Холбогдсон' : 'Холбогдоогүй'}
-                                </span>
-                            </div>
-                            <div className="fbm-drawer-section">
-                                <div className="fbm-drawer-section-title"><Link2 size={14} /> Webhook URL</div>
-                                <div className="fbm-copyable" onClick={() => copyText(webhookUrl, 'url')}>
-                                    <code>{webhookUrl}</code>
-                                    {copied === 'url' ? <Check size={12} color="#10b981" /> : <Copy size={12} />}
-                                </div>
-                                {settings?.verifyToken && (
-                                    <>
-                                        <div className="fbm-drawer-sublabel">Verify Token</div>
-                                        <div className="fbm-copyable" onClick={() => copyText(settings.verifyToken, 'token')}>
-                                            <code>{settings.verifyToken}</code>
-                                            {copied === 'token' ? <Check size={12} color="#10b981" /> : <Copy size={12} />}
-                                        </div>
-                                    </>
-                                )}
-                            </div>
-                            <div className="fbm-drawer-section">
-                                <div className="fbm-drawer-section-title"><Settings size={14} /> Access Token</div>
-                                <p className="fbm-drawer-hint">
-                                    <a href="https://developers.facebook.com/tools/explorer/" target="_blank" rel="noopener noreferrer">
-                                        Graph API Explorer <ExternalLink size={10} />
-                                    </a>
-                                </p>
-                                <div className="fbm-drawer-field">
-                                    <label>Page Name</label>
-                                    <input value={settingsForm.pageName} onChange={e => setSettingsForm(p => ({ ...p, pageName: e.target.value }))} placeholder="My Page" />
-                                </div>
-                                <div className="fbm-drawer-field">
-                                    <label>Page ID</label>
-                                    <input value={settingsForm.pageId} onChange={e => setSettingsForm(p => ({ ...p, pageId: e.target.value }))} placeholder="123456789" />
-                                </div>
-                                <div className="fbm-drawer-field">
-                                    <label>Page Access Token</label>
-                                    <input value={settingsForm.pageAccessToken} onChange={e => setSettingsForm(p => ({ ...p, pageAccessToken: e.target.value }))} placeholder="EAABsb..." type="password" />
-                                </div>
-                            </div>
 
-                            {/* AI Mode Section */}
-                            <div className="fbm-drawer-section">
-                                <div className="fbm-drawer-section-title">🤖 AI Горим</div>
-                                <p className="fbm-drawer-hint">Хэрэглэгчдэд хэрхэн хариулахыг тохируулна</p>
-                                <div className="fbm-ai-modes">
-                                    {(['manual', 'assist', 'auto'] as AiMode[]).map(mode => (
-                                        <button key={mode} className={`fbm-ai-mode-btn ${(settings?.aiMode || 'manual') === mode ? 'active' : ''}`}
-                                            onClick={async () => {
-                                                await fbMessengerService.updateAIMode(business!.id, mode);
-                                                setSettings(prev => prev ? { ...prev, aiMode: mode } : prev);
-                                                toast.success(`AI горим: ${mode === 'manual' ? 'Гар' : mode === 'assist' ? 'Туслах' : 'Автомат'}`);
-                                            }}>
-                                            <span className="fbm-ai-mode-icon">{mode === 'manual' ? '🔴' : mode === 'assist' ? '🟡' : '🟢'}</span>
-                                            <span className="fbm-ai-mode-label">{mode === 'manual' ? 'Гар' : mode === 'assist' ? 'Туслах' : 'Автомат'}</span>
-                                            <span className="fbm-ai-mode-desc">{mode === 'manual' ? 'AI оролцохгүй' : mode === 'assist' ? 'AI санал болгоно' : 'AI өөрөө хариулна'}</span>
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
-                        </div>
-                        <div className="fbm-drawer-footer">
-                            <button className="fbm-save-btn" onClick={handleSaveSettings} disabled={savingSettings}>
-                                {savingSettings ? <Loader2 className="animate-spin" size={16} /> : <Save size={16} />}
-                                Хадгалах
+                        {/* Tabs */}
+                        <div className="fbm-drawer-tabs">
+                            <button className={`fbm-drawer-tab ${settingsTab === 'connection' ? 'active' : ''}`} onClick={() => setSettingsTab('connection')}>
+                                <Link2 size={14} /> Холболт
+                            </button>
+                            <button className={`fbm-drawer-tab ${settingsTab === 'ai' ? 'active' : ''}`} onClick={() => setSettingsTab('ai')}>
+                                <Bot size={14} /> AI
+                            </button>
+                            <button className={`fbm-drawer-tab ${settingsTab === 'canned' ? 'active' : ''}`} onClick={() => { setSettingsTab('canned'); setEditingCanned([...cannedResponses]); }}>
+                                <Zap size={14} /> Хариулт
                             </button>
                         </div>
+
+                        <div className="fbm-drawer-body">
+                            {/* ── Connection Tab ── */}
+                            {settingsTab === 'connection' && (
+                                <>
+                                    <div className="fbm-drawer-section">
+                                        <div className="fbm-drawer-section-title"><Shield size={14} /> Холболт</div>
+                                        <span className={`fbm-conn-badge ${settings?.isConnected ? 'connected' : ''}`}>
+                                            ● {settings?.isConnected ? 'Холбогдсон' : 'Холбогдоогүй'}
+                                        </span>
+                                    </div>
+                                    <div className="fbm-drawer-section">
+                                        <div className="fbm-drawer-section-title"><Link2 size={14} /> Webhook URL</div>
+                                        <div className="fbm-copyable" onClick={() => copyText(webhookUrl, 'url')}>
+                                            <code>{webhookUrl}</code>
+                                            {copied === 'url' ? <Check size={14} /> : <Copy size={14} />}
+                                        </div>
+                                        {settings?.verifyToken && (
+                                            <>
+                                                <div className="fbm-drawer-sublabel">Verify Token</div>
+                                                <div className="fbm-copyable" onClick={() => copyText(settings.verifyToken, 'token')}>
+                                                    <code>{settings.verifyToken}</code>
+                                                    {copied === 'token' ? <Check size={14} /> : <Copy size={14} />}
+                                                </div>
+                                            </>
+                                        )}
+                                    </div>
+                                    <div className="fbm-drawer-section">
+                                        <div className="fbm-drawer-section-title"><Settings size={14} /> Access Token</div>
+                                        <p className="fbm-drawer-hint">
+                                            <a href="https://developers.facebook.com/tools/explorer/" target="_blank" rel="noopener noreferrer">
+                                                Graph API Explorer <ExternalLink size={11} />
+                                            </a>
+                                        </p>
+                                        <div className="fbm-drawer-field">
+                                            <label>Page Name</label>
+                                            <input value={settingsForm.pageName} onChange={e => setSettingsForm(p => ({ ...p, pageName: e.target.value }))} placeholder="My Page" />
+                                        </div>
+                                        <div className="fbm-drawer-field">
+                                            <label>Page ID</label>
+                                            <input value={settingsForm.pageId} onChange={e => setSettingsForm(p => ({ ...p, pageId: e.target.value }))} placeholder="123456789" />
+                                        </div>
+                                        <div className="fbm-drawer-field">
+                                            <label>Page Access Token</label>
+                                            <input value={settingsForm.pageAccessToken} onChange={e => setSettingsForm(p => ({ ...p, pageAccessToken: e.target.value }))} placeholder="EAABsb..." type="password" />
+                                        </div>
+                                    </div>
+                                </>
+                            )}
+
+                            {/* ── AI Tab ── */}
+                            {settingsTab === 'ai' && (
+                                <div className="fbm-drawer-section">
+                                    <div className="fbm-drawer-section-title"><Bot size={14} /> AI Горим</div>
+                                    <p className="fbm-drawer-hint">Хэрэглэгчдэд хэрхэн хариулахыг тохируулна</p>
+                                    <div className="fbm-ai-modes">
+                                        {(['manual', 'assist', 'auto'] as AiMode[]).map(mode => (
+                                            <button key={mode} className={`fbm-ai-mode-btn ${(settings?.aiMode || 'manual') === mode ? 'active' : ''}`}
+                                                onClick={async () => {
+                                                    await fbMessengerService.updateAIMode(business!.id, mode);
+                                                    setSettings(prev => prev ? { ...prev, aiMode: mode } : prev);
+                                                    toast.success(`AI горим: ${mode === 'manual' ? 'Гар' : mode === 'assist' ? 'Туслах' : 'Автомат'}`);
+                                                }}>
+                                                <span className="fbm-ai-mode-icon">{mode === 'manual' ? '🔴' : mode === 'assist' ? '🟡' : '🟢'}</span>
+                                                <div className="fbm-ai-mode-info">
+                                                    <span className="fbm-ai-mode-label">{mode === 'manual' ? 'Гар' : mode === 'assist' ? 'Туслах' : 'Автомат'}</span>
+                                                    <span className="fbm-ai-mode-desc">{mode === 'manual' ? 'AI оролцохгүй, оператор бүгдийг хамаарна' : mode === 'assist' ? 'AI хариу санал болгоно, оператор батлах/засах' : 'AI бүрэн автомат хариулна, захиалга үүсгэх, төлбөр илгээх'}</span>
+                                                </div>
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* ── Canned Responses Tab ── */}
+                            {settingsTab === 'canned' && (
+                                <div className="fbm-drawer-section">
+                                    <div className="fbm-drawer-section-title"><Zap size={14} /> Түргэн хариулт</div>
+                                    <p className="fbm-drawer-hint">Чатанд / бичээд хурдан хариулт оруулах</p>
+
+                                    <div className="fbm-canned-list">
+                                        {editingCanned.map((r, i) => (
+                                            <div key={i} className="fbm-canned-edit-row">
+                                                <code>{r.key}</code>
+                                                <span>{r.text}</span>
+                                                <button className="fbm-canned-del" onClick={() => setEditingCanned(prev => prev.filter((_, j) => j !== i))}>
+                                                    <X size={12} />
+                                                </button>
+                                            </div>
+                                        ))}
+                                    </div>
+
+                                    <div className="fbm-canned-add">
+                                        <input placeholder="/товчлол" value={newCannedKey} onChange={e => setNewCannedKey(e.target.value)} className="fbm-canned-key-input" />
+                                        <input placeholder="Хариу текст" value={newCannedText} onChange={e => setNewCannedText(e.target.value)} className="fbm-canned-text-input" />
+                                        <button className="fbm-canned-add-btn" onClick={handleAddCanned} disabled={!newCannedKey || !newCannedText}>+</button>
+                                    </div>
+
+                                    <button className="fbm-save-btn" onClick={handleSaveCanned} style={{ marginTop: 12 }}>
+                                        <Save size={16} /> Хадгалах
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+
+                        {settingsTab === 'connection' && (
+                            <div className="fbm-drawer-footer">
+                                <button className="fbm-save-btn" onClick={handleSaveSettings} disabled={savingSettings}>
+                                    {savingSettings ? <Loader2 className="animate-spin" size={16} /> : <Save size={16} />}
+                                    Хадгалах
+                                </button>
+                            </div>
+                        )}
                     </div>
                 </div>
             )}
