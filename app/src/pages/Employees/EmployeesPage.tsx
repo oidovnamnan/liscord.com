@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Search, Plus, Phone, Shield, MoreVertical, Clock, Loader2, Pencil, Trash2, Users, Briefcase } from 'lucide-react';
+import { Search, Plus, Phone, Shield, MoreVertical, Clock, Loader2, Pencil, Trash2, Users, Briefcase, Send } from 'lucide-react';
 import { useBusinessStore } from '../../store';
 import { teamService } from '../../services/db';
 import type { Employee, Position } from '../../types';
@@ -36,6 +36,22 @@ export function EmployeesPage() {
             toast.success('Ажилтан хасагдлаа');
         } catch {
             toast.error('Алдаа гарлаа');
+        }
+        setMenuId(null);
+    };
+
+    const handleReinvite = async (emp: Employee) => {
+        if (!business) return;
+        const loginUrl = `https://www.liscord.com/app`;
+        try {
+            await navigator.clipboard.writeText(loginUrl);
+            toast.success(
+                `Линк хуулагдлаа! ${emp.name}-д илгээнэ үү:\n${loginUrl}\n\nУтас: ${emp.phone}`,
+                { duration: 6000 }
+            );
+        } catch {
+            // Fallback for browsers without clipboard API
+            toast.success(`Нэвтрэх линк: ${loginUrl}\n${emp.name} (${emp.phone})`, { duration: 6000 });
         }
         setMenuId(null);
     };
@@ -175,6 +191,11 @@ export function EmployeesPage() {
                                                     <button className="emp-context-item" onClick={e => { e.stopPropagation(); setMenuId(null); setEditingEmployee(emp); }}>
                                                         <Pencil size={14} /> Засах
                                                     </button>
+                                                    {emp.status !== 'active' && (
+                                                        <button className="emp-context-item" onClick={e => { e.stopPropagation(); handleReinvite(emp); }}>
+                                                            <Send size={14} /> Дахин урих
+                                                        </button>
+                                                    )}
                                                     <button className="emp-context-item danger" onClick={e => { e.stopPropagation(); handleDelete(emp); }}>
                                                         <Trash2 size={14} /> Устгах
                                                     </button>
