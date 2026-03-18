@@ -17,6 +17,24 @@ const FIRESTORE_BASE = `https://firestore.googleapis.com/v1/projects/${PROJECT_I
 const API_KEY = process.env.VITE_FIREBASE_API_KEY || process.env.FIREBASE_API_KEY || 'AIzaSyCuaNXSfhQt_dtNgoBs_Uz6IXN8qzZkONs';
 console.log(`[fb-webhook] API_KEY length: ${API_KEY.length}`);
 
+// ═══ Message Deduplication ═══
+const processedMessages = new Map<string, number>();
+const DEDUP_TTL = 5 * 60 * 1000; // 5 minutes
+
+function isDuplicate(messageId: string): boolean {
+    // Clean old entries
+    const now = Date.now();
+    for (const [id, ts] of processedMessages) {
+        if (now - ts > DEDUP_TTL) processedMessages.delete(id);
+    }
+    if (processedMessages.has(messageId)) {
+        console.log(`[fb-webhook] DUPLICATE message ${messageId} — skipping`);
+        return true;
+    }
+    processedMessages.set(messageId, now);
+    return false;
+}
+
 // ═══ Firestore REST API Helpers ═══
 
 function toFirestoreValue(val: unknown): Record<string, unknown> {
@@ -185,6 +203,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             return res.status(404).send('Not a page event');
         }
 
+        // Respond 200 IMMEDIATELY to prevent Facebook retries
+        res.status(200).send('EVENT_RECEIVED');
+
+        // Process asynchronously after response
         try {
             for (const entry of body.entry || []) {
                 const pageId = entry.id;
@@ -229,6 +251,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                     // ── 1. MESSAGE EVENT ──
                     if (event.message) {
                         const msg = event.message;
+
+                        // Deduplication: skip if we already processed this message
+                        if (msg.mid && isDuplicate(msg.mid)) continue;
 
                         // Get sender profile from Facebook
                         let senderName = senderId;
@@ -495,8 +520,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             console.error('FB webhook processing error:', err);
         }
 
-        // Facebook expects 200 within 20 seconds
-        return res.status(200).send('EVENT_RECEIVED');
+        // Response already sent above
+        return;
     }
 
     return res.status(405).send('Method not allowed');
