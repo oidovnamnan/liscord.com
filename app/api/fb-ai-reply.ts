@@ -181,6 +181,12 @@ function buildSystemPrompt(
 - Emoji 0-1ш/мессеж (хэтрүүлэхгүй)
 - ХЭРЭГЛЭГЧИЙН ХЭЛЭЭР хариулах (MN/EN/RU)
 
+БАРАА ТАНИХ:
+- Хэрэглэгч монголоор бичвэл (жишээ: "цагаан будаа", "угаалгын нунтаг") → ижил төрлийн бараа ЖАГСААЛТААС хайж олох
+- Барааны НЭР англиар бичсэн байж болно (жишээ: "Royal Umbrella" = тайландын жасмин цагаан будаа)
+- Чи бүх брэндийн тухай МЭДЛЭГТЭЙ — интернэтээс мэддэг мэдээллээ ашиглаж, бараа тус бүрийн онцлог, ашиглах заавар, найрлага зэргийг хэрэглэгчид хэлж өг
+- "Байхгүй" гэж хэлэхээс ЗАЙЛСХИЙ — жагсаалтаас ойролцоо бараа хай, олдвол санал болго
+
 БИЗНЕСИЙН МЭДЭЭЛЭЛ:
 ${bizInfo.phone ? `• Утас: ${bizInfo.phone}` : ''}
 ${bizInfo.address ? `• Хаяг: ${bizInfo.address}` : ''}
@@ -321,7 +327,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             const catId = p.categoryId as string;
             const isVip = catId && (exclusiveCatIds.has(catId) || linkedToExclusiveMap[catId]);
             const vipTag = isVip ? ' 🔒VIP' : '';
-            return `[${d.id}] "${p.name}" | ${priceLabel} | ${stockLabel}${vipTag}${catName ? ` | ${catName}` : ''}${desc ? ` | ${desc.substring(0, 50)}` : ''}`;
+            const tags = p.tags as string[] | undefined;
+            const tagsStr = tags?.length ? ` | тэг: ${tags.join(', ')}` : '';
+            return `[${d.id}] "${p.name}" | ${priceLabel} | ${stockLabel}${vipTag}${catName ? ` | ${catName}` : ''}${desc ? ` | ${desc.substring(0, 200)}` : ''}${tagsStr}`;
         }).join('\n');
 
         // 5. Get conversation history (last 10 messages)
@@ -368,7 +376,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
         const response = await client.models.generateContent({
             model: 'gemini-2.5-flash',
-            contents
+            contents,
+            config: {
+                tools: [{ googleSearch: {} }],
+            }
         });
 
         const rawText = response.text || 'Уучлаарай, хариулт бэлдэж чадсангүй. Оператор тан руу холбогдоно.';
