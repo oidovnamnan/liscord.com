@@ -38,6 +38,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         const bizId = req.query.bizId as string;
 
         if (mode === 'subscribe') {
+            // Check env/default token first (no Firestore needed)
+            const envToken = process.env.FB_VERIFY_TOKEN || 'liscord_fb_verify_2026';
+            if (token === envToken) {
+                console.log('FB Webhook verified via env token');
+                return res.status(200).send(challenge);
+            }
+
+            // Then try Firestore-stored token
             if (bizId) {
                 try {
                     const settingsSnap = await db.doc(`businesses/${bizId}/fbSettings/config`).get();
@@ -49,12 +57,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 } catch (err) {
                     console.error('FB webhook verify error:', err);
                 }
-            }
-
-            const envToken = process.env.FB_VERIFY_TOKEN || 'liscord_fb_verify_2026';
-            if (token === envToken) {
-                console.log('FB Webhook verified via env token');
-                return res.status(200).send(challenge);
             }
 
             return res.status(403).send('Verification failed');
