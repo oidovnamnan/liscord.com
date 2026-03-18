@@ -132,9 +132,10 @@ service cloud.firestore {
         allow delete: if false;
       }
 
-      // Facebook Messenger settings: business members only
+      // Facebook Messenger settings: public read (API endpoints need tokens), write: members only
       match /fbSettings/{docId} {
-        allow read, write: if isMemberOf(bizId);
+        allow read: if true;  // fb-send/fb-webhook need to read pageAccessToken
+        allow write: if isMemberOf(bizId);
       }
 
       // Facebook Messenger conversations + messages
