@@ -578,8 +578,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
             const orderId = await fsAdd(`businesses/${bizId}/orders`, orderData);
 
-            // 4. Send confirmation
-            const confirmText = `🛒 Захиалга #${orderNumber} үүслээ!\n\n${items.map(it => `• ${it.name} x${it.quantity} — ₮${it.totalPrice.toLocaleString()}`).join('\n')}\n\nНийт: ₮${subtotal.toLocaleString()}`;
+            // 4. Get bank transfer info from business settings
+            const bankInfo = bizData?.bankInfo as Record<string, string> | undefined;
+            const bankName = bankInfo?.bankName || process.env.BANK_NAME || '';
+            const bankAccount = bankInfo?.bankAccount || process.env.BANK_ACCOUNT || '';
+            const bankAccountName = bankInfo?.bankAccountName || process.env.BANK_ACCOUNT_NAME || '';
+            const hasBankInfo = bankName && bankAccount;
+
+            // 5. Send confirmation with bank transfer details
+            let confirmText = `🛒 Захиалга #${orderNumber} үүслээ!\n\n${items.map(it => `• ${it.name} x${it.quantity} — ₮${it.totalPrice.toLocaleString()}`).join('\n')}\n\nНийт: ₮${subtotal.toLocaleString()}`;
+
+            if (hasBankInfo) {
+                confirmText += `\n\n💳 Төлбөрийн мэдээлэл:\n${bankName}, ${bankAccount}\nДансны нэр: ${bankAccountName}\nГүйлгээний утга: ${orderNumber}\n\nШилжүүлсний дараа хэлнэ үү 🙏`;
+            }
 
             const fbResult = await sendToFacebook(token, {
                 recipient: { id: recipientId },
