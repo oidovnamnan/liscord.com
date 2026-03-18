@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { productService, categoryService } from '../../../services/db';
 import { membershipService } from '../../../services/membershipService';
 import type { Business, Product, Category } from '../../../types';
@@ -17,7 +18,9 @@ export function useStorefrontData(business: Business | undefined) {
     const [activeMemberships, setActiveMemberships] = useState<string[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
-    const [activeCategory, setActiveCategory] = useState<string>('all');
+    const [searchParams] = useSearchParams();
+    const initialCat = searchParams.get('cat') || 'all';
+    const [activeCategory, setActiveCategory] = useState<string>(initialCat);
 
     // Shuffle helper (Fisher-Yates) — randomizes once per session
     const shuffleSeed = useRef(Date.now());
