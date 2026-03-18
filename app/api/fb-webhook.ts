@@ -203,10 +203,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             return res.status(404).send('Not a page event');
         }
 
-        // Respond 200 IMMEDIATELY to prevent Facebook retries
-        res.status(200).send('EVENT_RECEIVED');
-
-        // Process asynchronously after response
         try {
             for (const entry of body.entry || []) {
                 const pageId = entry.id;
@@ -537,8 +533,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             console.error('FB webhook processing error:', err);
         }
 
-        // Response already sent above
-        return;
+        // Respond 200 after processing (Facebook allows 20 seconds)
+        return res.status(200).send('EVENT_RECEIVED');
     }
 
     return res.status(405).send('Method not allowed');
