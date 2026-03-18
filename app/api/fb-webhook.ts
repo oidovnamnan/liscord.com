@@ -348,13 +348,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                                     // Send product carousel if AI suggested products with images
                                     if (aiResult.suggestedProducts?.length) {
                                         const carouselElements = aiResult.suggestedProducts
-                                            .filter((p: Record<string, string>) => p.image_url)
-                                            .map((p: Record<string, string>) => ({
+                                            .filter((p: Record<string, unknown>) => p.image_url)
+                                            .map((p: Record<string, unknown>) => ({
                                                 title: p.title,
                                                 subtitle: p.subtitle,
                                                 image_url: p.image_url,
                                                 default_url: p.default_url,
-                                                buttons: [{ title: '🛒 Захиалах', payload: `ORDER_${p.id}` }],
+                                                buttons: (p.buttons as Array<{ title: string; payload: string }>) || [{ title: '🛒 Захиалах', payload: `ORDER:${p.id}:1` }],
                                             }));
 
                                         if (carouselElements.length > 0) {
