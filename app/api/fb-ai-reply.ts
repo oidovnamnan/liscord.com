@@ -330,7 +330,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         // 4. Get ALL products (important: fetch enough to cover entire catalog)
         const products = await fsListWithFilter(`businesses/${bizId}/products`, 'isDeleted', false, 5000);
 
-        const productTable = products.map(d => {
+        // 5. Get conversation history EARLY (needed for smart product filtering)
+        const messages = await fsList(
+            `businesses/${bizId}/fbConversations/${senderId}/messages`,
+            'timestamp', 'desc', 10
+        );
+
+        // Build product detail formatter
+        const formatProductFull = (d: { id: string; data: Record<string, unknown> }) => {
             const p = d.data;
             const pricing = p.pricing as Record<string, unknown> | undefined;
             const stock = p.stock as Record<string, unknown> | undefined;
@@ -350,13 +357,75 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             const tags = p.tags as string[] | undefined;
             const tagsStr = tags?.length ? ` | тэг: ${tags.join(', ')}` : '';
             return `[${d.id}] "${p.name}" | ${priceLabel} | ${stockLabel}${vipTag}${catName ? ` | ${catName}` : ''}${desc ? ` | ${desc.substring(0, 200)}` : ''}${tagsStr}`;
-        }).join('\n');
+        };
 
-        // 5. Get conversation history (last 10 messages)
-        const messages = await fsList(
-            `businesses/${bizId}/fbConversations/${senderId}/messages`,
-            'timestamp', 'desc', 10
-        );
+        const formatProductCompact = (d: { id: string; data: Record<string, unknown> }) => {
+            const p = d.data;
+            const pricing = p.pricing as Record<string, unknown> | undefined;
+            const salePrice = (pricing?.salePrice as number) || 0;
+            const catName = p.categoryName as string;
+            const catId = p.categoryId as string;
+            const isVip = catId && (exclusiveCatIds.has(catId) || linkedToExclusiveMap[catId]);
+            const vipTag = isVip ? ' 🔒VIP' : '';
+            return `[${d.id}] "${p.name}" | ₮${salePrice.toLocaleString()}${vipTag}${catName ? ` | ${catName}` : ''}`;
+        };
+
+        // Smart pre-filtering: match products by user query + history keywords
+        const queryLower = messageText.toLowerCase();
+        // Also extract keywords from recent conversation history
+        const historyText = messages.map(m => ((m.data.text as string) || '').toLowerCase()).join(' ');
+        const allContext = `${queryLower} ${historyText}`;
+
+        // Find matching category names from context
+        const matchedCatNames = new Set<string>();
+        categories.forEach(d => {
+            const catName = (d.data.name as string || '').toLowerCase();
+            if (catName && allContext.includes(catName)) {
+                matchedCatNames.add(catName);
+            }
+        });
+
+        // Split products into relevant (full detail) and rest (compact)
+        const relevantProducts: typeof products = [];
+        const otherProducts: typeof products = [];
+
+        for (const d of products) {
+            const name = ((d.data.name as string) || '').toLowerCase();
+            const catName = ((d.data.categoryName as string) || '').toLowerCase();
+            const tags = (d.data.tags as string[] || []).map(t => t.toLowerCase());
+            const desc = ((d.data.description as string) || '').toLowerCase();
+
+            // Check if product is relevant to the query
+            const isRelevant =
+                // Product name or category matches a keyword in the query
+                allContext.split(/\s+/).some(word => word.length >= 2 && (
+                    name.includes(word) || word.includes(name.substring(0, 4)) ||
+                    tags.some(t => t.includes(word))
+                )) ||
+                // Category matches
+                matchedCatNames.has(catName) ||
+                // Direct name mention
+                queryLower.includes(name.substring(0, Math.min(name.length, 8)));
+
+            if (isRelevant) {
+                relevantProducts.push(d);
+            } else {
+                otherProducts.push(d);
+            }
+        }
+
+        // Build optimized product table
+        let productTable: string;
+        if (relevantProducts.length > 0) {
+            const relevantTable = relevantProducts.map(formatProductFull).join('\n');
+            const otherTable = otherProducts.map(formatProductCompact).join('\n');
+            productTable = `--- ХОЛБОГДОХ БАРАА (${relevantProducts.length}ш, дэлгэрэнгүй) ---\n${relevantTable}\n\n--- БУСАД БАРАА (${otherProducts.length}ш, товч) ---\n${otherTable}`;
+        } else {
+            // No specific match — send all products in compact format
+            productTable = products.map(formatProductCompact).join('\n');
+        }
+
+        // History already fetched above for smart filtering
 
         const history = messages.reverse().map(d => {
             return {
