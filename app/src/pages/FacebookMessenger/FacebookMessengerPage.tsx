@@ -244,12 +244,28 @@ export function FacebookMessengerPage() {
         return d.toLocaleDateString('mn-MN', { month: 'short', day: 'numeric' });
     };
 
-    // Display name: if raw FB PSID (all digits, 15+ chars), show "FB User"
+    // Display name: if raw FB PSID (all digits, 15+ chars), show friendly fallback
     const displayName = (name: string | undefined) => {
         if (!name) return 'Хэрэглэгч';
-        if (/^\d{15,}$/.test(name)) return `FB #${name.slice(-4)}`;
+        if (/^\d{15,}$/.test(name)) return 'Хэрэглэгч';
         return name;
     };
+
+    // Auto-resolve FB PSID names → real names via Graph API
+    const resolvedRef = useRef<Set<string>>(new Set());
+    useEffect(() => {
+        if (!business?.id || !conversations.length) return;
+        for (const c of conversations) {
+            if (c.senderName && /^\d{15,}$/.test(c.senderName) && !resolvedRef.current.has(c.id)) {
+                resolvedRef.current.add(c.id);
+                fetch('/api/fb-send', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ bizId: business.id, recipientId: c.id, action: 'resolve_name' }),
+                }).catch(() => {});
+            }
+        }
+    }, [business?.id, conversations]);
 
     const getDateLabel = (d: Date | null) => {
         if (!d) return '';

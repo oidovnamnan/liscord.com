@@ -198,6 +198,29 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             return res.status(200).json({ success: true });
         }
 
+        // ── RESOLVE NAME — Fetch real FB name from Graph API ──
+        if (action === 'resolve_name') {
+            try {
+                const profileResp = await fetch(
+                    `https://graph.facebook.com/v21.0/${recipientId}?fields=first_name,last_name,profile_pic&access_token=${token}`
+                );
+                if (profileResp.ok) {
+                    const profile = await profileResp.json();
+                    const realName = `${profile.first_name || ''} ${profile.last_name || ''}`.trim();
+                    if (realName) {
+                        await fsUpdate(`businesses/${bizId}/fbConversations/${recipientId}`, {
+                            senderName: realName,
+                            senderProfilePic: profile.profile_pic || '',
+                        });
+                        return res.status(200).json({ success: true, name: realName });
+                    }
+                }
+            } catch (err) {
+                console.error('[resolve_name] Error:', err);
+            }
+            return res.status(200).json({ success: false, error: 'Could not resolve name' });
+        }
+
         // Show typing before any message
         await sendToFacebook(token, { recipient: { id: recipientId }, sender_action: 'typing_on' });
 
