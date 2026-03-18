@@ -604,7 +604,93 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 readAt: null,
             });
 
-            return res.status(200).json({ success: true, orderId, orderNumber });
+            // 5. Auto QPay Invoice — send payment link if QPay configured
+            let paymentResult: Record<string, unknown> | null = null;
+            try {
+                const paySettings = await fsGet(`businesses/${bizId}/payment_settings/qpay`);
+                const qpayUsername = (paySettings?.username as string) || process.env.QPAY_VIP_USERNAME;
+                const qpayPassword = (paySettings?.password as string) || process.env.QPAY_VIP_PASSWORD;
+                const invoiceCode = (paySettings?.invoiceCode as string) || process.env.QPAY_VIP_INVOICE_CODE || 'GATE_SIM_INVOICE';
+
+                if (qpayUsername && qpayPassword && subtotal > 0) {
+                    const qpayToken = await getQPayToken(qpayUsername, qpayPassword);
+                    const payInvoiceId = `ai_${orderNumber}_${Date.now().toString(36)}`;
+
+                    const host = req.headers.host || 'www.liscord.com';
+                    const protocol = host.includes('localhost') ? 'http' : 'https';
+                    const callbackUrl = `${protocol}://${host}/api/qpay-callback?bizId=${bizId}&orderId=${orderId}`;
+
+                    const invoiceResp = await fetch(`${QPAY_API_URL}/invoice`, {
+                        method: 'POST',
+                        headers: { 'Authorization': `Bearer ${qpayToken}`, 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            invoice_code: invoiceCode,
+                            sender_invoice_no: payInvoiceId,
+                            invoice_receiver_code: recipientId,
+                            invoice_description: `Захиалга #${orderNumber} — ${items.map(it => it.name).join(', ')}`,
+                            amount: subtotal,
+                            callback_url: callbackUrl,
+                        }),
+                    });
+
+                    if (invoiceResp.ok) {
+                        const invoice = await invoiceResp.json();
+                        const paymentText = `💳 Төлбөр: ₮${subtotal.toLocaleString()}\nЗахиалга #${orderNumber}`;
+
+                        const payFbResult = await sendToFacebook(token, {
+                            recipient: { id: recipientId },
+                            message: {
+                                attachment: {
+                                    type: 'template',
+                                    payload: {
+                                        template_type: 'button',
+                                        text: paymentText,
+                                        buttons: [
+                                            { type: 'web_url', url: invoice.qPay_shortUrl || `https://qpay.mn/payment/${invoice.invoice_id}`, title: '💳 Төлбөр төлөх' },
+                                        ],
+                                    },
+                                },
+                            },
+                        });
+
+                        await fsAdd(`${convPath}/messages`, {
+                            text: paymentText,
+                            direction: 'outbound',
+                            senderId: 'page',
+                            senderName: 'AI Туслах',
+                            timestamp: new Date(),
+                            fbMessageId: (payFbResult as Record<string, unknown>).message_id || '',
+                            isPayment: true,
+                            isAI: true,
+                            paymentAmount: subtotal,
+                            paymentInvoiceId: invoice.invoice_id,
+                            paymentUrl: invoice.qPay_shortUrl,
+                            paymentQr: invoice.qr_image,
+                            orderId,
+                            deliveredAt: null,
+                            readAt: null,
+                        });
+
+                        // Update order with payment info
+                        if (orderId) {
+                            await fsUpdate(`businesses/${bizId}/orders/${orderId}`, {
+                                qpayInvoiceId: invoice.invoice_id,
+                                qpayShortUrl: invoice.qPay_shortUrl,
+                            });
+                        }
+
+                        paymentResult = {
+                            invoiceId: invoice.invoice_id,
+                            shortUrl: invoice.qPay_shortUrl,
+                            qrImage: invoice.qr_image,
+                        };
+                    }
+                }
+            } catch (payErr) {
+                console.error('Auto QPay invoice error (non-fatal):', payErr);
+            }
+
+            return res.status(200).json({ success: true, orderId, orderNumber, payment: paymentResult });
         }
 
         return res.status(400).json({ error: `Unknown action: ${action}` });
