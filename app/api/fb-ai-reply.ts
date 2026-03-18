@@ -156,16 +156,22 @@ function buildSystemPrompt(
     bizName: string,
     bizInfo: { phone?: string; address?: string; storeUrl?: string },
     productTable: string,
+    categoryTable: string,
     senderName: string
 ): string {
-    return `Чи "${bizName}" дэлгүүрийн найрсаг, тусч зөвлөх.
+    return `Чи "${bizName}" дэлгүүрийн найрсаг, мэргэжлийн зөвлөх.
 Чат дээр хэрэглэгчтэй харилцаж байна. Хэрэглэгчийн нэр: ${senderName}.
+
+БИЗНЕСИЙН ОНЦЛОГ:
+- Энэ бол ЗАХИАЛГЫН ҮЙЛЧИЛГЭЭ (99% захиалгаар бэлтгэдэг)
+- Бараа "дууссан" гэж хэлж БОЛОХГҮЙ — бүх бараа захиалгаар авах боломжтой
+- Үлдэгдэл 0 байсан ч хэрэглэгчид захиалга өгөх боломжтой гэж хэлэх
+- Дэлгүүрийн линк: ${bizInfo.storeUrl || '(тохируулаагүй)'}
 
 ДҮРЭМ:
 - Найрсаг, тусч, ТОВЧ хариулах (2-3 өгүүлбэрээс илүүгүй)
-- Зөвхөн мэдэх зүйлээ хариулах
-- Мэдэхгүй бол "Оператор тань удахгүй холбогдоно 🙏" гэж хэлэх
-- Бараа нэр, ҮНЭ, ҮЛДЭГДЭЛ → EXACT утгаар хариулах (зохиохгүй!)
+- Бараа асуухад → НЭРИЙГ ҮНИЙН ХАМТ хэлж, захиалах боломжтой гэдгийг мэдэгд
+- Ангиллын линк өгч болно (доорх АНГИЛАЛ хэсгээс)
 - Emoji бага зэрэг хэр (1-2 emoji/мессеж)
 - Монгол хэлээр
 
@@ -175,21 +181,24 @@ ${bizInfo.phone ? `• Утас: ${bizInfo.phone}` : ''}
 ${bizInfo.address ? `• Хаяг: ${bizInfo.address}` : ''}
 ${bizInfo.storeUrl ? `• Дэлгүүр: ${bizInfo.storeUrl}` : ''}
 
+АНГИЛАЛ (хэрэглэгчид линк өгч болно):
+${categoryTable || '(Ангилал оруулаагүй)'}
+
 БАРААНЫ ЖАГСААЛТ:
 ${productTable || '(Бараа оруулаагүй)'}
 
 ЗАХИАЛГА АВАХ:
-- Хэрэглэгч бараа авмаар бол → барааны нэр, үнэ, үлдэгдэл хэлэх
+- Хэрэглэгч бараа асуувал → барааны нэр, үнэ хэлж, захиалах эсэхийг асуух
 - "Захиалах уу?" гэж асуух
 - Хэрэглэгч "Тийм", "За", "Авъя" гэвэл → хариундаа [ORDER:productId:quantity] format оруулах
   Жишээ: "Захиалга үүсгэж байна! 🛒 [ORDER:abc123:1]"
 - Олон бараа бол: [ORDER:id1:1,id2:2]
-- Үлдэгдэл 0 бол → "Уучлаарай, одоогоор дууссан байна" гэж хэлэх (захиалга авахгүй)
+- Бүх бараа захиалгаар авах боломжтой (stock=0 ч захиалж болно!)
 
 ХАРИУЛАХГҮЙ:
 - Буцаалт/гомдол → "Оператор тан руу холбож байна 🙏"
 - Хувийн мэдээлэл асуувал → хариулахгүй
-- Барааны жагсаалтад байхгүй зүйл → "Манайд энэ бараа одоогоор байхгүй байна"`;
+- Жагсаалтад байхгүй зүйл → "Манайд энэ бараа одоогоор байхгүй байна. Гэхдээ манай бусад бүтээгдэхүүнээс сонгох бол: ${bizInfo.storeUrl || ''}"`;
 }
 
 function parseAIResponse(text: string): AIResponse {
@@ -251,7 +260,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         const bizSlug = biz?.slug as string;
         const storeUrl = bizSlug ? `https://www.liscord.com/store/${bizSlug}` : '';
 
-        // 3. Get products (compact table for AI)
+        // 3. Get categories (for links)
+        const categories = await fsListWithFilter(`businesses/${bizId}/categories`, 'isDeleted', false, 50);
+        const categoryTable = categories.map(d => {
+            const c = d.data;
+            const catLink = storeUrl ? `${storeUrl}?category=${d.id}` : '';
+            return `• "${c.name}" → ${catLink}`;
+        }).join('\n');
+
+        // 4. Get products (compact table for AI)
         const products = await fsListWithFilter(`businesses/${bizId}/products`, 'isDeleted', false, 100);
 
         const productTable = products.map(d => {
@@ -260,11 +277,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             const stock = p.stock as Record<string, unknown> | undefined;
             const price = (pricing?.salePrice as number) || 0;
             const qty = (stock?.quantity as number) ?? 0;
+            const isPreorder = p.isPreorder === true || (p.stockType === 'preorder');
+            const stockLabel = isPreorder ? 'Захиалгын' : `${qty}ш`;
             const desc = p.description as string;
-            return `[${d.id}] "${p.name}" | ₮${price.toLocaleString()} | Үлдэгдэл: ${qty}ш${desc ? ` | ${desc.substring(0, 60)}` : ''}`;
+            const catName = p.categoryName as string;
+            return `[${d.id}] "${p.name}" | ₮${price.toLocaleString()} | ${stockLabel}${catName ? ` | ${catName}` : ''}${desc ? ` | ${desc.substring(0, 50)}` : ''}`;
         }).join('\n');
 
-        // 4. Get conversation history (last 10 messages)
+        // 5. Get conversation history (last 10 messages)
         const messages = await fsList(
             `businesses/${bizId}/fbConversations/${senderId}/messages`,
             'timestamp', 'desc', 10
@@ -277,11 +297,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             };
         });
 
-        // 5. Build prompt and call Gemini
+        // 6. Build prompt and call Gemini
         const systemPrompt = buildSystemPrompt(
             bizName,
             { phone: biz?.phone as string, address: biz?.address as string, storeUrl },
             productTable,
+            categoryTable,
             senderName || senderId
         );
 
