@@ -30,14 +30,11 @@ export function FacebookMessengerPage() {
     const [savingSettings, setSavingSettings] = useState(false);
     const [copied, setCopied] = useState<string>('');
 
-    // ═══ Load settings ═══
     useEffect(() => {
         if (!business?.id) return;
         fbMessengerService.getSettings(business.id).then(s => {
             setSettings(s);
             if (s) setSettingsForm({ pageId: s.pageId, pageName: s.pageName, pageAccessToken: s.pageAccessToken });
-            // If not connected, show settings
-            if (!s?.isConnected) setActiveView('settings');
         });
     }, [business?.id]);
 
