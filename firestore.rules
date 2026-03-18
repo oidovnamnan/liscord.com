@@ -12,6 +12,10 @@ service cloud.firestore {
       return isAuth() && bizId in get(/databases/$(database)/documents/users/$(request.auth.uid)).data.businessIds;
     }
 
+    function isSuperAdmin() {
+      return isAuth() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isSuperAdmin == true;
+    }
+
     // === USERS ===
     match /users/{userId} {
       allow read, write: if isAuth() && request.auth.uid == userId;
@@ -22,28 +26,28 @@ service cloud.firestore {
       }
     }
 
-    // === SYSTEM SETTINGS (Super Admin only via Admin SDK) ===
+    // === SYSTEM SETTINGS (Super Admin) ===
     match /systemSettings/{docId} {
       allow read: if isAuth();
-      allow write: if false; // Admin SDK only
+      allow write: if isSuperAdmin();
     }
 
     // system_settings (snake_case — used by services)
     match /system_settings/{docId} {
       allow read: if isAuth();
-      allow write: if false; // Admin SDK only — SuperAdmin writes via Cloud Function proxy
+      allow write: if isSuperAdmin();
     }
 
-    // === BUSINESS CATEGORIES (public read) ===
+    // === BUSINESS CATEGORIES ===
     match /businessCategories/{catId} {
       allow read: if isAuth();
-      allow write: if false; // Admin SDK only
+      allow write: if isSuperAdmin();
     }
 
     // system_categories (snake_case — used by Module Settings page)
     match /system_categories/{catId} {
       allow read: if isAuth();
-      allow write: if false; // Admin SDK only — SuperAdmin writes via Cloud Function proxy
+      allow write: if isSuperAdmin();
     }
 
     // === BUSINESS REQUESTS ===
