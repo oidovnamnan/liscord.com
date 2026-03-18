@@ -49,9 +49,30 @@ export function StorefrontWrapper() {
         const prevTheme = root.getAttribute('data-theme') || 'dark';
         root.setAttribute('data-theme', 'light');
         document.body.style.background = '#ffffff';
+
+        // FB browser: enforce viewport to prevent zoom/scaling issues
+        const isFB = /FBAN|FBAV/i.test(navigator.userAgent);
+        let prevViewport = '';
+        if (isFB) {
+            const viewport = document.querySelector('meta[name="viewport"]');
+            if (viewport) {
+                prevViewport = viewport.getAttribute('content') || '';
+                viewport.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover');
+            }
+            // Add FB-specific body class for global CSS hooks
+            document.body.classList.add('fb-browser');
+        }
+
         return () => {
             root.setAttribute('data-theme', prevTheme);
             document.body.style.background = '';
+            if (isFB) {
+                const viewport = document.querySelector('meta[name="viewport"]');
+                if (viewport && prevViewport) {
+                    viewport.setAttribute('content', prevViewport);
+                }
+                document.body.classList.remove('fb-browser');
+            }
         };
     }, []);
 

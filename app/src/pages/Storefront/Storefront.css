@@ -2552,10 +2552,79 @@
     -webkit-backdrop-filter: none;
 }
 
-/* FB Browser: Stock inquiry popup */
-.is-fb-browser .sinq-popup-backdrop {
+/* FB Browser: Stock inquiry popup — compact for FB WebView */
+.is-fb-browser .sinq-popup-overlay {
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
+    padding: 12px;
+}
+
+.is-fb-browser .sinq-popup-card {
+    padding: 20px 16px;
+    border-radius: 18px;
+    max-width: 100%;
+}
+
+.is-fb-browser .sinq-popup-header {
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.is-fb-browser .sinq-popup-header h3 {
+    font-size: 0.95rem;
+}
+
+.is-fb-browser .sinq-popup-desc {
+    font-size: 0.75rem;
+    line-height: 1.5;
+    margin-bottom: 12px;
+}
+
+.is-fb-browser .sinq-popup-products {
+    gap: 8px;
+}
+
+.is-fb-browser .sinq-popup-product {
+    padding: 10px;
+    border-radius: 10px;
+    gap: 8px;
+}
+
+.is-fb-browser .sinq-popup-pimg {
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+}
+
+.is-fb-browser .sinq-popup-pimg-ph {
+    width: 40px;
+    height: 40px;
+}
+
+.is-fb-browser .sinq-popup-status {
+    padding-top: 12px;
+}
+
+.is-fb-browser .sinq-popup-timer svg {
+    width: 44px;
+    height: 44px;
+}
+
+.is-fb-browser .sinq-popup-btn {
+    padding: 10px 14px;
+    font-size: 0.78rem;
+    border-radius: 10px;
+}
+
+/* ══ Global FB Browser text-size fix ══ */
+body.fb-browser {
+    -webkit-text-size-adjust: 100%;
+    -moz-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+}
+
+body.fb-browser .storefront-layout {
+    font-size: 14px;
 }
 
 /* FB Browser: Checkout page optimizations */
