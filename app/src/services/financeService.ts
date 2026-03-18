@@ -142,11 +142,14 @@ export const dashboardService = {
             }
         });
 
+        // Count only active (non-deleted) products
+        const activeProducts = productsSnap.docs.filter(d => !d.data().isDeleted).length;
+
         const stats: BusinessStats = {
             totalOrders: ordersSnap.size,
             totalRevenue,
             totalCustomers: customersSnap.size,
-            totalProducts: productsSnap.size,
+            totalProducts: activeProducts,
             totalEmployees: data.stats?.totalEmployees || 0,
         };
 
