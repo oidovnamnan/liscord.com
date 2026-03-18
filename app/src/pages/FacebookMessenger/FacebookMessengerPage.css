@@ -455,3 +455,59 @@
     display: flex; align-items: center; gap: 8px; margin: 0;
 }
 .fbm-payment-modal-body { padding: 18px; }
+
+/* ── AI Badge ── */
+.fbm-ai-badge {
+    font-size: 0.6rem; margin-right: 2px;
+}
+
+/* ── AI Suggestion Bar ── */
+.fbm-ai-suggestion {
+    padding: 8px 16px; border-top: 1px solid var(--border-color);
+    background: linear-gradient(135deg, rgba(24,119,242,0.03), rgba(139,92,246,0.03));
+}
+.fbm-ai-suggestion-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 6px;
+}
+.fbm-ai-suggestion-header > span {
+    font-size: 0.72rem; font-weight: 600; color: #8b5cf6;
+}
+.fbm-ai-suggestion-actions { display: flex; gap: 4px; }
+.fbm-ai-approve, .fbm-ai-reject {
+    display: flex; align-items: center; gap: 3px;
+    padding: 4px 10px; border-radius: 6px; border: none;
+    font-size: 0.68rem; font-weight: 600; cursor: pointer;
+    font-family: inherit; transition: all 0.15s;
+}
+.fbm-ai-approve {
+    background: rgba(16,185,129,0.08); color: #10b981;
+}
+.fbm-ai-approve:hover { background: rgba(16,185,129,0.15); }
+.fbm-ai-reject {
+    background: rgba(239,68,68,0.06); color: #ef4444;
+}
+.fbm-ai-reject:hover { background: rgba(239,68,68,0.12); }
+.fbm-ai-suggestion-text {
+    padding: 8px 10px; background: var(--bg-primary);
+    border: 1px solid var(--border-color); border-radius: 10px;
+    font-size: 0.82rem; color: var(--text-primary);
+    line-height: 1.4;
+}
+
+/* ── AI Mode Toggle ── */
+.fbm-ai-modes { display: flex; flex-direction: column; gap: 6px; }
+.fbm-ai-mode-btn {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 12px; border: 1.5px solid var(--border-color);
+    border-radius: 10px; background: none; cursor: pointer;
+    transition: all 0.15s; text-align: left; font-family: inherit;
+}
+.fbm-ai-mode-btn:hover { border-color: #8b5cf6; }
+.fbm-ai-mode-btn.active {
+    border-color: #8b5cf6; background: rgba(139,92,246,0.04);
+}
+.fbm-ai-mode-icon { font-size: 1.2rem; flex-shrink: 0; }
+.fbm-ai-mode-label { font-weight: 700; font-size: 0.82rem; }
+.fbm-ai-mode-desc { font-size: 0.68rem; color: var(--text-muted); margin-left: auto; }
+

@@ -21,6 +21,8 @@ export interface FbConversation {
     tags?: string[];
     notes?: string;
     assignedTo?: string;
+    aiSuggestion?: string | null;
+    aiAction?: { type: string; productIds: string[]; quantities: number[] } | null;
 }
 
 export interface FbMessage {
@@ -41,7 +43,11 @@ export interface FbMessage {
     paymentQr?: string;
     isTemplate?: boolean;
     isPostback?: boolean;
+    isAI?: boolean;
+    orderId?: string;
 }
+
+export type AiMode = 'manual' | 'assist' | 'auto';
 
 export interface FbSettings {
     pageId: string;
@@ -50,6 +56,8 @@ export interface FbSettings {
     verifyToken: string;
     isConnected: boolean;
     connectedAt?: Date;
+    aiMode?: AiMode;
+    aiGreeting?: string;
 }
 
 export interface FbCannedResponse {
@@ -263,5 +271,34 @@ export const fbMessengerService = {
             responses,
             updatedAt: serverTimestamp(),
         });
+    },
+
+    // ── AI Mode ──
+    async updateAIMode(bizId: string, mode: AiMode): Promise<void> {
+        await setDoc(doc(db, 'businesses', bizId, 'fbSettings', 'config'), {
+            aiMode: mode,
+            updatedAt: serverTimestamp(),
+        }, { merge: true });
+    },
+
+    async clearAISuggestion(bizId: string, senderId: string): Promise<void> {
+        await updateDoc(doc(db, 'businesses', bizId, 'fbConversations', senderId), {
+            aiSuggestion: null,
+            aiAction: null,
+        });
+    },
+
+    async sendAISuggestion(bizId: string, senderId: string, text: string): Promise<void> {
+        const resp = await fetch('/api/fb-send', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                bizId, recipientId: senderId,
+                action: 'send_text', message: text,
+                senderName: 'AI Туслах',
+            }),
+        });
+        if (!resp.ok) throw new Error('Failed to send AI suggestion');
+        await this.clearAISuggestion(bizId, senderId);
     },
 };

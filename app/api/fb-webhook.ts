@@ -172,6 +172,70 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                         }, { merge: true });
 
                         await convRef.collection('messages').add(messageData);
+
+                        // ── AI MODE ROUTING ──
+                        const settings = bizQuery.docs[0].data();
+                        const aiMode = settings?.aiMode || 'manual';
+
+                        if (aiMode !== 'manual' && msg.text) {
+                            try {
+                                // Call AI reply endpoint
+                                const host = req.headers.host || 'www.liscord.com';
+                                const protocol = host.includes('localhost') ? 'http' : 'https';
+                                const aiResp = await fetch(`${protocol}://${host}/api/fb-ai-reply`, {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ bizId, senderId, senderName, messageText: msg.text }),
+                                });
+                                const aiResult = await aiResp.json();
+
+                                if (aiMode === 'auto' && aiResult.text) {
+                                    // AUTO: Send AI response directly via Facebook
+                                    let actionType = 'send_text';
+                                    const sendBody: Record<string, unknown> = {
+                                        bizId, recipientId: senderId,
+                                        action: actionType, message: aiResult.text,
+                                        senderName: 'AI Туслах',
+                                    };
+
+                                    // If AI wants to create an order
+                                    if (aiResult.action?.type === 'create_order') {
+                                        sendBody.action = 'create_order_and_pay';
+                                        sendBody.productIds = aiResult.action.productIds;
+                                        sendBody.quantities = aiResult.action.quantities;
+                                        sendBody.customerName = senderName;
+                                        sendBody.customerPsid = senderId;
+                                    }
+
+                                    await fetch(`${protocol}://${host}/api/fb-send`, {
+                                        method: 'POST',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify(sendBody),
+                                    });
+
+                                    // If there was an order action AND a text message, send text too
+                                    if (aiResult.action?.type === 'create_order' && aiResult.text) {
+                                        await fetch(`${protocol}://${host}/api/fb-send`, {
+                                            method: 'POST',
+                                            headers: { 'Content-Type': 'application/json' },
+                                            body: JSON.stringify({
+                                                bizId, recipientId: senderId,
+                                                action: 'send_text', message: aiResult.text,
+                                                senderName: 'AI Туслах',
+                                            }),
+                                        });
+                                    }
+                                } else if (aiMode === 'assist' && aiResult.text) {
+                                    // ASSIST: Save suggestion to conversation doc
+                                    await convRef.update({
+                                        aiSuggestion: aiResult.text,
+                                        aiAction: aiResult.action || null,
+                                    });
+                                }
+                            } catch (aiErr) {
+                                console.error('AI reply error:', aiErr);
+                            }
+                        }
                     }
 
                     // ── 2. DELIVERY EVENT ──

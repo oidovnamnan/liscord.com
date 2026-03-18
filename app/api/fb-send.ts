@@ -305,6 +305,190 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             });
         }
 
+        // ── CREATE ORDER + SEND PAYMENT (AI Flow) ──
+        if (action === 'create_order_and_pay') {
+            const { productIds, quantities, customerName, customerPsid } = req.body;
+            if (!productIds?.length) return res.status(400).json({ error: 'Missing productIds' });
+
+            // 1. Fetch products from Firestore
+            const items: Array<{ productId: string; name: string; variant: string; quantity: number; unitPrice: number; costPrice: number; totalPrice: number; image: string | null }> = [];
+            let subtotal = 0;
+
+            for (let i = 0; i < productIds.length; i++) {
+                const prodSnap = await db.doc(`businesses/${bizId}/products/${productIds[i]}`).get();
+                if (!prodSnap.exists) continue;
+                const p = prodSnap.data()!;
+                const qty = quantities?.[i] || 1;
+                const price = p.pricing?.salePrice || 0;
+                const cost = p.pricing?.costPrice || 0;
+                const total = price * qty;
+
+                items.push({
+                    productId: prodSnap.id,
+                    name: p.name || 'Бараа',
+                    variant: '',
+                    quantity: qty,
+                    unitPrice: price,
+                    costPrice: cost,
+                    totalPrice: total,
+                    image: p.images?.[0] || null,
+                });
+                subtotal += total;
+            }
+
+            if (items.length === 0) {
+                return res.status(400).json({ error: 'No valid products found' });
+            }
+
+            // 2. Generate order number
+            const bizSnap = await db.doc(`businesses/${bizId}`).get();
+            const bizData = bizSnap.data();
+            const prefix = bizData?.settings?.orderPrefix || 'ORD';
+            const counter = (bizData?.settings?.orderCounter || 0) + 1;
+            const orderNumber = `${prefix}-${String(counter).padStart(4, '0')}`;
+
+            // Update counter
+            await db.doc(`businesses/${bizId}`).update({ 'settings.orderCounter': counter });
+
+            // 3. Create Order in Firestore
+            const orderData = {
+                orderNumber,
+                status: 'new',
+                paymentStatus: 'unpaid',
+                customer: {
+                    id: null,
+                    name: customerName || customerPsid || 'Messenger',
+                    phone: '',
+                    socialHandle: `FB:${customerPsid}`,
+                },
+                source: 'facebook',
+                items,
+                financials: {
+                    subtotal,
+                    discountType: 'fixed',
+                    discountValue: 0,
+                    discountAmount: 0,
+                    deliveryFee: 0,
+                    cargoFee: 0,
+                    cargoIncluded: false,
+                    totalAmount: subtotal,
+                    payments: [],
+                    paidAmount: 0,
+                    balanceDue: subtotal,
+                },
+                assignedTo: null,
+                assignedToName: null,
+                notes: `Messenger-ээр AI захиалга (PSID: ${customerPsid})`,
+                internalNotes: '',
+                deliveryAddress: '',
+                statusHistory: [{
+                    status: 'new',
+                    at: new Date(),
+                    by: 'ai_messenger',
+                    byName: 'AI Туслах',
+                }],
+                tags: ['messenger', 'ai'],
+                createdBy: 'ai_messenger',
+                createdByName: 'AI Туслах',
+                createdAt: admin.firestore.FieldValue.serverTimestamp(),
+                updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+                isDeleted: false,
+                orderType: 'standard',
+                messengerPsid: customerPsid,
+            };
+
+            const orderRef = await db.collection(`businesses/${bizId}/orders`).add(orderData);
+            const orderId = orderRef.id;
+
+            // 4. Create QPay Invoice
+            const qpay = bizData?.settings?.qpay;
+            const qpayUsername = qpay?.username || process.env.QPAY_VIP_USERNAME;
+            const qpayPassword = qpay?.password || process.env.QPAY_VIP_PASSWORD;
+            const invoiceCode = qpay?.invoiceCode || process.env.QPAY_VIP_INVOICE_CODE || 'GATE_SIM_INVOICE';
+
+            if (!qpayUsername || !qpayPassword) {
+                // No QPay — just send order confirmation without payment
+                const confirmText = `🛒 Захиалга #${orderNumber} үүслээ!\n\n${items.map(it => `• ${it.name} x${it.quantity} — ₮${it.totalPrice.toLocaleString()}`).join('\n')}\n\nНийт: ₮${subtotal.toLocaleString()}\n\nТөлбөрийн мэдээллийг оператор илгээнэ.`;
+
+                const fbResult = await sendToFacebook(token, {
+                    recipient: { id: recipientId },
+                    message: { text: confirmText },
+                });
+
+                const convRef = db.doc(`businesses/${bizId}/fbConversations/${recipientId}`);
+                await convRef.set({ lastMessage: `🛒 Захиалга #${orderNumber}`, lastMessageAt: admin.firestore.FieldValue.serverTimestamp(), updatedAt: admin.firestore.FieldValue.serverTimestamp() }, { merge: true });
+                await convRef.collection('messages').add({
+                    text: confirmText, direction: 'outbound', senderId: 'page', senderName: senderName || 'AI Туслах',
+                    timestamp: admin.firestore.FieldValue.serverTimestamp(), fbMessageId: (fbResult as any).message_id || '',
+                    isAI: true, orderId, deliveredAt: null, readAt: null,
+                });
+
+                return res.status(200).json({ success: true, orderId, orderNumber });
+            }
+
+            // QPay invoice
+            const qpayToken = await getQPayToken(qpayUsername, qpayPassword);
+            const host = req.headers.host || 'www.liscord.com';
+            const protocol = host.includes('localhost') ? 'http' : 'https';
+            const callbackUrl = `${protocol}://${host}/api/qpay-callback?bizId=${bizId}&orderId=${orderId}`;
+
+            const invoiceResp = await fetch(`${QPAY_API_URL}/invoice`, {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${qpayToken}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    invoice_code: invoiceCode,
+                    sender_invoice_no: orderId,
+                    invoice_receiver_code: customerPsid || 'messenger',
+                    invoice_description: `Захиалга #${orderNumber} — ₮${subtotal.toLocaleString()}`,
+                    amount: subtotal,
+                    callback_url: callbackUrl,
+                }),
+            });
+
+            if (!invoiceResp.ok) {
+                return res.status(500).json({ error: 'QPay invoice failed' });
+            }
+
+            const invoice = await invoiceResp.json();
+
+            // Save qpayInvoiceId to order
+            await orderRef.update({ qpayInvoiceId: invoice.invoice_id });
+
+            // 5. Send payment button via Messenger
+            const payText = `🛒 Захиалга #${orderNumber}\n\n${items.map(it => `• ${it.name} x${it.quantity} — ₮${it.totalPrice.toLocaleString()}`).join('\n')}\n\nНийт: ₮${subtotal.toLocaleString()}`;
+
+            const fbResult = await sendToFacebook(token, {
+                recipient: { id: recipientId },
+                message: {
+                    attachment: {
+                        type: 'template',
+                        payload: {
+                            template_type: 'button',
+                            text: payText,
+                            buttons: [
+                                { type: 'web_url', url: invoice.qPay_shortUrl || `https://qpay.mn/payment/${invoice.invoice_id}`, title: '💳 Төлбөр төлөх' },
+                            ],
+                        },
+                    },
+                },
+            });
+
+            // Save to chat
+            const convRef = db.doc(`businesses/${bizId}/fbConversations/${recipientId}`);
+            await convRef.set({ lastMessage: `🛒 #${orderNumber} — ₮${subtotal.toLocaleString()}`, lastMessageAt: admin.firestore.FieldValue.serverTimestamp(), updatedAt: admin.firestore.FieldValue.serverTimestamp() }, { merge: true });
+            await convRef.collection('messages').add({
+                text: payText, direction: 'outbound', senderId: 'page', senderName: senderName || 'AI Туслах',
+                timestamp: admin.firestore.FieldValue.serverTimestamp(), fbMessageId: (fbResult as any).message_id || '',
+                isAI: true, isPayment: true, paymentAmount: subtotal, paymentInvoiceId: invoice.invoice_id,
+                paymentUrl: invoice.qPay_shortUrl, orderId, deliveredAt: null, readAt: null,
+            });
+
+            return res.status(200).json({
+                success: true, orderId, orderNumber,
+                invoiceId: invoice.invoice_id, shortUrl: invoice.qPay_shortUrl,
+            });
+        }
+
         return res.status(400).json({ error: `Unknown action: ${action}` });
 
     } catch (err: any) {

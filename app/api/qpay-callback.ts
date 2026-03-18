@@ -189,6 +189,54 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         });
 
         console.log(`✅ QPay payment confirmed: Order ${orderId} (₮${totalAmount})`);
+
+        // 7. Send Messenger confirmation if order came from chat
+        if (orderData.messengerPsid) {
+            try {
+                const psid = orderData.messengerPsid;
+                // Get page access token
+                const fbSettingsSnap = await db.collection('businesses').doc(bizId)
+                    .collection('fbSettings').doc('config').get();
+                const pageToken = fbSettingsSnap.data()?.pageAccessToken;
+
+                if (pageToken) {
+                    const confirmText = `✅ Баярлалаа! Захиалга #${orderNumber} — ₮${totalAmount.toLocaleString()} төлбөр амжилттай баталгаажлаа! 🎉`;
+
+                    // Send via Facebook
+                    await fetch(`https://graph.facebook.com/v21.0/me/messages?access_token=${pageToken}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            recipient: { id: psid },
+                            message: { text: confirmText },
+                        }),
+                    });
+
+                    // Save to chat
+                    const convRef = db.doc(`businesses/${bizId}/fbConversations/${psid}`);
+                    await convRef.set({
+                        lastMessage: `✅ Төлбөр баталгаажлаа #${orderNumber}`,
+                        lastMessageAt: now,
+                        updatedAt: now,
+                    }, { merge: true });
+                    await convRef.collection('messages').add({
+                        text: confirmText,
+                        direction: 'outbound',
+                        senderId: 'page',
+                        senderName: 'Систем',
+                        timestamp: now,
+                        isAI: true,
+                        isPaymentConfirmation: true,
+                        orderId,
+                        deliveredAt: null,
+                        readAt: null,
+                    });
+                }
+            } catch (msgErr) {
+                console.error('Messenger confirmation error:', msgErr);
+            }
+        }
+
         return res.status(200).json({ message: 'Payment confirmed' });
 
     } catch (err: any) {

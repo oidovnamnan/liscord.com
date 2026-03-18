@@ -5,7 +5,7 @@ import {
     Zap, User, CreditCard, DollarSign, ChevronDown, XCircle, CheckCircle
 } from 'lucide-react';
 import { useBusinessStore, useAuthStore, useUIStore } from '../../store';
-import { fbMessengerService, type FbConversation, type FbMessage, type FbSettings, type FbCannedResponse } from '../../services/fbMessengerService';
+import { fbMessengerService, type FbConversation, type FbMessage, type FbSettings, type FbCannedResponse, type AiMode } from '../../services/fbMessengerService';
 import toast from 'react-hot-toast';
 import './FacebookMessengerPage.css';
 
@@ -355,6 +355,7 @@ export function FacebookMessengerPage() {
                                                 </div>
                                             )}
                                             <div className="fbm-msg-footer">
+                                                {item.msg.isAI && <span className="fbm-ai-badge" title="AI хариулсан">🤖</span>}
                                                 <span className="fbm-msg-ts">{formatTime(item.msg.timestamp)}</span>
                                                 {msgStatus(item.msg) === 'read' && <span className="fbm-msg-status read">✓✓</span>}
                                                 {msgStatus(item.msg) === 'delivered' && <span className="fbm-msg-status">✓✓</span>}
@@ -374,6 +375,27 @@ export function FacebookMessengerPage() {
                                             <Zap size={12} /> <strong>{r.key}</strong> <span>{r.text}</span>
                                         </button>
                                     ))}
+                                </div>
+                            )}
+
+                            {/* AI Suggestion Bar */}
+                            {activeConv?.aiSuggestion && (
+                                <div className="fbm-ai-suggestion">
+                                    <div className="fbm-ai-suggestion-header">
+                                        <span>🤖 AI санал болгож байна:</span>
+                                        <div className="fbm-ai-suggestion-actions">
+                                            <button className="fbm-ai-approve" onClick={async () => {
+                                                try {
+                                                    await fbMessengerService.sendAISuggestion(business!.id, activeConvId!, activeConv.aiSuggestion!);
+                                                    toast.success('AI хариу илгээгдлээ');
+                                                } catch { toast.error('Алдаа гарлаа'); }
+                                            }}><CheckCircle size={14} /> Батлах</button>
+                                            <button className="fbm-ai-reject" onClick={async () => {
+                                                await fbMessengerService.clearAISuggestion(business!.id, activeConvId!);
+                                            }}><XCircle size={14} /> Үгүйсгэх</button>
+                                        </div>
+                                    </div>
+                                    <div className="fbm-ai-suggestion-text">{activeConv.aiSuggestion}</div>
                                 </div>
                             )}
 
@@ -524,6 +546,25 @@ export function FacebookMessengerPage() {
                                 <div className="fbm-drawer-field">
                                     <label>Page Access Token</label>
                                     <input value={settingsForm.pageAccessToken} onChange={e => setSettingsForm(p => ({ ...p, pageAccessToken: e.target.value }))} placeholder="EAABsb..." type="password" />
+                                </div>
+                            </div>
+
+                            {/* AI Mode Section */}
+                            <div className="fbm-drawer-section">
+                                <div className="fbm-drawer-section-title">🤖 AI Горим</div>
+                                <p className="fbm-drawer-hint">Хэрэглэгчдэд хэрхэн хариулахыг тохируулна</p>
+                                <div className="fbm-ai-modes">
+                                    {(['manual', 'assist', 'auto'] as AiMode[]).map(mode => (
+                                        <button key={mode} className={`fbm-ai-mode-btn ${(settings?.aiMode || 'manual') === mode ? 'active' : ''}`}
+                                            onClick={async () => {
+                                                await fbMessengerService.updateAIMode(business!.id, mode);
+                                                toast.success(`AI горим: ${mode === 'manual' ? 'Гар' : mode === 'assist' ? 'Туслах' : 'Автомат'}`);
+                                            }}>
+                                            <span className="fbm-ai-mode-icon">{mode === 'manual' ? '🔴' : mode === 'assist' ? '🟡' : '🟢'}</span>
+                                            <span className="fbm-ai-mode-label">{mode === 'manual' ? 'Гар' : mode === 'assist' ? 'Туслах' : 'Автомат'}</span>
+                                            <span className="fbm-ai-mode-desc">{mode === 'manual' ? 'AI оролцохгүй' : mode === 'assist' ? 'AI санал болгоно' : 'AI өөрөө хариулна'}</span>
+                                        </button>
+                                    ))}
                                 </div>
                             </div>
                         </div>
