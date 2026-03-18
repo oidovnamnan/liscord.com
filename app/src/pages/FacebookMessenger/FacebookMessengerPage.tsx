@@ -3,7 +3,8 @@ import {
     Send, Search, MessageSquare, X, Copy, Check, Loader2, Save,
     ExternalLink, Settings, Link2, Shield, Tag, StickyNote,
     Zap, User, CreditCard, DollarSign, ChevronDown, XCircle, CheckCircle,
-    Smile, Paperclip, Image as ImageIcon, ShoppingBag, Bot, Mic, ArrowRight, ArrowLeft, ChevronUp
+    Smile, Paperclip, Image as ImageIcon, ShoppingBag, Bot, Mic, ArrowRight, ArrowLeft, ChevronUp,
+    Phone, Crown
 } from 'lucide-react';
 import { useBusinessStore, useAuthStore, useUIStore } from '../../store';
 import { fbMessengerService, type FbConversation, type FbMessage, type FbSettings, type FbCannedResponse, type FbPageConfig, type AiMode } from '../../services/fbMessengerService';
@@ -77,6 +78,17 @@ export function FacebookMessengerPage() {
     const [editingNotes, setEditingNotes] = useState('');
     const notesTimeout = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
+    // Customer intelligence
+    const [customerData, setCustomerData] = useState<{
+        phone?: string;
+        isVip?: boolean;
+        vipCategoryName?: string;
+        orderCount: number;
+        totalSpent: number;
+        recentOrders: Array<{ id: string; number: string; status: string; total: number; date: Date | null }>;
+        loading: boolean;
+    }>({ orderCount: 0, totalSpent: 0, recentOrders: [], loading: false });
+
     // ═══ Effects ═══
     useEffect(() => {
         if (!business?.id) return;
@@ -108,6 +120,84 @@ export function FacebookMessengerPage() {
     // Set notes when switching conv
     const activeConv = conversations.find(c => c.id === activeConvId);
     useEffect(() => { setEditingNotes(activeConv?.notes || ''); }, [activeConvId, activeConv?.notes]);
+
+    // Fetch customer intelligence when switching conversation
+    useEffect(() => {
+        if (!business?.id || !activeConvId || !activeConv) { setCustomerData({ orderCount: 0, totalSpent: 0, recentOrders: [], loading: false }); return; }
+        let cancelled = false;
+        setCustomerData(prev => ({ ...prev, loading: true }));
+
+        (async () => {
+            try {
+                const { collection: fsCollection, query: fsQuery, where: fsWhere, orderBy: fsOrderBy, limit: fsLimit, getDocs } = await import('firebase/firestore');
+                const { db: fsDb } = await import('../../services/firebase');
+                const senderName = activeConv.senderName || '';
+
+                // Search orders by customer name
+                let phone = '';
+                let orderCount = 0;
+                let totalSpent = 0;
+                const recentOrders: typeof customerData.recentOrders = [];
+
+                // Try to find orders matching this sender
+                const ordersRef = fsCollection(fsDb, 'businesses', business.id, 'orders');
+                const oq = fsQuery(ordersRef, fsOrderBy('createdAt', 'desc'), fsLimit(200));
+                const orderSnap = await getDocs(oq);
+
+                for (const od of orderSnap.docs) {
+                    const o = od.data();
+                    if (o.isDeleted) continue;
+                    const customerName = (o.customer?.name || '').toLowerCase();
+                    const customerPhone = o.customer?.phone || '';
+                    const senderLower = senderName.toLowerCase();
+
+                    // Match by name (contains) or exact PSID match
+                    if (customerName && senderLower && (
+                        customerName.includes(senderLower) || senderLower.includes(customerName)
+                    )) {
+                        if (!phone && customerPhone) phone = customerPhone;
+                        orderCount++;
+                        totalSpent += o.financials?.totalAmount || 0;
+                        if (recentOrders.length < 5) {
+                            recentOrders.push({
+                                id: od.id,
+                                number: o.orderNumber || od.id.substring(0, 8),
+                                status: o.status || 'pending',
+                                total: o.financials?.totalAmount || 0,
+                                date: o.createdAt?.toDate?.() || null,
+                            });
+                        }
+                    }
+                }
+
+                // Check VIP membership
+                let isVip = false;
+                let vipCategoryName = '';
+                if (phone) {
+                    const cleanPhone = phone.replace(/[^\d]/g, '');
+                    const memRef = fsCollection(fsDb, 'businesses', business.id, 'memberships');
+                    const mq = fsQuery(memRef, fsWhere('phone', '==', cleanPhone), fsLimit(1));
+                    const memSnap = await getDocs(mq);
+                    if (!memSnap.empty) {
+                        const memData = memSnap.docs[0].data();
+                        if (memData.status === 'active') {
+                            isVip = true;
+                            vipCategoryName = memData.categoryName || 'VIP';
+                        }
+                    }
+                }
+
+                if (!cancelled) {
+                    setCustomerData({ phone, isVip, vipCategoryName, orderCount, totalSpent, recentOrders, loading: false });
+                }
+            } catch (err) {
+                console.debug('[Messenger] Customer data lookup failed:', err);
+                if (!cancelled) setCustomerData({ orderCount: 0, totalSpent: 0, recentOrders: [], loading: false });
+            }
+        })();
+
+        return () => { cancelled = true; };
+    }, [business?.id, activeConvId]);
 
     // ═══ Handlers ═══
     const handleSend = async () => {
@@ -635,16 +725,85 @@ export function FacebookMessengerPage() {
 
                         {/* Stats */}
                         <div className="fbm-info-section">
-                            <div className="fbm-info-stats-grid">
-                                <div className="fbm-info-stat-card">
-                                    <span className="fbm-info-stat-value">{messages.length}</span>
-                                    <span className="fbm-info-stat-label">Мессеж</span>
+                            {customerData.loading ? (
+                                <div style={{ textAlign: 'center', padding: 12, color: '#999', fontSize: '0.8rem' }}>
+                                    <Loader2 size={16} className="animate-spin" style={{ display: 'inline-block', marginRight: 4 }} /> Мэдээлэл ачаалж байна...
                                 </div>
-                                <div className="fbm-info-stat-card">
-                                    <span className="fbm-info-stat-value">{messages.filter(m => m.isPayment).length}</span>
-                                    <span className="fbm-info-stat-label">Төлбөр</span>
-                                </div>
-                            </div>
+                            ) : (
+                                <>
+                                    {/* Phone */}
+                                    {customerData.phone && (
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 0', borderBottom: '1px solid var(--border-light)' }}>
+                                            <Phone size={14} style={{ color: '#22c55e' }} />
+                                            <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>{customerData.phone}</span>
+                                        </div>
+                                    )}
+
+                                    {/* VIP Status */}
+                                    {customerData.isVip && (
+                                        <div style={{
+                                            display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', marginTop: 8,
+                                            background: 'linear-gradient(135deg, rgba(234,179,8,0.1), rgba(245,158,11,0.05))',
+                                            borderRadius: 10, border: '1px solid rgba(234,179,8,0.2)',
+                                        }}>
+                                            <Crown size={14} style={{ color: '#eab308' }} />
+                                            <span style={{ fontSize: '0.82rem', fontWeight: 700, color: '#b45309' }}>VIP Гишүүн</span>
+                                            {customerData.vipCategoryName && (
+                                                <span style={{ fontSize: '0.7rem', color: '#92400e', opacity: 0.7 }}>• {customerData.vipCategoryName}</span>
+                                            )}
+                                        </div>
+                                    )}
+
+                                    {/* Stats Grid */}
+                                    <div className="fbm-info-stats-grid" style={{ marginTop: 8 }}>
+                                        <div className="fbm-info-stat-card">
+                                            <span className="fbm-info-stat-value">{messages.length}</span>
+                                            <span className="fbm-info-stat-label">Мессеж</span>
+                                        </div>
+                                        <div className="fbm-info-stat-card">
+                                            <span className="fbm-info-stat-value">{customerData.orderCount}</span>
+                                            <span className="fbm-info-stat-label">Захиалга</span>
+                                        </div>
+                                        <div className="fbm-info-stat-card">
+                                            <span className="fbm-info-stat-value">
+                                                {customerData.totalSpent > 0 ? `₮${(customerData.totalSpent / 1000).toFixed(0)}k` : '0'}
+                                            </span>
+                                            <span className="fbm-info-stat-label">Нийт дүн</span>
+                                        </div>
+                                    </div>
+
+                                    {/* Recent Orders */}
+                                    {customerData.recentOrders.length > 0 && (
+                                        <div style={{ marginTop: 12 }}>
+                                            <div className="fbm-info-label" style={{ marginBottom: 6 }}>
+                                                <ShoppingBag size={12} /> Сүүлийн захиалгууд
+                                            </div>
+                                            {customerData.recentOrders.map(o => (
+                                                <div key={o.id} style={{
+                                                    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                                                    padding: '6px 0', borderBottom: '1px solid var(--border-light)', fontSize: '0.78rem',
+                                                }}>
+                                                    <div>
+                                                        <span style={{ fontWeight: 600 }}>#{o.number}</span>
+                                                        <span style={{
+                                                            marginLeft: 6, padding: '1px 6px', borderRadius: 4, fontSize: '0.65rem', fontWeight: 600,
+                                                            background: o.status === 'completed' || o.status === 'delivered' ? 'rgba(34,197,94,0.1)' :
+                                                                o.status === 'pending' ? 'rgba(234,179,8,0.1)' : 'rgba(59,130,246,0.1)',
+                                                            color: o.status === 'completed' || o.status === 'delivered' ? '#22c55e' :
+                                                                o.status === 'pending' ? '#eab308' : '#3b82f6',
+                                                        }}>
+                                                            {o.status === 'pending' ? 'Хүлээгдэж буй' : o.status === 'confirmed' ? 'Баталсан' :
+                                                                o.status === 'completed' ? 'Дуусан' : o.status === 'delivered' ? 'Хүргэсэн' :
+                                                                o.status === 'sourced' ? 'Олсон' : o.status === 'arrived' ? 'Ирсэн' : o.status}
+                                                        </span>
+                                                    </div>
+                                                    <span style={{ fontWeight: 600, color: 'var(--primary)' }}>₮{o.total.toLocaleString()}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </>
+                            )}
                         </div>
 
                         {/* Quick Actions */}
