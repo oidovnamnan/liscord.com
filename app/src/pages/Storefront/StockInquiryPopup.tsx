@@ -320,7 +320,7 @@ export function StockInquiryPopup({ businessId, cartItems, customerPhone, timeou
                 </div>
 
                 <p className="sinq-popup-desc">
-                    Доорх бараанд өмнө нь нөөц шалгуулах хүсэлт гаргаагүй, эсвэл 30 хоногоос удсан байна. Барааны үлдэгдэл болон мэдээллийг лавлаж байна, түр хүлээнэ үү.
+                    Барааны үлдэгдэл болон мэдээллийг лавлаж байна, түр хүлээнэ үү.
                 </p>
 
                 {/* Products with per-item status */}
@@ -388,6 +388,26 @@ export function StockInquiryPopup({ businessId, cartItems, customerPhone, timeou
                             <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginTop: 4 }}>
                                 {secondsLeft} секундын дараа автоматаар үргэлжлүүлнэ
                             </p>
+                            <button
+                                className="sinq-popup-btn cancel-btn"
+                                style={{ marginTop: 16 }}
+                                onClick={async () => {
+                                    // Mark inquiries as user_left in Firestore
+                                    for (const [, state] of itemStates) {
+                                        if (state.inquiryId && ['pending', 'checking'].includes(state.status)) {
+                                            try {
+                                                await updateDoc(doc(db, `businesses/${businessId}/stockInquiries`, state.inquiryId), {
+                                                    customerLeft: true,
+                                                    customerLeftAt: Timestamp.now(),
+                                                });
+                                            } catch (_) { /* ignore */ }
+                                        }
+                                    }
+                                    onCancel();
+                                }}
+                            >
+                                Болих
+                            </button>
                         </>
                     )}
 
@@ -399,6 +419,25 @@ export function StockInquiryPopup({ businessId, cartItems, customerPhone, timeou
                             <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginTop: 4 }}>
                                 Агент барааг шалгаж байна
                             </p>
+                            <button
+                                className="sinq-popup-btn cancel-btn"
+                                style={{ marginTop: 16 }}
+                                onClick={async () => {
+                                    for (const [, state] of itemStates) {
+                                        if (state.inquiryId && ['pending', 'checking'].includes(state.status)) {
+                                            try {
+                                                await updateDoc(doc(db, `businesses/${businessId}/stockInquiries`, state.inquiryId), {
+                                                    customerLeft: true,
+                                                    customerLeftAt: Timestamp.now(),
+                                                });
+                                            } catch (_) { /* ignore */ }
+                                        }
+                                    }
+                                    onCancel();
+                                }}
+                            >
+                                Болих
+                            </button>
                         </>
                     )}
 
