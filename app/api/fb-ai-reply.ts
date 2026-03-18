@@ -315,8 +315,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             return `• "${catName}"${vipTag} → ${catLink}`;
         }).join('\n');
 
-        // 4. Get products (compact table for AI)
-        const products = await fsListWithFilter(`businesses/${bizId}/products`, 'isDeleted', false, 100);
+        // 4. Get ALL products (important: fetch enough to cover entire catalog)
+        const products = await fsListWithFilter(`businesses/${bizId}/products`, 'isDeleted', false, 500);
 
         const productTable = products.map(d => {
             const p = d.data;
