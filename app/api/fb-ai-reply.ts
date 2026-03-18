@@ -260,13 +260,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         const bizSlug = biz?.slug as string;
         const storeUrl = bizSlug ? `https://www.liscord.com/store/${bizSlug}` : '';
 
-        // 3. Get categories (for links)
+        // 3. Get categories (for context)
         const categories = await fsListWithFilter(`businesses/${bizId}/categories`, 'isDeleted', false, 50);
         const categoryTable = categories.map(d => {
             const c = d.data;
-            const catLink = storeUrl ? `${storeUrl}?category=${d.id}` : '';
-            return `• "${c.name}" → ${catLink}`;
-        }).join('\n');
+            return `• "${c.name}"`;
+        }).join('\n') + (storeUrl ? `\nДэлгүүрийн линк: ${storeUrl}` : '');
 
         // 4. Get products (compact table for AI)
         const products = await fsListWithFilter(`businesses/${bizId}/products`, 'isDeleted', false, 100);
