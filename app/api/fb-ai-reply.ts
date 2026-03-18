@@ -407,15 +407,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 const price = (pricing?.salePrice as number) || 0;
                 const images = prod.data.images as string[] | undefined;
                 const imageUrl = images?.[0] || '';
+                const category = prod.data.category as string || '';
+
+                // Build product-specific URL: link to category if available
+                let productUrl = storeUrl || '';
+                if (storeUrl && category) {
+                    productUrl = `${storeUrl}?cat=${encodeURIComponent(category)}`;
+                }
 
                 suggestedProducts.push({
                     id: prod.id,
                     title: name.substring(0, 80),
                     subtitle: `₮${price.toLocaleString()} • Захиалгаар авах боломжтой`,
                     image_url: imageUrl,
-                    default_url: storeUrl || '',
+                    default_url: productUrl,
                     buttons: [
-                        { title: '🛒 Дэлгүүр үзэх', url: storeUrl || '' },
+                        { title: '🛒 Дэлгүүр үзэх', url: productUrl },
                     ],
                 });
             }
