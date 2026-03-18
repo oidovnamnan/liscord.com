@@ -826,23 +826,64 @@ export function FacebookMessengerPage() {
                             {settingsTab === 'ai' && (
                                 <div className="fbm-drawer-section">
                                     <div className="fbm-drawer-section-title"><Bot size={14} /> AI Горим</div>
-                                    <p className="fbm-drawer-hint">Хэрэглэгчдэд хэрхэн хариулахыг тохируулна</p>
-                                    <div className="fbm-ai-modes">
-                                        {(['manual', 'assist', 'auto'] as AiMode[]).map(mode => (
-                                            <button key={mode} className={`fbm-ai-mode-btn ${(settings?.aiMode || 'manual') === mode ? 'active' : ''}`}
-                                                onClick={async () => {
-                                                    await fbMessengerService.updateAIMode(business!.id, mode);
-                                                    setSettings(prev => prev ? { ...prev, aiMode: mode } : prev);
-                                                    toast.success(`AI горим: ${mode === 'manual' ? 'Гар' : mode === 'assist' ? 'Туслах' : 'Автомат'}`);
-                                                }}>
-                                                <span className="fbm-ai-mode-icon">{mode === 'manual' ? '🔴' : mode === 'assist' ? '🟡' : '🟢'}</span>
-                                                <div className="fbm-ai-mode-info">
-                                                    <span className="fbm-ai-mode-label">{mode === 'manual' ? 'Гар' : mode === 'assist' ? 'Туслах' : 'Автомат'}</span>
-                                                    <span className="fbm-ai-mode-desc">{mode === 'manual' ? 'AI оролцохгүй, оператор бүгдийг хамаарна' : mode === 'assist' ? 'AI хариу санал болгоно, оператор батлах/засах' : 'AI бүрэн автомат хариулна, захиалга үүсгэх, төлбөр илгээх'}</span>
+                                    <p className="fbm-drawer-hint">Пэйж тус бүрд AI горимыг тохируулна</p>
+
+                                    {pages.length > 0 ? pages.map(page => {
+                                        const pageAiMode = page.aiMode || settings?.aiMode || 'manual';
+                                        return (
+                                            <div key={page.pageId} style={{ marginBottom: 20 }}>
+                                                <div style={{ fontSize: '0.85rem', fontWeight: 700, marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
+                                                    📱 {page.pageName || page.pageId}
+                                                    <span style={{
+                                                        fontSize: '0.7rem', fontWeight: 600, padding: '2px 8px', borderRadius: 100,
+                                                        background: pageAiMode === 'auto' ? 'rgba(34,197,94,0.1)' : pageAiMode === 'assist' ? 'rgba(234,179,8,0.1)' : 'rgba(239,68,68,0.1)',
+                                                        color: pageAiMode === 'auto' ? '#22c55e' : pageAiMode === 'assist' ? '#eab308' : '#ef4444',
+                                                    }}>
+                                                        {pageAiMode === 'auto' ? '🟢 Автомат' : pageAiMode === 'assist' ? '🟡 Туслах' : '🔴 Гар'}
+                                                    </span>
                                                 </div>
-                                            </button>
-                                        ))}
-                                    </div>
+                                                <div className="fbm-ai-modes">
+                                                    {(['manual', 'assist', 'auto'] as AiMode[]).map(mode => (
+                                                        <button key={mode} className={`fbm-ai-mode-btn ${pageAiMode === mode ? 'active' : ''}`}
+                                                            onClick={async () => {
+                                                                await fbMessengerService.updatePageAIMode(business!.id, page.pageId, mode);
+                                                                setSettings(prev => {
+                                                                    if (!prev) return prev;
+                                                                    const updatedPages = (prev.pages || []).map(p =>
+                                                                        p.pageId === page.pageId ? { ...p, aiMode: mode } : p
+                                                                    );
+                                                                    return { ...prev, pages: updatedPages };
+                                                                });
+                                                                toast.success(`${page.pageName}: AI → ${mode === 'manual' ? 'Гар' : mode === 'assist' ? 'Туслах' : 'Автомат'}`);
+                                                            }}>
+                                                            <span className="fbm-ai-mode-icon">{mode === 'manual' ? '🔴' : mode === 'assist' ? '🟡' : '🟢'}</span>
+                                                            <div className="fbm-ai-mode-info">
+                                                                <span className="fbm-ai-mode-label">{mode === 'manual' ? 'Гар' : mode === 'assist' ? 'Туслах' : 'Автомат'}</span>
+                                                                <span className="fbm-ai-mode-desc">{mode === 'manual' ? 'AI оролцохгүй' : mode === 'assist' ? 'AI санал болгоно, оператор батална' : 'AI бүрэн автомат хариулна'}</span>
+                                                            </div>
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        );
+                                    }) : (
+                                        <div className="fbm-ai-modes">
+                                            {(['manual', 'assist', 'auto'] as AiMode[]).map(mode => (
+                                                <button key={mode} className={`fbm-ai-mode-btn ${(settings?.aiMode || 'manual') === mode ? 'active' : ''}`}
+                                                    onClick={async () => {
+                                                        await fbMessengerService.updateAIMode(business!.id, mode);
+                                                        setSettings(prev => prev ? { ...prev, aiMode: mode } : prev);
+                                                        toast.success(`AI горим: ${mode === 'manual' ? 'Гар' : mode === 'assist' ? 'Туслах' : 'Автомат'}`);
+                                                    }}>
+                                                    <span className="fbm-ai-mode-icon">{mode === 'manual' ? '🔴' : mode === 'assist' ? '🟡' : '🟢'}</span>
+                                                    <div className="fbm-ai-mode-info">
+                                                        <span className="fbm-ai-mode-label">{mode === 'manual' ? 'Гар' : mode === 'assist' ? 'Туслах' : 'Автомат'}</span>
+                                                        <span className="fbm-ai-mode-desc">{mode === 'manual' ? 'AI оролцохгүй' : mode === 'assist' ? 'AI санал болгоно, оператор батална' : 'AI бүрэн автомат хариулна'}</span>
+                                                    </div>
+                                                </button>
+                                            ))}
+                                        </div>
+                                    )}
                                 </div>
                             )}
 

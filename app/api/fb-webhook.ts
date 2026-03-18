@@ -308,7 +308,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
                         // ── AI MODE ROUTING ──
                         const settingsData = await fsGet(`businesses/${bizId}/fbSettings/config`);
-                        const aiMode = (settingsData?.aiMode as string) || 'manual';
+                        // Per-page AI mode: check pages[] array first, fallback to global
+                        const pagesArr = (settingsData?.pages || []) as Array<{ pageId: string; aiMode?: string }>;
+                        const thisPage = pagesArr.find(p => p.pageId === pageId);
+                        const aiMode = (thisPage?.aiMode || settingsData?.aiMode as string) || 'manual';
 
                         if (aiMode !== 'manual' && msg.text) {
                             try {

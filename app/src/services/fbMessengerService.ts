@@ -56,6 +56,7 @@ export interface FbPageConfig {
     pageName: string;
     pageAccessToken: string;
     isActive: boolean;
+    aiMode?: AiMode;
 }
 
 export interface FbSettings {
@@ -301,6 +302,19 @@ export const fbMessengerService = {
             aiMode: mode,
             updatedAt: serverTimestamp(),
         }, { merge: true });
+    },
+
+    async updatePageAIMode(bizId: string, pageId: string, mode: AiMode): Promise<void> {
+        const settings = await this.getSettings(bizId);
+        const pages = settings?.pages || [];
+        const idx = pages.findIndex(p => p.pageId === pageId);
+        if (idx >= 0) {
+            pages[idx] = { ...pages[idx], aiMode: mode };
+            await setDoc(doc(db, 'businesses', bizId, 'fbSettings', 'config'), {
+                pages,
+                updatedAt: serverTimestamp(),
+            }, { merge: true });
+        }
     },
 
     // ═══ Multi-Page Management ═══
