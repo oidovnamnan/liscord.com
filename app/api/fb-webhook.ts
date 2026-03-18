@@ -11,23 +11,27 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import * as admin from 'firebase-admin';
 
-// Initialize Firebase Admin
-if (!admin.apps.length) {
-    const projectId = process.env.FIREBASE_PROJECT_ID || 'liscord-2b529';
-    try {
-        admin.initializeApp({
-            credential: admin.credential.cert({
-                projectId,
-                clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-                privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
-            }),
-        });
-    } catch {
-        admin.initializeApp({ projectId });
+// Lazy Firebase Admin initialization
+let dbInstance: admin.firestore.Firestore | null = null;
+function getDb(): admin.firestore.Firestore {
+    if (dbInstance) return dbInstance;
+    if (!admin.apps.length) {
+        const projectId = process.env.FIREBASE_PROJECT_ID || 'liscord-2b529';
+        try {
+            admin.initializeApp({
+                credential: admin.credential.cert({
+                    projectId,
+                    clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+                    privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
+                }),
+            });
+        } catch {
+            admin.initializeApp({ projectId });
+        }
     }
+    dbInstance = admin.firestore();
+    return dbInstance;
 }
-
-const db = admin.firestore();
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
     // ═══ GET: Webhook Verification ═══
@@ -48,7 +52,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             // Then try Firestore-stored token
             if (bizId) {
                 try {
-                    const settingsSnap = await db.doc(`businesses/${bizId}/fbSettings/config`).get();
+                    const settingsSnap = await getDb().doc(`businesses/${bizId}/fbSettings/config`).get();
                     const settings = settingsSnap.data();
                     if (settings?.verifyToken === token) {
                         console.log(`FB Webhook verified for bizId=${bizId}`);
@@ -78,7 +82,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 const pageId = entry.id;
 
                 // Find the business that has this pageId
-                const bizQuery = await db.collectionGroup('fbSettings')
+                const bizQuery = await getDb().collectionGroup('fbSettings')
                     .where('pageId', '==', pageId)
                     .limit(1)
                     .get();
@@ -161,7 +165,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                         }
 
                         // Save conversation + message
-                        const convRef = db.doc(`businesses/${bizId}/fbConversations/${senderId}`);
+                        const convRef = getDb().doc(`businesses/${bizId}/fbConversations/${senderId}`);
                         await convRef.set({
                             senderId,
                             senderName,
@@ -245,14 +249,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                         const watermark = event.delivery.watermark;
                         if (watermark) {
                             // Mark all outbound messages before watermark as delivered
-                            const convRef = db.collection(`businesses/${bizId}/fbConversations/${senderId}/messages`);
+                            const convRef = getDb().collection(`businesses/${bizId}/fbConversations/${senderId}/messages`);
                             const q = convRef
                                 .where('direction', '==', 'outbound')
                                 .where('deliveredAt', '==', null)
                                 .limit(20);
 
                             const snap = await q.get();
-                            const batch = db.batch();
+                            const batch = getDb().batch();
                             snap.docs.forEach(d => {
                                 const ts = d.data().timestamp;
                                 if (ts && ts.toMillis() <= watermark) {
@@ -268,14 +272,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                         const watermark = event.read.watermark;
                         if (watermark) {
                             // Mark all outbound messages before watermark as read
-                            const convRef = db.collection(`businesses/${bizId}/fbConversations/${senderId}/messages`);
+                            const convRef = getDb().collection(`businesses/${bizId}/fbConversations/${senderId}/messages`);
                             const q = convRef
                                 .where('direction', '==', 'outbound')
                                 .where('readAt', '==', null)
                                 .limit(20);
 
                             const snap = await q.get();
-                            const batch = db.batch();
+                            const batch = getDb().batch();
                             snap.docs.forEach(d => {
                                 const ts = d.data().timestamp;
                                 if (ts && ts.toMillis() <= watermark) {
@@ -295,7 +299,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                         const title = event.postback.title;
 
                         // Save as a system message
-                        const convRef = db.doc(`businesses/${bizId}/fbConversations/${senderId}`);
+                        const convRef = getDb().doc(`businesses/${bizId}/fbConversations/${senderId}`);
                         await convRef.collection('messages').add({
                             text: `[Товч дарсан] ${title || payload}`,
                             direction: 'inbound',
