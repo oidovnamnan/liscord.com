@@ -280,6 +280,23 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                             console.warn('[fb-webhook] No pageAccessToken — cannot fetch sender profile');
                         }
 
+                        // Fallback: if profile fetch failed, try to get name from existing conversation
+                        if (senderName === senderId && bizId) {
+                            try {
+                                const existingConv = await fsGet(`businesses/${bizId}/fbConversations/${senderId}`);
+                                if (existingConv) {
+                                    const savedName = existingConv.senderName as string;
+                                    if (savedName && savedName !== senderId) {
+                                        senderName = savedName;
+                                        senderProfilePic = (existingConv.senderProfilePic as string) || senderProfilePic;
+                                        console.log(`[fb-webhook] Got name from existing conv: ${senderName}`);
+                                    }
+                                }
+                            } catch {
+                                // Non-critical
+                            }
+                        }
+
                         let messageText = msg.text || '';
 
                         const messageData: Record<string, unknown> = {
