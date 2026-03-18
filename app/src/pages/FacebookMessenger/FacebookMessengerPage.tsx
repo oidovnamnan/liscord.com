@@ -60,7 +60,7 @@ export function FacebookMessengerPage() {
 
     // Notes editing
     const [editingNotes, setEditingNotes] = useState('');
-    const notesTimeout = useRef<ReturnType<typeof setTimeout>>();
+    const notesTimeout = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
     // ═══ Effects ═══
     useEffect(() => {
