@@ -364,7 +364,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                         const thisPage = pagesArr.find(p => p.pageId === pageId);
                         const aiMode = (thisPage?.aiMode || settingsData?.aiMode as string) || 'manual';
 
-                        if (aiMode !== 'manual' && msg.text) {
+                        if (aiMode !== 'manual' && (msg.text || msg.attachments?.length)) {
+                            // For attachment-only messages, create a descriptive text for AI
+                            const aiMessageText = msg.text || (msg.attachments?.length ? `Хэрэглэгч ${messageText} илгээлээ` : '');
+                            
                             try {
                                 // Call AI reply endpoint
                                 const host = req.headers.host || 'www.liscord.com';
@@ -372,7 +375,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                                 const aiResp = await fetch(`${protocol}://${host}/api/fb-ai-reply`, {
                                     method: 'POST',
                                     headers: { 'Content-Type': 'application/json' },
-                                    body: JSON.stringify({ bizId, senderId, senderName, messageText: msg.text }),
+                                    body: JSON.stringify({ bizId, senderId, senderName, messageText: aiMessageText }),
                                 });
                                 const aiResult = await aiResp.json();
 
