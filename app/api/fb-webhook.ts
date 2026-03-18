@@ -2,9 +2,11 @@
  * Facebook Messenger Webhook
  * 
  * GET  — Webhook verification (Facebook sends hub.mode, hub.verify_token, hub.challenge)
- * POST — Receive inbound messages from Facebook Messenger
- * 
- * Stores messages in Firestore: businesses/{bizId}/fbConversations/{senderId}/messages/{msgId}
+ * POST — Receive inbound events from Facebook Messenger:
+ *        - messages (text, attachments)
+ *        - message_deliveries
+ *        - message_reads
+ *        - messaging_postbacks
  */
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import * as admin from 'firebase-admin';
@@ -36,7 +38,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         const bizId = req.query.bizId as string;
 
         if (mode === 'subscribe') {
-            // Look up the verify token for this business
             if (bizId) {
                 try {
                     const settingsSnap = await db.doc(`businesses/${bizId}/fbSettings/config`).get();
@@ -50,7 +51,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 }
             }
 
-            // Fallback: check env-level verify token
             const envToken = process.env.FB_VERIFY_TOKEN || 'liscord_fb_verify_2026';
             if (token === envToken) {
                 console.log('FB Webhook verified via env token');
@@ -63,7 +63,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return res.status(400).send('Invalid request');
     }
 
-    // ═══ POST: Receive Messages ═══
+    // ═══ POST: Receive Events ═══
     if (req.method === 'POST') {
         const body = req.body;
 
@@ -89,35 +89,37 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 const bizId = bizQuery.docs[0].ref.parent.parent?.id;
                 if (!bizId) continue;
 
+                const pageAccessToken = bizQuery.docs[0].data()?.pageAccessToken;
+
                 for (const event of entry.messaging || []) {
                     const senderId = event.sender?.id;
-                    if (!senderId || senderId === pageId) continue; // Skip messages from the page itself
+                    if (!senderId || senderId === pageId) continue;
 
                     const timestamp = event.timestamp || Date.now();
 
-                    // Get sender profile from Facebook
-                    let senderName = senderId;
-                    let senderProfilePic = '';
-                    const pageAccessToken = bizQuery.docs[0].data()?.pageAccessToken;
-
-                    if (pageAccessToken) {
-                        try {
-                            const profileResp = await fetch(
-                                `https://graph.facebook.com/v21.0/${senderId}?fields=first_name,last_name,profile_pic&access_token=${pageAccessToken}`
-                            );
-                            if (profileResp.ok) {
-                                const profile = await profileResp.json();
-                                senderName = `${profile.first_name || ''} ${profile.last_name || ''}`.trim() || senderId;
-                                senderProfilePic = profile.profile_pic || '';
-                            }
-                        } catch {
-                            // Non-critical — use senderId as fallback
-                        }
-                    }
-
-                    // Handle text message
+                    // ── 1. MESSAGE EVENT ──
                     if (event.message) {
                         const msg = event.message;
+
+                        // Get sender profile from Facebook
+                        let senderName = senderId;
+                        let senderProfilePic = '';
+
+                        if (pageAccessToken) {
+                            try {
+                                const profileResp = await fetch(
+                                    `https://graph.facebook.com/v21.0/${senderId}?fields=first_name,last_name,profile_pic&access_token=${pageAccessToken}`
+                                );
+                                if (profileResp.ok) {
+                                    const profile = await profileResp.json();
+                                    senderName = `${profile.first_name || ''} ${profile.last_name || ''}`.trim() || senderId;
+                                    senderProfilePic = profile.profile_pic || '';
+                                }
+                            } catch {
+                                // Non-critical
+                            }
+                        }
+
                         const messageData: Record<string, unknown> = {
                             text: msg.text || '',
                             direction: 'inbound',
@@ -126,23 +128,43 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                             timestamp: admin.firestore.Timestamp.fromMillis(timestamp),
                             fbMessageId: msg.mid || '',
                             readAt: null,
+                            deliveredAt: null,
                         };
 
-                        // Handle attachments
+                        // Handle attachments (image, video, audio, file, sticker)
                         if (msg.attachments?.length) {
-                            messageData.attachments = msg.attachments.map((att: { type: string; payload?: { url?: string } }) => ({
-                                type: att.type,
+                            messageData.attachments = msg.attachments.map((att: { type: string; payload?: { url?: string; sticker_id?: number } }) => ({
+                                type: att.type, // 'image' | 'video' | 'audio' | 'file' | 'fallback'
                                 url: att.payload?.url || '',
+                                stickerId: att.payload?.sticker_id,
                             }));
+
+                            // If no text but has attachments, set preview text
+                            if (!msg.text) {
+                                const firstType = msg.attachments[0].type;
+                                const typeMap: Record<string, string> = {
+                                    image: '📷 Зураг',
+                                    video: '🎬 Видео',
+                                    audio: '🎤 Дуут мессеж',
+                                    file: '📄 Файл',
+                                    fallback: '📎 Хавсралт',
+                                };
+                                messageData.text = typeMap[firstType] || '📎 Хавсралт';
+                            }
                         }
 
-                        // Save message
+                        // Quick reply payload
+                        if (msg.quick_reply?.payload) {
+                            messageData.quickReplyPayload = msg.quick_reply.payload;
+                        }
+
+                        // Save conversation + message
                         const convRef = db.doc(`businesses/${bizId}/fbConversations/${senderId}`);
                         await convRef.set({
                             senderId,
                             senderName,
                             senderProfilePic,
-                            lastMessage: msg.text || '[Хавсралт]',
+                            lastMessage: messageData.text,
                             lastMessageAt: admin.firestore.Timestamp.fromMillis(timestamp),
                             unreadCount: admin.firestore.FieldValue.increment(1),
                             status: 'open',
@@ -150,6 +172,81 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                         }, { merge: true });
 
                         await convRef.collection('messages').add(messageData);
+                    }
+
+                    // ── 2. DELIVERY EVENT ──
+                    if (event.delivery) {
+                        const watermark = event.delivery.watermark;
+                        if (watermark) {
+                            // Mark all outbound messages before watermark as delivered
+                            const convRef = db.collection(`businesses/${bizId}/fbConversations/${senderId}/messages`);
+                            const q = convRef
+                                .where('direction', '==', 'outbound')
+                                .where('deliveredAt', '==', null)
+                                .limit(20);
+
+                            const snap = await q.get();
+                            const batch = db.batch();
+                            snap.docs.forEach(d => {
+                                const ts = d.data().timestamp;
+                                if (ts && ts.toMillis() <= watermark) {
+                                    batch.update(d.ref, { deliveredAt: admin.firestore.Timestamp.fromMillis(watermark) });
+                                }
+                            });
+                            if (snap.docs.length > 0) await batch.commit();
+                        }
+                    }
+
+                    // ── 3. READ EVENT ──
+                    if (event.read) {
+                        const watermark = event.read.watermark;
+                        if (watermark) {
+                            // Mark all outbound messages before watermark as read
+                            const convRef = db.collection(`businesses/${bizId}/fbConversations/${senderId}/messages`);
+                            const q = convRef
+                                .where('direction', '==', 'outbound')
+                                .where('readAt', '==', null)
+                                .limit(20);
+
+                            const snap = await q.get();
+                            const batch = db.batch();
+                            snap.docs.forEach(d => {
+                                const ts = d.data().timestamp;
+                                if (ts && ts.toMillis() <= watermark) {
+                                    batch.update(d.ref, {
+                                        readAt: admin.firestore.Timestamp.fromMillis(watermark),
+                                        deliveredAt: d.data().deliveredAt || admin.firestore.Timestamp.fromMillis(watermark),
+                                    });
+                                }
+                            });
+                            if (snap.docs.length > 0) await batch.commit();
+                        }
+                    }
+
+                    // ── 4. POSTBACK EVENT ──
+                    if (event.postback) {
+                        const payload = event.postback.payload;
+                        const title = event.postback.title;
+
+                        // Save as a system message
+                        const convRef = db.doc(`businesses/${bizId}/fbConversations/${senderId}`);
+                        await convRef.collection('messages').add({
+                            text: `[Товч дарсан] ${title || payload}`,
+                            direction: 'inbound',
+                            senderId,
+                            senderName: senderId,
+                            timestamp: admin.firestore.Timestamp.fromMillis(timestamp),
+                            isPostback: true,
+                            postbackPayload: payload,
+                        });
+
+                        await convRef.set({
+                            lastMessage: `[Товч] ${title || payload}`,
+                            lastMessageAt: admin.firestore.Timestamp.fromMillis(timestamp),
+                            unreadCount: admin.firestore.FieldValue.increment(1),
+                            status: 'open',
+                            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+                        }, { merge: true });
                     }
                 }
             }

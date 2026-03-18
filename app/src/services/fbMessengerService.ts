@@ -1,12 +1,12 @@
 /**
- * Facebook Messenger Service
+ * Facebook Messenger Service — Extended
  * 
- * Client-side Firestore operations for the Facebook Messenger module.
- * Handles conversations, messages, and settings.
+ * Client-side Firestore operations + API calls for the Facebook Messenger module.
+ * Handles conversations, messages, settings, tags, notes, canned responses, and payments.
  */
 import {
     collection, doc, getDoc, setDoc, query, orderBy, limit,
-    onSnapshot, serverTimestamp, where
+    onSnapshot, serverTimestamp, where, updateDoc
 } from 'firebase/firestore';
 import { db } from './firebase';
 
@@ -18,6 +18,9 @@ export interface FbConversation {
     lastMessageAt: Date | null;
     unreadCount: number;
     status: 'open' | 'closed';
+    tags?: string[];
+    notes?: string;
+    assignedTo?: string;
 }
 
 export interface FbMessage {
@@ -28,8 +31,16 @@ export interface FbMessage {
     senderName: string;
     timestamp: Date | null;
     fbMessageId?: string;
-    attachments?: Array<{ type: string; url: string }>;
+    attachments?: Array<{ type: string; url: string; stickerId?: number }>;
     readAt?: Date | null;
+    deliveredAt?: Date | null;
+    isPayment?: boolean;
+    paymentAmount?: number;
+    paymentInvoiceId?: string;
+    paymentUrl?: string;
+    paymentQr?: string;
+    isTemplate?: boolean;
+    isPostback?: boolean;
 }
 
 export interface FbSettings {
@@ -39,6 +50,11 @@ export interface FbSettings {
     verifyToken: string;
     isConnected: boolean;
     connectedAt?: Date;
+}
+
+export interface FbCannedResponse {
+    key: string;   // e.g. "/баярлалаа"
+    text: string;
 }
 
 function convertTimestamp(val: unknown): Date | null {
@@ -91,6 +107,9 @@ export const fbMessengerService = {
                     lastMessageAt: convertTimestamp(data.lastMessageAt),
                     unreadCount: data.unreadCount || 0,
                     status: data.status || 'open',
+                    tags: data.tags || [],
+                    notes: data.notes || '',
+                    assignedTo: data.assignedTo || '',
                 } as FbConversation;
             });
             callback(convs);
@@ -118,24 +137,74 @@ export const fbMessengerService = {
                     fbMessageId: data.fbMessageId,
                     attachments: data.attachments,
                     readAt: convertTimestamp(data.readAt),
+                    deliveredAt: convertTimestamp(data.deliveredAt),
+                    isPayment: data.isPayment || false,
+                    paymentAmount: data.paymentAmount,
+                    paymentInvoiceId: data.paymentInvoiceId,
+                    paymentUrl: data.paymentUrl,
+                    paymentQr: data.paymentQr,
+                    isTemplate: data.isTemplate || false,
+                    isPostback: data.isPostback || false,
                 } as FbMessage;
             });
             callback(msgs);
         });
     },
 
-    // ═══ Send Message ═══
+    // ═══ Send Actions (via API) ═══
     async sendMessage(bizId: string, recipientId: string, message: string, senderName?: string): Promise<{ success: boolean; error?: string }> {
         try {
             const resp = await fetch('/api/fb-send', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ bizId, recipientId, message, senderName }),
+                body: JSON.stringify({ bizId, recipientId, action: 'send_text', message, senderName }),
             });
             return resp.json();
         } catch {
             return { success: false, error: 'Network error' };
         }
+    },
+
+    async sendImage(bizId: string, recipientId: string, imageUrl: string, senderName?: string): Promise<{ success: boolean; error?: string }> {
+        try {
+            const resp = await fetch('/api/fb-send', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ bizId, recipientId, action: 'send_image', imageUrl, senderName }),
+            });
+            return resp.json();
+        } catch {
+            return { success: false, error: 'Network error' };
+        }
+    },
+
+    async sendPayment(bizId: string, recipientId: string, amount: number, description?: string, senderName?: string): Promise<{ success: boolean; invoiceId?: string; shortUrl?: string; qrImage?: string; error?: string }> {
+        try {
+            const resp = await fetch('/api/fb-send', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ bizId, recipientId, action: 'send_payment', amount, description, senderName }),
+            });
+            return resp.json();
+        } catch {
+            return { success: false, error: 'Network error' };
+        }
+    },
+
+    async setTyping(bizId: string, recipientId: string): Promise<void> {
+        await fetch('/api/fb-send', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ bizId, recipientId, action: 'typing_on' }),
+        }).catch(() => {});
+    },
+
+    async markSeen(bizId: string, recipientId: string): Promise<void> {
+        await fetch('/api/fb-send', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ bizId, recipientId, action: 'mark_seen' }),
+        }).catch(() => {});
     },
 
     // ═══ Mark as read ═══
@@ -144,7 +213,6 @@ export const fbMessengerService = {
             unreadCount: 0,
         }, { merge: true });
 
-        // Mark all unread messages as read
         const q = query(
             collection(db, 'businesses', bizId, 'fbConversations', senderId, 'messages'),
             where('readAt', '==', null),
@@ -152,9 +220,48 @@ export const fbMessengerService = {
             limit(50)
         );
 
-        const { getDocs, updateDoc } = await import('firebase/firestore');
+        const { getDocs, updateDoc: firestoreUpdateDoc } = await import('firebase/firestore');
         const snap = await getDocs(q);
         const now = serverTimestamp();
-        await Promise.all(snap.docs.map(d => updateDoc(d.ref, { readAt: now })));
+        await Promise.all(snap.docs.map(d => firestoreUpdateDoc(d.ref, { readAt: now })));
+
+        // Also send mark_seen to Facebook
+        this.markSeen(bizId, senderId);
+    },
+
+    // ═══ Conversation Management ═══
+    async updateConversationStatus(bizId: string, senderId: string, status: 'open' | 'closed'): Promise<void> {
+        await updateDoc(doc(db, 'businesses', bizId, 'fbConversations', senderId), {
+            status,
+            updatedAt: serverTimestamp(),
+        });
+    },
+
+    async updateConversationTags(bizId: string, senderId: string, tags: string[]): Promise<void> {
+        await updateDoc(doc(db, 'businesses', bizId, 'fbConversations', senderId), {
+            tags,
+            updatedAt: serverTimestamp(),
+        });
+    },
+
+    async updateConversationNotes(bizId: string, senderId: string, notes: string): Promise<void> {
+        await updateDoc(doc(db, 'businesses', bizId, 'fbConversations', senderId), {
+            notes,
+            updatedAt: serverTimestamp(),
+        });
+    },
+
+    // ═══ Canned Responses ═══
+    async getCannedResponses(bizId: string): Promise<FbCannedResponse[]> {
+        const snap = await getDoc(doc(db, 'businesses', bizId, 'fbSettings', 'canned'));
+        if (!snap.exists()) return [];
+        return snap.data().responses || [];
+    },
+
+    async saveCannedResponses(bizId: string, responses: FbCannedResponse[]): Promise<void> {
+        await setDoc(doc(db, 'businesses', bizId, 'fbSettings', 'canned'), {
+            responses,
+            updatedAt: serverTimestamp(),
+        });
     },
 };

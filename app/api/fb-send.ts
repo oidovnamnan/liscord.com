@@ -1,9 +1,13 @@
 /**
- * Facebook Messenger Send API
+ * Facebook Messenger Send API — Extended
  * 
- * POST — Send a message from Liscord to a Facebook user via Messenger
- * 
- * Body: { bizId, recipientId, message, senderName? }
+ * POST actions:
+ *   action=send_text    — Send text message
+ *   action=send_image   — Send image via URL
+ *   action=send_button  — Send button template (product card, payment link)
+ *   action=send_payment — Create QPay invoice + send payment button
+ *   action=typing_on    — Show typing indicator
+ *   action=mark_seen    — Mark message as seen
  */
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import * as admin from 'firebase-admin';
@@ -25,70 +29,286 @@ if (!admin.apps.length) {
 }
 
 const db = admin.firestore();
+const QPAY_API_URL = 'https://merchant.qpay.mn/v2';
+
+// QPay token cache
+const tokenCache: Record<string, { token: string; expiresAt: number }> = {};
+
+async function getQPayToken(username: string, password: string): Promise<string> {
+    const cached = tokenCache[username];
+    if (cached && Date.now() < cached.expiresAt - 300000) return cached.token;
+
+    const resp = await fetch(`${QPAY_API_URL}/auth/token`, {
+        method: 'POST',
+        headers: {
+            'Authorization': `Basic ${Buffer.from(`${username}:${password}`).toString('base64')}`,
+            'Content-Type': 'application/json',
+        },
+    });
+
+    if (!resp.ok) throw new Error(`QPay auth failed: ${resp.status}`);
+    const data = await resp.json();
+    tokenCache[username] = { token: data.access_token, expiresAt: Date.now() + (data.expires_in * 1000) };
+    return data.access_token;
+}
+
+async function sendToFacebook(pageAccessToken: string, payload: Record<string, unknown>): Promise<Record<string, unknown>> {
+    const resp = await fetch('https://graph.facebook.com/v21.0/me/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...payload, access_token: pageAccessToken }),
+    });
+    return resp.json();
+}
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (req.method !== 'POST') {
         return res.status(405).json({ error: 'Method not allowed' });
     }
 
-    const { bizId, recipientId, message, senderName } = req.body;
+    const { bizId, recipientId, action = 'send_text', message, senderName, imageUrl, buttons, title, subtitle, amount, description } = req.body;
 
-    if (!bizId || !recipientId || !message) {
-        return res.status(400).json({ error: 'Missing bizId, recipientId, or message' });
+    if (!bizId || !recipientId) {
+        return res.status(400).json({ error: 'Missing bizId or recipientId' });
     }
 
     try {
-        // 1. Get Page Access Token from business settings
+        // 1. Get Page Access Token
         const settingsSnap = await db.doc(`businesses/${bizId}/fbSettings/config`).get();
         const settings = settingsSnap.data();
-
         if (!settings?.pageAccessToken) {
             return res.status(400).json({ error: 'Facebook Page Access Token not configured' });
         }
+        const token = settings.pageAccessToken;
 
-        // 2. Send message via Facebook Send API
-        const fbResponse = await fetch('https://graph.facebook.com/v21.0/me/messages', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                recipient: { id: recipientId },
-                message: { text: message },
-                access_token: settings.pageAccessToken,
-            }),
-        });
-
-        const fbResult = await fbResponse.json();
-
-        if (!fbResponse.ok) {
-            console.error('FB Send API error:', fbResult);
-            return res.status(502).json({ error: 'Facebook Send API failed', details: fbResult.error?.message });
+        // ── TYPING ON ──
+        if (action === 'typing_on') {
+            await sendToFacebook(token, { recipient: { id: recipientId }, sender_action: 'typing_on' });
+            return res.status(200).json({ success: true });
         }
 
-        // 3. Save outbound message to Firestore
-        const convRef = db.doc(`businesses/${bizId}/fbConversations/${recipientId}`);
-        
-        // Update conversation metadata
-        await convRef.set({
-            lastMessage: message,
-            lastMessageAt: admin.firestore.FieldValue.serverTimestamp(),
-            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-        }, { merge: true });
+        // ── MARK SEEN ──
+        if (action === 'mark_seen') {
+            await sendToFacebook(token, { recipient: { id: recipientId }, sender_action: 'mark_seen' });
+            return res.status(200).json({ success: true });
+        }
 
-        // Add message to subcollection
-        await convRef.collection('messages').add({
-            text: message,
-            direction: 'outbound',
-            senderId: 'page',
-            senderName: senderName || 'Оператор',
-            timestamp: admin.firestore.FieldValue.serverTimestamp(),
-            fbMessageId: fbResult.message_id || '',
-            readAt: null,
-        });
+        // Show typing before any message
+        await sendToFacebook(token, { recipient: { id: recipientId }, sender_action: 'typing_on' });
 
-        return res.status(200).json({ success: true, messageId: fbResult.message_id });
+        // ── SEND TEXT ──
+        if (action === 'send_text') {
+            if (!message) return res.status(400).json({ error: 'Missing message' });
 
-    } catch (err) {
+            const fbResult = await sendToFacebook(token, {
+                recipient: { id: recipientId },
+                message: { text: message },
+            });
+
+            // Save to Firestore
+            const convRef = db.doc(`businesses/${bizId}/fbConversations/${recipientId}`);
+            await convRef.set({
+                lastMessage: message,
+                lastMessageAt: admin.firestore.FieldValue.serverTimestamp(),
+                updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+            }, { merge: true });
+
+            await convRef.collection('messages').add({
+                text: message,
+                direction: 'outbound',
+                senderId: 'page',
+                senderName: senderName || 'Оператор',
+                timestamp: admin.firestore.FieldValue.serverTimestamp(),
+                fbMessageId: (fbResult as any).message_id || '',
+                deliveredAt: null,
+                readAt: null,
+            });
+
+            return res.status(200).json({ success: true, messageId: (fbResult as any).message_id });
+        }
+
+        // ── SEND IMAGE ──
+        if (action === 'send_image') {
+            if (!imageUrl) return res.status(400).json({ error: 'Missing imageUrl' });
+
+            const fbResult = await sendToFacebook(token, {
+                recipient: { id: recipientId },
+                message: {
+                    attachment: { type: 'image', payload: { url: imageUrl, is_reusable: true } },
+                },
+            });
+
+            const convRef = db.doc(`businesses/${bizId}/fbConversations/${recipientId}`);
+            await convRef.set({
+                lastMessage: '📷 Зураг',
+                lastMessageAt: admin.firestore.FieldValue.serverTimestamp(),
+                updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+            }, { merge: true });
+
+            await convRef.collection('messages').add({
+                text: '📷 Зураг',
+                direction: 'outbound',
+                senderId: 'page',
+                senderName: senderName || 'Оператор',
+                timestamp: admin.firestore.FieldValue.serverTimestamp(),
+                fbMessageId: (fbResult as any).message_id || '',
+                attachments: [{ type: 'image', url: imageUrl }],
+                deliveredAt: null,
+                readAt: null,
+            });
+
+            return res.status(200).json({ success: true, messageId: (fbResult as any).message_id });
+        }
+
+        // ── SEND BUTTON TEMPLATE ──
+        if (action === 'send_button') {
+            if (!title || !buttons?.length) return res.status(400).json({ error: 'Missing title or buttons' });
+
+            const fbResult = await sendToFacebook(token, {
+                recipient: { id: recipientId },
+                message: {
+                    attachment: {
+                        type: 'template',
+                        payload: {
+                            template_type: 'button',
+                            text: title,
+                            buttons: buttons.map((b: { title: string; url?: string; payload?: string }) => (
+                                b.url
+                                    ? { type: 'web_url', url: b.url, title: b.title }
+                                    : { type: 'postback', title: b.title, payload: b.payload || b.title }
+                            )),
+                        },
+                    },
+                },
+            });
+
+            const convRef = db.doc(`businesses/${bizId}/fbConversations/${recipientId}`);
+            await convRef.set({
+                lastMessage: `📋 ${title}`,
+                lastMessageAt: admin.firestore.FieldValue.serverTimestamp(),
+                updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+            }, { merge: true });
+
+            await convRef.collection('messages').add({
+                text: `📋 ${title}`,
+                direction: 'outbound',
+                senderId: 'page',
+                senderName: senderName || 'Оператор',
+                timestamp: admin.firestore.FieldValue.serverTimestamp(),
+                fbMessageId: (fbResult as any).message_id || '',
+                isTemplate: true,
+                templateType: 'button',
+                deliveredAt: null,
+                readAt: null,
+            });
+
+            return res.status(200).json({ success: true, messageId: (fbResult as any).message_id });
+        }
+
+        // ── SEND PAYMENT (QPay Invoice + Button Template) ──
+        if (action === 'send_payment') {
+            if (!amount) return res.status(400).json({ error: 'Missing amount' });
+
+            // Get business QPay credentials
+            const paymentSnap = await db.doc(`businesses/${bizId}/payment_settings/qpay`).get();
+            const paySettings = paymentSnap.data();
+
+            const qpayUsername = paySettings?.username || process.env.QPAY_VIP_USERNAME;
+            const qpayPassword = paySettings?.password || process.env.QPAY_VIP_PASSWORD;
+            const invoiceCode = paySettings?.invoiceCode || process.env.QPAY_VIP_INVOICE_CODE || 'GATE_SIM_INVOICE';
+
+            if (!qpayUsername || !qpayPassword) {
+                return res.status(400).json({ error: 'QPay credentials not configured' });
+            }
+
+            // Create QPay invoice
+            const qpayToken = await getQPayToken(qpayUsername, qpayPassword);
+            const invoiceId = `fb_${recipientId.slice(-6)}_${Date.now().toString(36)}`;
+
+            const host = req.headers.host || 'www.liscord.com';
+            const protocol = host.includes('localhost') ? 'http' : 'https';
+            const callbackUrl = `${protocol}://${host}/api/qpay-callback?bizId=${bizId}&orderId=${invoiceId}`;
+
+            const invoiceResp = await fetch(`${QPAY_API_URL}/invoice`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${qpayToken}`,
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    invoice_code: invoiceCode,
+                    sender_invoice_no: invoiceId,
+                    invoice_receiver_code: recipientId,
+                    invoice_description: description || `Messenger төлбөр — ${amount}₮`,
+                    amount: amount,
+                    callback_url: callbackUrl,
+                }),
+            });
+
+            if (!invoiceResp.ok) {
+                const err = await invoiceResp.json().catch(() => ({}));
+                console.error('QPay invoice error:', err);
+                return res.status(500).json({ error: 'QPay invoice creation failed', details: err });
+            }
+
+            const invoice = await invoiceResp.json();
+
+            // Send button template with payment link
+            const paymentText = `💳 Төлбөр: ${Number(amount).toLocaleString()}₮\n${description || 'Messenger-ээр илгээсэн нэхэмжлэх'}`;
+
+            const fbResult = await sendToFacebook(token, {
+                recipient: { id: recipientId },
+                message: {
+                    attachment: {
+                        type: 'template',
+                        payload: {
+                            template_type: 'button',
+                            text: paymentText,
+                            buttons: [
+                                { type: 'web_url', url: invoice.qPay_shortUrl || `https://qpay.mn/payment/${invoice.invoice_id}`, title: '💳 Төлбөр төлөх' },
+                            ],
+                        },
+                    },
+                },
+            });
+
+            // Save to Firestore
+            const convRef = db.doc(`businesses/${bizId}/fbConversations/${recipientId}`);
+            await convRef.set({
+                lastMessage: `💳 Төлбөр: ${Number(amount).toLocaleString()}₮`,
+                lastMessageAt: admin.firestore.FieldValue.serverTimestamp(),
+                updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+            }, { merge: true });
+
+            await convRef.collection('messages').add({
+                text: paymentText,
+                direction: 'outbound',
+                senderId: 'page',
+                senderName: senderName || 'Оператор',
+                timestamp: admin.firestore.FieldValue.serverTimestamp(),
+                fbMessageId: (fbResult as any).message_id || '',
+                isPayment: true,
+                paymentAmount: amount,
+                paymentInvoiceId: invoice.invoice_id,
+                paymentUrl: invoice.qPay_shortUrl,
+                paymentQr: invoice.qr_image,
+                deliveredAt: null,
+                readAt: null,
+            });
+
+            return res.status(200).json({
+                success: true,
+                messageId: (fbResult as any).message_id,
+                invoiceId: invoice.invoice_id,
+                qrImage: invoice.qr_image,
+                shortUrl: invoice.qPay_shortUrl,
+            });
+        }
+
+        return res.status(400).json({ error: `Unknown action: ${action}` });
+
+    } catch (err: any) {
         console.error('FB send error:', err);
-        return res.status(500).json({ error: 'Internal server error' });
+        return res.status(500).json({ error: err.message || 'Internal server error' });
     }
 }

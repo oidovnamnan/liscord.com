@@ -1,21 +1,21 @@
-import { useState, useRef, useEffect, useMemo } from 'react';
+import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import {
     Send, Search, MessageSquare, X, Copy, Check, Loader2, Save,
-    ExternalLink, Settings, Link2, Shield, ChevronRight, Tag, StickyNote,
-    Image as ImageIcon, Smile, Zap, Filter, User
+    ExternalLink, Settings, Link2, Shield, Tag, StickyNote,
+    Zap, User, CreditCard, DollarSign, ChevronDown, XCircle, CheckCircle
 } from 'lucide-react';
 import { useBusinessStore, useAuthStore, useUIStore } from '../../store';
-import { fbMessengerService, type FbConversation, type FbMessage, type FbSettings } from '../../services/fbMessengerService';
+import { fbMessengerService, type FbConversation, type FbMessage, type FbSettings, type FbCannedResponse } from '../../services/fbMessengerService';
 import toast from 'react-hot-toast';
 import './FacebookMessengerPage.css';
 
 type ConvFilter = 'all' | 'unread' | 'open' | 'closed';
 
-const CANNED_RESPONSES = [
+const DEFAULT_CANNED: FbCannedResponse[] = [
     { key: '/баярлалаа', text: 'Баярлалаа! Манай дэлгүүрээр зочлоорой 🙏' },
     { key: '/захиалга', text: 'Захиалга өгөхийн тулд манай дэлгүүрээр зочилно уу!' },
     { key: '/хаяг', text: 'Бидний хаяг: ...' },
-    { key: '/ажиллах', text: 'Ажлын цаг: Даваа-Баасан 09:00-18:00' },
+    { key: '/цаг', text: 'Ажлын цаг: Даваа-Баасан 09:00-18:00' },
     { key: '/холбоо', text: 'Холбоо барих утас: ...' },
 ];
 
@@ -29,10 +29,7 @@ export function FacebookMessengerPage() {
     useEffect(() => {
         prevCollapsed.current = sidebarCollapsed;
         if (!sidebarCollapsed) toggleSidebarCollapsed();
-        return () => {
-            // Restore sidebar state on unmount
-            if (!prevCollapsed.current) toggleSidebarCollapsed();
-        };
+        return () => { if (!prevCollapsed.current) toggleSidebarCollapsed(); };
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
@@ -48,6 +45,10 @@ export function FacebookMessengerPage() {
     const [showDrawer, setShowDrawer] = useState(false);
     const [showInfoPanel, setShowInfoPanel] = useState(false);
     const [showCanned, setShowCanned] = useState(false);
+    const [showPaymentModal, setShowPaymentModal] = useState(false);
+    const [paymentAmount, setPaymentAmount] = useState('');
+    const [paymentDesc, setPaymentDesc] = useState('');
+    const [sendingPayment, setSendingPayment] = useState(false);
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
     // Settings
@@ -55,6 +56,11 @@ export function FacebookMessengerPage() {
     const [settingsForm, setSettingsForm] = useState({ pageId: '', pageName: '', pageAccessToken: '' });
     const [savingSettings, setSavingSettings] = useState(false);
     const [copied, setCopied] = useState('');
+    const [cannedResponses, setCannedResponses] = useState<FbCannedResponse[]>(DEFAULT_CANNED);
+
+    // Notes editing
+    const [editingNotes, setEditingNotes] = useState('');
+    const notesTimeout = useRef<ReturnType<typeof setTimeout>>();
 
     // ═══ Effects ═══
     useEffect(() => {
@@ -63,6 +69,7 @@ export function FacebookMessengerPage() {
             setSettings(s);
             if (s) setSettingsForm({ pageId: s.pageId, pageName: s.pageName, pageAccessToken: s.pageAccessToken });
         });
+        fbMessengerService.getCannedResponses(business.id).then(r => { if (r.length > 0) setCannedResponses(r); });
     }, [business?.id]);
 
     useEffect(() => {
@@ -82,6 +89,10 @@ export function FacebookMessengerPage() {
 
     useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages.length]);
 
+    // Set notes when switching conv
+    const activeConv = conversations.find(c => c.id === activeConvId);
+    useEffect(() => { setEditingNotes(activeConv?.notes || ''); }, [activeConvId, activeConv?.notes]);
+
     // ═══ Handlers ═══
     const handleSend = async () => {
         if (!newMessage.trim() || !business?.id || !activeConvId || sending) return;
@@ -93,6 +104,22 @@ export function FacebookMessengerPage() {
             const r = await fbMessengerService.sendMessage(business.id, activeConvId, text, user?.displayName || 'Оператор');
             if (!r.success) { toast.error(r.error || 'Илгээхэд алдаа'); setNewMessage(text); }
         } catch { toast.error('Илгээхэд алдаа'); setNewMessage(text); } finally { setSending(false); }
+    };
+
+    const handleSendPayment = async () => {
+        if (!business?.id || !activeConvId || !paymentAmount) return;
+        setSendingPayment(true);
+        try {
+            const r = await fbMessengerService.sendPayment(business.id, activeConvId, Number(paymentAmount), paymentDesc || undefined, user?.displayName || 'Оператор');
+            if (r.success) {
+                toast.success('Төлбөрийн нэхэмжлэх илгээгдлээ!');
+                setShowPaymentModal(false);
+                setPaymentAmount('');
+                setPaymentDesc('');
+            } else {
+                toast.error(r.error || 'Алдаа');
+            }
+        } catch { toast.error('Алдаа гарлаа'); } finally { setSendingPayment(false); }
     };
 
     const handleSaveSettings = async () => {
@@ -111,22 +138,34 @@ export function FacebookMessengerPage() {
         } catch { toast.error('Алдаа гарлаа'); } finally { setSavingSettings(false); }
     };
 
-    const handleDisconnect = async () => {
-        if (!business?.id || !confirm('Салгах уу?')) return;
-        setSavingSettings(true);
-        try {
-            await fbMessengerService.saveSettings(business.id, { pageAccessToken: '', isConnected: false });
-            setSettings(prev => prev ? { ...prev, pageAccessToken: '', isConnected: false } : null);
-            setSettingsForm(prev => ({ ...prev, pageAccessToken: '' }));
-            toast.success('Салгагдлаа');
-        } finally { setSavingSettings(false); }
-    };
+    const handleNotesChange = useCallback((value: string) => {
+        setEditingNotes(value);
+        if (notesTimeout.current) clearTimeout(notesTimeout.current);
+        notesTimeout.current = setTimeout(() => {
+            if (business?.id && activeConvId) {
+                fbMessengerService.updateConversationNotes(business.id, activeConvId, value);
+            }
+        }, 1000);
+    }, [business?.id, activeConvId]);
+
+    const toggleTag = useCallback((tag: string) => {
+        if (!business?.id || !activeConvId || !activeConv) return;
+        const current = activeConv.tags || [];
+        const updated = current.includes(tag) ? current.filter(t => t !== tag) : [...current, tag];
+        fbMessengerService.updateConversationTags(business.id, activeConvId, updated);
+    }, [business?.id, activeConvId, activeConv]);
+
+    const toggleConvStatus = useCallback(() => {
+        if (!business?.id || !activeConvId || !activeConv) return;
+        const newStatus = activeConv.status === 'open' ? 'closed' : 'open';
+        fbMessengerService.updateConversationStatus(business.id, activeConvId, newStatus);
+        toast.success(newStatus === 'closed' ? 'Харилцаа хаагдлаа' : 'Харилцаа нээгдлээ');
+    }, [business?.id, activeConvId, activeConv]);
 
     const webhookUrl = `https://www.liscord.com/api/fb-webhook?bizId=${business?.id || ''}`;
     const copyText = (text: string, key: string) => { navigator.clipboard.writeText(text); setCopied(key); setTimeout(() => setCopied(''), 2000); };
 
     // ═══ Derived ═══
-    const activeConv = conversations.find(c => c.id === activeConvId);
     const totalUnread = conversations.reduce((sum, c) => sum + c.unreadCount, 0);
 
     const filteredConvs = useMemo(() => {
@@ -138,11 +177,10 @@ export function FacebookMessengerPage() {
         return list;
     }, [conversations, convFilter, convSearch]);
 
-    // Canned response matching
     const cannedMatches = useMemo(() => {
         if (!newMessage.startsWith('/')) return [];
-        return CANNED_RESPONSES.filter(r => r.key.startsWith(newMessage));
-    }, [newMessage]);
+        return cannedResponses.filter(r => r.key.startsWith(newMessage));
+    }, [newMessage, cannedResponses]);
 
     const formatTime = (d: Date | null) => {
         if (!d) return '';
@@ -156,14 +194,12 @@ export function FacebookMessengerPage() {
     const getDateLabel = (d: Date | null) => {
         if (!d) return '';
         const now = new Date();
-        const isToday = d.toDateString() === now.toDateString();
-        const yesterday = new Date(now); yesterday.setDate(now.getDate() - 1);
-        if (isToday) return 'Өнөөдөр';
-        if (d.toDateString() === yesterday.toDateString()) return 'Өчигдөр';
+        if (d.toDateString() === now.toDateString()) return 'Өнөөдөр';
+        const y = new Date(now); y.setDate(now.getDate() - 1);
+        if (d.toDateString() === y.toDateString()) return 'Өчигдөр';
         return d.toLocaleDateString('mn-MN', { year: 'numeric', month: 'long', day: 'numeric' });
     };
 
-    // Group messages by date
     const messagesWithDates = useMemo(() => {
         const result: Array<{ type: 'date'; label: string } | { type: 'msg'; msg: FbMessage }> = [];
         let lastDate = '';
@@ -175,36 +211,40 @@ export function FacebookMessengerPage() {
         return result;
     }, [messages]);
 
+    const msgStatus = (m: FbMessage) => {
+        if (m.direction !== 'outbound') return null;
+        if (m.readAt) return 'read';
+        if (m.deliveredAt) return 'delivered';
+        return 'sent';
+    };
+
+    const TAGS = ['VIP', 'Шинэ', 'Яаралтай', 'Хүлээгдэж буй'];
+    const TAG_COLORS: Record<string, string> = { 'VIP': 'blue', 'Шинэ': 'green', 'Яаралтай': 'red', 'Хүлээгдэж буй': 'yellow' };
+
     // ═══ RENDER ═══
     return (
         <div className="fbm-page animate-fade-in">
             {/* ── Compact Toolbar ── */}
             <div className="fbm-toolbar">
                 <div className="fbm-toolbar-left">
-                    <div className="fbm-toolbar-icon">
-                        <MessageSquare size={18} />
-                    </div>
+                    <div className="fbm-toolbar-icon"><MessageSquare size={18} /></div>
                     <div className="fbm-toolbar-text">
                         <span className="fbm-toolbar-title">Messenger</span>
                         <span className="fbm-toolbar-sub">
                             {settings?.pageName || 'Facebook Page'}
-                            {settings?.isConnected
-                                ? <span className="fbm-dot connected" />
-                                : <span className="fbm-dot" />}
+                            <span className={`fbm-dot ${settings?.isConnected ? 'connected' : ''}`} />
                         </span>
                     </div>
                 </div>
                 <div className="fbm-toolbar-right">
                     {totalUnread > 0 && <span className="fbm-toolbar-badge">{totalUnread}</span>}
-                    <button className="fbm-toolbar-btn" onClick={() => setShowDrawer(true)} title="Тохиргоо">
-                        <Settings size={16} />
-                    </button>
+                    <button className="fbm-toolbar-btn" onClick={() => setShowDrawer(true)} title="Тохиргоо"><Settings size={16} /></button>
                 </div>
             </div>
 
             {/* ── Main Grid ── */}
-            <div className={`fbm-main ${showInfoPanel ? 'with-info' : ''}`}>
-                {/* ── Conversations Sidebar ── */}
+            <div className={`fbm-main ${showInfoPanel && activeConv ? 'with-info' : ''}`}>
+                {/* ── Conversations ── */}
                 <div className="fbm-convs">
                     <div className="fbm-conv-search">
                         <Search size={14} />
@@ -222,9 +262,7 @@ export function FacebookMessengerPage() {
                         {loading ? (
                             <div className="flex-center" style={{ padding: 40 }}><Loader2 size={18} className="animate-spin" style={{ color: '#1877F2' }} /></div>
                         ) : filteredConvs.length === 0 ? (
-                            <div className="fbm-conv-empty">
-                                {convFilter !== 'all' ? 'Шүүлтэд тохирох харилцагч алга' : settings?.isConnected ? '📭 Мессеж ирээгүй' : '⚙️ Тохиргоо хийнэ үү'}
-                            </div>
+                            <div className="fbm-conv-empty">{convFilter !== 'all' ? 'Шүүлтэд тохирох алга' : settings?.isConnected ? '📭 Мессеж ирээгүй' : '⚙️ Тохиргоо хийнэ үү'}</div>
                         ) : filteredConvs.map(c => (
                             <button key={c.id} className={`fbm-conv-row ${activeConvId === c.id ? 'active' : ''}`}
                                 onClick={() => setActiveConvId(c.id)}>
@@ -232,7 +270,10 @@ export function FacebookMessengerPage() {
                                     {c.senderProfilePic ? <img src={c.senderProfilePic} alt="" /> : (c.senderName?.charAt(0) || '?')}
                                 </div>
                                 <div className="fbm-conv-info">
-                                    <div className="fbm-conv-name">{c.senderName}</div>
+                                    <div className="fbm-conv-name">
+                                        {c.senderName}
+                                        {c.tags?.includes('VIP') && <span className="fbm-mini-tag blue">VIP</span>}
+                                    </div>
                                     <div className="fbm-conv-preview">{c.lastMessage}</div>
                                 </div>
                                 <div className="fbm-conv-meta">
@@ -248,7 +289,6 @@ export function FacebookMessengerPage() {
                 <div className="fbm-chat">
                     {activeConv ? (
                         <>
-                            {/* Chat Header */}
                             <div className="fbm-chat-header">
                                 <div className="fbm-chat-header-left">
                                     <div className="fbm-conv-avatar sm">
@@ -256,14 +296,15 @@ export function FacebookMessengerPage() {
                                     </div>
                                     <div>
                                         <div className="fbm-chat-name">{activeConv.senderName}</div>
-                                        <div className="fbm-chat-platform">
-                                            <span className="fbm-dot connected" /> Facebook Messenger
-                                        </div>
+                                        <div className="fbm-chat-platform"><span className="fbm-dot connected" /> Facebook Messenger</div>
                                     </div>
                                 </div>
                                 <div className="fbm-chat-header-actions">
-                                    <button className={`fbm-toolbar-btn ${showInfoPanel ? 'active' : ''}`} onClick={() => setShowInfoPanel(!showInfoPanel)} title="Мэдээлэл">
-                                        <User size={16} />
+                                    <button className="fbm-toolbar-btn chat" onClick={() => setShowPaymentModal(true)} title="Төлбөр илгээх">
+                                        <CreditCard size={15} />
+                                    </button>
+                                    <button className={`fbm-toolbar-btn chat ${showInfoPanel ? 'active' : ''}`} onClick={() => setShowInfoPanel(!showInfoPanel)} title="Мэдээлэл">
+                                        <User size={15} />
                                     </button>
                                 </div>
                             </div>
@@ -271,44 +312,66 @@ export function FacebookMessengerPage() {
                             {/* Messages */}
                             <div className="fbm-messages">
                                 {messagesWithDates.map((item, i) => item.type === 'date' ? (
-                                    <div key={`date-${i}`} className="fbm-date-sep">
-                                        <span>{item.label}</span>
-                                    </div>
+                                    <div key={`d-${i}`} className="fbm-date-sep"><span>{item.label}</span></div>
                                 ) : (
-                                    <div key={item.msg.id} className={`fbm-msg ${item.msg.direction}`}>
+                                    <div key={item.msg.id} className={`fbm-msg ${item.msg.direction} ${item.msg.isPostback ? 'postback' : ''}`}>
                                         {item.msg.direction === 'inbound' && (
                                             <div className="fbm-msg-av">
                                                 {activeConv.senderProfilePic ? <img src={activeConv.senderProfilePic} alt="" /> : (activeConv.senderName?.charAt(0) || '?')}
                                             </div>
                                         )}
-                                        <div>
-                                            <div className="fbm-msg-bubble">
-                                                {item.msg.text}
-                                                {/* Attachments */}
-                                                {item.msg.attachments?.map((att, j) => (
-                                                    att.type === 'image' ? (
-                                                        <img key={j} src={att.url} alt="" className="fbm-msg-img" />
-                                                    ) : (
-                                                        <a key={j} href={att.url} target="_blank" rel="noopener noreferrer" className="fbm-msg-attachment">
-                                                            📎 Хавсралт
+                                        <div className="fbm-msg-content">
+                                            {/* Payment message */}
+                                            {item.msg.isPayment ? (
+                                                <div className="fbm-msg-payment">
+                                                    <div className="fbm-payment-header"><DollarSign size={14} /> Төлбөрийн нэхэмжлэх</div>
+                                                    <div className="fbm-payment-amount">{Number(item.msg.paymentAmount).toLocaleString()}₮</div>
+                                                    {item.msg.paymentUrl && (
+                                                        <a href={item.msg.paymentUrl} target="_blank" rel="noopener noreferrer" className="fbm-payment-link">
+                                                            💳 Төлбөр төлөх линк
                                                         </a>
-                                                    )
-                                                ))}
+                                                    )}
+                                                </div>
+                                            ) : (
+                                                <div className="fbm-msg-bubble">
+                                                    {item.msg.text}
+                                                    {item.msg.attachments?.map((att, j) => (
+                                                        att.type === 'image' ? (
+                                                            <a key={j} href={att.url} target="_blank" rel="noopener noreferrer">
+                                                                <img src={att.url} alt="" className="fbm-msg-img" />
+                                                            </a>
+                                                        ) : att.type === 'video' ? (
+                                                            <video key={j} src={att.url} controls className="fbm-msg-video" />
+                                                        ) : att.type === 'audio' ? (
+                                                            <audio key={j} src={att.url} controls className="fbm-msg-audio" />
+                                                        ) : att.type === 'sticker' ? (
+                                                            <img key={j} src={att.url} alt="sticker" className="fbm-msg-sticker" />
+                                                        ) : (
+                                                            <a key={j} href={att.url} target="_blank" rel="noopener noreferrer" className="fbm-msg-file">
+                                                                📄 Файл татах
+                                                            </a>
+                                                        )
+                                                    ))}
+                                                </div>
+                                            )}
+                                            <div className="fbm-msg-footer">
+                                                <span className="fbm-msg-ts">{formatTime(item.msg.timestamp)}</span>
+                                                {msgStatus(item.msg) === 'read' && <span className="fbm-msg-status read">✓✓</span>}
+                                                {msgStatus(item.msg) === 'delivered' && <span className="fbm-msg-status">✓✓</span>}
+                                                {msgStatus(item.msg) === 'sent' && <span className="fbm-msg-status">✓</span>}
                                             </div>
-                                            <div className="fbm-msg-ts">{formatTime(item.msg.timestamp)}</div>
                                         </div>
                                     </div>
                                 ))}
                                 <div ref={messagesEndRef} />
                             </div>
 
-                            {/* Canned Responses Popup */}
+                            {/* Canned popup */}
                             {showCanned && cannedMatches.length > 0 && (
                                 <div className="fbm-canned-popup">
                                     {cannedMatches.map(r => (
                                         <button key={r.key} className="fbm-canned-item" onClick={() => { setNewMessage(r.text); setShowCanned(false); }}>
-                                            <Zap size={12} /> <strong>{r.key}</strong>
-                                            <span>{r.text}</span>
+                                            <Zap size={12} /> <strong>{r.key}</strong> <span>{r.text}</span>
                                         </button>
                                     ))}
                                 </div>
@@ -316,13 +379,9 @@ export function FacebookMessengerPage() {
 
                             {/* Input */}
                             <div className="fbm-input">
-                                <input
-                                    placeholder="Мессеж бичих... ( / бичвэл түргэн хариу)"
-                                    value={newMessage}
+                                <input placeholder="Мессеж бичих... ( / түргэн хариу)" value={newMessage}
                                     onChange={e => { setNewMessage(e.target.value); setShowCanned(e.target.value.startsWith('/')); }}
-                                    onKeyDown={e => e.key === 'Enter' && handleSend()}
-                                    disabled={sending}
-                                />
+                                    onKeyDown={e => e.key === 'Enter' && handleSend()} disabled={sending} />
                                 <button className="fbm-send" onClick={handleSend} disabled={!newMessage.trim() || sending}>
                                     {sending ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
                                 </button>
@@ -332,20 +391,18 @@ export function FacebookMessengerPage() {
                         <div className="fbm-empty">
                             <div className="fbm-empty-icon"><MessageSquare size={32} /></div>
                             <h3>Facebook Messenger</h3>
-                            <p>{settings?.isConnected ? 'Зүүн талаас харилцагч сонгоно уу' : 'Эхлээд ⚙️ Тохиргоо хийж Facebook Page-ээ холбоно уу'}</p>
-                            {!settings?.isConnected && (
-                                <button className="fbm-empty-btn" onClick={() => setShowDrawer(true)}>⚙️ Тохиргоо</button>
-                            )}
+                            <p>{settings?.isConnected ? 'Зүүн талаас харилцагч сонгоно уу' : 'Эхлээд ⚙️ Тохиргоо хийж Page-ээ холбоно уу'}</p>
+                            {!settings?.isConnected && <button className="fbm-empty-btn" onClick={() => setShowDrawer(true)}>⚙️ Тохиргоо</button>}
                         </div>
                     )}
                 </div>
 
-                {/* ── Customer Info Panel ── */}
+                {/* ── Info Panel ── */}
                 {showInfoPanel && activeConv && (
                     <div className="fbm-info-panel">
                         <div className="fbm-info-header">
                             <span>Хэрэглэгч</span>
-                            <button className="fbm-toolbar-btn" onClick={() => setShowInfoPanel(false)}><X size={14} /></button>
+                            <button className="fbm-toolbar-btn chat" onClick={() => setShowInfoPanel(false)}><X size={14} /></button>
                         </div>
                         <div className="fbm-info-profile">
                             <div className="fbm-info-avatar">
@@ -354,43 +411,85 @@ export function FacebookMessengerPage() {
                             <div className="fbm-info-name">{activeConv.senderName}</div>
                             <div className="fbm-info-id">PSID: {activeConv.id}</div>
                         </div>
+
                         <div className="fbm-info-section">
-                            <div className="fbm-info-label"><MessageSquare size={12} /> Мессежийн тоо</div>
-                            <div className="fbm-info-value">{messages.length}</div>
+                            <div className="fbm-info-label"><MessageSquare size={12} /> Статистик</div>
+                            <div className="fbm-info-value">{messages.length} мессеж</div>
                         </div>
+
                         <div className="fbm-info-section">
                             <div className="fbm-info-label"><Tag size={12} /> Хаяг</div>
                             <div className="fbm-info-tags">
-                                <span className="fbm-tag blue">Messenger</span>
-                                {activeConv.status === 'open' && <span className="fbm-tag green">Нээлттэй</span>}
+                                {TAGS.map(tag => (
+                                    <button key={tag} className={`fbm-tag ${TAG_COLORS[tag] || ''} ${activeConv.tags?.includes(tag) ? 'active' : ''}`}
+                                        onClick={() => toggleTag(tag)}>{tag}</button>
+                                ))}
                             </div>
                         </div>
+
+                        <div className="fbm-info-section">
+                            <div className="fbm-info-label">
+                                {activeConv.status === 'open' ? <CheckCircle size={12} /> : <XCircle size={12} />}
+                                Төлөв
+                            </div>
+                            <button className={`fbm-status-btn ${activeConv.status}`} onClick={toggleConvStatus}>
+                                {activeConv.status === 'open' ? '🟢 Нээлттэй — хаах' : '🔴 Хаагдсан — нээх'}
+                            </button>
+                        </div>
+
                         <div className="fbm-info-section">
                             <div className="fbm-info-label"><StickyNote size={12} /> Тэмдэглэл</div>
-                            <textarea className="fbm-info-notes" placeholder="Тэмдэглэл бичих..." rows={3} />
+                            <textarea className="fbm-info-notes" placeholder="Тэмдэглэл бичих..." rows={3}
+                                value={editingNotes} onChange={e => handleNotesChange(e.target.value)} />
                         </div>
                     </div>
                 )}
             </div>
+
+            {/* ── Payment Modal ── */}
+            {showPaymentModal && (
+                <div className="fbm-drawer-overlay" onClick={() => setShowPaymentModal(false)}>
+                    <div className="fbm-payment-modal" onClick={e => e.stopPropagation()}>
+                        <div className="fbm-payment-modal-header">
+                            <h3><CreditCard size={18} /> Төлбөр илгээх</h3>
+                            <button className="fbm-toolbar-btn" onClick={() => setShowPaymentModal(false)}><X size={16} /></button>
+                        </div>
+                        <div className="fbm-payment-modal-body">
+                            <p className="fbm-drawer-hint">QPay нэхэмжлэх үүсгэн Messenger-ээр илгээнэ</p>
+                            <div className="fbm-drawer-field">
+                                <label>Дүн (₮)</label>
+                                <input type="number" value={paymentAmount} onChange={e => setPaymentAmount(e.target.value)} placeholder="50000" autoFocus />
+                            </div>
+                            <div className="fbm-drawer-field">
+                                <label>Тайлбар</label>
+                                <input value={paymentDesc} onChange={e => setPaymentDesc(e.target.value)} placeholder="Бараа/үйлчилгээний нэр" />
+                            </div>
+                        </div>
+                        <div className="fbm-drawer-footer">
+                            <button className="fbm-save-btn" onClick={handleSendPayment} disabled={sendingPayment || !paymentAmount}>
+                                {sendingPayment ? <Loader2 className="animate-spin" size={16} /> : <CreditCard size={16} />}
+                                Нэхэмжлэх илгээх
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* ── Settings Drawer ── */}
             {showDrawer && (
                 <div className="fbm-drawer-overlay" onClick={() => setShowDrawer(false)}>
                     <div className="fbm-drawer" onClick={e => e.stopPropagation()}>
                         <div className="fbm-drawer-header">
-                            <h3><Settings size={18} /> Messenger тохиргоо</h3>
+                            <h3><Settings size={18} /> Тохиргоо</h3>
                             <button className="fbm-toolbar-btn" onClick={() => setShowDrawer(false)}><X size={16} /></button>
                         </div>
                         <div className="fbm-drawer-body">
-                            {/* Status */}
                             <div className="fbm-drawer-section">
                                 <div className="fbm-drawer-section-title"><Shield size={14} /> Холболт</div>
                                 <span className={`fbm-conn-badge ${settings?.isConnected ? 'connected' : ''}`}>
                                     ● {settings?.isConnected ? 'Холбогдсон' : 'Холбогдоогүй'}
                                 </span>
                             </div>
-
-                            {/* Webhook */}
                             <div className="fbm-drawer-section">
                                 <div className="fbm-drawer-section-title"><Link2 size={14} /> Webhook URL</div>
                                 <div className="fbm-copyable" onClick={() => copyText(webhookUrl, 'url')}>
@@ -407,8 +506,6 @@ export function FacebookMessengerPage() {
                                     </>
                                 )}
                             </div>
-
-                            {/* Token */}
                             <div className="fbm-drawer-section">
                                 <div className="fbm-drawer-section-title"><Settings size={14} /> Access Token</div>
                                 <p className="fbm-drawer-hint">
@@ -435,9 +532,6 @@ export function FacebookMessengerPage() {
                                 {savingSettings ? <Loader2 className="animate-spin" size={16} /> : <Save size={16} />}
                                 Хадгалах
                             </button>
-                            {settings?.isConnected && (
-                                <button className="fbm-disconnect-btn" onClick={handleDisconnect} disabled={savingSettings}>Салгах</button>
-                            )}
                         </div>
                     </div>
                 </div>
