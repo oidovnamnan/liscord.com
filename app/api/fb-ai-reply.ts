@@ -154,7 +154,7 @@ interface AIResponse {
 
 function buildSystemPrompt(
     bizName: string,
-    bizInfo: { phone?: string; address?: string; storeUrl?: string },
+    bizInfo: { phone?: string; address?: string; storeUrl?: string; businessHours?: string; deliveryInfo?: string },
     productTable: string,
     categoryTable: string,
     senderName: string
@@ -171,17 +171,20 @@ function buildSystemPrompt(
 ДҮРЭМ:
 - Найрсаг, тусч, ТОВЧ хариулах (2-3 өгүүлбэрээс илүүгүй)
 - Бараа асуухад → НЭРИЙГ ҮНИЙН ХАМТ хэлж, захиалах боломжтой гэдгийг мэдэгд
-- Ангиллын линк өгч болно (доорх АНГИЛАЛ хэсгээс)
+- Хямдралтай бараа байвал → ХУУЧИН болон ШИНЭ ҮНИЙГ хоёуланг нь хэлэх
+- Ангиллын нэр хэлж болно (доорх АНГИЛАЛ хэсгээс)
 - Emoji бага зэрэг хэр (1-2 emoji/мессеж)
-- Монгол хэлээр
+- ХЭРЭГЛЭГЧИЙН ХЭЛЭЭР ХАРИУЛАХ: Хэрэглэгч англиар бичвэл → англиар, монголоор бичвэл → монголоор, оросоор бичвэл → оросоор хариулах
 
 БИЗНЕСИЙН МЭДЭЭЛЭЛ:
 • Нэр: ${bizName}
 ${bizInfo.phone ? `• Утас: ${bizInfo.phone}` : ''}
 ${bizInfo.address ? `• Хаяг: ${bizInfo.address}` : ''}
 ${bizInfo.storeUrl ? `• Дэлгүүр: ${bizInfo.storeUrl}` : ''}
+${bizInfo.businessHours ? `• Ажлын цаг: ${bizInfo.businessHours}` : ''}
+${bizInfo.deliveryInfo ? `• Хүргэлт: ${bizInfo.deliveryInfo}` : ''}
 
-АНГИЛАЛ (хэрэглэгчид линк өгч болно):
+АНГИЛАЛ:
 ${categoryTable || '(Ангилал оруулаагүй)'}
 
 БАРААНЫ ЖАГСААЛТ:
@@ -260,6 +263,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         const bizSlug = biz?.slug as string;
         const storeUrl = bizSlug ? `https://www.liscord.com/${bizSlug}` : '';
 
+        // Extract business hours and delivery info from settings
+        const bizSettings = biz?.settings as Record<string, unknown> | undefined;
+        const businessHours = (bizSettings?.businessHours as string) || (biz?.businessHours as string) || '';
+        const deliveryInfo = (bizSettings?.deliveryInfo as string) || (biz?.deliveryInfo as string) || '';
+
         // 3. Get categories (for context)
         const categories = await fsListWithFilter(`businesses/${bizId}/categories`, 'isDeleted', false, 50);
         const categoryTable = categories.map(d => {
@@ -274,13 +282,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             const p = d.data;
             const pricing = p.pricing as Record<string, unknown> | undefined;
             const stock = p.stock as Record<string, unknown> | undefined;
-            const price = (pricing?.salePrice as number) || 0;
+            const salePrice = (pricing?.salePrice as number) || 0;
+            const originalPrice = (pricing?.price as number) || (pricing?.originalPrice as number) || 0;
             const qty = (stock?.quantity as number) ?? 0;
             const isPreorder = p.isPreorder === true || (p.stockType === 'preorder');
             const stockLabel = isPreorder ? 'Захиалгын' : `${qty}ш`;
+            const priceLabel = originalPrice > salePrice && salePrice > 0
+                ? `~~₮${originalPrice.toLocaleString()}~~ → ₮${salePrice.toLocaleString()} 🏷️`
+                : `₮${salePrice.toLocaleString()}`;
             const desc = p.description as string;
             const catName = p.categoryName as string;
-            return `[${d.id}] "${p.name}" | ₮${price.toLocaleString()} | ${stockLabel}${catName ? ` | ${catName}` : ''}${desc ? ` | ${desc.substring(0, 50)}` : ''}`;
+            return `[${d.id}] "${p.name}" | ${priceLabel} | ${stockLabel}${catName ? ` | ${catName}` : ''}${desc ? ` | ${desc.substring(0, 50)}` : ''}`;
         }).join('\n');
 
         // 5. Get conversation history (last 10 messages)
@@ -299,7 +311,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         // 6. Build prompt and call Gemini
         const systemPrompt = buildSystemPrompt(
             bizName,
-            { phone: biz?.phone as string, address: biz?.address as string, storeUrl },
+            {
+                phone: biz?.phone as string,
+                address: biz?.address as string,
+                storeUrl,
+                businessHours,
+                deliveryInfo,
+            },
             productTable,
             categoryTable,
             senderName || senderId
