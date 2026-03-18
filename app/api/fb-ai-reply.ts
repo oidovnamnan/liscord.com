@@ -258,7 +258,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         const biz = await fsGet(`businesses/${bizId}`);
         const bizName = (biz?.name as string) || 'Дэлгүүр';
         const bizSlug = biz?.slug as string;
-        const storeUrl = bizSlug ? `https://www.liscord.com/store/${bizSlug}` : '';
+        const storeUrl = bizSlug ? `https://www.liscord.com/${bizSlug}` : '';
 
         // 3. Get categories (for context)
         const categories = await fsListWithFilter(`businesses/${bizId}/categories`, 'isDeleted', false, 50);
