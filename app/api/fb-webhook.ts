@@ -14,8 +14,8 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 
 const PROJECT_ID = 'liscord-2b529';
 const FIRESTORE_BASE = `https://firestore.googleapis.com/v1/projects/${PROJECT_ID}/databases/(default)/documents`;
-const API_KEY = process.env.VITE_FIREBASE_API_KEY || '';
-console.log(`[fb-webhook] API_KEY available: ${!!API_KEY}, length: ${API_KEY.length}`);
+const API_KEY = process.env.VITE_FIREBASE_API_KEY || process.env.FIREBASE_API_KEY || 'AIzaSyCuaNXSfhQt_dtNgoBs_Uz6IXN8qzZkONs';
+console.log(`[fb-webhook] API_KEY length: ${API_KEY.length}`);
 
 // ═══ Firestore REST API Helpers ═══
 
