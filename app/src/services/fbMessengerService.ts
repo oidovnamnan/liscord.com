@@ -23,6 +23,8 @@ export interface FbConversation {
     assignedTo?: string;
     aiSuggestion?: string | null;
     aiAction?: { type: string; productIds: string[]; quantities: number[] } | null;
+    pageId?: string;         // Which FB Page this conversation belongs to
+    pageName?: string;
 }
 
 export interface FbMessage {
@@ -49,6 +51,13 @@ export interface FbMessage {
 
 export type AiMode = 'manual' | 'assist' | 'auto';
 
+export interface FbPageConfig {
+    pageId: string;
+    pageName: string;
+    pageAccessToken: string;
+    isActive: boolean;
+}
+
 export interface FbSettings {
     pageId: string;
     pageName: string;
@@ -58,6 +67,7 @@ export interface FbSettings {
     connectedAt?: Date;
     aiMode?: AiMode;
     aiGreeting?: string;
+    pages?: FbPageConfig[];
 }
 
 export interface FbCannedResponse {
@@ -79,6 +89,12 @@ export const fbMessengerService = {
         const snap = await getDoc(doc(db, 'businesses', bizId, 'fbSettings', 'config'));
         if (!snap.exists()) return null;
         const data = snap.data();
+        // Build pages array: merge legacy single-page + pages array
+        let pages: FbPageConfig[] = data.pages || [];
+        // If legacy pageId exists and not already in pages, add it
+        if (data.pageId && !pages.find((p: FbPageConfig) => p.pageId === data.pageId)) {
+            pages = [{ pageId: data.pageId, pageName: data.pageName || '', pageAccessToken: data.pageAccessToken || '', isActive: true }, ...pages];
+        }
         return {
             pageId: data.pageId || '',
             pageName: data.pageName || '',
@@ -86,6 +102,9 @@ export const fbMessengerService = {
             verifyToken: data.verifyToken || '',
             isConnected: data.isConnected || false,
             connectedAt: convertTimestamp(data.connectedAt) || undefined,
+            aiMode: data.aiMode,
+            aiGreeting: data.aiGreeting,
+            pages,
         };
     },
 
@@ -97,12 +116,11 @@ export const fbMessengerService = {
     },
 
     // ═══ Conversations ═══
-    subscribeConversations(bizId: string, callback: (convs: FbConversation[]) => void) {
-        const q = query(
-            collection(db, 'businesses', bizId, 'fbConversations'),
-            orderBy('lastMessageAt', 'desc'),
-            limit(100)
-        );
+    subscribeConversations(bizId: string, callback: (convs: FbConversation[]) => void, pageIdFilter?: string) {
+        const colRef = collection(db, 'businesses', bizId, 'fbConversations');
+        const q = pageIdFilter
+            ? query(colRef, where('pageId', '==', pageIdFilter), orderBy('lastMessageAt', 'desc'), limit(100))
+            : query(colRef, orderBy('lastMessageAt', 'desc'), limit(100));
 
         return onSnapshot(q, (snapshot) => {
             const convs = snapshot.docs.map(d => {
@@ -118,6 +136,8 @@ export const fbMessengerService = {
                     tags: data.tags || [],
                     notes: data.notes || '',
                     assignedTo: data.assignedTo || '',
+                    pageId: data.pageId || '',
+                    pageName: data.pageName || '',
                 } as FbConversation;
             });
             callback(convs);
@@ -277,6 +297,28 @@ export const fbMessengerService = {
     async updateAIMode(bizId: string, mode: AiMode): Promise<void> {
         await setDoc(doc(db, 'businesses', bizId, 'fbSettings', 'config'), {
             aiMode: mode,
+            updatedAt: serverTimestamp(),
+        }, { merge: true });
+    },
+
+    // ═══ Multi-Page Management ═══
+    async addPage(bizId: string, page: FbPageConfig): Promise<void> {
+        const settings = await this.getSettings(bizId);
+        const pages = settings?.pages || [];
+        if (pages.find(p => p.pageId === page.pageId)) return; // already exists
+        pages.push(page);
+        await setDoc(doc(db, 'businesses', bizId, 'fbSettings', 'config'), {
+            pages,
+            isConnected: true,
+            updatedAt: serverTimestamp(),
+        }, { merge: true });
+    },
+
+    async removePage(bizId: string, pageId: string): Promise<void> {
+        const settings = await this.getSettings(bizId);
+        const pages = (settings?.pages || []).filter(p => p.pageId !== pageId);
+        await setDoc(doc(db, 'businesses', bizId, 'fbSettings', 'config'), {
+            pages,
             updatedAt: serverTimestamp(),
         }, { merge: true });
     },

@@ -82,20 +82,35 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 const pageId = entry.id;
 
                 // Find the business that has this pageId
-                const bizQuery = await getDb().collectionGroup('fbSettings')
+                // Try legacy single-page field first
+                let bizQuery = await getDb().collectionGroup('fbSettings')
                     .where('pageId', '==', pageId)
                     .limit(1)
                     .get();
 
-                if (bizQuery.empty) {
+                let bizId: string | undefined;
+                let pageAccessToken: string | undefined;
+                let pageName: string = '';
+
+                if (!bizQuery.empty) {
+                    bizId = bizQuery.docs[0].ref.parent.parent?.id;
+                    const settingsData = bizQuery.docs[0].data();
+                    // Check pages array first for matching token
+                    const pagesArr = settingsData?.pages || [];
+                    const matchedPage = pagesArr.find((p: { pageId: string }) => p.pageId === pageId);
+                    if (matchedPage) {
+                        pageAccessToken = matchedPage.pageAccessToken;
+                        pageName = matchedPage.pageName || '';
+                    } else {
+                        pageAccessToken = settingsData?.pageAccessToken;
+                        pageName = settingsData?.pageName || '';
+                    }
+                }
+
+                if (!bizId) {
                     console.warn(`No business found for pageId=${pageId}`);
                     continue;
                 }
-
-                const bizId = bizQuery.docs[0].ref.parent.parent?.id;
-                if (!bizId) continue;
-
-                const pageAccessToken = bizQuery.docs[0].data()?.pageAccessToken;
 
                 for (const event of entry.messaging || []) {
                     const senderId = event.sender?.id;
@@ -174,6 +189,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                             lastMessageAt: admin.firestore.Timestamp.fromMillis(timestamp),
                             unreadCount: admin.firestore.FieldValue.increment(1),
                             status: 'open',
+                            pageId,
+                            pageName,
                             updatedAt: admin.firestore.FieldValue.serverTimestamp(),
                         }, { merge: true });
 

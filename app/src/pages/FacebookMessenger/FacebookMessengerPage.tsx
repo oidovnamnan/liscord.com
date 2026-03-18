@@ -6,7 +6,7 @@ import {
     Smile, Paperclip, Image as ImageIcon, ShoppingBag, Bot, Mic, ArrowRight
 } from 'lucide-react';
 import { useBusinessStore, useAuthStore, useUIStore } from '../../store';
-import { fbMessengerService, type FbConversation, type FbMessage, type FbSettings, type FbCannedResponse, type AiMode } from '../../services/fbMessengerService';
+import { fbMessengerService, type FbConversation, type FbMessage, type FbSettings, type FbCannedResponse, type FbPageConfig, type AiMode } from '../../services/fbMessengerService';
 import toast from 'react-hot-toast';
 import './FacebookMessengerPage.css';
 
@@ -68,6 +68,10 @@ export function FacebookMessengerPage() {
     const [copied, setCopied] = useState('');
     const [cannedResponses, setCannedResponses] = useState<FbCannedResponse[]>(DEFAULT_CANNED);
 
+    // Multi-page
+    const [selectedPageId, setSelectedPageId] = useState<string>('all');
+    const [showPageDropdown, setShowPageDropdown] = useState(false);
+
     // Notes editing
     const [editingNotes, setEditingNotes] = useState('');
     const notesTimeout = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
@@ -85,9 +89,10 @@ export function FacebookMessengerPage() {
     useEffect(() => {
         if (!business?.id) return;
         setLoading(true);
-        const unsub = fbMessengerService.subscribeConversations(business.id, (convs) => { setConversations(convs); setLoading(false); });
+        const pageFilter = selectedPageId === 'all' ? undefined : selectedPageId;
+        const unsub = fbMessengerService.subscribeConversations(business.id, (convs) => { setConversations(convs); setLoading(false); }, pageFilter);
         return () => unsub();
-    }, [business?.id]);
+    }, [business?.id, selectedPageId]);
 
     useEffect(() => {
         if (!business?.id || !activeConvId) return;
@@ -138,12 +143,21 @@ export function FacebookMessengerPage() {
         setSavingSettings(true);
         try {
             const verifyToken = settings?.verifyToken || `liscord_${business.id.substring(0, 8)}_${Date.now().toString(36)}`;
+            // Merge current page into pages array
+            const existingPages = settings?.pages || [];
+            let updatedPages = [...existingPages];
+            if (settingsForm.pageId) {
+                const idx = updatedPages.findIndex(p => p.pageId === settingsForm.pageId);
+                const pageConfig = { pageId: settingsForm.pageId, pageName: settingsForm.pageName, pageAccessToken: settingsForm.pageAccessToken, isActive: true };
+                if (idx >= 0) { updatedPages[idx] = pageConfig; } else { updatedPages.push(pageConfig); }
+            }
             await fbMessengerService.saveSettings(business.id, {
                 ...settingsForm, verifyToken,
                 isConnected: !!settingsForm.pageAccessToken,
                 connectedAt: settingsForm.pageAccessToken ? new Date() : undefined,
+                pages: updatedPages,
             });
-            setSettings({ ...settingsForm, verifyToken, isConnected: !!settingsForm.pageAccessToken, connectedAt: settingsForm.pageAccessToken ? new Date() : undefined });
+            setSettings({ ...settingsForm, verifyToken, isConnected: !!settingsForm.pageAccessToken, connectedAt: settingsForm.pageAccessToken ? new Date() : undefined, pages: updatedPages });
             toast.success('Тохиргоо хадгалагдлаа!');
             setShowDrawer(false);
         } catch { toast.error('Алдаа гарлаа'); } finally { setSavingSettings(false); }
@@ -257,6 +271,10 @@ export function FacebookMessengerPage() {
     const TAG_COLORS: Record<string, string> = { 'VIP': 'blue', 'Шинэ': 'green', 'Яаралтай': 'red', 'Хүлээгдэж буй': 'yellow' };
 
     const aiModeLabel = settings?.aiMode === 'auto' ? '🟢 AI Auto' : settings?.aiMode === 'assist' ? '🟡 AI Туслах' : null;
+    const pages = settings?.pages || [];
+    const selectedPageName = selectedPageId === 'all'
+        ? (pages.length > 1 ? `Бүгд (${pages.length})` : (pages[0]?.pageName || settings?.pageName || 'Facebook Page'))
+        : (pages.find(p => p.pageId === selectedPageId)?.pageName || settings?.pageName || 'Page');
 
     // ═══ RENDER ═══
     return (
@@ -268,7 +286,21 @@ export function FacebookMessengerPage() {
                     <div className="fbm-toolbar-text">
                         <span className="fbm-toolbar-title">Messenger</span>
                         <span className="fbm-toolbar-sub">
-                            {settings?.pageName || 'Facebook Page'}
+                            {pages.length > 1 ? (
+                                <span className="fbm-page-selector" onClick={() => setShowPageDropdown(!showPageDropdown)}>
+                                    {selectedPageName} <ChevronDown size={12} />
+                                    {showPageDropdown && (
+                                        <div className="fbm-page-dropdown">
+                                            <div className={`fbm-page-opt ${selectedPageId === 'all' ? 'active' : ''}`} onClick={() => { setSelectedPageId('all'); setShowPageDropdown(false); }}>📋 Бүгд ({pages.length})</div>
+                                            {pages.map(p => (
+                                                <div key={p.pageId} className={`fbm-page-opt ${selectedPageId === p.pageId ? 'active' : ''}`} onClick={() => { setSelectedPageId(p.pageId); setShowPageDropdown(false); }}>
+                                                    📱 {p.pageName}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </span>
+                            ) : (selectedPageName)}
                             <span className={`fbm-dot ${settings?.isConnected ? 'connected' : ''}`} />
                             {aiModeLabel && <span className="fbm-ai-toolbar-badge">{aiModeLabel}</span>}
                         </span>
@@ -324,7 +356,10 @@ export function FacebookMessengerPage() {
                                         {c.tags?.includes('VIP') && <span className="fbm-mini-tag blue">VIP</span>}
                                         {c.tags?.includes('Яаралтай') && <span className="fbm-mini-tag red">❗</span>}
                                     </div>
-                                    <div className="fbm-conv-preview">{c.lastMessage}</div>
+                                    <div className="fbm-conv-preview">
+                                        {c.lastMessage}
+                                        {selectedPageId === 'all' && pages.length > 1 && c.pageName && <span className="fbm-page-badge">{c.pageName}</span>}
+                                    </div>
                                 </div>
                                 <div className="fbm-conv-meta">
                                     <span className="fbm-conv-time">{formatTime(c.lastMessageAt)}</span>
@@ -346,7 +381,10 @@ export function FacebookMessengerPage() {
                                     </div>
                                     <div>
                                         <div className="fbm-chat-name">{activeConv.senderName}</div>
-                                        <div className="fbm-chat-platform"><span className="fbm-dot connected" /> Facebook Messenger</div>
+                                        <div className="fbm-chat-platform">
+                                        <span className="fbm-dot connected" /> Facebook Messenger
+                                        {activeConv.pageName && <span className="fbm-page-badge">{activeConv.pageName}</span>}
+                                    </div>
                                     </div>
                                 </div>
                                 <div className="fbm-chat-header-actions">
@@ -707,6 +745,36 @@ export function FacebookMessengerPage() {
                                             <input value={settingsForm.pageAccessToken} onChange={e => setSettingsForm(p => ({ ...p, pageAccessToken: e.target.value }))} placeholder="EAABsb..." type="password" />
                                         </div>
                                     </div>
+                                    {/* Connected Pages list */}
+                                    {pages.length > 0 && (
+                                        <div className="fbm-drawer-section">
+                                            <div className="fbm-drawer-section-title">📱 Холбогдсон Page-үүд ({pages.length})</div>
+                                            <div className="fbm-pages-list">
+                                                {pages.map(p => (
+                                                    <div key={p.pageId} className={`fbm-page-item ${p.pageId === settingsForm.pageId ? 'editing' : ''}`}>
+                                                        <div className="fbm-page-item-info">
+                                                            <span className="fbm-page-item-name">{p.pageName || p.pageId}</span>
+                                                            <span className="fbm-page-item-id">{p.pageId}</span>
+                                                        </div>
+                                                        <div className="fbm-page-item-actions">
+                                                            <button className="fbm-page-edit-btn" onClick={() => setSettingsForm({ pageId: p.pageId, pageName: p.pageName, pageAccessToken: p.pageAccessToken })} title="Засах">✏️</button>
+                                                            {pages.length > 1 && (
+                                                                <button className="fbm-page-remove-btn" onClick={async () => {
+                                                                    if (!business?.id) return;
+                                                                    await fbMessengerService.removePage(business.id, p.pageId);
+                                                                    setSettings(prev => prev ? { ...prev, pages: (prev.pages || []).filter(x => x.pageId !== p.pageId) } : prev);
+                                                                    toast.success('Page устгагдлаа');
+                                                                }} title="Устгах"><XCircle size={14} /></button>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                            <button className="fbm-add-page-btn" onClick={() => setSettingsForm({ pageId: '', pageName: '', pageAccessToken: '' })}>
+                                                + Шинэ Page нэмэх
+                                            </button>
+                                        </div>
+                                    )}
                                 </>
                             )}
 
