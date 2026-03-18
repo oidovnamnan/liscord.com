@@ -15,6 +15,7 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 const PROJECT_ID = 'liscord-2b529';
 const FIRESTORE_BASE = `https://firestore.googleapis.com/v1/projects/${PROJECT_ID}/databases/(default)/documents`;
 const API_KEY = process.env.VITE_FIREBASE_API_KEY || '';
+console.log(`[fb-webhook] API_KEY available: ${!!API_KEY}, length: ${API_KEY.length}`);
 
 // ═══ Firestore REST API Helpers ═══
 
@@ -86,24 +87,34 @@ async function fsSet(path: string, data: Record<string, unknown>): Promise<boole
     try {
         // Add server timestamp
         data.updatedAt = new Date();
-        const resp = await fetch(`${FIRESTORE_BASE}/${path}?key=${API_KEY}`, {
+        const url = `${FIRESTORE_BASE}/${path}?key=${API_KEY}`;
+        const resp = await fetch(url, {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(buildFirestoreDoc(data)),
         });
+        if (!resp.ok) {
+            const errText = await resp.text();
+            console.error(`[fsSet] FAILED ${path}: HTTP ${resp.status} - ${errText}`);
+        }
         return resp.ok;
-    } catch { return false; }
+    } catch (err) { console.error(`[fsSet] ERROR ${path}:`, err); return false; }
 }
 
 async function fsAdd(collectionPath: string, data: Record<string, unknown>): Promise<boolean> {
     try {
-        const resp = await fetch(`${FIRESTORE_BASE}/${collectionPath}?key=${API_KEY}`, {
+        const url = `${FIRESTORE_BASE}/${collectionPath}?key=${API_KEY}`;
+        const resp = await fetch(url, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(buildFirestoreDoc(data)),
         });
+        if (!resp.ok) {
+            const errText = await resp.text();
+            console.error(`[fsAdd] FAILED ${collectionPath}: HTTP ${resp.status} - ${errText}`);
+        }
         return resp.ok;
-    } catch { return false; }
+    } catch (err) { console.error(`[fsAdd] ERROR ${collectionPath}:`, err); return false; }
 }
 
 async function fsMerge(path: string, data: Record<string, unknown>): Promise<boolean> {
