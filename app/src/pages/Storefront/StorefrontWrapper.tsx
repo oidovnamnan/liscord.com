@@ -143,10 +143,12 @@ export function StorefrontWrapper() {
 
     const brandColor = business.brandColor || '#4a6bff';
 
+    // Detect Facebook in-app browser
+    const isFBBrowser = /FBAN|FBAV/i.test(navigator.userAgent);
 
     return (
         <div
-            className="storefront-layout"
+            className={`storefront-layout${isFBBrowser ? ' is-fb-browser' : ''}`}
             style={{
                 // @ts-expect-error - CSS variable injection
                 '--sf-brand-color': brandColor,
