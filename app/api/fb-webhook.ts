@@ -236,17 +236,23 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
                         if (pageAccessToken) {
                             try {
-                                const profileResp = await fetch(
-                                    `https://graph.facebook.com/v21.0/${senderId}?fields=first_name,last_name,profile_pic&access_token=${pageAccessToken}`
-                                );
+                                const profileUrl = `https://graph.facebook.com/v22.0/${senderId}?fields=first_name,last_name,profile_pic&access_token=${pageAccessToken}`;
+                                console.log(`[fb-webhook] Fetching profile for ${senderId}...`);
+                                const profileResp = await fetch(profileUrl);
                                 if (profileResp.ok) {
                                     const profile = await profileResp.json();
                                     senderName = `${profile.first_name || ''} ${profile.last_name || ''}`.trim() || senderId;
                                     senderProfilePic = profile.profile_pic || '';
+                                    console.log(`[fb-webhook] Got profile: ${senderName}`);
+                                } else {
+                                    const errBody = await profileResp.text();
+                                    console.error(`[fb-webhook] Profile fetch FAILED (HTTP ${profileResp.status}): ${errBody}`);
                                 }
-                            } catch {
-                                // Non-critical
+                            } catch (profileErr) {
+                                console.error('[fb-webhook] Profile fetch error:', profileErr);
                             }
+                        } else {
+                            console.warn('[fb-webhook] No pageAccessToken — cannot fetch sender profile');
                         }
 
                         let messageText = msg.text || '';
