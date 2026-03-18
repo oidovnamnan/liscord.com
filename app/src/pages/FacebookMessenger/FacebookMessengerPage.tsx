@@ -3,7 +3,7 @@ import {
     Send, Search, MessageSquare, X, Copy, Check, Loader2, Save,
     ExternalLink, Settings, Link2, Shield, Tag, StickyNote,
     Zap, User, CreditCard, DollarSign, ChevronDown, XCircle, CheckCircle,
-    Smile, Paperclip, Image as ImageIcon, ShoppingBag, Bot, Mic, ArrowRight
+    Smile, Paperclip, Image as ImageIcon, ShoppingBag, Bot, Mic, ArrowRight, ArrowLeft, ChevronUp
 } from 'lucide-react';
 import { useBusinessStore, useAuthStore, useUIStore } from '../../store';
 import { fbMessengerService, type FbConversation, type FbMessage, type FbSettings, type FbCannedResponse, type FbPageConfig, type AiMode } from '../../services/fbMessengerService';
@@ -44,6 +44,7 @@ export function FacebookMessengerPage() {
     const [newMessage, setNewMessage] = useState('');
     const [sending, setSending] = useState(false);
     const [convSearch, setConvSearch] = useState('');
+    const [mobileChat, setMobileChat] = useState(false);
     const [convFilter, setConvFilter] = useState<ConvFilter>('all');
     const [loading, setLoading] = useState(true);
     const [showDrawer, setShowDrawer] = useState(false);
@@ -250,12 +251,17 @@ export function FacebookMessengerPage() {
     };
 
     const messagesWithDates = useMemo(() => {
-        const result: Array<{ type: 'date'; label: string } | { type: 'msg'; msg: FbMessage }> = [];
+        const result: Array<{ type: 'date'; label: string } | { type: 'msg'; msg: FbMessage; grouped: boolean; groupFirst: boolean; groupLast: boolean }> = [];
         let lastDate = '';
-        for (const m of messages) {
+        for (let i = 0; i < messages.length; i++) {
+            const m = messages[i];
             const dl = getDateLabel(m.timestamp);
             if (dl && dl !== lastDate) { result.push({ type: 'date', label: dl }); lastDate = dl; }
-            result.push({ type: 'msg', msg: m });
+            const prev = i > 0 ? messages[i - 1] : null;
+            const next = i < messages.length - 1 ? messages[i + 1] : null;
+            const sameAsPrev = prev && prev.direction === m.direction && prev.senderId === m.senderId;
+            const sameAsNext = next && next.direction === m.direction && next.senderId === m.senderId;
+            result.push({ type: 'msg', msg: m, grouped: !!sameAsPrev, groupFirst: !sameAsPrev && !!sameAsNext, groupLast: !!sameAsPrev && !sameAsNext });
         }
         return result;
     }, [messages]);
@@ -313,7 +319,7 @@ export function FacebookMessengerPage() {
             </div>
 
             {/* ── Main Grid ── */}
-            <div className={`fbm-main ${showInfoPanel && activeConv ? 'with-info' : ''}`}>
+            <div className={`fbm-main ${showInfoPanel && activeConv ? 'with-info' : ''} ${mobileChat && activeConvId ? 'mobile-chat' : ''}`}>
                 {/* ── Conversations ── */}
                 <div className="fbm-convs">
                     <div className="fbm-conv-search">
@@ -345,7 +351,7 @@ export function FacebookMessengerPage() {
                             <div className="fbm-conv-empty">{convFilter !== 'all' ? 'Шүүлтэд тохирох алга' : settings?.isConnected ? '📭 Мессеж ирээгүй' : '⚙️ Тохиргоо хийнэ үү'}</div>
                         ) : filteredConvs.map(c => (
                             <button key={c.id} className={`fbm-conv-row ${activeConvId === c.id ? 'active' : ''}`}
-                                onClick={() => setActiveConvId(c.id)}>
+                                onClick={() => { setActiveConvId(c.id); setMobileChat(true); }}>
                                 <div className="fbm-conv-avatar">
                                     {c.senderProfilePic ? <img src={c.senderProfilePic} alt="" /> : (c.senderName?.charAt(0) || '?')}
                                     <span className="fbm-online-dot" />
@@ -357,6 +363,7 @@ export function FacebookMessengerPage() {
                                         {c.tags?.includes('Яаралтай') && <span className="fbm-mini-tag red">❗</span>}
                                     </div>
                                     <div className="fbm-conv-preview">
+                                        {c.lastMessage && messages.length > 0 && c.id === activeConvId ? '' : ''}
                                         {c.lastMessage}
                                         {selectedPageId === 'all' && pages.length > 1 && c.pageName && <span className="fbm-page-badge">{c.pageName}</span>}
                                     </div>
@@ -376,7 +383,10 @@ export function FacebookMessengerPage() {
                         <>
                             <div className="fbm-chat-header">
                                 <div className="fbm-chat-header-left">
-                                    <div className="fbm-conv-avatar sm">
+                                    <button className="fbm-back-btn" onClick={() => { setMobileChat(false); }}>
+                                        <ArrowLeft size={16} />
+                                    </button>
+                                    <div className="fbm-conv-avatar lg">
                                         {activeConv.senderProfilePic ? <img src={activeConv.senderProfilePic} alt="" /> : (activeConv.senderName?.charAt(0) || '?')}
                                     </div>
                                     <div>
@@ -402,7 +412,15 @@ export function FacebookMessengerPage() {
                                 {messagesWithDates.map((item, i) => item.type === 'date' ? (
                                     <div key={`d-${i}`} className="fbm-date-sep"><span>{item.label}</span></div>
                                 ) : (
-                                    <div key={item.msg.id} className={`fbm-msg ${item.msg.direction} ${item.msg.isPostback ? 'postback' : ''} ${item.msg.isAI ? 'ai-msg' : ''} msg-animate`}>
+                                    <div key={item.msg.id} className={[
+                                        'fbm-msg', item.msg.direction,
+                                        item.msg.isPostback ? 'postback' : '',
+                                        item.msg.isAI ? 'ai-msg' : '',
+                                        item.grouped ? 'grouped' : '',
+                                        item.groupFirst ? 'group-first' : '',
+                                        item.groupLast ? 'group-last' : '',
+                                        'msg-animate'
+                                    ].filter(Boolean).join(' ')}>
                                         {item.msg.direction === 'inbound' && (
                                             <div className="fbm-msg-av">
                                                 {activeConv.senderProfilePic ? <img src={activeConv.senderProfilePic} alt="" /> : (activeConv.senderName?.charAt(0) || '?')}
@@ -412,7 +430,6 @@ export function FacebookMessengerPage() {
                                             <div className="fbm-msg-av ai-av"><Bot size={14} /></div>
                                         )}
                                         <div className="fbm-msg-content">
-                                            {/* Payment message */}
                                             {item.msg.isPayment ? (
                                                 <div className="fbm-msg-payment">
                                                     <div className="fbm-payment-header"><DollarSign size={14} /> Төлбөрийн нэхэмжлэх</div>
@@ -506,10 +523,11 @@ export function FacebookMessengerPage() {
                                 <button className="fbm-input-action" onClick={() => setShowEmojiPicker(!showEmojiPicker)} title="Emoji"><Smile size={18} /></button>
                                 <button className="fbm-input-action" onClick={() => fileInputRef.current?.click()} title="Файл хавсаргах"><Paperclip size={18} /></button>
                                 <input type="file" ref={fileInputRef} hidden accept="image/*,video/*,.pdf,.doc,.docx" onChange={handleSendImage} />
-                                <input className="fbm-input-text" placeholder="Мессеж бичих... ( / түргэн хариу)" value={newMessage}
-                                    onChange={e => { setNewMessage(e.target.value); setShowCanned(e.target.value.startsWith('/')); }}
-                                    onKeyDown={e => e.key === 'Enter' && handleSend()} disabled={sending} />
-                                <button className="fbm-send" onClick={handleSend} disabled={!newMessage.trim() || sending}>
+                                <textarea className="fbm-input-text" placeholder="Мессеж бичих... ( / түргэн хариу)" value={newMessage}
+                                    onChange={e => { setNewMessage(e.target.value); setShowCanned(e.target.value.startsWith('/')); e.target.style.height = 'auto'; e.target.style.height = Math.min(e.target.scrollHeight, 120) + 'px'; }}
+                                    onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
+                                    rows={1} disabled={sending} />
+                                <button className={`fbm-send ${sending ? 'sending' : ''}`} onClick={handleSend} disabled={!newMessage.trim() || sending}>
                                     {sending ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
                                 </button>
                             </div>
