@@ -444,21 +444,39 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                             const host = req.headers.host || 'www.liscord.com';
                             const protocol = host.includes('localhost') ? 'http' : 'https';
                             try {
-                                const orderResp = await fetch(`${protocol}://${host}/api/fb-send`, {
-                                    method: 'POST',
-                                    headers: { 'Content-Type': 'application/json' },
-                                    body: JSON.stringify({
-                                        bizId,
-                                        action: 'create_order_and_pay',
-                                        recipientId: senderId,
-                                        orderTag: payload.replace('ORDER:', ''),
-                                        senderName: postbackSenderName,
-                                    }),
-                                });
-                                const orderResult = await orderResp.json();
-                                console.log(`[Postback ORDER] Created order:`, orderResult);
+                                // Parse ORDER:productId:qty or ORDER:id1:qty1,id2:qty2
+                                const orderStr = payload.replace('ORDER:', '');
+                                const parts = orderStr.split(',');
+                                const productIds: string[] = [];
+                                const quantities: number[] = [];
+                                for (const part of parts) {
+                                    const [id, qtyStr] = part.split(':');
+                                    if (id) {
+                                        productIds.push(id);
+                                        quantities.push(parseInt(qtyStr) || 1);
+                                    }
+                                }
+
+                                if (productIds.length > 0) {
+                                    const orderResp = await fetch(`${protocol}://${host}/api/fb-send`, {
+                                        method: 'POST',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({
+                                            bizId,
+                                            action: 'create_order_and_pay',
+                                            recipientId: senderId,
+                                            productIds,
+                                            quantities,
+                                            customerName: postbackSenderName,
+                                            customerPsid: senderId,
+                                            senderName: postbackSenderName,
+                                        }),
+                                    });
+                                    const orderResult = await orderResp.json();
+                                    console.log(`[Postback ORDER] Result:`, orderResult);
+                                }
                             } catch (orderErr) {
-                                console.error('[Postback ORDER] Error creating order:', orderErr);
+                                console.error('[Postback ORDER] Error:', orderErr);
                             }
                         }
                     }
