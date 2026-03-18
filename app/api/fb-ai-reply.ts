@@ -2,31 +2,146 @@
  * Facebook Messenger AI Reply — Server-side Gemini
  * 
  * Called by fb-webhook.ts when AI mode is 'auto' or 'assist'.
- * - Fetches business products from Firestore
+ * - Fetches business products from Firestore (REST API)
  * - Builds system prompt with product catalog
  * - Sends to Gemini with conversation history
  * - Returns AI response text + optional action (create_order)
+ * 
+ * Uses Firestore REST API (no firebase-admin SDK needed)
  */
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import * as admin from 'firebase-admin';
 
-// Initialize Firebase Admin
-if (!admin.apps.length) {
-    const projectId = process.env.FIREBASE_PROJECT_ID || 'liscord-2b529';
-    try {
-        admin.initializeApp({
-            credential: admin.credential.cert({
-                projectId,
-                clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-                privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
-            }),
-        });
-    } catch {
-        admin.initializeApp({ projectId });
+const PROJECT_ID = 'liscord-2b529';
+const FIRESTORE_BASE = `https://firestore.googleapis.com/v1/projects/${PROJECT_ID}/databases/(default)/documents`;
+const API_KEY = process.env.VITE_FIREBASE_API_KEY || process.env.FIREBASE_API_KEY || 'AIzaSyCuaNXSfhQt_dtNgoBs_Uz6IXN8qzZkONs';
+
+// ═══ Firestore REST API Helpers ═══
+
+function fromFirestoreValue(val: Record<string, unknown>): unknown {
+    if ('stringValue' in val) return val.stringValue;
+    if ('integerValue' in val) return Number(val.integerValue);
+    if ('doubleValue' in val) return val.doubleValue;
+    if ('booleanValue' in val) return val.booleanValue;
+    if ('nullValue' in val) return null;
+    if ('timestampValue' in val) return val.timestampValue;
+    if ('arrayValue' in val) {
+        const arr = val.arrayValue as { values?: Record<string, unknown>[] };
+        return (arr.values || []).map(v => fromFirestoreValue(v));
     }
+    if ('mapValue' in val) {
+        const map = val.mapValue as { fields?: Record<string, Record<string, unknown>> };
+        const result: Record<string, unknown> = {};
+        for (const [k, v] of Object.entries(map.fields || {})) {
+            result[k] = fromFirestoreValue(v);
+        }
+        return result;
+    }
+    return null;
 }
 
-const db = admin.firestore();
+function fromFirestoreDoc(doc: { fields?: Record<string, Record<string, unknown>> }): Record<string, unknown> {
+    const result: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(doc.fields || {})) {
+        result[k] = fromFirestoreValue(v);
+    }
+    return result;
+}
+
+async function fsGet(path: string): Promise<Record<string, unknown> | null> {
+    try {
+        const resp = await fetch(`${FIRESTORE_BASE}/${path}?key=${API_KEY}`);
+        if (!resp.ok) return null;
+        const doc = await resp.json();
+        return fromFirestoreDoc(doc);
+    } catch { return null; }
+}
+
+interface FsListDoc {
+    id: string;
+    data: Record<string, unknown>;
+}
+
+async function fsList(collectionPath: string, orderBy?: string, orderDir?: string, limitCount?: number): Promise<FsListDoc[]> {
+    try {
+        // Use Firestore REST API runQuery for ordering
+        const parent = collectionPath.split('/').slice(0, -1).join('/');
+        const collectionId = collectionPath.split('/').pop()!;
+
+        const query: Record<string, unknown> = {
+            structuredQuery: {
+                from: [{ collectionId }],
+                limit: limitCount || 100,
+            }
+        };
+
+        if (orderBy) {
+            (query.structuredQuery as Record<string, unknown>).orderBy = [{
+                field: { fieldPath: orderBy },
+                direction: orderDir === 'desc' ? 'DESCENDING' : 'ASCENDING',
+            }];
+        }
+
+        const parentPath = parent ? `${FIRESTORE_BASE}/${parent}` : FIRESTORE_BASE;
+        const resp = await fetch(`${parentPath}:runQuery?key=${API_KEY}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(query),
+        });
+
+        if (!resp.ok) return [];
+        const results = await resp.json();
+
+        return (results as Array<{ document?: { name: string; fields?: Record<string, Record<string, unknown>> } }>)
+            .filter(r => r.document)
+            .map(r => ({
+                id: r.document!.name.split('/').pop()!,
+                data: fromFirestoreDoc(r.document!),
+            }));
+    } catch { return []; }
+}
+
+async function fsListWithFilter(collectionPath: string, filterField: string, filterValue: unknown, limitCount?: number): Promise<FsListDoc[]> {
+    try {
+        const parent = collectionPath.split('/').slice(0, -1).join('/');
+        const collectionId = collectionPath.split('/').pop()!;
+
+        let fieldFilter: Record<string, unknown>;
+        if (typeof filterValue === 'boolean') {
+            fieldFilter = { field: { fieldPath: filterField }, op: 'EQUAL', value: { booleanValue: filterValue } };
+        } else if (typeof filterValue === 'string') {
+            fieldFilter = { field: { fieldPath: filterField }, op: 'EQUAL', value: { stringValue: filterValue } };
+        } else {
+            fieldFilter = { field: { fieldPath: filterField }, op: 'EQUAL', value: { integerValue: String(filterValue) } };
+        }
+
+        const query = {
+            structuredQuery: {
+                from: [{ collectionId }],
+                where: { fieldFilter },
+                limit: limitCount || 100,
+            }
+        };
+
+        const parentPath = parent ? `${FIRESTORE_BASE}/${parent}` : FIRESTORE_BASE;
+        const resp = await fetch(`${parentPath}:runQuery?key=${API_KEY}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(query),
+        });
+
+        if (!resp.ok) return [];
+        const results = await resp.json();
+
+        return (results as Array<{ document?: { name: string; fields?: Record<string, Record<string, unknown>> } }>)
+            .filter(r => r.document)
+            .map(r => ({
+                id: r.document!.name.split('/').pop()!,
+                data: fromFirestoreDoc(r.document!),
+            }));
+    } catch { return []; }
+}
+
+// ═══ AI Logic ═══
 
 interface AIResponse {
     text: string;
@@ -115,50 +230,48 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     try {
         // 1. Get Gemini API key from system settings
-        const sysSnap = await db.doc('system/settings').get();
-        const apiKey = sysSnap.data()?.geminiApiKey;
+        const sysSettings = await fsGet('system/settings');
+        const apiKey = sysSettings?.geminiApiKey as string;
         if (!apiKey) {
             return res.status(400).json({ error: 'Gemini API Key тохируулаагүй', fallback: true });
         }
 
         // 2. Get business info
-        const bizSnap = await db.doc(`businesses/${bizId}`).get();
-        const biz = bizSnap.data();
-        const bizName = biz?.name || 'Дэлгүүр';
-        const bizSlug = biz?.slug;
+        const biz = await fsGet(`businesses/${bizId}`);
+        const bizName = (biz?.name as string) || 'Дэлгүүр';
+        const bizSlug = biz?.slug as string;
         const storeUrl = bizSlug ? `https://www.liscord.com/store/${bizSlug}` : '';
 
         // 3. Get products (compact table for AI)
-        const productsSnap = await db.collection(`businesses/${bizId}/products`)
-            .where('isDeleted', '==', false)
-            .limit(100)
-            .get();
+        const products = await fsListWithFilter(`businesses/${bizId}/products`, 'isDeleted', false, 100);
 
-        const productTable = productsSnap.docs.map(d => {
-            const p = d.data();
-            const price = p.pricing?.salePrice || 0;
-            const stock = p.stock?.quantity ?? 0;
-            return `[${d.id}] "${p.name}" | ₮${price.toLocaleString()} | Үлдэгдэл: ${stock}ш${p.description ? ` | ${(p.description as string).substring(0, 60)}` : ''}`;
+        const productTable = products.map(d => {
+            const p = d.data;
+            const pricing = p.pricing as Record<string, unknown> | undefined;
+            const stock = p.stock as Record<string, unknown> | undefined;
+            const price = (pricing?.salePrice as number) || 0;
+            const qty = (stock?.quantity as number) ?? 0;
+            const desc = p.description as string;
+            return `[${d.id}] "${p.name}" | ₮${price.toLocaleString()} | Үлдэгдэл: ${qty}ш${desc ? ` | ${desc.substring(0, 60)}` : ''}`;
         }).join('\n');
 
         // 4. Get conversation history (last 10 messages)
-        const msgsSnap = await db.collection(`businesses/${bizId}/fbConversations/${senderId}/messages`)
-            .orderBy('timestamp', 'desc')
-            .limit(10)
-            .get();
+        const messages = await fsList(
+            `businesses/${bizId}/fbConversations/${senderId}/messages`,
+            'timestamp', 'desc', 10
+        );
 
-        const history = msgsSnap.docs.reverse().map(d => {
-            const m = d.data();
+        const history = messages.reverse().map(d => {
             return {
-                role: m.direction === 'inbound' ? 'user' : 'model',
-                text: m.text || '',
+                role: d.data.direction === 'inbound' ? 'user' : 'model',
+                text: (d.data.text as string) || '',
             };
         });
 
         // 5. Build prompt and call Gemini
         const systemPrompt = buildSystemPrompt(
             bizName,
-            { phone: biz?.phone, address: biz?.address, storeUrl },
+            { phone: biz?.phone as string, address: biz?.address as string, storeUrl },
             productTable,
             senderName || senderId
         );
@@ -190,12 +303,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             action: parsed.action || null,
         });
 
-    } catch (err: any) {
-        console.error('AI Reply error:', err);
+    } catch (err: unknown) {
+        const errMsg = err instanceof Error ? err.message : String(err);
+        console.error('AI Reply error:', errMsg);
         return res.status(200).json({
             text: 'Оператор тань удахгүй холбогдоно 🙏',
             action: null,
-            error: err.message,
+            error: errMsg,
         });
     }
 }
