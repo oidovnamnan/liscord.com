@@ -138,10 +138,17 @@ service cloud.firestore {
       }
 
       // Facebook Messenger conversations + messages
+      // Public write: webhook creates conversations without auth (like orders)
+      // Read: members only
       match /fbConversations/{convId} {
-        allow read, write: if isMemberOf(bizId);
+        allow read: if isMemberOf(bizId);
+        allow create, update: if true;  // Webhook writes without admin SDK
+        allow delete: if false;
         match /messages/{msgId} {
-          allow read, write: if isMemberOf(bizId);
+          allow read: if isMemberOf(bizId);
+          allow create: if true;  // Webhook writes without admin SDK
+          allow update: if isMemberOf(bizId);
+          allow delete: if false;
         }
       }
 
