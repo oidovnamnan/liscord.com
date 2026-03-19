@@ -7,10 +7,11 @@ import { GlobalBanner } from '../common/GlobalBanner';
 import { useDynamicTheme } from '../../hooks/useDynamicTheme';
 import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../../services/firebase';
+import { Menu } from 'lucide-react';
 import './AppLayout.css';
 
 export function AppLayout() {
-    const { sidebarCollapsed } = useUIStore();
+    const { sidebarCollapsed, sidebarOpen, toggleSidebar } = useUIStore();
     const { business, employee } = useBusinessStore();
     useDynamicTheme(); // Phase 40: Apply dynamic theme
 
@@ -54,6 +55,14 @@ export function AppLayout() {
             </div>
             <div className="app-container">
                 <Sidebar />
+
+                {/* Mobile hamburger button */}
+                {!sidebarOpen && (
+                    <button className="mobile-menu-btn" onClick={toggleSidebar} aria-label="Цэс нээх">
+                        <Menu size={22} />
+                    </button>
+                )}
+
                 <main className="app-main">
                     <div className="app-main-scrolled">
                         <Outlet />
@@ -63,4 +72,3 @@ export function AppLayout() {
         </div>
     );
 }
-
