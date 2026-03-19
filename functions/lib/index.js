@@ -112,6 +112,19 @@ exports.onQrLoginUpdate = functions
                 status: 'authenticated',
                 customToken: customToken,
                 authenticatedAt: admin.firestore.FieldValue.serverTimestamp()
+            }).then(() => {
+                // Auto-delete customToken after 10 seconds (security: minimize exposure window)
+                setTimeout(async () => {
+                    try {
+                        await change.after.ref.update({
+                            customToken: admin.firestore.FieldValue.delete()
+                        });
+                        console.log(`QR token cleaned for session: ${sessionId}`);
+                    }
+                    catch (e) {
+                        console.warn('QR token cleanup failed (non-critical):', e);
+                    }
+                }, 10000);
             });
         }
         catch (err) {
@@ -543,6 +556,8 @@ exports.onSmsIncome = functions
             // Fallback: old regex patterns
             if (!smsAmount && tmpl.amountPattern) {
                 try {
+                    if (tmpl.amountPattern.length > 200)
+                        throw new Error('Pattern too long');
                     const amountRegex = new RegExp(tmpl.amountPattern, 'i');
                     const amountMatch = smsBody.match(amountRegex);
                     if (amountMatch === null || amountMatch === void 0 ? void 0 : amountMatch[1]) {
@@ -553,6 +568,8 @@ exports.onSmsIncome = functions
             }
             if (!smsNote && tmpl.utgaPattern) {
                 try {
+                    if (tmpl.utgaPattern.length > 200)
+                        throw new Error('Pattern too long');
                     const utgaRegex = new RegExp(tmpl.utgaPattern, 'i');
                     const utgaMatch = smsBody.match(utgaRegex);
                     if (utgaMatch === null || utgaMatch === void 0 ? void 0 : utgaMatch[1]) {
@@ -727,5 +744,60 @@ exports.onSmsIncome = functions
         catch (_) { }
         return null;
     }
+});
+// ═══════════════════════════════════════════
+// SuperAdmin Proxy Functions
+// Firestore rules block direct client writes to system_settings/system_categories.
+// These callable functions verify isSuperAdmin before writing via Admin SDK.
+// ═══════════════════════════════════════════
+async function verifySuperAdmin(uid) {
+    var _a;
+    const userSnap = await db.doc(`users/${uid}`).get();
+    return userSnap.exists && ((_a = userSnap.data()) === null || _a === void 0 ? void 0 : _a.isSuperAdmin) === true;
+}
+exports.updateSystemSettings = functions.https.onCall(async (data, context) => {
+    if (!context.auth)
+        throw new functions.https.HttpsError('unauthenticated', 'Login required');
+    if (!(await verifySuperAdmin(context.auth.uid))) {
+        throw new functions.https.HttpsError('permission-denied', 'SuperAdmin only');
+    }
+    const { docId, value } = data;
+    if (!docId || !value)
+        throw new functions.https.HttpsError('invalid-argument', 'docId and value required');
+    await db.doc(`system_settings/${docId}`).set(value, { merge: true });
+    return { success: true };
+});
+exports.updateSystemCategory = functions.https.onCall(async (data, context) => {
+    if (!context.auth)
+        throw new functions.https.HttpsError('unauthenticated', 'Login required');
+    if (!(await verifySuperAdmin(context.auth.uid))) {
+        throw new functions.https.HttpsError('permission-denied', 'SuperAdmin only');
+    }
+    const { categoryId, value, isDelete } = data;
+    if (!categoryId)
+        throw new functions.https.HttpsError('invalid-argument', 'categoryId required');
+    if (isDelete) {
+        await db.doc(`system_categories/${categoryId}`).delete();
+    }
+    else {
+        await db.doc(`system_categories/${categoryId}`).set(value, { merge: true });
+    }
+    return { success: true };
+});
+exports.bulkUpdateSystemCategories = functions.https.onCall(async (data, context) => {
+    if (!context.auth)
+        throw new functions.https.HttpsError('unauthenticated', 'Login required');
+    if (!(await verifySuperAdmin(context.auth.uid))) {
+        throw new functions.https.HttpsError('permission-denied', 'SuperAdmin only');
+    }
+    const { ids, updates } = data;
+    if (!(ids === null || ids === void 0 ? void 0 : ids.length) || !updates)
+        throw new functions.https.HttpsError('invalid-argument', 'ids and updates required');
+    const batch = db.batch();
+    for (const id of ids) {
+        batch.update(db.doc(`system_categories/${id}`), updates);
+    }
+    await batch.commit();
+    return { success: true };
 });
 //# sourceMappingURL=index.js.map

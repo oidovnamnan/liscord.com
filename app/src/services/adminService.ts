@@ -446,9 +446,8 @@ export const globalSettingsService = {
     },
 
     async updateSettings(updates: Partial<GlobalSettings>): Promise<void> {
-        const functions = getFunctions();
-        const updateFn = httpsCallable(functions, 'updateSystemSettings');
-        await updateFn({ docId: 'global', value: updates });
+        const docRef = doc(db, 'system_settings', 'global');
+        await setDoc(docRef, updates, { merge: true });
     },
 
     subscribeToSettings(callback: (settings: GlobalSettings) => void) {
