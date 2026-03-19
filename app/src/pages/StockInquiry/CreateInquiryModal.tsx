@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { X, Package, MessageSquare, Send, Loader2, Search, Settings } from 'lucide-react';
 import { useBusinessStore, useAuthStore } from '../../store';
 import { db } from '../../services/firebase';
-import { collection, addDoc, Timestamp, query, where, limit, getDocs, doc, updateDoc } from 'firebase/firestore';
+import { collection, addDoc, Timestamp, query, where, limit, getDocs, doc, updateDoc, orderBy } from 'firebase/firestore';
 import type { Product, StockInquiry } from '../../types';
 import { toast } from 'react-hot-toast';
 
@@ -27,6 +27,9 @@ export function CreateInquiryModal({ product: initialProduct, fbUserId, onClose 
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isEditMode, setIsEditMode] = useState(false);
     const [newTemplate, setNewTemplate] = useState('');
+    
+    const [latestInq, setLatestInq] = useState<StockInquiry | null>(null);
+    const [isLoadingInq, setIsLoadingInq] = useState(false);
 
     const DEFAULT_NOTES = [
         "Бэлэн байна уу?",
@@ -70,6 +73,38 @@ export function CreateInquiryModal({ product: initialProduct, fbUserId, onClose 
         const timer = setTimeout(fetchP, 400);
         return () => clearTimeout(timer);
     }, [searchQ, business?.id, selectedProduct]);
+
+    // Fetch latest inquiry for selected product
+    useEffect(() => {
+        if (!selectedProduct || !business?.id) {
+            setLatestInq(null);
+            return;
+        }
+        let isMounted = true;
+        const fetchLatest = async () => {
+            setIsLoadingInq(true);
+            try {
+                const q = query(
+                    collection(db, `businesses/${business.id}/stockInquiries`),
+                    where('productId', '==', selectedProduct.id),
+                    orderBy('createdAt', 'desc'),
+                    limit(1)
+                );
+                const snap = await getDocs(q);
+                if (isMounted && !snap.empty) {
+                    setLatestInq({ id: snap.docs[0].id, ...snap.docs[0].data() } as StockInquiry);
+                } else if (isMounted) {
+                    setLatestInq(null);
+                }
+            } catch (err) {
+                console.error('Failed fetching latest inquiry:', err);
+            } finally {
+                if (isMounted) setIsLoadingInq(false);
+            }
+        };
+        fetchLatest();
+        return () => { isMounted = false; };
+    }, [selectedProduct?.id, business?.id]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -207,6 +242,33 @@ export function CreateInquiryModal({ product: initialProduct, fbUserId, onClose 
                         </div>
                     )}
 
+                    {isLoadingInq ? (
+                        <div style={{ padding: 12, display: 'flex', alignItems: 'center', gap: 8, color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+                            <Loader2 size={14} className="animate-spin" /> Өмнөх лавлагааг шалгаж байна...
+                        </div>
+                    ) : latestInq ? (
+                        <div style={{ 
+                            padding: 14, marginBottom: 20, borderRadius: 12, fontSize: '0.85rem',
+                            background: ['pending', 'checking'].includes(latestInq.status) ? '#fffbeb' : '#f0fdf4',
+                            border: `1px solid ${['pending', 'checking'].includes(latestInq.status) ? '#fde68a' : '#bbf7d0'}`,
+                        }}>
+                            <div style={{ fontWeight: 600, color: ['pending', 'checking'].includes(latestInq.status) ? '#92400e' : '#166534', marginBottom: 4 }}>
+                                {['pending', 'checking'].includes(latestInq.status) ? '⏳ Хүлээгдэж буй лавлагаа байна' : '✅ Сүүлд өгсөн хариу'}
+                            </div>
+                            <div style={{ color: ['pending', 'checking'].includes(latestInq.status) ? '#b45309' : '#15803d' }}>
+                                <strong>Төлөв:</strong> {
+                                    latestInq.status === 'pending' ? 'Хүлээж байна' :
+                                    latestInq.status === 'checking' ? 'Шалгаж байна' :
+                                    latestInq.status === 'updated' ? 'Үнэ, мэдээлэл шинэчлэгдсэн' :
+                                    latestInq.status === 'no_change' ? 'Өөрчлөлтгүй бэлэн' :
+                                    latestInq.status === 'inactive' ? 'Нөөц дууссан' : 'Хугацаа дууссан'
+                                } <br/>
+                                {latestInq.respondedByName && <><strong>Хариулсан:</strong> {latestInq.respondedByName} <br/></>}
+                                <strong>Хэзээ:</strong> {latestInq.createdAt instanceof Timestamp ? latestInq.createdAt.toDate().toLocaleString('mn-MN') : 'Саяхан'}
+                            </div>
+                        </div>
+                    ) : null}
+
                     <form onSubmit={handleSubmit}>
                         <div className="input-group" style={{ marginBottom: 24 }}>
                             <label className="input-label" style={{ display: 'flex', justifyContent: 'space-between' }}>
@@ -301,9 +363,14 @@ export function CreateInquiryModal({ product: initialProduct, fbUserId, onClose 
                             <button type="button" className="btn btn-secondary" onClick={onClose} disabled={isSubmitting}>
                                 Болих
                             </button>
-                            <button type="submit" className="btn btn-primary" disabled={isSubmitting || !selectedProduct} style={{ background: 'var(--primary)', color: 'white', border: 'none' }}>
+                            <button 
+                                type="submit" 
+                                className="btn btn-primary" 
+                                disabled={isSubmitting || !selectedProduct || ['pending', 'checking'].includes(latestInq?.status || '')} 
+                                style={{ background: 'var(--primary)', color: 'white', border: 'none' }}
+                            >
                                 {isSubmitting ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
-                                Илгээх
+                                {['pending', 'checking'].includes(latestInq?.status || '') ? 'Хариу хүлээж байна' : 'Илгээх'}
                             </button>
                         </div>
                     </form>
