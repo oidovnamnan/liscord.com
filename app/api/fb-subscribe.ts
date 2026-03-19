@@ -58,17 +58,168 @@ async function fsGet(path: string): Promise<Record<string, unknown> | null> {
     } catch { return null; }
 }
 
+function toFirestoreValue(val: unknown): Record<string, unknown> {
+    if (val === null || val === undefined) return { nullValue: null };
+    if (typeof val === 'string') return { stringValue: val };
+    if (typeof val === 'number') return Number.isInteger(val) ? { integerValue: String(val) } : { doubleValue: val };
+    if (typeof val === 'boolean') return { booleanValue: val };
+    if (val instanceof Date) return { timestampValue: val.toISOString() };
+    if (Array.isArray(val)) return { arrayValue: { values: val.map(v => toFirestoreValue(v)) } };
+    if (typeof val === 'object') {
+        const fields: Record<string, unknown> = {};
+        for (const [k, v] of Object.entries(val as Record<string, unknown>)) fields[k] = toFirestoreValue(v);
+        return { mapValue: { fields } };
+    }
+    return { stringValue: String(val) };
+}
+
+function buildFirestoreDoc(data: Record<string, unknown>): Record<string, unknown> {
+    const fields: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(data)) fields[k] = toFirestoreValue(v);
+    return { fields };
+}
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
     const bizId = (req.query.bizId || req.body?.bizId) as string;
+    const userToken = req.body?.userToken as string; // Direct user token (bypasses Firestore)
     
+    // ═══ POST with userToken: Get pages from Facebook directly & subscribe ═══
+    if (req.method === 'POST' && userToken) {
+        console.log('[fb-subscribe] Using direct user token to fetch pages and subscribe...');
+        
+        try {
+            // Step 1: Get pages from Facebook using user token
+            const pagesResp = await fetch(
+                `https://graph.facebook.com/v22.0/me/accounts?access_token=${userToken}&fields=id,name,access_token`
+            );
+            const pagesData = await pagesResp.json();
+            
+            if (!pagesData.data?.length) {
+                return res.status(400).json({ error: 'No pages found', details: pagesData.error || null });
+            }
+            
+            console.log(`[fb-subscribe] Found ${pagesData.data.length} pages`);
+            
+            // Step 2: Subscribe each page
+            const results = [];
+            for (const page of pagesData.data) {
+                console.log(`[fb-subscribe] Subscribing ${page.name} (${page.id})...`);
+                try {
+                    const subResp = await fetch(
+                        `https://graph.facebook.com/v22.0/${page.id}/subscribed_apps`,
+                        {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                subscribed_fields: SUBSCRIBED_FIELDS,
+                                access_token: page.access_token,
+                            }),
+                        }
+                    );
+                    const subData = await subResp.json();
+                    
+                    if (subData.success) {
+                        console.log(`[fb-subscribe] ✅ ${page.name} subscribed!`);
+                    } else {
+                        console.error(`[fb-subscribe] ❌ ${page.name} failed:`, subData.error);
+                    }
+                    
+                    results.push({
+                        pageId: page.id,
+                        pageName: page.name,
+                        success: !!subData.success,
+                        subscribedFields: SUBSCRIBED_FIELDS,
+                        error: subData.error || null,
+                    });
+                } catch (err) {
+                    results.push({
+                        pageId: page.id,
+                        pageName: page.name,
+                        success: false,
+                        error: String(err),
+                    });
+                }
+            }
+            
+            // Step 3: Also try to save tokens to Firestore (best effort)
+            const APP_SECRET = process.env.FB_APP_SECRET;
+            let longLivedTokens = false;
+            
+            if (APP_SECRET) {
+                try {
+                    // Exchange for long-lived user token first
+                    const exchangeResp = await fetch(
+                        `https://graph.facebook.com/v22.0/oauth/access_token?grant_type=fb_exchange_token&client_id=938520898673623&client_secret=${APP_SECRET}&fb_exchange_token=${userToken}`
+                    );
+                    if (exchangeResp.ok) {
+                        const exchangeData = await exchangeResp.json();
+                        // Get page tokens with long-lived user token
+                        const llPagesResp = await fetch(
+                            `https://graph.facebook.com/v22.0/me/accounts?access_token=${exchangeData.access_token}&fields=id,name,access_token`
+                        );
+                        const llPagesData = await llPagesResp.json();
+                        if (llPagesData.data?.length) {
+                            // Try saving to Firestore
+                            const pagesConfig = llPagesData.data.map((p: { id: string; name: string; access_token: string }) => ({
+                                pageId: p.id,
+                                pageName: p.name,
+                                pageAccessToken: p.access_token,
+                                isActive: true,
+                            }));
+                            
+                            if (bizId) {
+                                const path = `businesses/${bizId}/fbSettings/config`;
+                                const saveData = {
+                                    pages: pagesConfig,
+                                    pageAccessToken: llPagesData.data[0].access_token,
+                                    pageId: llPagesData.data[0].id,
+                                    pageName: llPagesData.data[0].name,
+                                    isConnected: true,
+                                    updatedAt: new Date(),
+                                };
+                                
+                                const fieldPaths = Object.keys(saveData).map(k => `updateMask.fieldPaths=${k}`).join('&');
+                                const saveResp = await fetch(`${FIRESTORE_BASE}/${path}?key=${API_KEY}&${fieldPaths}`, {
+                                    method: 'PATCH',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify(buildFirestoreDoc(saveData)),
+                                });
+                                longLivedTokens = saveResp.ok;
+                                if (saveResp.ok) {
+                                    console.log('[fb-subscribe] ✅ Long-lived tokens saved to Firestore');
+                                } else {
+                                    console.log('[fb-subscribe] ⚠️ Could not save to Firestore (non-critical)');
+                                }
+                            }
+                        }
+                    }
+                } catch (err) {
+                    console.log('[fb-subscribe] Token exchange skipped:', err);
+                }
+            }
+            
+            const allSuccess = results.every(r => r.success);
+            return res.status(allSuccess ? 200 : 207).json({
+                success: allSuccess,
+                longLivedTokensSaved: longLivedTokens,
+                message: allSuccess 
+                    ? `All ${results.length} pages subscribed successfully!` 
+                    : `Some pages failed to subscribe`,
+                pages: results,
+            });
+        } catch (err) {
+            return res.status(500).json({ error: String(err) });
+        }
+    }
+
+    // ═══ Firestore-based flow (existing pages) ═══
     if (!bizId) {
         return res.status(400).json({ error: 'Missing bizId parameter' });
     }
 
-    // Get settings from Firestore
     const settings = await fsGet(`businesses/${bizId}/fbSettings/config`);
     if (!settings) {
-        return res.status(400).json({ error: 'Facebook settings not found for this business' });
+        return res.status(400).json({ error: 'Facebook settings not found' });
     }
 
     const pagesArr = (settings.pages as Array<{ pageId: string; pageName?: string; pageAccessToken: string }>) || [];
@@ -94,69 +245,33 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                     error: data.error || null,
                 });
             } catch (err) {
-                results.push({
-                    pageId: page.pageId,
-                    pageName: page.pageName,
-                    status: 'error',
-                    error: String(err),
-                });
+                results.push({ pageId: page.pageId, pageName: page.pageName, status: 'error', error: String(err) });
             }
         }
         return res.status(200).json({ pages: results });
     }
 
-    // ═══ POST: Subscribe pages ═══
+    // ═══ POST: Subscribe from Firestore tokens ═══
     if (req.method === 'POST') {
         const results = [];
         for (const page of pagesArr) {
-            console.log(`[fb-subscribe] Subscribing page ${page.pageName || page.pageId} to webhook events...`);
             try {
-                const resp = await fetch(
-                    `https://graph.facebook.com/v22.0/${page.pageId}/subscribed_apps`,
-                    {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            subscribed_fields: SUBSCRIBED_FIELDS,
-                            access_token: page.pageAccessToken,
-                        }),
-                    }
-                );
+                const resp = await fetch(`https://graph.facebook.com/v22.0/${page.pageId}/subscribed_apps`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ subscribed_fields: SUBSCRIBED_FIELDS, access_token: page.pageAccessToken }),
+                });
                 const data = await resp.json();
-                
-                if (data.success) {
-                    console.log(`[fb-subscribe] ✅ ${page.pageName || page.pageId} subscribed successfully`);
-                } else {
-                    console.error(`[fb-subscribe] ❌ ${page.pageName || page.pageId} failed:`, data.error);
-                }
-
-                results.push({
-                    pageId: page.pageId,
-                    pageName: page.pageName,
-                    success: !!data.success,
-                    subscribedFields: SUBSCRIBED_FIELDS,
-                    error: data.error || null,
-                });
+                results.push({ pageId: page.pageId, pageName: page.pageName, success: !!data.success, error: data.error || null });
             } catch (err) {
-                console.error(`[fb-subscribe] Error for ${page.pageName}:`, err);
-                results.push({
-                    pageId: page.pageId,
-                    pageName: page.pageName,
-                    success: false,
-                    error: String(err),
-                });
+                results.push({ pageId: page.pageId, pageName: page.pageName, success: false, error: String(err) });
             }
         }
 
         const allSuccess = results.every(r => r.success);
-        return res.status(allSuccess ? 200 : 207).json({
-            success: allSuccess,
-            message: allSuccess 
-                ? `All ${results.length} pages subscribed successfully!` 
-                : `Some pages failed to subscribe`,
-            pages: results,
-        });
+        return res.status(allSuccess ? 200 : 207).json({ success: allSuccess, pages: results });
     }
 
     return res.status(405).json({ error: 'Method not allowed' });
 }
+
