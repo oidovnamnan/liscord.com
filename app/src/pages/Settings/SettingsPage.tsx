@@ -612,6 +612,18 @@ export function SettingsPage() {
                                         </div>
 
                                         <div className="input-group" style={{ marginTop: 24 }}>
+                                            <label className="settings-label">Дэлгүүрт гаргах барааны тоо (Pagination)</label>
+                                            <input 
+                                                className="input" 
+                                                type="number" 
+                                                name="productsPerPage" 
+                                                defaultValue={business?.settings?.storefront?.productsPerPage || ''} 
+                                                placeholder="Жнь: 20 (Хоосон орхивол хязгааргүй)" 
+                                            />
+                                            <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: '8px 0 0 0' }}>Дэлгүүрийн нүүр хуудсанд нэг дор хэдэн ширхэг бараа харагдахыг заана уу.</p>
+                                        </div>
+
+                                        <div className="input-group" style={{ marginTop: 24 }}>
                                             <label className="settings-label">Төлбөргүй захиалга автомат устгах хугацаа</label>
                                             <select
                                                 className="input"
