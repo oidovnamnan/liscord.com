@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { X, Package, MessageSquare, Send, Loader2, Search } from 'lucide-react';
+import { X, Package, MessageSquare, Send, Loader2, Search, Settings } from 'lucide-react';
 import { useBusinessStore, useAuthStore } from '../../store';
 import { db } from '../../services/firebase';
-import { collection, addDoc, Timestamp, query, where, limit, getDocs } from 'firebase/firestore';
+import { collection, addDoc, Timestamp, query, where, limit, getDocs, doc, updateDoc } from 'firebase/firestore';
 import type { Product, StockInquiry } from '../../types';
 import { toast } from 'react-hot-toast';
 
@@ -25,14 +25,28 @@ export function CreateInquiryModal({ product: initialProduct, fbUserId, onClose 
 
     const [note, setNote] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isEditMode, setIsEditMode] = useState(false);
+    const [newTemplate, setNewTemplate] = useState('');
 
-    const QUICK_NOTES = [
+    const DEFAULT_NOTES = [
         "Бэлэн байна уу?",
         "Хэзээ ирэх вэ?",
         "Энэ үнэ хэвээрээ юу?",
         "Өнгө/размер сонголт бий юу?",
         "Захиалгаар авах уу?"
     ];
+    const templates = business?.settings?.stockInquiryTemplates || DEFAULT_NOTES;
+
+    const handleUpdateTemplates = async (newTpls: string[]) => {
+        if (!business?.id) return;
+        try {
+            await updateDoc(doc(db, 'businesses', business.id), {
+                'settings.stockInquiryTemplates': newTpls
+            });
+        } catch (e) {
+            toast.error('Загвар хадгалахад алдаа гарлаа');
+        }
+    };
 
     useEffect(() => {
         if (selectedProduct || !searchQ || searchQ.length < 2 || !business?.id) {
@@ -197,20 +211,79 @@ export function CreateInquiryModal({ product: initialProduct, fbUserId, onClose 
                         <div className="input-group" style={{ marginBottom: 24 }}>
                             <label className="input-label" style={{ display: 'flex', justifyContent: 'space-between' }}>
                                 <span>Нэмэлт тайлбар (заавал биш)</span>
+                                <button 
+                                    type="button" 
+                                    onClick={() => setIsEditMode(!isEditMode)} 
+                                    style={{ background: 'none', border: 'none', color: isEditMode ? 'var(--primary)' : 'var(--text-muted)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, fontSize: '0.75rem' }}
+                                >
+                                    <Settings size={14} /> {isEditMode ? 'Болих' : 'Загвар засах'}
+                                </button>
                             </label>
 
                             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 10 }}>
-                                {QUICK_NOTES.map((text, i) => (
-                                    <button 
-                                        key={i} 
-                                        type="button" 
-                                        className="btn btn-outline btn-xs" 
-                                        style={{ fontSize: '0.75rem', padding: '4px 10px', borderRadius: 100, borderColor: 'var(--border-primary)', color: 'var(--text-secondary)' }}
-                                        onClick={() => setNote(prev => prev ? `${prev} ${text}` : text)}
-                                    >
-                                        + {text}
-                                    </button>
+                                {templates.map((text, i) => (
+                                    <div key={i} style={{ position: 'relative', display: 'inline-flex' }}>
+                                        <button 
+                                            type="button" 
+                                            className="btn btn-outline btn-xs" 
+                                            style={{ 
+                                                fontSize: '0.75rem', padding: '4px 10px', borderRadius: 100, 
+                                                borderColor: 'var(--border-primary)', color: 'var(--text-secondary)',
+                                                paddingRight: isEditMode ? '24px' : '10px'
+                                            }}
+                                            onClick={() => !isEditMode && setNote(prev => prev ? `${prev} ${text}` : text)}
+                                            disabled={isEditMode}
+                                        >
+                                            {!isEditMode && '+ '} {text}
+                                        </button>
+                                        {isEditMode && (
+                                            <button 
+                                                type="button"
+                                                onClick={() => {
+                                                    const next = [...templates];
+                                                    next.splice(i, 1);
+                                                    handleUpdateTemplates(next);
+                                                }}
+                                                style={{ position: 'absolute', right: 6, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', padding: 0 }}
+                                            >
+                                                <X size={12} />
+                                            </button>
+                                        )}
+                                    </div>
                                 ))}
+                                {isEditMode && (
+                                    <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                                        <input 
+                                            value={newTemplate} 
+                                            onChange={e => setNewTemplate(e.target.value)} 
+                                            placeholder="Шинэ загвар..."
+                                            className="input"
+                                            style={{ height: 26, fontSize: '0.75rem', padding: '0 8px', width: 120, minHeight: 'unset' }}
+                                            onKeyDown={e => {
+                                                if (e.key === 'Enter') {
+                                                    e.preventDefault();
+                                                    if (newTemplate.trim()) {
+                                                        handleUpdateTemplates([...templates, newTemplate.trim()]);
+                                                        setNewTemplate('');
+                                                    }
+                                                }
+                                            }}
+                                        />
+                                        <button 
+                                            type="button" 
+                                            className="btn btn-primary btn-xs" 
+                                            style={{ padding: '0 8px', height: 26 }}
+                                            onClick={() => {
+                                                if (newTemplate.trim()) {
+                                                    handleUpdateTemplates([...templates, newTemplate.trim()]);
+                                                    setNewTemplate('');
+                                                }
+                                            }}
+                                        >
+                                            Нэмэх
+                                        </button>
+                                    </div>
+                                )}
                             </div>
 
                             <textarea 

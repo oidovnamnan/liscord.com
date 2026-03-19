@@ -228,6 +228,7 @@ export interface BusinessSettings {
     }>;
     autoLogoutMinutes?: number;
     unpaidOrderExpiryHours?: number;
+    stockInquiryTemplates?: string[];
 }
 
 export interface OrderSource {
