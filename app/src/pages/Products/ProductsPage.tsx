@@ -5,7 +5,7 @@ import { ImageUpload } from '../../components/common/ImageUpload';
 import {
     Grid3X3, List, Plus, Search, MoreVertical, AlertTriangle, Loader2,
     Eye, EyeOff, Bot, Target, ShieldCheck, Sparkles, CheckCircle2, Facebook,
-    Package, Clock, Check, Trash2, Image as ImageIcon, Link2
+    Package, Clock, Check, Trash2, Image as ImageIcon, Link2, X
 } from 'lucide-react';
 import { useBusinessStore, useAuthStore } from '../../store';
 import { productService, categoryService, cargoService } from '../../services/db';
@@ -46,6 +46,7 @@ export function ProductsPage() {
     });
     const [selectedIds, setSelectedIds] = useState<string[]>([]);
     const [isBulkUpdating, setIsBulkUpdating] = useState(false);
+    const [isBulkTagging, setIsBulkTagging] = useState(false);
     const [categories, setCategories] = useState<Category[]>([]);
     const [totalCount, setTotalCount] = useState<number | null>(null);
 
@@ -127,6 +128,60 @@ export function ProductsPage() {
         return matchSearch && matchCategory;
     });
 
+    const handleBulkAutoTag = async () => {
+        if (!business) return;
+        
+        const productsToTag = products.filter(p => !p.isDeleted && p.images?.length > 0 && (!p.tags || p.tags.length === 0));
+        
+        if (productsToTag.length === 0) {
+            toast.success('Бүх зурагтай бараанууд хэдийнэ түлхүүр үгтэй байна!');
+            return;
+        }
+
+        if (!confirm(`Нийт ${productsToTag.length} бараанд AI ашиглан түлхүүр үг үүсгэх үү? Энэ нь хэдэн минут шаардаж магадгүй.`)) return;
+
+        setIsBulkTagging(true);
+        let successCount = 0;
+        const toastId = toast.loading(`${productsToTag.length} бараанаас 0-г нь таньж байна...`);
+
+        try {
+            for (let i = 0; i < productsToTag.length; i++) {
+                const p = productsToTag[i];
+                toast.loading(`${productsToTag.length} бараанаас ${i+1}-г нь таньж байна...`, { id: toastId });
+                
+                try {
+                    const res = await fetch('/api/fb-ai-tags', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            imageUrls: [p.images[0]],
+                            name: p.name,
+                            description: p.description
+                        })
+                    });
+
+                    if (res.ok) {
+                        const data = await res.json();
+                        if (data.tags && data.tags.length > 0) {
+                            await productService.updateProduct(business.id, p.id, { tags: data.tags });
+                            successCount++;
+                        }
+                    }
+                } catch (e) {
+                    console.error('Failed to tag product', p.id, e);
+                }
+                
+                await new Promise(r => setTimeout(r, 800)); // Delay to prevent rate limits
+            }
+            
+            toast.success(`Амжилттай! Нийт ${successCount} бараанд түлхүүр үг нэмэгдлээ ✨`, { id: toastId });
+        } catch (error) {
+            toast.error('Алдаа гарлаа', { id: toastId });
+        } finally {
+            setIsBulkTagging(false);
+        }
+    };
+
     const handleDelete = async (id: string) => {
         if (!business || !confirm('Энэ барааг устгахдаа итгэлтэй байна уу?')) return;
         try {
@@ -202,6 +257,17 @@ export function ProductsPage() {
                             </div>
                         </div>
                         <div className="prd-hero-actions">
+                            <PermissionGate permission="products.edit">
+                                <button 
+                                    className="prd-hero-btn" 
+                                    style={{ background: 'var(--primary)', color: 'white', border: 'none' }}
+                                    onClick={handleBulkAutoTag}
+                                    disabled={isBulkTagging}
+                                >
+                                    {isBulkTagging ? <Loader2 size={16} className="animate-spin" /> : <Sparkles size={16} />} 
+                                    AI Auto-Tag
+                                </button>
+                            </PermissionGate>
                             <PermissionGate permission="products.create">
                                 <button className="prd-hero-btn fb-btn" onClick={() => setShowFBImport(true)}>
                                     <Facebook size={16} /> FB
@@ -475,6 +541,11 @@ function CreateProductModal({ onClose }: { onClose: () => void }) {
     const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
     const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
 
+    // Tags
+    const [tags, setTags] = useState<string[]>([]);
+    const [tagsInput, setTagsInput] = useState('');
+    const [isGeneratingTags, setIsGeneratingTags] = useState(false);
+
     // Smart Features States
     const [sku, setSku] = useState('');
     const [costPrice, setCostPrice] = useState<string>('');
@@ -517,6 +588,46 @@ function CreateProductModal({ onClose }: { onClose: () => void }) {
             setIsGeneratingAI(false);
             toast.success('Тайлбар бэлэн боллоо');
         }, 1500);
+    };
+
+    const generateAITags = async () => {
+        if (!imageFiles.length && !existingImages.length) {
+            toast.error('Эхлээд барааны зураг оруулна уу');
+            return;
+        }
+        setIsGeneratingTags(true);
+        try {
+            let base64Image = '';
+            if (imageFiles.length > 0) {
+                const reader = new FileReader();
+                reader.readAsDataURL(imageFiles[0]);
+                base64Image = await new Promise<string>((resolve) => {
+                    reader.onload = () => resolve(reader.result?.toString().split(',')[1] || '');
+                });
+            }
+
+            const res = await fetch('/api/fb-ai-tags', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    imageUrls: existingImages.length > 0 ? [existingImages[0]] : [],
+                    imageBase64: base64Image,
+                    name: productName,
+                    description
+                })
+            });
+
+            if (!res.ok) throw new Error('API Error');
+            const data = await res.json();
+            if (data.tags) {
+                setTags(prev => [...new Set([...prev, ...data.tags])]);
+                toast.success('Түлхүүр үгс нэмэгдлээ ✨');
+            }
+        } catch(e) {
+            toast.error('AI танихад алдаа гарлаа');
+        } finally {
+            setIsGeneratingTags(false);
+        }
     };
 
     const addVariation = () => {
@@ -674,6 +785,7 @@ function CreateProductModal({ onClose }: { onClose: () => void }) {
                     lowStockThreshold: 3,
                     trackInventory: productType === 'ready'
                 },
+                tags,
                 variations: variations.length > 0 ? variations : [],
                 ...(productType === 'preorder' ? {
                     cargoFee: {
@@ -826,6 +938,45 @@ function CreateProductModal({ onClose }: { onClose: () => void }) {
                                             <label className="input-label">SKU</label>
                                             <input className="input" value={sku} onChange={e => setSku(e.target.value)} placeholder="Автоматаар..." />
                                         </div>
+                                    </div>
+
+                                    <div className="input-group" style={{ marginTop: 4 }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                                            <label className="input-label" style={{ marginBottom: 0 }}>Түлхүүр үгс (Tags)</label>
+                                            <button
+                                                type="button"
+                                                className="btn btn-sm btn-ghost gradient-btn-alt"
+                                                onClick={generateAITags}
+                                                disabled={isGeneratingTags}
+                                                style={{ color: 'var(--primary)', fontWeight: 800, gap: 8, padding: '4px 12px', borderRadius: 8, background: 'rgba(var(--primary-rgb), 0.05)' }}
+                                            >
+                                                {isGeneratingTags ? <Loader2 size={16} className="animate-spin" /> : <><Sparkles size={16} /> ✨ AI Auto Tag</>}
+                                            </button>
+                                        </div>
+                                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 8 }}>
+                                            {tags.map((tag, i) => (
+                                                <span key={i} className="badge badge-soft" style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '4px 8px', borderRadius: 6 }}>
+                                                    {tag}
+                                                    <X size={12} style={{ cursor: 'pointer' }} onClick={() => setTags(tags.filter((_, idx) => idx !== i))} />
+                                                </span>
+                                            ))}
+                                        </div>
+                                        <input
+                                            className="input"
+                                            value={tagsInput}
+                                            onChange={e => setTagsInput(e.target.value)}
+                                            onKeyDown={e => {
+                                                if (e.key === 'Enter' || e.key === ',') {
+                                                    e.preventDefault();
+                                                    if (tagsInput.trim()) {
+                                                        const newTags = tagsInput.split(',').map(t => t.trim()).filter(Boolean);
+                                                        setTags(prev => [...new Set([...prev, ...newTags])]);
+                                                        setTagsInput('');
+                                                    }
+                                                }
+                                            }}
+                                            placeholder="Жишээ нь: цүнх, арьсан, жижиг (Enter дарж нэмнэ)"
+                                        />
                                     </div>
                                 </div>
                             </div>
@@ -1068,6 +1219,11 @@ function EditProductModal({ product, onClose }: { product: Product; onClose: () 
     const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
     const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
 
+    // Tags
+    const [tags, setTags] = useState<string[]>(product.tags || []);
+    const [tagsInput, setTagsInput] = useState('');
+    const [isGeneratingTags, setIsGeneratingTags] = useState(false);
+
     // Prices
     const [sku, setSku] = useState(product.sku || '');
     const [costPrice, setCostPrice] = useState<string>(product.pricing.costPrice?.toString() || '');
@@ -1178,6 +1334,46 @@ function EditProductModal({ product, onClose }: { product: Product; onClose: () 
         }, 1200);
     };
 
+    const generateAITags = async () => {
+        if (!imageFiles.length && !existingImages.length) {
+            toast.error('Эхлээд барааны зураг оруулна уу');
+            return;
+        }
+        setIsGeneratingTags(true);
+        try {
+            let base64Image = '';
+            if (imageFiles.length > 0) {
+                const reader = new FileReader();
+                reader.readAsDataURL(imageFiles[0]);
+                base64Image = await new Promise<string>((resolve) => {
+                    reader.onload = () => resolve(reader.result?.toString().split(',')[1] || '');
+                });
+            }
+
+            const res = await fetch('/api/fb-ai-tags', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    imageUrls: existingImages.length > 0 ? [existingImages[0]] : [],
+                    imageBase64: base64Image,
+                    name: productName,
+                    description
+                })
+            });
+
+            if (!res.ok) throw new Error('API Error');
+            const data = await res.json();
+            if (data.tags) {
+                setTags(prev => [...new Set([...prev, ...data.tags])]);
+                toast.success('Түлхүүр үгс нэмэгдлээ ✨');
+            }
+        } catch(e) {
+            toast.error('AI танихад алдаа гарлаа');
+        } finally {
+            setIsGeneratingTags(false);
+        }
+    };
+
     const addVariation = () => {
         const id = Math.random().toString(36).substring(2, 9);
         setVariations([...variations, { id, name: '', sku: `${sku} -${variations.length + 1} `, quantity: 0 }]);
@@ -1237,6 +1433,7 @@ function EditProductModal({ product, onClose }: { product: Product; onClose: () 
                     lowStockThreshold: 3,
                     trackInventory: productType === 'ready'
                 },
+                tags,
                 variations: variations.length > 0 ? variations : [],
                 ...(productType === 'preorder' ? {
                     cargoFee: {
@@ -1380,6 +1577,45 @@ function EditProductModal({ product, onClose }: { product: Product; onClose: () 
                                                 <label className="input-label">SKU (Код)</label>
                                                 <input className="input" value={sku} onChange={e => setSku(e.target.value)} placeholder="Жишээ: B-001" />
                                             </div>
+                                        </div>
+
+                                        <div className="input-group" style={{ marginTop: 4 }}>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                                                <label className="input-label" style={{ marginBottom: 0 }}>Түлхүүр үгс (Tags)</label>
+                                                <button
+                                                    type="button"
+                                                    className="btn btn-sm btn-ghost gradient-btn-alt"
+                                                    onClick={generateAITags}
+                                                    disabled={isGeneratingTags}
+                                                    style={{ color: 'var(--primary)', fontWeight: 800, gap: 8, padding: '4px 12px', borderRadius: 8, background: 'rgba(var(--primary-rgb), 0.05)' }}
+                                                >
+                                                    {isGeneratingTags ? <Loader2 size={16} className="animate-spin" /> : <><Sparkles size={16} /> ✨ AI Auto Tag</>}
+                                                </button>
+                                            </div>
+                                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 8 }}>
+                                                {tags.map((tag, i) => (
+                                                    <span key={i} className="badge badge-soft" style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '4px 8px', borderRadius: 6 }}>
+                                                        {tag}
+                                                        <X size={12} style={{ cursor: 'pointer' }} onClick={() => setTags(tags.filter((_, idx) => idx !== i))} />
+                                                    </span>
+                                                ))}
+                                            </div>
+                                            <input
+                                                className="input"
+                                                value={tagsInput}
+                                                onChange={e => setTagsInput(e.target.value)}
+                                                onKeyDown={e => {
+                                                    if (e.key === 'Enter' || e.key === ',') {
+                                                        e.preventDefault();
+                                                        if (tagsInput.trim()) {
+                                                            const newTags = tagsInput.split(',').map(t => t.trim()).filter(Boolean);
+                                                            setTags(prev => [...new Set([...prev, ...newTags])]);
+                                                            setTagsInput('');
+                                                        }
+                                                    }
+                                                }}
+                                                placeholder="Жишээ нь: цүнх, арьсан, жижиг (Enter дарж нэмнэ)"
+                                            />
                                         </div>
                                     </div>
                                 </div>

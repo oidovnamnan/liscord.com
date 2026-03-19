@@ -671,6 +671,7 @@ export interface Product {
     updatedAt: Date;
     isDeleted: boolean;
     isHidden?: boolean;
+    tags?: string[];
     sourceLinks?: { url: string; label: string }[];
 }
 
