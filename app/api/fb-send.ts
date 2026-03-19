@@ -174,12 +174,23 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             return res.status(400).json({ error: 'Settings not found' });
         }
 
-        // Multi-page support: Find the correct page token
+        // Multi-page support: Find the correct page token based on conversation's pageId
         let token = settings.pageAccessToken as string;
         const pagesArr = (settings.pages as Array<{ pageId: string; pageAccessToken: string }>) || [];
-        if (pagesArr.length > 0 && pagesArr[0].pageAccessToken) {
-            // Use the first active page's token (or the legacy token)
-            token = pagesArr[0].pageAccessToken;
+        if (pagesArr.length > 0) {
+            // Try to find which page this conversation belongs to
+            const conv = await fsGet(`businesses/${bizId}/fbConversations/${recipientId}`);
+            const convPageId = conv?.pageId as string;
+            if (convPageId) {
+                const matchedPage = pagesArr.find(p => p.pageId === convPageId);
+                if (matchedPage?.pageAccessToken) {
+                    token = matchedPage.pageAccessToken;
+                }
+            }
+            // Fallback to first page if no match
+            if (!token && pagesArr[0]?.pageAccessToken) {
+                token = pagesArr[0].pageAccessToken;
+            }
         }
 
         if (!token) {

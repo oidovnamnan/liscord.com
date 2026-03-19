@@ -92,6 +92,17 @@ export function Sidebar() {
             setModuleBadges(prev => ({ ...prev, 'stock-inquiry': snap.size }));
         }, () => {}));
 
+        // 4. Messenger: total unread conversations
+        const messengerQ = query(
+            collection(db, 'businesses', business.id, 'fbConversations'),
+            where('unreadCount', '>', 0),
+            limit(50),
+        );
+        unsubs.push(onSnapshot(messengerQ, (snap) => {
+            const totalUnread = snap.docs.reduce((sum, d) => sum + (d.data().unreadCount || 0), 0);
+            setModuleBadges(prev => ({ ...prev, messenger: totalUnread }));
+        }, () => {}));
+
         return () => unsubs.forEach(u => u());
     }, [business?.id]);
 
