@@ -455,6 +455,19 @@ export function SettingsPage() {
                                                 <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-muted)' }}>PNG эсвэл JPG форматтай, 2MB-аас бага хэмжээтэй файл оруулна уу.</p>
                                             </div>
                                         </div>
+                                        <div className="logo-upload-premium">
+                                            <ImageUpload
+                                                images={existingFavicon}
+                                                onImagesChange={(urls) => { setExistingFavicon(urls); setIsDirty(true); }}
+                                                onFilesChange={(files) => { setFaviconFiles(files); setIsDirty(true); }}
+                                                maxImages={1}
+                                                label=""
+                                            />
+                                            <div>
+                                                <h4 style={{ margin: '0 0 4px 0', fontSize: '1rem', fontWeight: 700 }}>Дэлгүүрийн Favicon</h4>
+                                                <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-muted)' }}>Таны дэлгүүрийн хөтөч (Browser) дээр харагдах 1:1 харьцаатай жижиг лого.</p>
+                                            </div>
+                                        </div>
 
                                         <div className="input-group">
                                             <label className="settings-label">Бизнесийн нэр</label>
