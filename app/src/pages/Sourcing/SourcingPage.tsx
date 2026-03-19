@@ -597,7 +597,7 @@ function SourcingDetailModal({ order, businessId, settings, onClose, onUpdate }:
     const labelTemplate = settings?.labelTemplate || '{shopPhone}-{date}-{customer}-{qty}ш';
     
     const totalQty = order.items.reduce((sum, it) => sum + (it.quantity || 1), 0);
-    const dateStr = order.createdAt ? format(order.createdAt, 'M/dd') : '';
+    const dateStr = format(new Date(), 'M/dd');
     const customerName = order.customerName || 'Тодорхойгүй';
 
     // Generate auto label from template
