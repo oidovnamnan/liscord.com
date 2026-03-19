@@ -15,7 +15,7 @@ import { FBImportModal } from './FBImportModal';
 import { toast } from 'react-hot-toast';
 import { usePermissions } from '../../hooks/usePermissions';
 import { PermissionGate } from '../../components/common/PermissionGate';
-import { collection, query, where, getCountFromServer, limit, onSnapshot, type QueryConstraint } from 'firebase/firestore';
+import { collection, query, where, getCountFromServer, limit, onSnapshot, getDocs, type QueryConstraint } from 'firebase/firestore';
 import { db } from '../../services/firebase';
 import './ProductsPage.css';
 
@@ -131,20 +131,32 @@ export function ProductsPage() {
     const handleBulkAutoTag = async () => {
         if (!business) return;
         
-        const productsToTag = products.filter(p => !p.isDeleted && p.images?.length > 0 && (!p.tags || p.tags.length === 0));
-        
-        if (productsToTag.length === 0) {
-            toast.success('Бүх зурагтай бараанууд хэдийнэ түлхүүр үгтэй байна!');
-            return;
-        }
-
-        if (!confirm(`Нийт ${productsToTag.length} бараанд AI ашиглан түлхүүр үг үүсгэх үү? Энэ нь хэдэн минут шаардаж магадгүй.`)) return;
-
         setIsBulkTagging(true);
-        let successCount = 0;
-        const toastId = toast.loading(`${productsToTag.length} бараанаас 0-г нь таньж байна...`);
+        const toastId = toast.loading('Бүх барааг шалгаж байна...');
 
         try {
+            const q = query(
+                collection(db, 'businesses', business.id, 'products'),
+                where('isDeleted', '==', false)
+            );
+            const snapshot = await getDocs(q);
+            const allProducts = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as Product));
+            
+            const productsToTag = allProducts.filter(p => p.images?.length > 0 && (!p.tags || p.tags.length === 0));
+            
+            if (productsToTag.length === 0) {
+                toast.success('Бүх зурагтай бараанууд хэдийнэ түлхүүр үгтэй байна!', { id: toastId });
+                setIsBulkTagging(false);
+                return;
+            }
+
+            if (!confirm(`Нийт ${productsToTag.length} бараанд AI ашиглан түлхүүр үг үүсгэх үү? Энэ нь хэдэн минут шаардаж магадгүй.`)) {
+                toast.dismiss(toastId);
+                setIsBulkTagging(false);
+                return;
+            }
+
+            let successCount = 0;
             for (let i = 0; i < productsToTag.length; i++) {
                 const p = productsToTag[i];
                 toast.loading(`${productsToTag.length} бараанаас ${i+1}-г нь таньж байна...`, { id: toastId });
