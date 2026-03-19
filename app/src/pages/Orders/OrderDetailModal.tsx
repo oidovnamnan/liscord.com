@@ -1,13 +1,13 @@
 import { X, Printer, Clock, User, Package, CreditCard, CheckCircle2, ChevronDown, Loader2, ImageIcon, Undo2 } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { createPortal } from 'react-dom';
 import type { Order, OrderStatusConfig } from '../../types';
 import { ebarimtService } from '../../services/ebarimt';
 import { orderService } from '../../services/db';
 import { toast } from 'react-hot-toast';
-import { useAuthStore, useBusinessStore, useModuleDefaultsStore } from '../../store';
+import { useAuthStore, useBusinessStore } from '../../store';
 import { usePermissions } from '../../hooks/usePermissions';
-import { isModuleAccessible } from '../../utils/moduleUtils';
+
 import { CreateReturnModal } from '../Returns/CreateReturnModal';
 import './OrderDetailModal.css';
 
@@ -22,9 +22,6 @@ export function OrderDetailModal({ bizId, order, onClose, statuses }: OrderDetai
     const { user } = useAuthStore();
     const { business } = useBusinessStore();
     const { hasPermission } = usePermissions();
-    const { defaults: moduleDefaults, fetched: defaultsLoaded, fetchDefaults } = useModuleDefaultsStore();
-
-    useEffect(() => { fetchDefaults(); }, [fetchDefaults]);
     const canCreateReturn = hasPermission('returns.create');
     const [updating, setUpdating] = useState(false);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -323,8 +320,8 @@ export function OrderDetailModal({ bizId, order, onClose, statuses }: OrderDetai
                                     </table>
                                 </div>
 
-                                {/* Arrival marking panel */}
-                                {!order.isDeleted && ['confirmed', 'sourced', 'arrived'].includes(currentStatusId) && (
+                                {/* Arrival marking panel — only when sourced */}
+                                {!order.isDeleted && ['sourced', 'arrived'].includes(currentStatusId) && (order as any).sourcing?.status && (order as any).sourcing.status !== 'pending' && (
                                     <div style={{ marginTop: 12, border: '1px solid var(--border-primary)', borderRadius: 12, padding: 14, background: 'var(--surface-1)' }}>
                                         <div style={{ fontWeight: 700, fontSize: '0.82rem', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6 }}>
                                             📥 Бараа ирсэн тэмдэглэх
