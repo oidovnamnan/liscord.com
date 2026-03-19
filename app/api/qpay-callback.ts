@@ -150,6 +150,30 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             updatedAt: now,
         });
 
+        // 4.5. Record QPay income in sms_inbox (appears on Income page)
+        try {
+            const bizDocSnap = await db.doc(`businesses/${bizId}`).get();
+            const smsBridgeKey = bizDocSnap.data()?.smsBridgeKey;
+            if (smsBridgeKey) {
+                const orderNumber = orderData.orderNumber || orderId.slice(0, 6);
+                await db.collection('sms_inbox').add({
+                    pairingKey: smsBridgeKey,
+                    sender: 'QPay',
+                    body: `QPay: ₮${totalAmount.toLocaleString()} — ${orderData.customer?.name || 'Зочин'} #${orderNumber}`,
+                    amount: totalAmount,
+                    bank: 'QPay',
+                    utga: `Захиалга #${orderNumber}`,
+                    status: 'matched',
+                    orderId,
+                    source: 'qpay',
+                    autoMatched: true,
+                    createdAt: now,
+                });
+            }
+        } catch (incomeErr) {
+            console.error('QPay income recording error (non-critical):', incomeErr);
+        }
+
         // 5. Grant membership if applicable
         if (orderData.orderType === 'membership' && orderData.membershipCategoryId) {
             const phone = orderData.customer?.phone || '';

@@ -20,6 +20,7 @@ import {
     User,
     Trash2,
     ShieldAlert,
+    CreditCard,
 } from 'lucide-react';
 import { collection, query, where, orderBy, onSnapshot, doc, getDoc, getDocs, updateDoc, writeBatch } from 'firebase/firestore';
 import { db } from '../../services/firebase';
@@ -41,6 +42,7 @@ interface SmsLog {
     status: 'matched' | 'pending' | 'ignored';
     orderId?: string;
     createdAt?: any;
+    source?: string;
 }
 
 interface MatchCandidate {
@@ -62,6 +64,7 @@ export function BankSmsSyncPage() {
     const [logs, setLogs] = useState<SmsLog[]>([]);
     const [loading, setLoading] = useState(true);
     const [pairingKey, setPairingKey] = useState<string | null>(null);
+    const [activeTab, setActiveTab] = useState<'sms' | 'qpay'>('sms');
 
     // Manual match modal state
     const [matchingSms, setMatchingSms] = useState<SmsLog | null>(null);
@@ -134,6 +137,7 @@ export function BankSmsSyncPage() {
                     status: d.status === 'matched' ? 'matched' : d.status === 'ignored' ? 'ignored' : 'pending',
                     orderId: d.orderId || undefined,
                     createdAt,
+                    source: d.source || undefined,
                 };
             });
             setLogs(items);
@@ -349,7 +353,13 @@ export function BankSmsSyncPage() {
         }
     };
 
-    const filteredLogs = logs.filter(log => {
+    // Filter by tab (sms vs qpay source)
+    const tabFilteredLogs = logs.filter(log => {
+        if (activeTab === 'qpay') return log.source === 'qpay';
+        return log.source !== 'qpay';
+    });
+
+    const filteredLogs = tabFilteredLogs.filter(log => {
         const matchSearch = !search ||
             log.note.toLowerCase().includes(search.toLowerCase()) ||
             log.bank.toLowerCase().includes(search.toLowerCase()) ||
@@ -359,9 +369,9 @@ export function BankSmsSyncPage() {
     });
 
     const stats = {
-        total: logs.reduce((s, l) => s + l.amount, 0),
-        matched: logs.filter(l => l.status === 'matched').length,
-        pending: logs.filter(l => l.status === 'pending').length,
+        total: tabFilteredLogs.reduce((s, l) => s + l.amount, 0),
+        matched: tabFilteredLogs.filter(l => l.status === 'matched').length,
+        pending: tabFilteredLogs.filter(l => l.status === 'pending').length,
     };
 
     const getStatusBadge = (status: string) => {
@@ -380,14 +390,14 @@ export function BankSmsSyncPage() {
             <div className="inv-hero sms-hero">
                 <div className="inv-hero-top">
                     <div className="inv-hero-left">
-                        <div className="inv-hero-icon"><Smartphone size={24} /></div>
+                        <div className="inv-hero-icon"><Banknote size={24} /></div>
                         <div>
-                            <h2 className="inv-hero-title">SMS Банк Орлого</h2>
-                            <div className="inv-hero-desc">Банкны SMS орлогыг хянах, захиалгатай холбох</div>
+                            <h2 className="inv-hero-title">Орлого</h2>
+                            <div className="inv-hero-desc">{activeTab === 'sms' ? 'SMS банк орлого хянах' : 'QPay төлбөр орлого хянах'}</div>
                         </div>
                     </div>
                     <div style={{ display: 'flex', gap: 8 }}>
-                        {logs.length > 0 && isOwner && (
+                        {logs.length > 0 && isOwner && activeTab === 'sms' && (
                             <button
                                 className="inv-hero-btn"
                                 onClick={() => setShowSecurityModal(true)}
@@ -403,6 +413,37 @@ export function BankSmsSyncPage() {
                         </button>
                     </div>
                 </div>
+
+                {/* Tab bar */}
+                <div style={{ display: 'flex', gap: 6, marginTop: 14, marginBottom: -4 }}>
+                    <button
+                        onClick={() => setActiveTab('sms')}
+                        style={{
+                            padding: '7px 18px', borderRadius: 20, border: 'none', cursor: 'pointer',
+                            fontFamily: 'inherit', fontSize: '0.78rem', fontWeight: 700,
+                            background: activeTab === 'sms' ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.06)',
+                            color: activeTab === 'sms' ? '#fff' : 'rgba(255,255,255,0.6)',
+                            transition: 'all 0.15s',
+                            display: 'flex', alignItems: 'center', gap: 5,
+                        }}
+                    >
+                        <Smartphone size={14} /> SMS Орлого
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('qpay')}
+                        style={{
+                            padding: '7px 18px', borderRadius: 20, border: 'none', cursor: 'pointer',
+                            fontFamily: 'inherit', fontSize: '0.78rem', fontWeight: 700,
+                            background: activeTab === 'qpay' ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.06)',
+                            color: activeTab === 'qpay' ? '#fff' : 'rgba(255,255,255,0.6)',
+                            transition: 'all 0.15s',
+                            display: 'flex', alignItems: 'center', gap: 5,
+                        }}
+                    >
+                        <CreditCard size={14} /> QPay Орлого
+                    </button>
+                </div>
+
                 <div className="inv-hero-stats">
                     <div className="inv-hero-stat">
                         <div className="inv-hero-stat-value">{stats.total >= 1000000 ? (stats.total / 1000000).toFixed(1) + 'M₮' : stats.total > 0 ? (stats.total / 1000).toFixed(0) + 'K₮' : '0₮'}</div>
@@ -417,7 +458,7 @@ export function BankSmsSyncPage() {
                         <div className="inv-hero-stat-label">Хүлээгдэж буй</div>
                     </div>
                     <div className="inv-hero-stat">
-                        <div className="inv-hero-stat-value">{logs.length}</div>
+                        <div className="inv-hero-stat-value">{tabFilteredLogs.length}</div>
                         <div className="inv-hero-stat-label">Нийт гүйлгээ</div>
                     </div>
                 </div>

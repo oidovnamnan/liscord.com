@@ -428,6 +428,7 @@ export function Sidebar() {
                         if (mod.id === 'inventory') displayName = 'Агуулах / Логистик';
                         if (mod.id === 'crm') displayName = 'Харилцагч & CRM';
                         if (mod.id === 'logistics') displayName = 'Логистик & Карго';
+                        if (mod.id === 'sms-income-sync') displayName = 'Орлого';
 
                         return (
                             <NavLink
