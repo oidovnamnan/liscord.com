@@ -9,6 +9,7 @@ import {
 import { useBusinessStore, useAuthStore, useUIStore } from '../../store';
 import { fbMessengerService, type FbConversation, type FbMessage, type FbSettings, type FbCannedResponse, type FbPageConfig, type AiMode, type AiScheduleEntry } from '../../services/fbMessengerService';
 import toast from 'react-hot-toast';
+import { CreateInquiryModal } from '../StockInquiry/CreateInquiryModal';
 import './FacebookMessengerPage.css';
 
 type ConvFilter = 'all' | 'unread' | 'open' | 'closed';
@@ -50,6 +51,7 @@ export function FacebookMessengerPage() {
     const [loading, setLoading] = useState(true);
     const [showDrawer, setShowDrawer] = useState(false);
     const [showInfoPanel, setShowInfoPanel] = useState(false);
+    const [showInquiryModal, setShowInquiryModal] = useState(false);
     const [showCanned, setShowCanned] = useState(false);
     const [showPaymentModal, setShowPaymentModal] = useState(false);
     const [paymentAmount, setPaymentAmount] = useState('');
@@ -525,6 +527,9 @@ export function FacebookMessengerPage() {
                                     </div>
                                 </div>
                                 <div className="fbm-chat-header-actions">
+                                    <button className="fbm-toolbar-btn chat" onClick={() => setShowInquiryModal(true)} title="Бараа шалгах / Лавлагаа үүсгэх">
+                                        <MessageSquare size={15} />
+                                    </button>
                                     <button className="fbm-toolbar-btn chat" onClick={() => setShowPaymentModal(true)} title="Төлбөр илгээх">
                                         <CreditCard size={15} />
                                     </button>
@@ -1179,6 +1184,14 @@ export function FacebookMessengerPage() {
                         )}
                     </div>
                 </div>
+            )}
+
+            {/* ── Inquiry Modal ── */}
+            {showInquiryModal && activeConvId && (
+                <CreateInquiryModal
+                    fbUserId={activeConvId}
+                    onClose={() => setShowInquiryModal(false)}
+                />
             )}
         </div>
     );

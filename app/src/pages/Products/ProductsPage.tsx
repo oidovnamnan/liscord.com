@@ -5,13 +5,14 @@ import { ImageUpload } from '../../components/common/ImageUpload';
 import {
     Grid3X3, List, Plus, Search, MoreVertical, AlertTriangle, Loader2,
     Eye, EyeOff, Bot, Target, ShieldCheck, Sparkles, CheckCircle2, Facebook,
-    Package, Clock, Check, Trash2, Image as ImageIcon, Link2, X
+    Package, Clock, Check, Trash2, Image as ImageIcon, Link2, X, MessageSquare
 } from 'lucide-react';
 import { useBusinessStore, useAuthStore } from '../../store';
 import { productService, categoryService, cargoService } from '../../services/db';
 import { storageService as storage } from '../../services/storage';
-import type { Product, Category, CargoType, ProductVariation } from '../../types';
+import type { Product, Category, CargoType, ProductVariation, StockInquiry } from '../../types';
 import { FBImportModal } from './FBImportModal';
+import { CreateInquiryModal } from '../StockInquiry/CreateInquiryModal';
 import { toast } from 'react-hot-toast';
 import { usePermissions } from '../../hooks/usePermissions';
 import { PermissionGate } from '../../components/common/PermissionGate';
@@ -36,6 +37,7 @@ export function ProductsPage() {
     const [hasMore, setHasMore] = useState(true);
 
     const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+    const [inquiryProduct, setInquiryProduct] = useState<Product | null>(null);
     const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
     const [categoryFilter, setCategoryFilter] = useState('all');
     const [stats, setStats] = useState({
@@ -464,6 +466,12 @@ export function ProductsPage() {
                                                                 <Link2 size={14} /> Линк хуулах
                                                             </div>
                                                         )}
+                                                        <div className="dropdown-action-item" onClick={() => {
+                                                            setInquiryProduct(p);
+                                                            setOpenDropdownId(null);
+                                                        }}>
+                                                            <MessageSquare size={14} /> Лавлагаа үүсгэх
+                                                        </div>
                                                         {hasPermission('products.edit') && (
                                                             <div className="dropdown-action-item" onClick={() => { setEditingProduct(p); setOpenDropdownId(null); }}>
                                                                 <Plus size={14} style={{ transform: 'rotate(45deg)' }} /> Засах
@@ -535,6 +543,12 @@ export function ProductsPage() {
                 <EditProductModal
                     product={editingProduct}
                     onClose={() => setEditingProduct(null)}
+                />
+            )}
+            {inquiryProduct && (
+                <CreateInquiryModal
+                    product={inquiryProduct}
+                    onClose={() => setInquiryProduct(null)}
                 />
             )}
         </>
@@ -1259,11 +1273,25 @@ function EditProductModal({ product, onClose }: { product: Product; onClose: () 
     // Visibility
     const [isHidden, setIsHidden] = useState(product.isHidden || false);
 
-    const [activeTab, setActiveTab] = useState<'basic' | 'price' | 'variations' | 'advanced'>('basic');
+    const [activeTab, setActiveTab] = useState<'basic' | 'price' | 'variations' | 'advanced' | 'inquiries'>('basic');
+    const [inquiries, setInquiries] = useState<StockInquiry[]>([]);
     const [variations, setVariations] = useState<ProductVariation[]>(product.variations || []);
     const [isGeneratingAI, setIsGeneratingAI] = useState(false);
     const [description, setDescription] = useState(product.description || '');
     const [productName, setProductName] = useState(product.name || '');
+
+    useEffect(() => {
+        if (activeTab !== 'inquiries' || !product.id || !business?.id) return;
+        setLoading(true);
+        const q = query(collection(db, `businesses/${business.id}/stockInquiries`), where('productId', '==', product.id));
+        const unsub = onSnapshot(q, snap => {
+            const data = snap.docs.map(d => ({id: d.id, ...d.data()} as StockInquiry));
+            data.sort((a,b) => ((b.createdAt as any)?.seconds || 0) - ((a.createdAt as any)?.seconds || 0));
+            setInquiries(data);
+            setLoading(false);
+        });
+        return () => unsub();
+    }, [activeTab, product.id, business?.id]);
 
     useEffect(() => {
         if (!business?.id) return;
@@ -1492,6 +1520,9 @@ function EditProductModal({ product, onClose }: { product: Product; onClose: () 
                     </button>
                     <button type="button" className={`tab-item ${activeTab === 'advanced' ? 'active' : ''} `} onClick={() => setActiveTab('advanced')}>
                         <Sparkles size={18} /> Бусад
+                    </button>
+                    <button type="button" className={`tab-item ${activeTab === 'inquiries' ? 'active' : ''} `} onClick={() => setActiveTab('inquiries')}>
+                        <MessageSquare size={18} /> Лавлагаа
                     </button>
                 </div>
 
@@ -1833,6 +1864,55 @@ function EditProductModal({ product, onClose }: { product: Product; onClose: () 
                                             <div className="toggle" />
                                         </div>
                                     </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {activeTab === 'inquiries' && (
+                            <div className="animate-slide-up" style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+                                <div className="modal-section-card">
+                                    <div className="modal-section-title">Лавлагааны түүх</div>
+                                    {inquiries.length === 0 ? (
+                                        <div style={{ padding: 32, textAlign: 'center', color: 'var(--text-muted)' }}>
+                                            <MessageSquare size={32} style={{ opacity: 0.2, marginBottom: 16 }} />
+                                            <div>Одоогоор энэ бараан дээр лавлагаа гараагүй байна</div>
+                                        </div>
+                                    ) : (
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                                            {inquiries.map(inq => (
+                                                <div key={inq.id} style={{ 
+                                                    padding: 16, border: '1px solid var(--border)', borderRadius: 12, 
+                                                    background: 'var(--bg-main)', display: 'flex', flexDirection: 'column', gap: 8 
+                                                }}>
+                                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                                        <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>
+                                                            {inq.source === 'operator' ? `Оператор: ${inq.operatorName || 'Тодорхойгүй'}` : `Харилцагч: ${inq.customerPhone}`}
+                                                        </div>
+                                                        <span style={{ 
+                                                            fontSize: '0.75rem', fontWeight: 600, padding: '2px 8px', borderRadius: 100,
+                                                            background: (inq.status === 'updated' || inq.status === 'no_change') ? 'rgba(34,197,94,0.1)' : inq.status === 'pending' ? 'rgba(234,179,8,0.1)' : 'rgba(100,100,100,0.1)',
+                                                            color: (inq.status === 'updated' || inq.status === 'no_change') ? '#22c55e' : inq.status === 'pending' ? '#eab308' : '#666'
+                                                        }}>
+                                                            {(inq.status === 'updated' || inq.status === 'no_change') ? 'Хариу өгсөн' : inq.status === 'pending' ? 'Хүлээгдэж буй' : inq.status}
+                                                        </span>
+                                                    </div>
+                                                    {inq.operatorNote && (
+                                                        <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', background: 'var(--bg-soft)', padding: '8px 12px', borderRadius: 8 }}>
+                                                            Тэмдэглэл: {inq.operatorNote}
+                                                        </div>
+                                                    )}
+                                                    {inq.changes?.note && (
+                                                        <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', background: 'rgba(34,197,94,0.05)', padding: '8px 12px', border: '1px solid rgba(34,197,94,0.1)', borderRadius: 8 }}>
+                                                            Хариу: {inq.changes.note}
+                                                        </div>
+                                                    )}
+                                                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textAlign: 'right' }}>
+                                                        {inq.createdAt ? new Date((inq.createdAt as any).seconds * 1000).toLocaleString('mn-MN') : ''}
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         )}

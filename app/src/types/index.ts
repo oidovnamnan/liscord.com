@@ -1742,5 +1742,12 @@ export interface StockInquiry {
     timeoutSeconds: number;
     createdAt: Date;
     respondedAt?: Date;
+
+    // Operator-initiated metadata
+    source?: 'website' | 'operator';
+    operatorId?: string;
+    operatorName?: string;
+    operatorNote?: string;
+    fbUserId?: string;
 }
 

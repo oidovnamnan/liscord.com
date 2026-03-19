@@ -192,6 +192,75 @@ export function SuperAdminSettings() {
         }
     };
 
+    const handleSystemBackup = async () => {
+        setShowSecurityModal(false);
+        setMigrating(true);
+        const loadingToastId = toast.loading('Байкап бэлтгэж байна, түр хүлээнэ үү (энэ нь хэдэн минут шаардаж магадгүй)...', { duration: 60000 });
+        try {
+            const { collection, getDocs } = await import('firebase/firestore');
+            
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const outputData: Record<string, any> = { metadata: { exportedAt: new Date().toISOString() } };
+
+            // 1. Users
+            const usersSnap = await getDocs(collection(db, 'users'));
+            outputData.users = usersSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+            // 2. System Settings & Categories
+            const sysSettingsSnap = await getDocs(collection(db, 'system_settings'));
+            outputData.system_settings = sysSettingsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+            const sysCatsSnap = await getDocs(collection(db, 'system_categories'));
+            outputData.system_categories = sysCatsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+            // 3. Businesses & Their Subcollections
+            const businessesSnap = await getDocs(collection(db, 'businesses'));
+            outputData.businesses = [];
+
+            for (const bDoc of businessesSnap.docs) {
+                const bId = bDoc.id;
+                const bData = { 
+                    id: bId, 
+                    ...bDoc.data(),
+                    subcollections: {} as any
+                };
+
+                // Fetch essential subcollections
+                const subCollections = ['products', 'orders', 'categories', 'cargoTypes', 'stockInquiries', 'customers', 'suppliers'];
+                for (const sub of subCollections) {
+                    try {
+                        const snap = await getDocs(collection(db, `businesses/${bId}/${sub}`));
+                        bData.subcollections[sub] = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                    } catch (e) {
+                        console.warn(`Failed to export ${sub} for business ${bId}`, e);
+                    }
+                }
+                outputData.businesses.push(bData);
+            }
+
+            // Create downloadable JSON blob
+            const jsonString = JSON.stringify(outputData, null, 2);
+            const blob = new Blob([jsonString], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `liscord_backup_${new Date().toISOString().split('T')[0]}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            toast.success('Байкап амжилттай татагдлаа', { id: loadingToastId });
+        } catch (error) {
+            console.error('Backup failed:', error);
+            toast.error('Байкап татахад алдаа гарлаа. Дата хэт их байж болзошгүй.', { id: loadingToastId });
+        } finally {
+            setMigrating(false);
+            toast.dismiss(loadingToastId);
+        }
+    };
+
     // Stats for header
     const totalModules = LISCORD_MODULES.length;
     const totalCategories = categoriesToDisplay.length;
@@ -599,6 +668,26 @@ export function SuperAdminSettings() {
                                                         disabled={migrating}
                                                     >
                                                         {migrating ? <Loader2 className="animate-spin" size={12} /> : 'Шилжүүлэг (V5)'}
+                                                    </button>
+                                                </div>
+
+                                                <div className="ms-migration-card success" style={{ borderLeft: '4px solid #10b981', background: 'var(--bg-card)' }}>
+                                                    <div className="ms-mig-header" style={{ color: '#10b981' }}>
+                                                        <Icons.DownloadCloud size={16} />
+                                                        <span style={{ fontWeight: 600 }}>Системийн Бааз Татах (Backup)</span>
+                                                    </div>
+                                                    <p>Бүх мэдээллийн санг (Users, Businesses, Orders, Products г.м) бүрэн хэмжээгээр уншиж .JSON файл болгон шууд компьютер дээрээ татаж авах.</p>
+                                                    <button
+                                                        className="btn btn-outline btn-xs"
+                                                        style={{ borderColor: '#10b981', color: '#10b981' }}
+                                                        onClick={() => {
+                                                            if (!confirm('SYSTEM BACKUP EXPORT\n\nЭнэ үйлдэл хэдэн минут шаардаж болно. Татаж эхлэх үү?')) return;
+                                                            setPendingAction(() => handleSystemBackup);
+                                                            setShowSecurityModal(true);
+                                                        }}
+                                                        disabled={migrating}
+                                                    >
+                                                        {migrating ? <Loader2 className="animate-spin" size={12} /> : 'Бааз татах (Download)'}
                                                     </button>
                                                 </div>
                                             </div>
