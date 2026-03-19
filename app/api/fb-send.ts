@@ -148,6 +148,8 @@ async function getQPayToken(username: string, password: string): Promise<string>
 }
 
 async function sendToFacebook(pageAccessToken: string, payload: Record<string, unknown>): Promise<Record<string, unknown>> {
+    const tokenPreview = pageAccessToken ? `${pageAccessToken.substring(0, 10)}...${pageAccessToken.slice(-6)}` : 'EMPTY';
+    console.log(`[fb-send] Sending to Facebook with token: ${tokenPreview}`);
     const resp = await fetch('https://graph.facebook.com/v21.0/me/messages', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -156,8 +158,42 @@ async function sendToFacebook(pageAccessToken: string, payload: Record<string, u
     const result = await resp.json();
     if (!resp.ok || result.error) {
         console.error('[fb-send] Facebook API error:', JSON.stringify(result.error || result));
+    } else {
+        console.log('[fb-send] ✅ Message sent successfully, message_id:', result.message_id);
     }
     return result;
+}
+
+// Try sending with multiple tokens (fallback on error #100)
+async function sendWithFallback(
+    primaryToken: string,
+    allTokens: Array<{ pageId: string; pageName?: string; token: string }>,
+    payload: Record<string, unknown>,
+    recipientId: string
+): Promise<Record<string, unknown>> {
+    // Try primary token first
+    const result = await sendToFacebook(primaryToken, payload);
+    
+    // If success, return
+    if (!result.error) return result;
+    
+    // If error #100 "No matching user", try other tokens
+    const errorCode = (result.error as Record<string, unknown>)?.code;
+    if (errorCode === 100 && allTokens.length > 1) {
+        console.log(`[fb-send] Token mismatch for recipient ${recipientId}, trying other page tokens...`);
+        for (const page of allTokens) {
+            if (page.token === primaryToken) continue; // skip already tried
+            console.log(`[fb-send] Trying token for page: ${page.pageName || page.pageId}...`);
+            const retryResult = await sendToFacebook(page.token, payload);
+            if (!retryResult.error) {
+                // This token worked! Update the conversation's pageId in Firestore
+                console.log(`[fb-send] ✅ Token for page ${page.pageName || page.pageId} worked! Updating conversation pageId.`);
+                return retryResult;
+            }
+        }
+    }
+    
+    return result; // return original error if all failed
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -180,20 +216,37 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
         // Multi-page support: Find the correct page token based on conversation's pageId
         let token = settings.pageAccessToken as string;
-        const pagesArr = (settings.pages as Array<{ pageId: string; pageAccessToken: string }>) || [];
+        const pagesArr = (settings.pages as Array<{ pageId: string; pageName?: string; pageAccessToken: string }>) || [];
+        
+        // Build all tokens list for fallback
+        const allTokens: Array<{ pageId: string; pageName?: string; token: string }> = [];
+        for (const p of pagesArr) {
+            if (p.pageAccessToken) {
+                allTokens.push({ pageId: p.pageId, pageName: (p as Record<string, unknown>).pageName as string, token: p.pageAccessToken });
+            }
+        }
+        
+        console.log(`[fb-send] Action: ${action}, Recipient: ${recipientId}, Pages: ${allTokens.length}`);
+        
         if (pagesArr.length > 0) {
             // Try to find which page this conversation belongs to
             const conv = await fsGet(`businesses/${bizId}/fbConversations/${recipientId}`);
             const convPageId = conv?.pageId as string;
+            console.log(`[fb-send] Conversation pageId: ${convPageId || 'NOT SET'}`);
+            
             if (convPageId) {
                 const matchedPage = pagesArr.find(p => p.pageId === convPageId);
                 if (matchedPage?.pageAccessToken) {
                     token = matchedPage.pageAccessToken;
+                    console.log(`[fb-send] Matched page: ${(matchedPage as Record<string, unknown>).pageName || convPageId}`);
+                } else {
+                    console.log(`[fb-send] ⚠️ No token found for pageId: ${convPageId}`);
                 }
             }
             // Fallback to first page if no match
             if (!token && pagesArr[0]?.pageAccessToken) {
                 token = pagesArr[0].pageAccessToken;
+                console.log(`[fb-send] Using fallback token from first page`);
             }
         }
 
@@ -215,24 +268,38 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
         // ── RESOLVE NAME — Fetch real FB name from Graph API ──
         if (action === 'resolve_name') {
-            try {
-                const profileResp = await fetch(
-                    `https://graph.facebook.com/v21.0/${recipientId}?fields=first_name,last_name,profile_pic&access_token=${token}`
-                );
-                if (profileResp.ok) {
-                    const profile = await profileResp.json();
-                    const realName = `${profile.first_name || ''} ${profile.last_name || ''}`.trim();
-                    if (realName) {
-                        await fsUpdate(`businesses/${bizId}/fbConversations/${recipientId}`, {
-                            senderName: realName,
-                            senderProfilePic: profile.profile_pic || '',
-                        });
-                        return res.status(200).json({ success: true, name: realName });
+            // Try all available tokens (primary first, then others)
+            const tokensToTry = [token, ...allTokens.filter(t => t.token !== token).map(t => t.token)];
+            
+            for (const tryToken of tokensToTry) {
+                try {
+                    const tokenPreview = tryToken ? `${tryToken.substring(0, 8)}...` : 'EMPTY';
+                    console.log(`[resolve_name] Trying token ${tokenPreview} for PSID ${recipientId}`);
+                    
+                    const profileResp = await fetch(
+                        `https://graph.facebook.com/v22.0/${recipientId}?fields=first_name,last_name,profile_pic&access_token=${tryToken}`
+                    );
+                    if (profileResp.ok) {
+                        const profile = await profileResp.json();
+                        const realName = `${profile.first_name || ''} ${profile.last_name || ''}`.trim();
+                        if (realName) {
+                            console.log(`[resolve_name] ✅ Resolved: ${realName}`);
+                            await fsUpdate(`businesses/${bizId}/fbConversations/${recipientId}`, {
+                                senderName: realName,
+                                senderProfilePic: profile.profile_pic || '',
+                            });
+                            return res.status(200).json({ success: true, name: realName });
+                        }
+                    } else {
+                        const errBody = await profileResp.text();
+                        console.log(`[resolve_name] Token failed (${profileResp.status}): ${errBody.substring(0, 100)}`);
                     }
+                } catch (err) {
+                    console.error('[resolve_name] Error:', err);
                 }
-            } catch (err) {
-                console.error('[resolve_name] Error:', err);
             }
+            
+            console.log(`[resolve_name] ❌ Could not resolve name for ${recipientId} with any token`);
             return res.status(200).json({ success: false, error: 'Could not resolve name' });
         }
 
