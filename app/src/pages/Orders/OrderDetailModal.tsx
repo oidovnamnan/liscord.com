@@ -25,9 +25,7 @@ export function OrderDetailModal({ bizId, order, onClose, statuses }: OrderDetai
     const { defaults: moduleDefaults, fetched: defaultsLoaded, fetchDefaults } = useModuleDefaultsStore();
 
     useEffect(() => { fetchDefaults(); }, [fetchDefaults]);
-
-    const returnsModuleActive = defaultsLoaded && business ? isModuleAccessible('returns', business, moduleDefaults).accessible : false;
-    const canCreateReturn = returnsModuleActive && hasPermission('returns.create');
+    const canCreateReturn = hasPermission('returns.create');
     const [updating, setUpdating] = useState(false);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const [ebarimtData, setEbarimtData] = useState<any>(null);
