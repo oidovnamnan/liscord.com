@@ -14,7 +14,7 @@ import { format } from 'date-fns';
 import { usePermissions } from '../../hooks/usePermissions';
 import './SourcingPage.css';
 
-type SourcingStatus = 'pending' | 'ordered' | 'arrived' | 'picked_up' | 'delivered' | 'fulfilled';
+type SourcingStatus = 'pending' | 'ordered' | 'arrived' | 'picked_up' | 'delivered' | 'fulfilled' | 'returned';
 type FilterStatus = 'all' | SourcingStatus | 'not_arrived';
 
 interface SourcingItem {
@@ -74,6 +74,7 @@ const STATUS_LABELS: Record<SourcingStatus, { label: string; color: string; icon
     picked_up:  { label: 'Ирж авсан',    color: '#00b894', icon: CheckCircle2 },
     delivered:  { label: 'Хүргэсэн',     color: '#00b894', icon: Truck },
     fulfilled:  { label: 'Биелсэн',      color: '#2d3436', icon: CheckCircle2 },
+    returned:   { label: 'Буцаалт',      color: '#d63031', icon: AlertTriangle },
 };
 
 export function SourcingPage() {
@@ -668,6 +669,11 @@ function SourcingDetailModal({ order, businessId, settings, onClose, onUpdate }:
                     orderUpdate.status = 'sourced';
                 }
             }
+            // Auto-cancel order when sourcing is returned
+            if (finalStatus === 'returned') {
+                orderUpdate.status = 'cancelled';
+                orderUpdate.isDeleted = true;
+            }
             await updateDoc(doc(db, 'businesses', businessId, 'orders', order.id), orderUpdate);
             const updated: SourcingOrder = {
                 ...order,
@@ -945,6 +951,7 @@ function SourcingDetailModal({ order, businessId, settings, onClose, onUpdate }:
                                         <option value="picked_up">Ирж авсан</option>
                                         <option value="delivered">Хүргэсэн</option>
                                         <option value="fulfilled">Биелсэн</option>
+                                        <option value="returned" style={{ color: '#d63031' }}>🔄 Буцаалт</option>
                                     </select>
                                     <ChevronDown size={14} className="sourcing-select-icon" />
                                 </div>

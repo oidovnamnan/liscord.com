@@ -188,7 +188,7 @@ export function OrderDetailModal({ bizId, order, onClose, statuses }: OrderDetai
                         )}
                     </div>
                     <div className="header-actions" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        {canCreateReturn && order.paymentStatus !== 'unpaid' && !order.isDeleted && order.status !== 'cancelled' && (
+                        {canCreateReturn && !order.isDeleted && order.status !== 'cancelled' && (
                             order.returnStatus === 'full' ? (
                                 <button className="btn btn-sm" disabled style={{ background: '#6b7280', color: '#fff', border: 'none', display: 'flex', alignItems: 'center', gap: 5, opacity: 0.5, cursor: 'not-allowed' }}>
                                     <Undo2 size={14} /> Буцаасан
