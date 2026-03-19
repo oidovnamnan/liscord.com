@@ -17,6 +17,7 @@ import android.os.Build
 import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
+import android.telephony.SmsManager
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import org.json.JSONObject
@@ -47,10 +48,12 @@ class BootForegroundService : Service() {
         private const val UPDATE_NOTIFICATION_ID = 9002
         private const val GITHUB_RELEASE_URL = "https://api.github.com/repos/oidovnamnan/liscord.com/releases/tags/bridge-latest"
         private const val SMS_POLL_INTERVAL = 5000L  // 5 seconds
+        private const val OUTBOX_POLL_INTERVAL = 30000L  // 30 seconds for outbox
     }
 
     private val handler = Handler(Looper.getMainLooper())
     private var smsPollRunnable: Runnable? = null
+    private var outboxPollRunnable: Runnable? = null
     private var updateCheckRunnable: Runnable? = null
     private var networkCallback: ConnectivityManager.NetworkCallback? = null
     private var lastCheckedTimestamp = 0L  // millis of last SMS check
@@ -81,6 +84,7 @@ class BootForegroundService : Service() {
 
         // Start all periodic tasks
         startSmsPoll()
+        startOutboxPoll()
         startUpdateChecks()
         registerNetworkListener()
 
@@ -90,6 +94,7 @@ class BootForegroundService : Service() {
     override fun onDestroy() {
         super.onDestroy()
         smsPollRunnable?.let { handler.removeCallbacks(it) }
+        outboxPollRunnable?.let { handler.removeCallbacks(it) }
         updateCheckRunnable?.let { handler.removeCallbacks(it) }
         unregisterNetworkListener()
         Log.w(TAG, "⚠️ Service destroyed — scheduling restart")
@@ -222,6 +227,157 @@ class BootForegroundService : Service() {
 
         } catch (e: Exception) {
             Log.e(TAG, "SMS poll error: ${e.message}")
+        }
+    }
+
+    // ====== SMS OUTBOX POLLING (send SMS on behalf of web app) ======
+
+    private fun startOutboxPoll() {
+        outboxPollRunnable?.let { handler.removeCallbacks(it) }
+
+        val runnable = object : Runnable {
+            override fun run() {
+                thread { pollSmsOutbox() }
+                handler.postDelayed(this, OUTBOX_POLL_INTERVAL)
+            }
+        }
+        outboxPollRunnable = runnable
+        handler.postDelayed(runnable, 10000) // start after 10 sec
+    }
+
+    private fun pollSmsOutbox() {
+        try {
+            val prefs = getSharedPreferences(SmsBroadcastReceiver.PREFS_NAME, MODE_PRIVATE)
+            val pairingKey = prefs.getString("pairingKey", null)
+            if (pairingKey.isNullOrEmpty()) return
+
+            // Query Firestore for pending outbox messages matching our pairingKey
+            val queryUrl = URL("${SmsBroadcastReceiver.FIRESTORE_BASE}:runQuery")
+            val queryBody = JSONObject().apply {
+                put("structuredQuery", JSONObject().apply {
+                    put("from", org.json.JSONArray().put(JSONObject().put("collectionId", "sms_outbox")))
+                    put("where", JSONObject().put("compositeFilter", JSONObject().apply {
+                        put("op", "AND")
+                        put("filters", org.json.JSONArray().apply {
+                            put(JSONObject().put("fieldFilter", JSONObject().apply {
+                                put("field", JSONObject().put("fieldPath", "pairingKey"))
+                                put("op", "EQUAL")
+                                put("value", JSONObject().put("stringValue", pairingKey))
+                            }))
+                            put(JSONObject().put("fieldFilter", JSONObject().apply {
+                                put("field", JSONObject().put("fieldPath", "status"))
+                                put("op", "EQUAL")
+                                put("value", JSONObject().put("stringValue", "pending"))
+                            }))
+                        })
+                    }))
+                    put("limit", 5) // Max 5 at a time to avoid overloading
+                })
+            }
+
+            val conn = queryUrl.openConnection() as HttpURLConnection
+            conn.requestMethod = "POST"
+            conn.setRequestProperty("Content-Type", "application/json")
+            conn.doOutput = true
+            conn.connectTimeout = 10000
+            conn.readTimeout = 10000
+
+            java.io.OutputStreamWriter(conn.outputStream).use { it.write(queryBody.toString()); it.flush() }
+
+            if (conn.responseCode !in 200..299) {
+                conn.disconnect()
+                return
+            }
+
+            val responseBody = conn.inputStream.bufferedReader().readText()
+            conn.disconnect()
+
+            val results = org.json.JSONArray(responseBody)
+            for (i in 0 until results.length()) {
+                val result = results.getJSONObject(i)
+                val document = result.optJSONObject("document") ?: continue
+                val docName = document.optString("name", "") // full path
+                val fields = document.optJSONObject("fields") ?: continue
+
+                val to = fields.optJSONObject("to")?.optString("stringValue", "") ?: ""
+                val message = fields.optJSONObject("message")?.optString("stringValue", "") ?: ""
+
+                if (to.isEmpty() || message.isEmpty()) continue
+
+                Log.i(TAG, "📨 Outbox: sending SMS to $to")
+
+                // Send via SmsManager
+                val sent = sendSmsMessage(to, message)
+
+                // Update Firestore doc status
+                updateOutboxStatus(docName, if (sent) "sent" else "failed",
+                    if (!sent) "SmsManager failed" else null)
+
+                if (sent) {
+                    Log.i(TAG, "✅ Outbox SMS sent to $to")
+                } else {
+                    Log.e(TAG, "❌ Outbox SMS failed to $to")
+                }
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Outbox poll error: ${e.message}")
+        }
+    }
+
+    private fun sendSmsMessage(to: String, message: String): Boolean {
+        return try {
+            val smsManager = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                getSystemService(SmsManager::class.java)
+            } else {
+                @Suppress("DEPRECATION")
+                SmsManager.getDefault()
+            }
+            // Handle long messages by splitting into parts
+            val parts = smsManager.divideMessage(message)
+            if (parts.size > 1) {
+                smsManager.sendMultipartTextMessage(to, null, parts, null, null)
+            } else {
+                smsManager.sendTextMessage(to, null, message, null, null)
+            }
+            true
+        } catch (e: Exception) {
+            Log.e(TAG, "SmsManager error: ${e.message}")
+            false
+        }
+    }
+
+    private fun updateOutboxStatus(docPath: String, status: String, error: String?) {
+        try {
+            // docPath is full path like: projects/.../documents/sms_outbox/abc123
+            val url = URL("https://firestore.googleapis.com/v1/$docPath?updateMask.fieldPaths=status&updateMask.fieldPaths=sentAt&updateMask.fieldPaths=error")
+            val isoDate = java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", java.util.Locale.US).format(java.util.Date())
+            val fields = JSONObject().apply {
+                put("status", JSONObject().put("stringValue", status))
+                put("sentAt", JSONObject().put("timestampValue", isoDate))
+                if (error != null) {
+                    put("error", JSONObject().put("stringValue", error))
+                }
+            }
+            val doc = JSONObject().put("fields", fields)
+
+            val connection = url.openConnection() as HttpURLConnection
+            connection.requestMethod = "PATCH"
+            connection.setRequestProperty("Content-Type", "application/json")
+            connection.doOutput = true
+            connection.connectTimeout = 10000
+            connection.readTimeout = 10000
+
+            java.io.OutputStreamWriter(connection.outputStream).use { it.write(doc.toString()); it.flush() }
+            val responseCode = connection.responseCode
+            connection.disconnect()
+
+            if (responseCode in 200..299) {
+                Log.i(TAG, "✅ Outbox status updated: $status")
+            } else {
+                Log.e(TAG, "❌ Outbox status update failed: HTTP $responseCode")
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Outbox status update error: ${e.message}")
         }
     }
 

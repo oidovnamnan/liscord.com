@@ -76,6 +76,13 @@ service cloud.firestore {
       allow update: if isAuth();  // Only authenticated users can update (match/status)
       allow read, delete: if isAuth();
     }
+
+    // === SMS OUTBOX (Web → Bridge App sends SMS) ===
+    match /sms_outbox/{docId} {
+      allow create: if isAuth();        // Web app creates outbox messages
+      allow read, update: if true;      // Bridge app reads pending + updates status (no auth)
+      allow delete: if isAuth();        // Cleanup by authenticated users
+    }
     
     // === BUSINESSES ===
     match /businesses/{bizId} {

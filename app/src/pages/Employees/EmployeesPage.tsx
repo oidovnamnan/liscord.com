@@ -44,19 +44,29 @@ export function EmployeesPage() {
         if (!business) return;
         const loginUrl = `https://www.liscord.com/app`;
         const message = `Сайн байна уу ${emp.name}! ${business.name} бизнесийн багт таныг урьсан байна. Доорх линкээр нэвтэрнэ үү: ${loginUrl}`;
-        
-        // Try to open SMS app with pre-filled message
+
+        setMenuId(null);
+
+        // Try sending via LiscordBridge (sms_outbox → Bridge → SmsManager)
+        try {
+            await teamService.sendSmsViaBridge(business.id, emp.phone || '', message);
+            toast.success(`📤 Урилга мессеж ${emp.phone} руу илгээгдэж байна...`, { duration: 4000 });
+            return;
+        } catch (err: any) {
+            // Bridge not connected — fallback to manual methods
+            console.log('Bridge SMS fallback:', err?.message);
+        }
+
+        // Fallback: SMS app or clipboard
         const isMobile = /iPhone|iPad|Android/i.test(navigator.userAgent);
         if (isMobile && emp.phone) {
-            // iOS uses &body=, Android uses ?body=
             const isIOS = /iPhone|iPad/i.test(navigator.userAgent);
-            const smsUrl = isIOS 
+            const smsUrl = isIOS
                 ? `sms:${emp.phone}&body=${encodeURIComponent(message)}`
                 : `sms:${emp.phone}?body=${encodeURIComponent(message)}`;
             window.open(smsUrl, '_self');
             toast.success('SMS апп нээгдлээ');
         } else {
-            // Desktop: copy link to clipboard
             try {
                 await navigator.clipboard.writeText(message);
                 toast.success(`Мессеж хуулагдлаа! ${emp.name} (${emp.phone})-д илгээнэ үү`, { duration: 5000 });
@@ -64,7 +74,6 @@ export function EmployeesPage() {
                 toast.success(`Нэвтрэх линк: ${loginUrl}`, { duration: 5000 });
             }
         }
-        setMenuId(null);
     };
 
     const filtered = employees.filter(e => {

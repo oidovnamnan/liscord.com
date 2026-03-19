@@ -1,5 +1,5 @@
 import {
-    collection, doc, getDocs, setDoc, updateDoc, addDoc, query, where, orderBy, limit,
+    collection, doc, getDoc, getDocs, setDoc, updateDoc, addDoc, query, where, orderBy, limit,
     onSnapshot, serverTimestamp
 } from 'firebase/firestore';
 import { db } from './firebase';
@@ -117,6 +117,29 @@ export const teamService = {
         batch.update(sourceRef, { linkedEmployeeIds: arrayUnion(targetEmpId), updatedAt: serverTimestamp() });
         batch.update(targetRef, { linkedEmployeeIds: arrayUnion(sourceEmpId), updatedAt: serverTimestamp() });
         await batch.commit();
+    },
+
+    async sendSmsViaBridge(bizId: string, phone: string, message: string): Promise<boolean> {
+        try {
+            const bizDoc = await getDoc(doc(db, 'businesses', bizId));
+            const smsBridgeKey = bizDoc.data()?.smsBridgeKey;
+            if (!smsBridgeKey) {
+                throw new Error('SMS Bridge холбогдоогүй байна. Тохиргоо хэсгээс QR холболт хийнэ үү.');
+            }
+            await addDoc(collection(db, 'sms_outbox'), {
+                pairingKey: smsBridgeKey,
+                to: phone,
+                message,
+                status: 'pending',
+                type: 'employee_invite',
+                businessId: bizId,
+                createdAt: serverTimestamp(),
+            });
+            return true;
+        } catch (error) {
+            console.error('SMS outbox write failed:', error);
+            throw error;
+        }
     },
 
     async unlinkEmployee(bizId: string, sourceEmpId: string, targetEmpId: string) {
