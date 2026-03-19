@@ -63,8 +63,13 @@ export function SettingsPage() {
     const [selectedThemeId, setSelectedThemeId] = useState(business?.settings?.storefront?.theme || 'minimal');
     const [logoFiles, setLogoFiles] = useState<File[]>([]);
     const [existingLogo, setExistingLogo] = useState<string[]>(business?.logo ? [business.logo] : []);
+    
+    const [faviconFiles, setFaviconFiles] = useState<File[]>([]);
+    const [existingFavicon, setExistingFavicon] = useState<string[]>(business?.favicon ? [business.favicon] : []);
+
     const [teamCount, setTeamCount] = useState(0);
     const [deviceCount, setDeviceCount] = useState(0);
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     // Grace period: 30 days after creation → can change freely once
     const isInGracePeriod = useMemo(() => {
@@ -99,13 +104,16 @@ export function SettingsPage() {
         if (business?.logo) {
             setExistingLogo([business.logo]);
         }
+        if (business?.favicon) {
+            setExistingFavicon([business.favicon]);
+        }
 
         if (business && activeTab === 'notifications') {
             moduleSettingsService.getSettings(business.id, 'notifications').then(data => {
                 if (data) setNotifications(data);
             });
         }
-    }, [activeTab, business?.slug, business?.id, business?.settings?.storefront?.theme, business?.logo, business]);
+    }, [activeTab, business?.slug, business?.id, business?.settings?.storefront?.theme, business?.logo, business?.favicon, business]);
 
     const isStorefrontEnabled = business?.settings?.storefront?.enabled || business?.category === 'online_shop';
 
@@ -193,6 +201,7 @@ export function SettingsPage() {
         setLoading(true);
         try {
             let logoUrl = business.logo;
+            let faviconUrl = business.favicon;
 
             if (logoFiles.length > 0) {
                 const file = logoFiles[0];
@@ -200,6 +209,14 @@ export function SettingsPage() {
                 logoUrl = await storage.uploadImage(file, path);
             } else if (existingLogo.length === 0) {
                 logoUrl = null;
+            }
+
+            if (faviconFiles.length > 0) {
+                const file = faviconFiles[0];
+                const path = `businesses/${business.id}/favicon/favicon_${Date.now()}`;
+                faviconUrl = await storage.uploadImage(file, path);
+            } else if (existingFavicon.length === 0) {
+                faviconUrl = null;
             }
 
             await businessService.updateBusiness(business.id, {

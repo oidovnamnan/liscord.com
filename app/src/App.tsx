@@ -9,6 +9,7 @@ import { userService, businessService } from './services/db';
 import { useAuthStore, useBusinessStore } from './store';
 import { Loader2 } from 'lucide-react';
 import { getDeviceId, getDeviceInfo } from './utils/device';
+import { useFavicon } from './hooks/useFavicon';
 
 // Layouts
 const AppLayout = lazy(() => import('./components/layout/AppLayout').then(m => ({ default: m.AppLayout })));
@@ -222,7 +223,9 @@ const AppStorePage = lazy(() => import('./pages/AppStore/AppStorePage').then(m =
 
 export default function App() {
   const { setUser, setLoading } = useAuthStore();
-  const { setBusiness, setEmployee, setLinkedEmployees, clear } = useBusinessStore();
+  const { business, setBusiness, setEmployee, setLinkedEmployees, clear } = useBusinessStore();
+
+  useFavicon(business?.favicon);
 
   useEffect(() => {
     let unsubscribeDevice: (() => void) | undefined;

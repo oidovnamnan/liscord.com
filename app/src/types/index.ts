@@ -129,6 +129,7 @@ export interface Business {
     ownerId: string;
     ownerName: string;
     logo: string | null;
+    favicon: string | null;
     phone: string;
     email: string;
     address: string;
