@@ -180,7 +180,7 @@ export function StockInquiryPage() {
                     <div className="sinq-icon-wrap"><SearchCheck size={22} /></div>
                     <div>
                         <h1>Бараа Лавлагаа</h1>
-                        <p>Хэрэглэгчийн нөөц, үнийн лавлагаа хүсэлтүүд</p>
+                        <p>Дотоод болон гадаад нөөц, үнийн лавлагаа</p>
                     </div>
                 </div>
                 <div className="sinq-stats-row">
@@ -304,6 +304,16 @@ export function StockInquiryPage() {
                                 </div>
                             </div>
 
+                            {/* Operator/Customer Note */}
+                            {selectedInquiry.operatorNote && (
+                                <div className="sinq-changes-card" style={{ background: '#f8fafc', borderColor: '#e2e8f0', marginBottom: 12 }}>
+                                    <h4 style={{ color: '#475569', marginBottom: 4 }}>💬 Асуусан ({selectedInquiry.operatorName || 'Оператор'})</h4>
+                                    <div style={{ fontSize: '0.9rem', color: '#1e293b', whiteSpace: 'pre-wrap' }}>
+                                        {selectedInquiry.operatorNote}
+                                    </div>
+                                </div>
+                            )}
+
                             {/* Changes if updated */}
                             {selectedInquiry.status === 'updated' && selectedInquiry.changes && (
                                 <div className="sinq-changes-card">
@@ -380,10 +390,10 @@ export function StockInquiryPage() {
                                         <Clock size={16} style={{ color: isExpired ? '#ef4444' : '#f59e0b' }} />
                                         <div>
                                             <div style={{ fontWeight: 700, fontSize: '0.85rem', color: isExpired ? '#ef4444' : '#92400e' }}>
-                                                {isExpired ? '⏰ Хэрэглэгчийн хүлээх хугацаа дууссан' : `⏳ ${remaining} сек хүлээж байна`}
+                                                {isExpired ? (selectedInquiry.source === 'operator' ? '⏰ Операторын хүлээх хугацаа дууссан' : '⏰ Хэрэглэгчийн хүлээх хугацаа дууссан') : `⏳ ${remaining} сек хүлээж байна`}
                                             </div>
                                             <div style={{ fontSize: '0.78rem', color: '#6b7280', marginTop: 2 }}>
-                                                {isExpired ? 'Хоцорч хариулж болно — хэрэглэгчид мэдэгдэнэ' : 'Хэрэглэгч popup дээр хариу хүлээж байна'}
+                                                {isExpired ? 'Хоцорч хариулж болно' : (selectedInquiry.source === 'operator' ? 'Оператор хариу хүлээж байна' : 'Хэрэглэгч popup дээр хариу хүлээж байна')}
                                             </div>
                                         </div>
                                     </div>
@@ -391,7 +401,7 @@ export function StockInquiryPage() {
                             })()}
 
                             {/* Action Buttons — always shown for this page's users */}
-                            {['pending', 'checking', 'expired'].includes(selectedInquiry.status) && hasPermission('stock_inquiries.respond') && (
+                            {['pending', 'checking', 'expired'].includes(selectedInquiry.status) && (hasPermission('stock_inquiries.respond') || hasPermission('orders.purchase')) && (
                                 <div className="sinq-actions">
                                     {selectedInquiry.status === 'expired' && (
                                         <div className="sinq-late-banner">
