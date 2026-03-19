@@ -391,7 +391,7 @@ export function StockInquiryPage() {
                             })()}
 
                             {/* Action Buttons — always shown for this page's users */}
-                            {['pending', 'checking', 'expired'].includes(selectedInquiry.status) && (
+                            {['pending', 'checking', 'expired'].includes(selectedInquiry.status) && hasPermission('stock_inquiries.respond') && (
                                 <div className="sinq-actions">
                                     {selectedInquiry.status === 'expired' && (
                                         <div className="sinq-late-banner">

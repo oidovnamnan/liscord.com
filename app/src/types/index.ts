@@ -441,6 +441,7 @@ export const ALL_PERMISSIONS: Record<string, { label: string; group: string }> =
     'products.delete': { label: 'Бараа устгах', group: 'Бараа' },
     'products.manage_stock': { label: 'Нөөц удирдах', group: 'Бараа' },
     'products.view_cost': { label: 'Өртөг харах', group: 'Бараа' },
+    'stock_inquiries.respond': { label: 'Лавлагаанд хариу өгөх (Сорс агент)', group: 'Бараа' },
     'reports.view_dashboard': { label: 'Dashboard харах', group: 'Тайлан' },
     'reports.view_sales': { label: 'Борлуулалтын тайлан', group: 'Тайлан' },
     'reports.export': { label: 'Тайлан экспортлох', group: 'Тайлан' },

@@ -26,6 +26,14 @@ export function CreateInquiryModal({ product: initialProduct, fbUserId, onClose 
     const [note, setNote] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
 
+    const QUICK_NOTES = [
+        "Бэлэн байна уу?",
+        "Хэзээ ирэх вэ?",
+        "Энэ үнэ хэвээрээ юу?",
+        "Өнгө/размер сонголт бий юу?",
+        "Захиалгаар авах уу?"
+    ];
+
     useEffect(() => {
         if (selectedProduct || !searchQ || searchQ.length < 2 || !business?.id) {
             setSearchResults([]);
@@ -70,7 +78,7 @@ export function CreateInquiryModal({ product: initialProduct, fbUserId, onClose 
                 operatorId: user.uid,
                 operatorName,
                 operatorNote: note,
-                fbUserId
+                ...(fbUserId ? { fbUserId } : {})
             };
 
             await addDoc(collection(db, `businesses/${business.id}/stockInquiries`), newInquiry);
@@ -187,7 +195,24 @@ export function CreateInquiryModal({ product: initialProduct, fbUserId, onClose 
 
                     <form onSubmit={handleSubmit}>
                         <div className="input-group" style={{ marginBottom: 24 }}>
-                            <label className="input-label">Нэмэлт тайлбар (заавал биш)</label>
+                            <label className="input-label" style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                <span>Нэмэлт тайлбар (заавал биш)</span>
+                            </label>
+
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 10 }}>
+                                {QUICK_NOTES.map((text, i) => (
+                                    <button 
+                                        key={i} 
+                                        type="button" 
+                                        className="btn btn-outline btn-xs" 
+                                        style={{ fontSize: '0.75rem', padding: '4px 10px', borderRadius: 100, borderColor: 'var(--border-primary)', color: 'var(--text-secondary)' }}
+                                        onClick={() => setNote(prev => prev ? `${prev} ${text}` : text)}
+                                    >
+                                        + {text}
+                                    </button>
+                                ))}
+                            </div>
+
                             <textarea 
                                 className="input" 
                                 rows={3} 
