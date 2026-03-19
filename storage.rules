@@ -12,6 +12,12 @@ service firebase.storage {
       allow write: if isAuth() && exists(/databases/$(database)/documents/businesses/$(bizId)/employees/$(request.auth.uid));
     }
 
+    // System Branding files — anyone can read, Super Admin can write
+    match /system/{allPaths=**} {
+      allow read: if true;
+      allow write: if isAuth() && firestore.get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isSuperAdmin == true;
+    }
+
     // User files — only the user themselves
     match /users/{userId}/{allPaths=**} {
       allow read, write: if isAuth() && request.auth.uid == userId;

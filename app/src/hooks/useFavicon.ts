@@ -5,7 +5,7 @@ export function useFavicon(url?: string | null) {
   const globalSettings = useGlobalSettingsStore(state => state.settings);
 
   useEffect(() => {
-    const faviconUrl = url || globalSettings?.systemFavicon || '/vite.svg'; // Usually Liscord default if no local SVG found
+    const faviconUrl = url || globalSettings?.systemFavicon || '/favicon.ico';
     
     let link: HTMLLinkElement | null = document.querySelector("link[rel~='icon']");
     if (!link) {
