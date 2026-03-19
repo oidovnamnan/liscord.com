@@ -22,8 +22,9 @@ export function ThemeMinimal({ business }: { business: Business }) {
     const [showMembershipModal, setShowMembershipModal] = useState(false);
     const [membershipTarget, setMembershipTarget] = useState<StorefrontProduct | null>(null);
     const [showDashboard, setShowDashboard] = useState(false);
-    const [visibleCount, setVisibleCount] = useState(20);
-    const PRODUCTS_PER_PAGE = 20;
+    
+    const PRODUCTS_PER_PAGE = business.settings?.storefront?.productsPerPage || 20;
+    const [visibleCount, setVisibleCount] = useState(PRODUCTS_PER_PAGE);
 
     // ── Auto-scroll categories ──
     const catScrollRef = useRef<HTMLDivElement>(null);

@@ -203,6 +203,7 @@ export interface BusinessSettings {
         installedThemes?: string[]; // IDs of installed/purchased themes
         showFooter?: boolean;
         preorderTerms?: string; // newline-separated terms for preorder products
+        productsPerPage?: number; // Pagination limit for storefront (default 20)
     };
     ebarimt?: {
         enabled: boolean;

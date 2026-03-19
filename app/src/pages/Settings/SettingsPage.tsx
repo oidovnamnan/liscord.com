@@ -234,6 +234,8 @@ export function SettingsPage() {
         const enabled = fd.has('storefrontEnabled') ? fd.get('storefrontEnabled') === 'on' : business.settings?.storefront?.enabled;
         const showFooter = fd.has('showFooter') ? fd.get('showFooter') === 'on' : business.settings?.storefront?.showFooter;
         const preorderTerms = fd.has('preorderTerms') ? (fd.get('preorderTerms') as string) : business.settings?.storefront?.preorderTerms;
+        const productsPerPageStr = fd.get('productsPerPage') as string;
+        const productsPerPage = productsPerPageStr ? parseInt(productsPerPageStr, 10) : undefined;
         const unpaidExpiry = fd.has('unpaidOrderExpiryHours') ? parseInt(fd.get('unpaidOrderExpiryHours') as string, 10) : (business.settings?.unpaidOrderExpiryHours ?? 24);
         const newTheme = fd.get('storefrontTheme') as string;
 
@@ -282,7 +284,8 @@ export function SettingsPage() {
                         showFooter: showFooter ?? true,
                         theme: newTheme || business.settings?.storefront?.theme || 'minimal',
                         name: storefrontName !== undefined ? storefrontName : (business.settings?.storefront?.name || ''),
-                        preorderTerms: preorderTerms ?? business.settings?.storefront?.preorderTerms
+                        preorderTerms: preorderTerms ?? business.settings?.storefront?.preorderTerms,
+                        productsPerPage: productsPerPage ?? business.settings?.storefront?.productsPerPage
                     }
                 }
             });
@@ -294,7 +297,8 @@ export function SettingsPage() {
                 showFooter: showFooter ?? true,
                 theme: newTheme || business.settings?.storefront?.theme || 'minimal',
                 name: storefrontName !== undefined ? storefrontName : (business.settings?.storefront?.name || ''),
-                preorderTerms: preorderTerms ?? business.settings?.storefront?.preorderTerms
+                preorderTerms: preorderTerms ?? business.settings?.storefront?.preorderTerms,
+                productsPerPage: productsPerPage ?? business.settings?.storefront?.productsPerPage
             };
             await moduleSettingsService.updateSettings(business.id, 'storefront', sfSettings);
 
