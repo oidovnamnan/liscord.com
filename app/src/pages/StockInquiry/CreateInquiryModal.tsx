@@ -262,9 +262,23 @@ export function CreateInquiryModal({ product: initialProduct, fbUserId, onClose 
                                     latestInq.status === 'updated' ? 'Үнэ, мэдээлэл шинэчлэгдсэн' :
                                     latestInq.status === 'no_change' ? 'Өөрчлөлтгүй бэлэн' :
                                     latestInq.status === 'inactive' ? 'Нөөц дууссан' : 'Хугацаа дууссан'
-                                } <br/>
-                                {latestInq.respondedByName && <><strong>Хариулсан:</strong> {latestInq.respondedByName} <br/></>}
-                                <strong>Хэзээ:</strong> {latestInq.createdAt instanceof Timestamp ? latestInq.createdAt.toDate().toLocaleString('mn-MN') : 'Саяхан'}
+                                }
+
+                                <div style={{ marginTop: 6, paddingTop: 6, borderTop: `1px solid ${['pending', 'checking'].includes(latestInq.status) ? '#fcd34d' : '#86efac'}`, display: 'flex', flexDirection: 'column', gap: 6 }}>
+                                    <div>
+                                        <strong>Асуусан ({latestInq.operatorName || 'Оператор'}):</strong> 
+                                        {latestInq.operatorNote ? <span style={{ marginLeft: 6 }}>"{latestInq.operatorNote}"</span> : <span style={{ marginLeft: 6, fontStyle: 'italic', opacity: 0.7 }}>(Тайлбаргүй)</span>}
+                                        <div style={{ fontSize: '0.75rem', opacity: 0.8 }}>{latestInq.createdAt instanceof Timestamp ? latestInq.createdAt.toDate().toLocaleString('mn-MN') : 'Саяхан'}</div>
+                                    </div>
+
+                                    {latestInq.respondedByName && (
+                                        <div>
+                                            <strong>Хариулсан ({latestInq.respondedByName}):</strong>
+                                            {latestInq.changes?.note ? <span style={{ marginLeft: 6, fontWeight: 500 }}>"{latestInq.changes.note}"</span> : <span style={{ marginLeft: 6, fontStyle: 'italic', opacity: 0.7 }}>(Хариу бичээгүй)</span>}
+                                            <div style={{ fontSize: '0.75rem', opacity: 0.8 }}>{latestInq.respondedAt instanceof Timestamp ? latestInq.respondedAt.toDate().toLocaleString('mn-MN') : ''}</div>
+                                        </div>
+                                    )}
+                                </div>
                             </div>
                         </div>
                     ) : null}
