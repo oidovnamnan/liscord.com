@@ -4,10 +4,10 @@ import {
     ExternalLink, Settings, Link2, Shield, Tag, StickyNote,
     Zap, User, CreditCard, DollarSign, ChevronDown, XCircle, CheckCircle,
     Smile, Paperclip, Image as ImageIcon, ShoppingBag, Bot, Mic, ArrowRight, ArrowLeft, ChevronUp,
-    Phone, Crown
+    Phone, Crown, Clock, Plus, Trash2
 } from 'lucide-react';
 import { useBusinessStore, useAuthStore, useUIStore } from '../../store';
-import { fbMessengerService, type FbConversation, type FbMessage, type FbSettings, type FbCannedResponse, type FbPageConfig, type AiMode } from '../../services/fbMessengerService';
+import { fbMessengerService, type FbConversation, type FbMessage, type FbSettings, type FbCannedResponse, type FbPageConfig, type AiMode, type AiScheduleEntry } from '../../services/fbMessengerService';
 import toast from 'react-hot-toast';
 import './FacebookMessengerPage.css';
 
@@ -1021,6 +1021,87 @@ export function FacebookMessengerPage() {
                                                                 <span className="fbm-ai-mode-desc">{mode === 'manual' ? 'AI оролцохгүй' : mode === 'assist' ? 'AI санал болгоно, оператор батална' : 'AI бүрэн автомат хариулна'}</span>
                                                             </div>
                                                         </button>
+                                                    ))}
+                                                </div>
+
+                                                {/* Schedule UI */}
+                                                <div className="fbm-schedule-section">
+                                                    <div className="fbm-schedule-header">
+                                                        <span><Clock size={12} /> Хуваарь</span>
+                                                        <button className="fbm-schedule-add-btn" onClick={async () => {
+                                                            const currentSchedule = page.schedule || [];
+                                                            const newEntry: AiScheduleEntry = { startTime: '09:00', endTime: '18:00', mode: 'auto' };
+                                                            const updated = [...currentSchedule, newEntry];
+                                                            await fbMessengerService.updatePageSchedule(business!.id, page.pageId, updated);
+                                                            setSettings(prev => {
+                                                                if (!prev) return prev;
+                                                                return { ...prev, pages: (prev.pages || []).map(p => p.pageId === page.pageId ? { ...p, schedule: updated } : p) };
+                                                            });
+                                                            toast.success('Хуваарь нэмэгдлээ');
+                                                        }}>
+                                                            <Plus size={12} /> Нэмэх
+                                                        </button>
+                                                    </div>
+                                                    {(page.schedule || []).length === 0 && (
+                                                        <p className="fbm-schedule-hint">Хуваарь тохируулаагүй — дээрх горим байнга ажиллана</p>
+                                                    )}
+                                                    {(page.schedule || []).map((entry, idx) => (
+                                                        <div key={idx} className="fbm-schedule-entry">
+                                                            <div className="fbm-schedule-row">
+                                                                <input type="time" value={entry.startTime} className="fbm-schedule-time"
+                                                                    onChange={async (e) => {
+                                                                        const updated = [...(page.schedule || [])];
+                                                                        updated[idx] = { ...updated[idx], startTime: e.target.value };
+                                                                        await fbMessengerService.updatePageSchedule(business!.id, page.pageId, updated);
+                                                                        setSettings(prev => prev ? { ...prev, pages: (prev.pages || []).map(p => p.pageId === page.pageId ? { ...p, schedule: updated } : p) } : prev);
+                                                                    }} />
+                                                                <span className="fbm-schedule-dash">–</span>
+                                                                <input type="time" value={entry.endTime} className="fbm-schedule-time"
+                                                                    onChange={async (e) => {
+                                                                        const updated = [...(page.schedule || [])];
+                                                                        updated[idx] = { ...updated[idx], endTime: e.target.value };
+                                                                        await fbMessengerService.updatePageSchedule(business!.id, page.pageId, updated);
+                                                                        setSettings(prev => prev ? { ...prev, pages: (prev.pages || []).map(p => p.pageId === page.pageId ? { ...p, schedule: updated } : p) } : prev);
+                                                                    }} />
+                                                                <select value={entry.mode} className="fbm-schedule-mode"
+                                                                    onChange={async (e) => {
+                                                                        const updated = [...(page.schedule || [])];
+                                                                        updated[idx] = { ...updated[idx], mode: e.target.value as AiMode };
+                                                                        await fbMessengerService.updatePageSchedule(business!.id, page.pageId, updated);
+                                                                        setSettings(prev => prev ? { ...prev, pages: (prev.pages || []).map(p => p.pageId === page.pageId ? { ...p, schedule: updated } : p) } : prev);
+                                                                    }}>
+                                                                    <option value="auto">🟢 Автомат</option>
+                                                                    <option value="assist">🟡 Туслах</option>
+                                                                    <option value="manual">🔴 Гар</option>
+                                                                </select>
+                                                                <button className="fbm-schedule-del" onClick={async () => {
+                                                                    const updated = (page.schedule || []).filter((_, i) => i !== idx);
+                                                                    await fbMessengerService.updatePageSchedule(business!.id, page.pageId, updated);
+                                                                    setSettings(prev => prev ? { ...prev, pages: (prev.pages || []).map(p => p.pageId === page.pageId ? { ...p, schedule: updated } : p) } : prev);
+                                                                    toast.success('Хуваарь устгагдлаа');
+                                                                }}>
+                                                                    <Trash2 size={13} />
+                                                                </button>
+                                                            </div>
+                                                            <div className="fbm-schedule-days">
+                                                                {['Ня', 'Да', 'Мя', 'Лх', 'Пү', 'Ба', 'Бя'].map((label, dayIdx) => (
+                                                                    <button key={dayIdx}
+                                                                        className={`fbm-schedule-day ${!entry.days || entry.days.length === 0 || entry.days.includes(dayIdx) ? 'active' : ''}`}
+                                                                        onClick={async () => {
+                                                                            const updated = [...(page.schedule || [])];
+                                                                            const currentDays = entry.days && entry.days.length > 0 ? [...entry.days] : [0,1,2,3,4,5,6];
+                                                                            const newDays = currentDays.includes(dayIdx)
+                                                                                ? currentDays.filter(d => d !== dayIdx)
+                                                                                : [...currentDays, dayIdx];
+                                                                            updated[idx] = { ...updated[idx], days: newDays.length === 7 ? [] : newDays };
+                                                                            await fbMessengerService.updatePageSchedule(business!.id, page.pageId, updated);
+                                                                            setSettings(prev => prev ? { ...prev, pages: (prev.pages || []).map(p => p.pageId === page.pageId ? { ...p, schedule: updated } : p) } : prev);
+                                                                        }}>
+                                                                        {label}
+                                                                    </button>
+                                                                ))}
+                                                            </div>
+                                                        </div>
                                                     ))}
                                                 </div>
                                             </div>

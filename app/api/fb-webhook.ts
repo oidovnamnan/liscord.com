@@ -13,6 +13,43 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
 const PROJECT_ID = 'liscord-2b529';
+
+// ── Schedule-aware AI mode resolver ──
+function resolveAiMode(
+    page: { aiMode?: string; schedule?: Array<{ startTime: string; endTime: string; mode: string; days?: number[] }> } | undefined,
+    settingsData: Record<string, unknown> | null
+): string {
+    // Check schedule first
+    const schedule = page?.schedule;
+    if (schedule && schedule.length > 0) {
+        // Use Asia/Ulaanbaatar timezone (UTC+8)
+        const now = new Date();
+        const ubStr = now.toLocaleString('en-US', { timeZone: 'Asia/Ulaanbaatar' });
+        const ubDate = new Date(ubStr);
+        const hh = ubDate.getHours().toString().padStart(2, '0');
+        const mm = ubDate.getMinutes().toString().padStart(2, '0');
+        const currentTime = `${hh}:${mm}`;
+        const currentDay = ubDate.getDay(); // 0=Sun, 1=Mon...6=Sat
+
+        for (const entry of schedule) {
+            // Check day filter
+            if (entry.days && entry.days.length > 0 && !entry.days.includes(currentDay)) continue;
+
+            const { startTime, endTime } = entry;
+            let inRange = false;
+            if (startTime <= endTime) {
+                // Same-day range: 09:00 – 18:00
+                inRange = currentTime >= startTime && currentTime < endTime;
+            } else {
+                // Overnight range: 18:00 – 09:00
+                inRange = currentTime >= startTime || currentTime < endTime;
+            }
+            if (inRange) return entry.mode;
+        }
+    }
+    // Fallback: static mode
+    return (page?.aiMode || (settingsData?.aiMode as string)) || 'manual';
+}
 const FIRESTORE_BASE = `https://firestore.googleapis.com/v1/projects/${PROJECT_ID}/databases/(default)/documents`;
 const API_KEY = process.env.VITE_FIREBASE_API_KEY || process.env.FIREBASE_API_KEY || 'AIzaSyCuaNXSfhQt_dtNgoBs_Uz6IXN8qzZkONs';
 console.log(`[fb-webhook] API_KEY length: ${API_KEY.length}`);
@@ -362,7 +399,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                         // Per-page AI mode: check pages[] array first, fallback to global
                         const pagesArr = (settingsData?.pages || []) as Array<{ pageId: string; aiMode?: string }>;
                         const thisPage = pagesArr.find(p => p.pageId === pageId);
-                        const aiMode = (thisPage?.aiMode || settingsData?.aiMode as string) || 'manual';
+                        const aiMode = resolveAiMode(thisPage as any, settingsData);
 
                         if (aiMode !== 'manual' && (msg.text || msg.attachments?.length)) {
                             // For attachment-only messages, create a descriptive text for AI

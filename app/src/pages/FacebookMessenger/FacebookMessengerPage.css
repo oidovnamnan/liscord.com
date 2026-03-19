@@ -941,3 +941,75 @@
     font-weight: 600; cursor: pointer; transition: background 0.15s;
 }
 .fbm-add-page-btn:hover { background: rgba(24,119,242,0.06); }
+
+/* ── AI Schedule ── */
+.fbm-schedule-section {
+    margin-top: 12px; padding-top: 10px;
+    border-top: 1px dashed var(--border-color);
+}
+.fbm-schedule-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 8px;
+}
+.fbm-schedule-header > span {
+    font-size: 0.72rem; font-weight: 600; color: var(--text-muted);
+    display: flex; align-items: center; gap: 4px;
+}
+.fbm-schedule-add-btn {
+    display: flex; align-items: center; gap: 3px;
+    padding: 3px 10px; border: 1px dashed var(--border-color);
+    border-radius: 6px; background: none; cursor: pointer;
+    font-size: 0.68rem; font-weight: 600; color: #8b5cf6;
+    font-family: inherit; transition: all 0.15s;
+}
+.fbm-schedule-add-btn:hover { background: rgba(139,92,246,0.06); border-color: #8b5cf6; }
+.fbm-schedule-hint {
+    font-size: 0.68rem; color: var(--text-muted); font-style: italic; margin: 0;
+}
+.fbm-schedule-entry {
+    padding: 8px 10px; margin-bottom: 6px;
+    border-radius: 10px; background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+}
+.fbm-schedule-row {
+    display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+}
+.fbm-schedule-time {
+    width: 90px; padding: 5px 8px;
+    border: 1px solid var(--border-color); border-radius: 6px;
+    font-size: 0.78rem; font-family: inherit;
+    background: var(--bg-primary); color: var(--text-primary);
+    outline: none;
+}
+.fbm-schedule-time:focus { border-color: #8b5cf6; }
+.fbm-schedule-dash { color: var(--text-muted); font-weight: 600; font-size: 0.8rem; }
+.fbm-schedule-mode {
+    flex: 1; min-width: 100px; padding: 5px 8px;
+    border: 1px solid var(--border-color); border-radius: 6px;
+    font-size: 0.78rem; font-family: inherit;
+    background: var(--bg-primary); color: var(--text-primary);
+    outline: none; cursor: pointer;
+}
+.fbm-schedule-mode:focus { border-color: #8b5cf6; }
+.fbm-schedule-del {
+    width: 26px; height: 26px; border: none; background: none;
+    color: var(--text-muted); cursor: pointer; border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.15s; flex-shrink: 0;
+}
+.fbm-schedule-del:hover { color: #ef4444; background: rgba(239,68,68,0.08); }
+.fbm-schedule-days {
+    display: flex; gap: 3px; margin-top: 6px;
+}
+.fbm-schedule-day {
+    width: 28px; height: 24px; border: 1px solid var(--border-color);
+    border-radius: 5px; background: none; cursor: pointer;
+    font-size: 0.6rem; font-weight: 600; color: var(--text-muted);
+    font-family: inherit; transition: all 0.15s;
+    display: flex; align-items: center; justify-content: center;
+}
+.fbm-schedule-day:hover { border-color: #8b5cf6; }
+.fbm-schedule-day.active {
+    background: rgba(139,92,246,0.08); color: #8b5cf6;
+    border-color: rgba(139,92,246,0.3);
+}

@@ -51,12 +51,20 @@ export interface FbMessage {
 
 export type AiMode = 'manual' | 'assist' | 'auto';
 
+export interface AiScheduleEntry {
+    startTime: string;  // "09:00"
+    endTime: string;    // "18:00"
+    mode: AiMode;
+    days?: number[];    // [1,2,3,4,5] = Mon-Fri. Empty = every day
+}
+
 export interface FbPageConfig {
     pageId: string;
     pageName: string;
     pageAccessToken: string;
     isActive: boolean;
     aiMode?: AiMode;
+    schedule?: AiScheduleEntry[];
 }
 
 export interface FbSettings {
@@ -310,6 +318,19 @@ export const fbMessengerService = {
         const idx = pages.findIndex(p => p.pageId === pageId);
         if (idx >= 0) {
             pages[idx] = { ...pages[idx], aiMode: mode };
+            await setDoc(doc(db, 'businesses', bizId, 'fbSettings', 'config'), {
+                pages,
+                updatedAt: serverTimestamp(),
+            }, { merge: true });
+        }
+    },
+
+    async updatePageSchedule(bizId: string, pageId: string, schedule: AiScheduleEntry[]): Promise<void> {
+        const settings = await this.getSettings(bizId);
+        const pages = settings?.pages || [];
+        const idx = pages.findIndex(p => p.pageId === pageId);
+        if (idx >= 0) {
+            pages[idx] = { ...pages[idx], schedule };
             await setDoc(doc(db, 'businesses', bizId, 'fbSettings', 'config'), {
                 pages,
                 updatedAt: serverTimestamp(),
