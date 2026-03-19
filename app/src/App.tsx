@@ -6,7 +6,7 @@ import { doc, onSnapshot, updateDoc, arrayUnion, serverTimestamp } from 'firebas
 import { getToken } from 'firebase/messaging';
 import { Toaster } from 'react-hot-toast';
 import { userService, businessService } from './services/db';
-import { useAuthStore, useBusinessStore } from './store';
+import { useAuthStore, useBusinessStore, useGlobalSettingsStore } from './store';
 import { Loader2 } from 'lucide-react';
 import { getDeviceId, getDeviceInfo } from './utils/device';
 import { useFavicon } from './hooks/useFavicon';
@@ -224,8 +224,13 @@ const AppStorePage = lazy(() => import('./pages/AppStore/AppStorePage').then(m =
 export default function App() {
   const { setUser, setLoading } = useAuthStore();
   const { business, setBusiness, setEmployee, setLinkedEmployees, clear } = useBusinessStore();
+  const { fetchSettings } = useGlobalSettingsStore();
 
   useFavicon(business?.favicon);
+
+  useEffect(() => {
+    fetchSettings();
+  }, [fetchSettings]);
 
   useEffect(() => {
     let unsubscribeDevice: (() => void) | undefined;

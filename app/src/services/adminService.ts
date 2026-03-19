@@ -415,6 +415,8 @@ export interface GlobalSettings {
     maintenanceMode: boolean;
     registrationEnabled: boolean;
     geminiApiKey?: string;
+    systemLogo?: string | null;
+    systemFavicon?: string | null;
 }
 
 const DEFAULT_GLOBAL_SETTINGS: GlobalSettings = {
@@ -425,7 +427,9 @@ const DEFAULT_GLOBAL_SETTINGS: GlobalSettings = {
     },
     maintenanceMode: false,
     registrationEnabled: true,
-    geminiApiKey: ''
+    geminiApiKey: '',
+    systemLogo: null,
+    systemFavicon: null
 };
 
 export const globalSettingsService = {

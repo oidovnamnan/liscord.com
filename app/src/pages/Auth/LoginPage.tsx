@@ -6,10 +6,12 @@ import { auth, db } from '../../services/firebase';
 import { doc, updateDoc, onSnapshot, getDoc } from 'firebase/firestore';
 import { Html5QrcodeScanner } from 'html5-qrcode';
 import { toast } from 'react-hot-toast';
+import { useGlobalSettingsStore } from '../../store';
 import './AuthPage.css';
 
 export function LoginPage() {
     const navigate = useNavigate();
+    const { settings } = useGlobalSettingsStore();
     const [authMethod, setAuthMethod] = useState<'phone' | 'qr'>('phone');
     const [showEmailLogin, setShowEmailLogin] = useState(false);
     const [email, setEmail] = useState('');
@@ -228,8 +230,14 @@ export function LoginPage() {
             <div className="auth-glow" />
             <div className="auth-card animate-scale-in">
                 <div className="auth-logo">
-                    <div className="landing-logo" style={{ width: 48, height: 48, fontSize: '1.4rem' }}>L</div>
-                    <h1 className="auth-title">Liscord</h1>
+                    {settings?.systemLogo ? (
+                        <img src={settings.systemLogo} alt="System Logo" style={{ height: 48, objectFit: 'contain' }} />
+                    ) : (
+                        <>
+                            <div className="landing-logo" style={{ width: 48, height: 48, fontSize: '1.4rem' }}>L</div>
+                            <h1 className="auth-title">Liscord</h1>
+                        </>
+                    )}
                     <p className="auth-subtitle">Бизнесээ хялбар удирдаарай</p>
                 </div>
 

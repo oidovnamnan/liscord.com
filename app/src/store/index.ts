@@ -206,3 +206,33 @@ export const useModuleDefaultsStore = create<ModuleDefaultsState>((set, get) => 
         }
     }
 }));
+
+// ============ GLOBAL SETTINGS STORE ============
+import { globalSettingsService } from '../services/db';
+import type { GlobalSettings } from '../services/adminService'; // Note: the type is in adminService
+
+interface GlobalSettingsState {
+    settings: GlobalSettings | null;
+    loading: boolean;
+    fetched: boolean;
+    fetchSettings: () => Promise<void>;
+}
+
+export const useGlobalSettingsStore = create<GlobalSettingsState>((set, get) => ({
+    settings: null,
+    loading: false,
+    fetched: false,
+    fetchSettings: async () => {
+        if (get().fetched || get().loading) return;
+        set({ loading: true });
+        try {
+            const data = await globalSettingsService.getSettings();
+            set({ settings: data, fetched: true });
+        } catch (error) {
+            console.error('Failed to fetch global settings:', error);
+            set({ fetched: true });
+        } finally {
+            set({ loading: false });
+        }
+    }
+}));

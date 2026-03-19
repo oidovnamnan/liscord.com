@@ -5,6 +5,8 @@ import { Loader2, Save, MessageSquare, Shield, AlertTriangle, Sun, Moon, Monitor
 import { useUIStore } from '../../store';
 import { toast } from 'react-hot-toast';
 import { SecurityModal } from '../../components/common/SecurityModal';
+import { storageService as storage } from '../../services/storage';
+import { ImageUpload } from '../../components/common/ImageUpload';
 import './SuperAdmin.css';
 
 export function SuperAdminGlobalSettings() {
@@ -14,11 +16,18 @@ export function SuperAdminGlobalSettings() {
     const { theme, setTheme } = useUIStore();
     const [showSecurityModal, setShowSecurityModal] = useState(false);
 
+    const [logoFiles, setLogoFiles] = useState<File[]>([]);
+    const [existingLogo, setExistingLogo] = useState<string[]>([]);
+    const [faviconFiles, setFaviconFiles] = useState<File[]>([]);
+    const [existingFavicon, setExistingFavicon] = useState<string[]>([]);
+
     useEffect(() => {
         const fetchSettings = async () => {
             try {
                 const data = await globalSettingsService.getSettings();
                 setSettings(data);
+                if (data.systemLogo) setExistingLogo([data.systemLogo]);
+                if (data.systemFavicon) setExistingFavicon([data.systemFavicon]);
             } catch (error) {
                 console.error('Failed to fetch global settings:', error);
                 toast.error('Тохиргоо татахад алдаа гарлаа');
@@ -41,7 +50,32 @@ export function SuperAdminGlobalSettings() {
 
         setSaving(true);
         try {
-            await globalSettingsService.updateSettings(settings);
+            let logoUrl = settings.systemLogo || null;
+            let faviconUrl = settings.systemFavicon || null;
+
+            if (logoFiles.length > 0) {
+                const file = logoFiles[0];
+                const path = `system/branding/logo_${Date.now()}`;
+                logoUrl = await storage.uploadImage(file, path);
+            } else if (existingLogo.length === 0) {
+                logoUrl = null;
+            }
+
+            if (faviconFiles.length > 0) {
+                const file = faviconFiles[0];
+                const path = `system/branding/favicon_${Date.now()}`;
+                faviconUrl = await storage.uploadImage(file, path);
+            } else if (existingFavicon.length === 0) {
+                faviconUrl = null;
+            }
+
+            const updatedSettings = {
+                ...settings,
+                systemLogo: logoUrl,
+                systemFavicon: faviconUrl,
+            };
+
+            await globalSettingsService.updateSettings(updatedSettings);
             toast.success('Глобал тохиргоо хадгалагдлаа');
         } catch (error) {
             console.error('Failed to save global settings:', error);
@@ -103,6 +137,46 @@ export function SuperAdminGlobalSettings() {
             </div>
 
             <form onSubmit={handleSaveClick} style={{ display: 'flex', flexDirection: 'column', gap: '20px', maxWidth: '800px' }}>
+                {/* ── System Branding (Logo & Favicon) ── */}
+                <div className="card">
+                    <h2 style={{ fontSize: '1.1rem', margin: '0 0 20px 0', display: 'flex', alignItems: 'center', gap: '10px', color: 'var(--text-primary)' }}>
+                        <Sparkles size={20} className="text-primary" />
+                        Системийн Лого & Favicon
+                    </h2>
+                    <p style={{ color: 'var(--text-secondary)', marginBottom: '20px', fontSize: '0.88rem' }}>
+                        Liscord системийн үндсэн лого болон хөтчийн Favicon-ийг эндээс тохируулж болно.
+                    </p>
+                    
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '24px' }}>
+                        <div>
+                            <label className="settings-label">Системийн Лого</label>
+                            <ImageUpload
+                                maxImages={1}
+                                images={existingLogo}
+                                onImagesChange={setExistingLogo}
+                                onFilesChange={setLogoFiles}
+                                label=""
+                            />
+                            <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '8px' }}>
+                                Зөвлөмж: Урт хэлбэртэй, цагаан болон хар дэвсгэр дээр тод харагдах PNG эсвэл SVG зураг.
+                            </p>
+                        </div>
+                        <div>
+                            <label className="settings-label">Системийн Favicon</label>
+                            <ImageUpload
+                                maxImages={1}
+                                images={existingFavicon}
+                                onImagesChange={setExistingFavicon}
+                                onFilesChange={setFaviconFiles}
+                                label=""
+                            />
+                            <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '8px' }}>
+                                Зөвлөмж: 1:1 харьцаатай жижиг (512x512 гэх мэт) дөрвөлжин лого байна. Browser таб дээр гарна.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
                 {/* ── Theme ── */}
                 <div className="card">
                     <h2 style={{ fontSize: '1.1rem', margin: '0 0 20px 0', display: 'flex', alignItems: 'center', gap: '10px', color: 'var(--text-primary)' }}>
