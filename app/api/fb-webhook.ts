@@ -193,7 +193,9 @@ async function fsIncrementUnread(path: string, data: Record<string, unknown>): P
         const existing = await fsGet(path);
         const currentUnread = (existing?.unreadCount as number) || 0;
         data.unreadCount = currentUnread + 1;
-        return await fsSet(path, data);
+        // Use fsMerge (field-level update) instead of fsSet (full replace)
+        // to preserve existing fields like tags, notes, assignedTo, etc.
+        return await fsMerge(path, data);
     } catch { return false; }
 }
 

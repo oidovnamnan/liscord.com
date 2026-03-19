@@ -153,7 +153,11 @@ async function sendToFacebook(pageAccessToken: string, payload: Record<string, u
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ...payload, access_token: pageAccessToken }),
     });
-    return resp.json();
+    const result = await resp.json();
+    if (!resp.ok || result.error) {
+        console.error('[fb-send] Facebook API error:', JSON.stringify(result.error || result));
+    }
+    return result;
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
