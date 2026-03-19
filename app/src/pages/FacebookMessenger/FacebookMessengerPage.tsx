@@ -392,7 +392,18 @@ export function FacebookMessengerPage() {
     const TAGS = ['VIP', 'Шинэ', 'Яаралтай', 'Хүлээгдэж буй'];
     const TAG_COLORS: Record<string, string> = { 'VIP': 'blue', 'Шинэ': 'green', 'Яаралтай': 'red', 'Хүлээгдэж буй': 'yellow' };
 
-    const aiModeLabel = settings?.aiMode === 'auto' ? '🟢 AI Auto' : settings?.aiMode === 'assist' ? '🟡 AI Туслах' : null;
+    // Derive effective AI mode from per-page settings (overrides global)
+    const effectiveAiMode = (() => {
+        const p = settings?.pages || [];
+        if (p.length > 0) {
+            const modes = p.map(pg => (pg as any).aiMode || 'manual');
+            if (modes.some(m => m === 'auto')) return 'auto';
+            if (modes.some(m => m === 'assist')) return 'assist';
+            return 'manual';
+        }
+        return settings?.aiMode || 'manual';
+    })();
+    const aiModeLabel = effectiveAiMode === 'auto' ? '🟢 AI Auto' : effectiveAiMode === 'assist' ? '🟡 AI Туслах' : null;
     const pages = settings?.pages || [];
     const selectedPageName = selectedPageId === 'all'
         ? (pages.length > 1 ? `Бүгд (${pages.length})` : (pages[0]?.pageName || settings?.pageName || 'Facebook Page'))
@@ -666,7 +677,7 @@ export function FacebookMessengerPage() {
                                             <span className="fbm-empty-stat-label">Уншаагүй</span>
                                         </div>
                                         <div className="fbm-empty-stat">
-                                            <span className="fbm-empty-stat-value">{settings?.aiMode === 'auto' ? '🟢' : settings?.aiMode === 'assist' ? '🟡' : '🔴'}</span>
+                                            <span className="fbm-empty-stat-value">{effectiveAiMode === 'auto' ? '🟢' : effectiveAiMode === 'assist' ? '🟡' : '🔴'}</span>
                                             <span className="fbm-empty-stat-label">AI горим</span>
                                         </div>
                                     </div>
