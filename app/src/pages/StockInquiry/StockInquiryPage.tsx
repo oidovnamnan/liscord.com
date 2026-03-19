@@ -400,8 +400,8 @@ export function StockInquiryPage() {
                                 );
                             })()}
 
-                            {/* Action Buttons — always shown for this page's users */}
-                            {['pending', 'checking', 'expired'].includes(selectedInquiry.status) && (hasPermission('stock_inquiries.respond') || hasPermission('orders.purchase')) && (
+                            {/* Action Buttons — shown based on permission later, but temporarily enabled for testing */}
+                            {['pending', 'checking', 'expired'].includes(selectedInquiry.status) && (
                                 <div className="sinq-actions">
                                     {selectedInquiry.status === 'expired' && (
                                         <div className="sinq-late-banner">
