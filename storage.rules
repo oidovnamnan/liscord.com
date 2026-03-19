@@ -12,10 +12,10 @@ service firebase.storage {
       allow write: if isAuth() && exists(/databases/$(database)/documents/businesses/$(bizId)/employees/$(request.auth.uid));
     }
 
-    // System Branding files — anyone can read, Super Admin can write
+    // System Branding files — anyone can read, Authenticated can upload
     match /system/{allPaths=**} {
       allow read: if true;
-      allow write: if isAuth() && firestore.get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isSuperAdmin == true;
+      allow write: if isAuth();
     }
 
     // User files — only the user themselves
