@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Sparkles, Brain, Zap, BarChart3, Bot, ChevronDown, AlertTriangle, Send, Loader2, Target, ShieldCheck, Package, TrendingUp, MessageSquare } from 'lucide-react';
+import { Sparkles, Brain, Zap, BarChart3, Bot, ChevronDown, AlertTriangle, Send, Loader2, Target, ShieldCheck, Package, TrendingUp, MessageSquare, Download, Tags, ArrowRight } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { useAuthStore, useBusinessStore } from '../../store';
 import { globalSettingsService } from '../../services/adminService';
 import { sendChatMessage, auditProducts, auditCategories, type ChatMessage, type BusinessContext, type ProductAuditIssue, type AuditResult, type CategoryAuditResult, type CategoryMergeSuggestion } from '../../services/ai/aiChatService';
@@ -57,6 +58,7 @@ export const AIAgentPage: React.FC = () => {
     const { user } = useAuthStore();
     const { business } = useBusinessStore();
     const [activeModel, setActiveModel] = useState('gemini-2.5');
+    const navigate = useNavigate();
     const [autoFallback, setAutoFallback] = useState(true);
     const [inputText, setInputText] = useState('');
     const [isTyping, setIsTyping] = useState(false);
@@ -756,6 +758,42 @@ export const AIAgentPage: React.FC = () => {
                         >
                             Дэлгэрэнгүй шинжилгээ
                         </button>
+                    </section>
+
+                    {/* AI Tools Hub */}
+                    <section className="widget-card" style={{ background: 'linear-gradient(135deg, rgba(108,92,231,0.04), rgba(168,85,247,0.04))' }}>
+                        <div className="widget-header">
+                            <div className="header-icon-box" style={{ background: 'linear-gradient(135deg, #6c5ce7, #a855f7)' }}><Sparkles size={18} /></div>
+                            <h3>🛠 AI Хэрэгслүүд</h3>
+                        </div>
+                        <p className="widget-desc">Бараа дээр AI ажиллуулах хэрэгслүүд</p>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 8 }}>
+                            {[
+                                { icon: Download, title: 'FB Бараа Import', desc: 'Facebook пост → бараа автомат', param: 'fb-import', color: '#3b82f6' },
+                                { icon: Tags, title: 'AI Auto Tag', desc: 'Бүх бараанд ангилал оноох', param: 'auto-tag', color: '#10b981' },
+                                { icon: Package, title: 'Карго Тогтоох', desc: 'AI-аар каргоны оворыг тогтоох', param: 'cargo-fee', color: '#f59e0b' },
+                            ].map(tool => (
+                                <button
+                                    key={tool.param}
+                                    onClick={() => navigate(`/app/products?ai=${tool.param}`)}
+                                    style={{
+                                        display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px',
+                                        borderRadius: 12, border: '1px solid var(--border-soft)', background: 'var(--surface-1)',
+                                        cursor: 'pointer', transition: 'all 0.2s', textAlign: 'left', width: '100%',
+                                    }}
+                                    className="btn-ghost"
+                                >
+                                    <div style={{ width: 34, height: 34, borderRadius: 10, background: `${tool.color}15`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                                        <tool.icon size={16} style={{ color: tool.color }} />
+                                    </div>
+                                    <div style={{ flex: 1, minWidth: 0 }}>
+                                        <div style={{ fontWeight: 700, fontSize: '0.85rem' }}>{tool.title}</div>
+                                        <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>{tool.desc}</div>
+                                    </div>
+                                    <ArrowRight size={14} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
+                                </button>
+                            ))}
+                        </div>
                     </section>
 
                     <section className="widget-card action-widget">

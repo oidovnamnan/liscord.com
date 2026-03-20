@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { createPortal } from 'react-dom';
 import '../Inventory/InventoryPage.css';
 import { ImageUpload } from '../../components/common/ImageUpload';
@@ -12,12 +13,14 @@ import { productService, categoryService, cargoService } from '../../services/db
 import { storageService as storage } from '../../services/storage';
 import type { Product, Category, CargoType, ProductVariation, StockInquiry } from '../../types';
 import { FBImportModal } from './FBImportModal';
+import { CargoEstimatorModal } from './CargoEstimatorModal';
 import { CreateInquiryModal } from '../StockInquiry/CreateInquiryModal';
 import { toast } from 'react-hot-toast';
 import { usePermissions } from '../../hooks/usePermissions';
 import { PermissionGate } from '../../components/common/PermissionGate';
 import { collection, query, where, getCountFromServer, limit, onSnapshot, getDocs, type QueryConstraint } from 'firebase/firestore';
 import { db } from '../../services/firebase';
+import { globalSettingsService } from '../../services/adminService';
 import './ProductsPage.css';
 
 function fmt(n: number) { return '₮' + n.toLocaleString('mn-MN'); }
@@ -51,6 +54,10 @@ export function ProductsPage() {
     const [isBulkTagging, setIsBulkTagging] = useState(false);
     const [categories, setCategories] = useState<Category[]>([]);
     const [totalCount, setTotalCount] = useState<number | null>(null);
+    const [showCargoEstimator, setShowCargoEstimator] = useState(false);
+    const [geminiApiKey, setGeminiApiKey] = useState('');
+    const [allCargoTypes, setAllCargoTypes] = useState<CargoType[]>([]);
+    const [searchParams, setSearchParams] = useSearchParams();
 
     useEffect(() => {
         if (!business?.id) return;
@@ -94,6 +101,30 @@ export function ProductsPage() {
         const unsub = categoryService.subscribeCategories(business.id, setCategories);
         return () => unsub();
     }, [business?.id]);
+
+    // Load Gemini API key + cargo types for estimator
+    useEffect(() => {
+        globalSettingsService.getSettings().then(s => {
+            if (s.geminiApiKey) setGeminiApiKey(s.geminiApiKey);
+        });
+    }, []);
+
+    useEffect(() => {
+        if (!business?.id) return;
+        const unsub = cargoService.subscribeCargoTypes(business.id, setAllCargoTypes);
+        return () => unsub();
+    }, [business?.id]);
+
+    // Handle AI tool navigation from AI Agent page
+    useEffect(() => {
+        const aiAction = searchParams.get('ai');
+        if (!aiAction) return;
+        if (aiAction === 'fb-import') setShowFBImport(true);
+        if (aiAction === 'auto-tag') handleBulkAutoTag();
+        if (aiAction === 'cargo-fee') setShowCargoEstimator(true);
+        setSearchParams({}, { replace: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [searchParams]);
 
     // Fetch real total product count (not limited by pagination)
     useEffect(() => {
@@ -549,6 +580,16 @@ export function ProductsPage() {
                 <CreateInquiryModal
                     product={inquiryProduct}
                     onClose={() => setInquiryProduct(null)}
+                />
+            )}
+            {showCargoEstimator && business?.id && (
+                <CargoEstimatorModal
+                    isOpen={showCargoEstimator}
+                    onClose={() => setShowCargoEstimator(false)}
+                    products={products}
+                    cargoTypes={allCargoTypes}
+                    bizId={business.id}
+                    geminiApiKey={geminiApiKey}
                 />
             )}
         </>
