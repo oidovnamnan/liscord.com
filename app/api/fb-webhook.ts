@@ -402,6 +402,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                         const pagesArr = (settingsData?.pages || []) as Array<{ pageId: string; aiMode?: string }>;
                         const thisPage = pagesArr.find(p => p.pageId === pageId);
                         const aiMode = resolveAiMode(thisPage as any, settingsData);
+                        console.log(`[fb-webhook] AI MODE: pageId=${pageId}, thisPage?.aiMode=${thisPage?.aiMode}, globalAiMode=${settingsData?.aiMode}, resolved=${aiMode}`);
 
                         if (aiMode !== 'manual' && (msg.text || msg.attachments?.length)) {
                             // For attachment-only messages, create a descriptive text for AI
