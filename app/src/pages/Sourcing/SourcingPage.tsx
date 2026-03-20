@@ -961,7 +961,7 @@ function SourcingDetailModal({ order, businessId, settings, onClose, onUpdate }:
 
                     {/* Status + Tracking */}
                     <div className="sourcing-tracking-section">
-                        <div className="sourcing-section-title">Статус & Tracking</div>
+                        <div className="sourcing-section-title">Статус & Каргоны дугаар</div>
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
                             <div className="input-group">
                                 <label className="input-label">Статус</label>
@@ -985,8 +985,8 @@ function SourcingDetailModal({ order, businessId, settings, onClose, onUpdate }:
                                 </div>
                             </div>
                             <div className="input-group">
-                                <label className="input-label">Tracking №</label>
-                                <input className="input" value={trackingNumber} onChange={e => setTrackingNumber(e.target.value)} placeholder="Илгээмжийн дугаар" style={{ height: 44 }} />
+                                <label className="input-label">Каргоны дугаар</label>
+                                <input className="input" value={trackingNumber} onChange={e => setTrackingNumber(e.target.value)} placeholder="Pinduoduo / Taobao дугаар" style={{ height: 44 }} />
                             </div>
                         </div>
                         <div className="input-group">
@@ -1254,7 +1254,7 @@ function BatchSourcingModal({ orders, allOrders, businessId, settings, generateB
 
                     {/* Status + Tracking */}
                     <div className="sourcing-tracking-section">
-                        <div className="sourcing-section-title">Статус & Tracking</div>
+                        <div className="sourcing-section-title">Статус & Каргоны дугаар</div>
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
                             <div className="input-group">
                                 <label className="input-label">Статус</label>
@@ -1276,8 +1276,8 @@ function BatchSourcingModal({ orders, allOrders, businessId, settings, generateB
                                 </div>
                             </div>
                             <div className="input-group">
-                                <label className="input-label">Tracking №</label>
-                                <input className="input" value={trackingNumber} onChange={e => setTrackingNumber(e.target.value)} placeholder="Илгээмжийн дугаар" style={{ height: 44 }} />
+                                <label className="input-label">Каргоны дугаар</label>
+                                <input className="input" value={trackingNumber} onChange={e => setTrackingNumber(e.target.value)} placeholder="Pinduoduo / Taobao дугаар" style={{ height: 44 }} />
                             </div>
                         </div>
                         <div className="input-group">
