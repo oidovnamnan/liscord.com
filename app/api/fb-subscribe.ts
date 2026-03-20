@@ -158,14 +158,25 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                             `https://graph.facebook.com/v22.0/me/accounts?access_token=${exchangeData.access_token}&fields=id,name,access_token`
                         );
                         const llPagesData = await llPagesResp.json();
-                        if (llPagesData.data?.length) {
-                            // Try saving to Firestore
-                            const pagesConfig = llPagesData.data.map((p: { id: string; name: string; access_token: string }) => ({
-                                pageId: p.id,
-                                pageName: p.name,
-                                pageAccessToken: p.access_token,
-                                isActive: true,
-                            }));
+                         if (llPagesData.data?.length) {
+                            // Read existing page config to preserve aiMode/schedule settings
+                            let existingPages: Array<{ pageId: string; aiMode?: string; schedule?: unknown[] }> = [];
+                            if (bizId) {
+                                const existing = await fsGet(`businesses/${bizId}/fbSettings/config`);
+                                existingPages = (existing?.pages as typeof existingPages) || [];
+                            }
+                            
+                            // Merge: update tokens but PRESERVE aiMode/schedule from existing pages
+                            const pagesConfig = llPagesData.data.map((p: { id: string; name: string; access_token: string }) => {
+                                const existingPage = existingPages.find(ep => ep.pageId === p.id);
+                                return {
+                                    ...(existingPage || {}), // preserve aiMode, schedule, etc.
+                                    pageId: p.id,
+                                    pageName: p.name,
+                                    pageAccessToken: p.access_token,
+                                    isActive: true,
+                                };
+                            });
                             
                             if (bizId) {
                                 const path = `businesses/${bizId}/fbSettings/config`;

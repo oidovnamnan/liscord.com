@@ -47,8 +47,10 @@ function resolveAiMode(
             if (inRange) return entry.mode;
         }
     }
-    // Fallback: static mode
-    return (page?.aiMode || (settingsData?.aiMode as string)) || 'manual';
+    // Fallback: page-level mode takes priority → global mode → default manual
+    if (page?.aiMode !== undefined && page.aiMode !== null) return page.aiMode;
+    if (settingsData?.aiMode !== undefined && settingsData.aiMode !== null) return settingsData.aiMode as string;
+    return 'manual';
 }
 const FIRESTORE_BASE = `https://firestore.googleapis.com/v1/projects/${PROJECT_ID}/databases/(default)/documents`;
 const API_KEY = process.env.VITE_FIREBASE_API_KEY || process.env.FIREBASE_API_KEY || 'AIzaSyCuaNXSfhQt_dtNgoBs_Uz6IXN8qzZkONs';
