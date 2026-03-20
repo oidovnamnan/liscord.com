@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
     Send, Search, MessageSquare, X, Copy, Check, Loader2, Save,
     ExternalLink, Settings, Link2, Shield, Tag, StickyNote,
@@ -10,6 +11,7 @@ import { useBusinessStore, useAuthStore, useUIStore } from '../../store';
 import { fbMessengerService, type FbConversation, type FbMessage, type FbSettings, type FbCannedResponse, type FbPageConfig, type AiMode, type AiScheduleEntry } from '../../services/fbMessengerService';
 import toast from 'react-hot-toast';
 import { CreateInquiryModal } from '../StockInquiry/CreateInquiryModal';
+import { usePermissions } from '../../hooks/usePermissions';
 import './FacebookMessengerPage.css';
 
 type ConvFilter = 'all' | 'unread' | 'open' | 'closed';
@@ -28,6 +30,8 @@ const EMOJI_QUICK = ['👍', '❤️', '😊', '🙏', '🔥', '✅', '📦', '�
 export function FacebookMessengerPage() {
     const { business } = useBusinessStore();
     const { user } = useAuthStore();
+    const navigate = useNavigate();
+    const { hasPermission } = usePermissions();
     const { sidebarCollapsed, toggleSidebarCollapsed } = useUIStore();
 
     // Auto-collapse main sidebar on mount
@@ -443,7 +447,10 @@ export function FacebookMessengerPage() {
                 </div>
                 <div className="fbm-toolbar-right">
                     {totalUnread > 0 && <span className="fbm-toolbar-badge">{totalUnread}</span>}
-                    <button className="fbm-toolbar-btn" onClick={() => setShowDrawer(true)} title="Тохиргоо"><Settings size={16} /></button>
+                    <button className="fbm-toolbar-btn" onClick={() => setShowDrawer(true)} title="AI горим"><Bot size={16} /></button>
+                    {hasPermission('fbmessenger.manage_connection') && (
+                        <button className="fbm-toolbar-btn" onClick={() => navigate('/app/settings?tab=fb-messenger')} title="Холболт тохиргоо"><Settings size={16} /></button>
+                    )}
                 </div>
             </div>
 
