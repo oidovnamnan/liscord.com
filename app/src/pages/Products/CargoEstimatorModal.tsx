@@ -178,9 +178,9 @@ export function CargoEstimatorModal({ isOpen, onClose, products, cargoTypes, biz
     if (!isOpen) return null;
 
     return createPortal(
-        <div className="modal-overlay" onClick={onClose}>
+        <div className="modal-backdrop" onClick={onClose}>
             <div
-                className="modal-content animate-slide-up"
+                className="modal"
                 onClick={e => e.stopPropagation()}
                 style={{ maxWidth: 960, width: '95vw', maxHeight: '90vh', display: 'flex', flexDirection: 'column' }}
             >
