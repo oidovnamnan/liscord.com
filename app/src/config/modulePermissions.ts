@@ -197,6 +197,11 @@ export const MODULE_PERMISSIONS: Record<string, ModulePermission[]> = {
         { id: 'stock-inquiry.respond', label: 'Лавлагаанд хариулах' },
         { id: 'stock-inquiry.configure', label: 'Тохиргоо өөрчлөх' },
     ],
+    'order-inquiry': [
+        { id: 'order-inquiry.view', label: 'Захиалга лавлагаа харах' },
+        { id: 'order-inquiry.respond', label: 'Лавлагаанд хариулах' },
+        { id: 'order-inquiry.forward', label: 'Сорс агент руу дамжуулах' },
+    ],
 
     'quality-control': [
         { id: 'qc.inspect', label: 'Шалгалт хийх' },

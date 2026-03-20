@@ -91,6 +91,7 @@ const SubContractingPage = lazy(() => import('./pages/Manufacturing/SubContracti
 const WarrantyPage = lazy(() => import('./pages/Inventory/WarrantyPage').then(m => ({ default: m.WarrantyPage })));
 const ReturnsPage = lazy(() => import('./pages/Returns/ReturnsPage').then(m => ({ default: m.ReturnsPage })));
 const StockInquiryPage = lazy(() => import('./pages/StockInquiry/StockInquiryPage').then(m => ({ default: m.StockInquiryPage })));
+const OrderInquiryPage = lazy(() => import('./pages/OrderInquiry/OrderInquiryPage').then(m => ({ default: m.OrderInquiryPage })));
 const QualityControlPage = lazy(() => import('./pages/Inventory/QualityControlPage').then(m => ({ default: m.QualityControlPage })));
 const InventoryAuditPage = lazy(() => import('./pages/Inventory/InventoryAuditPage').then(m => ({ default: m.InventoryAuditPage })));
 const AIAgentPage = lazy(() => import('./pages/AIAgent/AIAgentPage').then(m => ({ default: m.AIAgentPage })));
@@ -442,6 +443,7 @@ export default function App() {
             <Route path="cross-docking" element={<ModuleGuard moduleId="cross-docking"><CrossDockingPage /></ModuleGuard>} />
             <Route path="returns" element={<ModuleGuard moduleId="returns"><ReturnsPage /></ModuleGuard>} />
             <Route path="stock-inquiry" element={<ModuleGuard moduleId="stock-inquiry"><StockInquiryPage /></ModuleGuard>} />
+            <Route path="order-inquiry" element={<ModuleGuard moduleId="order-inquiry"><OrderInquiryPage /></ModuleGuard>} />
             <Route path="quality-control" element={<ModuleGuard moduleId="quality-control"><QualityControlPage /></ModuleGuard>} />
             <Route path="inventory-forecast" element={<ModuleGuard moduleId="inventory-forecast"><InventoryForecastPage /></ModuleGuard>} />
             <Route path="pricing-rules" element={<ModuleGuard moduleId="pricing-rules"><PricingRulesPage /></ModuleGuard>} />

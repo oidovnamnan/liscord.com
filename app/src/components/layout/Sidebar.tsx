@@ -92,6 +92,16 @@ export function Sidebar() {
             setModuleBadges(prev => ({ ...prev, 'stock-inquiry': snap.size }));
         }, () => {}));
 
+        // 5. Order inquiries: pending (not yet answered)
+        const orderInqQ = query(
+            collection(db, 'businesses', business.id, 'orderInquiries'),
+            where('status', '==', 'pending'),
+            limit(50),
+        );
+        unsubs.push(onSnapshot(orderInqQ, (snap) => {
+            setModuleBadges(prev => ({ ...prev, 'order-inquiry': snap.size }));
+        }, () => {}));
+
         // 4. Messenger: total unread conversations
         const messengerQ = query(
             collection(db, 'businesses', business.id, 'fbConversations'),

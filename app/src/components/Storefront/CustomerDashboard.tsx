@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { X, User, Crown, Package, MapPin, Bell, Clock, CheckCircle, AlertTriangle, RefreshCw, Phone, Loader2, Edit3 } from 'lucide-react';
+import { X, User, Crown, Package, MapPin, Bell, Clock, CheckCircle, AlertTriangle, RefreshCw, Phone, Loader2, Edit3, MessageSquare, Send } from 'lucide-react';
 import type { Business } from '../../types';
 import { Timestamp } from 'firebase/firestore';
 
@@ -625,36 +625,17 @@ export function CustomerDashboard({ isOpen, onClose, business, phone, onOpenMemb
                                     {orders.map(order => {
                                         const statusInfo = STATUS_LABELS[order.paymentStatus] || STATUS_LABELS.pending;
                                         return (
-                                            <div key={order.id} className="cd-order-card">
-                                                <div className="cd-order-top">
-                                                    <div className="cd-order-number">#{order.orderNumber}</div>
-                                                    <div className="cd-order-status" style={{
-                                                        color: statusInfo.color,
-                                                        background: statusInfo.bg
-                                                    }}>
-                                                        {statusInfo.label}
-                                                    </div>
-                                                </div>
-                                                <div className="cd-order-info">
-                                                    <span className="cd-order-date">
-                                                        <Clock size={13} /> {formatDate(order.createdAt)}
-                                                    </span>
-                                                    <span className="cd-order-amount">{formatCurrency(order.totalAmount)}</span>
-                                                </div>
-                                                {order.items && order.items.length > 0 && (
-                                                    <div className="cd-order-items">
-                                                        {order.items.slice(0, 3).map((item, idx) => (
-                                                            <div key={idx} className="cd-order-item">
-                                                                <span>{item.name}</span>
-                                                                <span>x{item.quantity}</span>
-                                                            </div>
-                                                        ))}
-                                                        {order.items.length > 3 && (
-                                                            <div className="cd-order-more">+{order.items.length - 3} бараа</div>
-                                                        )}
-                                                    </div>
-                                                )}
-                                            </div>
+                                            <OrderCardWithInquiry
+                                                key={order.id}
+                                                order={order}
+                                                statusInfo={statusInfo}
+                                                business={business}
+                                                customerName={customerName}
+                                                customerPhone={displayPhone}
+                                                formatDate={formatDate}
+                                                formatCurrency={formatCurrency}
+                                                brandColor={brandColor}
+                                            />
                                         );
                                     })}
                                 </div>
@@ -773,5 +754,186 @@ export function CustomerDashboard({ isOpen, onClose, business, phone, onOpenMemb
                 </div>
             </div>
         </>
+    );
+}
+
+// ═══ Sub-component: Order card with inquiry button ═══
+const QUICK_QUESTIONS = [
+    'Захиалга хаана явж байна?',
+    'Хэзээ ирэх вэ?',
+    'Буусан уу?',
+];
+
+function OrderCardWithInquiry({ order, statusInfo, business, customerName, customerPhone, formatDate, formatCurrency, brandColor }: {
+    order: { id: string; orderNumber?: string; totalAmount: number; paymentStatus: string; createdAt: Date; items?: { name: string; quantity: number; price: number }[] };
+    statusInfo: { label: string; color: string; bg: string };
+    business: Business;
+    customerName: string;
+    customerPhone: string;
+    formatDate: (d: Date) => string;
+    formatCurrency: (n: number) => string;
+    brandColor: string;
+}) {
+    const [showForm, setShowForm] = useState(false);
+    const [question, setQuestion] = useState('');
+    const [sending, setSending] = useState(false);
+    const [sent, setSent] = useState(false);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const [prevInquiries, setPrevInquiries] = useState<any[]>([]);
+
+    // Load previous inquiries for this order
+    useEffect(() => {
+        if (!business?.id || !order.id) return;
+        (async () => {
+            try {
+                const { collection, query, where, getDocs, orderBy: fbOrderBy } = await import('firebase/firestore');
+                const { db } = await import('../../services/firebase');
+                const q = query(
+                    collection(db, 'businesses', business.id, 'orderInquiries'),
+                    where('orderId', '==', order.id),
+                    fbOrderBy('createdAt', 'desc')
+                );
+                const snap = await getDocs(q);
+                setPrevInquiries(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+            } catch { /* silent */ }
+        })();
+    }, [business?.id, order.id, sent]);
+
+    const handleSend = async (q: string) => {
+        if (!q.trim() || !business?.id) return;
+        setSending(true);
+        try {
+            const { collection, addDoc, Timestamp } = await import('firebase/firestore');
+            const { db } = await import('../../services/firebase');
+            await addDoc(collection(db, 'businesses', business.id, 'orderInquiries'), {
+                orderId: order.id,
+                orderNumber: order.orderNumber || order.id.slice(-6).toUpperCase(),
+                customerName: customerName || 'Хэрэглэгч',
+                customerPhone: customerPhone,
+                question: q.trim(),
+                source: 'storefront',
+                status: 'pending',
+                createdAt: Timestamp.now(),
+                updatedAt: Timestamp.now(),
+            });
+            setSent(true);
+            setQuestion('');
+            setShowForm(false);
+            setTimeout(() => setSent(false), 3000);
+        } catch (err) {
+            console.error('Send inquiry error:', err);
+        } finally {
+            setSending(false);
+        }
+    };
+
+    return (
+        <div className="cd-order-card">
+            <div className="cd-order-top">
+                <div className="cd-order-number">#{order.orderNumber}</div>
+                <div className="cd-order-status" style={{ color: statusInfo.color, background: statusInfo.bg }}>
+                    {statusInfo.label}
+                </div>
+            </div>
+            <div className="cd-order-info">
+                <span className="cd-order-date"><Clock size={13} /> {formatDate(order.createdAt)}</span>
+                <span className="cd-order-amount">{formatCurrency(order.totalAmount)}</span>
+            </div>
+            {order.items && order.items.length > 0 && (
+                <div className="cd-order-items">
+                    {order.items.slice(0, 3).map((item, idx) => (
+                        <div key={idx} className="cd-order-item">
+                            <span>{item.name}</span>
+                            <span>x{item.quantity}</span>
+                        </div>
+                    ))}
+                    {order.items.length > 3 && (
+                        <div className="cd-order-more">+{order.items.length - 3} бараа</div>
+                    )}
+                </div>
+            )}
+
+            {/* Inquiry sent confirmation */}
+            {sent && (
+                <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 10, padding: '8px 12px', fontSize: '0.82rem', color: '#065f46', fontWeight: 600, marginTop: 8 }}>
+                    ✅ Лавлагаа илгээгдлээ!
+                </div>
+            )}
+
+            {/* Inquiry button / form */}
+            {!showForm ? (
+                <button
+                    onClick={() => setShowForm(true)}
+                    style={{
+                        width: '100%', marginTop: 8, padding: '8px 12px', borderRadius: 10,
+                        border: `1.5px solid ${brandColor}20`, background: `${brandColor}08`,
+                        color: brandColor, fontSize: '0.82rem', fontWeight: 700,
+                        cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                    }}
+                >
+                    <MessageSquare size={14} /> Захиалга лавлах
+                </button>
+            ) : (
+                <div style={{ marginTop: 8, background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 12, padding: 12 }}>
+                    <div style={{ fontSize: '0.82rem', fontWeight: 700, marginBottom: 8, color: '#334155' }}>📩 Асуулга илгээх</div>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 8 }}>
+                        {QUICK_QUESTIONS.map(q => (
+                            <button
+                                key={q}
+                                onClick={() => handleSend(q)}
+                                disabled={sending}
+                                style={{
+                                    padding: '6px 12px', borderRadius: 8, border: '1px solid #e2e8f0',
+                                    background: '#fff', fontSize: '0.78rem', cursor: 'pointer', color: '#475569',
+                                    fontWeight: 600, opacity: sending ? 0.5 : 1
+                                }}
+                            >
+                                {q}
+                            </button>
+                        ))}
+                    </div>
+                    <div style={{ display: 'flex', gap: 6 }}>
+                        <input
+                            type="text"
+                            placeholder="Бусад асуулт бичих..."
+                            value={question}
+                            onChange={e => setQuestion(e.target.value)}
+                            onKeyDown={e => e.key === 'Enter' && handleSend(question)}
+                            style={{ flex: 1, padding: '7px 12px', borderRadius: 8, border: '1px solid #e2e8f0', fontSize: '0.82rem' }}
+                        />
+                        <button
+                            onClick={() => handleSend(question)}
+                            disabled={!question.trim() || sending}
+                            style={{
+                                padding: '7px 12px', borderRadius: 8, border: 'none',
+                                background: brandColor, color: '#fff', cursor: 'pointer',
+                                opacity: (!question.trim() || sending) ? 0.5 : 1
+                            }}
+                        >
+                            {sending ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
+                        </button>
+                    </div>
+                    <button onClick={() => setShowForm(false)} style={{ width: '100%', marginTop: 6, border: 'none', background: 'none', fontSize: '0.78rem', color: '#94a3b8', cursor: 'pointer' }}>
+                        Болих
+                    </button>
+                </div>
+            )}
+
+            {/* Previous inquiry history */}
+            {prevInquiries.length > 0 && (
+                <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 6 }}>
+                    {prevInquiries.slice(0, 2).map(inq => (
+                        <div key={inq.id} style={{ background: inq.answer ? '#f0fdf4' : '#fffbeb', border: `1px solid ${inq.answer ? '#bbf7d0' : '#fde68a'}`, borderRadius: 10, padding: '8px 12px', fontSize: '0.78rem' }}>
+                            <div style={{ color: '#64748b', marginBottom: 2 }}>❓ {inq.question}</div>
+                            {inq.answer ? (
+                                <div style={{ color: '#065f46', fontWeight: 600 }}>✅ {inq.answer}</div>
+                            ) : (
+                                <div style={{ color: '#92400e', fontWeight: 600 }}>⏳ Хариу хүлээж байна...</div>
+                            )}
+                        </div>
+                    ))}
+                </div>
+            )}
+        </div>
     );
 }
