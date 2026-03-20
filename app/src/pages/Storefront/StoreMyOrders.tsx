@@ -526,7 +526,8 @@ function CargoPaymentGate({ order, business, onPaid }: { order: Order; business:
     const [qpayError, setQpayError] = useState(false);
     const [qpayData, setQpayData] = useState<{ qr_image: string; urls: Array<{ name: string; description: string; link: string; logo: string }> } | null>(null);
     const [paid, setPaid] = useState(false);
-    const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const pollingRef = useRef<any>(null);
     const cargoFee = order.financials?.cargoFee || 0;
 
     const enabledBanks = (business.settings?.bankTransferAccounts || []).filter((a: { enabled: boolean }) => a.enabled);
