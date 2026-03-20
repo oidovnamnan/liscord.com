@@ -313,6 +313,15 @@ export function ProductsPage() {
                                     AI Auto-Tag
                                 </button>
                             </PermissionGate>
+                            <PermissionGate permission="products.edit">
+                                <button
+                                    className="prd-hero-btn"
+                                    style={{ background: '#f59e0b', color: 'white', border: 'none' }}
+                                    onClick={() => setShowCargoEstimator(true)}
+                                >
+                                    <Package size={16} /> Карго
+                                </button>
+                            </PermissionGate>
                             <PermissionGate permission="products.create">
                                 <button className="prd-hero-btn fb-btn" onClick={() => setShowFBImport(true)}>
                                     <Facebook size={16} /> FB
