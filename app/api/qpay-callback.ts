@@ -81,18 +81,27 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             return res.status(200).json({ message: 'Already paid' });
         }
 
-        // 2. Determine credentials — always use business QPay
+        // 2. Determine credentials — VIP uses server-side, product uses business QPay
         let username: string;
         let password: string;
 
         const bizDoc = await db.doc(`businesses/${bizId}`).get();
         if (!bizDoc.exists) return res.status(404).json({ error: 'Business not found' });
-        const qpay = bizDoc.data()!.settings?.qpay;
-        if (!qpay?.username || !qpay?.password) {
-            return res.status(400).json({ error: 'QPay credentials not configured' });
+        const bizData = bizDoc.data()!;
+
+        if (orderData.orderType === 'membership') {
+            // VIP/membership invoices were created with server-side GATE_SIM credentials
+            username = process.env.QPAY_VIP_USERNAME || 'GATE_SIM';
+            password = process.env.QPAY_VIP_PASSWORD || '8r3bvsa3';
+        } else {
+            // Product orders use business's own QPay credentials
+            const qpay = bizData.settings?.qpay;
+            if (!qpay?.username || !qpay?.password) {
+                return res.status(400).json({ error: 'QPay credentials not configured' });
+            }
+            username = qpay.username;
+            password = qpay.password;
         }
-        username = qpay.username;
-        password = qpay.password;
 
         // 3. Verify payment with QPay
         const invoiceId = orderData.qpayInvoiceId;
@@ -145,24 +154,33 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
         // 4.5. Record QPay income in sms_inbox (appears on Income page)
         try {
-            const bizDocSnap = await db.doc(`businesses/${bizId}`).get();
-            const smsBridgeKey = bizDocSnap.data()?.smsBridgeKey;
-            if (smsBridgeKey) {
-                const orderNumber = orderData.orderNumber || orderId.slice(0, 6);
-                await db.collection('sms_inbox').add({
-                    pairingKey: smsBridgeKey,
-                    sender: 'QPay',
-                    body: `QPay: ₮${totalAmount.toLocaleString()} — ${orderData.customer?.name || 'Зочин'} #${orderNumber}`,
-                    amount: totalAmount,
-                    bank: 'QPay',
-                    utga: `Захиалга #${orderNumber}`,
-                    status: 'matched',
-                    orderId,
-                    source: 'qpay',
-                    autoMatched: true,
-                    createdAt: now,
-                });
+            // Use smsBridgeKey if available, otherwise generate one from bizId
+            const smsBridgeKey = bizData.smsBridgeKey || `qpay_${bizId}`;
+            
+            // If business has no smsBridgeKey, set one so QPay income page can find it
+            if (!bizData.smsBridgeKey) {
+                await db.doc(`businesses/${bizId}`).update({ smsBridgeKey });
             }
+
+            const orderNumber = orderData.orderNumber || orderId.slice(0, 6);
+            const isMembership = orderData.orderType === 'membership';
+            await db.collection('sms_inbox').add({
+                pairingKey: smsBridgeKey,
+                sender: 'QPay',
+                body: isMembership
+                    ? `QPay VIP: ₮${totalAmount.toLocaleString()} — ${orderData.customer?.name || 'Зочин'} гишүүнчлэл`
+                    : `QPay: ₮${totalAmount.toLocaleString()} — ${orderData.customer?.name || 'Зочин'} #${orderNumber}`,
+                amount: totalAmount,
+                bank: isMembership ? 'QPay VIP' : 'QPay',
+                utga: isMembership
+                    ? `VIP гишүүнчлэл — ${orderData.customer?.name || 'Зочин'}`
+                    : `Захиалга #${orderNumber}`,
+                status: 'matched',
+                orderId,
+                source: 'qpay',
+                autoMatched: true,
+                createdAt: now,
+            });
         } catch (incomeErr) {
             console.error('QPay income recording error (non-critical):', incomeErr);
         }
