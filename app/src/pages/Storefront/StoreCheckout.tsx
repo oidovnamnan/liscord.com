@@ -1085,10 +1085,12 @@ export function StoreCheckout() {
                                 <span style={{ fontWeight: 500 }}>Барааны нийт дүн:</span>
                                 <span style={{ fontWeight: 700, color: 'var(--text-primary)' }}>{totalAmount().toLocaleString()} ₮</span>
                             </div>
+                            {currentFee > 0 && (
                             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12, color: 'var(--text-secondary)', fontSize: '0.95rem' }}>
                                 <span style={{ fontWeight: 500 }}>Хүргэлтийн төлбөр:</span>
                                 <span style={{ fontWeight: 700, color: 'var(--text-primary)' }}>{currentFee.toLocaleString()} ₮</span>
                             </div>
+                            )}
 
                             {/* Cargo Fee Section */}
                             {totalCargoFee > 0 && (
