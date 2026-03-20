@@ -5,6 +5,8 @@ import type { Product, CargoType } from '../../types';
 import { estimateCargoForProducts, type CargoEstimation } from '../../services/ai/cargoEstimationService';
 import { productService } from '../../services/db';
 import { toast } from 'react-hot-toast';
+import { collection, query, where, getDocs } from 'firebase/firestore';
+import { db } from '../../services/firebase';
 
 interface Props {
     isOpen: boolean;
@@ -46,20 +48,33 @@ function initRows(prods: Product[], types: CargoType[]): ProductCargoRow[] {
         }));
 }
 
-export function CargoEstimatorModal({ isOpen, onClose, products, cargoTypes, bizId, geminiApiKey }: Props) {
+export function CargoEstimatorModal({ isOpen, onClose, products: _products, cargoTypes, bizId, geminiApiKey }: Props) {
     const [rows, setRows] = useState<ProductCargoRow[]>([]);
+    const [isLoadingProducts, setIsLoadingProducts] = useState(false);
     const [filter, setFilter] = useState<FilterMode>('all');
     const [isEstimating, setIsEstimating] = useState(false);
     const [estimateProgress, setEstimateProgress] = useState({ current: 0, total: 0 });
     const [isSaving, setIsSaving] = useState(false);
     const [saveProgress, setSaveProgress] = useState({ current: 0, total: 0 });
 
-    // Re-initialize rows when modal opens or products change
+    // Fetch ALL products from Firestore when modal opens
     useEffect(() => {
-        if (isOpen && products.length > 0) {
-            setRows(initRows(products, cargoTypes));
-        }
-    }, [isOpen, products, cargoTypes]);
+        if (!isOpen || !bizId) return;
+        setIsLoadingProducts(true);
+        const q = query(
+            collection(db, 'businesses', bizId, 'products'),
+            where('isDeleted', '==', false)
+        );
+        getDocs(q).then(snapshot => {
+            const allProducts = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as Product));
+            allProducts.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+            setRows(initRows(allProducts, cargoTypes));
+        }).catch(() => {
+            toast.error('Бараа татахад алдаа гарлаа');
+        }).finally(() => {
+            setIsLoadingProducts(false);
+        });
+    }, [isOpen, bizId, cargoTypes]);
 
     const filteredRows = useMemo(() => {
         if (filter === 'unconfigured') return rows.filter(r => !r.hasExisting);
@@ -251,8 +266,16 @@ export function CargoEstimatorModal({ isOpen, onClose, products, cargoTypes, biz
                     </button>
                 </div>
 
+                {/* Loading State */}
+                {isLoadingProducts && (
+                    <div style={{ padding: '40px 24px', textAlign: 'center' }}>
+                        <Loader2 size={32} className="animate-spin" style={{ color: 'var(--primary)', marginBottom: 12 }} />
+                        <p style={{ fontWeight: 600 }}>Бүх бараа татаж байна...</p>
+                    </div>
+                )}
+
                 {/* No cargo types warning */}
-                {cargoTypes.length === 0 && (
+                {!isLoadingProducts && cargoTypes.length === 0 && (
                     <div style={{ padding: '20px 24px', textAlign: 'center', color: 'var(--text-muted)' }}>
                         <AlertTriangle size={32} style={{ color: '#f59e0b', marginBottom: 8 }} />
                         <p style={{ fontWeight: 600 }}>Каргоны төрөл тохируулаагүй байна</p>
@@ -261,7 +284,7 @@ export function CargoEstimatorModal({ isOpen, onClose, products, cargoTypes, biz
                 )}
 
                 {/* Table */}
-                {cargoTypes.length > 0 && (
+                {!isLoadingProducts && cargoTypes.length > 0 && (
                     <div style={{ flex: 1, overflowY: 'auto', padding: '0 24px 16px' }}>
                         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
                             <thead>
