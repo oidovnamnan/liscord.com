@@ -1,6 +1,6 @@
-import { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { X, Package, Loader2, Sparkles, Save, ChevronDown, Check, AlertTriangle, Filter } from 'lucide-react';
+import { X, Package, Loader2, Sparkles, Save, Check, AlertTriangle, Filter } from 'lucide-react';
 import type { Product, CargoType } from '../../types';
 import { estimateCargoForProducts, type CargoEstimation } from '../../services/ai/cargoEstimationService';
 import { productService } from '../../services/db';
@@ -30,29 +30,36 @@ interface ProductCargoRow {
 
 type FilterMode = 'all' | 'unconfigured' | 'configured';
 
+function initRows(prods: Product[], types: CargoType[]): ProductCargoRow[] {
+    return prods
+        .filter(p => !p.isDeleted && p.isActive !== false)
+        .map(p => ({
+            productId: p.id,
+            name: p.name,
+            categoryName: p.categoryName || '',
+            image: p.images?.[0],
+            cargoTypeId: p.cargoFee?.cargoTypeId || (types.length > 0 ? types[0].id : ''),
+            cargoValue: p.cargoFee?.cargoValue || 1,
+            isIncluded: p.cargoFee?.isIncluded || false,
+            hasExisting: !!(p.cargoFee?.amount && p.cargoFee.amount > 0),
+            isDirty: false,
+        }));
+}
+
 export function CargoEstimatorModal({ isOpen, onClose, products, cargoTypes, bizId, geminiApiKey }: Props) {
-    const [rows, setRows] = useState<ProductCargoRow[]>(() => initRows(products, cargoTypes));
+    const [rows, setRows] = useState<ProductCargoRow[]>([]);
     const [filter, setFilter] = useState<FilterMode>('all');
     const [isEstimating, setIsEstimating] = useState(false);
     const [estimateProgress, setEstimateProgress] = useState({ current: 0, total: 0 });
     const [isSaving, setIsSaving] = useState(false);
     const [saveProgress, setSaveProgress] = useState({ current: 0, total: 0 });
 
-    function initRows(prods: Product[], types: CargoType[]): ProductCargoRow[] {
-        return prods
-            .filter(p => !p.isDeleted && p.isActive !== false)
-            .map(p => ({
-                productId: p.id,
-                name: p.name,
-                categoryName: p.categoryName || '',
-                image: p.images?.[0],
-                cargoTypeId: p.cargoFee?.cargoTypeId || (types.length > 0 ? types[0].id : ''),
-                cargoValue: p.cargoFee?.cargoValue || 1,
-                isIncluded: p.cargoFee?.isIncluded || false,
-                hasExisting: !!(p.cargoFee?.amount && p.cargoFee.amount > 0),
-                isDirty: false,
-            }));
-    }
+    // Re-initialize rows when modal opens or products change
+    useEffect(() => {
+        if (isOpen && products.length > 0) {
+            setRows(initRows(products, cargoTypes));
+        }
+    }, [isOpen, products, cargoTypes]);
 
     const filteredRows = useMemo(() => {
         if (filter === 'unconfigured') return rows.filter(r => !r.hasExisting);
