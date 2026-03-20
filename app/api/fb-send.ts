@@ -312,10 +312,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         if (action === 'send_text') {
             if (!message) return res.status(400).json({ error: 'Missing message' });
 
-            const fbResult = await sendToFacebook(token, {
+            const fbResult = await sendWithFallback(token, allTokens, {
                 recipient: { id: recipientId },
                 message: { text: message },
-            });
+            }, recipientId);
 
             // Save to Firestore
             const convPath = `businesses/${bizId}/fbConversations/${recipientId}`;
@@ -342,12 +342,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         if (action === 'send_image') {
             if (!imageUrl) return res.status(400).json({ error: 'Missing imageUrl' });
 
-            const fbResult = await sendToFacebook(token, {
+            const fbResult = await sendWithFallback(token, allTokens, {
                 recipient: { id: recipientId },
                 message: {
                     attachment: { type: 'image', payload: { url: imageUrl, is_reusable: true } },
                 },
-            });
+            }, recipientId);
 
             const convPath = `businesses/${bizId}/fbConversations/${recipientId}`;
             await fsMerge(convPath, {
@@ -374,7 +374,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         if (action === 'send_button') {
             if (!title || !buttons?.length) return res.status(400).json({ error: 'Missing title or buttons' });
 
-            const fbResult = await sendToFacebook(token, {
+            const fbResult = await sendWithFallback(token, allTokens, {
                 recipient: { id: recipientId },
                 message: {
                     attachment: {
@@ -390,7 +390,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                         },
                     },
                 },
-            });
+            }, recipientId);
 
             const convPath = `businesses/${bizId}/fbConversations/${recipientId}`;
             await fsMerge(convPath, {
@@ -440,7 +440,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 return item;
             });
 
-            const fbResult = await sendToFacebook(token, {
+            const fbResult = await sendWithFallback(token, allTokens, {
                 recipient: { id: recipientId },
                 message: {
                     attachment: {
@@ -451,7 +451,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                         },
                     },
                 },
-            });
+            }, recipientId);
 
             const convPath = `businesses/${bizId}/fbConversations/${recipientId}`;
             await fsMerge(convPath, {
@@ -519,7 +519,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             const invoice = await invoiceResp.json();
             const paymentText = `💳 Төлбөр: ${Number(amount).toLocaleString()}₮\n${description || 'Messenger-ээр илгээсэн нэхэмжлэх'}`;
 
-            const fbResult = await sendToFacebook(token, {
+            const fbResult = await sendWithFallback(token, allTokens, {
                 recipient: { id: recipientId },
                 message: {
                     attachment: {
@@ -533,7 +533,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                         },
                     },
                 },
-            });
+            }, recipientId);
 
             const convPath = `businesses/${bizId}/fbConversations/${recipientId}`;
             await fsMerge(convPath, {
@@ -674,10 +674,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 confirmText += `\n\n💳 Төлбөрийн мэдээлэл:\n${bankName}, ${bankAccount}\nДансны нэр: ${bankAccountName}\nГүйлгээний утга: ${orderNumber}\n\nШилжүүлсний дараа хэлнэ үү 🙏`;
             }
 
-            const fbResult = await sendToFacebook(token, {
+            const fbResult = await sendWithFallback(token, allTokens, {
                 recipient: { id: recipientId },
                 message: { text: confirmText },
-            });
+            }, recipientId);
 
             const convPath = `businesses/${bizId}/fbConversations/${recipientId}`;
             await fsMerge(convPath, {
@@ -730,7 +730,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                         const invoice = await invoiceResp.json();
                         const paymentText = `💳 Төлбөр: ₮${subtotal.toLocaleString()}\nЗахиалга #${orderNumber}`;
 
-                        const payFbResult = await sendToFacebook(token, {
+                        const payFbResult = await sendWithFallback(token, allTokens, {
                             recipient: { id: recipientId },
                             message: {
                                 attachment: {
@@ -744,7 +744,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                                     },
                                 },
                             },
-                        });
+                        }, recipientId);
 
                         await fsAdd(`${convPath}/messages`, {
                             text: paymentText,
