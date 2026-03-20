@@ -1,8 +1,9 @@
 import { useState, useEffect, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { createPortal } from 'react-dom';
 import {
     Globe, Search, Loader2, Clock, Package, Truck, CheckCircle2, Copy, Check, X, ChevronDown,
-    Link2, ExternalLink, Plus, DollarSign, Trash2, EyeOff, Eye, Power, ChevronUp, Layers, AlertTriangle
+    Link2, ExternalLink, Plus, DollarSign, Trash2, EyeOff, Eye, Power, ChevronUp, Layers, AlertTriangle, Settings
 } from 'lucide-react';
 import { useBusinessStore } from '../../store';
 import { moduleSettingsService } from '../../services/db';
@@ -79,6 +80,8 @@ const STATUS_LABELS: Record<SourcingStatus, { label: string; color: string; icon
 
 export function SourcingPage() {
     const { business } = useBusinessStore();
+    const navigate = useNavigate();
+    const { hasPermission } = usePermissions();
     const [orders, setOrders] = useState<SourcingOrder[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
@@ -276,6 +279,16 @@ export function SourcingPage() {
                             <div className="src-hero-desc">Хятадаас бараа захиалах, мөрдөх</div>
                         </div>
                     </div>
+                    {hasPermission('sourcing.configure') && (
+                        <button
+                            className="btn btn-ghost btn-icon"
+                            onClick={() => navigate('/app/settings?tab=sourcing')}
+                            title="Сорсинг тохиргоо"
+                            style={{ background: 'rgba(255,255,255,0.15)', borderRadius: 10, color: 'white', width: 36, height: 36 }}
+                        >
+                            <Settings size={18} />
+                        </button>
+                    )}
                 </div>
                 <div className="src-hero-stats">
                     <div className="src-hero-stat" onClick={() => setStatusFilter('pending')}>
