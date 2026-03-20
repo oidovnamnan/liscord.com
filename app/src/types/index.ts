@@ -538,6 +538,8 @@ export interface Order {
         deliveryFee: number;
         cargoFee: number;
         cargoIncluded: boolean;
+        cargoPaymentTiming?: 'with_order' | 'on_arrival';
+        cargoPaymentStatus?: 'unpaid' | 'paid';
         totalAmount: number;
         payments: OrderPayment[];
         paidAmount: number;

@@ -81,6 +81,7 @@ export function StoreCheckout() {
 
     const [isDeliveryRequested, setIsDeliveryRequested] = useState(hasReadyItems);
     const [deliveryZone, setDeliveryZone] = useState('ub_center');
+    const [cargoPaymentTiming, setCargoPaymentTiming] = useState<'with_order' | 'on_arrival'>('on_arrival');
 
     const deliveryFees: Record<string, { label: string, fee: number }> = {
         'ub_center': { label: 'Улаанбаатар (А бүс)', fee: 5000 },
@@ -88,8 +89,18 @@ export function StoreCheckout() {
         'local_cargo': { label: 'Орон нутаг (Унаанд тавих)', fee: 0 }
     };
 
+    // Cargo fee calculation: sum of each item's cargoFee.amount × quantity (skip if isIncluded)
+    const totalCargoFee = useMemo(() => {
+        return items.reduce((sum, item) => {
+            const cf = item.product.cargoFee;
+            if (!cf || !cf.amount || cf.isIncluded) return sum;
+            return sum + cf.amount * item.quantity;
+        }, 0);
+    }, [items]);
+
     const currentFee = isDeliveryRequested ? deliveryFees[deliveryZone].fee : 0;
-    const finalTotal = totalAmount() + currentFee;
+    const cargoInTotal = cargoPaymentTiming === 'with_order' ? totalCargoFee : 0;
+    const finalTotal = totalAmount() + currentFee + cargoInTotal;
 
     // Bank accounts
     const enabledBanks = useMemo(() =>
@@ -226,8 +237,10 @@ export function StoreCheckout() {
                     discountValue: 0,
                     discountAmount: 0,
                     deliveryFee: currentFee,
-                    cargoFee: 0,
-                    cargoIncluded: false,
+                    cargoFee: totalCargoFee,
+                    cargoIncluded: cargoPaymentTiming === 'with_order',
+                    cargoPaymentTiming,
+                    cargoPaymentStatus: totalCargoFee > 0 ? (cargoPaymentTiming === 'with_order' ? 'paid' : 'unpaid') : 'paid',
                     totalAmount: finalTotal,
                     payments: [],
                     paidAmount: 0,
@@ -1072,14 +1085,59 @@ export function StoreCheckout() {
                                 <span style={{ fontWeight: 500 }}>Барааны нийт дүн:</span>
                                 <span style={{ fontWeight: 700, color: 'var(--text-primary)' }}>{totalAmount().toLocaleString()} ₮</span>
                             </div>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 20, color: 'var(--text-secondary)', fontSize: '0.95rem' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12, color: 'var(--text-secondary)', fontSize: '0.95rem' }}>
                                 <span style={{ fontWeight: 500 }}>Хүргэлтийн төлбөр:</span>
                                 <span style={{ fontWeight: 700, color: 'var(--text-primary)' }}>{currentFee.toLocaleString()} ₮</span>
                             </div>
+
+                            {/* Cargo Fee Section */}
+                            {totalCargoFee > 0 && (
+                                <div style={{ marginBottom: 16, padding: '14px 16px', borderRadius: 14, background: 'rgba(245, 158, 11, 0.06)', border: '1px solid rgba(245, 158, 11, 0.15)' }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+                                        <span style={{ fontWeight: 600, fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: 6 }}>📦 Каргоны төлбөр:</span>
+                                        <span style={{ fontWeight: 800, color: '#d97706', fontSize: '1rem' }}>{totalCargoFee.toLocaleString()} ₮</span>
+                                    </div>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                                        <label
+                                            style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', padding: '6px 10px', borderRadius: 10, background: cargoPaymentTiming === 'on_arrival' ? 'rgba(245, 158, 11, 0.1)' : 'transparent', transition: 'all 0.15s' }}
+                                            onClick={() => setCargoPaymentTiming('on_arrival')}
+                                        >
+                                            <div style={{ width: 18, height: 18, borderRadius: '50%', border: `2px solid ${cargoPaymentTiming === 'on_arrival' ? '#d97706' : 'var(--border-color)'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                                                {cargoPaymentTiming === 'on_arrival' && <div style={{ width: 9, height: 9, borderRadius: '50%', background: '#d97706' }} />}
+                                            </div>
+                                            <div>
+                                                <div style={{ fontWeight: 700, fontSize: '0.82rem' }}>Бараа ирсэн хойно төлөх</div>
+                                                <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Карго ирэхэд төлбөрөө төлнө</div>
+                                            </div>
+                                        </label>
+                                        <label
+                                            style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', padding: '6px 10px', borderRadius: 10, background: cargoPaymentTiming === 'with_order' ? 'rgba(99, 102, 241, 0.08)' : 'transparent', transition: 'all 0.15s' }}
+                                            onClick={() => setCargoPaymentTiming('with_order')}
+                                        >
+                                            <div style={{ width: 18, height: 18, borderRadius: '50%', border: `2px solid ${cargoPaymentTiming === 'with_order' ? 'var(--primary)' : 'var(--border-color)'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                                                {cargoPaymentTiming === 'with_order' && <div style={{ width: 9, height: 9, borderRadius: '50%', background: 'var(--primary)' }} />}
+                                            </div>
+                                            <div>
+                                                <div style={{ fontWeight: 700, fontSize: '0.82rem' }}>Одоо хамт төлөх</div>
+                                                <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Барааны үнэтэй хамт нэгтгэнэ</div>
+                                            </div>
+                                        </label>
+                                    </div>
+                                    {cargoPaymentTiming === 'on_arrival' && (
+                                        <div style={{ marginTop: 8, padding: '6px 10px', borderRadius: 8, background: 'rgba(245, 158, 11, 0.08)', fontSize: '0.72rem', color: '#92400e', fontWeight: 600, textAlign: 'center' }}>
+                                            ⚠ Каргоны {totalCargoFee.toLocaleString()}₮ бараа ирэхэд тусад нь төлөгдөнө
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+
                             <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: 16, borderTop: '1px dashed var(--border-primary)', fontWeight: 900, fontSize: '1.4rem', color: 'var(--text-primary)' }} className="summary-total-row">
                                 <span>Нийт төлөх:</span>
                                 <div style={{ textAlign: 'right' }}>
                                     <div style={{ color: 'var(--primary)' }}>{finalTotal.toLocaleString()} ₮</div>
+                                    {totalCargoFee > 0 && cargoPaymentTiming === 'on_arrival' && (
+                                        <div style={{ fontSize: '0.7rem', fontWeight: 600, color: '#d97706', marginTop: 2 }}>+ карго {totalCargoFee.toLocaleString()}₮ (дараа)</div>
+                                    )}
                                 </div>
                             </div>
                         </div>

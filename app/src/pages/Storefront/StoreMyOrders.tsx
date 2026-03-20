@@ -359,6 +359,12 @@ export function StoreMyOrders() {
                                     🔄 {order.returnStatus === 'full' ? 'Бүрэн буцаалт' : 'Хэсэгчлэн буцаалт'}
                                 </div>
                             )}
+                            {/* Cargo payment needed badge */}
+                            {order.status === 'arrived' && order.financials?.cargoFee > 0 && order.financials?.cargoPaymentStatus !== 'paid' && order.financials?.cargoPaymentTiming === 'on_arrival' && (
+                                <div style={{ marginTop: 6, padding: '5px 10px', borderRadius: 6, background: '#fef3c7', color: '#92400e', fontSize: '0.72rem', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 4, border: '1px solid #fde68a' }}>
+                                    📦 Каргоны төлбөр: {order.financials.cargoFee.toLocaleString()}₮
+                                </div>
+                            )}
                         </div>
                     );
                 })
@@ -408,7 +414,68 @@ export function StoreMyOrders() {
                                     <span>Нийт:</span>
                                     <span style={{ color: brandColor }}>{(selectedOrder.financials?.totalAmount || 0).toLocaleString()}₮</span>
                                 </div>
+                                {/* Cargo fee info */}
+                                {selectedOrder.financials?.cargoFee > 0 && (
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: 6, fontSize: '0.82rem' }}>
+                                        <span style={{ color: '#92400e', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4 }}>
+                                            📦 Каргоны төлбөр:
+                                        </span>
+                                        <span style={{ fontWeight: 700, color: selectedOrder.financials.cargoPaymentStatus === 'paid' ? '#10b981' : '#d97706' }}>
+                                            {selectedOrder.financials.cargoFee.toLocaleString()}₮
+                                            {selectedOrder.financials.cargoPaymentStatus === 'paid' ? ' ✅' : ' (төлөөгүй)'}
+                                        </span>
+                                    </div>
+                                )}
                             </div>
+
+                            {/* ── CARGO GATE ── */}
+                            {selectedOrder.status === 'arrived' &&
+                             selectedOrder.financials?.cargoFee > 0 &&
+                             selectedOrder.financials?.cargoPaymentTiming === 'on_arrival' &&
+                             selectedOrder.financials?.cargoPaymentStatus !== 'paid' && (
+                                <div style={{
+                                    padding: 16, borderRadius: 14,
+                                    background: 'linear-gradient(135deg, #fef3c7, #fff7ed)',
+                                    border: '2px solid #f59e0b',
+                                }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+                                        <div style={{ width: 40, height: 40, borderRadius: 12, background: '#f59e0b', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.2rem', flexShrink: 0 }}>📦</div>
+                                        <div>
+                                            <div style={{ fontWeight: 800, fontSize: '0.95rem', color: '#92400e' }}>Каргоны төлбөр төлнө үү</div>
+                                            <div style={{ fontSize: '0.75rem', color: '#a16207' }}>Төлбөр хийж байж бараагаа авах боломжтой</div>
+                                        </div>
+                                    </div>
+                                    <div style={{
+                                        background: '#fff', borderRadius: 12, padding: '12px 16px',
+                                        border: '1px solid #fde68a', marginBottom: 12, textAlign: 'center'
+                                    }}>
+                                        <div style={{ fontSize: '0.72rem', color: '#92400e', fontWeight: 600, marginBottom: 4 }}>ТӨЛӨХ ДҮН</div>
+                                        <div style={{ fontSize: '1.5rem', fontWeight: 900, color: '#d97706' }}>
+                                            {selectedOrder.financials.cargoFee.toLocaleString()}₮
+                                        </div>
+                                    </div>
+
+                                    {/* Bank accounts for cargo payment */}
+                                    {(business.settings?.bankTransferAccounts || []).filter(a => a.enabled).length > 0 && (
+                                        <div style={{ marginBottom: 10 }}>
+                                            <div style={{ fontSize: '0.72rem', fontWeight: 700, color: '#92400e', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Дансаар шилжүүлэх:</div>
+                                            {(business.settings?.bankTransferAccounts || []).filter(a => a.enabled).map(bank => (
+                                                <div key={bank.id} style={{ background: '#fff', padding: '8px 12px', borderRadius: 10, border: '1px solid #fde68a', marginBottom: 6, fontSize: '0.8rem' }}>
+                                                    <div style={{ fontWeight: 700 }}>{bank.bankName}</div>
+                                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 2 }}>
+                                                        <span style={{ color: '#666' }}>{bank.accountNumber}</span>
+                                                        <span style={{ fontWeight: 600 }}>{bank.accountName}</span>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+
+                                    <div style={{ fontSize: '0.72rem', color: '#92400e', textAlign: 'center', fontWeight: 600 }}>
+                                        💡 QPay эсвэл бэлнээр төлөх бол манай менежерт хандана уу
+                                    </div>
+                                </div>
+                            )}
 
                             {/* Return button */}
                             {selectedOrder.paymentStatus === 'paid' && selectedOrder.returnStatus !== 'full' && !showReturnForm && (
