@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
-import { collection, onSnapshot, query, orderBy, doc, updateDoc, Timestamp } from 'firebase/firestore';
+import { collection, onSnapshot, query, orderBy, doc, updateDoc, addDoc, Timestamp } from 'firebase/firestore';
 import { db } from '../../services/firebase';
 import { useBusinessStore, useAuthStore } from '../../store';
-import { MessageSquare, Clock, CheckCircle, Send, ArrowRight, Loader2, BellRing, Phone, User } from 'lucide-react';
+import { MessageSquare, Clock, CheckCircle, Send, ArrowRight, Loader2, BellRing, Phone, User, Plus, X } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import './OrderInquiryPage.css';
 
@@ -78,6 +78,10 @@ export function OrderInquiryPage() {
     const [showAnswerForm, setShowAnswerForm] = useState(false);
     const [answerText, setAnswerText] = useState('');
     const [saving, setSaving] = useState(false);
+
+    // Create form
+    const [showCreateForm, setShowCreateForm] = useState(false);
+    const [createData, setCreateData] = useState({ orderNumber: '', customerName: '', customerPhone: '', question: '', source: 'phone' as 'phone' | 'messenger' });
 
     // New inquiry detection
     const prevPendingRef = useRef<number | null>(null);
@@ -181,6 +185,34 @@ export function OrderInquiryPage() {
         }
     };
 
+    const handleCreate = async () => {
+        if (!business?.id || !createData.orderNumber.trim() || !createData.question.trim()) return;
+        setSaving(true);
+        try {
+            await addDoc(collection(db, `businesses/${business.id}/orderInquiries`), {
+                orderId: '',
+                orderNumber: createData.orderNumber.trim(),
+                customerName: createData.customerName.trim() || 'Хэрэглэгч',
+                customerPhone: createData.customerPhone.trim(),
+                question: createData.question.trim(),
+                source: createData.source,
+                status: 'pending',
+                assignedTo: user?.uid || employee?.id || '',
+                assignedToName: employee?.name || user?.displayName || 'Оператор',
+                createdAt: Timestamp.now(),
+                updatedAt: Timestamp.now(),
+            });
+            toast.success('Лавлагаа үүсгэгдлээ ✅');
+            setShowCreateForm(false);
+            setCreateData({ orderNumber: '', customerName: '', customerPhone: '', question: '', source: 'phone' });
+        } catch (e) {
+            console.error('Failed to create inquiry:', e);
+            toast.error('Алдаа гарлаа');
+        } finally {
+            setSaving(false);
+        }
+    };
+
     const filtered = filter === 'active'
         ? inquiries.filter(i => ['pending', 'reviewing', 'forwarded'].includes(i.status))
         : inquiries;
@@ -219,6 +251,9 @@ export function OrderInquiryPage() {
                             <div className="oinq-hero-desc">Захиалагчдын асуулга, хариу</div>
                         </div>
                     </div>
+                    <button className="oinq-btn answer" style={{ borderRadius: 12, padding: '8px 16px' }} onClick={() => setShowCreateForm(true)}>
+                        <Plus size={16} /> Лавлагаа үүсгэх
+                    </button>
                 </div>
                 <div className="oinq-hero-stats">
                     <div className="oinq-hero-stat" onClick={() => setFilter('active')}>
@@ -430,6 +465,86 @@ export function OrderInquiryPage() {
                     </div>
                 </div>
             </div>
+
+            {/* Create Inquiry Modal */}
+            {showCreateForm && (
+                <>
+                    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 9998 }} onClick={() => setShowCreateForm(false)} />
+                    <div style={{
+                        position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%,-50%)',
+                        background: 'var(--surface-1)', borderRadius: 20, padding: 28, width: 420, maxWidth: '90vw',
+                        zIndex: 9999, boxShadow: '0 20px 60px rgba(0,0,0,0.3)'
+                    }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+                            <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 800 }}>➕ Лавлагаа үүсгэх</h3>
+                            <button onClick={() => setShowCreateForm(false)} style={{ border: 'none', background: 'var(--surface-2)', borderRadius: 8, padding: 6, cursor: 'pointer' }}>
+                                <X size={18} />
+                            </button>
+                        </div>
+
+                        {/* Source toggle */}
+                        <div style={{ display: 'flex', gap: 6, marginBottom: 14 }}>
+                            {(['phone', 'messenger'] as const).map(s => (
+                                <button
+                                    key={s}
+                                    onClick={() => setCreateData(d => ({ ...d, source: s }))}
+                                    style={{
+                                        flex: 1, padding: '8px 12px', borderRadius: 10, border: 'none',
+                                        background: createData.source === s ? '#6366f1' : 'var(--surface-2)',
+                                        color: createData.source === s ? '#fff' : 'var(--text-secondary)',
+                                        fontSize: '0.84rem', fontWeight: 700, cursor: 'pointer',
+                                    }}
+                                >
+                                    {s === 'phone' ? '📞 Утасаар' : '💬 Мессенжерээр'}
+                                </button>
+                            ))}
+                        </div>
+
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                            <input
+                                placeholder="Захиалгын дугаар *"
+                                value={createData.orderNumber}
+                                onChange={e => setCreateData(d => ({ ...d, orderNumber: e.target.value }))}
+                                className="oinq-answer-textarea"
+                                style={{ minHeight: 'auto', padding: '10px 14px' }}
+                            />
+                            <input
+                                placeholder="Харилцагчийн нэр"
+                                value={createData.customerName}
+                                onChange={e => setCreateData(d => ({ ...d, customerName: e.target.value }))}
+                                className="oinq-answer-textarea"
+                                style={{ minHeight: 'auto', padding: '10px 14px' }}
+                            />
+                            <input
+                                placeholder="Утасны дугаар"
+                                value={createData.customerPhone}
+                                onChange={e => setCreateData(d => ({ ...d, customerPhone: e.target.value }))}
+                                className="oinq-answer-textarea"
+                                style={{ minHeight: 'auto', padding: '10px 14px' }}
+                            />
+                            <textarea
+                                placeholder="Асуулга / тэмдэглэл *"
+                                value={createData.question}
+                                onChange={e => setCreateData(d => ({ ...d, question: e.target.value }))}
+                                className="oinq-answer-textarea"
+                                rows={3}
+                            />
+                        </div>
+
+                        <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 16 }}>
+                            <button className="oinq-btn" style={{ background: 'var(--surface-2)' }} onClick={() => setShowCreateForm(false)}>Болих</button>
+                            <button
+                                className="oinq-btn answer"
+                                disabled={!createData.orderNumber.trim() || !createData.question.trim() || saving}
+                                onClick={handleCreate}
+                            >
+                                {saving ? <Loader2 size={14} className="oinq-spin" /> : <Plus size={14} />}
+                                Үүсгэх
+                            </button>
+                        </div>
+                    </div>
+                </>
+            )}
         </div>
     );
 }
