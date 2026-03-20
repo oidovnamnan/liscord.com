@@ -486,6 +486,23 @@ export const MODULE_PERMISSIONS: Record<string, ModulePermission[]> = {
         { id: 'messenger.manage_channels', label: 'Суваг удирдах' },
     ],
 
+    'fb-messenger': [
+        { id: 'fbmessenger.view', label: 'Мессенжер харах' },
+        { id: 'fbmessenger.reply', label: 'Мессеж хариулах' },
+        { id: 'fbmessenger.send_payment', label: 'Төлбөр илгээх' },
+        { id: 'fbmessenger.manage_tags', label: 'Хаяг/шошго удирдах' },
+        { id: 'fbmessenger.manage_status', label: 'Харилцааны төлөв солих' },
+        { id: 'fbmessenger.view_customer', label: 'Харилцагч мэдээлэл харах' },
+        { id: 'fbmessenger.manage_notes', label: 'Тэмдэглэл удирдах' },
+        { id: 'fbmessenger.manage_connection', label: 'Холболт тохиргоо (Token, Webhook)' },
+        { id: 'fbmessenger.manage_ai', label: 'AI горим тохируулах' },
+        { id: 'fbmessenger.manage_schedule', label: 'AI хуваарь удирдах' },
+        { id: 'fbmessenger.manage_canned', label: 'Түргэн хариулт удирдах' },
+        { id: 'fbmessenger.manage_pages', label: 'Page нэмэх/хасах' },
+        { id: 'fbmessenger.create_inquiry', label: 'Лавлагаа үүсгэх' },
+        { id: 'fbmessenger.export', label: 'Мессеж экспортлох' },
+    ],
+
     'campaigns': [
         { id: 'campaigns.view', label: 'Кампанит ажил харах' },
         { id: 'campaigns.create', label: 'Кампанит ажил үүсгэх' },

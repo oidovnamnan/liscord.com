@@ -814,6 +814,7 @@ export const LISCORD_MODULES: AppModule[] = [
         route: '/app/fb-messenger',
         isCore: false,
         category: 'sales',
+        hasSettings: true,
         isFree: false,
         plans: [
             { id: 'monthly', name: '30 хоног', price: 20000, durationDays: 30 },

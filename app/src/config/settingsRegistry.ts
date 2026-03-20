@@ -18,5 +18,6 @@ export const SettingsRegistry: Record<string, React.LazyExoticComponent<any>> = 
     'sourcing': lazy(() => import('../pages/Settings/components/SourcingSettings').then(m => ({ default: m.SourcingSettings }))),
     'returns': lazy(() => import('../pages/Settings/components/ReturnsSettings').then(m => ({ default: m.ReturnsSettings }))),
     'stock-inquiry': lazy(() => import('../pages/Settings/components/StockInquirySettings').then(m => ({ default: m.StockInquirySettings }))),
+    'fb-messenger': lazy(() => import('../pages/Settings/components/MessengerSettings').then(m => ({ default: m.MessengerSettings }))),
 
 };
