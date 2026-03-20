@@ -704,6 +704,7 @@ export interface CargoType {
     name: string;
     fee: number;
     unit: string; // ш, кг, л, м3
+    pricingTiers?: { minQty: number; fee: number }[];
     isDeleted: boolean;
     createdAt: Date;
 }
