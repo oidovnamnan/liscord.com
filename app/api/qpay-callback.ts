@@ -81,25 +81,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             return res.status(200).json({ message: 'Already paid' });
         }
 
-        // 2. Determine credentials based on order type
+        // 2. Determine credentials — always use business QPay
         let username: string;
         let password: string;
 
-        if (orderData.orderType === 'membership') {
-            // VIP/membership → server-side env credentials
-            username = process.env.QPAY_VIP_USERNAME || 'GATE_SIM';
-            password = process.env.QPAY_VIP_PASSWORD || '8r3bvsa3';
-        } else {
-            // Product → business credentials
-            const bizDoc = await db.doc(`businesses/${bizId}`).get();
-            if (!bizDoc.exists) return res.status(404).json({ error: 'Business not found' });
-            const qpay = bizDoc.data()!.settings?.qpay;
-            if (!qpay?.username || !qpay?.password) {
-                return res.status(400).json({ error: 'QPay credentials not configured' });
-            }
-            username = qpay.username;
-            password = qpay.password;
+        const bizDoc = await db.doc(`businesses/${bizId}`).get();
+        if (!bizDoc.exists) return res.status(404).json({ error: 'Business not found' });
+        const qpay = bizDoc.data()!.settings?.qpay;
+        if (!qpay?.username || !qpay?.password) {
+            return res.status(400).json({ error: 'QPay credentials not configured' });
         }
+        username = qpay.username;
+        password = qpay.password;
 
         // 3. Verify payment with QPay
         const invoiceId = orderData.qpayInvoiceId;

@@ -1,4 +1,10 @@
 {
+    "crons": [
+        {
+            "path": "/api/cleanup-orders",
+            "schedule": "0 * * * *"
+        }
+    ],
     "headers": [
         {
             "source": "/index.html",
