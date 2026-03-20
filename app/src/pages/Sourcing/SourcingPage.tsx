@@ -548,6 +548,7 @@ function SourcingDetailModal({ order, businessId, settings, onClose, onUpdate }:
     });
     const [statusOverride, setStatusOverride] = useState<SourcingStatus>(order.sourcing?.status || 'ordered');
     const [copiedField, setCopiedField] = useState<string | null>(null);
+    const [expandedCargoField, setExpandedCargoField] = useState<string | null>('label');
 
     // Dirty state tracking: save button disabled when no changes
     const [lastSavedSnapshot, setLastSavedSnapshot] = useState<string>(() => {
@@ -773,30 +774,49 @@ function SourcingDetailModal({ order, businessId, settings, onClose, onUpdate }:
                     {/* Cargo Info */}
                     {hasConfig ? (
                         <div className="sourcing-cargo-section">
-                            <div className="sourcing-copy-block">
-                                <div className="sourcing-copy-label">📋 Хүлээн авагч</div>
-                                <div className="sourcing-copy-value">{recipientText}</div>
-                                <button className="sourcing-copy-btn" onClick={() => handleCopy(recipientText, 'recipient')}>
-                                    {copiedField === 'recipient' ? <Check size={14} /> : <Copy size={14} />}
-                                    {copiedField === 'recipient' ? 'Хуулсан!' : 'Хуулах'}
-                                </button>
-                            </div>
-                            <div className="sourcing-copy-block" style={{ background: 'linear-gradient(135deg, rgba(108,92,231,0.06) 0%, rgba(0,206,158,0.06) 100%)', borderColor: 'var(--primary)', borderStyle: 'dashed' }}>
-                                <div className="sourcing-copy-label">🏷️ Таних код</div>
-                                <div className="sourcing-copy-value" style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--primary)', letterSpacing: '0.5px' }}>{autoLabel}</div>
-                                <button className="sourcing-copy-btn" onClick={() => handleCopy(autoLabel, 'label')}>
-                                    {copiedField === 'label' ? <Check size={14} /> : <Copy size={14} />}
-                                    {copiedField === 'label' ? 'Хуулсан!' : 'Хуулах'}
-                                </button>
-                            </div>
-                            <div className="sourcing-copy-block">
-                                <div className="sourcing-copy-label">📋 Хаяг (карго шошго)</div>
-                                <div className="sourcing-copy-value">{addressText}</div>
-                                <button className="sourcing-copy-btn" onClick={() => handleCopy(addressText, 'address')}>
-                                    {copiedField === 'address' ? <Check size={14} /> : <Copy size={14} />}
-                                    {copiedField === 'address' ? 'Хуулсан!' : 'Хуулах'}
-                                </button>
-                            </div>
+                            {/* Collapsible cargo blocks — only one open at a time */}
+                            {[{
+                                key: 'recipient', icon: '📋', label: 'Хүлээн авагч', value: recipientText, style: {},
+                            }, {
+                                key: 'label', icon: '🏷️', label: 'Таних код', value: autoLabel, style: {
+                                    background: 'linear-gradient(135deg, rgba(108,92,231,0.06) 0%, rgba(0,206,158,0.06) 100%)',
+                                    borderColor: 'var(--primary)', borderStyle: 'dashed' as const,
+                                }, valueStyle: { fontSize: '1.1rem', fontWeight: 800, color: 'var(--primary)', letterSpacing: '0.5px' },
+                            }, {
+                                key: 'address', icon: '📋', label: 'Хаяг (карго шошго)', value: addressText, style: {},
+                            }].map(block => {
+                                const isOpen = expandedCargoField === block.key;
+                                return (
+                                    <div key={block.key} className="sourcing-copy-block" style={{
+                                        ...block.style, cursor: 'pointer', transition: 'all 0.2s',
+                                        ...(isOpen ? {} : { padding: '8px 16px' }),
+                                    }} onClick={() => setExpandedCargoField(isOpen ? null : block.key)}>
+                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+                                            <div className="sourcing-copy-label" style={{ margin: 0 }}>{block.icon} {block.label}</div>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                                {!isOpen && (
+                                                    <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', maxWidth: 180, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                                        {block.value}
+                                                    </span>
+                                                )}
+                                                <ChevronDown size={14} style={{
+                                                    color: 'var(--text-muted)', transition: 'transform 0.2s',
+                                                    transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+                                                }} />
+                                            </div>
+                                        </div>
+                                        {isOpen && (
+                                            <>
+                                                <div className="sourcing-copy-value" style={block.valueStyle || {}}>{block.value}</div>
+                                                <button className="sourcing-copy-btn" onClick={(e) => { e.stopPropagation(); handleCopy(block.value, block.key); }}>
+                                                    {copiedField === block.key ? <Check size={14} /> : <Copy size={14} />}
+                                                    {copiedField === block.key ? 'Хуулсан!' : 'Хуулах'}
+                                                </button>
+                                            </>
+                                        )}
+                                    </div>
+                                );
+                            })}
                         </div>
                     ) : (
                         <div className="sourcing-cargo-section" style={{ textAlign: 'center', padding: '24px 28px' }}>
@@ -1004,6 +1024,7 @@ function BatchSourcingModal({ orders, allOrders, businessId, settings, generateB
     const [trackingNumber, setTrackingNumber] = useState('');
     const [notes, setNotes] = useState('');
     const [copiedField, setCopiedField] = useState<string | null>(null);
+    const [expandedBatchField, setExpandedBatchField] = useState<string | null>(null);
 
     // Group items by productId
     const batchItems = useMemo<BatchItem[]>(() => {
@@ -1149,22 +1170,43 @@ function BatchSourcingModal({ orders, allOrders, businessId, settings, generateB
 
                         {hasConfig ? (
                             <>
-                                <div className="sourcing-copy-block">
-                                    <div className="sourcing-copy-label">📋 Хүлээн авагч</div>
-                                    <div className="sourcing-copy-value">{recipientText}</div>
-                                    <button className="sourcing-copy-btn" onClick={() => handleCopy(recipientText, 'recipient')}>
-                                        {copiedField === 'recipient' ? <Check size={14} /> : <Copy size={14} />}
-                                        {copiedField === 'recipient' ? 'Хуулсан!' : 'Хуулах'}
-                                    </button>
-                                </div>
-                                <div className="sourcing-copy-block">
-                                    <div className="sourcing-copy-label">📋 Хаяг (карго шошго)</div>
-                                    <div className="sourcing-copy-value">{addressText}</div>
-                                    <button className="sourcing-copy-btn" onClick={() => handleCopy(addressText, 'address')}>
-                                        {copiedField === 'address' ? <Check size={14} /> : <Copy size={14} />}
-                                        {copiedField === 'address' ? 'Хуулсан!' : 'Хуулах'}
-                                    </button>
-                                </div>
+                                {[{
+                                    key: 'recipient', icon: '📋', label: 'Хүлээн авагч', value: recipientText,
+                                }, {
+                                    key: 'address', icon: '📋', label: 'Хаяг (карго шошго)', value: addressText,
+                                }].map(block => {
+                                    const isOpen = expandedBatchField === block.key;
+                                    return (
+                                        <div key={block.key} className="sourcing-copy-block" style={{
+                                            cursor: 'pointer', transition: 'all 0.2s',
+                                            ...(isOpen ? {} : { padding: '8px 16px' }),
+                                        }} onClick={() => setExpandedBatchField(isOpen ? null : block.key)}>
+                                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+                                                <div className="sourcing-copy-label" style={{ margin: 0 }}>{block.icon} {block.label}</div>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                                    {!isOpen && (
+                                                        <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', maxWidth: 180, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                                            {block.value}
+                                                        </span>
+                                                    )}
+                                                    <ChevronDown size={14} style={{
+                                                        color: 'var(--text-muted)', transition: 'transform 0.2s',
+                                                        transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+                                                    }} />
+                                                </div>
+                                            </div>
+                                            {isOpen && (
+                                                <>
+                                                    <div className="sourcing-copy-value">{block.value}</div>
+                                                    <button className="sourcing-copy-btn" onClick={(e) => { e.stopPropagation(); handleCopy(block.value, block.key); }}>
+                                                        {copiedField === block.key ? <Check size={14} /> : <Copy size={14} />}
+                                                        {copiedField === block.key ? 'Хуулсан!' : 'Хуулах'}
+                                                    </button>
+                                                </>
+                                            )}
+                                        </div>
+                                    );
+                                })}
                             </>
                         ) : (
                             <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', margin: 0 }}>
