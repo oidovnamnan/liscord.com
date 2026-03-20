@@ -152,33 +152,23 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             updatedAt: now,
         });
 
-        // 4.5. Record QPay income in sms_inbox (appears on Income page)
+        // 4.5. Record QPay income in business-specific collection (no SMS bridge dependency)
         try {
-            // Use smsBridgeKey if available, otherwise generate one from bizId
-            const smsBridgeKey = bizData.smsBridgeKey || `qpay_${bizId}`;
-            
-            // If business has no smsBridgeKey, set one so QPay income page can find it
-            if (!bizData.smsBridgeKey) {
-                await db.doc(`businesses/${bizId}`).update({ smsBridgeKey });
-            }
-
             const orderNumber = orderData.orderNumber || orderId.slice(0, 6);
             const isMembership = orderData.orderType === 'membership';
-            await db.collection('sms_inbox').add({
-                pairingKey: smsBridgeKey,
-                sender: 'QPay',
-                body: isMembership
-                    ? `QPay VIP: ₮${totalAmount.toLocaleString()} — ${orderData.customer?.name || 'Зочин'} гишүүнчлэл`
-                    : `QPay: ₮${totalAmount.toLocaleString()} — ${orderData.customer?.name || 'Зочин'} #${orderNumber}`,
+            await db.collection(`businesses/${bizId}/qpay_income`).add({
+                orderId,
+                orderNumber,
                 amount: totalAmount,
+                customerName: orderData.customer?.name || 'Зочин',
+                customerPhone: orderData.customer?.phone || '',
+                type: isMembership ? 'membership' : 'product',
                 bank: isMembership ? 'QPay VIP' : 'QPay',
-                utga: isMembership
+                description: isMembership
                     ? `VIP гишүүнчлэл — ${orderData.customer?.name || 'Зочин'}`
                     : `Захиалга #${orderNumber}`,
-                status: 'matched',
-                orderId,
-                source: 'qpay',
-                autoMatched: true,
+                qpayPaymentId: paidPayment.payment_id || '',
+                status: 'confirmed',
                 createdAt: now,
             });
         } catch (incomeErr) {

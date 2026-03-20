@@ -45,6 +45,20 @@ interface SmsLog {
     source?: string;
 }
 
+interface QPayIncome {
+    id: string;
+    orderId: string;
+    orderNumber: string;
+    amount: number;
+    customerName: string;
+    customerPhone: string;
+    type: 'membership' | 'product';
+    bank: string;
+    description: string;
+    status: string;
+    createdAt?: any;
+}
+
 interface MatchCandidate {
     id: string;
     orderNumber: string;
@@ -62,7 +76,9 @@ export function BankSmsSyncPage() {
     const [search, setSearch] = useState('');
     const [statusFilter, setStatusFilter] = useState<'all' | 'matched' | 'pending' | 'ignored'>('all');
     const [logs, setLogs] = useState<SmsLog[]>([]);
+    const [qpayLogs, setQpayLogs] = useState<QPayIncome[]>([]);
     const [loading, setLoading] = useState(true);
+    const [qpayLoading, setQpayLoading] = useState(true);
     const [pairingKey, setPairingKey] = useState<string | null>(null);
     const [activeTab, setActiveTab] = useState<'sms' | 'qpay'>('sms');
 
@@ -154,6 +170,39 @@ export function BankSmsSyncPage() {
         return () => unsubscribe();
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [pairingKey, business?.id]);
+
+    // ── QPay Income — separate listener (no pairingKey needed) ──
+    useEffect(() => {
+        if (!business?.id) { setQpayLoading(false); return; }
+        const q = query(
+            collection(db, `businesses/${business.id}/qpay_income`),
+            orderBy('createdAt', 'desc')
+        );
+        const unsubscribe = onSnapshot(q, (snapshot) => {
+            const items: QPayIncome[] = snapshot.docs.map(docSnap => {
+                const d = docSnap.data();
+                return {
+                    id: docSnap.id,
+                    orderId: d.orderId || '',
+                    orderNumber: d.orderNumber || '',
+                    amount: d.amount || 0,
+                    customerName: d.customerName || '',
+                    customerPhone: d.customerPhone || '',
+                    type: d.type || 'product',
+                    bank: d.bank || 'QPay',
+                    description: d.description || '',
+                    status: d.status || 'confirmed',
+                    createdAt: d.createdAt?.toDate?.() || new Date(),
+                };
+            });
+            setQpayLogs(items);
+            setQpayLoading(false);
+        }, (error) => {
+            console.error('QPay income subscription error:', error);
+            setQpayLoading(false);
+        });
+        return () => unsubscribe();
+    }, [business?.id]);
 
     const matchedRef = useRef<Set<string>>(new Set());
 
@@ -354,10 +403,7 @@ export function BankSmsSyncPage() {
     };
 
     // Filter by tab (sms vs qpay source)
-    const tabFilteredLogs = logs.filter(log => {
-        if (activeTab === 'qpay') return log.source === 'qpay';
-        return log.source !== 'qpay';
-    });
+    const tabFilteredLogs = logs.filter(log => log.source !== 'qpay');
 
     const filteredLogs = tabFilteredLogs.filter(log => {
         const matchSearch = !search ||
@@ -368,7 +414,19 @@ export function BankSmsSyncPage() {
         return matchSearch && matchStatus;
     });
 
-    const stats = {
+    const filteredQpay = qpayLogs.filter(log => {
+        if (!search) return true;
+        return log.description.toLowerCase().includes(search.toLowerCase()) ||
+            log.bank.toLowerCase().includes(search.toLowerCase()) ||
+            log.customerName.toLowerCase().includes(search.toLowerCase()) ||
+            log.amount.toString().includes(search);
+    });
+
+    const stats = activeTab === 'qpay' ? {
+        total: qpayLogs.reduce((s, l) => s + l.amount, 0),
+        matched: qpayLogs.filter(l => l.status === 'confirmed').length,
+        pending: 0,
+    } : {
         total: tabFilteredLogs.reduce((s, l) => s + l.amount, 0),
         matched: tabFilteredLogs.filter(l => l.status === 'matched').length,
         pending: tabFilteredLogs.filter(l => l.status === 'pending').length,
@@ -506,7 +564,101 @@ export function BankSmsSyncPage() {
             </div>
 
             {/* Content */}
-            {loading ? (
+            {activeTab === 'qpay' ? (
+                /* ═══ QPay Income Tab — separate data ═══ */
+                qpayLoading ? (
+                    <div className="sms-empty">
+                        <Loader2 size={32} className="spin" />
+                        <h4>Ачааллаж байна...</h4>
+                    </div>
+                ) : filteredQpay.length > 0 ? (
+                    <>
+                        <div className="sms-table-wrap" style={{ marginTop: 12 }}>
+                            <table className="sms-table">
+                                <thead>
+                                    <tr>
+                                        <th>Цаг</th>
+                                        <th>Төрөл</th>
+                                        <th>Дүн</th>
+                                        <th>Тайлбар</th>
+                                        <th>Төлөв</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {filteredQpay.map(log => {
+                                        const createdAt = log.createdAt instanceof Date ? log.createdAt : new Date();
+                                        const now = new Date();
+                                        const isToday = createdAt.toDateString() === now.toDateString();
+                                        const timeStr = isToday
+                                            ? createdAt.toLocaleTimeString('mn-MN', { hour: '2-digit', minute: '2-digit' })
+                                            : createdAt.toLocaleDateString('mn-MN', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+                                        return (
+                                            <tr key={log.id}>
+                                                <td className="sms-cell-time">
+                                                    <span>{timeStr}</span>
+                                                    <span className="sms-cell-sender">{log.customerPhone}</span>
+                                                </td>
+                                                <td>
+                                                    <span className="sms-bank-badge">{log.bank}</span>
+                                                </td>
+                                                <td className="sms-cell-amount">
+                                                    <ArrowUpRight size={14} />
+                                                    +{log.amount.toLocaleString()}₮
+                                                </td>
+                                                <td className="sms-cell-note">
+                                                    <span className="sms-note-text">{log.description}</span>
+                                                </td>
+                                                <td>
+                                                    <span className="badge badge-delivered"><CircleCheck size={12} /> Баталгаажсан</span>
+                                                </td>
+                                            </tr>
+                                        );
+                                    })}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        {/* Mobile Cards */}
+                        <div className="sms-mobile-cards">
+                            {filteredQpay.map(log => {
+                                const createdAt = log.createdAt instanceof Date ? log.createdAt : new Date();
+                                const now = new Date();
+                                const isToday = createdAt.toDateString() === now.toDateString();
+                                const timeStr = isToday
+                                    ? createdAt.toLocaleTimeString('mn-MN', { hour: '2-digit', minute: '2-digit' })
+                                    : createdAt.toLocaleDateString('mn-MN', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+                                return (
+                                    <div key={log.id} className="sms-mobile-card">
+                                        <div className="sms-mobile-top">
+                                            <span className="sms-bank-badge">{log.bank}</span>
+                                            <span className="badge badge-delivered"><CircleCheck size={12} /> Баталгаажсан</span>
+                                        </div>
+                                        <div className="sms-mobile-amount">
+                                            <ArrowUpRight size={16} />
+                                            +{log.amount.toLocaleString()}₮
+                                        </div>
+                                        <div className="sms-mobile-meta">
+                                            <span>{timeStr} · {log.customerName}</span>
+                                            <span>{log.description}</span>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </>
+                ) : (
+                    <div className="sms-empty">
+                        <CreditCard size={32} />
+                        <h4>QPay орлого алга</h4>
+                        <p>
+                            {search ? 'Хайлтанд тохирох гүйлгээ олдсонгүй.' :
+                                'QPay-аар төлбөр баталгаажаагүй байна.'}
+                        </p>
+                    </div>
+                )
+            ) : (
+            /* ═══ SMS Income Tab — original ═══ */
+            loading ? (
                 <div className="sms-empty">
                     <Loader2 size={32} className="spin" />
                     <h4>Ачааллаж байна...</h4>
@@ -616,7 +768,7 @@ export function BankSmsSyncPage() {
                         </button>
                     )}
                 </div>
-            )}
+            ))}
             </div>{/* /inv-page-card */}
 
             {/* ═══════════════════════════════════════════ */}
