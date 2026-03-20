@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useOutletContext, Link } from 'react-router-dom';
 import { collection, query, where, getDocs, addDoc, Timestamp } from 'firebase/firestore';
 import { RecaptchaVerifier, signInWithPhoneNumber } from 'firebase/auth';
@@ -433,48 +433,15 @@ export function StoreMyOrders() {
                              selectedOrder.financials?.cargoFee > 0 &&
                              selectedOrder.financials?.cargoPaymentTiming === 'on_arrival' &&
                              selectedOrder.financials?.cargoPaymentStatus !== 'paid' && (
-                                <div style={{
-                                    padding: 16, borderRadius: 14,
-                                    background: 'linear-gradient(135deg, #fef3c7, #fff7ed)',
-                                    border: '2px solid #f59e0b',
-                                }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
-                                        <div style={{ width: 40, height: 40, borderRadius: 12, background: '#f59e0b', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.2rem', flexShrink: 0 }}>📦</div>
-                                        <div>
-                                            <div style={{ fontWeight: 800, fontSize: '0.95rem', color: '#92400e' }}>Каргоны төлбөр төлнө үү</div>
-                                            <div style={{ fontSize: '0.75rem', color: '#a16207' }}>Төлбөр хийж байж бараагаа авах боломжтой</div>
-                                        </div>
-                                    </div>
-                                    <div style={{
-                                        background: '#fff', borderRadius: 12, padding: '12px 16px',
-                                        border: '1px solid #fde68a', marginBottom: 12, textAlign: 'center'
-                                    }}>
-                                        <div style={{ fontSize: '0.72rem', color: '#92400e', fontWeight: 600, marginBottom: 4 }}>ТӨЛӨХ ДҮН</div>
-                                        <div style={{ fontSize: '1.5rem', fontWeight: 900, color: '#d97706' }}>
-                                            {selectedOrder.financials.cargoFee.toLocaleString()}₮
-                                        </div>
-                                    </div>
-
-                                    {/* Bank accounts for cargo payment */}
-                                    {(business.settings?.bankTransferAccounts || []).filter(a => a.enabled).length > 0 && (
-                                        <div style={{ marginBottom: 10 }}>
-                                            <div style={{ fontSize: '0.72rem', fontWeight: 700, color: '#92400e', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Дансаар шилжүүлэх:</div>
-                                            {(business.settings?.bankTransferAccounts || []).filter(a => a.enabled).map(bank => (
-                                                <div key={bank.id} style={{ background: '#fff', padding: '8px 12px', borderRadius: 10, border: '1px solid #fde68a', marginBottom: 6, fontSize: '0.8rem' }}>
-                                                    <div style={{ fontWeight: 700 }}>{bank.bankName}</div>
-                                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 2 }}>
-                                                        <span style={{ color: '#666' }}>{bank.accountNumber}</span>
-                                                        <span style={{ fontWeight: 600 }}>{bank.accountName}</span>
-                                                    </div>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    )}
-
-                                    <div style={{ fontSize: '0.72rem', color: '#92400e', textAlign: 'center', fontWeight: 600 }}>
-                                        💡 QPay эсвэл бэлнээр төлөх бол манай менежерт хандана уу
-                                    </div>
-                                </div>
+                                <CargoPaymentGate
+                                    order={selectedOrder}
+                                    business={business}
+                                    onPaid={() => {
+                                        // Update local state
+                                        setSelectedOrder(prev => prev ? { ...prev, financials: { ...prev.financials, cargoPaymentStatus: 'paid' } } : null);
+                                        setOrders(prev => prev.map(o => o.id === selectedOrder.id ? { ...o, financials: { ...o.financials, cargoPaymentStatus: 'paid' } } : o));
+                                    }}
+                                />
                             )}
 
                             {/* Return button */}
@@ -543,6 +510,180 @@ export function StoreMyOrders() {
                                 </div>
                             )}
                         </div>
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+}
+
+// ═══════════════════════════════════════════
+// Cargo Payment Gate — QPay + Bank Transfer
+// ═══════════════════════════════════════════
+function CargoPaymentGate({ order, business, onPaid }: { order: Order; business: Business; onPaid: () => void }) {
+    const [tab, setTab] = useState<'qpay' | 'bank'>('qpay');
+    const [qpayLoading, setQpayLoading] = useState(false);
+    const [qpayError, setQpayError] = useState(false);
+    const [qpayData, setQpayData] = useState<{ qr_image: string; urls: Array<{ name: string; description: string; link: string; logo: string }> } | null>(null);
+    const [paid, setPaid] = useState(false);
+    const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
+    const cargoFee = order.financials?.cargoFee || 0;
+
+    const enabledBanks = (business.settings?.bankTransferAccounts || []).filter((a: { enabled: boolean }) => a.enabled);
+
+    const generateCargoQPay = async () => {
+        setQpayLoading(true);
+        setQpayError(false);
+        try {
+            const { qpayService } = await import('../../services/qpay');
+            const invoice = await qpayService.createInvoice(
+                business.id,
+                `cargo_${order.id}`,
+                cargoFee,
+                `Карго төлбөр — Захиалга #${order.orderNumber}`,
+                order.customer?.phone || '',
+                'product',
+                {
+                    username: business.settings?.qpay?.username || '',
+                    password: business.settings?.qpay?.password || '',
+                    invoiceCode: business.settings?.qpay?.invoiceCode || '',
+                }
+            );
+            setQpayData({ qr_image: invoice.qr_image, urls: invoice.urls || [] });
+
+            // Start polling
+            if (invoice.invoice_id) {
+                startPolling(invoice.invoice_id);
+            }
+        } catch (e) {
+            console.error('Cargo QPay error:', e);
+            setQpayError(true);
+        } finally {
+            setQpayLoading(false);
+        }
+    };
+
+    const startPolling = (invoiceId: string) => {
+        if (pollingRef.current) clearInterval(pollingRef.current);
+        let attempts = 0;
+        pollingRef.current = setInterval(async () => {
+            attempts++;
+            if (attempts > 200) { if (pollingRef.current) clearInterval(pollingRef.current); return; }
+            try {
+                const resp = await fetch('/api/qpay-check', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        invoiceId,
+                        purpose: 'product',
+                        bizId: business.id,
+                        orderId: order.id,
+                        qpayUsername: business.settings?.qpay?.username || '',
+                        qpayPassword: business.settings?.qpay?.password || '',
+                    }),
+                });
+                const data = await resp.json();
+                if (data.paid) {
+                    if (pollingRef.current) clearInterval(pollingRef.current);
+                    // Update Firestore
+                    const { doc: firestoreDoc, updateDoc } = await import('firebase/firestore');
+                    const { db: firestoreDb } = await import('../../services/firebase');
+                    await updateDoc(firestoreDoc(firestoreDb, `businesses/${business.id}/orders`, order.id), {
+                        'financials.cargoPaymentStatus': 'paid',
+                    });
+                    setPaid(true);
+                    onPaid();
+                    toast.success('Каргоны төлбөр амжилттай төлөгдлөө!');
+                }
+            } catch { /* retry */ }
+        }, 3000);
+    };
+
+    useEffect(() => {
+        if (tab === 'qpay' && !qpayData && !qpayLoading) generateCargoQPay();
+        return () => { if (pollingRef.current) clearInterval(pollingRef.current); };
+    }, [tab]);
+
+    if (paid) {
+        return (
+            <div style={{ padding: 20, borderRadius: 14, background: '#d1fae5', border: '2px solid #10b981', textAlign: 'center' }}>
+                <div style={{ fontSize: '2rem', marginBottom: 6 }}>✅</div>
+                <div style={{ fontWeight: 800, color: '#065f46' }}>Каргоны төлбөр амжилттай!</div>
+                <div style={{ fontSize: '0.8rem', color: '#047857', marginTop: 4 }}>Бараагаа авах боломжтой боллоо</div>
+            </div>
+        );
+    }
+
+    return (
+        <div style={{ padding: 16, borderRadius: 14, background: 'linear-gradient(135deg, #fef3c7, #fff7ed)', border: '2px solid #f59e0b' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+                <div style={{ width: 40, height: 40, borderRadius: 12, background: '#f59e0b', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.2rem', flexShrink: 0 }}>📦</div>
+                <div>
+                    <div style={{ fontWeight: 800, fontSize: '0.95rem', color: '#92400e' }}>Каргоны төлбөр төлнө үү</div>
+                    <div style={{ fontSize: '0.75rem', color: '#a16207' }}>Төлбөр хийж байж бараагаа авах боломжтой</div>
+                </div>
+            </div>
+            <div style={{ background: '#fff', borderRadius: 12, padding: '12px 16px', border: '1px solid #fde68a', marginBottom: 12, textAlign: 'center' }}>
+                <div style={{ fontSize: '0.72rem', color: '#92400e', fontWeight: 600, marginBottom: 4 }}>ТӨЛӨХ ДҮН</div>
+                <div style={{ fontSize: '1.5rem', fontWeight: 900, color: '#d97706' }}>{cargoFee.toLocaleString()}₮</div>
+            </div>
+
+            {/* Payment tabs */}
+            <div style={{ display: 'flex', gap: 6, marginBottom: 12 }}>
+                <button onClick={() => setTab('qpay')} style={{ flex: 1, padding: '8px 0', borderRadius: 10, border: tab === 'qpay' ? '2px solid #d97706' : '1px solid #fde68a', background: tab === 'qpay' ? '#fff' : 'transparent', fontWeight: 700, fontSize: '0.82rem', color: tab === 'qpay' ? '#d97706' : '#92400e', cursor: 'pointer' }}>QPay</button>
+                <button onClick={() => setTab('bank')} style={{ flex: 1, padding: '8px 0', borderRadius: 10, border: tab === 'bank' ? '2px solid #d97706' : '1px solid #fde68a', background: tab === 'bank' ? '#fff' : 'transparent', fontWeight: 700, fontSize: '0.82rem', color: tab === 'bank' ? '#d97706' : '#92400e', cursor: 'pointer' }}>Шилжүүлэг</button>
+            </div>
+
+            {tab === 'qpay' && (
+                <>
+                    {qpayLoading ? (
+                        <div style={{ textAlign: 'center', padding: 20 }}><Loader2 size={24} className="animate-spin" style={{ color: '#d97706' }} /><div style={{ fontSize: '0.78rem', marginTop: 6, color: '#92400e' }}>QPay QR үүсгэж байна...</div></div>
+                    ) : qpayError ? (
+                        <div style={{ textAlign: 'center', padding: 16 }}>
+                            <div style={{ color: '#dc2626', fontWeight: 600, marginBottom: 8 }}>QPay QR үүсгэхэд алдаа</div>
+                            <button onClick={generateCargoQPay} style={{ padding: '8px 20px', borderRadius: 10, border: '1px solid #fde68a', background: '#fff', fontWeight: 700, cursor: 'pointer', fontSize: '0.82rem' }}>Дахин оролдох</button>
+                        </div>
+                    ) : qpayData ? (
+                        <div>
+                            {/* Bank app deeplinks */}
+                            {qpayData.urls.length > 0 && (
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 6, marginBottom: 12 }}>
+                                    {qpayData.urls.slice(0, 8).map((url, i) => (
+                                        <a key={i} href={url.link} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, padding: 6, borderRadius: 10, background: '#fff', border: '1px solid #fde68a', textDecoration: 'none', fontSize: '0.65rem', color: '#333', fontWeight: 600 }}>
+                                            <img src={url.logo} alt={url.name} style={{ width: 28, height: 28, borderRadius: 6 }} onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                                            <span style={{ textAlign: 'center', lineHeight: 1.1 }}>{url.description || url.name}</span>
+                                        </a>
+                                    ))}
+                                </div>
+                            )}
+                            {/* QR Code */}
+                            <div style={{ textAlign: 'center' }}>
+                                <div style={{ fontSize: '0.68rem', color: '#92400e', fontWeight: 600, marginBottom: 6 }}>эсвэл QR уншуулах</div>
+                                <img src={`data:image/png;base64,${qpayData.qr_image}`} alt="QPay QR" style={{ width: 140, height: 140, borderRadius: 10 }} />
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: 10, fontSize: '0.75rem', color: '#92400e', fontWeight: 600 }}>
+                                <Loader2 size={14} className="animate-spin" /> Төлбөр хүлээж байна...
+                            </div>
+                        </div>
+                    ) : null}
+                </>
+            )}
+
+            {tab === 'bank' && (
+                <div>
+                    {enabledBanks.length > 0 ? enabledBanks.map(bank => (
+                        <div key={bank.id} style={{ background: '#fff', padding: '8px 12px', borderRadius: 10, border: '1px solid #fde68a', marginBottom: 6, fontSize: '0.8rem' }}>
+                            <div style={{ fontWeight: 700 }}>{bank.bankName}</div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 2 }}>
+                                <span style={{ color: '#666' }}>{bank.accountNumber}</span>
+                                <span style={{ fontWeight: 600 }}>{bank.accountName}</span>
+                            </div>
+                        </div>
+                    )) : (
+                        <div style={{ textAlign: 'center', color: '#92400e', fontSize: '0.82rem', padding: 12 }}>Банкны данс тохируулагдаагүй</div>
+                    )}
+                    <div style={{ fontSize: '0.72rem', color: '#92400e', textAlign: 'center', fontWeight: 600, marginTop: 8 }}>
+                        💡 Гүйлгээний утга: Карго #{order.orderNumber}
                     </div>
                 </div>
             )}

@@ -503,6 +503,7 @@ export interface OrderPayment {
     id: string;
     amount: number;
     method: PaymentMethod;
+    purpose?: 'product' | 'delivery' | 'cargo' | 'membership' | 'full';
     note: string;
     paidAt: Date;
     recordedBy: string;

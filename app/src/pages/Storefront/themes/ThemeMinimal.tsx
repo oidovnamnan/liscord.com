@@ -750,7 +750,12 @@ function MembershipModal({
                 price,
                 `VIP гишүүнчлэл — ${product.exclusiveCategoryName || 'Онцгой'}`,
                 phone || '',
-                'vip'
+                'product',
+                {
+                    username: business.settings?.qpay?.username || '',
+                    password: business.settings?.qpay?.password || '',
+                    invoiceCode: business.settings?.qpay?.invoiceCode || '',
+                }
             );
             setQpayData({
                 qr_image: invoice.qr_image,
@@ -800,9 +805,11 @@ function MembershipModal({
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         invoiceId,
-                        purpose: 'vip',
+                        purpose: 'product',
                         bizId: business.id,
                         orderId: _oid,
+                        qpayUsername: business.settings?.qpay?.username || '',
+                        qpayPassword: business.settings?.qpay?.password || '',
                     }),
                 });
                 const data = await resp.json();
