@@ -60,9 +60,10 @@ export function MessengerSettings({ bizId }: { bizId: string }) {
             // Check if editing existing page
             const existingIdx = pages.findIndex(p => p.pageId === settingsForm.pageId);
             if (existingIdx >= 0) {
-                // Update existing
+                // Update existing — keep old token if user didn't paste a new one
                 const updatedPages = [...pages];
-                updatedPages[existingIdx] = { ...updatedPages[existingIdx], ...newPage };
+                const finalToken = settingsForm.pageAccessToken || updatedPages[existingIdx].pageAccessToken;
+                updatedPages[existingIdx] = { ...updatedPages[existingIdx], ...newPage, pageAccessToken: finalToken };
                 await fbMessengerService.saveSettings(bizId, {
                     pages: updatedPages,
                     pageId: settingsForm.pageId,
@@ -191,7 +192,13 @@ export function MessengerSettings({ bizId }: { bizId: string }) {
                     </div>
                     <div className="form-group">
                         <label className="form-label">Page Access Token</label>
-                        <input className="input" value={settingsForm.pageAccessToken} onChange={e => setSettingsForm(p => ({ ...p, pageAccessToken: e.target.value }))} placeholder="EAABsb..." type="password" />
+                        <input className="input" value={settingsForm.pageAccessToken} onChange={e => setSettingsForm(p => ({ ...p, pageAccessToken: e.target.value }))} placeholder="Шинэ token paste хийнэ үү..." type="password" />
+                        {settingsForm.pageAccessToken && (
+                            <div style={{ fontSize: '0.75rem', color: settingsForm.pageAccessToken.length > 200 && settingsForm.pageAccessToken.length < 300 ? '#22c55e' : '#ef4444', marginTop: 4 }}>
+                                Token урт: {settingsForm.pageAccessToken.length} тэмдэгт
+                                {settingsForm.pageAccessToken.length > 300 && ' ⚠️ Хэт урт — давхар paste болсон байж магадгүй!'}
+                            </div>
+                        )}
                     </div>
                 </div>
 
@@ -214,7 +221,7 @@ export function MessengerSettings({ bizId }: { bizId: string }) {
                                         <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontFamily: 'monospace' }}>{p.pageId}</div>
                                     </div>
                                     <div style={{ display: 'flex', gap: 6 }}>
-                                        <button className="btn btn-ghost btn-sm" onClick={() => setSettingsForm({ pageId: p.pageId, pageName: p.pageName, pageAccessToken: p.pageAccessToken })} title="Засах" style={{ fontSize: '0.82rem' }}>✏️</button>
+                                        <button className="btn btn-ghost btn-sm" onClick={() => setSettingsForm({ pageId: p.pageId, pageName: p.pageName, pageAccessToken: '' })} title="Засах — token шинээр оруулна" style={{ fontSize: '0.82rem' }}>✏️</button>
                                         {pages.length > 1 && (
                                             <button className="btn btn-ghost btn-sm" onClick={async () => {
                                                 await fbMessengerService.removePage(bizId, p.pageId);
