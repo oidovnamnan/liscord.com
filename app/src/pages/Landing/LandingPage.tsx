@@ -1,198 +1,305 @@
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowRight, Zap, Shield, Smartphone, BarChart3, Users, Package, ShoppingCart } from 'lucide-react';
+import {
+    ArrowRight, Zap, Shield, Smartphone, BarChart3, Users, Package,
+    ShoppingCart, Check, Star, ChevronRight, Globe, MessageCircle,
+    Layers, TrendingUp, Truck, Cpu, Clock, BadgeCheck
+} from 'lucide-react';
 import './LandingPage.css';
 
 const features = [
-    { icon: ShoppingCart, title: 'Захиалга удирдлага', desc: 'Бүх захиалгыг нэг дороос бүртгэж, хянаж, удирдаарай.' },
-    { icon: Package, title: 'Бараа & Нөөц', desc: 'Барааны нөөцийг хянах, нийлүүлэгч удирдах.' },
-    { icon: Users, title: 'Харилцагч', desc: 'Харилцагчдын мэдээлэл, тооцоо, авлага бүртгэл.' },
-    { icon: BarChart3, title: 'Тайлан', desc: 'Орлого, борлуулалт, ашгийн тайланг шууд харах.' },
-    { icon: Shield, title: 'Аюулгүй', desc: 'PIN хамгаалалт, эрхийн хяналт, аудит лог.' },
-    { icon: Smartphone, title: 'Мобайл', desc: 'Утаснаас бүрэн удирдах. PWA дэмжлэг.' },
+    { icon: ShoppingCart, title: 'Захиалга удирдлага', desc: 'Бүх захиалгыг нэг дороос бүртгэж, хянаж, статус, төлбөр удирдах.', color: '#ef4444' },
+    { icon: Package, title: 'Бараа & Нөөц', desc: 'Агуулах, нөөц, баркод, нийлүүлэгч бүгдийг нэг дороос.', color: '#f97316' },
+    { icon: Users, title: 'Харилцагч CRM', desc: 'VIP гишүүнчлэл, авлага, тооцоо, хайлт бүрэн.', color: '#ec4899' },
+    { icon: BarChart3, title: 'Тайлан & Аналитик', desc: 'Орлого, борлуулалт, ашгийн тайланг real-time харах.', color: '#8b5cf6' },
+    { icon: Truck, title: 'Хүргэлт & Карго', desc: 'Карго, ачааны хяналт, tracking, QR скан.', color: '#06b6d4' },
+    { icon: MessageCircle, title: 'AI & Мессенжер', desc: 'Facebook AI хариулт, автомат захиалга, чат.', color: '#10b981' },
+    { icon: Shield, title: 'Аюулгүй байдал', desc: 'PIN, эрхийн хяналт, аудит лог, SMS баталгаажуулалт.', color: '#f59e0b' },
+    { icon: Globe, title: 'Онлайн дэлгүүр', desc: 'Storefront, checkout, QR төлбөр бүгд автомат.', color: '#6366f1' },
 ];
 
 const categories = [
-    '📦 Карго/Импорт', '🏪 Бөөний худалдаа', '📱 Онлайн дэлгүүр', '🍔 Хоол/Хүргэлт',
-    '🔧 Засвар/Үйлчилгээ', '🖨️ Хэвлэл', '💐 Цэцэг/Бэлэг', '💊 Эмийн сан',
-    '🚗 Авто эд анги', '📋 Бусад',
+    { emoji: '📦', name: 'Карго/Импорт' },
+    { emoji: '🏪', name: 'Бөөний худалдаа' },
+    { emoji: '📱', name: 'Онлайн дэлгүүр' },
+    { emoji: '🍔', name: 'Хоол/Хүргэлт' },
+    { emoji: '🔧', name: 'Засвар/Үйлчилгээ' },
+    { emoji: '🖨️', name: 'Хэвлэл' },
+    { emoji: '💐', name: 'Цэцэг/Бэлэг' },
+    { emoji: '💊', name: 'Эмийн сан' },
+    { emoji: '🚗', name: 'Авто эд анги' },
+    { emoji: '👗', name: 'Хувцас/Фашион' },
+    { emoji: '📋', name: 'Бусад' },
 ];
+
+const stats = [
+    { value: '500+', label: 'Бизнес', icon: Layers },
+    { value: '50K+', label: 'Захиалга', icon: TrendingUp },
+    { value: '99.9%', label: 'Uptime', icon: Clock },
+    { value: '24/7', label: 'Дэмжлэг', icon: BadgeCheck },
+];
+
+/** Animated counter */
+function AnimCounter({ target, suffix = '' }: { target: string; suffix?: string }) {
+    const numPart = parseInt(target.replace(/\D/g, '')) || 0;
+    const [count, setCount] = useState(0);
+    const ref = useRef<HTMLSpanElement>(null);
+    const started = useRef(false);
+
+    useEffect(() => {
+        const observer = new IntersectionObserver(([entry]) => {
+            if (entry.isIntersecting && !started.current) {
+                started.current = true;
+                const start = performance.now();
+                const dur = 1500;
+                const ease = (t: number) => 1 - Math.pow(1 - t, 4);
+                function tick(now: number) {
+                    const p = Math.min((now - start) / dur, 1);
+                    setCount(Math.round(numPart * ease(p)));
+                    if (p < 1) requestAnimationFrame(tick);
+                }
+                requestAnimationFrame(tick);
+            }
+        }, { threshold: 0.3 });
+        if (ref.current) observer.observe(ref.current);
+        return () => observer.disconnect();
+    }, [numPart]);
+
+    const formatted = target.includes('K') ? `${count >= 1000 ? Math.round(count / 1000) + 'K' : count}` :
+        target.includes('%') ? `${count}%` : count.toString();
+    return <span ref={ref}>{formatted}{suffix}{target.includes('+') ? '+' : ''}</span>;
+}
 
 export function LandingPage() {
     const navigate = useNavigate();
+    const [scrolled, setScrolled] = useState(false);
+
+    useEffect(() => {
+        const onScroll = () => setScrolled(window.scrollY > 20);
+        window.addEventListener('scroll', onScroll, { passive: true });
+        return () => window.removeEventListener('scroll', onScroll);
+    }, []);
 
     return (
-        <div className="landing">
-            {/* Nav */}
-            <nav className="landing-nav">
-                <div className="landing-nav-inner">
-                    <div className="landing-nav-brand">
-                        <div className="landing-logo">L</div>
-                        <span className="landing-brand-text">Liscord</span>
+        <div className="lp">
+            {/* ═══ Navigation ═══ */}
+            <nav className={`lp-nav ${scrolled ? 'scrolled' : ''}`}>
+                <div className="lp-nav-inner">
+                    <div className="lp-nav-brand" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
+                        <div className="lp-logo">L</div>
+                        <span className="lp-brand-text">Liscord</span>
                     </div>
-                    <div className="landing-nav-links hide-mobile">
+                    <div className="lp-nav-links hide-mobile">
                         <a href="#features">Боломжууд</a>
                         <a href="#categories">Ангилал</a>
                         <a href="#pricing">Үнэ</a>
                     </div>
-                    <div className="landing-nav-actions">
-                        <button className="btn btn-ghost" onClick={() => navigate('/login')}>Нэвтрэх</button>
-                        <button className="btn btn-primary" onClick={() => navigate('/register')}>
-                            Бүртгүүлэх
+                    <div className="lp-nav-actions">
+                        <button className="lp-btn-ghost" onClick={() => navigate('/login')}>Нэвтрэх</button>
+                        <button className="lp-btn-primary" onClick={() => navigate('/register')}>
+                            Бүртгүүлэх <ArrowRight size={14} />
                         </button>
                     </div>
                 </div>
             </nav>
 
-            {/* Hero */}
-            <section className="landing-hero">
-                <div className="landing-hero-glow" />
-                <div className="landing-hero-content animate-fade-in">
-                    <div className="landing-hero-badge">
-                        <Zap size={14} /> Шинэ! AI бараа тайлбар үүсгэгч
+            {/* ═══ Hero ═══ */}
+            <section className="lp-hero">
+                <div className="lp-hero-glow" />
+                <div className="lp-hero-glow-2" />
+                <div className="lp-hero-grid-bg" />
+
+                <div className="lp-hero-content">
+                    <div className="lp-hero-badge">
+                        <Cpu size={14} />
+                        <span>AI-powered бизнес платформ</span>
+                        <ChevronRight size={14} />
                     </div>
-                    <h1 className="landing-hero-title">
-                        Google Sheets-ээс
+
+                    <h1 className="lp-hero-title">
+                        Бизнесээ <span className="lp-gradient-text">дараагийн</span>
                         <br />
-                        <span className="gradient-text">10 дахин хурдан</span>
-                        <br />
-                        бараа захиалгын бүртгэл
+                        <span className="lp-gradient-text">түвшинд</span> аваачина
                     </h1>
-                    <p className="landing-hero-desc">
-                        Монгол бизнест зориулсан захиалга, бараа, харилцагч, тайлангийн систем.
-                        Бүх зүйлийг нэг дороос удирдаарай.
+
+                    <p className="lp-hero-desc">
+                        Захиалга, бараа, харилцагч, тайлан, хүргэлт, AI — бүгдийг нэг дороос.
+                        <br />
+                        Монгол бизнесийн #1 удирдлагын систем.
                     </p>
-                    <div className="landing-hero-actions">
-                        <button className="btn btn-primary btn-xl" onClick={() => navigate('/register')}>
+
+                    <div className="lp-hero-actions">
+                        <button className="lp-btn-hero" onClick={() => navigate('/register')}>
                             Үнэгүй эхлэх <ArrowRight size={18} />
                         </button>
-                        <button className="btn btn-secondary btn-xl" onClick={() => navigate('/app')}>
-                            Demo харах
+                        <button className="lp-btn-hero-secondary" onClick={() => navigate('/app')}>
+                            <Zap size={16} /> Demo харах
                         </button>
                     </div>
-                    <div className="landing-hero-stats">
-                        <div className="landing-hero-stat">
-                            <span className="landing-hero-stat-value">500+</span>
-                            <span className="landing-hero-stat-label">Бизнес</span>
-                        </div>
-                        <div className="landing-hero-stat-divider" />
-                        <div className="landing-hero-stat">
-                            <span className="landing-hero-stat-value">50K+</span>
-                            <span className="landing-hero-stat-label">Захиалга</span>
-                        </div>
-                        <div className="landing-hero-stat-divider" />
-                        <div className="landing-hero-stat">
-                            <span className="landing-hero-stat-value">99.9%</span>
-                            <span className="landing-hero-stat-label">Uptime</span>
-                        </div>
+
+                    {/* Stats row */}
+                    <div className="lp-hero-stats">
+                        {stats.map((s, i) => {
+                            const Icon = s.icon;
+                            return (
+                                <div key={i} className="lp-hero-stat">
+                                    <Icon size={16} className="lp-hero-stat-icon" />
+                                    <span className="lp-hero-stat-value">
+                                        <AnimCounter target={s.value} />
+                                    </span>
+                                    <span className="lp-hero-stat-label">{s.label}</span>
+                                </div>
+                            );
+                        })}
                     </div>
                 </div>
             </section>
 
-            {/* Features */}
-            <section className="landing-section" id="features">
-                <h2 className="landing-section-title">Бүх боломжууд нэг дор</h2>
-                <p className="landing-section-subtitle">Бизнесийн өдөр тутмын бүх ажлыг хялбарчлана</p>
-                <div className="landing-features-grid">
+            {/* ═══ Trusted by ═══ */}
+            <section className="lp-trust">
+                <p className="lp-trust-label">Монголын бизнесүүд итгэж ажиллаж байна</p>
+                <div className="lp-trust-logos">
+                    {['Карго компани', 'Онлайн шоп', 'Хоол хүргэлт', 'Бөөний худалдаа', 'Фашион брэнд'].map((name, i) => (
+                        <div key={i} className="lp-trust-logo">{name}</div>
+                    ))}
+                </div>
+            </section>
+
+            {/* ═══ Features ═══ */}
+            <section className="lp-section" id="features">
+                <div className="lp-section-header">
+                    <div className="lp-section-badge">Боломжууд</div>
+                    <h2 className="lp-section-title">Бүх зүйлийг <span className="lp-gradient-text">нэг дороос</span></h2>
+                    <p className="lp-section-sub">20+ модуль, 10+ интеграци — бизнесийн бүх хэрэгцээг хангана</p>
+                </div>
+
+                <div className="lp-features-grid">
                     {features.map((f, i) => {
                         const Icon = f.icon;
                         return (
-                            <div key={i} className="landing-feature-card card card-glass">
-                                <div className="landing-feature-icon">
-                                    <Icon size={24} />
+                            <div key={i} className="lp-feature-card" style={{ '--fc': f.color } as React.CSSProperties}>
+                                <div className="lp-feature-icon">
+                                    <Icon size={22} />
                                 </div>
                                 <h3>{f.title}</h3>
                                 <p>{f.desc}</p>
+                                <div className="lp-feature-shine" />
                             </div>
                         );
                     })}
                 </div>
             </section>
 
-            {/* Categories */}
-            <section className="landing-section landing-section-dark" id="categories">
-                <h2 className="landing-section-title">10+ төрлийн бизнест тохирно</h2>
-                <p className="landing-section-subtitle">Ангилал сонгоход бүх зүйл таны бизнест зориулагдана</p>
-                <div className="landing-categories">
+            {/* ═══ Categories ═══ */}
+            <section className="lp-section lp-section-alt" id="categories">
+                <div className="lp-section-header">
+                    <div className="lp-section-badge">Ангилал</div>
+                    <h2 className="lp-section-title">10+ төрлийн бизнест <span className="lp-gradient-text">тохирно</span></h2>
+                    <p className="lp-section-sub">Ангилал сонгоход бүх зүйл таны салбарт зориулагдана</p>
+                </div>
+                <div className="lp-categories">
                     {categories.map((cat, i) => (
-                        <div key={i} className="landing-category-chip">{cat}</div>
+                        <div key={i} className="lp-category-chip">
+                            <span className="lp-category-emoji">{cat.emoji}</span>
+                            <span>{cat.name}</span>
+                        </div>
                     ))}
                 </div>
             </section>
 
-            {/* Pricing */}
-            <section className="landing-section" id="pricing">
-                <h2 className="landing-section-title">Энгийн үнийн бодлого</h2>
-                <p className="landing-section-subtitle">Жижиг бизнест үнэгүй. Өсөхийн хэрээр шинэчлэнэ.</p>
-                <div className="landing-pricing-grid">
-                    <div className="landing-pricing-card card">
-                        <div className="landing-pricing-tier">Үнэгүй</div>
-                        <div className="landing-pricing-price">₮0<span>/сар</span></div>
-                        <ul className="landing-pricing-features">
-                            <li>✅ 100 захиалга / сар</li>
-                            <li>✅ 1 хэрэглэгч</li>
-                            <li>✅ 50 бараа</li>
-                            <li>✅ 500MB хадгалалт</li>
-                            <li>❌ Тайлан</li>
-                            <li>❌ Чат</li>
+            {/* ═══ Pricing ═══ */}
+            <section className="lp-section" id="pricing">
+                <div className="lp-section-header">
+                    <div className="lp-section-badge">Үнийн бодлого</div>
+                    <h2 className="lp-section-title">Энгийн, <span className="lp-gradient-text">ил тод</span> үнэ</h2>
+                    <p className="lp-section-sub">Жижиг бизнест үнэгүй. Өсөхийн хэрээр шинэчлэнэ.</p>
+                </div>
+
+                <div className="lp-pricing-grid">
+                    {/* Free */}
+                    <div className="lp-pricing-card">
+                        <div className="lp-pricing-tier">Үнэгүй</div>
+                        <div className="lp-pricing-price">₮0<span>/сар</span></div>
+                        <p className="lp-pricing-desc">Жижиг бизнест тохиромжтой</p>
+                        <ul className="lp-pricing-list">
+                            <li><Check size={16} className="lp-check" /> 100 захиалга / сар</li>
+                            <li><Check size={16} className="lp-check" /> 1 хэрэглэгч</li>
+                            <li><Check size={16} className="lp-check" /> 50 бараа</li>
+                            <li><Check size={16} className="lp-check" /> 500MB хадгалалт</li>
                         </ul>
-                        <button className="btn btn-secondary btn-full" onClick={() => navigate('/register')}>
-                            Эхлэх
-                        </button>
+                        <button className="lp-btn-outline" onClick={() => navigate('/register')}>Эхлэх</button>
                     </div>
-                    <div className="landing-pricing-card card landing-pricing-popular">
-                        <div className="landing-pricing-badge">Хамгийн их сонголт</div>
-                        <div className="landing-pricing-tier">Про</div>
-                        <div className="landing-pricing-price">₮29,900<span>/сар</span></div>
-                        <ul className="landing-pricing-features">
-                            <li>✅ Хязгааргүй захиалга</li>
-                            <li>✅ 5 хэрэглэгч</li>
-                            <li>✅ Хязгааргүй бараа</li>
-                            <li>✅ 5GB хадгалалт</li>
-                            <li>✅ Тайлан + PDF</li>
-                            <li>✅ Чат</li>
+
+                    {/* Pro — Popular */}
+                    <div className="lp-pricing-card lp-pricing-popular">
+                        <div className="lp-pricing-badge-pop">🔥 Хамгийн их сонголт</div>
+                        <div className="lp-pricing-tier">Про</div>
+                        <div className="lp-pricing-price">₮29,900<span>/сар</span></div>
+                        <p className="lp-pricing-desc">Идэвхтэй өсөж буй бизнест</p>
+                        <ul className="lp-pricing-list">
+                            <li><Check size={16} className="lp-check" /> Хязгааргүй захиалга</li>
+                            <li><Check size={16} className="lp-check" /> 5 хэрэглэгч</li>
+                            <li><Check size={16} className="lp-check" /> Хязгааргүй бараа</li>
+                            <li><Check size={16} className="lp-check" /> 5GB хадгалалт</li>
+                            <li><Check size={16} className="lp-check" /> Тайлан + PDF</li>
+                            <li><Check size={16} className="lp-check" /> AI & Чат</li>
                         </ul>
-                        <button className="btn btn-primary btn-full" onClick={() => navigate('/register')}>
+                        <button className="lp-btn-hero" onClick={() => navigate('/register')}>
                             14 хоног үнэгүй <ArrowRight size={16} />
                         </button>
                     </div>
-                    <div className="landing-pricing-card card">
-                        <div className="landing-pricing-tier">Бизнес</div>
-                        <div className="landing-pricing-price">₮59,900<span>/сар</span></div>
-                        <ul className="landing-pricing-features">
-                            <li>✅ Бүх Про боломж</li>
-                            <li>✅ 20 хэрэглэгч</li>
-                            <li>✅ 50GB хадгалалт</li>
-                            <li>✅ HR / Цалин</li>
-                            <li>✅ B2B интеграци</li>
-                            <li>✅ Тусгай дэмжлэг</li>
+
+                    {/* Business */}
+                    <div className="lp-pricing-card">
+                        <div className="lp-pricing-tier">Бизнес</div>
+                        <div className="lp-pricing-price">₮59,900<span>/сар</span></div>
+                        <p className="lp-pricing-desc">Том байгууллагад зориулсан</p>
+                        <ul className="lp-pricing-list">
+                            <li><Check size={16} className="lp-check" /> Бүх Про боломж</li>
+                            <li><Check size={16} className="lp-check" /> 20 хэрэглэгч</li>
+                            <li><Check size={16} className="lp-check" /> 50GB хадгалалт</li>
+                            <li><Check size={16} className="lp-check" /> HR / Цалин</li>
+                            <li><Check size={16} className="lp-check" /> B2B интеграци</li>
+                            <li><Check size={16} className="lp-check" /> Тусгай дэмжлэг</li>
                         </ul>
-                        <button className="btn btn-secondary btn-full">Холбогдох</button>
+                        <button className="lp-btn-outline">Холбогдох</button>
                     </div>
                 </div>
             </section>
 
-            {/* CTA */}
-            <section className="landing-cta">
-                <h2>Бизнесээ өнөөдрөөс хялбар удирдаарай</h2>
-                <p>Үнэгүй бүртгүүлж, 2 минутад эхлэх боломжтой</p>
-                <button className="btn btn-primary btn-xl" onClick={() => navigate('/register')}>
-                    Үнэгүй эхлэх <ArrowRight size={18} />
-                </button>
+            {/* ═══ CTA ═══ */}
+            <section className="lp-cta">
+                <div className="lp-cta-glow" />
+                <div className="lp-cta-content">
+                    <Star size={32} className="lp-cta-star" />
+                    <h2>Бизнесээ өнөөдрөөс<br /><span className="lp-gradient-text">хялбар удирдаарай</span></h2>
+                    <p>2 минутад бүртгүүлж, шууд эхлэх боломжтой. Банк картгүйгээр.</p>
+                    <button className="lp-btn-hero lp-btn-lg" onClick={() => navigate('/register')}>
+                        Үнэгүй эхлэх <ArrowRight size={18} />
+                    </button>
+                </div>
             </section>
 
-            {/* Footer */}
-            <footer className="landing-footer">
-                <div className="landing-footer-inner">
-                    <div className="landing-footer-brand">
-                        <div className="landing-logo">L</div>
-                        <span>Liscord</span>
+            {/* ═══ Footer ═══ */}
+            <footer className="lp-footer">
+                <div className="lp-footer-inner">
+                    <div className="lp-footer-top">
+                        <div className="lp-footer-brand">
+                            <div className="lp-logo">L</div>
+                            <div>
+                                <div className="lp-brand-text" style={{ fontSize: '1rem' }}>Liscord</div>
+                                <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', margin: '2px 0 0' }}>Бизнес удирдлагын платформ</p>
+                            </div>
+                        </div>
+                        <div className="lp-footer-links">
+                            <a href="/terms">Үйлчилгээний нөхцөл</a>
+                            <a href="/privacy">Нууцлал</a>
+                            <a href="mailto:support@liscord.com">Холбоо барих</a>
+                        </div>
                     </div>
-                    <div className="landing-footer-links">
-                        <a href="/terms">Үйлчилгээний нөхцөл</a>
-                        <a href="/privacy">Нууцлал</a>
-                        <a href="mailto:support@liscord.com">Холбоо барих</a>
+                    <div className="lp-footer-bottom">
+                        <p>© 2026 Liscord. Бүх эрх хуулиар хамгаалагдсан.</p>
                     </div>
-                    <p className="landing-footer-copy">© 2026 Liscord. Бүх эрх хуулиар хамгаалагдсан.</p>
                 </div>
             </footer>
         </div>
