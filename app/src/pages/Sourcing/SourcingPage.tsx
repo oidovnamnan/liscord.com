@@ -634,6 +634,7 @@ function SourcingDetailModal({ order, businessId, settings, onClose, onUpdate }:
 
     const allItemsOrdered = order.items.every(it => itemsState[it.productId]?.ordered);
     const anyItemOrdered = order.items.some(it => itemsState[it.productId]?.ordered);
+    const isFirstSave = !order.sourcing?.status;
 
     // Auto-calculate status based on items
     const computedStatus: SourcingStatus = (() => {
@@ -643,6 +644,13 @@ function SourcingDetailModal({ order, businessId, settings, onClose, onUpdate }:
     })();
 
     const handleSave = async () => {
+        // First-time save confirmation
+        if (isFirstSave) {
+            const confirmed = window.confirm(
+                `Та тус захиалга (#${(order.orderNumber || order.id.slice(0, 6)).toUpperCase()}) -г "${statusOverride === 'ordered' ? 'Захиалсан' : statusOverride === 'pending' ? 'Хүлээгдэж буй' : statusOverride}" төлөвт оруулах гэж байна. Үргэлжлүүлэх үү?`
+            );
+            if (!confirmed) return;
+        }
         setSaving(true);
         try {
             // Use the status the admin selected directly
@@ -990,7 +998,12 @@ function SourcingDetailModal({ order, businessId, settings, onClose, onUpdate }:
 
                 <div className="modal-footer" style={{ padding: '16px 28px' }}>
                     <button className="btn btn-secondary" onClick={onClose}>Болих</button>
-                    <button className="btn btn-primary gradient-btn" onClick={handleSave} disabled={saving || (!anyItemOrdered && !order.sourcing?.status) || JSON.stringify({ items: Object.fromEntries(Object.entries(itemsState).map(([k, v]) => [k, v.ordered])), status: statusOverride, tracking: trackingNumber, notes }) === lastSavedSnapshot}>
+                    <button className="btn btn-primary gradient-btn" onClick={handleSave} disabled={
+                        saving || (
+                            !isFirstSave &&
+                            JSON.stringify({ items: Object.fromEntries(Object.entries(itemsState).map(([k, v]) => [k, v.ordered])), status: statusOverride, tracking: trackingNumber, notes }) === lastSavedSnapshot
+                        )
+                    }>
                         {saving ? 'Хадгалж байна...' : '💾 Хадгалах'}
                     </button>
                 </div>
