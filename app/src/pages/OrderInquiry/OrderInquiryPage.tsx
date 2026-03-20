@@ -117,6 +117,10 @@ export function OrderInquiryPage() {
                 const results = snap.docs
                     .map(d => ({ id: d.id, ...d.data() }))
                     .filter((o: any) => {
+                        // Only confirmed/paid product orders (not membership)
+                        const isConfirmed = o.paymentStatus === 'confirmed' || o.paymentStatus === 'paid';
+                        const isProduct = o.orderType !== 'membership';
+                        if (!isConfirmed || !isProduct) return false;
                         const num = (o.orderNumber || o.id.slice(-6)).toString().toLowerCase();
                         const phone = (o.customer?.phone || '').toString();
                         const name = (o.customer?.name || '').toString().toLowerCase();
