@@ -905,91 +905,253 @@ export function FacebookMessengerPage() {
                             <button className="fbm-toolbar-btn" onClick={() => setShowDrawer(false)}><X size={16} /></button>
                         </div>
 
-                        {/* Single section — Connection only. AI/Хариулт moved to Тохиргоо → Залгаасууд */}
-
-                        <div className="fbm-drawer-body">
-                            {/* ── Connection Settings ── */}
-                                <>
-                                    <div className="fbm-drawer-section">
-                                        <div className="fbm-drawer-section-title"><Shield size={14} /> Холболт</div>
-                                        <span className={`fbm-conn-badge ${settings?.isConnected ? 'connected' : ''}`}>
-                                            ● {settings?.isConnected ? 'Холбогдсон' : 'Холбогдоогүй'}
-                                        </span>
-                                    </div>
-                                    <div className="fbm-drawer-section">
-                                        <div className="fbm-drawer-section-title"><Link2 size={14} /> Webhook URL</div>
-                                        <div className="fbm-copyable" onClick={() => copyText(webhookUrl, 'url')}>
-                                            <code>{webhookUrl}</code>
-                                            {copied === 'url' ? <Check size={14} /> : <Copy size={14} />}
-                                        </div>
-                                        {settings?.verifyToken && (
-                                            <>
-                                                <div className="fbm-drawer-sublabel">Verify Token</div>
-                                                <div className="fbm-copyable" onClick={() => copyText(settings.verifyToken, 'token')}>
-                                                    <code>{settings.verifyToken}</code>
-                                                    {copied === 'token' ? <Check size={14} /> : <Copy size={14} />}
-                                                </div>
-                                            </>
-                                        )}
-                                    </div>
-                                    <div className="fbm-drawer-section">
-                                        <div className="fbm-drawer-section-title"><Settings size={14} /> Access Token</div>
-                                        <p className="fbm-drawer-hint">
-                                            <a href="https://developers.facebook.com/tools/explorer/" target="_blank" rel="noopener noreferrer">
-                                                Graph API Explorer <ExternalLink size={11} />
-                                            </a>
-                                        </p>
-                                        <div className="fbm-drawer-field">
-                                            <label>Page Name</label>
-                                            <input value={settingsForm.pageName} onChange={e => setSettingsForm(p => ({ ...p, pageName: e.target.value }))} placeholder="My Page" />
-                                        </div>
-                                        <div className="fbm-drawer-field">
-                                            <label>Page ID</label>
-                                            <input value={settingsForm.pageId} onChange={e => setSettingsForm(p => ({ ...p, pageId: e.target.value }))} placeholder="123456789" />
-                                        </div>
-                                        <div className="fbm-drawer-field">
-                                            <label>Page Access Token</label>
-                                            <input value={settingsForm.pageAccessToken} onChange={e => setSettingsForm(p => ({ ...p, pageAccessToken: e.target.value }))} placeholder="EAABsb..." type="password" />
-                                        </div>
-                                    </div>
-                                    {/* Connected Pages list */}
-                                    {pages.length > 0 && (
-                                        <div className="fbm-drawer-section">
-                                            <div className="fbm-drawer-section-title">📱 Холбогдсон Page-үүд ({pages.length})</div>
-                                            <div className="fbm-pages-list">
-                                                {pages.map(p => (
-                                                    <div key={p.pageId} className={`fbm-page-item ${p.pageId === settingsForm.pageId ? 'editing' : ''}`}>
-                                                        <div className="fbm-page-item-info">
-                                                            <span className="fbm-page-item-name">{p.pageName || p.pageId}</span>
-                                                            <span className="fbm-page-item-id">{p.pageId}</span>
-                                                        </div>
-                                                        <div className="fbm-page-item-actions">
-                                                            <button className="fbm-page-edit-btn" onClick={() => setSettingsForm({ pageId: p.pageId, pageName: p.pageName, pageAccessToken: p.pageAccessToken })} title="Засах">✏️</button>
-                                                            {pages.length > 1 && (
-                                                                <button className="fbm-page-remove-btn" onClick={async () => {
-                                                                    if (!business?.id) return;
-                                                                    await fbMessengerService.removePage(business.id, p.pageId);
-                                                                    setSettings(prev => prev ? { ...prev, pages: (prev.pages || []).filter(x => x.pageId !== p.pageId) } : prev);
-                                                                    toast.success('Page устгагдлаа');
-                                                                }} title="Устгах"><XCircle size={14} /></button>
-                                                            )}
-                                                        </div>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                            <button className="fbm-add-page-btn" onClick={() => setSettingsForm({ pageId: '', pageName: '', pageAccessToken: '' })}>
-                                                + Шинэ Page нэмэх
-                                            </button>
-                                        </div>
-                                    )}
-                                </>
+                        {/* Tabs — AI + Хариулт (Холболт → Тохиргоо залгаас руу шилжсэн) */}
+                        <div className="fbm-drawer-tabs">
+                            <button className={`fbm-drawer-tab ${settingsTab === 'ai' ? 'active' : ''}`} onClick={() => setSettingsTab('ai')}>
+                                <Bot size={14} /> AI горим
+                            </button>
+                            <button className={`fbm-drawer-tab ${settingsTab === 'canned' ? 'active' : ''}`} onClick={() => { setSettingsTab('canned'); setEditingCanned([...cannedResponses]); }}>
+                                <Zap size={14} /> Хариулт
+                            </button>
                         </div>
 
-                        <div className="fbm-drawer-footer">
-                            <button className="fbm-save-btn" onClick={handleSaveSettings} disabled={savingSettings}>
-                                {savingSettings ? <Loader2 className="animate-spin" size={16} /> : <Save size={16} />}
-                                Хадгалах
-                            </button>
+                        <div className="fbm-drawer-body">
+                            {/* ── AI Tab ── */}
+                            {settingsTab === 'ai' && (
+                                <div className="fbm-drawer-section">
+                                    {/* AI Status Banner */}
+                                    {(() => {
+                                        const allManual = pages.every(p => (p.aiMode || 'manual') === 'manual');
+                                        const anyAuto = pages.some(p => (p.aiMode || 'manual') === 'auto');
+                                        return (
+                                            <div style={{
+                                                padding: '10px 14px', borderRadius: 10, marginBottom: 16, display: 'flex', alignItems: 'center', gap: 10,
+                                                background: allManual ? 'rgba(239,68,68,0.08)' : anyAuto ? 'rgba(34,197,94,0.08)' : 'rgba(234,179,8,0.08)',
+                                                border: `1px solid ${allManual ? 'rgba(239,68,68,0.2)' : anyAuto ? 'rgba(34,197,94,0.2)' : 'rgba(234,179,8,0.2)'}`,
+                                            }}>
+                                                <span style={{ fontSize: '1.2rem' }}>{allManual ? '🔴' : anyAuto ? '🟢' : '🟡'}</span>
+                                                <div>
+                                                    <div style={{ fontSize: '0.82rem', fontWeight: 700, color: allManual ? '#ef4444' : anyAuto ? '#22c55e' : '#eab308' }}>
+                                                        {allManual ? 'AI унтарсан' : anyAuto ? 'AI автомат идэвхтэй' : 'AI туслах горим'}
+                                                    </div>
+                                                    <div style={{ fontSize: '0.72rem', color: '#888', marginTop: 2 }}>
+                                                        {allManual ? 'Бүх page дээр AI хариулахгүй — гараар хариулна' : anyAuto ? 'AI мессежид автомат хариулж байна' : 'AI санал болгоно, та батлах хэрэгтэй'}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        );
+                                    })()}
+
+                                    {/* Quick Action: Set All Pages */}
+                                    {pages.length > 1 && (
+                                        <div style={{ display: 'flex', gap: 6, marginBottom: 16 }}>
+                                            {(['manual', 'assist', 'auto'] as AiMode[]).map(mode => (
+                                                <button key={mode} style={{
+                                                    flex: 1, padding: '6px 8px', borderRadius: 8, border: '1px solid var(--border-light)',
+                                                    background: 'var(--glass-bg)', cursor: 'pointer', fontSize: '0.72rem', fontWeight: 600,
+                                                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4,
+                                                    color: mode === 'manual' ? '#ef4444' : mode === 'assist' ? '#eab308' : '#22c55e',
+                                                    transition: 'all 0.2s',
+                                                }} onClick={async () => {
+                                                    for (const p of pages) {
+                                                        await fbMessengerService.updatePageAIMode(business!.id, p.pageId, mode);
+                                                    }
+                                                    setSettings(prev => {
+                                                        if (!prev) return prev;
+                                                        return { ...prev, pages: (prev.pages || []).map(p => ({ ...p, aiMode: mode })) };
+                                                    });
+                                                    toast.success(`Бүх page: ${mode === 'manual' ? '🔴 Гар' : mode === 'assist' ? '🟡 Туслах' : '🟢 Автомат'}`);
+                                                }}>
+                                                    {mode === 'manual' ? '🔴 Бүгдийг Гар' : mode === 'assist' ? '🟡 Бүгдийг Туслах' : '🟢 Бүгдийг Автомат'}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    )}
+
+                                    <div className="fbm-drawer-section-title"><Bot size={14} /> Пэйж тус бүрийн AI горим</div>
+
+                                    {pages.length > 0 ? pages.map(page => {
+                                        const pageAiMode = page.aiMode || settings?.aiMode || 'manual';
+                                        return (
+                                            <div key={page.pageId} style={{
+                                                marginBottom: 16, padding: '12px 14px', borderRadius: 12,
+                                                background: 'var(--glass-bg)', border: '1px solid var(--border-light)',
+                                            }}>
+                                                {/* Page Header */}
+                                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+                                                    <div style={{ fontSize: '0.85rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6 }}>
+                                                        📱 {page.pageName || page.pageId}
+                                                    </div>
+                                                    <span style={{
+                                                        fontSize: '0.72rem', fontWeight: 700, padding: '3px 10px', borderRadius: 100,
+                                                        background: pageAiMode === 'auto' ? 'rgba(34,197,94,0.15)' : pageAiMode === 'assist' ? 'rgba(234,179,8,0.15)' : 'rgba(239,68,68,0.15)',
+                                                        color: pageAiMode === 'auto' ? '#16a34a' : pageAiMode === 'assist' ? '#ca8a04' : '#dc2626',
+                                                    }}>
+                                                        {pageAiMode === 'auto' ? '🟢 Автомат' : pageAiMode === 'assist' ? '🟡 Туслах' : '🔴 Гар'}
+                                                    </span>
+                                                </div>
+
+                                                {/* Mode Cards */}
+                                                <div style={{ display: 'flex', gap: 6 }}>
+                                                    {([
+                                                        { mode: 'manual' as AiMode, icon: '🔴', label: 'Гар', desc: 'AI хариулахгүй', color: '#ef4444', bg: 'rgba(239,68,68,0.06)', border: 'rgba(239,68,68,0.3)' },
+                                                        { mode: 'assist' as AiMode, icon: '🟡', label: 'Туслах', desc: 'AI санал болгоно', color: '#eab308', bg: 'rgba(234,179,8,0.06)', border: 'rgba(234,179,8,0.3)' },
+                                                        { mode: 'auto' as AiMode, icon: '🟢', label: 'Автомат', desc: 'AI автомат хариулна', color: '#22c55e', bg: 'rgba(34,197,94,0.06)', border: 'rgba(34,197,94,0.3)' },
+                                                    ]).map(m => (
+                                                        <button key={m.mode} style={{
+                                                            flex: 1, padding: '10px 6px', borderRadius: 10, cursor: 'pointer', transition: 'all 0.2s',
+                                                            background: pageAiMode === m.mode ? m.bg : 'transparent',
+                                                            border: `2px solid ${pageAiMode === m.mode ? m.border : 'var(--border-light)'}`,
+                                                            textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
+                                                        }} onClick={async () => {
+                                                            await fbMessengerService.updatePageAIMode(business!.id, page.pageId, m.mode);
+                                                            setSettings(prev => {
+                                                                if (!prev) return prev;
+                                                                return { ...prev, pages: (prev.pages || []).map(p => p.pageId === page.pageId ? { ...p, aiMode: m.mode } : p) };
+                                                            });
+                                                            toast.success(`${page.pageName}: ${m.icon} ${m.label}`);
+                                                        }}>
+                                                            <span style={{ fontSize: '1.1rem' }}>{m.icon}</span>
+                                                            <span style={{ fontSize: '0.78rem', fontWeight: 700, color: pageAiMode === m.mode ? m.color : '#888' }}>{m.label}</span>
+                                                            <span style={{ fontSize: '0.62rem', color: '#999', lineHeight: 1.2 }}>{m.desc}</span>
+                                                        </button>
+                                                    ))}
+                                                </div>
+
+                                                {/* Schedule */}
+                                                <div style={{ marginTop: 10, paddingTop: 10, borderTop: '1px dashed var(--border-light)' }}>
+                                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                                                        <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#888', display: 'flex', alignItems: 'center', gap: 4 }}>
+                                                            <Clock size={11} /> Хуваарь
+                                                        </span>
+                                                        <button className="fbm-schedule-add-btn" onClick={async () => {
+                                                            const currentSchedule = page.schedule || [];
+                                                            const newEntry: AiScheduleEntry = { startTime: '09:00', endTime: '18:00', mode: 'auto' };
+                                                            const updated = [...currentSchedule, newEntry];
+                                                            await fbMessengerService.updatePageSchedule(business!.id, page.pageId, updated);
+                                                            setSettings(prev => {
+                                                                if (!prev) return prev;
+                                                                return { ...prev, pages: (prev.pages || []).map(p => p.pageId === page.pageId ? { ...p, schedule: updated } : p) };
+                                                            });
+                                                            toast.success('Хуваарь нэмэгдлээ');
+                                                        }}>
+                                                            <Plus size={11} /> Нэмэх
+                                                        </button>
+                                                    </div>
+                                                    {(page.schedule || []).length === 0 && (
+                                                        <p style={{ fontSize: '0.7rem', color: '#aaa', margin: '0 0 4px', fontStyle: 'italic' }}>Хуваарьгүй — дээрх горим 24/7 ажиллана</p>
+                                                    )}
+                                                    {(page.schedule || []).map((entry, idx) => (
+                                                        <div key={idx} className="fbm-schedule-entry">
+                                                            <div className="fbm-schedule-row">
+                                                                <input type="time" value={entry.startTime} className="fbm-schedule-time"
+                                                                    onChange={async (e) => {
+                                                                        const updated = [...(page.schedule || [])];
+                                                                        updated[idx] = { ...updated[idx], startTime: e.target.value };
+                                                                        await fbMessengerService.updatePageSchedule(business!.id, page.pageId, updated);
+                                                                        setSettings(prev => prev ? { ...prev, pages: (prev.pages || []).map(p => p.pageId === page.pageId ? { ...p, schedule: updated } : p) } : prev);
+                                                                    }} />
+                                                                <span className="fbm-schedule-dash">–</span>
+                                                                <input type="time" value={entry.endTime} className="fbm-schedule-time"
+                                                                    onChange={async (e) => {
+                                                                        const updated = [...(page.schedule || [])];
+                                                                        updated[idx] = { ...updated[idx], endTime: e.target.value };
+                                                                        await fbMessengerService.updatePageSchedule(business!.id, page.pageId, updated);
+                                                                        setSettings(prev => prev ? { ...prev, pages: (prev.pages || []).map(p => p.pageId === page.pageId ? { ...p, schedule: updated } : p) } : prev);
+                                                                    }} />
+                                                                <select value={entry.mode} className="fbm-schedule-mode"
+                                                                    onChange={async (e) => {
+                                                                        const updated = [...(page.schedule || [])];
+                                                                        updated[idx] = { ...updated[idx], mode: e.target.value as AiMode };
+                                                                        await fbMessengerService.updatePageSchedule(business!.id, page.pageId, updated);
+                                                                        setSettings(prev => prev ? { ...prev, pages: (prev.pages || []).map(p => p.pageId === page.pageId ? { ...p, schedule: updated } : p) } : prev);
+                                                                    }}>
+                                                                    <option value="auto">🟢 Автомат</option>
+                                                                    <option value="assist">🟡 Туслах</option>
+                                                                    <option value="manual">🔴 Гар</option>
+                                                                </select>
+                                                                <button className="fbm-schedule-del" onClick={async () => {
+                                                                    const updated = (page.schedule || []).filter((_, i) => i !== idx);
+                                                                    await fbMessengerService.updatePageSchedule(business!.id, page.pageId, updated);
+                                                                    setSettings(prev => prev ? { ...prev, pages: (prev.pages || []).map(p => p.pageId === page.pageId ? { ...p, schedule: updated } : p) } : prev);
+                                                                    toast.success('Хуваарь устгагдлаа');
+                                                                }}>
+                                                                    <Trash2 size={13} />
+                                                                </button>
+                                                            </div>
+                                                            <div className="fbm-schedule-days">
+                                                                {['Ня', 'Да', 'Мя', 'Лх', 'Пү', 'Ба', 'Бя'].map((label, dayIdx) => (
+                                                                    <button key={dayIdx}
+                                                                        className={`fbm-schedule-day ${!entry.days || entry.days.length === 0 || entry.days.includes(dayIdx) ? 'active' : ''}`}
+                                                                        onClick={async () => {
+                                                                            const updated = [...(page.schedule || [])];
+                                                                            const currentDays = entry.days && entry.days.length > 0 ? [...entry.days] : [0,1,2,3,4,5,6];
+                                                                            const newDays = currentDays.includes(dayIdx)
+                                                                                ? currentDays.filter(d => d !== dayIdx)
+                                                                                : [...currentDays, dayIdx];
+                                                                            updated[idx] = { ...updated[idx], days: newDays.length === 7 ? [] : newDays };
+                                                                            await fbMessengerService.updatePageSchedule(business!.id, page.pageId, updated);
+                                                                            setSettings(prev => prev ? { ...prev, pages: (prev.pages || []).map(p => p.pageId === page.pageId ? { ...p, schedule: updated } : p) } : prev);
+                                                                        }}>
+                                                                        {label}
+                                                                    </button>
+                                                                ))}
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        );
+                                    }) : (
+                                        <div className="fbm-ai-modes">
+                                            {(['manual', 'assist', 'auto'] as AiMode[]).map(mode => (
+                                                <button key={mode} className={`fbm-ai-mode-btn ${(settings?.aiMode || 'manual') === mode ? 'active' : ''}`}
+                                                    onClick={async () => {
+                                                        await fbMessengerService.updateAIMode(business!.id, mode);
+                                                        setSettings(prev => prev ? { ...prev, aiMode: mode } : prev);
+                                                        toast.success(`AI горим: ${mode === 'manual' ? 'Гар' : mode === 'assist' ? 'Туслах' : 'Автомат'}`);
+                                                    }}>
+                                                    <span className="fbm-ai-mode-icon">{mode === 'manual' ? '🔴' : mode === 'assist' ? '🟡' : '🟢'}</span>
+                                                    <div className="fbm-ai-mode-info">
+                                                        <span className="fbm-ai-mode-label">{mode === 'manual' ? 'Гар' : mode === 'assist' ? 'Туслах' : 'Автомат'}</span>
+                                                        <span className="fbm-ai-mode-desc">{mode === 'manual' ? 'AI оролцохгүй' : mode === 'assist' ? 'AI санал болгоно, оператор батална' : 'AI бүрэн автомат хариулна'}</span>
+                                                    </div>
+                                                </button>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+
+                            {/* ── Canned Responses Tab ── */}
+                            {settingsTab === 'canned' && (
+                                <div className="fbm-drawer-section">
+                                    <div className="fbm-drawer-section-title"><Zap size={14} /> Түргэн хариулт</div>
+                                    <p className="fbm-drawer-hint">Чатанд / бичээд хурдан хариулт оруулах</p>
+
+                                    <div className="fbm-canned-list">
+                                        {editingCanned.map((r, i) => (
+                                            <div key={i} className="fbm-canned-edit-row">
+                                                <code>{r.key}</code>
+                                                <span>{r.text}</span>
+                                                <button className="fbm-canned-del" onClick={() => setEditingCanned(prev => prev.filter((_, j) => j !== i))}>
+                                                    <X size={12} />
+                                                </button>
+                                            </div>
+                                        ))}
+                                    </div>
+
+                                    <div className="fbm-canned-add">
+                                        <input placeholder="/товчлол" value={newCannedKey} onChange={e => setNewCannedKey(e.target.value)} className="fbm-canned-key-input" />
+                                        <input placeholder="Хариу текст" value={newCannedText} onChange={e => setNewCannedText(e.target.value)} className="fbm-canned-text-input" />
+                                        <button className="fbm-canned-add-btn" onClick={handleAddCanned} disabled={!newCannedKey || !newCannedText}>+</button>
+                                    </div>
+
+                                    <button className="fbm-save-btn" onClick={handleSaveCanned} style={{ marginTop: 12 }}>
+                                        <Save size={16} /> Хадгалах
+                                    </button>
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>
