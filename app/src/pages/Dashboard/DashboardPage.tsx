@@ -174,9 +174,12 @@ export function DashboardPage() {
 
                     ordersSnap.docs.forEach(d => {
                         const o = d.data();
+                        // Skip unpaid (fake) orders and membership orders
+                        if (o.paymentStatus === 'unpaid' || o.orderType === 'membership') return;
+                        if (o.status === 'cancelled') return;
                         const status = o.status || 'new';
                         statusMap[status] = (statusMap[status] || 0) + 1;
-                        if (o.status !== 'cancelled' && o.items) {
+                        if (o.items) {
                             // eslint-disable-next-line @typescript-eslint/no-explicit-any
                             o.items.forEach((item: any) => {
                                 const pid = item.productId || item.name;

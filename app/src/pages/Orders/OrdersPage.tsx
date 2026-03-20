@@ -77,20 +77,22 @@ export function OrdersPage() {
     };
 
     useEffect(() => {
-        // Calculate stats whenever orders change
+        // Calculate stats — ONLY from paid/confirmed orders (unpaid = fake)
         const now = new Date();
         const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
-        const todayOrders = orders.filter(o => {
+        const paidOrders = orders.filter(o => !o.isDeleted && (o.paymentStatus === 'paid' || o.paymentStatus === 'partial') && o.orderType !== 'membership');
+
+        const todayPaid = paidOrders.filter(o => {
             const date = o.createdAt instanceof Date ? o.createdAt : new Date();
-            return date >= startOfToday && !o.isDeleted;
+            return date >= startOfToday;
         });
 
         const newStats = {
-            revenue: todayOrders.reduce((sum, o) => sum + (o.financials?.totalAmount || 0), 0),
-            new: orders.filter(o => o.status === 'new' && !o.isDeleted).length,
-            processing: orders.filter(o => (o.status === 'confirmed' || o.status === 'sourced') && !o.isDeleted).length,
-            delivered: orders.filter(o => (o.status === 'arrived') && !o.isDeleted).length
+            revenue: todayPaid.reduce((sum, o) => sum + (o.financials?.totalAmount || 0), 0),
+            new: paidOrders.filter(o => o.status === 'new').length,
+            processing: paidOrders.filter(o => o.status === 'confirmed' || o.status === 'sourced').length,
+            delivered: paidOrders.filter(o => o.status === 'arrived').length
         };
         setStats(newStats);
     }, [orders]);
@@ -273,7 +275,7 @@ export function OrdersPage() {
                             <div className="ord-hero-icon"><ShoppingCart size={24} /></div>
                             <div>
                                 <h2 className="ord-hero-title">Борлуулалтын Захиалга</h2>
-                                <div className="ord-hero-desc">{loading ? 'Уншиж байна...' : `Нийт ${orders.length} захиалга`}</div>
+                                <div className="ord-hero-desc">{loading ? 'Уншиж байна...' : `Нийт ${orders.filter(o => !o.isDeleted && o.paymentStatus !== 'unpaid').length} баталгаажсан захиалга`}</div>
                             </div>
                         </div>
                         <PermissionGate permission="orders.create">
@@ -286,7 +288,7 @@ export function OrdersPage() {
                     <div className="ord-hero-stats">
                         <div className="ord-hero-stat">
                             <div className="ord-hero-stat-value">{fmt(stats.revenue)}</div>
-                            <div className="ord-hero-stat-label">Өнөөдрийн орлого</div>
+                            <div className="ord-hero-stat-label">Өнөөдрийн орлого (баталгаажсан)</div>
                         </div>
                         <div className="ord-hero-stat">
                             <div className="ord-hero-stat-value">{stats.new}</div>
