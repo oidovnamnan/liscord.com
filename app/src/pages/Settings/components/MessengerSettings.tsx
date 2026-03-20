@@ -44,10 +44,18 @@ export function MessengerSettings({ bizId }: { bizId: string }) {
     };
 
     const handleSave = async () => {
-        if (!settingsForm.pageId || !settingsForm.pageAccessToken) {
-            toast.error('Page ID болон Access Token оруулна уу');
+        if (!settingsForm.pageId) {
+            toast.error('Page ID оруулна уу');
             return;
         }
+
+        // For new pages, token is required
+        const existingIdx = pages.findIndex(p => p.pageId === settingsForm.pageId);
+        if (existingIdx < 0 && !settingsForm.pageAccessToken) {
+            toast.error('Шинэ page-д Access Token оруулна уу');
+            return;
+        }
+
         setSaving(true);
         try {
             const newPage: FbPageConfig = {
@@ -57,8 +65,6 @@ export function MessengerSettings({ bizId }: { bizId: string }) {
                 isActive: true,
             };
 
-            // Check if editing existing page
-            const existingIdx = pages.findIndex(p => p.pageId === settingsForm.pageId);
             if (existingIdx >= 0) {
                 // Update existing — keep old token if user didn't paste a new one
                 const updatedPages = [...pages];
@@ -68,7 +74,7 @@ export function MessengerSettings({ bizId }: { bizId: string }) {
                     pages: updatedPages,
                     pageId: settingsForm.pageId,
                     pageName: settingsForm.pageName,
-                    pageAccessToken: settingsForm.pageAccessToken,
+                    pageAccessToken: finalToken,
                     isConnected: true,
                 });
                 setSettings(prev => prev ? { ...prev, pages: updatedPages, isConnected: true } : prev);
