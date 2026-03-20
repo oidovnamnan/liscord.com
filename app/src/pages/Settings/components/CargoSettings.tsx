@@ -51,29 +51,54 @@ export function CargoSettings({ bizId }: { bizId: string }) {
                 </div>
 
                 <div className="cargo-types-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 16, marginTop: 16 }}>
-                    {cargoTypes.map(type => (
-                        <div key={type.id} className="card cargo-type-card" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', padding: '16px 20px', border: '1px solid var(--border-color)', borderRadius: '16px' }}>
-                            <div>
-                                <div style={{ fontWeight: 600, fontSize: '1rem', marginBottom: 4 }}>{type.name}</div>
-                                <div style={{ color: 'var(--primary)', fontWeight: 700, fontSize: '1.25rem' }}>
-                                    ₮{type.fee.toLocaleString()} <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 400 }}>/ {type.unit}</span>
-                                </div>
-                                {type.pricingTiers && type.pricingTiers.length > 0 && (
-                                    <div style={{ fontSize: '0.72rem', color: 'var(--accent-green, #10b981)', fontWeight: 600, marginTop: 4 }}>
-                                        📊 {type.pricingTiers.length} шатлалт үнэ
+                    {cargoTypes.map(type => {
+                        const sortedTiers = (type.pricingTiers || []).sort((a, b) => a.minQty - b.minQty);
+                        return (
+                        <div key={type.id} className="card cargo-type-card" style={{ padding: '16px 20px', border: '1px solid var(--border-color)', borderRadius: '16px' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
+                                <div>
+                                    <div style={{ fontWeight: 600, fontSize: '1rem', marginBottom: 4 }}>{type.name}</div>
+                                    <div style={{ color: 'var(--primary)', fontWeight: 700, fontSize: '1.25rem' }}>
+                                        ₮{type.fee.toLocaleString()} <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 400 }}>/ {type.unit}</span>
                                     </div>
-                                )}
+                                </div>
+                                <div style={{ display: 'flex', gap: 4 }}>
+                                    <button className="btn btn-ghost btn-sm btn-icon" onClick={() => { setEditingType(type); setShowModal(true); }}>
+                                        <MoreVertical size={14} />
+                                    </button>
+                                    <button className="btn btn-ghost btn-sm btn-icon text-danger" onClick={() => handleDelete(type.id)}>
+                                        <Trash2 size={14} />
+                                    </button>
+                                </div>
                             </div>
-                            <div style={{ display: 'flex', gap: 4 }}>
-                                <button className="btn btn-ghost btn-sm btn-icon" onClick={() => { setEditingType(type); setShowModal(true); }}>
-                                    <MoreVertical size={14} />
-                                </button>
-                                <button className="btn btn-ghost btn-sm btn-icon text-danger" onClick={() => handleDelete(type.id)}>
-                                    <Trash2 size={14} />
-                                </button>
-                            </div>
+                            {sortedTiers.length > 0 && (
+                                <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 4 }}>
+                                    <div style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.3px', marginBottom: 2 }}>📊 Шатлалт үнэ</div>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '5px 10px', borderRadius: 8, background: 'rgba(99,102,241,0.05)', fontSize: '0.78rem' }}>
+                                        <span style={{ fontWeight: 600, color: 'var(--primary)', minWidth: 60 }}>1–{sortedTiers[0].minQty - 1} {type.unit}</span>
+                                        <span style={{ fontWeight: 700 }}>₮{type.fee.toLocaleString()}</span>
+                                    </div>
+                                    {sortedTiers.map((tier, i) => {
+                                        const nextTier = sortedTiers[i + 1];
+                                        const rangeLabel = nextTier
+                                            ? `${tier.minQty}–${nextTier.minQty - 1} ${type.unit}`
+                                            : `${tier.minQty}+ ${type.unit}`;
+                                        return (
+                                            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '5px 10px', borderRadius: 8, background: 'rgba(16,185,129,0.05)', fontSize: '0.78rem' }}>
+                                                <span style={{ fontWeight: 600, color: '#10b981', minWidth: 60 }}>{rangeLabel}</span>
+                                                <span style={{ fontWeight: 700 }}>₮{tier.fee.toLocaleString()}</span>
+                                                {tier.fee < type.fee && (
+                                                    <span style={{ fontSize: '0.68rem', color: '#10b981', fontWeight: 600, marginLeft: 'auto' }}>
+                                                        −{Math.round(((type.fee - tier.fee) / type.fee) * 100)}%
+                                                    </span>
+                                                )}
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            )}
                         </div>
-                    ))}
+                    );})}
                     {cargoTypes.length === 0 && (
                         <div className="empty-state-mini" style={{ gridColumn: '1/-1', textAlign: 'center', padding: '40px', background: 'var(--bg-soft)', borderRadius: 12, border: '1px dashed var(--border-color)' }}>
                             <Globe size={32} style={{ color: 'var(--text-muted)', marginBottom: 12, opacity: 0.5 }} />
