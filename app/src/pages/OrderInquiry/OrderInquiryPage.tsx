@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { collection, onSnapshot, query, orderBy, doc, updateDoc, addDoc, Timestamp } from 'firebase/firestore';
+import { collection, onSnapshot, query, orderBy, doc, updateDoc, addDoc, getDocs, where, Timestamp } from 'firebase/firestore';
 import { db } from '../../services/firebase';
 import { useBusinessStore, useAuthStore } from '../../store';
 import { MessageSquare, Clock, CheckCircle, Send, ArrowRight, Loader2, BellRing, Phone, User, Plus, X } from 'lucide-react';
@@ -81,7 +81,15 @@ export function OrderInquiryPage() {
 
     // Create form
     const [showCreateForm, setShowCreateForm] = useState(false);
-    const [createData, setCreateData] = useState({ orderNumber: '', customerName: '', customerPhone: '', question: '', source: 'phone' as 'phone' | 'messenger' });
+    const [createSource, setCreateSource] = useState<'phone' | 'messenger'>('phone');
+    const [createQuestion, setCreateQuestion] = useState('');
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const [selectedOrder, setSelectedOrder] = useState<any>(null);
+    const [orderSearchTerm, setOrderSearchTerm] = useState('');
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const [orderSearchResults, setOrderSearchResults] = useState<any[]>([]);
+    const [orderSearching, setOrderSearching] = useState(false);
+    const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     // New inquiry detection
     const prevPendingRef = useRef<number | null>(null);
@@ -91,6 +99,40 @@ export function OrderInquiryPage() {
             Notification.requestPermission();
         }
     }, []);
+
+    // Order search with debounce
+    useEffect(() => {
+        if (!business?.id || !orderSearchTerm.trim() || orderSearchTerm.trim().length < 2) {
+            setOrderSearchResults([]);
+            return;
+        }
+        if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
+        searchTimeoutRef.current = setTimeout(async () => {
+            setOrderSearching(true);
+            try {
+                const term = orderSearchTerm.trim();
+                const ordersRef = collection(db, `businesses/${business.id}/orders`);
+                // Fetch recent orders and filter client-side for flexibility
+                const snap = await getDocs(query(ordersRef, orderBy('createdAt', 'desc')));
+                const results = snap.docs
+                    .map(d => ({ id: d.id, ...d.data() }))
+                    .filter((o: any) => {
+                        const num = (o.orderNumber || o.id.slice(-6)).toString().toLowerCase();
+                        const phone = (o.customer?.phone || '').toString();
+                        const name = (o.customer?.name || '').toString().toLowerCase();
+                        const t = term.toLowerCase();
+                        return num.includes(t) || phone.includes(t) || name.includes(t);
+                    })
+                    .slice(0, 10);
+                setOrderSearchResults(results);
+            } catch (e) {
+                console.error('Order search error:', e);
+            } finally {
+                setOrderSearching(false);
+            }
+        }, 400);
+        return () => { if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current); };
+    }, [orderSearchTerm, business?.id]);
 
     useEffect(() => {
         if (!business?.id) return;
@@ -186,16 +228,16 @@ export function OrderInquiryPage() {
     };
 
     const handleCreate = async () => {
-        if (!business?.id || !createData.orderNumber.trim() || !createData.question.trim()) return;
+        if (!business?.id || !selectedOrder || !createQuestion.trim()) return;
         setSaving(true);
         try {
             await addDoc(collection(db, `businesses/${business.id}/orderInquiries`), {
-                orderId: '',
-                orderNumber: createData.orderNumber.trim(),
-                customerName: createData.customerName.trim() || 'Хэрэглэгч',
-                customerPhone: createData.customerPhone.trim(),
-                question: createData.question.trim(),
-                source: createData.source,
+                orderId: selectedOrder.id,
+                orderNumber: selectedOrder.orderNumber || selectedOrder.id.slice(-6).toUpperCase(),
+                customerName: selectedOrder.customer?.name || 'Хэрэглэгч',
+                customerPhone: selectedOrder.customer?.phone || '',
+                question: createQuestion.trim(),
+                source: createSource,
                 status: 'pending',
                 assignedTo: user?.uid || employee?.id || '',
                 assignedToName: employee?.name || user?.displayName || 'Оператор',
@@ -204,7 +246,11 @@ export function OrderInquiryPage() {
             });
             toast.success('Лавлагаа үүсгэгдлээ ✅');
             setShowCreateForm(false);
-            setCreateData({ orderNumber: '', customerName: '', customerPhone: '', question: '', source: 'phone' });
+            setSelectedOrder(null);
+            setOrderSearchTerm('');
+            setOrderSearchResults([]);
+            setCreateQuestion('');
+            setCreateSource('phone');
         } catch (e) {
             console.error('Failed to create inquiry:', e);
             toast.error('Алдаа гарлаа');
@@ -472,7 +518,8 @@ export function OrderInquiryPage() {
                     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 9998 }} onClick={() => setShowCreateForm(false)} />
                     <div style={{
                         position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%,-50%)',
-                        background: 'var(--surface-1)', borderRadius: 20, padding: 28, width: 420, maxWidth: '90vw',
+                        background: 'var(--surface-1)', borderRadius: 20, padding: 28, width: 520, maxWidth: '92vw',
+                        maxHeight: '85vh', overflowY: 'auto',
                         zIndex: 9999, boxShadow: '0 20px 60px rgba(0,0,0,0.3)'
                     }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
@@ -482,66 +529,142 @@ export function OrderInquiryPage() {
                             </button>
                         </div>
 
-                        {/* Source toggle */}
-                        <div style={{ display: 'flex', gap: 6, marginBottom: 14 }}>
-                            {(['phone', 'messenger'] as const).map(s => (
-                                <button
-                                    key={s}
-                                    onClick={() => setCreateData(d => ({ ...d, source: s }))}
-                                    style={{
-                                        flex: 1, padding: '8px 12px', borderRadius: 10, border: 'none',
-                                        background: createData.source === s ? '#6366f1' : 'var(--surface-2)',
-                                        color: createData.source === s ? '#fff' : 'var(--text-secondary)',
-                                        fontSize: '0.84rem', fontWeight: 700, cursor: 'pointer',
-                                    }}
-                                >
-                                    {s === 'phone' ? '📞 Утасаар' : '💬 Мессенжерээр'}
-                                </button>
-                            ))}
-                        </div>
+                        {/* Step 1: Search for order */}
+                        {!selectedOrder ? (
+                            <>
+                                <div style={{ fontSize: '0.84rem', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: 8 }}>
+                                    🔍 Захиалга хайх
+                                </div>
+                                <input
+                                    placeholder="Захиалгын дугаар, утасны дугаар, нэрээр хайх..."
+                                    value={orderSearchTerm}
+                                    onChange={e => setOrderSearchTerm(e.target.value)}
+                                    className="oinq-answer-textarea"
+                                    style={{ minHeight: 'auto', padding: '10px 14px', marginBottom: 10 }}
+                                    autoFocus
+                                />
 
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                            <input
-                                placeholder="Захиалгын дугаар *"
-                                value={createData.orderNumber}
-                                onChange={e => setCreateData(d => ({ ...d, orderNumber: e.target.value }))}
-                                className="oinq-answer-textarea"
-                                style={{ minHeight: 'auto', padding: '10px 14px' }}
-                            />
-                            <input
-                                placeholder="Харилцагчийн нэр"
-                                value={createData.customerName}
-                                onChange={e => setCreateData(d => ({ ...d, customerName: e.target.value }))}
-                                className="oinq-answer-textarea"
-                                style={{ minHeight: 'auto', padding: '10px 14px' }}
-                            />
-                            <input
-                                placeholder="Утасны дугаар"
-                                value={createData.customerPhone}
-                                onChange={e => setCreateData(d => ({ ...d, customerPhone: e.target.value }))}
-                                className="oinq-answer-textarea"
-                                style={{ minHeight: 'auto', padding: '10px 14px' }}
-                            />
-                            <textarea
-                                placeholder="Асуулга / тэмдэглэл *"
-                                value={createData.question}
-                                onChange={e => setCreateData(d => ({ ...d, question: e.target.value }))}
-                                className="oinq-answer-textarea"
-                                rows={3}
-                            />
-                        </div>
+                                {orderSearching && (
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: 12, color: 'var(--text-muted)', fontSize: '0.82rem' }}>
+                                        <Loader2 size={14} className="oinq-spin" /> Хайж байна...
+                                    </div>
+                                )}
 
-                        <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 16 }}>
-                            <button className="oinq-btn" style={{ background: 'var(--surface-2)' }} onClick={() => setShowCreateForm(false)}>Болих</button>
-                            <button
-                                className="oinq-btn answer"
-                                disabled={!createData.orderNumber.trim() || !createData.question.trim() || saving}
-                                onClick={handleCreate}
-                            >
-                                {saving ? <Loader2 size={14} className="oinq-spin" /> : <Plus size={14} />}
-                                Үүсгэх
-                            </button>
-                        </div>
+                                {!orderSearching && orderSearchTerm.trim().length >= 2 && orderSearchResults.length === 0 && (
+                                    <div style={{ padding: 16, textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.84rem' }}>
+                                        Захиалга олдсонгүй
+                                    </div>
+                                )}
+
+                                {orderSearchResults.length > 0 && (
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6, maxHeight: 300, overflowY: 'auto' }}>
+                                        {orderSearchResults.map((o: any) => {
+                                            const d = o.createdAt?.toDate?.() || o.createdAt;
+                                            const dateStr = d instanceof Date ? d.toLocaleDateString('mn-MN') : '';
+                                            return (
+                                                <div
+                                                    key={o.id}
+                                                    onClick={() => { setSelectedOrder(o); setOrderSearchResults([]); }}
+                                                    style={{
+                                                        padding: '10px 14px', borderRadius: 12, border: '1px solid var(--border)',
+                                                        cursor: 'pointer', background: 'var(--surface-1)', transition: 'all 0.15s',
+                                                    }}
+                                                    onMouseEnter={e => (e.currentTarget.style.background = 'var(--surface-2)')}
+                                                    onMouseLeave={e => (e.currentTarget.style.background = 'var(--surface-1)')}
+                                                >
+                                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                                                        <span style={{ fontWeight: 800, fontSize: '0.88rem' }}>
+                                                            #{o.orderNumber || o.id.slice(-6).toUpperCase()}
+                                                        </span>
+                                                        <span style={{
+                                                            fontSize: '0.72rem', fontWeight: 700, padding: '2px 8px', borderRadius: 6,
+                                                            background: o.paymentStatus === 'confirmed' ? '#dcfce7' : '#fef3c7',
+                                                            color: o.paymentStatus === 'confirmed' ? '#166534' : '#92400e',
+                                                        }}>
+                                                            {o.paymentStatus === 'confirmed' ? '✅ Баталгаажсан' : '⏳ ' + (o.paymentStatus || 'pending')}
+                                                        </span>
+                                                    </div>
+                                                    <div style={{ display: 'flex', gap: 12, fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                                                        {o.customer?.name && <span>👤 {o.customer.name}</span>}
+                                                        {o.customer?.phone && <span>📞 {o.customer.phone}</span>}
+                                                        {dateStr && <span>📅 {dateStr}</span>}
+                                                    </div>
+                                                    {o.totalAmount != null && (
+                                                        <div style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-primary)', marginTop: 4 }}>
+                                                            💰 {Number(o.totalAmount).toLocaleString()}₮
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                )}
+                            </>
+                        ) : (
+                            <>
+                                {/* Step 2: Selected order + question */}
+                                <div style={{
+                                    padding: '12px 16px', borderRadius: 14, border: '2px solid #6366f1',
+                                    background: '#6366f108', marginBottom: 14,
+                                }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                                        <span style={{ fontWeight: 800, fontSize: '0.92rem' }}>
+                                            #{selectedOrder.orderNumber || selectedOrder.id.slice(-6).toUpperCase()}
+                                        </span>
+                                        <button
+                                            onClick={() => { setSelectedOrder(null); setOrderSearchTerm(''); }}
+                                            style={{ border: 'none', background: 'var(--surface-2)', borderRadius: 6, padding: '2px 8px', cursor: 'pointer', fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-muted)' }}
+                                        >
+                                            Өөрчлөх
+                                        </button>
+                                    </div>
+                                    <div style={{ display: 'flex', gap: 12, fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                                        {selectedOrder.customer?.name && <span>👤 {selectedOrder.customer.name}</span>}
+                                        {selectedOrder.customer?.phone && <span>📞 {selectedOrder.customer.phone}</span>}
+                                    </div>
+                                </div>
+
+                                {/* Source */}
+                                <div style={{ display: 'flex', gap: 6, marginBottom: 12 }}>
+                                    {(['phone', 'messenger'] as const).map(s => (
+                                        <button
+                                            key={s}
+                                            onClick={() => setCreateSource(s)}
+                                            style={{
+                                                flex: 1, padding: '8px 12px', borderRadius: 10, border: 'none',
+                                                background: createSource === s ? '#6366f1' : 'var(--surface-2)',
+                                                color: createSource === s ? '#fff' : 'var(--text-secondary)',
+                                                fontSize: '0.84rem', fontWeight: 700, cursor: 'pointer',
+                                            }}
+                                        >
+                                            {s === 'phone' ? '📞 Утасаар' : '💬 Мессенжерээр'}
+                                        </button>
+                                    ))}
+                                </div>
+
+                                {/* Question */}
+                                <textarea
+                                    placeholder="Асуулга / тэмдэглэл *"
+                                    value={createQuestion}
+                                    onChange={e => setCreateQuestion(e.target.value)}
+                                    className="oinq-answer-textarea"
+                                    rows={3}
+                                    autoFocus
+                                />
+
+                                <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 14 }}>
+                                    <button className="oinq-btn" style={{ background: 'var(--surface-2)' }} onClick={() => setShowCreateForm(false)}>Болих</button>
+                                    <button
+                                        className="oinq-btn answer"
+                                        disabled={!createQuestion.trim() || saving}
+                                        onClick={handleCreate}
+                                    >
+                                        {saving ? <Loader2 size={14} className="oinq-spin" /> : <Plus size={14} />}
+                                        Үүсгэх
+                                    </button>
+                                </div>
+                            </>
+                        )}
                     </div>
                 </>
             )}
