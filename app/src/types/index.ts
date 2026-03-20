@@ -258,6 +258,10 @@ export interface BusinessStats {
     totalCustomers: number;
     totalProducts: number;
     totalEmployees: number;
+    // Confirmed-only metrics
+    confirmedRevenue?: number;
+    confirmedOrderCount?: number;
+    vipMemberCount?: number;
     // Cargo specific
     totalPackages?: number;
     packagesInTransit?: number;

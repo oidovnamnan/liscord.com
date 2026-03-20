@@ -133,12 +133,28 @@ export const dashboardService = {
             getDocs(collection(db, 'businesses', bizId, 'customers')),
         ]);
 
-        // Sum revenue from orders
+        // Sum revenue from orders — now split by payment status
         let totalRevenue = 0;
+        let confirmedRevenue = 0;
+        let confirmedOrderCount = 0;
+        let vipMemberCount = 0;
+        let productOrderCount = 0;
         ordersSnap.docs.forEach(d => {
             const order = d.data();
-            if (order.status !== 'cancelled') {
-                totalRevenue += order.financials?.totalAmount || order.totalAmount || 0;
+            // VIP/Membership orders
+            if (order.orderType === 'membership') {
+                if (order.paymentStatus === 'paid' || order.paymentStatus === 'confirmed') {
+                    vipMemberCount++;
+                }
+                return; // Don't count membership in product revenue
+            }
+            if (order.status === 'cancelled') return;
+            productOrderCount++;
+            const amount = order.financials?.totalAmount || order.totalAmount || 0;
+            totalRevenue += amount;
+            if (order.paymentStatus === 'paid' || order.paymentStatus === 'confirmed') {
+                confirmedRevenue += amount;
+                confirmedOrderCount++;
             }
         });
 
@@ -146,8 +162,11 @@ export const dashboardService = {
         const activeProducts = productsSnap.docs.filter(d => !d.data().isDeleted).length;
 
         const stats: BusinessStats = {
-            totalOrders: ordersSnap.size,
+            totalOrders: productOrderCount,
             totalRevenue,
+            confirmedRevenue,
+            confirmedOrderCount,
+            vipMemberCount,
             totalCustomers: customersSnap.size,
             totalProducts: activeProducts,
             totalEmployees: data.stats?.totalEmployees || 0,

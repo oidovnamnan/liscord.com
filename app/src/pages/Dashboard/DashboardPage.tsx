@@ -286,14 +286,14 @@ export function DashboardPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [business?.id, visibleModuleIds]);
 
-    // Today's revenue from recent orders (must be before early return - hooks rule)
+    // Today's revenue from recent orders — confirmed only, excluding membership
     const todayRevenue = useMemo(() => {
         const todayStart = new Date();
         todayStart.setHours(0, 0, 0, 0);
         return recentOrders
             .filter(o => {
                 const d = o.createdAt instanceof Date ? o.createdAt : (o.createdAt as any)?.toDate?.();
-                return d && d >= todayStart && o.paymentStatus === 'paid';
+                return d && d >= todayStart && o.paymentStatus === 'paid' && o.orderType !== 'membership';
             })
             .reduce((sum, o) => sum + (o.financials?.totalAmount || 0), 0);
     }, [recentOrders]);
@@ -334,19 +334,13 @@ export function DashboardPage() {
                     {hasModule('orders') && (
                         <div className="sa-hero-stat">
                             <div className="sa-hero-stat-value">₮{todayRevenue > 999999 ? `${(todayRevenue / 1000000).toFixed(1)}M` : todayRevenue > 999 ? `${(todayRevenue / 1000).toFixed(0)}K` : todayRevenue.toLocaleString()}</div>
-                            <div className="sa-hero-stat-label">Өнөөдрийн орлого</div>
+                            <div className="sa-hero-stat-label">Өнөөдрийн орлого (баталгаажсан)</div>
                         </div>
                     )}
-                    {hasModule('orders') && (
+                    {hasModule('orders') && pendingOrders > 0 && (
                         <div className="sa-hero-stat">
-                            <div className="sa-hero-stat-value">{pendingOrders}{pendingOrders > 0 && <span className="sa-hero-stat-growth down" style={{ background: 'rgba(251,191,36,0.3)', color: '#fde68a' }}>шинэ</span>}</div>
+                            <div className="sa-hero-stat-value">{pendingOrders}<span className="sa-hero-stat-growth down" style={{ background: 'rgba(251,191,36,0.3)', color: '#fde68a' }}>шинэ</span></div>
                             <div className="sa-hero-stat-label">Хүлээгдэж буй</div>
-                        </div>
-                    )}
-                    {hasModule('products') && (
-                        <div className="sa-hero-stat">
-                            <div className="sa-hero-stat-value">{stats?.totalProducts || 0}</div>
-                            <div className="sa-hero-stat-label">Идэвхтэй бараа</div>
                         </div>
                     )}
                     {hasModule('online-presence') && (
