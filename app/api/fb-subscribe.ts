@@ -9,9 +9,10 @@
  */
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
+const APP_ID = process.env.FB_APP_ID || '';
 const PROJECT_ID = 'liscord-2b529';
 const FIRESTORE_BASE = `https://firestore.googleapis.com/v1/projects/${PROJECT_ID}/databases/(default)/documents`;
-const API_KEY = process.env.VITE_FIREBASE_API_KEY || process.env.FIREBASE_API_KEY || 'AIzaSyCuaNXSfhQt_dtNgoBs_Uz6IXN8qzZkONs';
+const API_KEY = process.env.FIREBASE_API_KEY || process.env.VITE_FIREBASE_API_KEY || '';
 
 // Webhook fields to subscribe to
 const SUBSCRIBED_FIELDS = [
@@ -149,7 +150,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 try {
                     // Exchange for long-lived user token first
                     const exchangeResp = await fetch(
-                        `https://graph.facebook.com/v22.0/oauth/access_token?grant_type=fb_exchange_token&client_id=938520898673623&client_secret=${APP_SECRET}&fb_exchange_token=${userToken}`
+                        `https://graph.facebook.com/v22.0/oauth/access_token?grant_type=fb_exchange_token&client_id=${APP_ID}&client_secret=${APP_SECRET}&fb_exchange_token=${userToken}`
                     );
                     if (exchangeResp.ok) {
                         const exchangeData = await exchangeResp.json();

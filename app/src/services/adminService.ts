@@ -92,20 +92,13 @@ export const loanService = {
         };
         await updateDoc(doc(db, 'businesses', bizId, 'loans', loanId), updateData);
 
-        if (data.status === 'closed') {
-            const loanRef = await getDoc(doc(db, 'businesses', bizId, 'loans', loanId));
-            if (loanRef.exists() && loanRef.data().pawnItemId) {
-                await updateDoc(doc(db, 'businesses', bizId, 'pawnItems', loanRef.data().pawnItemId), {
-                    status: 'returned'
-                });
-            }
-        }
-
-        if (data.status === 'foreclosed') {
-            const loanRef = await getDoc(doc(db, 'businesses', bizId, 'loans', loanId));
-            if (loanRef.exists() && loanRef.data().pawnItemId) {
-                await updateDoc(doc(db, 'businesses', bizId, 'pawnItems', loanRef.data().pawnItemId), {
-                    status: 'for_sale'
+        // Update pawn item status when loan is closed or foreclosed (single read)
+        if (data.status === 'closed' || data.status === 'foreclosed') {
+            const loanSnap = await getDoc(doc(db, 'businesses', bizId, 'loans', loanId));
+            if (loanSnap.exists() && loanSnap.data().pawnItemId) {
+                const pawnStatus = data.status === 'closed' ? 'returned' : 'for_sale';
+                await updateDoc(doc(db, 'businesses', bizId, 'pawnItems', loanSnap.data().pawnItemId), {
+                    status: pawnStatus
                 });
             }
         }

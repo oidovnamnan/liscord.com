@@ -1,12 +1,12 @@
 import {
     collection, doc, getDoc, setDoc, updateDoc, addDoc, query, orderBy, limit,
-    onSnapshot, serverTimestamp, writeBatch, where, startAfter, getDocs
+    onSnapshot, serverTimestamp, writeBatch, where, startAfter, getDocs, runTransaction
 } from 'firebase/firestore';
 import { db } from './firebase';
 import { eventBus, EVENTS } from './eventBus';
 import { auditService } from './audit';
 import type { Order, OrderStatusConfig } from '../types';
-import { convertTimestamps } from './helpers';
+import { convertTimestamps, chunkedBatch } from './helpers';
 
 // ============ ORDER STATUS SERVICES ============
 
@@ -157,21 +157,23 @@ export const orderService = {
     async updateOrderStatus(bizId: string, orderId: string, status: string, historyItem: any, employeeProfile?: any): Promise<void> {
         const docRef = doc(db, 'businesses', bizId, 'orders', orderId);
 
-        const orderSnap = await getDoc(docRef);
-        let updatedHistory = [historyItem];
-        if (orderSnap.exists()) {
-            const data = orderSnap.data();
-            if (Array.isArray(data.statusHistory)) {
-                updatedHistory = [...data.statusHistory, historyItem];
-            } else if (data.statusHistory) {
-                updatedHistory = [data.statusHistory, historyItem];
+        await runTransaction(db, async (transaction) => {
+            const orderSnap = await transaction.get(docRef);
+            let updatedHistory = [historyItem];
+            if (orderSnap.exists()) {
+                const data = orderSnap.data();
+                if (Array.isArray(data.statusHistory)) {
+                    updatedHistory = [...data.statusHistory, historyItem];
+                } else if (data.statusHistory) {
+                    updatedHistory = [data.statusHistory, historyItem];
+                }
             }
-        }
 
-        await updateDoc(docRef, {
-            status,
-            updatedAt: serverTimestamp(),
-            statusHistory: updatedHistory
+            transaction.update(docRef, {
+                status,
+                updatedAt: serverTimestamp(),
+                statusHistory: updatedHistory
+            });
         });
 
         await auditService.writeLog(bizId, {
@@ -197,22 +199,24 @@ export const orderService = {
 
     async addTimelineEvent(bizId: string, orderId: string, event: { statusId: string, note: string, createdBy: string }): Promise<void> {
         const docRef = doc(db, 'businesses', bizId, 'orders', orderId);
-        const orderSnap = await getDoc(docRef);
 
-        let updatedHistory = [{ ...event, at: new Date() }];
+        await runTransaction(db, async (transaction) => {
+            const orderSnap = await transaction.get(docRef);
+            let updatedHistory = [{ ...event, at: new Date() }];
 
-        if (orderSnap.exists()) {
-            const data = orderSnap.data();
-            if (Array.isArray(data.statusHistory)) {
-                updatedHistory = [...data.statusHistory, ...updatedHistory];
-            } else if (data.statusHistory) {
-                updatedHistory = [data.statusHistory, ...updatedHistory];
+            if (orderSnap.exists()) {
+                const data = orderSnap.data();
+                if (Array.isArray(data.statusHistory)) {
+                    updatedHistory = [...data.statusHistory, ...updatedHistory];
+                } else if (data.statusHistory) {
+                    updatedHistory = [data.statusHistory, ...updatedHistory];
+                }
             }
-        }
 
-        await updateDoc(docRef, {
-            statusHistory: updatedHistory,
-            updatedAt: serverTimestamp()
+            transaction.update(docRef, {
+                statusHistory: updatedHistory,
+                updatedAt: serverTimestamp()
+            });
         });
     },
 
@@ -240,30 +244,28 @@ export const orderService = {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     async batchUpdateOrdersStatus(bizId: string, orderIds: string[], status: string, historyItem: any, employeeProfile?: any): Promise<void> {
         if (!orderIds.length) return;
-        const batch = writeBatch(db);
 
         const promises = orderIds.map(id => getDoc(doc(db, 'businesses', bizId, 'orders', id)));
         const snaps = await Promise.all(promises);
 
-        snaps.forEach(snap => {
-            if (snap.exists()) {
-                const data = snap.data();
-                let updatedHistory = [historyItem];
-                if (Array.isArray(data.statusHistory)) {
-                    updatedHistory = [...data.statusHistory, historyItem];
-                } else if (data.statusHistory) {
-                    updatedHistory = [data.statusHistory, historyItem];
-                }
+        // Build items array for chunkedBatch
+        const validSnaps = snaps.filter(snap => snap.exists());
 
-                batch.update(snap.ref, {
-                    status,
-                    updatedAt: serverTimestamp(),
-                    statusHistory: updatedHistory
-                });
+        await chunkedBatch(validSnaps, (batch, snap) => {
+            const data = snap.data()!;
+            let updatedHistory = [historyItem];
+            if (Array.isArray(data.statusHistory)) {
+                updatedHistory = [...data.statusHistory, historyItem];
+            } else if (data.statusHistory) {
+                updatedHistory = [data.statusHistory, historyItem];
             }
-        });
 
-        await batch.commit();
+            batch.update(snap.ref, {
+                status,
+                updatedAt: serverTimestamp(),
+                statusHistory: updatedHistory
+            });
+        });
 
         await auditService.writeLog(bizId, {
             action: 'orders.batch_status_change',
@@ -278,16 +280,13 @@ export const orderService = {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     async batchDeleteOrders(bizId: string, orderIds: string[], reason: string, employeeProfile?: any): Promise<void> {
         if (!orderIds.length) return;
-        const batch = writeBatch(db);
 
-        orderIds.forEach(id => {
+        await chunkedBatch(orderIds, (batch, id) => {
             batch.update(doc(db, 'businesses', bizId, 'orders', id), {
                 isDeleted: true,
                 updatedAt: serverTimestamp()
             });
         });
-
-        await batch.commit();
 
         await auditService.writeLog(bizId, {
             action: 'orders.batch_delete',

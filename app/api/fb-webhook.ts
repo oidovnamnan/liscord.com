@@ -53,8 +53,8 @@ function resolveAiMode(
     return 'manual';
 }
 const FIRESTORE_BASE = `https://firestore.googleapis.com/v1/projects/${PROJECT_ID}/databases/(default)/documents`;
-const API_KEY = process.env.VITE_FIREBASE_API_KEY || process.env.FIREBASE_API_KEY || 'AIzaSyCuaNXSfhQt_dtNgoBs_Uz6IXN8qzZkONs';
-console.log(`[fb-webhook] API_KEY length: ${API_KEY.length}`);
+const API_KEY = process.env.FIREBASE_API_KEY || process.env.VITE_FIREBASE_API_KEY || '';
+if (!API_KEY) console.error('[fb-webhook] FIREBASE_API_KEY not configured in environment!');
 
 // ═══ Message Deduplication ═══
 const processedMessages = new Map<string, number>();
@@ -211,7 +211,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
         if (mode === 'subscribe') {
             // Check env/default token first (no Firestore needed)
-            const envToken = process.env.FB_VERIFY_TOKEN || 'liscord_fb_verify_2026';
+            const envToken = process.env.FB_VERIFY_TOKEN || '';
             if (token === envToken) {
                 console.log('FB Webhook verified via env token');
                 return res.status(200).send(challenge);

@@ -90,9 +90,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         const bizData = bizDoc.data()!;
 
         if (orderData.orderType === 'membership') {
-            // VIP/membership invoices were created with server-side GATE_SIM credentials
-            username = process.env.QPAY_VIP_USERNAME || 'GATE_SIM';
-            password = process.env.QPAY_VIP_PASSWORD || '8r3bvsa3';
+            // VIP/membership invoices — credentials from Vercel Environment Variables
+            if (!process.env.QPAY_VIP_USERNAME || !process.env.QPAY_VIP_PASSWORD) {
+                return res.status(500).json({ error: 'QPay VIP credentials not configured in server environment' });
+            }
+            username = process.env.QPAY_VIP_USERNAME;
+            password = process.env.QPAY_VIP_PASSWORD;
         } else {
             // Product orders use business's own QPay credentials
             const qpay = bizData.settings?.qpay;

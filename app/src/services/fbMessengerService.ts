@@ -259,10 +259,15 @@ export const fbMessengerService = {
             limit(50)
         );
 
-        const { getDocs, updateDoc: firestoreUpdateDoc } = await import('firebase/firestore');
+        const { getDocs, writeBatch } = await import('firebase/firestore');
         const snap = await getDocs(q);
-        const now = serverTimestamp();
-        await Promise.all(snap.docs.map(d => firestoreUpdateDoc(d.ref, { readAt: now })));
+        if (snap.docs.length > 0) {
+            const { db: firestore } = await import('./firebase');
+            const batch = writeBatch(firestore);
+            const now = serverTimestamp();
+            snap.docs.forEach(d => batch.update(d.ref, { readAt: now }));
+            await batch.commit();
+        }
 
         // Also send mark_seen to Facebook
         this.markSeen(bizId, senderId);

@@ -1,4 +1,4 @@
-import { collection, doc, query, where, getDocs, getDoc, addDoc, updateDoc, serverTimestamp, orderBy, limit } from 'firebase/firestore';
+import { collection, doc, query, where, getDocs, getDoc, addDoc, updateDoc, serverTimestamp, orderBy, limit, runTransaction } from 'firebase/firestore';
 import { db } from './firebase';
 import type { ServiceProfile, BusinessLink, ServiceRequest, B2BServiceType } from '../types';
 
@@ -146,38 +146,46 @@ export const b2bService = {
      */
     async updateServiceRequestStatus(requestId: string, status: ServiceRequest['status'], note?: string, changedBy?: string) {
         const reqRef = doc(db, 'serviceRequests', requestId);
-        const reqSnap = await getDoc(reqRef);
 
-        if (!reqSnap.exists()) throw new Error('Request not found');
+        // Read first to get data needed for order sync (outside transaction scope)
+        const initialSnap = await getDoc(reqRef);
+        if (!initialSnap.exists()) throw new Error('Request not found');
+        const reqData = initialSnap.data() as ServiceRequest;
 
-        const reqData = reqSnap.data() as ServiceRequest;
-        const newHistoryItem = {
-            status,
-            at: new Date(),
-            note: note || `Статус өөрчиллөө: ${status}`,
-            by: changedBy
-        };
+        // Use transaction to prevent race conditions on statusHistory
+        await runTransaction(db, async (transaction) => {
+            const reqSnap = await transaction.get(reqRef);
+            if (!reqSnap.exists()) throw new Error('Request not found');
 
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const updates: any = {
-            status,
-            statusHistory: [...(reqData.statusHistory || []), newHistoryItem],
-            updatedAt: serverTimestamp()
-        };
+            const currentData = reqSnap.data() as ServiceRequest;
+            const newHistoryItem = {
+                status,
+                at: new Date(),
+                note: note || `Статус өөрчиллөө: ${status}`,
+                by: changedBy
+            };
 
-        // If completed, update link stats
-        if (status === 'completed' && reqData.linkId) {
-            const linkRef = doc(db, 'businessLinks', reqData.linkId);
-            const linkSnap = await getDoc(linkRef);
-            if (linkSnap.exists()) {
-                const link = linkSnap.data() as BusinessLink;
-                updateDoc(linkRef, {
-                    'stats.completedRequests': (link.stats?.completedRequests || 0) + 1,
-                });
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const updates: any = {
+                status,
+                statusHistory: [...(currentData.statusHistory || []), newHistoryItem],
+                updatedAt: serverTimestamp()
+            };
+
+            transaction.update(reqRef, updates);
+
+            // If completed, update link stats
+            if (status === 'completed' && currentData.linkId) {
+                const linkRef = doc(db, 'businessLinks', currentData.linkId);
+                const linkSnap = await transaction.get(linkRef);
+                if (linkSnap.exists()) {
+                    const link = linkSnap.data() as BusinessLink;
+                    transaction.update(linkRef, {
+                        'stats.completedRequests': (link.stats?.completedRequests || 0) + 1,
+                    });
+                }
             }
-        }
-
-        await updateDoc(reqRef, updates);
+        });
 
         // Sync status back to original order
         if (reqData.sourceOrder?.orderId && reqData.consumer.businessId) {

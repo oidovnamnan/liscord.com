@@ -18,7 +18,13 @@ service cloud.firestore {
 
     // === USERS ===
     match /users/{userId} {
-      allow read, write: if isAuth() && request.auth.uid == userId;
+      allow read: if isAuth() && request.auth.uid == userId;
+      // Prevent self-promotion: block client-side changes to isSuperAdmin
+      allow create: if isAuth() && request.auth.uid == userId
+        && (!('isSuperAdmin' in request.resource.data) || request.resource.data.isSuperAdmin == false);
+      allow update: if isAuth() && request.auth.uid == userId
+        && request.resource.data.isSuperAdmin == resource.data.isSuperAdmin;
+      allow delete: if false;
       
       // Device tracking for remote logout
       match /devices/{deviceId} {
@@ -66,29 +72,38 @@ service cloud.firestore {
 
     // === QR LOGINS ===
     match /qr_logins/{sessionId} {
-      allow read, update: if true;
-      allow create, delete: if isAuth();
+      // Read: anyone can poll status (desktop needs to check before auth)
+      // Update: anyone can update (mobile scans QR before desktop is authed)
+      // But customToken is written by Cloud Function (Admin SDK), not client
+      allow read: if true;
+      allow update: if true;
+      allow create: if isAuth();
+      allow delete: if false;
     }
     
     // === SMS INBOX (Bridge App) ===
+    // Bridge app uses Firestore REST API with API key — no Firebase Auth
+    // Validated by pairingKey field (shared secret between web + bridge)
     match /sms_inbox/{smsId} {
-      allow create: if true;  // Bridge app creates without auth (Phase 4: add auth)
+      allow create: if true;  // Bridge app creates without auth — validated by pairingKey in Cloud Function
       allow update: if isAuth();  // Only authenticated users can update (match/status)
-      allow read, delete: if isAuth();
+      allow read: if isAuth();
+      allow delete: if isAuth();
     }
 
     // === SMS OUTBOX (Web → Bridge App sends SMS) ===
+    // Bridge app polls for pending messages using pairingKey query
     match /sms_outbox/{docId} {
       allow create: if isAuth();        // Web app creates outbox messages
-      allow read, update: if true;      // Bridge app reads pending + updates status (no auth)
+      allow read, update: if true;      // Bridge app reads pending + updates status (no auth — uses pairingKey)
       allow delete: if isAuth();        // Cleanup by authenticated users
     }
     
     // === BUSINESSES ===
     match /businesses/{bizId} {
-      // Public read: allow listing businesses by slug (for storefront)
-      // Firestore 'list' (query) requires access at collection level
-      allow list: if true;
+      // List: only authenticated users can query business list
+      // Storefront uses get-by-slug (single doc), not list queries
+      allow list: if isAuth();
       // Get: members OR storefront slug lookup (public)
       allow get: if isMemberOf(bizId) || resource.data.slug != null;
       // Create: any authenticated user (creating new business)
@@ -117,10 +132,12 @@ service cloud.firestore {
         allow delete: if false;
       }
 
-      // Orders: public CRUD (storefront checkout + QPay invoice ID save)
-      // Payment verification goes through /api/qpay-callback (Admin SDK)
+      // Orders: storefront can create + read own order, members have full access
+      // Payment status update goes through /api/qpay-callback (Admin SDK) or Cloud Functions
       match /orders/{docId} {
-        allow read, create, update: if true;
+        allow read: if true;            // Storefront needs to poll order status after QPay
+        allow create: if true;          // Storefront checkout creates orders
+        allow update: if isMemberOf(bizId);  // Only business members can update orders
         allow delete: if false;
       }
 
@@ -139,9 +156,11 @@ service cloud.firestore {
         allow delete: if false;
       }
 
-      // Facebook Messenger settings: public read (API endpoints need tokens), write: members only
+      // Facebook Messenger settings: member-only read/write
+      // fb-webhook uses Firestore REST API with server-side API key (not client auth)
+      // fb-send uses Firestore REST API with server-side API key
       match /fbSettings/{docId} {
-        allow read: if true;  // fb-send/fb-webhook need to read pageAccessToken
+        allow read: if isMemberOf(bizId);
         allow write: if isMemberOf(bizId);
       }
 

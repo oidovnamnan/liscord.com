@@ -1,11 +1,11 @@
 import {
     collection, doc, getDoc, getDocs, addDoc, updateDoc, query, where, orderBy, limit,
-    onSnapshot, serverTimestamp, writeBatch
+    onSnapshot, serverTimestamp, writeBatch, runTransaction
 } from 'firebase/firestore';
 import { db } from './firebase';
 import { auditService } from './audit';
 import type { Customer, Product, Category, CargoType } from '../types';
-import { convertTimestamps } from './helpers';
+import { convertTimestamps, chunkedBatch } from './helpers';
 
 // ============ CUSTOMER SERVICES ============
 
@@ -131,15 +131,13 @@ export const productService = {
     },
 
     async bulkUpdateProducts(bizId: string, productIds: string[], updates: Partial<Product>): Promise<void> {
-        const batch = writeBatch(db);
-        productIds.forEach(id => {
+        await chunkedBatch(productIds, (batch, id) => {
             const docRef = doc(db, 'businesses', bizId, 'products', id);
             batch.update(docRef, {
                 ...updates,
                 updatedAt: serverTimestamp()
             });
         });
-        await batch.commit();
     }
 };
 
@@ -169,59 +167,60 @@ export const stockMovementService = {
         shelfId?: string;
     }): Promise<void> {
         const productRef = doc(db, 'businesses', bizId, 'products', data.productId);
-        const productSnap = await getDoc(productRef);
-        if (!productSnap.exists()) throw new Error('Product not found');
 
-        const productData = productSnap.data();
-        const currentTotalStock = productData.stock?.quantity || 0;
-        const currentBalances = productData.stockBalances || {};
+        await runTransaction(db, async (transaction) => {
+            const productSnap = await transaction.get(productRef);
+            if (!productSnap.exists()) throw new Error('Product not found');
 
-        let newTotalStock = currentTotalStock;
-        let newWarehouseBalance = 0;
+            const productData = productSnap.data();
+            const currentTotalStock = productData.stock?.quantity || 0;
+            const currentBalances = productData.stockBalances || {};
 
-        if (data.warehouseId) {
-            const currentWHBalance = currentBalances[data.warehouseId] || 0;
-            if (data.type === 'in') {
-                newWarehouseBalance = currentWHBalance + data.quantity;
-                newTotalStock = currentTotalStock + data.quantity;
-            } else if (data.type === 'out') {
-                newWarehouseBalance = Math.max(0, currentWHBalance - data.quantity);
-                const actualShipment = currentWHBalance - newWarehouseBalance;
-                newTotalStock = Math.max(0, currentTotalStock - actualShipment);
+            let newTotalStock = currentTotalStock;
+            let newWarehouseBalance = 0;
+
+            if (data.warehouseId) {
+                const currentWHBalance = currentBalances[data.warehouseId] || 0;
+                if (data.type === 'in') {
+                    newWarehouseBalance = currentWHBalance + data.quantity;
+                    newTotalStock = currentTotalStock + data.quantity;
+                } else if (data.type === 'out') {
+                    newWarehouseBalance = Math.max(0, currentWHBalance - data.quantity);
+                    const actualShipment = currentWHBalance - newWarehouseBalance;
+                    newTotalStock = Math.max(0, currentTotalStock - actualShipment);
+                } else {
+                    const diff = data.quantity - currentWHBalance;
+                    newWarehouseBalance = data.quantity;
+                    newTotalStock = currentTotalStock + diff;
+                }
             } else {
-                const diff = data.quantity - currentWHBalance;
-                newWarehouseBalance = data.quantity;
-                newTotalStock = currentTotalStock + diff;
+                if (data.type === 'in') newTotalStock = currentTotalStock + data.quantity;
+                else if (data.type === 'out') newTotalStock = Math.max(0, currentTotalStock - data.quantity);
+                else newTotalStock = data.quantity;
             }
-        } else {
-            if (data.type === 'in') newTotalStock = currentTotalStock + data.quantity;
-            else if (data.type === 'out') newTotalStock = Math.max(0, currentTotalStock - data.quantity);
-            else newTotalStock = data.quantity;
-        }
 
-        const batch = writeBatch(db);
+            // Record the stock movement
+            const movRef = doc(collection(db, 'businesses', bizId, 'stock_movements'));
+            transaction.set(movRef, {
+                ...data,
+                previousStock: currentTotalStock,
+                newStock: newTotalStock,
+                createdAt: serverTimestamp(),
+            });
 
-        const movRef = doc(collection(db, 'businesses', bizId, 'stock_movements'));
-        batch.set(movRef, {
-            ...data,
-            previousStock: currentTotalStock,
-            newStock: newTotalStock,
-            createdAt: serverTimestamp(),
+            // Update product stock atomically
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const updates: any = {
+                'stock.quantity': newTotalStock,
+                updatedAt: serverTimestamp(),
+            };
+
+            if (data.warehouseId) {
+                updates[`stockBalances.${data.warehouseId}`] = newWarehouseBalance;
+            }
+
+            transaction.update(productRef, updates);
         });
-
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const updates: any = {
-            'stock.quantity': newTotalStock,
-            updatedAt: serverTimestamp(),
-        };
-
-        if (data.warehouseId) {
-            updates[`stockBalances.${data.warehouseId}`] = newWarehouseBalance;
-        }
-
-        batch.update(productRef, updates);
-
-        await batch.commit();
     },
 };
 

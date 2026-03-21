@@ -72,10 +72,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     let invoiceCode: string;
 
     if (purpose === 'vip') {
-        // VIP/membership → server-side env credentials
-        username = process.env.QPAY_VIP_USERNAME || 'GATE_SIM';
-        password = process.env.QPAY_VIP_PASSWORD || '8r3bvsa3';
-        invoiceCode = process.env.QPAY_VIP_INVOICE_CODE || 'GATE_SIM_INVOICE';
+        // VIP/membership → server-side env credentials (Vercel Environment Variables)
+        if (!process.env.QPAY_VIP_USERNAME || !process.env.QPAY_VIP_PASSWORD) {
+            return res.status(500).json({ error: 'QPay VIP credentials not configured in server environment' });
+        }
+        username = process.env.QPAY_VIP_USERNAME;
+        password = process.env.QPAY_VIP_PASSWORD;
+        invoiceCode = process.env.QPAY_VIP_INVOICE_CODE || `${process.env.QPAY_VIP_USERNAME}_INVOICE`;
     } else {
         // Product → business credentials from frontend
         if (!qpayUsername || !qpayPassword || !qpayInvoiceCode) {

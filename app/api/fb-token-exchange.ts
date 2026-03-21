@@ -13,12 +13,12 @@
  */
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
-const APP_ID = process.env.FB_APP_ID || '938520898673623';
+const APP_ID = process.env.FB_APP_ID || '';
 const APP_SECRET = process.env.FB_APP_SECRET || '';
 
 const PROJECT_ID = 'liscord-2b529';
 const FIRESTORE_BASE = `https://firestore.googleapis.com/v1/projects/${PROJECT_ID}/databases/(default)/documents`;
-const API_KEY = process.env.VITE_FIREBASE_API_KEY || process.env.FIREBASE_API_KEY || 'AIzaSyCuaNXSfhQt_dtNgoBs_Uz6IXN8qzZkONs';
+const API_KEY = process.env.FIREBASE_API_KEY || process.env.VITE_FIREBASE_API_KEY || '';
 
 // Firestore helpers (minimal)
 function toFirestoreValue(val: unknown): Record<string, unknown> {

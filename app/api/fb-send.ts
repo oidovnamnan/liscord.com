@@ -15,7 +15,7 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 
 const PROJECT_ID = 'liscord-2b529';
 const FIRESTORE_BASE = `https://firestore.googleapis.com/v1/projects/${PROJECT_ID}/databases/(default)/documents`;
-const API_KEY = process.env.VITE_FIREBASE_API_KEY || process.env.FIREBASE_API_KEY || 'AIzaSyCuaNXSfhQt_dtNgoBs_Uz6IXN8qzZkONs';
+const API_KEY = process.env.FIREBASE_API_KEY || process.env.VITE_FIREBASE_API_KEY || '';
 
 // ═══ Firestore REST API Helpers ═══
 
@@ -484,7 +484,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
             const qpayUsername = (paySettings?.username as string) || process.env.QPAY_VIP_USERNAME;
             const qpayPassword = (paySettings?.password as string) || process.env.QPAY_VIP_PASSWORD;
-            const invoiceCode = (paySettings?.invoiceCode as string) || process.env.QPAY_VIP_INVOICE_CODE || 'GATE_SIM_INVOICE';
+            const invoiceCode = (paySettings?.invoiceCode as string) || process.env.QPAY_VIP_INVOICE_CODE || '';
 
             if (!qpayUsername || !qpayPassword) {
                 return res.status(400).json({ error: 'QPay credentials not configured' });
@@ -703,7 +703,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 const paySettings = await fsGet(`businesses/${bizId}/payment_settings/qpay`);
                 const qpayUsername = (paySettings?.username as string) || process.env.QPAY_VIP_USERNAME;
                 const qpayPassword = (paySettings?.password as string) || process.env.QPAY_VIP_PASSWORD;
-                const invoiceCode = (paySettings?.invoiceCode as string) || process.env.QPAY_VIP_INVOICE_CODE || 'GATE_SIM_INVOICE';
+                const invoiceCode = (paySettings?.invoiceCode as string) || process.env.QPAY_VIP_INVOICE_CODE || '';
 
                 if (qpayUsername && qpayPassword && subtotal > 0) {
                     const qpayToken = await getQPayToken(qpayUsername, qpayPassword);

@@ -110,12 +110,11 @@ export const dashboardService = {
         const q = query(
             collection(db, 'businesses', bizId, 'orders'),
             where('isDeleted', '==', false),
+            orderBy('createdAt', 'desc'),
             limit(10)
         );
         return onSnapshot(q, (snapshot) => {
             const orders = snapshot.docs.map(d => ({ id: d.id, ...convertTimestamps(d.data()) } as Order));
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            orders.sort((a: any, b: any) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
             callback(orders.slice(0, 5));
         });
     },
