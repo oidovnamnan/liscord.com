@@ -139,6 +139,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         const totalAmount = orderData.financials?.totalAmount || 0;
 
         await orderRef.update({
+            status: 'confirmed',
             paymentStatus: 'paid',
             paymentVerifiedAt: now,
             paymentVerifiedBy: 'qpay',
@@ -151,6 +152,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 note: 'QPay төлбөр',
                 paidAt: now,
                 recordedBy: 'qpay_auto',
+            }),
+            statusHistory: admin.firestore.FieldValue.arrayUnion({
+                status: 'confirmed',
+                at: new Date(),
+                by: 'qpay_auto',
+                byName: 'QPay Систем',
+                note: `QPay төлбөр баталгаажлаа — ₮${totalAmount.toLocaleString()}`
             }),
             updatedAt: now,
         });
