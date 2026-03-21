@@ -19,6 +19,7 @@ export function ThemeMinimal({ business }: { business: Business }) {
     } = useStorefrontData(business);
 
     const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+    const [flashDealPrice, setFlashDealPrice] = useState<number | null>(null);
     const [showMembershipModal, setShowMembershipModal] = useState(false);
     const [membershipTarget, setMembershipTarget] = useState<StorefrontProduct | null>(null);
     const [showDashboard, setShowDashboard] = useState(false);
@@ -174,6 +175,11 @@ export function ThemeMinimal({ business }: { business: Business }) {
             quantity: 1,
             price: p.pricing?.salePrice || 0
         });
+        toast.success('Сагсанд нэмлээ', {
+            duration: 2000,
+            style: { background: '#1e293b', color: '#fff', fontSize: '0.88rem', fontWeight: 600 },
+            icon: '🛒',
+        });
     };
 
     const handleProductClick = (p: StorefrontProduct) => {
@@ -290,7 +296,10 @@ export function ThemeMinimal({ business }: { business: Business }) {
                         <FlashDealSection
                             config={flashConfig}
                             allProducts={products}
-                            onProductClick={(p) => setSelectedProduct(p)}
+                            onProductClick={(p, fp) => {
+                                setFlashDealPrice(fp ?? null);
+                                setSelectedProduct(p);
+                            }}
                         />
                     );
                 })()}
@@ -427,8 +436,9 @@ export function ThemeMinimal({ business }: { business: Business }) {
             {selectedProduct && (
                 <ProductModal
                     product={selectedProduct}
-                    onClose={() => setSelectedProduct(null)}
+                    onClose={() => { setSelectedProduct(null); setFlashDealPrice(null); }}
                     preorderTerms={business.settings?.storefront?.preorderTerms}
+                    flashDealPrice={flashDealPrice ?? undefined}
                     onCategoryClick={(catName) => {
                         setActiveCategory(catName);
                         window.scrollTo({ top: 0, behavior: 'smooth' });

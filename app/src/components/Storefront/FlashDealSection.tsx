@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { ShoppingBag, Zap, Clock } from 'lucide-react';
+import { toast } from 'react-hot-toast';
 import type { Product } from '../../types';
 import { useCartStore } from '../../store';
 
@@ -24,7 +25,7 @@ export interface FlashDealConfig {
 interface FlashDealSectionProps {
     config: FlashDealConfig;
     allProducts: Product[];
-    onProductClick?: (product: Product) => void;
+    onProductClick?: (product: Product, flashPrice?: number) => void;
 }
 
 /** Per-card countdown hook */
@@ -90,6 +91,11 @@ export function FlashDealSection({ config, allProducts, onProductClick }: FlashD
             product: { ...product, pricing: { ...product.pricing, salePrice: flashPrice } },
             quantity: 1,
             price: flashPrice,
+        });
+        toast.success('Сагсанд нэмлээ', {
+            duration: 2000,
+            style: { background: '#1e293b', color: '#fff', fontSize: '0.88rem', fontWeight: 600 },
+            icon: '🛒',
         });
     };
 
@@ -190,7 +196,7 @@ export function FlashDealSection({ config, allProducts, onProductClick }: FlashD
                         <div
                             key={`${product.id}-${idx}`}
                             className={`fd-card ${isSoldOut ? 'sold-out' : ''}`}
-                            onClick={() => !isSoldOut && onProductClick?.(product)}
+                            onClick={() => !isSoldOut && onProductClick?.(product, flashPrice)}
                         >
                             {/* Image container */}
                             <div className="fd-card-img-wrap">

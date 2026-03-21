@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { X, Plus, Minus, ShoppingBag, Check, ChevronLeft, ChevronRight, Package, Zap } from 'lucide-react';
+import { toast } from 'react-hot-toast';
 import type { Product } from '../../types';
 import { useCartStore } from '../../store';
 import './ProductModal.css';
@@ -9,9 +10,10 @@ interface ProductModalProps {
     onClose: () => void;
     preorderTerms?: string;
     onCategoryClick?: (categoryName: string) => void;
+    flashDealPrice?: number;
 }
 
-export function ProductModal({ product, onClose, preorderTerms, onCategoryClick }: ProductModalProps) {
+export function ProductModal({ product, onClose, preorderTerms, onCategoryClick, flashDealPrice }: ProductModalProps) {
     const [quantity, setQuantity] = useState(1);
     const [added, setAdded] = useState(false);
     const [activeImage, setActiveImage] = useState(0);
@@ -74,11 +76,18 @@ export function ProductModal({ product, onClose, preorderTerms, onCategoryClick 
         touchRef.current = null;
     };
 
+    const effectivePrice = flashDealPrice ?? (product.pricing?.salePrice || 0);
+
     const handleAddToCart = () => {
         useCartStore.getState().addItem({
-            product,
+            product: flashDealPrice ? { ...product, pricing: { ...product.pricing, salePrice: flashDealPrice } } : product,
             quantity,
-            price: product.pricing?.salePrice || 0
+            price: effectivePrice
+        });
+        toast.success('Сагсанд нэмлээ', {
+            duration: 2000,
+            style: { background: '#1e293b', color: '#fff', fontSize: '0.88rem', fontWeight: 600 },
+            icon: '🛒',
         });
         setAdded(true);
         setTimeout(() => {
@@ -89,9 +98,9 @@ export function ProductModal({ product, onClose, preorderTerms, onCategoryClick 
 
     const handleBuyNow = () => {
         useCartStore.getState().addItem({
-            product,
+            product: flashDealPrice ? { ...product, pricing: { ...product.pricing, salePrice: flashDealPrice } } : product,
             quantity,
-            price: product.pricing?.salePrice || 0
+            price: effectivePrice
         });
         onClose();
         // Open cart immediately for checkout
@@ -108,10 +117,12 @@ export function ProductModal({ product, onClose, preorderTerms, onCategoryClick 
     const brand = extractBrand(product.description);
     const isPreorder = product.productType === 'preorder';
     const hasStock = isPreorder || !product.stock?.trackInventory || (product.stock?.quantity ?? 0) > 0;
-    const salePrice = product.pricing?.salePrice || 0;
-    const comparePrice = product.pricing?.comparePrice;
-    const hasDiscount = comparePrice && comparePrice > salePrice;
-    const discountPercent = hasDiscount ? Math.round((1 - salePrice / comparePrice) * 100) : 0;
+    const originalSalePrice = product.pricing?.salePrice || 0;
+    const salePrice = flashDealPrice ?? originalSalePrice;
+    const comparePrice = flashDealPrice ? originalSalePrice : product.pricing?.comparePrice;
+    const hasDiscount = (comparePrice && comparePrice > salePrice) || !!flashDealPrice;
+    const discountPercent = hasDiscount && comparePrice ? Math.round((1 - salePrice / comparePrice) * 100) : 0;
+    const isFlashDeal = !!flashDealPrice;
 
     return (
         <div className="sf-modal-overlay" onClick={onClose}>
@@ -228,19 +239,33 @@ export function ProductModal({ product, onClose, preorderTerms, onCategoryClick 
                             <h2 className="sf-modal-title">{product.name}</h2>
 
                             <div className="sf-modal-price">
+                                {isFlashDeal && (
+                                    <span style={{
+                                        fontSize: '0.7rem', fontWeight: 700,
+                                        background: 'linear-gradient(135deg, #f59e0b, #ef4444)',
+                                        color: '#fff',
+                                        padding: '3px 10px', borderRadius: 100,
+                                        marginRight: 6, display: 'inline-flex',
+                                        alignItems: 'center', gap: 3,
+                                    }}>
+                                        <Zap size={11} /> FLASH DEAL
+                                    </span>
+                                )}
                                 <span>{salePrice.toLocaleString()} ₮</span>
-                                {hasDiscount && (
+                                {hasDiscount && comparePrice && (
                                     <>
                                         <span className="sf-modal-compare-price">
                                             {comparePrice.toLocaleString()} ₮
                                         </span>
-                                        <span style={{
-                                            fontSize: '0.75rem', fontWeight: 700,
-                                            background: '#fef2f2', color: '#dc2626',
-                                            padding: '3px 8px', borderRadius: 100,
-                                        }}>
-                                            -{discountPercent}%
-                                        </span>
+                                        {discountPercent > 0 && (
+                                            <span style={{
+                                                fontSize: '0.75rem', fontWeight: 700,
+                                                background: '#fef2f2', color: '#dc2626',
+                                                padding: '3px 8px', borderRadius: 100,
+                                            }}>
+                                                -{discountPercent}%
+                                            </span>
+                                        )}
                                     </>
                                 )}
                             </div>
