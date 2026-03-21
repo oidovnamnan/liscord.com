@@ -168,8 +168,7 @@ export function ChatPage() {
                     const q = query(
                         collection(db, 'businesses', business.id, 'orders'),
                         where('isDeleted', '==', false),
-                        orderBy('createdAt', 'desc'),
-                        limit(10)
+                        orderBy('createdAt', 'desc')
                     );
                     const snap = await getDocs(q);
                     const filtered = snap.docs
@@ -180,18 +179,17 @@ export function ChatPage() {
                                 o.customer?.name?.toLowerCase().includes(q) ||
                                 o.customer?.phone?.includes(q));
                         });
-                    setSlashResults(filtered.slice(0, 5));
+                    setSlashResults(filtered.slice(0, 8));
                 } else if (slashMode === 'product') {
                     const q = query(
                         collection(db, 'businesses', business.id, 'products'),
-                        where('isDeleted', '==', false),
-                        limit(20)
+                        where('isDeleted', '==', false)
                     );
                     const snap = await getDocs(q);
                     const filtered = snap.docs
                         .map(d => ({ id: d.id, ...d.data() }))
                         .filter((p: any) => p.name?.toLowerCase().includes(slashQuery.toLowerCase()));
-                    setSlashResults(filtered.slice(0, 5));
+                    setSlashResults(filtered.slice(0, 8));
                 }
             } catch (e) {
                 console.error('Slash search error:', e);
