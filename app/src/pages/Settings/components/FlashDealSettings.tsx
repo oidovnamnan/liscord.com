@@ -19,7 +19,7 @@ interface FlashProduct {
 interface FlashConfig {
     enabled: boolean;
     title: string;
-    durationHours: number; // deal duration in hours
+    durationHours: number; // default deal duration in hours
     products: FlashProduct[];
 }
 
@@ -29,7 +29,7 @@ export function FlashDealSettings({ bizId }: { bizId: string }) {
     const [allProducts, setAllProducts] = useState<Product[]>([]);
     const [productSearch, setProductSearch] = useState('');
     const [showProductPicker, setShowProductPicker] = useState(false);
-    const [discountPercent, setDiscountPercent] = useState(30);
+    const [defaultDiscountPercent, setDefaultDiscountPercent] = useState(30);
 
     const [config, setConfig] = useState<FlashConfig>({
         enabled: false,
@@ -119,7 +119,7 @@ export function FlashDealSettings({ bizId }: { bizId: string }) {
             return;
         }
         const origPrice = product.pricing?.salePrice || 0;
-        const flashPrice = Math.round(origPrice * (1 - discountPercent / 100));
+        const flashPrice = Math.round(origPrice * (1 - defaultDiscountPercent / 100));
         setConfig(prev => ({
             ...prev,
             products: [...prev.products, {
@@ -149,6 +149,14 @@ export function FlashDealSettings({ bizId }: { bizId: string }) {
                 p.productId === productId ? { ...p, [field]: value } : p
             ),
         }));
+    };
+
+    /** Update discount % for a specific product by recalculating flashPrice */
+    const updateProductDiscount = (productId: string, pct: number) => {
+        const prod = allProducts.find(p => p.id === productId);
+        const origPrice = prod?.pricing?.salePrice || 0;
+        const newPrice = Math.round(origPrice * (1 - pct / 100));
+        updateProduct(productId, 'flashPrice', newPrice);
     };
 
     const getProduct = (productId: string) => allProducts.find(p => p.id === productId);
@@ -186,11 +194,11 @@ export function FlashDealSettings({ bizId }: { bizId: string }) {
 
             {config.enabled && (
                 <>
-                    {/* ── Settings Card ── */}
+                    {/* ── Global Settings Card (Title + Defaults) ── */}
                     <div className="fds-card">
                         <div className="fds-card-title">
                             <Settings size={16} />
-                            Тохиргоо
+                            Ерөнхий тохиргоо
                         </div>
 
                         {/* Title */}
@@ -204,52 +212,39 @@ export function FlashDealSettings({ bizId }: { bizId: string }) {
                             />
                         </div>
 
-                        {/* Duration presets */}
-                        <div className="fds-row-full">
-                            <label className="fds-label">⏱️ Хугацаа (хадгалснаас эхэлж тоолно)</label>
-                            <div className="fds-duration-presets">
-                                {[4, 8, 12, 24, 48, 72].map(h => (
-                                    <button
-                                        key={h}
-                                        className={`fds-duration-btn ${config.durationHours === h ? 'active' : ''}`}
-                                        onClick={() => setConfig({ ...config, durationHours: h })}
-                                    >
-                                        {h}ц
-                                    </button>
-                                ))}
-                                <div className="fds-duration-custom">
-                                    <input
-                                        type="number"
-                                        min={1}
-                                        max={168}
-                                        value={config.durationHours}
-                                        onChange={e => setConfig({ ...config, durationHours: Math.max(1, Number(e.target.value)) })}
-                                    />
-                                    <span>цаг</span>
+                        {/* Default settings for new products */}
+                        <div className="fds-row-full" style={{ marginTop: 8 }}>
+                            <label className="fds-label">📐 Анхдагч утга (шинэ бараа нэмэхэд хэрэглэгдэнэ)</label>
+                            <div className="fds-defaults-row">
+                                <div className="fds-default-item">
+                                    <span className="fds-default-label">Хямдрал</span>
+                                    <div className="fds-default-input-wrap">
+                                        <input
+                                            type="number"
+                                            min={5} max={90} step={5}
+                                            value={defaultDiscountPercent}
+                                            onChange={e => setDefaultDiscountPercent(Math.max(5, Math.min(90, Number(e.target.value))))}
+                                            className="fds-default-input"
+                                        />
+                                        <span className="fds-default-unit">%</span>
+                                    </div>
+                                </div>
+                                <div className="fds-default-item">
+                                    <span className="fds-default-label">Хугацаа</span>
+                                    <div className="fds-default-input-wrap">
+                                        <input
+                                            type="number"
+                                            min={1} max={168}
+                                            value={config.durationHours}
+                                            onChange={e => setConfig({ ...config, durationHours: Math.max(1, Number(e.target.value)) })}
+                                            className="fds-default-input"
+                                        />
+                                        <span className="fds-default-unit">цаг</span>
+                                    </div>
                                 </div>
                             </div>
-                            <div className="fds-slider-info">
-                                Хадгалах товч дарахад эхлэх цаг автоматаар тохируулагдана.
-                            </div>
-                        </div>
-
-                        {/* Discount slider */}
-                        <div className="fds-row-full" style={{ marginTop: 8 }}>
-                            <label className="fds-label">Хямдралын хувь</label>
-                            <div className="fds-slider-wrap">
-                                <input
-                                    type="range"
-                                    className="fds-slider"
-                                    min={5}
-                                    max={90}
-                                    step={5}
-                                    value={discountPercent}
-                                    onChange={e => setDiscountPercent(Number(e.target.value))}
-                                />
-                                <div className="fds-slider-badge">{discountPercent}%</div>
-                            </div>
-                            <div className="fds-slider-info">
-                                Бараа нэмэхэд анхны үнэнд энэ хувийг хэрэглэнэ. Нэмсний дараа тус тусад нь засах боломжтой.
+                            <div className="fds-slider-info" style={{ marginTop: 4 }}>
+                                Бараа нэмэхэд эдгээр утга анхдагч болно. Нэмсний дараа тус бүрийг тусад нь өөрчлөх боломжтой.
                             </div>
                         </div>
                     </div>
@@ -297,7 +292,46 @@ export function FlashDealSettings({ bizId }: { bizId: string }) {
                                                 <span className="fds-product-flash">{fp.flashPrice.toLocaleString()}₮</span>
                                                 {discount > 0 && <span className="fds-product-badge">-{discount}%</span>}
                                             </div>
-                                            <div className="fds-product-inputs" style={{ gridTemplateColumns: '1fr 1fr 1fr' }}>
+
+                                            {/* ── Per-product discount slider ── */}
+                                            <div className="fds-per-product-section">
+                                                <div className="fds-per-label">Хямдралын хувь</div>
+                                                <div className="fds-per-slider-wrap">
+                                                    <input
+                                                        type="range"
+                                                        className="fds-slider fds-slider-sm"
+                                                        min={5} max={90} step={5}
+                                                        value={discount || 30}
+                                                        onChange={e => updateProductDiscount(fp.productId, Number(e.target.value))}
+                                                    />
+                                                    <span className="fds-per-slider-val">-{discount}%</span>
+                                                </div>
+                                            </div>
+
+                                            {/* ── Per-product duration ── */}
+                                            <div className="fds-per-product-section">
+                                                <div className="fds-per-label">⏱️ Хугацаа</div>
+                                                <div className="fds-per-duration">
+                                                    {[4, 8, 12, 24, 48, 72].map(h => (
+                                                        <button
+                                                            key={h}
+                                                            className={`fds-dur-chip ${(fp.durationHours || config.durationHours) === h ? 'active' : ''}`}
+                                                            onClick={() => updateProduct(fp.productId, 'durationHours', h)}
+                                                        >
+                                                            {h}ц
+                                                        </button>
+                                                    ))}
+                                                    <input
+                                                        type="number"
+                                                        className="fds-dur-input"
+                                                        min={1} max={168}
+                                                        value={fp.durationHours || config.durationHours}
+                                                        onChange={e => updateProduct(fp.productId, 'durationHours', Math.max(1, Number(e.target.value)))}
+                                                    />
+                                                </div>
+                                            </div>
+
+                                            <div className="fds-product-inputs" style={{ gridTemplateColumns: '1fr 1fr' }}>
                                                 <div>
                                                     <label>Flash үнэ (₮)</label>
                                                     <input
@@ -307,21 +341,11 @@ export function FlashDealSettings({ bizId }: { bizId: string }) {
                                                     />
                                                 </div>
                                                 <div>
-                                                    <label>Тоо (ш)</label>
+                                                    <label>Тоо хэмжээ (ш)</label>
                                                     <input
                                                         type="number"
                                                         value={fp.maxQuantity}
                                                         onChange={e => updateProduct(fp.productId, 'maxQuantity', Number(e.target.value))}
-                                                    />
-                                                </div>
-                                                <div>
-                                                    <label>⏱️ Хугацаа (ц)</label>
-                                                    <input
-                                                        type="number"
-                                                        min={1}
-                                                        max={168}
-                                                        value={fp.durationHours || config.durationHours}
-                                                        onChange={e => updateProduct(fp.productId, 'durationHours', Math.max(1, Number(e.target.value)))}
                                                     />
                                                 </div>
                                             </div>
