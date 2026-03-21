@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { createPortal } from 'react-dom';
 import '../Inventory/InventoryPage.css';
@@ -6,7 +6,7 @@ import { ImageUpload } from '../../components/common/ImageUpload';
 import {
     Grid3X3, List, Plus, Search, MoreVertical, AlertTriangle, Loader2,
     Eye, EyeOff, Bot, Target, ShieldCheck, Sparkles, CheckCircle2, Facebook,
-    Package, Clock, Check, Trash2, Image as ImageIcon, Link2, X, MessageSquare
+    Package, Clock, Check, Trash2, Image as ImageIcon, Link2, X, MessageSquare, Zap
 } from 'lucide-react';
 import { useBusinessStore, useAuthStore } from '../../store';
 import { productService, categoryService, cargoService } from '../../services/db';
@@ -160,6 +160,22 @@ export function ProductsPage() {
 
         return matchSearch && matchCategory;
     });
+
+    // Flash deal product lookup
+    const flashDealMap = useMemo(() => {
+        const fd = (business?.settings as any)?.storefront?.flashDeal;
+        if (!fd?.enabled || !fd.products?.length) return new Map<string, number>();
+        const map = new Map<string, number>();
+        const now = Date.now();
+        const globalEnd = fd.endsAt?.toDate?.()?.getTime?.() || new Date(fd.endsAt).getTime();
+        for (const fp of fd.products) {
+            const productEnd = fp.endsAt ? (fp.endsAt?.toDate?.()?.getTime?.() || new Date(fp.endsAt).getTime()) : globalEnd;
+            if (productEnd > now) {
+                map.set(fp.productId, fp.flashPrice);
+            }
+        }
+        return map;
+    }, [business?.settings]);
 
     const handleBulkAutoTag = async () => {
         if (!business) return;
@@ -473,6 +489,11 @@ export function ProductsPage() {
                                             </div>
 
                                             <div className="product-card-badges">
+                                                {flashDealMap.has(p.id) && (
+                                                    <span className="badge" style={{ background: 'linear-gradient(135deg, #f59e0b, #ef4444)', color: '#fff', display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: '0.65rem', fontWeight: 700 }}>
+                                                        <Zap size={10} /> {fmt(flashDealMap.get(p.id)!)}
+                                                    </span>
+                                                )}
                                                 {p.productType === 'preorder' ? (
                                                     <span className="badge badge-info">♾️ Захиалга</span>
                                                 ) : (p.stock?.quantity || 0) === 0 ? (
