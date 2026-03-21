@@ -1,41 +1,88 @@
 import {
     collection, doc, getDoc, getDocs, setDoc, updateDoc, addDoc, query, where, orderBy, limit,
-    onSnapshot, serverTimestamp
+    onSnapshot, serverTimestamp, writeBatch, arrayUnion, arrayRemove, startAfter, Timestamp,
+    QueryDocumentSnapshot, deleteField
 } from 'firebase/firestore';
 import { db } from './firebase';
 import type { Employee, Position, OrderSource, SocialAccount } from '../types';
 import { convertTimestamps } from './helpers';
 
-// ============ CHAT SERVICES ============
+// ============ CHAT TYPES ============
+export interface ChatMessage {
+    id: string;
+    text: string;
+    senderId: string;
+    senderName: string;
+    avatar: string;
+    type: 'text' | 'image' | 'file' | 'system' | 'entity_link';
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    createdAt: any;
+    // Reply
+    replyTo?: { messageId: string; senderName: string; text: string } | null;
+    // Edit/Delete
+    isEdited?: boolean;
+    editedAt?: Date | null;
+    isDeleted?: boolean;
+    // Pin
+    isPinned?: boolean;
+    // Reactions: { "👍": ["userId1"], "❤️": ["userId2", "userId3"] }
+    reactions?: Record<string, string[]>;
+    // Attachments
+    attachments?: Array<{ type: string; url: string; name?: string; size?: number; thumbnail?: string }>;
+    // Entity links (system integration)
+    entityLink?: { type: 'order' | 'product' | 'customer'; id: string; label: string; number?: string } | null;
+    // Mentions
+    mentions?: string[];
+}
+
+export interface ChatChannel {
+    id: string;
+    name: string;
+    type: 'general' | 'team' | 'dm' | 'announcement';
+    icon: string;
+    description?: string;
+    members?: string[];
+    dmParticipants?: { id: string; name: string; avatar: string }[];
+    lastMessage?: string;
+    lastMessageAt?: Timestamp;
+    pinnedMessageIds?: string[];
+    createdBy?: string;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    createdAt?: any;
+    isDefault?: boolean;
+}
+
+// ============ CHAT SERVICE ============
 
 export const chatService = {
     getChannelsRef(bizId: string) {
         return collection(db, 'businesses', bizId, 'channels');
     },
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    subscribeChannels(bizId: string, callback: (channels: any[]) => void) {
+    getMessagesRef(bizId: string, channelId: string) {
+        return collection(db, 'businesses', bizId, 'channels', channelId, 'messages');
+    },
+
+    // ──── CHANNELS ────
+
+    subscribeChannels(bizId: string, callback: (channels: ChatChannel[]) => void) {
         const q = query(this.getChannelsRef(bizId), orderBy('name'));
         return onSnapshot(q, (snapshot) => {
-            callback(snapshot.docs.map(d => ({ id: d.id, ...d.data() })));
+            callback(snapshot.docs.map(d => ({ id: d.id, ...d.data() } as ChatChannel)));
         });
     },
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    subscribeMessages(bizId: string, channelId: string, callback: (messages: any[]) => void) {
-        const q = query(
-            collection(db, 'businesses', bizId, 'channels', channelId, 'messages'),
-            orderBy('createdAt', 'asc'),
-            limit(100)
-        );
-        return onSnapshot(q, (snapshot) => {
-            callback(snapshot.docs.map(d => ({ id: d.id, ...convertTimestamps(d.data()) })));
-        });
-    },
-
-    async createChannel(bizId: string, data: { name: string, type: 'general' | 'team' | 'dm', icon: string }) {
+    async createChannel(bizId: string, data: {
+        name: string;
+        type: 'general' | 'team' | 'dm' | 'announcement';
+        icon: string;
+        description?: string;
+        members?: string[];
+        createdBy?: string;
+    }) {
         const docRef = await addDoc(this.getChannelsRef(bizId), {
             ...data,
+            pinnedMessageIds: [],
             createdAt: serverTimestamp(),
             lastMessage: 'Суваг үүсгэгдлээ',
             lastMessageAt: serverTimestamp()
@@ -43,16 +90,273 @@ export const chatService = {
         return docRef.id;
     },
 
-    async sendMessage(bizId: string, channelId: string, message: { text: string; senderId: string; senderName: string; avatar: string }) {
-        await addDoc(collection(db, 'businesses', bizId, 'channels', channelId, 'messages'), {
+    async updateChannel(bizId: string, channelId: string, data: Partial<ChatChannel>) {
+        await updateDoc(doc(db, 'businesses', bizId, 'channels', channelId), {
+            ...data,
+            updatedAt: serverTimestamp()
+        });
+    },
+
+    async deleteChannel(bizId: string, channelId: string) {
+        await updateDoc(doc(db, 'businesses', bizId, 'channels', channelId), {
+            isDeleted: true,
+            updatedAt: serverTimestamp()
+        });
+    },
+
+    // ──── MESSAGES ────
+
+    subscribeMessages(bizId: string, channelId: string, callback: (messages: ChatMessage[]) => void, msgLimit = 50) {
+        const q = query(
+            this.getMessagesRef(bizId, channelId),
+            orderBy('createdAt', 'asc'),
+            limit(msgLimit)
+        );
+        return onSnapshot(q, (snapshot) => {
+            callback(snapshot.docs.map(d => ({ id: d.id, ...convertTimestamps(d.data()) } as ChatMessage)));
+        });
+    },
+
+    // Cursor-based pagination — load older messages
+    async loadMoreMessages(bizId: string, channelId: string, beforeDoc: QueryDocumentSnapshot, count = 30): Promise<{ messages: ChatMessage[]; lastDoc: QueryDocumentSnapshot | null }> {
+        const q = query(
+            this.getMessagesRef(bizId, channelId),
+            orderBy('createdAt', 'desc'),
+            startAfter(beforeDoc),
+            limit(count)
+        );
+        const snap = await getDocs(q);
+        const messages = snap.docs.reverse().map(d => ({ id: d.id, ...convertTimestamps(d.data()) } as ChatMessage));
+        return { messages, lastDoc: snap.docs.length > 0 ? snap.docs[snap.docs.length - 1] : null };
+    },
+
+    // ──── SEND MESSAGE (atomic: message + channel lastMessage) ────
+
+    async sendMessage(bizId: string, channelId: string, message: {
+        text: string;
+        senderId: string;
+        senderName: string;
+        avatar: string;
+        type?: ChatMessage['type'];
+        replyTo?: ChatMessage['replyTo'];
+        attachments?: ChatMessage['attachments'];
+        entityLink?: ChatMessage['entityLink'];
+        mentions?: string[];
+    }) {
+        const batch = writeBatch(db);
+
+        // 1. Add message
+        const msgRef = doc(this.getMessagesRef(bizId, channelId));
+        batch.set(msgRef, {
             ...message,
+            type: message.type || 'text',
+            reactions: {},
+            isPinned: false,
+            isDeleted: false,
+            isEdited: false,
             createdAt: serverTimestamp()
         });
 
-        await updateDoc(doc(db, 'businesses', bizId, 'channels', channelId), {
-            lastMessage: `${message.senderName}: ${message.text}`,
+        // 2. Update channel preview (atomic with message)
+        const channelRef = doc(db, 'businesses', bizId, 'channels', channelId);
+        const previewText = message.type === 'image' ? '📸 Зураг' :
+            message.type === 'file' ? '📎 Файл' :
+            message.type === 'entity_link' ? `🔗 ${message.entityLink?.label || 'Линк'}` :
+            message.text;
+        batch.update(channelRef, {
+            lastMessage: `${message.senderName}: ${previewText}`.slice(0, 100),
             lastMessageAt: serverTimestamp()
         });
+
+        await batch.commit();
+        return msgRef.id;
+    },
+
+    // ──── EDIT MESSAGE (5 min window) ────
+
+    async editMessage(bizId: string, channelId: string, msgId: string, newText: string, userId: string) {
+        const msgRef = doc(db, 'businesses', bizId, 'channels', channelId, 'messages', msgId);
+        const snap = await getDoc(msgRef);
+        if (!snap.exists()) throw new Error('Message not found');
+
+        const data = snap.data();
+        if (data.senderId !== userId) throw new Error('Can only edit own messages');
+
+        // 5 minute limit
+        const createdAt = data.createdAt?.toDate?.() || new Date(data.createdAt);
+        const minutesSince = (Date.now() - createdAt.getTime()) / 60000;
+        if (minutesSince > 5) throw new Error('Edit window expired (5 min)');
+
+        await updateDoc(msgRef, {
+            text: newText,
+            isEdited: true,
+            editedAt: serverTimestamp()
+        });
+    },
+
+    // ──── DELETE MESSAGE (soft delete) ────
+
+    async deleteMessage(bizId: string, channelId: string, msgId: string, userId: string, isAdmin = false) {
+        const msgRef = doc(db, 'businesses', bizId, 'channels', channelId, 'messages', msgId);
+        const snap = await getDoc(msgRef);
+        if (!snap.exists()) throw new Error('Message not found');
+
+        const data = snap.data();
+        if (data.senderId !== userId && !isAdmin) throw new Error('Can only delete own messages');
+
+        await updateDoc(msgRef, {
+            isDeleted: true,
+            text: 'Энэ зурвас устгагдсан',
+            attachments: [],
+            deletedAt: serverTimestamp(),
+            deletedBy: userId
+        });
+    },
+
+    // ──── REACTIONS ────
+
+    async addReaction(bizId: string, channelId: string, msgId: string, emoji: string, userId: string) {
+        const msgRef = doc(db, 'businesses', bizId, 'channels', channelId, 'messages', msgId);
+        await updateDoc(msgRef, {
+            [`reactions.${emoji}`]: arrayUnion(userId)
+        });
+    },
+
+    async removeReaction(bizId: string, channelId: string, msgId: string, emoji: string, userId: string) {
+        const msgRef = doc(db, 'businesses', bizId, 'channels', channelId, 'messages', msgId);
+        await updateDoc(msgRef, {
+            [`reactions.${emoji}`]: arrayRemove(userId)
+        });
+    },
+
+    // ──── PIN / UNPIN ────
+
+    async togglePin(bizId: string, channelId: string, msgId: string) {
+        const msgRef = doc(db, 'businesses', bizId, 'channels', channelId, 'messages', msgId);
+        const channelRef = doc(db, 'businesses', bizId, 'channels', channelId);
+        const snap = await getDoc(msgRef);
+        if (!snap.exists()) return;
+
+        const isPinned = snap.data().isPinned || false;
+        const batch = writeBatch(db);
+
+        batch.update(msgRef, { isPinned: !isPinned });
+        if (isPinned) {
+            batch.update(channelRef, { pinnedMessageIds: arrayRemove(msgId) });
+        } else {
+            batch.update(channelRef, { pinnedMessageIds: arrayUnion(msgId) });
+        }
+
+        await batch.commit();
+    },
+
+    // Subscribe to pinned messages
+    subscribePinnedMessages(bizId: string, channelId: string, callback: (messages: ChatMessage[]) => void) {
+        const q = query(
+            this.getMessagesRef(bizId, channelId),
+            where('isPinned', '==', true),
+            orderBy('createdAt', 'desc')
+        );
+        return onSnapshot(q, (snap) => {
+            callback(snap.docs.map(d => ({ id: d.id, ...convertTimestamps(d.data()) } as ChatMessage)));
+        });
+    },
+
+    // ──── UNREAD TRACKING ────
+
+    async markChannelRead(bizId: string, channelId: string, userId: string) {
+        const readRef = doc(db, 'businesses', bizId, 'chatReadState', `${userId}_${channelId}`);
+        await setDoc(readRef, {
+            userId,
+            channelId,
+            lastReadAt: serverTimestamp()
+        }, { merge: true });
+    },
+
+    subscribeReadStates(bizId: string, userId: string, callback: (states: Record<string, Date>) => void) {
+        const q = query(
+            collection(db, 'businesses', bizId, 'chatReadState'),
+            where('userId', '==', userId)
+        );
+        return onSnapshot(q, (snap) => {
+            const states: Record<string, Date> = {};
+            snap.docs.forEach(d => {
+                const data = d.data();
+                states[data.channelId] = data.lastReadAt?.toDate?.() || new Date(0);
+            });
+            callback(states);
+        });
+    },
+
+    // ──── DIRECT MESSAGES ────
+
+    getDMChannelId(userId1: string, userId2: string): string {
+        return [userId1, userId2].sort().join('_dm_');
+    },
+
+    async getOrCreateDM(bizId: string, user1: { id: string; name: string; avatar: string }, user2: { id: string; name: string; avatar: string }): Promise<string> {
+        const dmId = this.getDMChannelId(user1.id, user2.id);
+        const channelRef = doc(db, 'businesses', bizId, 'channels', dmId);
+        const snap = await getDoc(channelRef);
+
+        if (snap.exists()) return dmId;
+
+        // Create DM channel with explicit ID
+        await setDoc(channelRef, {
+            name: `${user1.name}`,
+            type: 'dm',
+            icon: user2.name.charAt(0),
+            dmParticipants: [
+                { id: user1.id, name: user1.name, avatar: user1.avatar },
+                { id: user2.id, name: user2.name, avatar: user2.avatar }
+            ],
+            members: [user1.id, user2.id],
+            pinnedMessageIds: [],
+            createdAt: serverTimestamp(),
+            lastMessage: '',
+            lastMessageAt: serverTimestamp()
+        });
+
+        return dmId;
+    },
+
+    // ──── SEARCH ────
+
+    async searchMessages(bizId: string, searchQuery: string, channelId?: string): Promise<ChatMessage[]> {
+        // Client-side search within loaded messages (Firestore doesn't support full-text)
+        // For better search, we query recent messages and filter
+        const searchLower = searchQuery.toLowerCase();
+        const colRef = channelId
+            ? this.getMessagesRef(bizId, channelId)
+            : null;
+
+        if (!colRef) {
+            // Search across all channels — get channels first, then search each
+            const channelsSnap = await getDocs(this.getChannelsRef(bizId));
+            const results: ChatMessage[] = [];
+            for (const ch of channelsSnap.docs) {
+                const q = query(
+                    this.getMessagesRef(bizId, ch.id),
+                    orderBy('createdAt', 'desc'),
+                    limit(200)
+                );
+                const snap = await getDocs(q);
+                snap.docs.forEach(d => {
+                    const data = d.data();
+                    if (data.text?.toLowerCase().includes(searchLower) && !data.isDeleted) {
+                        results.push({ id: d.id, ...convertTimestamps(data), _channelId: ch.id, _channelName: ch.data().name } as ChatMessage & { _channelId: string; _channelName: string });
+                    }
+                });
+            }
+            return results.slice(0, 20);
+        }
+
+        const q = query(colRef, orderBy('createdAt', 'desc'), limit(200));
+        const snap = await getDocs(q);
+        return snap.docs
+            .filter(d => d.data().text?.toLowerCase().includes(searchLower) && !d.data().isDeleted)
+            .map(d => ({ id: d.id, ...convertTimestamps(d.data()) } as ChatMessage))
+            .slice(0, 20);
     }
 };
 
