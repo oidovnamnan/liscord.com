@@ -347,11 +347,19 @@ export function StoreCheckout() {
                     try {
                         const orderRef = doc(db, `businesses/${business.id}/orders`, successId);
                         await updateDoc(orderRef, {
+                            status: 'confirmed',
                             paymentStatus: 'paid',
                             paymentVerifiedAt: serverTimestamp(),
                             paymentVerifiedBy: 'qpay_poll',
                             'financials.paidAmount': savedTotal,
                             'financials.balanceDue': 0,
+                            statusHistory: arrayUnion({
+                                status: 'confirmed',
+                                at: new Date(),
+                                by: 'qpay_auto',
+                                byName: 'QPay Систем',
+                                note: `QPay төлбөр баталгаажлаа — ₮${savedTotal.toLocaleString()}`
+                            }),
                         });
                     } catch (e) {
                         console.error('Failed to update order:', e);

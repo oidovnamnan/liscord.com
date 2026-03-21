@@ -825,6 +825,7 @@ function MembershipModal({
                         // 1. Mark order as paid
                         const orderRef = firestoreDoc(db, `businesses/${business.id}/orders`, _oid);
                         await updateDoc(orderRef, {
+                            status: 'confirmed',
                             paymentStatus: 'paid',
                             paymentVerifiedAt: serverTimestamp(),
                             paymentVerifiedBy: 'qpay_poll',
