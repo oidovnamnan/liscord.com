@@ -40,6 +40,38 @@
     -moz-osx-font-smoothing: grayscale;
 }
 
+/* ── Force Light Mode on Storefront ──
+   Samsung Internet, Xiaomi MIUI browser, and others apply system dark mode.
+   This ensures storefront is ALWAYS white regardless of system preferences. */
+.storefront-layout {
+    color-scheme: light !important;
+    background: #ffffff !important;
+    color: #111111 !important;
+}
+
+.storefront-layout *,
+.storefront-layout *::before,
+.storefront-layout *::after {
+    color-scheme: light;
+}
+
+/* Override any dark theme variables when inside storefront */
+.storefront-layout,
+.storefront-layout .store-bg {
+    --bg-primary: #ffffff;
+    --bg-secondary: #ffffff;
+    --bg-tertiary: #f5f5fa;
+    --bg-elevated: #ffffff;
+    --surface-1: #ffffff;
+    --surface-2: #f8f8fc;
+    --surface-3: #f0f0f6;
+    --text-primary: #111111;
+    --text-secondary: #555555;
+    --text-muted: #999999;
+    --border-primary: rgba(0, 0, 0, 0.08);
+    --border-secondary: rgba(0, 0, 0, 0.12);
+}
+
 /* ============================================
    NAVBAR — Sticky Glass
    ============================================ */

@@ -57,8 +57,11 @@ export function StorefrontWrapper() {
     useEffect(() => {
         const root = document.documentElement;
         const prevTheme = root.getAttribute('data-theme') || 'dark';
+        const prevColorScheme = root.style.colorScheme || '';
         root.setAttribute('data-theme', 'light');
+        root.style.colorScheme = 'light';  // Force browser to use light UA styles
         document.body.style.background = '#ffffff';
+        document.body.style.color = '#111111';
 
         // FB browser: enforce viewport to prevent zoom/scaling issues
         const isFB = /FBAN|FBAV/i.test(navigator.userAgent);
@@ -75,7 +78,9 @@ export function StorefrontWrapper() {
 
         return () => {
             root.setAttribute('data-theme', prevTheme);
+            root.style.colorScheme = prevColorScheme;
             document.body.style.background = '';
+            document.body.style.color = '';
             if (isFB) {
                 const viewport = document.querySelector('meta[name="viewport"]');
                 if (viewport && prevViewport) {
