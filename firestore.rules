@@ -23,7 +23,8 @@ service cloud.firestore {
       allow create: if isAuth() && request.auth.uid == userId
         && (!('isSuperAdmin' in request.resource.data) || request.resource.data.isSuperAdmin == false);
       allow update: if isAuth() && request.auth.uid == userId
-        && request.resource.data.isSuperAdmin == resource.data.isSuperAdmin;
+        && (!('isSuperAdmin' in resource.data) || 
+            request.resource.data.isSuperAdmin == resource.data.isSuperAdmin);
       allow delete: if false;
       
       // Device tracking for remote logout
