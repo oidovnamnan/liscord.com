@@ -1,10 +1,11 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { Menu, Bell, Search, Plus, ShoppingBag } from 'lucide-react';
+import { Menu, Bell, Search, Plus, ShoppingBag, LogOut } from 'lucide-react';
 import { useUIStore, useAuthStore, useBusinessStore } from '../../store';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { userService } from '../../services/db';
-import { db } from '../../services/firebase';
+import { db, auth } from '../../services/firebase';
 import { collection, query, orderBy, limit, onSnapshot, doc, updateDoc, writeBatch, serverTimestamp } from 'firebase/firestore';
+import { signOut } from 'firebase/auth';
 import './Header.css';
 
 interface HeaderProps {
@@ -56,6 +57,8 @@ export function Header({ title, subtitle, action, extra }: HeaderProps) {
 
 
     const [isNotifOpen, setIsNotifOpen] = useState(false);
+    const [isProfileOpen, setIsProfileOpen] = useState(false);
+    const profileRef = useRef<HTMLDivElement>(null);
     const notifRef = useRef<HTMLDivElement>(null);
     const [notifications, setNotifications] = useState<NotifItem[]>([]);
 
@@ -65,10 +68,22 @@ export function Header({ title, subtitle, action, extra }: HeaderProps) {
             if (notifRef.current && !notifRef.current.contains(event.target as Node)) {
                 setIsNotifOpen(false);
             }
+            if (profileRef.current && !profileRef.current.contains(event.target as Node)) {
+                setIsProfileOpen(false);
+            }
         }
         document.addEventListener('mousedown', handleClickOutside);
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
+
+    const handleLogout = async () => {
+        try {
+            await signOut(auth);
+            navigate('/login');
+        } catch (e) {
+            console.error('Logout failed:', e);
+        }
+    };
 
     // Real-time Firestore notification subscription
     useEffect(() => {
@@ -298,8 +313,41 @@ export function Header({ title, subtitle, action, extra }: HeaderProps) {
                     </button>
                 )}
 
-                <div className="header-avatar" title={user?.displayName || 'Хэрэглэгч'} onClick={() => navigate('/app/profile')} style={{ cursor: 'pointer' }}>
-                    {user?.displayName?.charAt(0) || '?'}
+                <div ref={profileRef} style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                    <div className="header-avatar" title={user?.displayName || 'Хэрэглэгч'} onClick={() => setIsProfileOpen(!isProfileOpen)} style={{ cursor: 'pointer' }}>
+                        {user?.displayName?.charAt(0) || '?'}
+                    </div>
+                    {isProfileOpen && (
+                        <div className="animate-slide-up shadow-lg" style={{
+                            position: 'absolute', top: '100%', right: 0, marginTop: '8px',
+                            width: '220px', background: 'var(--surface-1)', borderRadius: '12px',
+                            border: '1px solid var(--border-color)', zIndex: 1000, overflow: 'hidden',
+                        }}>
+                            <div style={{ padding: '14px 16px', borderBottom: '1px solid var(--border-color)' }}>
+                                <div style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--text-primary)' }}>
+                                    {user?.displayName || 'Хэрэглэгч'}
+                                </div>
+                                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 2 }}>
+                                    {user?.phone || user?.email || ''}
+                                </div>
+                            </div>
+                            <button
+                                onClick={handleLogout}
+                                style={{
+                                    width: '100%', padding: '12px 16px',
+                                    display: 'flex', alignItems: 'center', gap: '10px',
+                                    background: 'none', border: 'none', cursor: 'pointer',
+                                    fontSize: '0.88rem', color: 'var(--error)',
+                                    fontWeight: 500, transition: 'background 0.2s',
+                                }}
+                                onMouseEnter={e => e.currentTarget.style.background = 'var(--bg-hover)'}
+                                onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                            >
+                                <LogOut size={18} />
+                                Гарах
+                            </button>
+                        </div>
+                    )}
                 </div>
             </div>
         </header>
