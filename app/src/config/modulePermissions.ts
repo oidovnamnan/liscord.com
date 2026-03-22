@@ -126,6 +126,13 @@ export const MODULE_PERMISSIONS: Record<string, ModulePermission[]> = {
         { id: 'products.manage_variants', label: 'Хувилбар удирдах' },
         { id: 'products.archive', label: 'Бараа архивлах' },
         { id: 'products.manage_suppliers', label: 'Нийлүүлэгч холбох' },
+        // Бодит UI товчнууд (ProductsPage)
+        { id: 'products.ai_description', label: 'AI тайлбар бичүүлэх' },
+        { id: 'products.ai_keywords', label: 'AI түлхүүр үг нэмэх' },
+        { id: 'products.fb_import', label: 'Facebook-оос бараа импортлох' },
+        { id: 'products.cargo_estimator', label: 'Каргоны тооцоолуур ашиглах' },
+        { id: 'products.copy_link', label: 'Барааны линк хуулах' },
+        { id: 'products.create_cargo_type', label: 'Карго төрөл үүсгэх' },
     ],
 
     'categories': [
@@ -133,6 +140,8 @@ export const MODULE_PERMISSIONS: Record<string, ModulePermission[]> = {
         { id: 'categories.create', label: 'Ангилал нэмэх' },
         { id: 'categories.edit', label: 'Ангилал засах' },
         { id: 'categories.delete', label: 'Ангилал устгах' },
+        // Бодит UI товчнууд (CategoriesPage)
+        { id: 'categories.grant_membership', label: 'Гишүүнчлэл олгох' },
         { id: 'categories.manage_memberships', label: 'Гишүүнчлэл удирдах' },
     ],
 
@@ -147,6 +156,10 @@ export const MODULE_PERMISSIONS: Record<string, ModulePermission[]> = {
         { id: 'inventory.set_reorder_point', label: 'Дахин захиалах цэг тохируулах' },
         { id: 'inventory.approve_adjustment', label: 'Тохируулга зөвшөөрөх' },
         { id: 'inventory.view_movement_log', label: 'Хөдөлгөөний лог' },
+        // Бодит UI товчнууд (InventoryPage)
+        { id: 'inventory.add_stock', label: 'Нөөц нэмэх' },
+        { id: 'inventory.sell_stock', label: 'Нөөц зарах/хасах' },
+        { id: 'inventory.set_stock', label: 'Нөөц тогтоох' },
     ],
 
     'multi-warehouse': [
@@ -247,6 +260,9 @@ export const MODULE_PERMISSIONS: Record<string, ModulePermission[]> = {
         { id: 'returns.process_refund', label: 'Мөнгө буцаах (санхүү)' },
         { id: 'returns.exchange', label: 'Солилцоо хийх' },
         { id: 'returns.view_reports', label: 'Буцаалтын тайлан' },
+        // Бодит UI товчнууд (ReturnsPage)
+        { id: 'returns.delete', label: 'Буцаалт устгах' },
+        { id: 'returns.manage_bank', label: 'Буцаалтын данс удирдах' },
         { id: 'returns.configure', label: 'Буцаалтын тохиргоо' },
     ],
 
@@ -430,6 +446,11 @@ export const MODULE_PERMISSIONS: Record<string, ModulePermission[]> = {
         { id: 'employees.edit', label: 'Ажилтан засах' },
         { id: 'employees.deactivate', label: 'Ажилтан идэвхгүйжүүлэх' },
         { id: 'employees.view_salary', label: 'Цалин харах' },
+        // Бодит UI товчнууд (EmployeesPage)
+        { id: 'employees.send_invite_sms', label: 'Урилга SMS илгээх' },
+        { id: 'employees.link_dual_role', label: 'Давхар эрх холбох' },
+        { id: 'employees.unlink_dual_role', label: 'Давхар эрх салгах' },
+        { id: 'employees.delete', label: 'Ажилтан устгах' },
     ],
 
     'attendance': [
@@ -576,6 +597,11 @@ export const MODULE_PERMISSIONS: Record<string, ModulePermission[]> = {
         { id: 'fbmessenger.manage_schedule', label: 'AI хуваарь удирдах' },
         { id: 'fbmessenger.manage_canned', label: 'Түргэн хариулт удирдах' },
         { id: 'fbmessenger.manage_pages', label: 'Page нэмэх/хасах' },
+        // Бодит UI товчнууд (FacebookMessengerPage)
+        { id: 'fbmessenger.send_ai_reply', label: 'AI хариу илгээх' },
+        { id: 'fbmessenger.send_image', label: 'Зураг илгээх' },
+        { id: 'fbmessenger.close_conversation', label: 'Харилцаа хаах/нээх' },
+        { id: 'fbmessenger.set_ai_mode', label: 'AI горим тус бүрчлэн тохируулах' },
         { id: 'fbmessenger.create_inquiry', label: 'Лавлагаа үүсгэх' },
         { id: 'fbmessenger.export', label: 'Мессеж экспортлох' },
         { id: 'fbmessenger.assign_conversation', label: 'Ажилтанд хуваарилах' },
@@ -627,6 +653,10 @@ export const MODULE_PERMISSIONS: Record<string, ModulePermission[]> = {
         { id: 'chat.delete_messages', label: 'Бусдын мессеж устгах' },
         { id: 'chat.send_files', label: 'Файл илгээх' },
         { id: 'chat.mention_all', label: '@everyone оруулах' },
+        // Бодит UI товчнууд (ChatPage)
+        { id: 'chat.edit_own_message', label: 'Өөрийн мессеж засах' },
+        { id: 'chat.send_image', label: 'Зураг илгээх' },
+        { id: 'chat.copy_message', label: 'Мессеж хуулах' },
     ],
 };
 
