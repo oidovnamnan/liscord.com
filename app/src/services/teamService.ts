@@ -425,6 +425,19 @@ export const teamService = {
     },
 
     async inviteEmployee(bizId: string, employeeData: Partial<Employee>) {
+        // Check for phone duplicate before creating
+        if (employeeData.phone) {
+            const normalized = normalizePhone(employeeData.phone);
+            const existing = await getDoc(doc(db, 'employee_phone_map', normalized));
+            if (existing.exists()) {
+                const data = existing.data();
+                // Allow if same business re-registering (e.g. re-adding deleted employee)
+                if (data.businessId !== bizId || data.employeeId) {
+                    throw new Error(`Энэ утасны дугаар (${employeeData.phone}) өөр ажилтанд бүртгэлтэй байна`);
+                }
+            }
+        }
+
         const docRef = await addDoc(collection(db, 'businesses', bizId, 'employees'), {
             ...employeeData,
             status: 'active',
@@ -438,15 +451,25 @@ export const teamService = {
     },
 
     async updateEmployee(bizId: string, empId: string, data: Partial<Employee>) {
-        // If phone is changing, remove old phone→business mapping first
+        // If phone is changing, check for duplicates and remove old mapping
         if (data.phone) {
             try {
                 const empSnap = await getDoc(doc(db, 'businesses', bizId, 'employees', empId));
                 const oldPhone = empSnap.exists() ? empSnap.data()?.phone : null;
                 if (oldPhone && oldPhone !== data.phone) {
+                    // Check new phone for duplicates
+                    const normalized = normalizePhone(data.phone);
+                    const existing = await getDoc(doc(db, 'employee_phone_map', normalized));
+                    if (existing.exists()) {
+                        const mapData = existing.data();
+                        if (mapData.employeeId !== empId) {
+                            throw new Error(`Энэ утасны дугаар (${data.phone}) өөр ажилтанд бүртгэлтэй байна`);
+                        }
+                    }
                     await removePhoneMap(oldPhone);
                 }
-            } catch (e) {
+            } catch (e: any) {
+                if (e?.message?.includes('бүртгэлтэй')) throw e;
                 console.warn('[teamService] read old phone failed (non-critical):', e);
             }
         }
