@@ -70,6 +70,13 @@ service cloud.firestore {
       allow update, delete: if false; // Admin SDK only
     }
 
+    // === EMPLOYEE PHONE MAP ===
+    // Authenticated users can read (autoLinkEmployee on login) and write (owner manages employees)
+    match /employee_phone_map/{phoneId} {
+      allow read: if isAuth();
+      allow create, update, delete: if isAuth();
+    }
+
     // === QR LOGINS ===
     match /qr_logins/{sessionId} {
       // Read: anyone can poll status (desktop needs to check before auth)
