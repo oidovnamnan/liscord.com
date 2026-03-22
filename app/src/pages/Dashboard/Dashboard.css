@@ -6,7 +6,7 @@
 .dash-widgets-container {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    grid-auto-rows: minmax(240px, auto);
+    grid-auto-rows: auto;
     grid-auto-flow: dense;
     gap: 12px;
     margin-top: 16px;
@@ -47,7 +47,8 @@
 
 /* STANDARD (1×) — one grid row = 260px */
 .wt-standard {
-    /* default: 1 grid-row = 260px, no override needed */
+    /* default: auto height from grid, but enforce min for list widgets */
+    min-height: 240px;
     display: block;
 }
 
