@@ -870,6 +870,25 @@ function SourcingDetailModal({ order, businessId, settings, onClose, onUpdate }:
                                                 onChange={() => toggleItem(item.productId)}
                                                 style={{ accentColor: 'var(--primary)', width: 18, height: 18 }}
                                             />
+                                            {/* Product thumbnail */}
+                                            {productInfo?.images?.[0] ? (
+                                                <img
+                                                    src={productInfo.images[0]}
+                                                    alt={item.name}
+                                                    style={{
+                                                        width: 40, height: 40, borderRadius: 8,
+                                                        objectFit: 'cover', flexShrink: 0,
+                                                        border: '1px solid var(--border-primary)',
+                                                    }}
+                                                />
+                                            ) : (
+                                                <div style={{
+                                                    width: 40, height: 40, borderRadius: 8,
+                                                    background: 'var(--surface-2)', flexShrink: 0,
+                                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                    color: 'var(--text-muted)', fontSize: '0.9rem',
+                                                }}>📦</div>
+                                            )}
                                             <div className="sourcing-item-info">
                                                 <span className="sourcing-item-name">{item.name}</span>
                                                 <span className="sourcing-item-qty">x{item.quantity || 1}</span>
