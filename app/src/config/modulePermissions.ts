@@ -21,6 +21,9 @@ export const CORE_PERMISSIONS: { group: string; permissions: ModulePermission[] 
             { id: 'settings.manage_billing', label: 'Багц/төлбөр удирдах' },
             { id: 'settings.manage_limits', label: 'Хязгаарлалт тохиргоо' },
             { id: 'settings.delete_business', label: 'Бизнес устгах (PIN)' },
+            { id: 'settings.manage_storefront', label: 'Дэлгүүр тохиргоо' },
+            { id: 'settings.manage_integrations', label: 'Холболт/API тохиргоо' },
+            { id: 'settings.view_audit_log', label: 'Үйлдэлийн лог харах' },
         ]
     },
     {
@@ -33,6 +36,8 @@ export const CORE_PERMISSIONS: { group: string; permissions: ModulePermission[] 
             { id: 'team.manage_positions', label: 'Албан тушаал удирдах' },
             { id: 'team.manage_permissions', label: 'Эрх тохируулах' },
             { id: 'team.view_activity', label: 'Идэвхжилийн лог харах' },
+            { id: 'team.view_salary', label: 'Цалин мэдээлэл харах' },
+            { id: 'team.manage_schedule', label: 'Ажлын хуваарь удирдах' },
         ]
     },
     {
@@ -73,17 +78,27 @@ export const MODULE_PERMISSIONS: Record<string, ModulePermission[]> = {
         { id: 'orders.edit_all', label: 'Бүх захиалга засах' },
         { id: 'orders.edit_own', label: 'Өөрийн захиалга засах' },
         { id: 'orders.delete', label: 'Захиалга устгах' },
-        { id: 'orders.change_status', label: 'Статус өөрчлөх' },
+        { id: 'orders.change_status', label: 'Статус өөрчлөх (ерөнхий)' },
+        { id: 'orders.status_to_confirmed', label: '→ Захиалсан руу шилжүүлэх' },
+        { id: 'orders.status_to_preparing', label: '→ Бэлтгэж байна руу шилжүүлэх' },
+        { id: 'orders.status_to_shipping', label: '→ Хүргэж байна руу шилжүүлэх' },
+        { id: 'orders.status_to_delivered', label: '→ Хүргэгдсэн руу шилжүүлэх' },
+        { id: 'orders.status_to_cancelled', label: '→ Цуцлагдсан руу шилжүүлэх' },
+        { id: 'orders.status_to_returned', label: '→ Буцаагдсан руу шилжүүлэх' },
         { id: 'orders.assign', label: 'Ажилтанд оноох' },
         { id: 'orders.view_financials', label: 'Мөнгөн дүн харах' },
         { id: 'orders.manage_payments', label: 'Төлбөр бүртгэх' },
         { id: 'orders.process_refund', label: 'Буцаалт хийх' },
         { id: 'orders.apply_discount', label: 'Хөнгөлөлт олгох' },
+        { id: 'orders.change_customer', label: 'Харилцагч солих' },
+        { id: 'orders.change_price', label: 'Үнэ өөрчлөх' },
         { id: 'orders.export', label: 'Экспортлох' },
         { id: 'orders.bulk_actions', label: 'Бөөнөөр үйлдэл хийх' },
         { id: 'orders.print', label: 'Хэвлэх' },
         { id: 'orders.add_notes', label: 'Тэмдэглэл нэмэх' },
         { id: 'orders.manage_delivery', label: 'Хүргэлт удирдах' },
+        { id: 'orders.merge', label: 'Захиалга нэгтгэх' },
+        { id: 'orders.duplicate', label: 'Захиалга хуулах' },
     ],
 
     'products': [
@@ -96,6 +111,12 @@ export const MODULE_PERMISSIONS: Record<string, ModulePermission[]> = {
         { id: 'products.manage_categories', label: 'Ангилал удирдах' },
         { id: 'products.manage_images', label: 'Зураг удирдах' },
         { id: 'products.manage_stock', label: 'Нөөц удирдах' },
+        { id: 'products.bulk_edit', label: 'Бөөнөөр засах' },
+        { id: 'products.import', label: 'Бараа импортлох' },
+        { id: 'products.export', label: 'Бараа экспортлох' },
+        { id: 'products.manage_variants', label: 'Хувилбар удирдах' },
+        { id: 'products.archive', label: 'Бараа архивлах' },
+        { id: 'products.manage_suppliers', label: 'Нийлүүлэгч холбох' },
     ],
 
     'categories': [
@@ -113,6 +134,10 @@ export const MODULE_PERMISSIONS: Record<string, ModulePermission[]> = {
         { id: 'inventory.receive', label: 'Бараа хүлээж авах' },
         { id: 'inventory.write_off', label: 'Акталж хасах' },
         { id: 'inventory.export', label: 'Нөөцийн тайлан экспорт' },
+        { id: 'inventory.view_cost', label: 'Нөөцийн өртөг харах' },
+        { id: 'inventory.set_reorder_point', label: 'Дахин захиалах цэг тохируулах' },
+        { id: 'inventory.approve_adjustment', label: 'Тохируулга зөвшөөрөх' },
+        { id: 'inventory.view_movement_log', label: 'Хөдөлгөөний лог' },
     ],
 
     'multi-warehouse': [
@@ -137,11 +162,24 @@ export const MODULE_PERMISSIONS: Record<string, ModulePermission[]> = {
     ],
 
     'sourcing': [
+        { id: 'sourcing.view_all', label: 'Бүх сорсинг харах' },
+        { id: 'sourcing.view_own', label: 'Өөрийн сорсинг харах' },
         { id: 'sourcing.view', label: 'Сорсинг харах' },
-        { id: 'sourcing.update_status', label: 'Статус шинэчлэх' },
+        { id: 'sourcing.update_status', label: 'Статус шинэчлэх (ерөнхий)' },
+        { id: 'sourcing.status_to_ordered', label: '→ Захиалсан руу шилжүүлэх' },
+        { id: 'sourcing.status_to_arrived', label: '→ Ирсэн руу шилжүүлэх' },
+        { id: 'sourcing.status_to_received', label: '→ Ирж авсан руу шилжүүлэх' },
+        { id: 'sourcing.status_to_shipping', label: '→ Хүргэсэн руу шилжүүлэх' },
+        { id: 'sourcing.status_to_fulfilled', label: '→ Биелсэн руу шилжүүлэх' },
+        { id: 'sourcing.status_to_returned', label: '→ Буцаалт руу шилжүүлэх' },
         { id: 'sourcing.add_tracking', label: 'Tracking нэмэх' },
         { id: 'sourcing.view_cost', label: 'Сорсинг өртөг харах' },
         { id: 'sourcing.mark_fulfilled', label: 'Биелсэн тэмдэглэх' },
+        { id: 'sourcing.edit_cargo', label: 'Карго мэдээлэл засах' },
+        { id: 'sourcing.edit_items', label: 'Сорсинг бараа засах' },
+        { id: 'sourcing.assign_cargo', label: 'Карго оноох' },
+        { id: 'sourcing.export', label: 'Экспортлох' },
+        { id: 'sourcing.bulk_actions', label: 'Бөөнөөр үйлдэл' },
         { id: 'sourcing.configure', label: 'Сорсинг тохиргоо' },
     ],
 
@@ -187,8 +225,11 @@ export const MODULE_PERMISSIONS: Record<string, ModulePermission[]> = {
         { id: 'returns.view', label: 'Буцаалт харах' },
         { id: 'returns.create', label: 'Буцаалт үүсгэх' },
         { id: 'returns.review', label: 'Буцаалт хянах (оператор)' },
+        { id: 'returns.approve', label: 'Буцаалт зөвшөөрөх' },
         { id: 'returns.reject', label: 'Буцаалт татгалзах' },
         { id: 'returns.process_refund', label: 'Мөнгө буцаах (санхүү)' },
+        { id: 'returns.exchange', label: 'Солилцоо хийх' },
+        { id: 'returns.view_reports', label: 'Буцаалтын тайлан' },
         { id: 'returns.configure', label: 'Буцаалтын тохиргоо' },
     ],
 
@@ -249,12 +290,18 @@ export const MODULE_PERMISSIONS: Record<string, ModulePermission[]> = {
     // ═══════════════════════════════════════
     'finance': [
         { id: 'finance.view_transactions', label: 'Гүйлгээ харах' },
+        { id: 'finance.create_transaction', label: 'Гүйлгээ бүртгэх' },
+        { id: 'finance.edit_transaction', label: 'Гүйлгээ засах' },
+        { id: 'finance.delete_transaction', label: 'Гүйлгээ устгах (PIN)' },
+        { id: 'finance.approve_transaction', label: 'Гүйлгээ зөвшөөрөх' },
         { id: 'finance.manage_accounts', label: 'Данс удирдах' },
         { id: 'finance.view_account_balance', label: 'Дансны үлдэгдэл' },
         { id: 'finance.manage_currencies', label: 'Валют/ханш удирдах' },
         { id: 'finance.view_debts', label: 'Авлага/өглөг харах' },
         { id: 'finance.write_off_debt', label: 'Авлага хасалт (PIN)' },
         { id: 'finance.view_reports', label: 'Санхүүгийн тайлан' },
+        { id: 'finance.export', label: 'Экспортлох' },
+        { id: 'finance.close_period', label: 'Хугацаа хаах' },
     ],
 
     'payments': [
@@ -378,11 +425,15 @@ export const MODULE_PERMISSIONS: Record<string, ModulePermission[]> = {
 
     'payroll': [
         { id: 'payroll.view', label: 'Цалин харах' },
+        { id: 'payroll.view_own', label: 'Өөрийн цалин харах' },
         { id: 'payroll.calculate', label: 'Цалин тооцох' },
         { id: 'payroll.approve', label: 'Цалин батлах' },
         { id: 'payroll.pay', label: 'Цалин олгох' },
         { id: 'payroll.view_reports', label: 'Цалингийн тайлан' },
         { id: 'payroll.manage_rules', label: 'Цалингийн дүрэм' },
+        { id: 'payroll.manage_deductions', label: 'Суутгал удирдах' },
+        { id: 'payroll.manage_bonuses', label: 'Урамшуулал удирдах' },
+        { id: 'payroll.export', label: 'Экспортлох' },
     ],
 
     'recruitment': [
@@ -483,6 +534,10 @@ export const MODULE_PERMISSIONS: Record<string, ModulePermission[]> = {
         { id: 'customers.manage_credit', label: 'Зээл удирдах' },
         { id: 'customers.manage_tags', label: 'Шошго удирдах' },
         { id: 'customers.export', label: 'Экспортлох' },
+        { id: 'customers.import', label: 'Импортлох' },
+        { id: 'customers.merge', label: 'Давхардал нэгтгэх' },
+        { id: 'customers.view_notes', label: 'Тэмдэглэл харах' },
+        { id: 'customers.manage_blacklist', label: 'Хар жагсаалт удирдах' },
     ],
 
     'messenger': [
@@ -506,6 +561,8 @@ export const MODULE_PERMISSIONS: Record<string, ModulePermission[]> = {
         { id: 'fbmessenger.manage_pages', label: 'Page нэмэх/хасах' },
         { id: 'fbmessenger.create_inquiry', label: 'Лавлагаа үүсгэх' },
         { id: 'fbmessenger.export', label: 'Мессеж экспортлох' },
+        { id: 'fbmessenger.assign_conversation', label: 'Ажилтанд хуваарилах' },
+        { id: 'fbmessenger.mark_resolved', label: 'Шийдвэрлэсэн болгох' },
     ],
 
     'campaigns': [
@@ -520,6 +577,39 @@ export const MODULE_PERMISSIONS: Record<string, ModulePermission[]> = {
         { id: 'loyalty.manage_programs', label: 'Хөтөлбөр удирдах' },
         { id: 'loyalty.award_points', label: 'Оноо олгох' },
         { id: 'loyalty.redeem_points', label: 'Оноо хэрэглэх' },
+    ],
+
+    // ═══════════════════════════════════════
+    // NEW MODULE GROUPS
+    // ═══════════════════════════════════════
+    'flash-deal': [
+        { id: 'flashdeal.view', label: 'Flash Deal харах' },
+        { id: 'flashdeal.create', label: 'Flash Deal үүсгэх' },
+        { id: 'flashdeal.edit', label: 'Flash Deal засах' },
+        { id: 'flashdeal.delete', label: 'Flash Deal устгах' },
+        { id: 'flashdeal.activate', label: 'Идэвхжүүлэх/зогсоох' },
+        { id: 'flashdeal.view_analytics', label: 'Статистик харах' },
+    ],
+
+    'storefront': [
+        { id: 'storefront.view', label: 'Дэлгүүр харах' },
+        { id: 'storefront.edit_design', label: 'Дизайн засах' },
+        { id: 'storefront.manage_products', label: 'Дэлгүүрийн бараа удирдах' },
+        { id: 'storefront.manage_pages', label: 'Хуудас удирдах' },
+        { id: 'storefront.manage_banner', label: 'Баннер засах' },
+        { id: 'storefront.view_analytics', label: 'Зочдын статистик' },
+        { id: 'storefront.manage_domain', label: 'Домайн тохиргоо' },
+    ],
+
+    'internal-chat': [
+        { id: 'chat.view', label: 'Чаат харах' },
+        { id: 'chat.send', label: 'Мессеж илгээх' },
+        { id: 'chat.create_channel', label: 'Суваг үүсгэх' },
+        { id: 'chat.manage_channels', label: 'Суваг удирдах (устгах, нэр солих)' },
+        { id: 'chat.pin_messages', label: 'Мессеж pin хийх' },
+        { id: 'chat.delete_messages', label: 'Бусдын мессеж устгах' },
+        { id: 'chat.send_files', label: 'Файл илгээх' },
+        { id: 'chat.mention_all', label: '@everyone оруулах' },
     ],
 };
 
