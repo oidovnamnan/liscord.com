@@ -80,7 +80,7 @@ type WidgetId = 'kpi' | 'analytics-grid' | 'chart' | 'status-bar' | 'status-donu
     'payment-breakdown' | 'customer-insights' | 'unpaid-cart';
 
 const DEFAULT_WIDGET_ORDER: WidgetId[] = [
-    'analytics-grid', 'status-bar', 'chart',
+    'kpi', 'analytics-grid', 'status-bar', 'chart',
     'status-donut', 'payment-breakdown',
     'recent-orders', 'unpaid-cart',
     'top-products', 'most-viewed',
