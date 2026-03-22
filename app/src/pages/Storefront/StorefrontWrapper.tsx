@@ -12,35 +12,45 @@ export function StorefrontWrapper() {
     const { slug } = useParams<{ slug: string }>();
     const [business, setBusiness] = useState<Business | null>(null);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<'not-found' | 'network' | null>(null);
 
-    useEffect(() => {
+    // Detect WeChat in-app browser
+    const isWeChat = /MicroMessenger/i.test(navigator.userAgent);
+
+    const loadBusiness = async () => {
         if (!slug) {
             setLoading(false);
+            setError('not-found');
             return;
         }
-
-        const loadBusiness = async () => {
-            try {
-                const biz = await businessService.getBusinessBySlug(slug.toLowerCase());
-                if (biz) {
-                    // Load module-specific settings (V5)
-                    const storefrontRef = doc(db, 'businesses', biz.id, 'module_settings', 'storefront');
-                    const storefrontSnap = await getDoc(storefrontRef);
-                    if (storefrontSnap.exists()) {
-                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                        const sfSettings = storefrontSnap.data() as any;
-                        biz.settings = { ...biz.settings, storefront: sfSettings };
-                    }
+        setLoading(true);
+        setError(null);
+        try {
+            const biz = await businessService.getBusinessBySlug(slug.toLowerCase());
+            if (biz) {
+                // Load module-specific settings (V5)
+                const storefrontRef = doc(db, 'businesses', biz.id, 'module_settings', 'storefront');
+                const storefrontSnap = await getDoc(storefrontRef);
+                if (storefrontSnap.exists()) {
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    const sfSettings = storefrontSnap.data() as any;
+                    biz.settings = { ...biz.settings, storefront: sfSettings };
                 }
                 setBusiness(biz);
-            } catch (err) {
-                console.error("Error loading storefront:", err);
-            } finally {
-                setLoading(false);
+            } else {
+                setError('not-found');
             }
-        };
+        } catch (err) {
+            console.error("Error loading storefront:", err);
+            setError('network');
+        } finally {
+            setLoading(false);
+        }
+    };
 
+    useEffect(() => {
         loadBusiness();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [slug]);
 
     // Force light theme on storefront pages (restore admin theme on unmount)
@@ -111,7 +121,6 @@ export function StorefrontWrapper() {
     useEffect(() => {
         if (!business?.id) return;
 
-        // Generate or retrieve a session-specific visitor ID
         let visitorId = sessionStorage.getItem('liscord_visitor_id');
         if (!visitorId) {
             visitorId = `v_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
@@ -120,7 +129,6 @@ export function StorefrontWrapper() {
 
         const visitorRef = doc(db, 'businesses', business.id, 'visitors', visitorId);
 
-        // Write heartbeat
         const writeHeartbeat = () => {
             setDoc(visitorRef, {
                 lastActiveAt: serverTimestamp(),
@@ -129,12 +137,9 @@ export function StorefrontWrapper() {
             }, { merge: true }).catch(() => {});
         };
 
-        // Initial heartbeat
         writeHeartbeat();
-        // Repeat every 30 seconds
         const interval = setInterval(writeHeartbeat, 30000);
 
-        // Cleanup: delete visitor doc on unmount
         return () => {
             clearInterval(interval);
             deleteDoc(visitorRef).catch(() => {});
@@ -149,8 +154,55 @@ export function StorefrontWrapper() {
         );
     }
 
-    if (!business) {
-        return <Navigate to="/" replace />;
+    // WeChat in-app browser often blocks Firebase/Firestore — show "open in browser" prompt
+    if (isWeChat && error === 'network') {
+        return (
+            <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: '20px', background: '#fff' }}>
+                <div style={{ fontSize: '3rem', marginBottom: 16 }}>🌐</div>
+                <h2 style={{ fontSize: '1.2rem', fontWeight: 700, marginBottom: 8, color: '#333' }}>Хөтөч дээр нээнэ үү</h2>
+                <p style={{ color: '#888', fontSize: '0.9rem', maxWidth: 320, lineHeight: 1.5, marginBottom: 20 }}>
+                    WeChat хөтөч дотор зөв ажиллахгүй байна. Баруун дээд буланд байгаа <strong>⋯</strong> товч дарж <strong>"Хөтөч дээр нээх"</strong> гэснийг сонгоно уу.
+                </p>
+                <div style={{ padding: '12px 20px', background: '#f0f0f0', borderRadius: 12, fontSize: '0.82rem', color: '#555', wordBreak: 'break-all' }}>
+                    {window.location.href}
+                </div>
+            </div>
+        );
+    }
+
+    // Network error — show retry
+    if (error === 'network') {
+        return (
+            <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: '20px', background: '#fff' }}>
+                <div style={{ fontSize: '3rem', marginBottom: 16 }}>⚠️</div>
+                <h2 style={{ fontSize: '1.2rem', fontWeight: 700, marginBottom: 8, color: '#333' }}>Холболт амжилтгүй</h2>
+                <p style={{ color: '#888', fontSize: '0.9rem', maxWidth: 320, lineHeight: 1.5, marginBottom: 20 }}>
+                    Интернэт холболтоо шалгаад дахин оролдоно уу.
+                </p>
+                <button
+                    onClick={() => loadBusiness()}
+                    style={{ padding: '12px 32px', background: '#4a6bff', color: '#fff', border: 'none', borderRadius: 12, fontSize: '0.9rem', fontWeight: 700, cursor: 'pointer' }}
+                >
+                    Дахин оролдох
+                </button>
+            </div>
+        );
+    }
+
+    // Slug not found — show 404 (NOT redirect to landing)
+    if (error === 'not-found' || !business) {
+        return (
+            <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: '20px', background: '#fff' }}>
+                <div style={{ fontSize: '3rem', marginBottom: 16 }}>🔍</div>
+                <h2 style={{ fontSize: '1.2rem', fontWeight: 700, marginBottom: 8, color: '#333' }}>Дэлгүүр олдсонгүй</h2>
+                <p style={{ color: '#888', fontSize: '0.9rem', maxWidth: 320, lineHeight: 1.5, marginBottom: 20 }}>
+                    <strong>"{slug}"</strong> нэртэй дэлгүүр бүртгэлгүй байна.
+                </p>
+                <a href="/" style={{ padding: '12px 32px', background: '#4a6bff', color: '#fff', borderRadius: 12, fontSize: '0.9rem', fontWeight: 700, textDecoration: 'none' }}>
+                    Нүүр хуудас
+                </a>
+            </div>
+        );
     }
 
     if (!business.settings?.storefront?.enabled) {
