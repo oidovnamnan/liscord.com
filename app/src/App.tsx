@@ -237,21 +237,24 @@ async function autoLinkEmployee(
   try {
     const { doc, getDoc, setDoc, updateDoc, serverTimestamp } = await import('firebase/firestore');
 
-    // Normalize phone: try both with and without +976 prefix
-    const phonesToCheck = [phone];
-    if (phone.startsWith('+976')) {
-      phonesToCheck.push(phone.replace('+976', ''));
+    // Build all possible phone formats to check in employee_phone_map
+    const cleaned = phone.replace(/[\s\-()]/g, '');
+    const phonesToCheck: string[] = [cleaned];
+    // Also try without +976 prefix (raw 8-digit)
+    if (cleaned.startsWith('+976')) {
+      phonesToCheck.push(cleaned.slice(4));
     }
-    if (/^\d{8}$/.test(phone)) {
-      phonesToCheck.push(`+976${phone}`);
+    // Also try with +976 prefix added
+    if (/^\d{8}$/.test(cleaned)) {
+      phonesToCheck.push(`+976${cleaned}`);
     }
 
-    // Look up employee_phone_map (simple getDoc — no index needed!)
+    console.log(`[Auth] autoLinkEmployee: phone=${phone}, trying keys:`, phonesToCheck);
+
+    // Look up employee_phone_map — try each format
     for (const ph of phonesToCheck) {
-      const normalized = ph.replace(/[\s\-()]/g, '');
-      const withPrefix = /^\d{8}$/.test(normalized) ? `+976${normalized}` : normalized;
-
-      const mapDoc = await getDoc(doc(db, 'employee_phone_map', withPrefix));
+      console.log(`[Auth] Checking employee_phone_map/${ph}...`);
+      const mapDoc = await getDoc(doc(db, 'employee_phone_map', ph));
       if (!mapDoc.exists()) continue;
 
       const { businessId: bizId, employeeId: empId } = mapDoc.data();
