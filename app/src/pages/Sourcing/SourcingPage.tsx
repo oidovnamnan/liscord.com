@@ -91,6 +91,7 @@ export function SourcingPage() {
     const [inactiveProducts, setInactiveProducts] = useState<ProductInfo[]>([]);
     const [showInactive, setShowInactive] = useState(false);
     const [reactivating, setReactivating] = useState<string | null>(null);
+    const [productImages, setProductImages] = useState<Record<string, string>>({});
 
     // Batch mode
     const [batchMode, setBatchMode] = useState(false);
@@ -144,6 +145,12 @@ export function SourcingPage() {
                     images: p.images || [],
                 }));
             setInactiveProducts(inactive);
+            // Build productId → firstImage map for list thumbnails
+            const imgMap: Record<string, string> = {};
+            products.forEach(p => {
+                if (p.images?.[0]) imgMap[p.id] = p.images[0];
+            });
+            setProductImages(imgMap);
         });
     }, [business?.id]);
 
@@ -388,9 +395,29 @@ export function SourcingPage() {
                                     </div>
                                 )}
                                 <div className="sourcing-card-left">
-                                    <div className="sourcing-card-avatar" style={{ background: statusInfo.color + '18', color: statusInfo.color }}>
-                                        <StatusIcon size={18} />
-                                    </div>
+                                    {/* Product image or status icon */}
+                                    {(() => {
+                                        const firstImg = order.items.find(it => productImages[it.productId]);
+                                        if (firstImg && productImages[firstImg.productId]) {
+                                            return (
+                                                <img
+                                                    src={productImages[firstImg.productId]}
+                                                    alt={firstImg.name}
+                                                    className="sourcing-card-avatar"
+                                                    style={{
+                                                        width: 44, height: 44, borderRadius: 10,
+                                                        objectFit: 'cover',
+                                                        border: '2px solid ' + statusInfo.color + '30',
+                                                    }}
+                                                />
+                                            );
+                                        }
+                                        return (
+                                            <div className="sourcing-card-avatar" style={{ background: statusInfo.color + '18', color: statusInfo.color }}>
+                                                <StatusIcon size={18} />
+                                            </div>
+                                        );
+                                    })()}
                                     <div className="sourcing-card-info">
                                         <div className="sourcing-card-top">
                                             <span className="sourcing-card-order">#{(order.orderNumber || order.id.slice(0, 6)).toUpperCase()}</span>
