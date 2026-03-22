@@ -99,6 +99,15 @@ export const MODULE_PERMISSIONS: Record<string, ModulePermission[]> = {
         { id: 'orders.manage_delivery', label: 'Хүргэлт удирдах' },
         { id: 'orders.merge', label: 'Захиалга нэгтгэх' },
         { id: 'orders.duplicate', label: 'Захиалга хуулах' },
+        // Бодит UI товчнууд (OrderDetailModal, OrdersPage)
+        { id: 'orders.mark_arrived', label: 'Бараа ирсэн тэмдэглэх' },
+        { id: 'orders.mark_picked_up', label: 'Хэрэглэгч авсан тэмдэглэх' },
+        { id: 'orders.send_to_provider', label: 'Сорс агент руу дамжуулах' },
+        { id: 'orders.generate_ebarimt', label: 'НӨАТ баримт олгох' },
+        { id: 'orders.cancel', label: 'Захиалга цуцлах' },
+        { id: 'orders.view_payment_proof', label: 'Төлбөрийн баримт харах' },
+        { id: 'orders.bulk_status_change', label: 'Бөөнөөр статус солих' },
+        { id: 'orders.view_status_history', label: 'Статус түүх харах' },
     ],
 
     'products': [
@@ -181,6 +190,14 @@ export const MODULE_PERMISSIONS: Record<string, ModulePermission[]> = {
         { id: 'sourcing.export', label: 'Экспортлох' },
         { id: 'sourcing.bulk_actions', label: 'Бөөнөөр үйлдэл' },
         { id: 'sourcing.configure', label: 'Сорсинг тохиргоо' },
+        // Бодит UI товчнууд (SourcingPage — detail modal)
+        { id: 'sourcing.add_link', label: 'Бараанд линк нэмэх' },
+        { id: 'sourcing.remove_link', label: 'Линк устгах' },
+        { id: 'sourcing.update_price', label: 'Бараа үнэ шинэчлэх' },
+        { id: 'sourcing.deactivate_product', label: 'Бараа идэвхгүй болгох' },
+        { id: 'sourcing.reactivate_product', label: 'Бараа идэвхжүүлэх' },
+        { id: 'sourcing.batch_merge', label: 'Бөөнөөр бүлэглэх/нэгтгэх' },
+        { id: 'sourcing.copy_info', label: 'Мэдээлэл хуулах' },
     ],
 
     'branches': [
