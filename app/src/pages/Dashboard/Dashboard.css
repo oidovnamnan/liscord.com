@@ -21,6 +21,8 @@
 .dash-widget {
     position: relative;
     border-radius: 20px;
+    user-select: none;
+    -webkit-user-select: none;
     transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1),
                 opacity 0.3s ease,
                 box-shadow 0.4s ease;
@@ -144,9 +146,10 @@
 
 /* ═══ Drag States ═══ */
 .dash-widget-dragging {
-    opacity: 0.35 !important;
-    transform: scale(0.96) rotate(1deg) !important;
-    pointer-events: none;
+    opacity: 0.4 !important;
+    transform: scale(0.97) !important;
+    z-index: 100;
+    cursor: grabbing !important;
 }
 
 .dash-widget-drag-over {
@@ -199,14 +202,13 @@
     transition: opacity 0.3s;
 }
 
-.glass-section:hover {
-    transform: translateY(-3px);
+.dash-widget:not(.dash-widget-dragging):hover .glass-section {
     box-shadow: 0 12px 40px rgba(0, 0, 0, 0.08),
                 0 4px 12px rgba(108, 92, 231, 0.06);
     border-left-color: #7c3aed;
 }
 
-.glass-section:hover::before {
+.dash-widget:not(.dash-widget-dragging):hover .glass-section::before {
     opacity: 1;
 }
 
