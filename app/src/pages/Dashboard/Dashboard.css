@@ -6,14 +6,15 @@
 .dash-widgets-container {
     display: grid;
     grid-template-columns: 1fr 1fr;
+    grid-auto-rows: 260px;
     gap: 16px;
     margin-top: 20px;
-    align-items: start;
 }
 
 @media (max-width: 768px) {
     .dash-widgets-container {
         grid-template-columns: 1fr;
+        grid-auto-rows: auto;
     }
 }
 
@@ -23,6 +24,7 @@
     border-radius: 20px;
     user-select: none;
     -webkit-user-select: none;
+    overflow: hidden;
     transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1),
                 opacity 0.3s ease,
                 box-shadow 0.4s ease;
@@ -32,22 +34,27 @@
     z-index: 2;
 }
 
-/* ═══ 3-Tier Widget Sizes ═══ */
+/* ═══ 2-Tier Widget Sizes ═══ */
 
-/* HEADER — compact, full-width */
+/* HEADER — full-width, auto height (not fixed) */
 .wt-header {
     grid-column: 1 / -1;
+    grid-row: span 1;
+    height: auto;
+    overflow: visible;
 }
 
-/* STANDARD (1×) — fixed height, half-width */
+/* STANDARD (1×) — one grid row = 260px */
 .wt-standard {
-    min-height: 300px;
+    /* default: 1 grid-row = 260px, no override needed */
+    display: block;
 }
 
 .wt-standard .glass-section {
     height: 100%;
     display: flex;
     flex-direction: column;
+    overflow: hidden;
 }
 
 .wt-standard .glass-section > .dash-list,
@@ -57,46 +64,52 @@
 .wt-standard .glass-section > div:last-child {
     flex: 1;
     min-height: 0;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(108, 92, 231, 0.15) transparent;
 }
 
-/* TALL (2×) — taller, scrollable interior */
+/* TALL (2×) — spans two grid rows = 260×2 + 16px gap = 536px */
 .wt-tall {
-    min-height: 440px;
+    grid-row: span 2;
 }
 
 .wt-tall .glass-section {
     height: 100%;
     display: flex;
     flex-direction: column;
+    overflow: hidden;
 }
 
 .wt-tall .glass-section > .dash-list,
 .wt-tall .glass-section > .dashboard-orders-list,
-.wt-tall .glass-section > .activity-stream {
+.wt-tall .glass-section > .activity-stream,
+.wt-tall .glass-section > div:last-child {
     flex: 1;
     overflow-y: auto;
     min-height: 0;
-    max-height: 380px;
     scrollbar-width: thin;
     scrollbar-color: rgba(108, 92, 231, 0.2) transparent;
 }
 
-.wt-tall .glass-section > .dash-list::-webkit-scrollbar,
-.wt-tall .glass-section > .dashboard-orders-list::-webkit-scrollbar,
-.wt-tall .glass-section > .activity-stream::-webkit-scrollbar {
+/* Scrollbar styles for all tiers */
+.wt-standard .glass-section ::-webkit-scrollbar,
+.wt-tall .glass-section ::-webkit-scrollbar {
     width: 4px;
 }
 
-.wt-tall .glass-section > .dash-list::-webkit-scrollbar-thumb,
-.wt-tall .glass-section > .dashboard-orders-list::-webkit-scrollbar-thumb,
-.wt-tall .glass-section > .activity-stream::-webkit-scrollbar-thumb {
+.wt-standard .glass-section ::-webkit-scrollbar-thumb,
+.wt-tall .glass-section ::-webkit-scrollbar-thumb {
     background: rgba(108, 92, 231, 0.2);
     border-radius: 100px;
 }
 
-/* FULL-WIDTH variants */
+/* FULL-WIDTH — full-width, auto height */
 .wt-full {
     grid-column: 1 / -1;
+    grid-row: span 1;
+    height: auto;
+    overflow: visible;
 }
 
 /* ═══ Drag Grip Handle ═══ */
