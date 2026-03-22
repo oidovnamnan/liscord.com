@@ -909,7 +909,7 @@ export function DashboardPage() {
                         <div className="dash-list">
                             {cartItems.length === 0 ? (
                                 <div className="empty-state-compact"><ShoppingBag size={24} style={{ color: 'var(--text-muted)', marginBottom: 8 }} /><p className="text-muted">Сагсанд бараа байхгүй</p></div>
-                            ) : cartItems.map(item => (
+                            ) : [...cartItems].sort((a, b) => b.quantity - a.quantity).map(item => (
                                 <div key={item.id} className="dash-list-item">
                                     <div className="dash-list-left">
                                         {item.product?.images?.[0] ? (
