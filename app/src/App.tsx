@@ -363,29 +363,36 @@ async function autoLinkEmployee(
 
       setUser({ ...profileData, uid: firebaseUser.uid, activeBusiness: bizId, createdAt: existingProfile?.createdAt || new Date() });
 
-      // ══ STEP 4: Load the business and employee data ══
+      // ══ STEP 4: Load business + use already-fetched employee data ══
       _debugLog(`[Auth] Step 4: Loading business ${bizId}...`);
       const biz = await businessService.getBusiness(bizId);
       _debugLog(`[Auth] ✅ Business loaded: ${biz?.name}`);
-      _debugLog(`[Auth] Loading employee profile for uid=${firebaseUser.uid}...`);
-      const emp = await businessService.getEmployeeProfile(bizId, firebaseUser.uid);
-      _debugLog(`[Auth] Employee profile: ${emp ? `found (${emp.name})` : 'NOT FOUND'}`);
       setBusiness(biz);
 
-      // Load position permissions
-      if (emp?.positionId && biz) {
-        try {
-          const posSnap = await getDoc(doc(db, 'businesses', biz.id, 'positions', emp.positionId));
-          if (posSnap.exists()) {
-            setEmployee({ ...emp, permissions: posSnap.data().permissions || [] } as typeof emp);
-            _debugLog(`[Auth] ✅ DONE — employee logged in with position permissions`);
-            return;
+      // Use empSnap data directly (already fetched by doc ID — no query index lag)
+      if (empSnap.exists() && biz) {
+        const empRecord = { id: empSnap.id, ...empSnap.data() } as any;
+        _debugLog(`[Auth] Employee data: name=${empRecord.name}, role=${empRecord.role}, positionId=${empRecord.positionId}`);
+        
+        // Load position permissions
+        if (empRecord.positionId) {
+          try {
+            const posSnap = await getDoc(doc(db, 'businesses', biz.id, 'positions', empRecord.positionId));
+            if (posSnap.exists()) {
+              const perms = posSnap.data().permissions || [];
+              setEmployee({ ...empRecord, permissions: perms });
+              _debugLog(`[Auth] ✅ DONE — employee logged in with ${perms.length} position permissions`);
+              return;
+            }
+          } catch (e) {
+            _debugLog(`[Auth] loadPositionPermissions failed (non-critical)`);
           }
-        } catch (e) {
-          _debugLog(`[Auth] loadPositionPermissions failed (non-critical)`);
         }
+        setEmployee(empRecord);
+        _debugLog(`[Auth] ✅ DONE — employee auto-linked (no position permissions)`);
+      } else {
+        _debugLog(`[Auth] ⚠️ Employee doc not found for empId=${empId}`);
       }
-      setEmployee(emp);
       _debugLog(`[Auth] ✅ DONE — employee auto-linked and logged in!`);
       return;
     }
