@@ -317,13 +317,37 @@ async function autoLinkEmployee(
 
       _debugLog(`[Auth] ✅ Auto-discovered employee via phone map: bizId=${bizId}, empId=${empId}`);
 
-      // 1. Link the Firebase UID to the employee record
+      // ══ STEP 1: Write user profile FIRST (so isMemberOf(bizId) passes for employee read) ══
+      const userRef = doc(db, 'users', firebaseUser.uid);
+      const profileData = {
+        uid: firebaseUser.uid,
+        phone: firebaseUser.phoneNumber,
+        email: firebaseUser.email || existingProfile?.email || null,
+        displayName: existingProfile?.displayName || '',
+        photoURL: firebaseUser.photoURL || existingProfile?.photoURL || null,
+        businessIds: [bizId],
+        activeBusiness: bizId,
+        language: existingProfile?.language || 'mn',
+        ...(existingProfile ? {} : { createdAt: serverTimestamp() }),
+        updatedAt: serverTimestamp(),
+      };
+      _debugLog(`[Auth] Step 1: Writing user profile with businessIds=[${bizId}]...`);
+      await setDoc(userRef, profileData, { merge: true });
+      _debugLog(`[Auth] ✅ User profile written — isMemberOf(${bizId}) should now pass`);
+
+      // ══ STEP 2: Link Firebase UID to the employee record (now we have permission) ══
       const empRef = doc(db, 'businesses', bizId, 'employees', empId);
+      _debugLog(`[Auth] Step 2: Reading employee ${empId}...`);
       const empSnap = await getDoc(empRef);
       if (empSnap.exists()) {
         const empData = empSnap.data();
+        // Update displayName from employee name
+        if (empData.name) {
+          profileData.displayName = empData.name;
+          await setDoc(userRef, { displayName: empData.name }, { merge: true });
+        }
         if (!empData.userId || empData.userId !== firebaseUser.uid) {
-          _debugLog(`[Auth] Linking UID ${firebaseUser.uid} to employee ${empId}`);
+          _debugLog(`[Auth] Linking UID ${firebaseUser.uid} to employee ${empId}...`);
           await updateDoc(empRef, {
             userId: firebaseUser.uid,
             status: 'active',
@@ -333,32 +357,14 @@ async function autoLinkEmployee(
         }
       }
 
-      // 2. Create or update user profile with activeBusiness
-      const userRef = doc(db, 'users', firebaseUser.uid);
-      const profileData = {
-        uid: firebaseUser.uid,
-        phone: firebaseUser.phoneNumber,
-        email: firebaseUser.email || existingProfile?.email || null,
-        displayName: empSnap.exists() ? (empSnap.data().name || existingProfile?.displayName || '') : (existingProfile?.displayName || ''),
-        photoURL: firebaseUser.photoURL || existingProfile?.photoURL || null,
-        businessIds: [bizId],
-        activeBusiness: bizId,
-        language: existingProfile?.language || 'mn',
-        ...(existingProfile ? {} : { createdAt: serverTimestamp() }),
-        updatedAt: serverTimestamp(),
-      };
-      _debugLog(`[Auth] Writing user profile with activeBusiness=${bizId}...`);
-      await setDoc(userRef, profileData, { merge: true });
-      _debugLog(`[Auth] ✅ User profile written successfully`);
-
-      // 3. Update the in-memory state
+      // ══ STEP 3: Update the in-memory state ══
       const { setUser } = useAuthStore.getState();
       const { setBusiness, setEmployee } = useBusinessStore.getState();
 
       setUser({ ...profileData, uid: firebaseUser.uid, activeBusiness: bizId, createdAt: existingProfile?.createdAt || new Date() });
 
-      // 4. Load the business and employee data
-      _debugLog(`[Auth] Loading business ${bizId}...`);
+      // ══ STEP 4: Load the business and employee data ══
+      _debugLog(`[Auth] Step 4: Loading business ${bizId}...`);
       const biz = await businessService.getBusiness(bizId);
       _debugLog(`[Auth] ✅ Business loaded: ${biz?.name}`);
       _debugLog(`[Auth] Loading employee profile for uid=${firebaseUser.uid}...`);
@@ -372,13 +378,15 @@ async function autoLinkEmployee(
           const posSnap = await getDoc(doc(db, 'businesses', biz.id, 'positions', emp.positionId));
           if (posSnap.exists()) {
             setEmployee({ ...emp, permissions: posSnap.data().permissions || [] } as typeof emp);
+            _debugLog(`[Auth] ✅ DONE — employee logged in with position permissions`);
             return;
           }
         } catch (e) {
-          console.warn('[Auth] autoLink: loadPositionPermissions failed:', e);
+          _debugLog(`[Auth] loadPositionPermissions failed (non-critical)`);
         }
       }
       setEmployee(emp);
+      _debugLog(`[Auth] ✅ DONE — employee auto-linked and logged in!`);
       return;
     }
     _debugLog(`[Auth] ❌ No employee_phone_map entry found for any phone format: ${JSON.stringify(phonesToCheck)}`);
