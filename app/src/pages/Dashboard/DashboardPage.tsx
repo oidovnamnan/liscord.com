@@ -77,16 +77,16 @@ interface AnalyticsData {
 type WidgetId = 'kpi' | 'analytics-grid' | 'chart' | 'status-bar' | 'status-donut' |
     'recent-orders' | 'low-stock' | 'top-products' | 'most-viewed' | 'recent-customers' |
     'unpaid-invoices' | 'online-employees' | 'activity-log' | 'getting-started' |
-    'payment-breakdown' | 'customer-insights';
+    'payment-breakdown' | 'customer-insights' | 'unpaid-cart';
 
 const DEFAULT_WIDGET_ORDER: WidgetId[] = [
     'kpi', 'analytics-grid', 'status-bar', 'chart',
     'status-donut', 'payment-breakdown',
-    'recent-orders', 'low-stock',
+    'recent-orders', 'unpaid-cart',
     'top-products', 'most-viewed',
-    'customer-insights', 'recent-customers',
+    'low-stock', 'customer-insights',
     'unpaid-invoices', 'online-employees',
-    'activity-log'
+    'recent-customers', 'activity-log'
 ];
 
 /** Format large numbers nicely */
@@ -207,6 +207,7 @@ export function DashboardPage() {
     const [unpaidInvoices, setUnpaidInvoices] = useState<UnpaidInvoice[]>([]);
     const [ordersByStatus, setOrdersByStatus] = useState<Record<string, number>>({});
     const [onlineEmployees, setOnlineEmployees] = useState<{ id: string; name: string; position?: string }[]>([]);
+    const [unpaidCartItems, setUnpaidCartItems] = useState<{ productId: string; name: string; totalQty: number; totalValue: number; cartCount: number }[]>([]);
     const [visitorCount, setVisitorCount] = useState(0);
     const { defaults: moduleDefaults, fetchDefaults } = useModuleDefaultsStore();
 
@@ -387,6 +388,8 @@ export function DashboardPage() {
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 const productSales: Record<string, { name: string; count: number; revenue: number }> = {};
                 const soldProductIds = new Set<string>();
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                const cartItemsMap: Record<string, { productId: string; name: string; totalQty: number; totalValue: number; cartCount: number }> = {};
 
                 if (visibleModuleIds.has('orders')) {
                     const ordersSnap = await getDocs(query(
@@ -408,8 +411,27 @@ export function DashboardPage() {
                         if (status === 'cancelled') { cancelledCount++; return; }
                         if (status === 'returned') { returnedCount++; return; }
 
-                        // Skip unpaid for revenue/product stats
-                        if (o.paymentStatus === 'unpaid' && status === 'new') { return; }
+                        // Unpaid carts — collect product items
+                        if (o.paymentStatus === 'unpaid' && status === 'new') {
+                            if (o.items) {
+                                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                                o.items.forEach((item: any) => {
+                                    const pid = item.productId || item.name;
+                                    if (!pid) return;
+                                    if (!cartItemsMap[pid]) cartItemsMap[pid] = { productId: pid, name: item.name || 'Нэргүй', totalQty: 0, totalValue: 0, cartCount: 0 };
+                                    cartItemsMap[pid].totalQty += item.quantity || 1;
+                                    cartItemsMap[pid].totalValue += (item.price || 0) * (item.quantity || 1);
+                                });
+                                // Count unique carts per product
+                                const seenPids = new Set<string>();
+                                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                                o.items.forEach((item: any) => {
+                                    const pid = item.productId || item.name;
+                                    if (pid && !seenPids.has(pid)) { seenPids.add(pid); if (cartItemsMap[pid]) cartItemsMap[pid].cartCount++; }
+                                });
+                            }
+                            return;
+                        }
 
                         totalValidOrders++;
 
@@ -453,6 +475,9 @@ export function DashboardPage() {
                     setTopProducts(Object.entries(productSales)
                         .map(([id, data]) => ({ id, name: data.name, soldCount: data.count, revenue: data.revenue }))
                         .sort((a, b) => b.soldCount - a.soldCount).slice(0, 8));
+
+                    // Unpaid cart items — sorted by total quantity
+                    setUnpaidCartItems(Object.values(cartItemsMap).sort((a, b) => b.totalQty - a.totalQty));
 
                     setAnalytics(prev => ({
                         ...prev,
@@ -568,6 +593,7 @@ export function DashboardPage() {
         'online-employees':  { tier: 'standard' },
         'low-stock':         { tier: 'standard' },
         'unpaid-invoices':   { tier: 'standard' },
+        'unpaid-cart':       { tier: 'standard' },
         'recent-orders':     { tier: 'tall' },
         'top-products':      { tier: 'tall' },
         'most-viewed':       { tier: 'tall' },
@@ -863,6 +889,36 @@ export function DashboardPage() {
                                         <div><span className="dash-list-name">{c.name}</span>{c.phone && <span className="dash-list-sub">{c.phone}</span>}</div>
                                     </div>
                                     {(c.totalOrders ?? 0) > 0 && <span className="dash-list-meta">{c.totalOrders} захиалга</span>}
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                );
+
+            case 'unpaid-cart':
+                if (!hasModule('orders')) return null;
+                return (
+                    <div className="dashboard-section glass-section">
+                        <div className="dashboard-section-header">
+                            <h3><ShoppingBag size={18} style={{ color: '#f59e0b', marginRight: 8 }} /> Сагсанд байгаа</h3>
+                            <a href="/app/orders" className="text-primary text-sm hover-underline">Бүгд →</a>
+                        </div>
+                        <div className="dash-list">
+                            {unpaidCartItems.length === 0 ? (
+                                <div className="empty-state-compact"><ShoppingBag size={24} style={{ color: 'var(--text-muted)', marginBottom: 8 }} /><p className="text-muted">Сагсанд бараа байхгүй</p></div>
+                            ) : unpaidCartItems.map(item => (
+                                <div key={item.productId} className="dash-list-item">
+                                    <div className="dash-list-left">
+                                        <ShoppingCart size={15} style={{ color: '#f59e0b', flexShrink: 0 }} />
+                                        <div>
+                                            <span className="dash-list-name">{item.name}</span>
+                                            <span className="dash-list-sub">{item.cartCount} сагс</span>
+                                        </div>
+                                    </div>
+                                    <div style={{ textAlign: 'right' }}>
+                                        <span className="dash-list-amount" style={{ color: '#f59e0b' }}>{item.totalQty}ш</span>
+                                        <span className="dash-list-sub" style={{ display: 'block', fontSize: '0.7rem' }}>{fmt(item.totalValue)}</span>
+                                    </div>
                                 </div>
                             ))}
                         </div>
