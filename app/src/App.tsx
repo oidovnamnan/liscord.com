@@ -222,6 +222,107 @@ function SuperAdminRoute({ children }: { children: React.ReactNode }) {
 
 const AppStorePage = lazy(() => import('./pages/AppStore/AppStorePage').then(m => ({ default: m.AppStorePage })));
 
+// ═══ Employee Auto-Discovery ═══
+// When a user logs in with a phone number that matches an employee record,
+// automatically link them to the business instead of showing BusinessWizard.
+async function autoLinkEmployee(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  firebaseUser: any,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  existingProfile: any
+) {
+  const phone = firebaseUser.phoneNumber;
+  if (!phone) return;
+
+  try {
+    const { collectionGroup, query, where, getDocs, doc, setDoc, updateDoc, serverTimestamp } = await import('firebase/firestore');
+
+    // Normalize phone: try both with and without +976 prefix
+    const phonesToCheck = [phone];
+    // If phone starts with +976, also check without country code
+    if (phone.startsWith('+976')) {
+      phonesToCheck.push(phone.replace('+976', ''));
+    }
+    // If phone is 8 digits (Mongolian), also check with +976 prefix
+    if (/^\d{8}$/.test(phone)) {
+      phonesToCheck.push(`+976${phone}`);
+    }
+
+    // Search across ALL businesses' employee subcollections
+    for (const ph of phonesToCheck) {
+      const empQuery = query(
+        collectionGroup(db, 'employees'),
+        where('phone', '==', ph),
+        where('status', '==', 'active')
+      );
+      const empSnap = await getDocs(empQuery);
+      if (!empSnap.empty) {
+        // Found an employee record — get the business ID from the doc path
+        const empDoc = empSnap.docs[0];
+        const empData = empDoc.data();
+        // Path is: businesses/{bizId}/employees/{empId}
+        const pathParts = empDoc.ref.path.split('/');
+        const bizId = pathParts[1]; // businesses/{bizId}/employees/{empId}
+
+        console.log(`[Auth] Auto-discovered employee: ${empData.name} in business ${bizId}`);
+
+        // 1. Link the Firebase UID to the employee record (if not already set)
+        if (!empData.userId || empData.userId !== firebaseUser.uid) {
+          await updateDoc(empDoc.ref, {
+            userId: firebaseUser.uid,
+            lastActiveAt: serverTimestamp(),
+          });
+        }
+
+        // 2. Create or update user profile with activeBusiness
+        const userRef = doc(db, 'users', firebaseUser.uid);
+        const profileData = {
+          uid: firebaseUser.uid,
+          phone: firebaseUser.phoneNumber,
+          email: firebaseUser.email || existingProfile?.email || null,
+          displayName: empData.name || existingProfile?.displayName || '',
+          photoURL: firebaseUser.photoURL || existingProfile?.photoURL || null,
+          businessIds: [bizId],
+          activeBusiness: bizId,
+          language: existingProfile?.language || 'mn',
+          ...(existingProfile ? {} : { createdAt: serverTimestamp() }),
+          updatedAt: serverTimestamp(),
+        };
+        await setDoc(userRef, profileData, { merge: true });
+
+        // 3. Update the in-memory state
+        const { setUser, setLoading } = useAuthStore.getState();
+        const { setBusiness, setEmployee } = useBusinessStore.getState();
+
+        setUser({ ...profileData, uid: firebaseUser.uid, activeBusiness: bizId, createdAt: existingProfile?.createdAt || new Date() });
+
+        // 4. Load the business and employee data
+        const biz = await businessService.getBusiness(bizId);
+        const emp = await businessService.getEmployeeProfile(bizId, firebaseUser.uid);
+        setBusiness(biz);
+
+        // Load position permissions
+        if (emp?.positionId && biz) {
+          try {
+            const posSnap = await (await import('firebase/firestore')).getDoc(doc(db, 'businesses', biz.id, 'positions', emp.positionId));
+            if (posSnap.exists()) {
+              setEmployee({ ...emp, permissions: posSnap.data().permissions || [] } as typeof emp);
+              return;
+            }
+          } catch (e) {
+            console.warn('[Auth] autoLink: loadPositionPermissions failed:', e);
+          }
+        }
+        setEmployee(emp);
+        return;
+      }
+    }
+    console.log('[Auth] No employee record found for phone:', phone);
+  } catch (e) {
+    console.warn('[Auth] autoLinkEmployee failed (non-critical):', e);
+  }
+}
+
 export default function App() {
   const { setUser, setLoading } = useAuthStore();
   const { business, setBusiness, setEmployee, setLinkedEmployees, clear } = useBusinessStore();
@@ -332,9 +433,16 @@ export default function App() {
               } catch (e) {
                 console.error('[Auth] getBusiness/getEmployee failed:', e);
               }
+            } else {
+              // ═══ Employee Auto-Discovery ═══
+              // Profile exists but no activeBusiness — check if this phone is registered as an employee
+              await autoLinkEmployee(firebaseUser, profile);
             }
           } else {
-            setUser({ uid: firebaseUser.uid, phone: firebaseUser.phoneNumber, email: firebaseUser.email, displayName: firebaseUser.displayName || '', photoURL: firebaseUser.photoURL, businessIds: [], activeBusiness: null, language: 'mn', createdAt: new Date() });
+            // No profile at all — create one, then check if this phone is registered as an employee
+            const newProfile = { uid: firebaseUser.uid, phone: firebaseUser.phoneNumber, email: firebaseUser.email, displayName: firebaseUser.displayName || '', photoURL: firebaseUser.photoURL, businessIds: [] as string[], activeBusiness: null as string | null, language: 'mn', createdAt: new Date() };
+            setUser(newProfile);
+            await autoLinkEmployee(firebaseUser, newProfile);
           }
 
           // 2. Device Tracking (non-blocking — should not crash auth flow)
