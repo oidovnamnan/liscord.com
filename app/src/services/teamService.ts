@@ -360,6 +360,42 @@ export const chatService = {
     }
 };
 
+// ============ PHONE MAP HELPERS (for employee auto-login) ============
+
+function normalizePhone(phone: string): string {
+    // Remove spaces, dashes, parentheses
+    let cleaned = phone.replace(/[\s\-()]/g, '');
+    // Ensure +976 prefix for Mongolian numbers
+    if (/^\d{8}$/.test(cleaned)) {
+        cleaned = `+976${cleaned}`;
+    }
+    return cleaned;
+}
+
+async function writePhoneMap(phone: string, bizId: string, empId: string) {
+    try {
+        const normalized = normalizePhone(phone);
+        await setDoc(doc(db, 'employee_phone_map', normalized), {
+            businessId: bizId,
+            employeeId: empId,
+            phone: normalized,
+            updatedAt: serverTimestamp(),
+        });
+    } catch (e) {
+        console.warn('[teamService] writePhoneMap failed (non-critical):', e);
+    }
+}
+
+async function removePhoneMap(phone: string) {
+    try {
+        const { deleteDoc: firebaseDeleteDoc } = await import('firebase/firestore');
+        const normalized = normalizePhone(phone);
+        await firebaseDeleteDoc(doc(db, 'employee_phone_map', normalized));
+    } catch (e) {
+        console.warn('[teamService] removePhoneMap failed (non-critical):', e);
+    }
+}
+
 // ============ TEAM SERVICES ============
 
 export const teamService = {
@@ -389,12 +425,16 @@ export const teamService = {
     },
 
     async inviteEmployee(bizId: string, employeeData: Partial<Employee>) {
-        await addDoc(collection(db, 'businesses', bizId, 'employees'), {
+        const docRef = await addDoc(collection(db, 'businesses', bizId, 'employees'), {
             ...employeeData,
             status: 'pending_invite',
             joinedAt: serverTimestamp(),
             stats: { totalOrdersCreated: 0, totalOrdersHandled: 0 }
         });
+        // Write phone→business mapping for auto-login
+        if (employeeData.phone) {
+            await writePhoneMap(employeeData.phone, bizId, docRef.id);
+        }
     },
 
     async updateEmployee(bizId: string, empId: string, data: Partial<Employee>) {
@@ -402,14 +442,26 @@ export const teamService = {
             ...data,
             updatedAt: serverTimestamp()
         });
+        // Update phone→business mapping if phone changed
+        if (data.phone) {
+            await writePhoneMap(data.phone, bizId, empId);
+        }
     },
 
     async deleteEmployee(bizId: string, empId: string) {
+        // Read the employee doc first to get phone for cleanup
+        const empSnap = await getDoc(doc(db, 'businesses', bizId, 'employees', empId));
+        const empPhone = empSnap.exists() ? empSnap.data()?.phone : null;
+
         await updateDoc(doc(db, 'businesses', bizId, 'employees', empId), {
             isDeleted: true,
             status: 'inactive',
             updatedAt: serverTimestamp()
         });
+        // Remove phone→business mapping
+        if (empPhone) {
+            await removePhoneMap(empPhone);
+        }
     },
 
     async linkEmployee(bizId: string, sourceEmpId: string, targetEmpId: string) {
