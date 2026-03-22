@@ -8,6 +8,7 @@ import {
     Crown, Hash, Eye
 } from 'lucide-react';
 import { useBusinessStore, useAuthStore, useModuleDefaultsStore } from '../../store';
+import { useCartStore } from '../../store/cartStore';
 import { dashboardService } from '../../services/db';
 import { auditService } from '../../services/audit';
 import { collection, query, where, getDocs, orderBy, limit, Timestamp, onSnapshot, doc, getDoc, setDoc } from 'firebase/firestore';
@@ -194,6 +195,7 @@ function HBarChart({ data, colors }: { data: { label: string; value: number }[];
 export function DashboardPage() {
     const { business, employee, isImpersonating } = useBusinessStore();
     const { user } = useAuthStore();
+    const cartItems = useCartStore(s => s.items);
     const [recentOrders, setRecentOrders] = useState<Order[]>([]);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const [stats, setStats] = useState<any>(null);
@@ -899,28 +901,29 @@ export function DashboardPage() {
                 );
 
             case 'unpaid-cart':
-                if (!hasModule('orders')) return null;
                 return (
                     <div className="dashboard-section glass-section">
                         <div className="dashboard-section-header">
-                            <h3><ShoppingBag size={18} style={{ color: '#f59e0b', marginRight: 8 }} /> Сагсанд байгаа</h3>
-                            <a href="/app/orders" className="text-primary text-sm hover-underline">Бүгд →</a>
+                            <h3><ShoppingBag size={18} style={{ color: '#f59e0b', marginRight: 8 }} /> Сагсанд байгаа ({cartItems.length})</h3>
                         </div>
                         <div className="dash-list">
-                            {unpaidCartItems.length === 0 ? (
+                            {cartItems.length === 0 ? (
                                 <div className="empty-state-compact"><ShoppingBag size={24} style={{ color: 'var(--text-muted)', marginBottom: 8 }} /><p className="text-muted">Сагсанд бараа байхгүй</p></div>
-                            ) : unpaidCartItems.map(item => (
-                                <div key={item.productId} className="dash-list-item">
+                            ) : cartItems.map(item => (
+                                <div key={item.id} className="dash-list-item">
                                     <div className="dash-list-left">
-                                        <ShoppingCart size={15} style={{ color: '#f59e0b', flexShrink: 0 }} />
+                                        {item.product?.images?.[0] ? (
+                                            <img src={item.product.images[0]} alt={item.product.name} style={{ width: 32, height: 32, borderRadius: 6, objectFit: 'cover', flexShrink: 0 }} />
+                                        ) : (
+                                            <ShoppingCart size={15} style={{ color: '#f59e0b', flexShrink: 0 }} />
+                                        )}
                                         <div>
-                                            <span className="dash-list-name">{item.name}</span>
-                                            <span className="dash-list-sub">{item.cartCount} сагс</span>
+                                            <span className="dash-list-name">{item.product?.name || 'Нэргүй'}</span>
+                                            <span className="dash-list-sub">x{item.quantity}</span>
                                         </div>
                                     </div>
                                     <div style={{ textAlign: 'right' }}>
-                                        <span className="dash-list-amount" style={{ color: '#f59e0b' }}>{item.totalQty}ш</span>
-                                        <span className="dash-list-sub" style={{ display: 'block', fontSize: '0.7rem' }}>{fmt(item.totalValue)}</span>
+                                        <span className="dash-list-amount" style={{ color: '#f59e0b' }}>{fmt(item.price * item.quantity)}</span>
                                     </div>
                                 </div>
                             ))}
