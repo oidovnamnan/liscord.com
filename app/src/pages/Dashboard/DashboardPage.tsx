@@ -247,19 +247,16 @@ export function DashboardPage() {
             { widgetOrder: order, updatedAt: new Date() }, { merge: true }).catch(() => {});
     }, [business?.id, user?.uid]);
 
-    // ═══ Drag handlers (improved) ═══
+    // ═══ Drag handlers (CSS Grid compatible) ═══
     const handleDragStart = useCallback((e: React.DragEvent, wId: WidgetId) => {
         setDraggedWidget(wId);
         e.dataTransfer.effectAllowed = 'move';
         e.dataTransfer.setData('text/plain', wId);
-        const el = e.currentTarget as HTMLElement;
-        requestAnimationFrame(() => el.style.opacity = '0.4');
     }, []);
 
-    const handleDragEnd = useCallback((e: React.DragEvent) => {
+    const handleDragEnd = useCallback(() => {
         setDraggedWidget(null);
         setDragOverWidget(null);
-        (e.currentTarget as HTMLElement).style.opacity = '1';
     }, []);
 
     const handleDragOver = useCallback((e: React.DragEvent) => {
@@ -267,12 +264,24 @@ export function DashboardPage() {
         e.dataTransfer.dropEffect = 'move';
     }, []);
 
-    const handleDragEnterWidget = useCallback((_e: React.DragEvent, wId: WidgetId) => {
+    const handleDragEnterWidget = useCallback((e: React.DragEvent, wId: WidgetId) => {
+        e.preventDefault();
+        e.stopPropagation();
         setDragOverWidget(wId);
+    }, []);
+
+    const handleDragLeaveWidget = useCallback((e: React.DragEvent) => {
+        // Only clear if leaving the actual widget (not entering a child)
+        const related = e.relatedTarget as HTMLElement | null;
+        if (!related || !e.currentTarget.contains(related)) {
+            setDragOverWidget(null);
+        }
     }, []);
 
     const handleDrop = useCallback((e: React.DragEvent, targetId: WidgetId) => {
         e.preventDefault();
+        e.stopPropagation();
+        setDraggedWidget(null);
         setDragOverWidget(null);
         const sourceId = e.dataTransfer.getData('text/plain') as WidgetId;
         if (!sourceId || sourceId === targetId) return;
@@ -584,6 +593,7 @@ export function DashboardPage() {
             onDragEnd={handleDragEnd}
             onDragOver={handleDragOver}
             onDragEnter={e => handleDragEnterWidget(e, wId)}
+            onDragLeave={handleDragLeaveWidget}
             onDrop={e => handleDrop(e, wId)}
         >
             <div className="dash-widget-grip" title="Чирж зөөх"><GripVertical size={14} /></div>
