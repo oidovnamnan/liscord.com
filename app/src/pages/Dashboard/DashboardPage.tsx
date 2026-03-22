@@ -545,12 +545,40 @@ export function DashboardPage() {
     const displayName = isImpersonating && employee ? employee.name : (user?.displayName || 'Эзэн');
 
     // ═══════════════════════════════════════
-    // Widget Wrapper
+    // Widget Config — size tiers
     // ═══════════════════════════════════════
+    const WIDGET_SIZE: Record<WidgetId, { tier: 'header' | 'standard' | 'tall' | 'full' }> = {
+        'kpi':               { tier: 'header' },
+        'analytics-grid':    { tier: 'header' },
+        'status-bar':        { tier: 'header' },
+        'getting-started':   { tier: 'header' },
+        'chart':             { tier: 'full' },
+        'status-donut':      { tier: 'standard' },
+        'payment-breakdown': { tier: 'standard' },
+        'customer-insights': { tier: 'standard' },
+        'online-employees':  { tier: 'standard' },
+        'low-stock':         { tier: 'standard' },
+        'unpaid-invoices':   { tier: 'standard' },
+        'recent-orders':     { tier: 'tall' },
+        'top-products':      { tier: 'tall' },
+        'most-viewed':       { tier: 'tall' },
+        'recent-customers':  { tier: 'tall' },
+        'activity-log':      { tier: 'tall' },
+    };
+
+    const tierClass = (wId: WidgetId) => {
+        const tier = WIDGET_SIZE[wId]?.tier || 'standard';
+        if (tier === 'header') return 'wt-header';
+        if (tier === 'full') return 'wt-full';
+        if (tier === 'tall') return 'wt-tall';
+        return 'wt-standard';
+    };
+
+    // Widget Wrapper
     const wrapWidget = (wId: WidgetId, node: React.ReactNode) => (
         <div
             key={wId}
-            className={`dash-widget ${draggedWidget === wId ? 'dash-widget-dragging' : ''} ${dragOverWidget === wId ? 'dash-widget-drag-over' : ''}`}
+            className={`dash-widget ${tierClass(wId)} ${draggedWidget === wId ? 'dash-widget-dragging' : ''} ${dragOverWidget === wId ? 'dash-widget-drag-over' : ''}`}
             draggable
             onDragStart={e => handleDragStart(e, wId)}
             onDragEnd={handleDragEnd}
@@ -562,6 +590,12 @@ export function DashboardPage() {
             {node}
         </div>
     );
+
+    // Build final order
+    const finalOrder = [...widgetOrder];
+    if (isNewBusiness && !finalOrder.includes('getting-started')) {
+        finalOrder.splice(Math.min(3, finalOrder.length), 0, 'getting-started');
+    }
 
     // Payment methods readable names
     const payMethodNames: Record<string, string> = {
@@ -912,41 +946,14 @@ export function DashboardPage() {
         }
     };
 
-    // Full-width widgets
-    const fullWidthIds = new Set<WidgetId>(['kpi', 'analytics-grid', 'chart', 'status-bar', 'getting-started']);
-
-    // Build final order
-    const finalOrder = [...widgetOrder];
-    if (isNewBusiness && !finalOrder.includes('getting-started')) {
-        finalOrder.splice(Math.min(3, finalOrder.length), 0, 'getting-started');
-    }
-
-    // Render
-    const rendered: React.ReactNode[] = [];
-    const halfBuf: { id: WidgetId; node: React.ReactNode }[] = [];
-
-    const flushHalf = () => {
-        if (halfBuf.length === 0) return;
-        const items = halfBuf.splice(0);
-        rendered.push(
-            <div className="dashboard-bottom-grid" key={`g-${items.map(x => x.id).join('-')}`}>
-                {items.map(item => wrapWidget(item.id, item.node))}
-            </div>
-        );
-    };
-
-    for (const wId of finalOrder) {
-        const node = renderWidget(wId);
-        if (!node) continue;
-        if (fullWidthIds.has(wId)) {
-            flushHalf();
-            rendered.push(wrapWidget(wId, node));
-        } else {
-            halfBuf.push({ id: wId, node });
-            if (halfBuf.length >= 2) flushHalf();
-        }
-    }
-    flushHalf();
+    // ═══ Render all widgets flat into CSS Grid ═══
+    const renderedWidgets = finalOrder
+        .map(wId => {
+            const node = renderWidget(wId);
+            if (!node) return null;
+            return wrapWidget(wId, node);
+        })
+        .filter(Boolean);
 
     return (
         <div className="page-container animate-fade-in" style={{ padding: '24px clamp(16px, 3vw, 32px) 32px' }}>
@@ -985,7 +992,7 @@ export function DashboardPage() {
             </div>
 
             <div className="dash-widgets-container">
-                {rendered}
+                {renderedWidgets}
             </div>
         </div>
     );
