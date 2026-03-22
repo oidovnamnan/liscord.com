@@ -427,7 +427,7 @@ export const teamService = {
     async inviteEmployee(bizId: string, employeeData: Partial<Employee>) {
         const docRef = await addDoc(collection(db, 'businesses', bizId, 'employees'), {
             ...employeeData,
-            status: 'pending_invite',
+            status: 'active',
             joinedAt: serverTimestamp(),
             stats: { totalOrdersCreated: 0, totalOrdersHandled: 0 }
         });
