@@ -438,11 +438,23 @@ export const teamService = {
     },
 
     async updateEmployee(bizId: string, empId: string, data: Partial<Employee>) {
+        // If phone is changing, remove old phone→business mapping first
+        if (data.phone) {
+            try {
+                const empSnap = await getDoc(doc(db, 'businesses', bizId, 'employees', empId));
+                const oldPhone = empSnap.exists() ? empSnap.data()?.phone : null;
+                if (oldPhone && oldPhone !== data.phone) {
+                    await removePhoneMap(oldPhone);
+                }
+            } catch (e) {
+                console.warn('[teamService] read old phone failed (non-critical):', e);
+            }
+        }
         await updateDoc(doc(db, 'businesses', bizId, 'employees', empId), {
             ...data,
             updatedAt: serverTimestamp()
         });
-        // Update phone→business mapping if phone changed
+        // Write new phone→business mapping
         if (data.phone) {
             await writePhoneMap(data.phone, bizId, empId);
         }
