@@ -23,44 +23,65 @@
     // ═══ Stale Chunk Recovery (Pre-React) ═══
     // After Vercel deploys new code, old hashed JS chunks are deleted.
     // If a user has a stale tab, the entry-point module script fails to load.
-    // This inline script detects that failure, clears SW cache, and auto-reloads.
+    // This script properly cleans SW caches THEN reloads with cache-busting.
     (function() {
       var RELOAD_KEY = 'liscord_chunk_reload';
-      var COOLDOWN_MS = 10000; // 10 seconds between reloads
+      var COUNT_KEY = 'liscord_chunk_count';
+      var COOLDOWN_MS = 15000; // 15 seconds between reloads
+      var MAX_RETRIES = 3;     // Max 3 reload attempts then show error
+      var reloading = false;
 
       function shouldReload() {
-        var last = sessionStorage.getItem(RELOAD_KEY);
-        return !last || (Date.now() - Number(last)) > COOLDOWN_MS;
+        try {
+          var count = parseInt(sessionStorage.getItem(COUNT_KEY) || '0');
+          if (count >= MAX_RETRIES) return false; // Stop infinite loops
+          var last = sessionStorage.getItem(RELOAD_KEY);
+          return !last || (Date.now() - Number(last)) > COOLDOWN_MS;
+        } catch(e) { return false; } // sessionStorage unavailable (private mode)
+      }
+
+      function showError() {
+        var root = document.getElementById('root');
+        if (root) root.innerHTML = '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;color:#fff;font-family:system-ui;text-align:center;padding:20px;background:#0a0a12"><div style="font-size:3rem;margin-bottom:16px">🔄</div><h2 style="font-size:1.2rem;margin-bottom:8px">Шинэчлэгдлээ</h2><p style="color:#888;max-width:320px;margin-bottom:20px">Liscord шинэ хувилбар суулаа. Хуудсыг дахин ачаална уу.</p><button onclick="sessionStorage.clear();location.href=location.pathname" style="padding:12px 32px;background:#6c5ce7;color:#fff;border:none;border-radius:12px;font-size:0.9rem;font-weight:700;cursor:pointer">Дахин ачаалах</button></div>';
       }
 
       function doReload() {
-        if (!shouldReload()) return;
-        sessionStorage.setItem(RELOAD_KEY, Date.now().toString());
+        if (reloading) return;
+        if (!shouldReload()) { showError(); return; }
+        reloading = true;
 
-        // Clear service worker caches to prevent serving stale index.html
+        try {
+          var count = parseInt(sessionStorage.getItem(COUNT_KEY) || '0');
+          sessionStorage.setItem(COUNT_KEY, (count + 1).toString());
+          sessionStorage.setItem(RELOAD_KEY, Date.now().toString());
+        } catch(e) {}
+
+        // Step 1: Clean ALL caches and unregister ALL service workers
+        var tasks = [];
         if ('caches' in window) {
-          caches.keys().then(function(names) {
-            names.forEach(function(name) { caches.delete(name); });
-          });
+          tasks.push(caches.keys().then(function(names) {
+            return Promise.all(names.map(function(n) { return caches.delete(n); }));
+          }));
         }
-        // Unregister service worker so it doesn't intercept the reload
         if ('serviceWorker' in navigator) {
-          navigator.serviceWorker.getRegistrations().then(function(regs) {
-            regs.forEach(function(reg) { reg.unregister(); });
-          });
+          tasks.push(navigator.serviceWorker.getRegistrations().then(function(regs) {
+            return Promise.all(regs.map(function(r) { return r.unregister(); }));
+          }));
         }
-        // Hard reload (bypass cache)
-        setTimeout(function() { window.location.reload(); }, 100);
+
+        // Step 2: Wait for cleanup, THEN reload with cache-busting param
+        Promise.all(tasks).catch(function(){}).then(function() {
+          var url = location.pathname + '?v=' + Date.now();
+          location.replace(url);
+        });
       }
 
       // 1. Catch module script load errors (capture phase)
       window.addEventListener('error', function(e) {
         var el = e.target || e.srcElement;
-        // Script/link element failed to load
         if (el && (el.tagName === 'SCRIPT' || el.tagName === 'LINK')) {
           doReload();
         }
-        // Error message about dynamic imports
         if (e.message && (
           e.message.indexOf('Failed to fetch dynamically imported module') !== -1 ||
           e.message.indexOf('Loading chunk') !== -1 ||
@@ -69,7 +90,7 @@
         )) {
           doReload();
         }
-      }, true); // ← capture phase = catches script load errors
+      }, true);
 
       // 2. Catch dynamic import() rejections (lazy-loaded routes)
       window.addEventListener('unhandledrejection', function(e) {
@@ -90,13 +111,22 @@
       });
 
       // 4. Render timeout — if app doesn't render within 8 seconds, reload
-      // This catches cases where the script silently fails without throwing
       setTimeout(function() {
         var root = document.getElementById('root');
         if (root && root.children.length === 0) {
           doReload();
         }
       }, 8000);
+
+      // 5. Clear reload counter on successful boot
+      window.addEventListener('load', function() {
+        setTimeout(function() {
+          var root = document.getElementById('root');
+          if (root && root.children.length > 0) {
+            try { sessionStorage.removeItem(COUNT_KEY); } catch(e) {}
+          }
+        }, 3000);
+      });
     })();
   </script>
   <script type="module" src="/src/main.tsx"></script>
