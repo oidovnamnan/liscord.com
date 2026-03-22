@@ -395,11 +395,11 @@ async function removePhoneMap(phone: string) {
         console.warn('[teamService] removePhoneMap failed (non-critical):', e);
     }
 }
-
 /**
- * Comprehensive duplicate check for phone and email.
- * Checks across: employee_phone_map, same-business employees, and users (owners/superadmins).
- * @param excludeEmpId - skip this employee (for edit form)
+ * Duplicate check for phone and email — scoped to same business's employees only.
+ * Each business manages its own employee uniqueness independently.
+ * Storefront customers and other businesses are NOT checked.
+ * @param excludeEmpId - skip this employee ID (for edit form)
  */
 async function checkDuplicateContact(
     bizId: string,
@@ -410,45 +410,20 @@ async function checkDuplicateContact(
     const errors: string[] = [];
 
     if (phone) {
-        const normalized = normalizePhone(phone);
-
-        // 1. Check employee_phone_map (cross-business employee duplicate)
-        const mapDoc = await getDoc(doc(db, 'employee_phone_map', normalized));
-        if (mapDoc.exists()) {
-            const data = mapDoc.data();
-            if (data.employeeId !== excludeEmpId) {
-                errors.push(`Утас (${phone}) өөр ажилтанд бүртгэлтэй`);
-            }
-        }
-
-        // 2. Check same-business employees (in case phone_map is missing)
         const empByPhone = query(
             collection(db, 'businesses', bizId, 'employees'),
-            where('phone', '==', phone),
+            where('phone', '==', phone.trim()),
             where('status', '==', 'active'),
             limit(1)
         );
         const empSnap = await getDocs(empByPhone);
         if (!empSnap.empty && empSnap.docs[0].id !== excludeEmpId) {
-            if (!errors.length) errors.push(`Утас (${phone}) энэ бизнесийн ажилтанд бүртгэлтэй`);
-        }
-
-        // 3. Check users collection (owners, superadmins)
-        const usersByPhone = query(
-            collection(db, 'users'),
-            where('phone', '==', normalized),
-            limit(1)
-        );
-        const usersSnap = await getDocs(usersByPhone);
-        if (!usersSnap.empty) {
-            if (!errors.length) errors.push(`Утас (${phone}) системийн хэрэглэгчид бүртгэлтэй`);
+            errors.push(`Утас (${phone}) энэ бизнесийн ажилтанд бүртгэлтэй`);
         }
     }
 
     if (email && email.trim()) {
         const trimmedEmail = email.trim().toLowerCase();
-
-        // 1. Check same-business employees by email
         const empByEmail = query(
             collection(db, 'businesses', bizId, 'employees'),
             where('email', '==', trimmedEmail),
@@ -458,17 +433,6 @@ async function checkDuplicateContact(
         const empEmailSnap = await getDocs(empByEmail);
         if (!empEmailSnap.empty && empEmailSnap.docs[0].id !== excludeEmpId) {
             errors.push(`Имэйл (${trimmedEmail}) энэ бизнесийн ажилтанд бүртгэлтэй`);
-        }
-
-        // 2. Check users collection (owners, superadmins)
-        const usersByEmail = query(
-            collection(db, 'users'),
-            where('email', '==', trimmedEmail),
-            limit(1)
-        );
-        const usersEmailSnap = await getDocs(usersByEmail);
-        if (!usersEmailSnap.empty) {
-            errors.push(`Имэйл (${trimmedEmail}) системийн хэрэглэгчид бүртгэлтэй`);
         }
     }
 
