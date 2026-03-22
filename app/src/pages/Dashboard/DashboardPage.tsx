@@ -235,9 +235,12 @@ export function DashboardPage() {
         getDoc(doc(db, 'businesses', business.id, 'dashboardLayout', user.uid)).then(snap => {
             if (snap.exists() && snap.data()?.widgetOrder?.length) {
                 const saved = snap.data().widgetOrder as WidgetId[];
-                const merged = [...saved];
-                for (const w of DEFAULT_WIDGET_ORDER) { if (!merged.includes(w)) merged.push(w); }
-                setWidgetOrder(merged);
+                // Filter out deprecated widgets no longer in defaults
+                const validSet = new Set(DEFAULT_WIDGET_ORDER);
+                const filtered = saved.filter(w => validSet.has(w));
+                // Add any new widgets not in saved order
+                for (const w of DEFAULT_WIDGET_ORDER) { if (!filtered.includes(w)) filtered.push(w); }
+                setWidgetOrder(filtered);
             }
         }).catch(() => {});
     }, [business?.id, user?.uid]);
