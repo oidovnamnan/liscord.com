@@ -260,7 +260,7 @@ async function autoLinkEmployee(
       const { businessId: bizId, employeeId: empId } = mapDoc.data();
       if (!bizId) continue;
 
-      console.log(`[Auth] Auto-discovered employee via phone map: bizId=${bizId}, empId=${empId}`);
+      console.log(`[Auth] ✅ Auto-discovered employee via phone map: bizId=${bizId}, empId=${empId}`);
 
       // 1. Link the Firebase UID to the employee record
       const empRef = doc(db, 'businesses', bizId, 'employees', empId);
@@ -268,11 +268,13 @@ async function autoLinkEmployee(
       if (empSnap.exists()) {
         const empData = empSnap.data();
         if (!empData.userId || empData.userId !== firebaseUser.uid) {
+          console.log(`[Auth] Linking UID ${firebaseUser.uid} to employee ${empId}`);
           await updateDoc(empRef, {
             userId: firebaseUser.uid,
             status: 'active',
             lastActiveAt: serverTimestamp(),
           });
+          console.log(`[Auth] ✅ Employee UID linked successfully`);
         }
       }
 
@@ -290,7 +292,9 @@ async function autoLinkEmployee(
         ...(existingProfile ? {} : { createdAt: serverTimestamp() }),
         updatedAt: serverTimestamp(),
       };
+      console.log(`[Auth] Writing user profile with activeBusiness=${bizId}...`);
       await setDoc(userRef, profileData, { merge: true });
+      console.log(`[Auth] ✅ User profile written successfully`);
 
       // 3. Update the in-memory state
       const { setUser } = useAuthStore.getState();
@@ -299,8 +303,12 @@ async function autoLinkEmployee(
       setUser({ ...profileData, uid: firebaseUser.uid, activeBusiness: bizId, createdAt: existingProfile?.createdAt || new Date() });
 
       // 4. Load the business and employee data
+      console.log(`[Auth] Loading business ${bizId}...`);
       const biz = await businessService.getBusiness(bizId);
+      console.log(`[Auth] ✅ Business loaded: ${biz?.name}`);
+      console.log(`[Auth] Loading employee profile for uid=${firebaseUser.uid}...`);
       const emp = await businessService.getEmployeeProfile(bizId, firebaseUser.uid);
+      console.log(`[Auth] Employee profile:`, emp ? `found (${emp.name})` : 'NOT FOUND');
       setBusiness(biz);
 
       // Load position permissions
@@ -318,9 +326,10 @@ async function autoLinkEmployee(
       setEmployee(emp);
       return;
     }
-    console.log('[Auth] No employee_phone_map entry found for phone:', phone);
-  } catch (e) {
-    console.warn('[Auth] autoLinkEmployee failed (non-critical):', e);
+    console.log('[Auth] ❌ No employee_phone_map entry found for any phone format:', phonesToCheck);
+  } catch (e: any) {
+    console.error('[Auth] ❌ autoLinkEmployee FAILED:', e?.message || e, e?.code || '');
+    console.error('[Auth] Full error:', e);
   }
 }
 
@@ -437,13 +446,17 @@ export default function App() {
             } else {
               // ═══ Employee Auto-Discovery ═══
               // Profile exists but no activeBusiness — check if this phone is registered as an employee
+              console.log('[Auth] Profile exists but NO activeBusiness — trying autoLink. phone:', firebaseUser.phoneNumber);
               await autoLinkEmployee(firebaseUser, profile);
+              console.log('[Auth] autoLinkEmployee completed for existing profile');
             }
           } else {
             // No profile at all — create one, then check if this phone is registered as an employee
+            console.log('[Auth] No profile exists — creating new profile + trying autoLink. phone:', firebaseUser.phoneNumber);
             const newProfile = { uid: firebaseUser.uid, phone: firebaseUser.phoneNumber, email: firebaseUser.email, displayName: firebaseUser.displayName || '', photoURL: firebaseUser.photoURL, businessIds: [] as string[], activeBusiness: null as string | null, language: 'mn', createdAt: new Date() };
             setUser(newProfile);
             await autoLinkEmployee(firebaseUser, newProfile);
+            console.log('[Auth] autoLinkEmployee completed for new profile');
           }
 
           // 2. Device Tracking (non-blocking — should not crash auth flow)
