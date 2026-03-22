@@ -1310,6 +1310,28 @@
     white-space: nowrap;
 }
 
+.dash-list-thumb {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    object-fit: cover;
+    flex-shrink: 0;
+    border: 1px solid var(--border-primary);
+}
+
+.dash-view-count {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.75rem;
+    font-weight: 800;
+    color: #8b5cf6;
+    background: rgba(139, 92, 246, 0.08);
+    padding: 3px 10px;
+    border-radius: 100px;
+    white-space: nowrap;
+}
+
 /* Stock Badges */
 .dash-stock-badge {
     font-size: 0.68rem;

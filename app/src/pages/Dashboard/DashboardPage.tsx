@@ -5,7 +5,7 @@ import {
     Clock, CreditCard, Radio, Wifi, Sparkles, LayoutDashboard,
     GripVertical, BarChart3, Percent, DollarSign, Repeat, UserPlus, PackageX,
     ShoppingBag, PieChart, ArrowDownRight, ArrowUpRight, Banknote, RefreshCw,
-    Crown, Hash
+    Crown, Hash, Eye
 } from 'lucide-react';
 import { useBusinessStore, useAuthStore, useModuleDefaultsStore } from '../../store';
 import { dashboardService } from '../../services/db';
@@ -75,7 +75,7 @@ interface AnalyticsData {
 
 // Widget definitions
 type WidgetId = 'kpi' | 'analytics-grid' | 'chart' | 'status-bar' | 'status-donut' |
-    'recent-orders' | 'low-stock' | 'top-products' | 'recent-customers' |
+    'recent-orders' | 'low-stock' | 'top-products' | 'most-viewed' | 'recent-customers' |
     'unpaid-invoices' | 'online-employees' | 'activity-log' | 'getting-started' |
     'payment-breakdown' | 'customer-insights';
 
@@ -83,9 +83,10 @@ const DEFAULT_WIDGET_ORDER: WidgetId[] = [
     'kpi', 'analytics-grid', 'status-bar', 'chart',
     'status-donut', 'payment-breakdown',
     'recent-orders', 'low-stock',
-    'top-products', 'customer-insights',
-    'recent-customers', 'unpaid-invoices',
-    'online-employees', 'activity-log'
+    'top-products', 'most-viewed',
+    'customer-insights', 'recent-customers',
+    'unpaid-invoices', 'online-employees',
+    'activity-log'
 ];
 
 /** Format large numbers nicely */
@@ -201,6 +202,7 @@ export function DashboardPage() {
     const [recentLogs, setRecentLogs] = useState<any[]>([]);
     const [lowStockProducts, setLowStockProducts] = useState<LowStockProduct[]>([]);
     const [topProducts, setTopProducts] = useState<TopProduct[]>([]);
+    const [mostViewedProducts, setMostViewedProducts] = useState<{ id: string; name: string; viewCount: number; image?: string }[]>([]);
     const [recentCustomers, setRecentCustomers] = useState<RecentCustomer[]>([]);
     const [unpaidInvoices, setUnpaidInvoices] = useState<UnpaidInvoice[]>([]);
     const [ordersByStatus, setOrdersByStatus] = useState<Record<string, number>>({});
@@ -341,6 +343,7 @@ export function DashboardPage() {
                 // ═══ PRODUCTS ═══
                 let outOfStock = 0, totalProds = 0, activeProds = 0;
                 const lowStock: LowStockProduct[] = [];
+                const viewedProds: { id: string; name: string; viewCount: number; image?: string }[] = [];
                 if (visibleModuleIds.has('products') || visibleModuleIds.has('inventory')) {
                     const productsSnap = await getDocs(collection(db, 'businesses', bizId, 'products'));
                     productsSnap.docs.forEach(d => {
@@ -354,9 +357,15 @@ export function DashboardPage() {
                         if (stock <= threshold && !p.isPreorder) {
                             lowStock.push({ id: d.id, name: p.name || 'Нэргүй', stock, lowStockThreshold: threshold });
                         }
+                        // Track most-viewed
+                        if ((p.viewCount || 0) > 0 && !p.isArchived) {
+                            viewedProds.push({ id: d.id, name: p.name || 'Нэргүй', viewCount: p.viewCount, image: p.images?.[0] });
+                        }
                     });
                     lowStock.sort((a, b) => a.stock - b.stock);
                     setLowStockProducts(lowStock.slice(0, 8));
+                    viewedProds.sort((a, b) => b.viewCount - a.viewCount);
+                    setMostViewedProducts(viewedProds.slice(0, 10));
                 }
 
                 // ═══ ORDERS (comprehensive analytics) ═══
@@ -759,6 +768,33 @@ export function DashboardPage() {
                                 <div key={p.id} className="dash-list-item">
                                     <div className="dash-list-left"><span className="dash-rank">#{i + 1}</span><span className="dash-list-name">{p.name}</span></div>
                                     <div className="dash-list-right"><span className="dash-list-meta">{p.soldCount}ш</span><span className="dash-list-amount">{fmt(p.revenue)}</span></div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                );
+
+            case 'most-viewed':
+                if (!hasModule('products') && !hasModule('inventory')) return null;
+                return (
+                    <div className="dashboard-section glass-section">
+                        <div className="dashboard-section-header">
+                            <h3><Eye size={18} style={{ color: '#8b5cf6', marginRight: 8 }} /> Хамгийн их үзэлттэй</h3>
+                            <a href="/app/products" className="text-primary text-sm hover-underline">Бүгд →</a>
+                        </div>
+                        <div className="dash-list">
+                            {mostViewedProducts.length === 0 ? (
+                                <div className="empty-state-compact"><Eye size={24} className="text-muted mb-2" /><p className="text-muted">Үзэлтийн мэдээлэл хуримтлагдаагүй байна</p></div>
+                            ) : mostViewedProducts.map((p, i) => (
+                                <div key={p.id} className="dash-list-item">
+                                    <div className="dash-list-left">
+                                        <span className="dash-rank">#{i + 1}</span>
+                                        {p.image && <img src={p.image} alt="" className="dash-list-thumb" />}
+                                        <span className="dash-list-name">{p.name}</span>
+                                    </div>
+                                    <div className="dash-list-right">
+                                        <span className="dash-view-count"><Eye size={12} /> {fmtNum(p.viewCount)}</span>
+                                    </div>
                                 </div>
                             ))}
                         </div>

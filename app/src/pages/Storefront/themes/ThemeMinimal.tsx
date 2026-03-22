@@ -439,6 +439,7 @@ export function ThemeMinimal({ business }: { business: Business }) {
                     onClose={() => { setSelectedProduct(null); setFlashDealPrice(null); }}
                     preorderTerms={business.settings?.storefront?.preorderTerms}
                     flashDealPrice={flashDealPrice ?? undefined}
+                    businessId={business.id}
                     onCategoryClick={(catName) => {
                         setActiveCategory(catName);
                         window.scrollTo({ top: 0, behavior: 'smooth' });

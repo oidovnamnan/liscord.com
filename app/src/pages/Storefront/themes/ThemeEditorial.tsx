@@ -119,6 +119,7 @@ export function ThemeEditorial({ business }: { business: Business }) {
                     product={selectedProduct}
                     onClose={() => setSelectedProduct(null)}
                     preorderTerms={business.settings?.storefront?.preorderTerms}
+                    businessId={business.id}
                 />
             )}
         </div>

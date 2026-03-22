@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { X, Plus, Minus, ShoppingBag, Check, ChevronLeft, ChevronRight, Package, Zap } from 'lucide-react';
 import { toast } from 'react-hot-toast';
+import { doc, updateDoc, increment } from 'firebase/firestore';
+import { db } from '../../services/firebase';
 import type { Product } from '../../types';
 import { useCartStore } from '../../store';
 import './ProductModal.css';
@@ -11,9 +13,10 @@ interface ProductModalProps {
     preorderTerms?: string;
     onCategoryClick?: (categoryName: string) => void;
     flashDealPrice?: number;
+    businessId?: string;
 }
 
-export function ProductModal({ product, onClose, preorderTerms, onCategoryClick, flashDealPrice }: ProductModalProps) {
+export function ProductModal({ product, onClose, preorderTerms, onCategoryClick, flashDealPrice, businessId }: ProductModalProps) {
     const [quantity, setQuantity] = useState(1);
     const [added, setAdded] = useState(false);
     const [activeImage, setActiveImage] = useState(0);
@@ -27,6 +30,15 @@ export function ProductModal({ product, onClose, preorderTerms, onCategoryClick,
         document.body.style.overflow = 'hidden';
         return () => { document.body.style.overflow = ''; };
     }, []);
+
+    // Track product view
+    useEffect(() => {
+        if (businessId && product?.id) {
+            updateDoc(doc(db, 'businesses', businessId, 'products', product.id), {
+                viewCount: increment(1)
+            }).catch(() => {});
+        }
+    }, [businessId, product?.id]);
 
     // Close on Escape, arrow keys for gallery
     useEffect(() => {
