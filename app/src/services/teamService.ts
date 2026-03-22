@@ -396,6 +396,87 @@ async function removePhoneMap(phone: string) {
     }
 }
 
+/**
+ * Comprehensive duplicate check for phone and email.
+ * Checks across: employee_phone_map, same-business employees, and users (owners/superadmins).
+ * @param excludeEmpId - skip this employee (for edit form)
+ */
+async function checkDuplicateContact(
+    bizId: string,
+    phone?: string | null,
+    email?: string | null,
+    excludeEmpId?: string
+) {
+    const errors: string[] = [];
+
+    if (phone) {
+        const normalized = normalizePhone(phone);
+
+        // 1. Check employee_phone_map (cross-business employee duplicate)
+        const mapDoc = await getDoc(doc(db, 'employee_phone_map', normalized));
+        if (mapDoc.exists()) {
+            const data = mapDoc.data();
+            if (data.employeeId !== excludeEmpId) {
+                errors.push(`Утас (${phone}) өөр ажилтанд бүртгэлтэй`);
+            }
+        }
+
+        // 2. Check same-business employees (in case phone_map is missing)
+        const empByPhone = query(
+            collection(db, 'businesses', bizId, 'employees'),
+            where('phone', '==', phone),
+            where('status', '==', 'active'),
+            limit(1)
+        );
+        const empSnap = await getDocs(empByPhone);
+        if (!empSnap.empty && empSnap.docs[0].id !== excludeEmpId) {
+            if (!errors.length) errors.push(`Утас (${phone}) энэ бизнесийн ажилтанд бүртгэлтэй`);
+        }
+
+        // 3. Check users collection (owners, superadmins)
+        const usersByPhone = query(
+            collection(db, 'users'),
+            where('phone', '==', normalized),
+            limit(1)
+        );
+        const usersSnap = await getDocs(usersByPhone);
+        if (!usersSnap.empty) {
+            if (!errors.length) errors.push(`Утас (${phone}) системийн хэрэглэгчид бүртгэлтэй`);
+        }
+    }
+
+    if (email && email.trim()) {
+        const trimmedEmail = email.trim().toLowerCase();
+
+        // 1. Check same-business employees by email
+        const empByEmail = query(
+            collection(db, 'businesses', bizId, 'employees'),
+            where('email', '==', trimmedEmail),
+            where('status', '==', 'active'),
+            limit(1)
+        );
+        const empEmailSnap = await getDocs(empByEmail);
+        if (!empEmailSnap.empty && empEmailSnap.docs[0].id !== excludeEmpId) {
+            errors.push(`Имэйл (${trimmedEmail}) энэ бизнесийн ажилтанд бүртгэлтэй`);
+        }
+
+        // 2. Check users collection (owners, superadmins)
+        const usersByEmail = query(
+            collection(db, 'users'),
+            where('email', '==', trimmedEmail),
+            limit(1)
+        );
+        const usersEmailSnap = await getDocs(usersByEmail);
+        if (!usersEmailSnap.empty) {
+            errors.push(`Имэйл (${trimmedEmail}) системийн хэрэглэгчид бүртгэлтэй`);
+        }
+    }
+
+    if (errors.length > 0) {
+        throw new Error(errors.join('. '));
+    }
+}
+
 // ============ TEAM SERVICES ============
 
 export const teamService = {
@@ -425,18 +506,8 @@ export const teamService = {
     },
 
     async inviteEmployee(bizId: string, employeeData: Partial<Employee>) {
-        // Check for phone duplicate before creating
-        if (employeeData.phone) {
-            const normalized = normalizePhone(employeeData.phone);
-            const existing = await getDoc(doc(db, 'employee_phone_map', normalized));
-            if (existing.exists()) {
-                const data = existing.data();
-                // Allow if same business re-registering (e.g. re-adding deleted employee)
-                if (data.businessId !== bizId || data.employeeId) {
-                    throw new Error(`Энэ утасны дугаар (${employeeData.phone}) өөр ажилтанд бүртгэлтэй байна`);
-                }
-            }
-        }
+        // Comprehensive duplicate check: phone + email across employees, owners, superadmins
+        await checkDuplicateContact(bizId, employeeData.phone, employeeData.email);
 
         const docRef = await addDoc(collection(db, 'businesses', bizId, 'employees'), {
             ...employeeData,
@@ -451,25 +522,20 @@ export const teamService = {
     },
 
     async updateEmployee(bizId: string, empId: string, data: Partial<Employee>) {
-        // If phone is changing, check for duplicates and remove old mapping
+        // If phone or email is changing, check for duplicates
+        if (data.phone || data.email) {
+            await checkDuplicateContact(bizId, data.phone, data.email, empId);
+        }
+
+        // If phone changed, remove old phone→business mapping
         if (data.phone) {
             try {
                 const empSnap = await getDoc(doc(db, 'businesses', bizId, 'employees', empId));
                 const oldPhone = empSnap.exists() ? empSnap.data()?.phone : null;
                 if (oldPhone && oldPhone !== data.phone) {
-                    // Check new phone for duplicates
-                    const normalized = normalizePhone(data.phone);
-                    const existing = await getDoc(doc(db, 'employee_phone_map', normalized));
-                    if (existing.exists()) {
-                        const mapData = existing.data();
-                        if (mapData.employeeId !== empId) {
-                            throw new Error(`Энэ утасны дугаар (${data.phone}) өөр ажилтанд бүртгэлтэй байна`);
-                        }
-                    }
                     await removePhoneMap(oldPhone);
                 }
-            } catch (e: any) {
-                if (e?.message?.includes('бүртгэлтэй')) throw e;
+            } catch (e) {
                 console.warn('[teamService] read old phone failed (non-critical):', e);
             }
         }

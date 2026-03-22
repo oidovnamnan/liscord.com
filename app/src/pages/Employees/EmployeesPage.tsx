@@ -275,8 +275,8 @@ function EditEmployeeModal({ employee, positions, onClose }: { employee: Employe
             });
             toast.success('Ажилтан амжилттай шинэчлэгдлээ');
             onClose();
-        } catch {
-            toast.error('Алдаа гарлаа');
+        } catch (err: any) {
+            toast.error(err?.message || 'Алдаа гарлаа');
         } finally {
             setSaving(false);
         }
@@ -443,9 +443,9 @@ function InviteModal({ positions, onClose }: { positions: Position[]; onClose: (
             });
             toast.success('Ажилтан амжилттай нэмэгдлээ!');
             onClose();
-        } catch (err) {
+        } catch (err: any) {
             console.error(err);
-            toast.error('Алдаа гарлаа, дахин оролдоно уу');
+            toast.error(err?.message || 'Алдаа гарлаа, дахин оролдоно уу');
         } finally {
             setSaving(false);
         }
