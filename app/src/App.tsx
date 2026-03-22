@@ -1,4 +1,4 @@
-import { useEffect, lazy, Suspense } from 'react';
+import { useState, useEffect, lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { auth, db, messaging } from './services/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
@@ -222,6 +222,61 @@ function SuperAdminRoute({ children }: { children: React.ReactNode }) {
 
 const AppStorePage = lazy(() => import('./pages/AppStore/AppStorePage').then(m => ({ default: m.AppStorePage })));
 
+// ═══ Debug Overlay for Auth Flow ═══
+// Shows auth logs directly on screen (for mobile debugging without DevTools)
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+(window as any).__AUTH_DEBUG__ = [] as string[];
+function _debugLog(msg: string) {
+  console.log(msg);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const logs = (window as any).__AUTH_DEBUG__ as string[];
+  logs.push(`${new Date().toLocaleTimeString()} ${msg}`);
+  if (logs.length > 30) logs.shift();
+  // Dispatch event so overlay re-renders
+  window.dispatchEvent(new CustomEvent('auth-debug'));
+}
+
+function DebugOverlay() {
+  const [show, setShow] = useState(false);
+  const [logs, setLogs] = useState<string[]>([]);
+  useEffect(() => {
+    const handler = () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      setLogs([...(window as any).__AUTH_DEBUG__]);
+    };
+    window.addEventListener('auth-debug', handler);
+    return () => window.removeEventListener('auth-debug', handler);
+  }, []);
+  if (logs.length === 0) return null;
+  return (
+    <>
+      <button onClick={() => setShow(!show)} style={{
+        position: 'fixed', bottom: 8, right: 8, zIndex: 99999,
+        background: '#ef4444', color: '#fff', border: 'none', borderRadius: 8,
+        padding: '4px 10px', fontSize: '0.7rem', fontWeight: 700, cursor: 'pointer',
+        boxShadow: '0 2px 8px rgba(0,0,0,0.3)'
+      }}>
+        🔧 Auth Debug ({logs.length})
+      </button>
+      {show && (
+        <div style={{
+          position: 'fixed', bottom: 40, right: 8, left: 8, zIndex: 99999,
+          background: 'rgba(0,0,0,0.95)', color: '#0f0', borderRadius: 12,
+          padding: 12, fontSize: '0.65rem', fontFamily: 'monospace',
+          maxHeight: '50vh', overflow: 'auto', lineHeight: 1.5,
+          boxShadow: '0 4px 24px rgba(0,0,0,0.5)'
+        }}>
+          <div style={{ color: '#fff', fontWeight: 700, marginBottom: 8 }}>Auth Debug Log</div>
+          {logs.map((l: string, i: number) => (
+            <div key={i} style={{ borderBottom: '1px solid #333', paddingBottom: 3, marginBottom: 3,
+              color: l.includes('❌') ? '#f87171' : l.includes('✅') ? '#4ade80' : '#0f0' }}>{l}</div>
+          ))}
+        </div>
+      )}
+    </>
+  );
+}
+
 // ═══ Employee Auto-Discovery ═══
 // When a user logs in with a phone number that matches an employee record,
 // automatically link them to the business via employee_phone_map lookup.
@@ -232,7 +287,7 @@ async function autoLinkEmployee(
   existingProfile: any
 ) {
   const phone = firebaseUser.phoneNumber;
-  if (!phone) return;
+  if (!phone) { _debugLog('[Auth] ❌ No phone number on firebaseUser'); return; }
 
   try {
     const { doc, getDoc, setDoc, updateDoc, serverTimestamp } = await import('firebase/firestore');
@@ -249,18 +304,18 @@ async function autoLinkEmployee(
       phonesToCheck.push(`+976${cleaned}`);
     }
 
-    console.log(`[Auth] autoLinkEmployee: phone=${phone}, trying keys:`, phonesToCheck);
+    _debugLog(`[Auth] autoLinkEmployee: phone=${phone}, trying keys: ${JSON.stringify(phonesToCheck)}`);
 
     // Look up employee_phone_map — try each format
     for (const ph of phonesToCheck) {
-      console.log(`[Auth] Checking employee_phone_map/${ph}...`);
+      _debugLog(`[Auth] Checking employee_phone_map/${ph}...`);
       const mapDoc = await getDoc(doc(db, 'employee_phone_map', ph));
       if (!mapDoc.exists()) continue;
 
       const { businessId: bizId, employeeId: empId } = mapDoc.data();
       if (!bizId) continue;
 
-      console.log(`[Auth] ✅ Auto-discovered employee via phone map: bizId=${bizId}, empId=${empId}`);
+      _debugLog(`[Auth] ✅ Auto-discovered employee via phone map: bizId=${bizId}, empId=${empId}`);
 
       // 1. Link the Firebase UID to the employee record
       const empRef = doc(db, 'businesses', bizId, 'employees', empId);
@@ -268,13 +323,13 @@ async function autoLinkEmployee(
       if (empSnap.exists()) {
         const empData = empSnap.data();
         if (!empData.userId || empData.userId !== firebaseUser.uid) {
-          console.log(`[Auth] Linking UID ${firebaseUser.uid} to employee ${empId}`);
+          _debugLog(`[Auth] Linking UID ${firebaseUser.uid} to employee ${empId}`);
           await updateDoc(empRef, {
             userId: firebaseUser.uid,
             status: 'active',
             lastActiveAt: serverTimestamp(),
           });
-          console.log(`[Auth] ✅ Employee UID linked successfully`);
+          _debugLog(`[Auth] ✅ Employee UID linked successfully`);
         }
       }
 
@@ -292,9 +347,9 @@ async function autoLinkEmployee(
         ...(existingProfile ? {} : { createdAt: serverTimestamp() }),
         updatedAt: serverTimestamp(),
       };
-      console.log(`[Auth] Writing user profile with activeBusiness=${bizId}...`);
+      _debugLog(`[Auth] Writing user profile with activeBusiness=${bizId}...`);
       await setDoc(userRef, profileData, { merge: true });
-      console.log(`[Auth] ✅ User profile written successfully`);
+      _debugLog(`[Auth] ✅ User profile written successfully`);
 
       // 3. Update the in-memory state
       const { setUser } = useAuthStore.getState();
@@ -303,12 +358,12 @@ async function autoLinkEmployee(
       setUser({ ...profileData, uid: firebaseUser.uid, activeBusiness: bizId, createdAt: existingProfile?.createdAt || new Date() });
 
       // 4. Load the business and employee data
-      console.log(`[Auth] Loading business ${bizId}...`);
+      _debugLog(`[Auth] Loading business ${bizId}...`);
       const biz = await businessService.getBusiness(bizId);
-      console.log(`[Auth] ✅ Business loaded: ${biz?.name}`);
-      console.log(`[Auth] Loading employee profile for uid=${firebaseUser.uid}...`);
+      _debugLog(`[Auth] ✅ Business loaded: ${biz?.name}`);
+      _debugLog(`[Auth] Loading employee profile for uid=${firebaseUser.uid}...`);
       const emp = await businessService.getEmployeeProfile(bizId, firebaseUser.uid);
-      console.log(`[Auth] Employee profile:`, emp ? `found (${emp.name})` : 'NOT FOUND');
+      _debugLog(`[Auth] Employee profile: ${emp ? `found (${emp.name})` : 'NOT FOUND'}`);
       setBusiness(biz);
 
       // Load position permissions
@@ -326,10 +381,9 @@ async function autoLinkEmployee(
       setEmployee(emp);
       return;
     }
-    console.log('[Auth] ❌ No employee_phone_map entry found for any phone format:', phonesToCheck);
+    _debugLog(`[Auth] ❌ No employee_phone_map entry found for any phone format: ${JSON.stringify(phonesToCheck)}`);
   } catch (e: any) {
-    console.error('[Auth] ❌ autoLinkEmployee FAILED:', e?.message || e, e?.code || '');
-    console.error('[Auth] Full error:', e);
+    _debugLog(`[Auth] ❌ autoLinkEmployee FAILED: ${e?.message || e} ${e?.code || ''}`);
   }
 }
 
@@ -446,17 +500,17 @@ export default function App() {
             } else {
               // ═══ Employee Auto-Discovery ═══
               // Profile exists but no activeBusiness — check if this phone is registered as an employee
-              console.log('[Auth] Profile exists but NO activeBusiness — trying autoLink. phone:', firebaseUser.phoneNumber);
+              _debugLog(`[Auth] Profile exists but NO activeBusiness — trying autoLink. phone: ${firebaseUser.phoneNumber}`);
               await autoLinkEmployee(firebaseUser, profile);
-              console.log('[Auth] autoLinkEmployee completed for existing profile');
+              _debugLog('[Auth] autoLinkEmployee completed for existing profile');
             }
           } else {
             // No profile at all — create one, then check if this phone is registered as an employee
-            console.log('[Auth] No profile exists — creating new profile + trying autoLink. phone:', firebaseUser.phoneNumber);
+            _debugLog(`[Auth] No profile exists — creating new + autoLink. phone: ${firebaseUser.phoneNumber}`);
             const newProfile = { uid: firebaseUser.uid, phone: firebaseUser.phoneNumber, email: firebaseUser.email, displayName: firebaseUser.displayName || '', photoURL: firebaseUser.photoURL, businessIds: [] as string[], activeBusiness: null as string | null, language: 'mn', createdAt: new Date() };
             setUser(newProfile);
             await autoLinkEmployee(firebaseUser, newProfile);
-            console.log('[Auth] autoLinkEmployee completed for new profile');
+            _debugLog('[Auth] autoLinkEmployee completed for new profile');
           }
 
           // 2. Device Tracking (non-blocking — should not crash auth flow)
@@ -858,6 +912,7 @@ export default function App() {
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Suspense>
+      <DebugOverlay />
     </BrowserRouter>
   );
 }
