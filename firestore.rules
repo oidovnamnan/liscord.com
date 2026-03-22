@@ -34,13 +34,13 @@ service cloud.firestore {
 
     // === SYSTEM SETTINGS (Super Admin) ===
     match /systemSettings/{docId} {
-      allow read: if isAuth();
+      allow read: if true;  // Public: storefront needs global settings (currency, language)
       allow write: if isSuperAdmin();
     }
 
     // system_settings (snake_case — used by services)
     match /system_settings/{docId} {
-      allow read: if isAuth();
+      allow read: if true;  // Public: storefront needs global settings
       allow write: if isSuperAdmin();
     }
 
@@ -108,11 +108,9 @@ service cloud.firestore {
     
     // === BUSINESSES ===
     match /businesses/{bizId} {
-      // List: only authenticated users can query business list
-      // Storefront uses get-by-slug (single doc), not list queries
-      allow list: if isAuth();
-      // Get: members OR storefront slug lookup (public)
-      allow get: if isMemberOf(bizId) || resource.data.slug != null;
+      // List + Get: public read for storefront (slug lookup + catalog)
+      // Business names/slugs/logos are not sensitive — needed for public storefront
+      allow read: if true;
       // Create: any authenticated user (creating new business)
       allow create: if isAuth();
       // Update: only members
