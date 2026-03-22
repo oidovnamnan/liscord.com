@@ -277,6 +277,7 @@
     gap: 8px;
     transition: all 0.3s;
     backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
 }
 
 .lp-btn-hero-secondary:hover {
@@ -423,6 +424,9 @@
 
 .lp-feature-card:hover {
     transform: translateY(-8px);
+    /* Fallback for browsers without color-mix() */
+    border-color: rgba(239, 68, 68, 0.25);
+    box-shadow: 0 20px 48px rgba(239, 68, 68, 0.12);
     border-color: color-mix(in srgb, var(--fc) 25%, transparent);
     box-shadow: 0 20px 48px color-mix(in srgb, var(--fc) 12%, transparent);
 }
@@ -431,6 +435,8 @@
     width: 44px;
     height: 44px;
     border-radius: 13px;
+    /* Fallback */
+    background: rgba(239, 68, 68, 0.12);
     background: color-mix(in srgb, var(--fc) 12%, transparent);
     color: var(--fc);
     display: flex;
@@ -444,6 +450,8 @@
     background: var(--fc);
     color: #fff;
     transform: scale(1.1) rotate(6deg);
+    /* Fallback */
+    box-shadow: 0 6px 20px rgba(239, 68, 68, 0.3);
     box-shadow: 0 6px 20px color-mix(in srgb, var(--fc) 30%, transparent);
 }
 

@@ -48,6 +48,7 @@
     border-radius: 14px;
     background: rgba(255,255,255,0.2);
     backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
     display: flex; align-items: center; justify-content: center;
     color: #fff;
     flex-shrink: 0;
@@ -72,6 +73,7 @@
     background: rgba(255,255,255,0.15);
     border: 1px solid rgba(255,255,255,0.2);
     backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
 }
 .bi-hero .report-period-btn {
     color: rgba(255,255,255,0.7);
@@ -99,6 +101,7 @@
 .bi-hero-stat {
     background: rgba(255,255,255,0.15);
     backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
     border: 1px solid rgba(255,255,255,0.2);
     border-radius: 12px;
     padding: 14px 16px;

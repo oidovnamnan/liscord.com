@@ -274,6 +274,7 @@
         /* Always show on mobile since no hover */
         background: rgba(255, 255, 255, 0.85);
         backdrop-filter: blur(4px);
+        -webkit-backdrop-filter: blur(4px);
         padding: 12px;
         font-size: 0.8rem;
     }

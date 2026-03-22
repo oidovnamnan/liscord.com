@@ -44,6 +44,7 @@
     border-radius: 14px;
     background: rgba(255,255,255,0.2);
     backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
     color: #fff;
     display: flex;
     align-items: center;
@@ -81,6 +82,7 @@
     border-radius: 10px;
     background: rgba(255,255,255,0.15);
     backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
     border: 1px solid rgba(255,255,255,0.2);
     color: #fff;
     display: inline-flex;
@@ -112,6 +114,7 @@
 .sa-hero-stat {
     background: rgba(255,255,255,0.15);
     backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
     border: 1px solid rgba(255,255,255,0.2);
     border-radius: 12px;
     padding: 14px 16px;
@@ -1716,6 +1719,7 @@
     opacity: 0;
     transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
     backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
 }
 
 .search-bar-premium:focus-within {

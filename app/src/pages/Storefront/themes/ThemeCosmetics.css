@@ -20,6 +20,7 @@
     min-height: 80px;
     background: rgba(250, 244, 240, 0.95);
     backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
     z-index: 100;
 }
 

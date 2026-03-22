@@ -20,6 +20,7 @@
     top: 0;
     background: rgba(253, 250, 246, 0.95);
     backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
     z-index: 100;
     border-bottom: 1px solid rgba(74, 84, 65, 0.1);
 }

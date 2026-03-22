@@ -54,6 +54,7 @@
     border-radius: 12px;
     background: rgba(255,255,255,0.2);
     backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
     display: flex; align-items: center; justify-content: center;
     color: #fff;
     font-size: 1.1rem;
@@ -86,6 +87,7 @@
 .chat-hero-stat {
     background: rgba(255,255,255,0.15);
     backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
     border: 1px solid rgba(255,255,255,0.2);
     border-radius: 10px;
     padding: 10px 12px;
@@ -112,6 +114,7 @@
     border-radius: 10px;
     background: rgba(255,255,255,0.2);
     backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
     border: 1px solid rgba(255,255,255,0.25);
     color: #fff;
     display: flex; align-items: center; justify-content: center;
@@ -1432,6 +1435,7 @@ html[data-theme="light"] .premium-empty-icon-wrapper {
     inset: 0;
     background: rgba(0, 0, 0, 0.5);
     backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
     display: flex;
     align-items: center;
     justify-content: center;
