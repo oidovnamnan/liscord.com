@@ -850,6 +850,7 @@ function SourcingDetailModal({ order, businessId, settings, onClose, onUpdate }:
                                                 <ChevronDown size={14} style={{
                                                     color: 'var(--text-muted)', transition: 'transform 0.2s',
                                                     transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+                                                    opacity: isOpen ? 0 : 1,
                                                 }} />
                                             </div>
                                         </div>
