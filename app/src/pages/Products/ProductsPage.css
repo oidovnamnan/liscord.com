@@ -1482,12 +1482,13 @@
     max-width: 680px;
     background: #fffbfa;
     border: 1px solid rgba(239, 68, 68, 0.06);
-    border-radius: 28px;
+    border-radius: 24px;
     box-shadow:
         0 0 0 1px rgba(0, 0, 0, 0.03),
         0 25px 65px -5px rgba(0, 0, 0, 0.12),
         0 10px 30px -10px rgba(239, 68, 68, 0.06);
     overflow: hidden;
+    overflow-y: hidden !important;
     animation: premiumModalIn 0.35s cubic-bezier(0.16, 1, 0.3, 1);
     display: flex;
     flex-direction: column;
@@ -1507,7 +1508,7 @@
 
 /* ── Header ── */
 .premium-product-modal .modal-header {
-    padding: 24px 28px 20px;
+    padding: 16px 24px 12px;
     border-bottom: none;
     background: linear-gradient(180deg, #fef7f5 0%, #fffbfa 100%);
     position: relative;
@@ -1525,7 +1526,7 @@
 }
 
 .premium-product-modal .modal-header h2 {
-    font-size: 1.15rem;
+    font-size: 1.05rem;
     font-weight: 800;
     color: #1a1a2e;
     letter-spacing: -0.02em;
@@ -1550,8 +1551,8 @@
 
 /* ── Tabs ── */
 .premium-product-modal .modal-tabs {
-    padding: 12px 28px 0;
-    gap: 4px;
+    padding: 8px 24px 0;
+    gap: 2px;
     border-bottom: none;
     background: transparent;
     overflow-x: auto;
@@ -1564,8 +1565,8 @@
 }
 
 .premium-product-modal .tab-item {
-    padding: 8px 14px;
-    font-size: 0.78rem;
+    padding: 6px 12px;
+    font-size: 0.75rem;
     font-weight: 700;
     color: #9ca3af;
     border-radius: 100px;
@@ -1573,7 +1574,7 @@
     border: 1.5px solid transparent;
     transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
     white-space: nowrap;
-    gap: 6px;
+    gap: 5px;
 }
 
 .premium-product-modal .tab-item:hover {
@@ -1611,7 +1612,7 @@
 
 /* ── Body ── */
 .premium-product-modal .modal-body {
-    padding: 20px 28px;
+    padding: 14px 24px;
     background: #fffbfa;
     overflow-y: auto;
     flex: 1;
@@ -1622,9 +1623,9 @@
 .premium-product-modal .modal-section-card {
     background: #ffffff;
     border: 1px solid rgba(0, 0, 0, 0.06);
-    border-radius: 18px;
-    padding: 22px;
-    gap: 16px;
+    border-radius: 14px;
+    padding: 16px;
+    gap: 12px;
     box-shadow:
         0 1px 3px rgba(0, 0, 0, 0.02),
         0 4px 12px rgba(0, 0, 0, 0.02);
@@ -1641,17 +1642,17 @@
 
 /* Section titles */
 .premium-product-modal .modal-section-title {
-    font-size: 0.72rem;
+    font-size: 0.68rem;
     font-weight: 800;
     color: #ef4444;
     text-transform: uppercase;
     letter-spacing: 1.2px;
-    padding-bottom: 12px;
+    padding-bottom: 8px;
     border-bottom: 1px solid rgba(239, 68, 68, 0.08);
-    margin-bottom: 4px;
+    margin-bottom: 2px;
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
 }
 
 .premium-product-modal .modal-section-title::before {
@@ -1667,9 +1668,9 @@
 .premium-product-modal .input {
     background: #faf8f7;
     border: 1.5px solid rgba(0, 0, 0, 0.07);
-    border-radius: 12px;
-    padding: 12px 16px;
-    font-size: 0.9rem;
+    border-radius: 10px;
+    padding: 9px 14px;
+    font-size: 0.85rem;
     color: #1a1a2e;
     font-weight: 500;
     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
@@ -1687,7 +1688,7 @@
 }
 
 .premium-product-modal .input-label {
-    font-size: 0.78rem;
+    font-size: 0.75rem;
     font-weight: 700;
     color: #64748b;
     letter-spacing: 0.01em;
@@ -1704,17 +1705,17 @@
 
 /* Textarea override */
 .premium-product-modal textarea.input {
-    min-height: 80px;
+    min-height: 60px;
     resize: vertical;
-    line-height: 1.6;
+    line-height: 1.5;
 }
 
 /* ── Price Preview Card ── */
 .premium-product-modal .price-preview-card {
     background: linear-gradient(135deg, #fff5f5 0%, #fff7ed 50%, #fffbeb 100%);
     border: 1px solid rgba(239, 68, 68, 0.1);
-    border-radius: 16px;
-    padding: 20px 24px;
+    border-radius: 12px;
+    padding: 14px 18px;
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8);
 }
 
@@ -1784,7 +1785,7 @@
 
 /* ── Footer ── */
 .premium-product-modal .modal-footer {
-    padding: 16px 28px 24px;
+    padding: 12px 24px 16px;
     border-top: none;
     background: linear-gradient(180deg, #fffbfa 0%, #fef7f5 100%);
     position: relative;
@@ -1796,8 +1797,8 @@
     content: '';
     position: absolute;
     top: 0;
-    left: 28px;
-    right: 28px;
+    left: 24px;
+    right: 24px;
     height: 1px;
     background: linear-gradient(90deg, transparent, rgba(239, 68, 68, 0.12), transparent);
 }
@@ -1807,10 +1808,10 @@
     background: #ffffff;
     border: 1.5px solid rgba(0, 0, 0, 0.08);
     color: #64748b;
-    border-radius: 14px;
+    border-radius: 12px;
     font-weight: 700;
-    font-size: 0.88rem;
-    padding: 12px 24px;
+    font-size: 0.84rem;
+    padding: 10px 20px;
     transition: all 0.2s;
 }
 
@@ -1824,10 +1825,10 @@
 .premium-product-modal .modal-footer .btn-primary {
     background: linear-gradient(135deg, #ef4444, #f97316);
     border: none;
-    border-radius: 14px;
+    border-radius: 12px;
     font-weight: 700;
-    font-size: 0.88rem;
-    padding: 12px 28px;
+    font-size: 0.84rem;
+    padding: 10px 24px;
     box-shadow: 0 4px 16px rgba(239, 68, 68, 0.3);
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
