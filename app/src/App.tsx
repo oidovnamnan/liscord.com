@@ -327,13 +327,14 @@ async function autoLinkEmployee(
         photoURL: firebaseUser.photoURL || existingProfile?.photoURL || null,
         businessIds: [bizId],
         activeBusiness: bizId,
+        employeeMap: { [bizId]: empId }, // ← KEY: maps bizId → employeeId for reliable lookup
         language: existingProfile?.language || 'mn',
         ...(existingProfile ? {} : { createdAt: serverTimestamp() }),
         updatedAt: serverTimestamp(),
       };
-      _debugLog(`[Auth] Step 1: Writing user profile with businessIds=[${bizId}]...`);
+      _debugLog(`[Auth] Step 1: Writing user profile with employeeMap[${bizId}]=${empId}...`);
       await setDoc(userRef, profileData, { merge: true });
-      _debugLog(`[Auth] ✅ User profile written — isMemberOf(${bizId}) should now pass`);
+      _debugLog(`[Auth] ✅ User profile written with employeeMap`);
 
       // ══ STEP 2: Link Firebase UID to the employee record (now we have permission) ══
       const empRef = doc(db, 'businesses', bizId, 'employees', empId);
@@ -433,9 +434,17 @@ export default function App() {
             setUser({ ...profile, uid: firebaseUser.uid });
             if (profile.activeBusiness) {
               try {
+                const activeBiz = profile.activeBusiness!;
                 const [biz, emp] = await Promise.all([
-                  businessService.getBusiness(profile.activeBusiness),
-                  businessService.getEmployeeProfile(profile.activeBusiness, firebaseUser.uid)
+                  businessService.getBusiness(activeBiz),
+                  // Use employeeMap for reliable doc ID lookup, fallback to userId query
+                  (async () => {
+                    const empId = profile.employeeMap?.[activeBiz];
+                    if (empId) {
+                      return businessService.getEmployeeById(activeBiz, empId);
+                    }
+                    return businessService.getEmployeeProfile(activeBiz, firebaseUser.uid);
+                  })()
                 ]);
                 setBusiness(biz);
                 

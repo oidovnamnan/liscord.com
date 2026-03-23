@@ -212,6 +212,12 @@ export const businessService = {
         return bizId;
     },
 
+    async getEmployeeById(bizId: string, empId: string): Promise<Employee | null> {
+        const docSnap = await getDoc(doc(db, 'businesses', bizId, 'employees', empId));
+        if (!docSnap.exists()) return null;
+        return convertTimestamps({ id: docSnap.id, ...docSnap.data() }) as Employee;
+    },
+
     async getEmployeeProfile(bizId: string, uid: string): Promise<Employee | null> {
         const q = query(
             collection(db, 'businesses', bizId, 'employees'),

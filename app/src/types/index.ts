@@ -16,6 +16,7 @@ export interface User {
     photoURL: string | null;
     businessIds: string[];
     activeBusiness: string | null;
+    employeeMap?: Record<string, string>; // { [bizId]: employeeId } — reliable employee lookup by doc ID
     language: string;
     isSuperAdmin?: boolean;
     uiVersion?: 'v1' | 'v2'; // For toggling UX versions

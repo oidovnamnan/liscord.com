@@ -514,9 +514,11 @@ export const teamService = {
     },
 
     async deleteEmployee(bizId: string, empId: string) {
-        // Read the employee doc first to get phone for cleanup
+        // Read the employee doc first to get phone and userId for cleanup
         const empSnap = await getDoc(doc(db, 'businesses', bizId, 'employees', empId));
-        const empPhone = empSnap.exists() ? empSnap.data()?.phone : null;
+        const empData = empSnap.exists() ? empSnap.data() : null;
+        const empPhone = empData?.phone || null;
+        const empUserId = empData?.userId || null;
 
         await updateDoc(doc(db, 'businesses', bizId, 'employees', empId), {
             isDeleted: true,
@@ -526,6 +528,16 @@ export const teamService = {
         // Remove phone→business mapping
         if (empPhone) {
             await removePhoneMap(empPhone);
+        }
+        // Remove employeeMap entry from user doc
+        if (empUserId) {
+            try {
+                await updateDoc(doc(db, 'users', empUserId), {
+                    [`employeeMap.${bizId}`]: deleteField()
+                });
+            } catch (e) {
+                console.warn('[teamService] cleanup employeeMap failed (non-critical):', e);
+            }
         }
     },
 
