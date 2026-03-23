@@ -243,7 +243,7 @@ export function QuickDashboard({ isOpen, onClose }: QuickDashboardProps) {
                                         <DollarSign size={16} />
                                     </div>
                                     <div className="qd-stat-value">{formatMoney(stats.todayRevenue)}</div>
-                                    <div className="qd-stat-label">Өнөөдрийн орлого</div>
+                                    <div className="qd-stat-label">Орлого</div>
                                 </div>
 
                                 <div className="qd-stat qd-stat--red">
@@ -251,15 +251,7 @@ export function QuickDashboard({ isOpen, onClose }: QuickDashboardProps) {
                                         <ShoppingCart size={16} />
                                     </div>
                                     <div className="qd-stat-value">{stats.todayOrders}</div>
-                                    <div className="qd-stat-label">Өнөөдрийн захиалга</div>
-                                </div>
-
-                                <div className="qd-stat qd-stat--neutral">
-                                    <div className="qd-stat-icon">
-                                        <TrendingUp size={16} />
-                                    </div>
-                                    <div className="qd-stat-value">{formatMoney(stats.todayPaidAmount)}</div>
-                                    <div className="qd-stat-label">Төлсөн дүн</div>
+                                    <div className="qd-stat-label">Захиалга</div>
                                 </div>
 
                                 <div className="qd-stat qd-stat--emerald">
@@ -267,7 +259,7 @@ export function QuickDashboard({ isOpen, onClose }: QuickDashboardProps) {
                                         <Eye size={16} />
                                     </div>
                                     <div className="qd-stat-value">{stats.todayVisitors}</div>
-                                    <div className="qd-stat-label">Өнөөдрийн зочин</div>
+                                    <div className="qd-stat-label">Зочин</div>
                                 </div>
                             </div>
 
