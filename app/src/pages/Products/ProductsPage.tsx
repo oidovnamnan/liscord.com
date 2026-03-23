@@ -75,18 +75,38 @@ export function ProductsPage() {
             constraints.push(where('categoryId', '==', categoryFilter));
         }
 
-        constraints.push(limit(productsLimit));
+        // For price sorting we need ALL products, not limited
+        const needsAllProducts = sortBy === 'expensive' || sortBy === 'cheapest';
+        if (!needsAllProducts) {
+            constraints.push(limit(productsLimit));
+        }
         const q = query(ref, ...constraints);
 
         const unsubscribe = onSnapshot(q, (snapshot) => {
             const data = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as Product));
+            // Sort based on current sortBy
             data.sort((a, b) => {
-                const timeA = a.createdAt instanceof Date ? a.createdAt.getTime() : 0;
-                const timeB = b.createdAt instanceof Date ? b.createdAt.getTime() : 0;
-                return timeB - timeA;
+                switch (sortBy) {
+                    case 'newest': {
+                        const tA = a.createdAt instanceof Date ? a.createdAt.getTime() : (a.createdAt as any)?.toDate?.()?.getTime?.() || 0;
+                        const tB = b.createdAt instanceof Date ? b.createdAt.getTime() : (b.createdAt as any)?.toDate?.()?.getTime?.() || 0;
+                        return tB - tA;
+                    }
+                    case 'oldest': {
+                        const tA = a.createdAt instanceof Date ? a.createdAt.getTime() : (a.createdAt as any)?.toDate?.()?.getTime?.() || 0;
+                        const tB = b.createdAt instanceof Date ? b.createdAt.getTime() : (b.createdAt as any)?.toDate?.()?.getTime?.() || 0;
+                        return tA - tB;
+                    }
+                    case 'expensive':
+                        return (b.pricing?.salePrice || 0) - (a.pricing?.salePrice || 0);
+                    case 'cheapest':
+                        return (a.pricing?.salePrice || 0) - (b.pricing?.salePrice || 0);
+                    default:
+                        return 0;
+                }
             });
             setProducts(data);
-            setHasMore(data.length === productsLimit);
+            setHasMore(!needsAllProducts && data.length === productsLimit);
             setLoading(false);
         }, () => {
             setProducts([]);
@@ -94,7 +114,7 @@ export function ProductsPage() {
         });
 
         return () => unsubscribe();
-    }, [business?.id, productsLimit, categoryFilter, categories]);
+    }, [business?.id, productsLimit, categoryFilter, categories, sortBy]);
 
     // Subscribe to all categories independently
     useEffect(() => {
@@ -166,13 +186,13 @@ export function ProductsPage() {
     const sorted = [...filtered].sort((a, b) => {
         switch (sortBy) {
             case 'newest': {
-                const tA = a.createdAt instanceof Date ? a.createdAt.getTime() : 0;
-                const tB = b.createdAt instanceof Date ? b.createdAt.getTime() : 0;
+                const tA = a.createdAt instanceof Date ? a.createdAt.getTime() : (a.createdAt as any)?.toDate?.()?.getTime?.() || 0;
+                const tB = b.createdAt instanceof Date ? b.createdAt.getTime() : (b.createdAt as any)?.toDate?.()?.getTime?.() || 0;
                 return tB - tA;
             }
             case 'oldest': {
-                const tA = a.createdAt instanceof Date ? a.createdAt.getTime() : 0;
-                const tB = b.createdAt instanceof Date ? b.createdAt.getTime() : 0;
+                const tA = a.createdAt instanceof Date ? a.createdAt.getTime() : (a.createdAt as any)?.toDate?.()?.getTime?.() || 0;
+                const tB = b.createdAt instanceof Date ? b.createdAt.getTime() : (b.createdAt as any)?.toDate?.()?.getTime?.() || 0;
                 return tA - tB;
             }
             case 'expensive':
