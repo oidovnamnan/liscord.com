@@ -5,6 +5,7 @@ import { useUIStore, useBusinessStore } from '../../store';
 import { ImpersonationBanner } from '../common/ImpersonationBanner';
 import { GlobalBanner } from '../common/GlobalBanner';
 import { QuickLookup } from '../common/QuickLookup';
+import { QuickDashboard } from '../common/QuickDashboard';
 import { useDynamicTheme } from '../../hooks/useDynamicTheme';
 import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../../services/firebase';
@@ -15,6 +16,7 @@ export function AppLayout() {
     const { sidebarCollapsed, sidebarOpen, toggleSidebar } = useUIStore();
     const { business, employee } = useBusinessStore();
     const [showQuickLookup, setShowQuickLookup] = useState(false);
+    const [showQuickDash, setShowQuickDash] = useState(false);
     useDynamicTheme(); // Phase 40: Apply dynamic theme
 
     // Global ⌘K / Ctrl+K shortcut
@@ -23,6 +25,10 @@ export function AppLayout() {
             if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
                 e.preventDefault();
                 setShowQuickLookup(prev => !prev);
+            }
+            if ((e.metaKey || e.ctrlKey) && e.key === 'd') {
+                e.preventDefault();
+                setShowQuickDash(prev => !prev);
             }
         };
         window.addEventListener('keydown', handler);
@@ -86,6 +92,7 @@ export function AppLayout() {
 
             {/* Quick Lookup Spotlight (⌘K) */}
             <QuickLookup isOpen={showQuickLookup} onClose={() => setShowQuickLookup(false)} />
+            <QuickDashboard isOpen={showQuickDash} onClose={() => setShowQuickDash(false)} />
         </div>
     );
 }
