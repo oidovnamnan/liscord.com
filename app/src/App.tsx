@@ -448,6 +448,24 @@ export default function App() {
                 ]);
                 setBusiness(biz);
                 
+                // Auto-populate employeeMap if employee found but map is missing
+                if (emp && !profile.employeeMap?.[activeBiz]) {
+                  try {
+                    await updateDoc(doc(db, 'users', firebaseUser.uid), {
+                      [`employeeMap.${activeBiz}`]: emp.id
+                    });
+                    // Also update in-memory profile
+                    const updatedProfile = {
+                      ...profile,
+                      uid: firebaseUser.uid,
+                      employeeMap: { ...profile.employeeMap, [activeBiz]: emp.id }
+                    };
+                    setUser(updatedProfile);
+                  } catch (e) {
+                    console.warn('[Auth] auto-populate employeeMap failed:', e);
+                  }
+                }
+
                 // Load position permissions for the employee
                 let empWithPerms = emp;
                 if (emp?.positionId && biz) {
