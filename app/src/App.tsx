@@ -38,6 +38,7 @@ const MembershipPage = lazy(() => import('./pages/Membership/MembershipPage').th
 const LeadsPage = lazy(() => import('./pages/CRM/LeadsPage').then(m => ({ default: m.LeadsPage })));
 const QuotesPage = lazy(() => import('./pages/CRM/QuotesPage').then(m => ({ default: m.QuotesPage })));
 const CampaignsPage = lazy(() => import('./pages/Marketing/CampaignsPage').then(m => ({ default: m.CampaignsPage })));
+const AdCreatorPage = lazy(() => import('./pages/AdCreator/AdCreatorPage').then(m => ({ default: m.AdCreatorPage })));
 const LoyaltyPage = lazy(() => import('./pages/CRM/LoyaltyPage').then(m => ({ default: m.LoyaltyPage })));
 const InvoicesPage = lazy(() => import('./pages/Finance/InvoicesPage').then(m => ({ default: m.InvoicesPage })));
 const ExpensesPage = lazy(() => import('./pages/Finance/ExpensesPage').then(m => ({ default: m.ExpensesPage })));
@@ -754,6 +755,7 @@ export default function App() {
             <Route path="freelancer-mgt" element={<ModuleGuard moduleId="freelancer-mgt"><FreelancerMgtPage /></ModuleGuard>} />
             <Route path="online-presence" element={<ModuleGuard moduleId="online-presence"><OnlinePresencePage /></ModuleGuard>} />
             <Route path="campaigns" element={<ModuleGuard moduleId="campaigns"><CampaignsPage /></ModuleGuard>} />
+            <Route path="ad-creator" element={<ModuleGuard moduleId="ad-creator"><AdCreatorPage /></ModuleGuard>} />
             <Route path="loyalty" element={<ModuleGuard moduleId="loyalty"><LoyaltyPage /></ModuleGuard>} />
             <Route path="flash-deal" element={<ModuleGuard moduleId="flash-deal"><FlashDealPage /></ModuleGuard>} />
             <Route path="leads" element={<ModuleGuard moduleId="leads"><LeadsPage /></ModuleGuard>} />

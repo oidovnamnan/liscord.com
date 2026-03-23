@@ -850,6 +850,16 @@ export const LISCORD_MODULES: AppModule[] = [
         ]
     },
     {
+        id: 'ad-creator',
+        name: 'Зар Зураг',
+        description: 'Бараанаас сонгоод зар зураг автоматаар үүсгэх',
+        icon: 'Palette',
+        route: '/app/ad-creator',
+        isCore: false,
+        category: 'sales',
+        isFree: true,
+    },
+    {
         id: 'flash-deal',
         name: 'Flash Deal',
         description: 'Цагтай хязгаартай хямдрал, countdown timer',
