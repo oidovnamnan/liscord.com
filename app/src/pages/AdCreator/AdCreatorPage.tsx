@@ -5,7 +5,8 @@ import {
 } from 'lucide-react';
 import { collection, getDocs, query, where } from 'firebase/firestore';
 import { db } from '../../services/firebase';
-import { useBusinessStore, useSuperAdminStore } from '../../store';
+import { useBusinessStore } from '../../store';
+import { globalSettingsService } from '../../services/adminService';
 import { AD_TEMPLATES, loadImage, renderAdImage } from './adTemplates';
 import type { AdTemplate, AdProduct, AdOptions } from './adTemplates';
 import { generateProductAdCopy, generateBulkAdCopy } from './adAiService';
@@ -33,8 +34,15 @@ interface GeneratedAd {
 
 export function AdCreatorPage() {
     const { business } = useBusinessStore();
-    const { settings: superSettings } = useSuperAdminStore();
     const businessId = business?.id || '';
+    const [geminiApiKey, setGeminiApiKey] = useState('');
+
+    // Fetch Gemini API key
+    useEffect(() => {
+        globalSettingsService.getSettings().then(settings => {
+            if (settings.geminiApiKey) setGeminiApiKey(settings.geminiApiKey);
+        });
+    }, []);
 
     // Step state
     const [step, setStep] = useState<1 | 2 | 3>(1);
@@ -203,8 +211,8 @@ export function AdCreatorPage() {
 
     // AI Copy
     const handleAiCopy = async (mode: 'bulk' | 'single') => {
-        const apiKey = (superSettings as any)?.geminiApiKey;
-        if (!apiKey) { toast.error('Gemini API Key тохируулаагүй'); return; }
+        if (!geminiApiKey) { toast.error('Gemini API Key тохируулаагүй'); return; }
+        const apiKey = geminiApiKey;
         setAiCopyLoading(true);
         try {
             const storefront = business?.slug ? `liscord.com/${business.slug}` : undefined;
