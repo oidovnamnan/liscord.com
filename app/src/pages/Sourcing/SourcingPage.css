@@ -1005,3 +1005,333 @@
     background: var(--surface-2);
     border: 1px solid var(--border-soft);
 }
+
+/* ═══════════════════════════════════════════
+   PREMIUM SOURCING MODAL — Red/Orange Theme
+   ═══════════════════════════════════════════ */
+
+/* Container */
+.sourcing-detail-modal.modal {
+    background: #fffbfa;
+    border: 1px solid rgba(239, 68, 68, 0.06);
+    border-radius: 24px;
+    box-shadow:
+        0 0 0 1px rgba(0, 0, 0, 0.03),
+        0 25px 65px -5px rgba(0, 0, 0, 0.12),
+        0 10px 30px -10px rgba(239, 68, 68, 0.06);
+    overflow: hidden;
+    overflow-y: hidden !important;
+    animation: premiumModalIn 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+    height: 85vh;
+    max-height: 85vh;
+}
+
+/* Header */
+.sourcing-detail-modal .modal-header {
+    padding: 16px 24px 14px !important;
+    border-bottom: none;
+    background: linear-gradient(180deg, #fef7f5 0%, #fffbfa 100%);
+    position: relative;
+    flex-shrink: 0;
+}
+
+.sourcing-detail-modal .modal-header::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 24px;
+    right: 24px;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(239, 68, 68, 0.15), transparent);
+}
+
+.sourcing-detail-modal .modal-header h2 {
+    font-size: 1.05rem !important;
+    font-weight: 800 !important;
+    color: #1a1a2e;
+    letter-spacing: -0.02em;
+}
+
+.sourcing-detail-modal .modal-header p {
+    color: #9ca3af !important;
+    font-size: 0.75rem !important;
+}
+
+.sourcing-detail-modal .icon-badge {
+    background: linear-gradient(135deg, #ef4444, #f97316) !important;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.25);
+}
+
+.sourcing-detail-modal .modal-header .btn-ghost {
+    width: 32px;
+    height: 32px;
+    min-height: 32px;
+    border-radius: 10px;
+    background: rgba(0, 0, 0, 0.04);
+    color: #9ca3af;
+    font-size: 0.85rem;
+    transition: all 0.2s;
+}
+
+.sourcing-detail-modal .modal-header .btn-ghost:hover {
+    background: rgba(239, 68, 68, 0.08);
+    color: #ef4444;
+    transform: rotate(90deg);
+}
+
+/* Body — scrollable */
+.sourcing-detail-modal .modal-body {
+    background: #fffbfa;
+    overflow-y: auto !important;
+    flex: 1;
+    min-height: 0;
+}
+
+/* Cargo section */
+.sourcing-detail-modal .sourcing-cargo-section {
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.03) 0%, rgba(249, 115, 22, 0.03) 100%);
+    border-bottom: 1px solid rgba(239, 68, 68, 0.08);
+    padding: 16px 24px;
+    gap: 10px;
+}
+
+.sourcing-detail-modal .sourcing-copy-block {
+    background: #ffffff;
+    border: 1.5px solid rgba(0, 0, 0, 0.06);
+    border-radius: 12px;
+    padding: 12px 14px;
+    transition: all 0.2s;
+}
+
+.sourcing-detail-modal .sourcing-copy-block:hover {
+    border-color: rgba(239, 68, 68, 0.15);
+    box-shadow: 0 2px 8px rgba(239, 68, 68, 0.05);
+}
+
+/* Label block with dashed border — make it red/orange */
+.sourcing-detail-modal .sourcing-copy-block[style*="dashed"] {
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.04) 0%, rgba(249, 115, 22, 0.04) 100%) !important;
+    border-color: #ef4444 !important;
+}
+
+.sourcing-detail-modal .sourcing-copy-label {
+    font-size: 0.68rem;
+    font-weight: 800;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    margin-bottom: 4px;
+}
+
+.sourcing-detail-modal .sourcing-copy-value {
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: #1a1a2e;
+}
+
+.sourcing-detail-modal .sourcing-copy-btn {
+    border: 1.5px solid rgba(239, 68, 68, 0.2);
+    background: rgba(239, 68, 68, 0.04);
+    color: #ef4444;
+    border-radius: 10px;
+    font-weight: 700;
+}
+
+.sourcing-detail-modal .sourcing-copy-btn:hover {
+    background: linear-gradient(135deg, #ef4444, #f97316);
+    color: white;
+    border-color: #ef4444;
+}
+
+/* Section titles — red accent */
+.sourcing-detail-modal .sourcing-section-title {
+    font-size: 0.68rem;
+    font-weight: 800;
+    color: #ef4444;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid rgba(239, 68, 68, 0.08);
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.sourcing-detail-modal .sourcing-section-title::before {
+    content: '';
+    width: 3px;
+    height: 14px;
+    border-radius: 4px;
+    background: linear-gradient(180deg, #ef4444, #f97316);
+    flex-shrink: 0;
+}
+
+/* Items section */
+.sourcing-detail-modal .sourcing-items-section {
+    padding: 16px 24px;
+    border-bottom: 1px solid rgba(239, 68, 68, 0.06);
+}
+
+.sourcing-detail-modal .sourcing-item-block {
+    border: 1.5px solid rgba(0, 0, 0, 0.06);
+    border-radius: 12px;
+    background: #ffffff;
+}
+
+.sourcing-detail-modal .sourcing-item-block:hover {
+    border-color: rgba(239, 68, 68, 0.18);
+    box-shadow: 0 2px 8px rgba(239, 68, 68, 0.05);
+}
+
+.sourcing-detail-modal .sourcing-item-block.ordered {
+    background: rgba(16, 185, 129, 0.04);
+    border-color: rgba(16, 185, 129, 0.2);
+}
+
+.sourcing-detail-modal .sourcing-item-name {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #1a1a2e;
+}
+
+.sourcing-detail-modal .sourcing-item-qty {
+    color: #ef4444;
+    background: rgba(239, 68, 68, 0.08);
+    font-weight: 800;
+    border-radius: 6px;
+    padding: 2px 8px;
+}
+
+.sourcing-detail-modal .sourcing-item-price {
+    font-weight: 700;
+    color: #64748b;
+}
+
+/* Source link chips — red/orange */
+.sourcing-detail-modal .sourcing-link-chip {
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.06), rgba(249, 115, 22, 0.06));
+    border: 1px solid rgba(239, 68, 68, 0.12);
+}
+
+.sourcing-detail-modal .sourcing-link-chip:hover {
+    border-color: #ef4444;
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.1), rgba(249, 115, 22, 0.1));
+}
+
+.sourcing-detail-modal .sourcing-link-chip a {
+    color: #ef4444;
+}
+
+.sourcing-detail-modal .sourcing-link-add-btn {
+    border-color: rgba(239, 68, 68, 0.2);
+    color: #9ca3af;
+}
+
+.sourcing-detail-modal .sourcing-link-add-btn:hover {
+    border-color: #ef4444;
+    color: #ef4444;
+    background: rgba(239, 68, 68, 0.04);
+}
+
+/* Tracking section */
+.sourcing-detail-modal .sourcing-tracking-section {
+    padding: 16px 24px;
+}
+
+.sourcing-detail-modal .input {
+    background: #faf8f7;
+    border: 1.5px solid rgba(0, 0, 0, 0.07);
+    border-radius: 10px;
+    font-size: 0.85rem;
+    color: #1a1a2e;
+    font-weight: 500;
+    transition: all 0.2s;
+}
+
+.sourcing-detail-modal .input:focus {
+    background: #ffffff;
+    border-color: #ef4444;
+    box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.06);
+}
+
+.sourcing-detail-modal .input-label {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #64748b;
+}
+
+/* Footer */
+.sourcing-detail-modal .modal-footer {
+    padding: 12px 24px 16px !important;
+    border-top: none;
+    background: linear-gradient(180deg, #fffbfa 0%, #fef7f5 100%);
+    position: relative;
+    gap: 10px;
+    flex-shrink: 0;
+}
+
+.sourcing-detail-modal .modal-footer::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 24px;
+    right: 24px;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(239, 68, 68, 0.12), transparent);
+}
+
+/* Cancel button */
+.sourcing-detail-modal .modal-footer .btn-secondary {
+    background: #ffffff;
+    border: 1.5px solid rgba(0, 0, 0, 0.08);
+    color: #64748b;
+    border-radius: 12px;
+    font-weight: 700;
+    font-size: 0.84rem;
+    padding: 10px 20px;
+    transition: all 0.2s;
+}
+
+.sourcing-detail-modal .modal-footer .btn-secondary:hover {
+    background: #fef2f2;
+    border-color: rgba(239, 68, 68, 0.12);
+    color: #ef4444;
+}
+
+/* Save button — premium red/orange gradient */
+.sourcing-detail-modal .modal-footer .btn-primary,
+.sourcing-detail-modal .modal-footer .gradient-btn {
+    background: linear-gradient(135deg, #ef4444, #f97316) !important;
+    border: none !important;
+    border-radius: 12px !important;
+    font-weight: 700;
+    font-size: 0.84rem;
+    padding: 10px 24px;
+    box-shadow: 0 4px 16px rgba(239, 68, 68, 0.3);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    color: white !important;
+}
+
+.sourcing-detail-modal .modal-footer .btn-primary:hover:not(:disabled),
+.sourcing-detail-modal .modal-footer .gradient-btn:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 24px rgba(239, 68, 68, 0.35);
+    background: linear-gradient(135deg, #f87171, #fb923c) !important;
+}
+
+.sourcing-detail-modal .modal-footer .btn-primary:disabled,
+.sourcing-detail-modal .modal-footer .gradient-btn:disabled {
+    opacity: 0.5;
+    box-shadow: none;
+    transform: none;
+}
+
+/* Auto-label value style override */
+.sourcing-detail-modal .sourcing-copy-block[style*="dashed"] .sourcing-copy-value {
+    font-size: 1rem !important;
+    font-weight: 800 !important;
+    color: #ef4444 !important;
+    letter-spacing: 0.5px !important;
+}
