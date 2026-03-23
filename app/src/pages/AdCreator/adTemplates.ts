@@ -709,6 +709,246 @@ const templateStory: AdTemplate = {
     }
 };
 
+// ── Content-focused templates (different card layouts) ──
+
+const overlayPriceBig: AdTemplate = {
+    id: 'overlay_price_big', name: 'Үнэ том', emoji: '💰',
+    width: 1080, height: 1080, category: 'square', isOverlay: true,
+    description: 'Үнэ хамгийн том, нэр жижиг',
+    render(ctx, p, o) {
+        drawProductImage(ctx, p.image, 0, 0, 1080, 1080);
+        const pos = o.labelPosition || 'bottom-right';
+        const opacity = getOpacity(o);
+        const cardW = 420, cardH = 220;
+        const { x, y } = getLabelRect(1080, 1080, cardW, cardH, pos);
+        ctx.save();
+        ctx.shadowColor = 'rgba(0,0,0,0.2)'; ctx.shadowBlur = 25; ctx.shadowOffsetY = 6;
+        ctx.fillStyle = `rgba(255,255,255,${opacity})`;
+        roundRect(ctx, x, y, cardW, cardH, 16);
+        ctx.fill();
+        ctx.restore();
+        // PRICE dominant at top
+        ctx.fillStyle = '#e74c3c'; ctx.font = 'bold 56px system-ui';
+        ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+        ctx.fillText(formatPrice(p.price), x + cardW / 2, y + 20);
+        // Compare price
+        if (p.comparePrice && p.comparePrice > p.price) {
+            ctx.font = '500 20px system-ui'; ctx.fillStyle = '#aaa';
+            const old = formatPrice(p.comparePrice);
+            ctx.fillText(old, x + cardW / 2, y + 82);
+            const tw = ctx.measureText(old).width;
+            ctx.strokeStyle = '#ccc'; ctx.lineWidth = 1.5;
+            ctx.beginPath(); ctx.moveTo(x + cardW / 2 - tw / 2, y + 96);
+            ctx.lineTo(x + cardW / 2 + tw / 2, y + 96); ctx.stroke();
+        }
+        // Divider
+        ctx.strokeStyle = '#eee'; ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.moveTo(x + 24, y + 110); ctx.lineTo(x + cardW - 24, y + 110); ctx.stroke();
+        // Name below small
+        ctx.fillStyle = '#333'; ctx.font = '600 18px system-ui';
+        ctx.textAlign = 'center';
+        wrapText(ctx, p.name, x + cardW / 2, y + 125, cardW - 40, 22, 2);
+        // Badge/promo
+        if (o.badgeText) {
+            ctx.fillStyle = '#e74c3c'; ctx.font = 'bold 12px system-ui';
+            ctx.fillText(o.badgeText, x + cardW / 2, y + cardH - 20);
+        }
+    }
+};
+
+const overlaySplitInfo: AdTemplate = {
+    id: 'overlay_split', name: 'Хуваасан', emoji: '◧',
+    width: 1080, height: 1080, category: 'square', isOverlay: true,
+    description: 'Зүүн тал мэдээлэл, баруун тал тунгалаг',
+    render(ctx, p, o) {
+        drawProductImage(ctx, p.image, 0, 0, 1080, 1080);
+        const opacity = getOpacity(o);
+        const pos = o.labelPosition || 'bottom-left';
+        const isLeft = pos.includes('left') || pos === 'center' || pos === 'bottom-center';
+        const panelW = 480;
+        const panelX = isLeft ? 0 : 1080 - panelW;
+        // Side panel gradient
+        const grad = ctx.createLinearGradient(
+            isLeft ? 0 : 1080, 0,
+            isLeft ? panelW : 1080 - panelW, 0
+        );
+        grad.addColorStop(0, `rgba(0,0,0,${opacity * 0.85})`);
+        grad.addColorStop(1, 'rgba(0,0,0,0)');
+        ctx.fillStyle = grad;
+        ctx.fillRect(panelX, 0, panelW, 1080);
+        // Content
+        const textX = isLeft ? 50 : 1080 - panelW + 50;
+        // Badge
+        if (o.badgeText) {
+            ctx.fillStyle = '#e74c3c';
+            roundRect(ctx, textX, 60, ctx.measureText(o.badgeText).width + 28 || 140, 34, 17);
+            ctx.fill();
+            ctx.fillStyle = '#fff'; ctx.font = 'bold 16px system-ui';
+            ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+            ctx.fillText(o.badgeText, textX + 14, 77);
+        }
+        // Name
+        ctx.fillStyle = '#fff'; ctx.font = 'bold 36px system-ui';
+        ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+        wrapText(ctx, p.name, textX, 130, panelW - 100, 44, 4);
+        // Description
+        if (p.description) {
+            ctx.fillStyle = 'rgba(255,255,255,0.6)'; ctx.font = '400 16px system-ui';
+            wrapText(ctx, p.description, textX, 340, panelW - 100, 22, 3);
+        }
+        // Divider
+        ctx.strokeStyle = 'rgba(255,255,255,0.2)'; ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.moveTo(textX, 440); ctx.lineTo(textX + panelW - 100, 440); ctx.stroke();
+        // Price
+        ctx.fillStyle = '#ffd700'; ctx.font = 'bold 52px system-ui';
+        ctx.textAlign = 'left';
+        ctx.fillText(formatPrice(p.price), textX, 470);
+        // Compare
+        if (p.comparePrice && p.comparePrice > p.price) {
+            ctx.font = '500 22px system-ui'; ctx.fillStyle = 'rgba(255,255,255,0.4)';
+            const old = formatPrice(p.comparePrice);
+            ctx.fillText(old, textX, 540);
+            const tw = ctx.measureText(old).width;
+            ctx.strokeStyle = 'rgba(255,255,255,0.5)'; ctx.lineWidth = 1;
+            ctx.beginPath(); ctx.moveTo(textX, 555); ctx.lineTo(textX + tw, 555); ctx.stroke();
+        }
+        // Store
+        if (o.storefront) {
+            ctx.font = '600 16px system-ui'; ctx.fillStyle = 'rgba(255,255,255,0.5)';
+            ctx.fillText('🛒 ' + o.storefront, textX, 900);
+        }
+        drawWatermark(ctx, o.businessName, 1080, 1080);
+    }
+};
+
+const overlayPillTag: AdTemplate = {
+    id: 'overlay_pill', name: 'Шошго пилл', emoji: '💊',
+    width: 1080, height: 1080, category: 'square', isOverlay: true,
+    description: 'Жижигхэн pill хэлбэрийн шошго',
+    render(ctx, p, o) {
+        drawProductImage(ctx, p.image, 0, 0, 1080, 1080);
+        const pos = o.labelPosition || 'bottom-left';
+        const opacity = getOpacity(o);
+        // Name pill
+        ctx.font = 'bold 24px system-ui';
+        const nameW = Math.min(ctx.measureText(p.name).width + 40, 800);
+        const priceText = formatPrice(p.price);
+        ctx.font = 'bold 28px system-ui';
+        const priceW = ctx.measureText(priceText).width + 40;
+        const totalW = nameW + priceW + 8;
+        const pillH = 56;
+        const margin = 40;
+        let startX: number, startY: number;
+        if (pos.includes('top')) startY = margin;
+        else if (pos === 'center') startY = (1080 - pillH) / 2;
+        else startY = 1080 - pillH - margin;
+        if (pos.includes('left')) startX = margin;
+        else if (pos.includes('right')) startX = 1080 - totalW - margin;
+        else startX = (1080 - totalW) / 2;
+        // Name pill (dark)
+        ctx.save();
+        ctx.shadowColor = 'rgba(0,0,0,0.2)'; ctx.shadowBlur = 15;
+        ctx.fillStyle = `rgba(0,0,0,${opacity * 0.85})`;
+        roundRect(ctx, startX, startY, nameW, pillH, 28);
+        ctx.fill();
+        ctx.restore();
+        ctx.fillStyle = '#fff'; ctx.font = 'bold 22px system-ui';
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        const shortName = p.name.length > 30 ? p.name.substring(0, 28) + '…' : p.name;
+        ctx.fillText(shortName, startX + nameW / 2, startY + pillH / 2);
+        // Price pill (red)
+        ctx.save();
+        ctx.shadowColor = 'rgba(231,76,60,0.3)'; ctx.shadowBlur = 15;
+        ctx.fillStyle = `rgba(231,76,60,${opacity})`;
+        roundRect(ctx, startX + nameW + 8, startY, priceW, pillH, 28);
+        ctx.fill();
+        ctx.restore();
+        ctx.fillStyle = '#fff'; ctx.font = 'bold 26px system-ui';
+        ctx.fillText(priceText, startX + nameW + 8 + priceW / 2, startY + pillH / 2);
+        // Badge separate
+        if (o.badgeText) {
+            const badgeY = pos.includes('top') ? startY + pillH + 12 : startY - 46;
+            drawBadge(ctx, o.badgeText, startX, badgeY, '#111', '#fff');
+        }
+    }
+};
+
+const overlayFullInfo: AdTemplate = {
+    id: 'overlay_full_info', name: 'Бүрэн карт', emoji: '📝',
+    width: 1080, height: 1080, category: 'square', isOverlay: true,
+    description: 'Бүтэн өргөн — бүх мэдээлэлтэй',
+    render(ctx, p, o) {
+        drawProductImage(ctx, p.image, 0, 0, 1080, 1080);
+        const opacity = getOpacity(o);
+        const pos = o.labelPosition || 'bottom-center';
+        const cardW = 1000, cardH = 240;
+        const margin = 40;
+        let cardY: number;
+        if (pos.includes('top')) cardY = margin;
+        else if (pos === 'center') cardY = (1080 - cardH) / 2;
+        else cardY = 1080 - cardH - margin;
+        const cardX = (1080 - cardW) / 2;
+        // Wide card
+        ctx.save();
+        ctx.shadowColor = 'rgba(0,0,0,0.15)'; ctx.shadowBlur = 30; ctx.shadowOffsetY = 6;
+        ctx.fillStyle = `rgba(255,255,255,${opacity})`;
+        roundRect(ctx, cardX, cardY, cardW, cardH, 20);
+        ctx.fill();
+        ctx.restore();
+        // Layout: [Badge] [Name + Desc] [Price]
+        // Badge column
+        if (o.badgeText) {
+            ctx.fillStyle = '#e74c3c';
+            roundRect(ctx, cardX + 20, cardY + 20, 80, 80, 14);
+            ctx.fill();
+            ctx.fillStyle = '#fff'; ctx.font = 'bold 12px system-ui';
+            ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+            // Split badge text into 2 lines if needed
+            const words = o.badgeText.split(' ');
+            if (words.length > 1) {
+                ctx.fillText(words[0], cardX + 60, cardY + 54);
+                ctx.fillText(words.slice(1).join(' '), cardX + 60, cardY + 70);
+            } else {
+                ctx.fillText(o.badgeText, cardX + 60, cardY + 60);
+            }
+        }
+        // Name + description center
+        const nameX = o.badgeText ? cardX + 120 : cardX + 24;
+        ctx.fillStyle = '#111'; ctx.font = 'bold 28px system-ui';
+        ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+        wrapText(ctx, p.name, nameX, cardY + 28, 540, 34, 2);
+        if (p.description) {
+            ctx.fillStyle = '#888'; ctx.font = '400 15px system-ui';
+            wrapText(ctx, p.description, nameX, cardY + 110, 540, 20, 3);
+        }
+        // Price right
+        ctx.fillStyle = '#e74c3c'; ctx.font = 'bold 46px system-ui';
+        ctx.textAlign = 'right'; ctx.textBaseline = 'top';
+        ctx.fillText(formatPrice(p.price), cardX + cardW - 24, cardY + 40);
+        // Compare price
+        if (p.comparePrice && p.comparePrice > p.price) {
+            ctx.font = '500 20px system-ui'; ctx.fillStyle = '#bbb';
+            const old = formatPrice(p.comparePrice);
+            ctx.fillText(old, cardX + cardW - 24, cardY + 100);
+            const tw = ctx.measureText(old).width;
+            ctx.strokeStyle = '#ccc'; ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(cardX + cardW - 24 - tw, cardY + 113);
+            ctx.lineTo(cardX + cardW - 24, cardY + 113);
+            ctx.stroke();
+        }
+        // Business name
+        ctx.font = '600 14px system-ui'; ctx.fillStyle = '#bbb';
+        ctx.textAlign = 'right';
+        ctx.fillText(o.businessName, cardX + cardW - 24, cardY + cardH - 30);
+        // Storefront
+        if (o.storefront) {
+            ctx.textAlign = 'left';
+            ctx.fillText('🛒 ' + o.storefront, nameX, cardY + cardH - 30);
+        }
+    }
+};
+
 // ============ EXPORT ALL ============
 
 export const AD_TEMPLATES: AdTemplate[] = [
@@ -723,6 +963,10 @@ export const AD_TEMPLATES: AdTemplate[] = [
     overlayPurple,
     overlayOrangeTag,
     overlayRoundBadge,
+    overlayPriceBig,
+    overlaySplitInfo,
+    overlayPillTag,
+    overlayFullInfo,
     overlayCatalog,
     overlayGradientFB,
     overlayStory,
@@ -737,27 +981,41 @@ export const AD_TEMPLATES: AdTemplate[] = [
 // ============ RENDER UTILITY ============
 
 /**
- * Load image via fetch+blob to bypass CORS canvas tainting.
- * Falls back to direct loading if fetch fails.
+ * Load image for canvas use with multiple fallback strategies:
+ * 1. fetch→blob→objectURL (bypasses CORS taint)
+ * 2. img with crossOrigin='anonymous' (needs CORS headers)
+ * 3. img WITHOUT crossOrigin (always works, but canvas gets tainted)
  */
 export async function loadImage(src: string): Promise<HTMLImageElement> {
+    // Strategy 1: fetch→blob (best — bypasses canvas taint)
     try {
         const response = await fetch(src, { mode: 'cors' });
         if (response.ok) {
             const blob = await response.blob();
             const url = URL.createObjectURL(blob);
-            return new Promise<HTMLImageElement>((resolve, reject) => {
+            return await new Promise<HTMLImageElement>((resolve, reject) => {
                 const img = new Image();
                 img.onload = () => { URL.revokeObjectURL(url); resolve(img); };
-                img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('Blob image load failed')); };
+                img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('Blob load failed')); };
                 img.src = url;
             });
         }
     } catch { /* fall through */ }
 
+    // Strategy 2: img with crossOrigin (needs server CORS)
+    try {
+        return await new Promise<HTMLImageElement>((resolve, reject) => {
+            const img = new Image();
+            img.crossOrigin = 'anonymous';
+            img.onload = () => resolve(img);
+            img.onerror = () => reject(new Error('crossOrigin load failed'));
+            img.src = src;
+        });
+    } catch { /* fall through */ }
+
+    // Strategy 3: img WITHOUT crossOrigin (always works, canvas gets tainted)
     return new Promise<HTMLImageElement>((resolve, reject) => {
         const img = new Image();
-        img.crossOrigin = 'anonymous';
         img.onload = () => resolve(img);
         img.onerror = () => reject(new Error('Image load failed: ' + src));
         img.src = src;
@@ -774,5 +1032,14 @@ export async function renderAdImage(
     canvas.height = template.height;
     const ctx = canvas.getContext('2d')!;
     template.render(ctx, product, options);
-    return canvas.toDataURL('image/png');
+    try {
+        return canvas.toDataURL('image/png');
+    } catch {
+        // Canvas tainted by cross-origin image — re-render without image
+        const ctx2 = canvas.getContext('2d')!;
+        ctx2.clearRect(0, 0, canvas.width, canvas.height);
+        template.render(ctx2, { ...product, image: null }, options);
+        return canvas.toDataURL('image/png');
+    }
 }
+
