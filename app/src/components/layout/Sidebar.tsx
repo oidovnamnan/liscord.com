@@ -131,12 +131,15 @@ export function Sidebar() {
     const loadSwitchableEmployees = async () => {
         if (!user || !business) return;
         try {
-            const isOwner = user.uid === business.ownerId || employee?.role === 'owner';
+            // Multiple ways to detect owner: ownerId match, role, superAdmin, or businessIds owner
+            const isOwner = user.uid === business.ownerId
+                || employee?.role === 'owner'
+                || user.isSuperAdmin === true
+                || (user.businessIds?.includes(business.id) && !employee);
 
             if (isOwner) {
                 // Owner: load ALL non-deleted employees
                 const allEmps = await businessService.getAllEmployees(business.id);
-
                 const currentEmpId = employee?.id;
                 setLinkedEmployees(currentEmpId ? allEmps.filter(e => e.id !== currentEmpId) : allEmps);
             } else if (employee?.linkedEmployeeIds?.length) {
