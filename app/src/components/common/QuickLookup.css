@@ -112,7 +112,7 @@
     display: flex;
     align-items: center;
     gap: 14px;
-    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    border-bottom: 1.5px solid rgba(239, 68, 68, 0.1);
     position: relative;
     z-index: 1;
 }
@@ -122,9 +122,9 @@
 }
 
 .ql-search-icon {
-    color: #10b981;
+    color: #ef4444;
     flex-shrink: 0;
-    opacity: 0.8;
+    opacity: 0.9;
 }
 
 .ql-search-input {
@@ -203,12 +203,12 @@
 }
 
 .ql-tab.active {
-    background: linear-gradient(135deg, #10b981, #059669);
+    background: linear-gradient(135deg, #ef4444, #dc2626);
     color: #fff;
-    border-color: rgba(16, 185, 129, 0.3);
+    border-color: rgba(239, 68, 68, 0.3);
     box-shadow:
-        0 4px 16px rgba(16, 185, 129, 0.3),
-        0 1px 3px rgba(16, 185, 129, 0.2);
+        0 4px 16px rgba(239, 68, 68, 0.3),
+        0 1px 3px rgba(239, 68, 68, 0.2);
 }
 
 .ql-tab-count {
@@ -259,15 +259,15 @@
 
 .ql-result-item:hover,
 .ql-result-item.focused {
-    background: rgba(16, 185, 129, 0.06);
-    border-color: rgba(16, 185, 129, 0.15);
+    background: rgba(239, 68, 68, 0.05);
+    border-color: rgba(239, 68, 68, 0.15);
     transform: translateX(4px);
 }
 
 .ql-result-item.focused {
-    background: rgba(16, 185, 129, 0.08);
-    border-color: rgba(16, 185, 129, 0.25);
-    box-shadow: 0 4px 18px rgba(16, 185, 129, 0.08);
+    background: rgba(239, 68, 68, 0.07);
+    border-color: rgba(239, 68, 68, 0.25);
+    box-shadow: 0 4px 18px rgba(239, 68, 68, 0.08);
 }
 
 .ql-result-thumb {
@@ -321,7 +321,7 @@
 
 .ql-result-price {
     font-weight: 900;
-    color: #059669;
+    color: #dc2626;
     font-size: 0.88rem;
     flex-shrink: 0;
     letter-spacing: -0.02em;
@@ -715,9 +715,9 @@
 }
 
 .ql-suggestion-item:hover {
-    background: rgba(16, 185, 129, 0.06);
-    border-color: rgba(16, 185, 129, 0.12);
-    color: #059669;
+    background: rgba(239, 68, 68, 0.06);
+    border-color: rgba(239, 68, 68, 0.12);
+    color: #dc2626;
     transform: translateX(4px);
 }
 
@@ -728,7 +728,7 @@
 
 .ql-suggestion-item:hover svg {
     opacity: 0.8;
-    color: #10b981;
+    color: #ef4444;
 }
 
 /* ── Loading ── */

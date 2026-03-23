@@ -101,13 +101,19 @@ export function QuickLookup({ isOpen, onClose }: QuickLookupProps) {
         }
     }, [isOpen]);
 
-    // Global ESC to close
+    // Global ESC to close — use refs to avoid stale closure
+    const previewOrderRef = useRef(previewOrder);
+    const previewProductRef = useRef(previewProduct);
+    previewOrderRef.current = previewOrder;
+    previewProductRef.current = previewProduct;
+
     useEffect(() => {
         if (!isOpen) return;
         const handler = (e: KeyboardEvent) => {
             if (e.key === 'Escape') {
                 e.preventDefault();
-                if (previewOrder || previewProduct) {
+                e.stopPropagation();
+                if (previewOrderRef.current || previewProductRef.current) {
                     setPreviewOrder(null);
                     setPreviewProduct(null);
                 } else {
@@ -115,9 +121,9 @@ export function QuickLookup({ isOpen, onClose }: QuickLookupProps) {
                 }
             }
         };
-        window.addEventListener('keydown', handler);
-        return () => window.removeEventListener('keydown', handler);
-    }, [isOpen, onClose, previewOrder, previewProduct]);
+        window.addEventListener('keydown', handler, true); // capture phase
+        return () => window.removeEventListener('keydown', handler, true);
+    }, [isOpen, onClose]);
 
     // Search with debounce
     const doSearch = useCallback(async (q: string) => {
