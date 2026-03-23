@@ -8,6 +8,8 @@ export interface AdTemplate {
     height: number;
     category: 'landscape' | 'square' | 'story';
     description: string;
+    /** If true, this is an overlay template (product image = full background + label card) */
+    isOverlay?: boolean;
     render: (ctx: CanvasRenderingContext2D, product: AdProduct, options: AdOptions) => void;
 }
 
@@ -19,11 +21,17 @@ export interface AdProduct {
     description?: string;
 }
 
+export type LabelPosition = 'bottom-right' | 'bottom-left' | 'top-right' | 'top-left' | 'bottom-center' | 'center';
+
 export interface AdOptions {
     businessName: string;
     badgeText?: string;
     promoText?: string;
     storefront?: string;
+    /** Label position for overlay templates */
+    labelPosition?: LabelPosition;
+    /** Label opacity 0-100 */
+    labelOpacity?: number;
 }
 
 // ── Helpers ──
@@ -58,7 +66,6 @@ function drawProductImage(ctx: CanvasRenderingContext2D, img: HTMLImageElement |
         roundRect(ctx, x, y, w, h, radius);
         ctx.clip();
     }
-    // Cover-fit
     const imgRatio = img.width / img.height;
     const boxRatio = w / h;
     let sx = 0, sy = 0, sw = img.width, sh = img.height;
@@ -122,186 +129,518 @@ function drawWatermark(ctx: CanvasRenderingContext2D, text: string, w: number, h
     ctx.fillText(text, w - 20, h - 14);
 }
 
-// ============ TEMPLATES ============
+// ── Label position calculator ──
 
-const templateSale: AdTemplate = {
-    id: 'sale', name: 'Хямдрал', emoji: '🔥',
-    width: 1200, height: 628, category: 'landscape',
-    description: 'Хямдралын зар — том зураг + хуучин/шинэ үнэ',
+interface LabelRect { x: number; y: number; w: number; h: number; }
+
+function getLabelRect(canvasW: number, canvasH: number, cardW: number, cardH: number, position: LabelPosition, margin = 40): LabelRect {
+    switch (position) {
+        case 'top-left': return { x: margin, y: margin, w: cardW, h: cardH };
+        case 'top-right': return { x: canvasW - cardW - margin, y: margin, w: cardW, h: cardH };
+        case 'bottom-left': return { x: margin, y: canvasH - cardH - margin, w: cardW, h: cardH };
+        case 'bottom-right': return { x: canvasW - cardW - margin, y: canvasH - cardH - margin, w: cardW, h: cardH };
+        case 'bottom-center': return { x: (canvasW - cardW) / 2, y: canvasH - cardH - margin, w: cardW, h: cardH };
+        case 'center': return { x: (canvasW - cardW) / 2, y: (canvasH - cardH) / 2, w: cardW, h: cardH };
+        default: return { x: canvasW - cardW - margin, y: canvasH - cardH - margin, w: cardW, h: cardH };
+    }
+}
+
+function getOpacity(options: AdOptions): number {
+    return (options.labelOpacity ?? 95) / 100;
+}
+
+// ============ OVERLAY LABEL TEMPLATES ============
+// Product image fills the entire canvas. A label card floats on top.
+
+const overlayWhiteCard: AdTemplate = {
+    id: 'overlay_white', name: 'Цагаан карт', emoji: '🏷️',
+    width: 1080, height: 1080, category: 'square', isOverlay: true,
+    description: 'Цагаан карт — цэвэрхэн, мэргэжлийн',
     render(ctx, p, o) {
-        // Background gradient
-        const grad = ctx.createLinearGradient(0, 0, 1200, 628);
-        grad.addColorStop(0, '#ff6b35');
-        grad.addColorStop(1, '#d63031');
-        ctx.fillStyle = grad;
-        ctx.fillRect(0, 0, 1200, 628);
-        // Decorative circles
-        ctx.fillStyle = 'rgba(255,255,255,0.06)';
-        ctx.beginPath(); ctx.arc(1100, 100, 200, 0, Math.PI * 2); ctx.fill();
-        ctx.beginPath(); ctx.arc(100, 550, 150, 0, Math.PI * 2); ctx.fill();
-        // Product image
-        drawProductImage(ctx, p.image, 60, 60, 500, 508, 24);
-        // Badge
-        const badge = o.badgeText || 'ХЯМДРАЛ';
-        ctx.font = 'bold 28px system-ui';
-        const bm = ctx.measureText(badge);
-        ctx.fillStyle = '#fff';
-        roundRect(ctx, 600, 60, bm.width + 40, 50, 25);
+        drawProductImage(ctx, p.image, 0, 0, 1080, 1080);
+        const pos = o.labelPosition || 'bottom-right';
+        const opacity = getOpacity(o);
+        const cardW = 460, cardH = 280;
+        const { x, y } = getLabelRect(1080, 1080, cardW, cardH, pos);
+        // Card shadow
+        ctx.save();
+        ctx.shadowColor = 'rgba(0,0,0,0.15)'; ctx.shadowBlur = 30; ctx.shadowOffsetY = 8;
+        ctx.fillStyle = `rgba(255,255,255,${opacity})`;
+        roundRect(ctx, x, y, cardW, cardH, 16);
         ctx.fill();
-        ctx.fillStyle = '#d63031';
-        ctx.textAlign = 'left';
-        ctx.textBaseline = 'middle';
-        ctx.fillText(badge, 620, 85);
-        // Product name
-        ctx.fillStyle = '#fff';
-        ctx.font = 'bold 36px system-ui';
-        ctx.textAlign = 'left';
-        ctx.textBaseline = 'top';
-        wrapText(ctx, p.name, 600, 140, 560, 44, 3);
-        // Compare price (strikethrough)
-        if (p.comparePrice && p.comparePrice > p.price) {
-            ctx.font = '600 28px system-ui';
-            ctx.fillStyle = 'rgba(255,255,255,0.5)';
-            const oldPrice = formatPrice(p.comparePrice);
-            ctx.fillText(oldPrice, 600, 340);
-            const tw = ctx.measureText(oldPrice).width;
-            ctx.strokeStyle = 'rgba(255,255,255,0.7)';
-            ctx.lineWidth = 2;
-            ctx.beginPath(); ctx.moveTo(600, 354); ctx.lineTo(600 + tw, 354); ctx.stroke();
+        ctx.restore();
+        // Blue accent line
+        ctx.fillStyle = '#4285f4';
+        ctx.fillRect(x + 4, y + 24, 3, cardH - 48);
+        // Label
+        ctx.fillStyle = '#4285f4'; ctx.font = 'bold 15px system-ui';
+        ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+        ctx.fillText('БҮТЭЭГДЭХҮҮН', x + 24, y + 26);
+        // Name
+        ctx.fillStyle = '#111'; ctx.font = 'bold 26px system-ui';
+        wrapText(ctx, p.name, x + 24, y + 54, cardW - 48, 32, 2);
+        // Description
+        if (p.description) {
+            ctx.fillStyle = '#666'; ctx.font = '400 15px system-ui';
+            wrapText(ctx, p.description, x + 24, y + 126, cardW - 48, 20, 2);
         }
         // Price
-        ctx.font = 'bold 64px system-ui';
-        ctx.fillStyle = '#fff';
-        ctx.fillText(formatPrice(p.price), 600, p.comparePrice ? 380 : 340);
-        // Business name
-        drawWatermark(ctx, o.businessName, 1200, 628);
-        // Storefront link
-        if (o.storefront) {
-            ctx.font = '600 20px system-ui';
-            ctx.fillStyle = 'rgba(255,255,255,0.7)';
-            ctx.textAlign = 'left';
-            ctx.fillText('🛒 ' + o.storefront, 600, 560);
+        ctx.fillStyle = '#e74c3c'; ctx.font = 'bold 40px system-ui';
+        ctx.textAlign = 'left';
+        ctx.fillText(formatPrice(p.price), x + 24, y + cardH - 52);
+        if (p.comparePrice && p.comparePrice > p.price) {
+            ctx.font = '500 18px system-ui'; ctx.fillStyle = '#999';
+            const pw = ctx.measureText(formatPrice(p.price)).width;
+            const old = formatPrice(p.comparePrice);
+            ctx.fillText(old, x + 30 + pw, y + cardH - 40);
+            const tw = ctx.measureText(old).width;
+            ctx.strokeStyle = '#ccc'; ctx.lineWidth = 1.5;
+            ctx.beginPath(); ctx.moveTo(x + 30 + pw, y + cardH - 32); ctx.lineTo(x + 30 + pw + tw, y + cardH - 32); ctx.stroke();
+        }
+        if (o.badgeText) drawBadge(ctx, o.badgeText, pos.includes('right') ? 30 : 1080 - 200, pos.includes('top') ? 1080 - 60 : 30, '#e74c3c', '#fff');
+    }
+};
+
+const overlayDarkCard: AdTemplate = {
+    id: 'overlay_dark', name: 'Хар карт', emoji: '🖤',
+    width: 1080, height: 1080, category: 'square', isOverlay: true,
+    description: 'Хар дэвсгэр + алтан үнэ',
+    render(ctx, p, o) {
+        drawProductImage(ctx, p.image, 0, 0, 1080, 1080);
+        const pos = o.labelPosition || 'bottom-right';
+        const opacity = getOpacity(o);
+        const cardW = 460, cardH = 270;
+        const { x, y } = getLabelRect(1080, 1080, cardW, cardH, pos);
+        ctx.save();
+        ctx.shadowColor = 'rgba(0,0,0,0.3)'; ctx.shadowBlur = 30; ctx.shadowOffsetY = 8;
+        ctx.fillStyle = `rgba(20,20,20,${opacity})`;
+        roundRect(ctx, x, y, cardW, cardH, 16);
+        ctx.fill();
+        ctx.restore();
+        // Gold line
+        ctx.fillStyle = '#c9a43e';
+        ctx.fillRect(x + 4, y + 24, 3, cardH - 48);
+        // Label
+        ctx.fillStyle = '#c9a43e'; ctx.font = 'bold 14px system-ui';
+        ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+        ctx.fillText('PREMIUM', x + 24, y + 28);
+        // Name
+        ctx.fillStyle = '#fff'; ctx.font = 'bold 26px system-ui';
+        wrapText(ctx, p.name, x + 24, y + 54, cardW - 48, 32, 2);
+        // Description
+        if (p.description) {
+            ctx.fillStyle = 'rgba(255,255,255,0.6)'; ctx.font = '400 15px system-ui';
+            wrapText(ctx, p.description, x + 24, y + 126, cardW - 48, 20, 2);
+        }
+        // Price gold
+        ctx.fillStyle = '#c9a43e'; ctx.font = 'bold 40px system-ui';
+        ctx.fillText(formatPrice(p.price), x + 24, y + cardH - 50);
+        if (o.badgeText) drawBadge(ctx, o.badgeText, pos.includes('right') ? 30 : 1080 - 200, pos.includes('top') ? 1080 - 60 : 30, '#c9a43e', '#0a0a0a');
+    }
+};
+
+const overlayGlassCard: AdTemplate = {
+    id: 'overlay_glass', name: 'Шилэн', emoji: '🪟',
+    width: 1080, height: 1080, category: 'square', isOverlay: true,
+    description: 'Glassmorphism — тунгалаг',
+    render(ctx, p, o) {
+        drawProductImage(ctx, p.image, 0, 0, 1080, 1080);
+        const pos = o.labelPosition || 'bottom-right';
+        const opacity = getOpacity(o);
+        const cardW = 460, cardH = 260;
+        const { x, y } = getLabelRect(1080, 1080, cardW, cardH, pos);
+        ctx.save();
+        ctx.shadowColor = 'rgba(0,0,0,0.15)'; ctx.shadowBlur = 30;
+        ctx.fillStyle = `rgba(255,255,255,${opacity * 0.75})`;
+        roundRect(ctx, x, y, cardW, cardH, 20);
+        ctx.fill();
+        // Border glow
+        ctx.strokeStyle = `rgba(255,255,255,${opacity * 0.4})`;
+        ctx.lineWidth = 1.5;
+        roundRect(ctx, x, y, cardW, cardH, 20);
+        ctx.stroke();
+        ctx.restore();
+        // Name
+        ctx.fillStyle = '#111'; ctx.font = 'bold 28px system-ui';
+        ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+        wrapText(ctx, p.name, x + 24, y + 24, cardW - 48, 34, 2);
+        // Description
+        if (p.description) {
+            ctx.fillStyle = '#444'; ctx.font = '400 15px system-ui';
+            wrapText(ctx, p.description, x + 24, y + 100, cardW - 48, 20, 2);
+        }
+        // Price
+        ctx.fillStyle = '#e74c3c'; ctx.font = 'bold 44px system-ui';
+        ctx.fillText(formatPrice(p.price), x + 24, y + cardH - 56);
+        if (o.badgeText) drawBadge(ctx, o.badgeText, pos.includes('right') ? 30 : 1080 - 200, pos.includes('top') ? 1080 - 60 : 30, '#e74c3c', '#fff');
+    }
+};
+
+const overlayMinimalStrip: AdTemplate = {
+    id: 'overlay_strip', name: 'Зурвас', emoji: '📐',
+    width: 1080, height: 1080, category: 'square', isOverlay: true,
+    description: 'Доод зурвас — нэр + үнэ',
+    render(ctx, p, o) {
+        drawProductImage(ctx, p.image, 0, 0, 1080, 1080);
+        const opacity = getOpacity(o);
+        const pos = o.labelPosition || 'bottom-center';
+        const stripH = 160;
+        let stripY: number;
+        if (pos.includes('top')) stripY = 0;
+        else stripY = 1080 - stripH;
+        // Background strip
+        ctx.fillStyle = `rgba(0,0,0,${opacity * 0.7})`;
+        ctx.fillRect(0, stripY, 1080, stripH);
+        // Name
+        ctx.fillStyle = '#fff'; ctx.font = 'bold 32px system-ui';
+        ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+        wrapText(ctx, p.name, 40, stripY + 24, 700, 38, 2);
+        // Price right
+        ctx.fillStyle = '#ffd700'; ctx.font = 'bold 48px system-ui';
+        ctx.textAlign = 'right';
+        ctx.fillText(formatPrice(p.price), 1040, stripY + 55);
+        if (o.badgeText) {
+            ctx.font = 'bold 20px system-ui'; ctx.fillStyle = 'rgba(255,255,255,0.7)';
+            ctx.textAlign = 'right';
+            ctx.fillText(o.badgeText, 1040, stripY + 120);
         }
     }
 };
 
-const templateNewArrival: AdTemplate = {
-    id: 'new_arrival', name: 'Шинэ ирц', emoji: '✨',
-    width: 1200, height: 628, category: 'landscape',
-    description: 'Шинэ бараа — gradient + "ШИНЭ" badge',
+const overlayRedTag: AdTemplate = {
+    id: 'overlay_red', name: 'Улаан таг', emoji: '🔴',
+    width: 1080, height: 1080, category: 'square', isOverlay: true,
+    description: 'Улаан дэвсгэр + цагаан текст',
     render(ctx, p, o) {
-        const grad = ctx.createLinearGradient(0, 0, 1200, 628);
-        grad.addColorStop(0, '#667eea');
-        grad.addColorStop(1, '#764ba2');
+        drawProductImage(ctx, p.image, 0, 0, 1080, 1080);
+        const pos = o.labelPosition || 'bottom-right';
+        const opacity = getOpacity(o);
+        const cardW = 440, cardH = 250;
+        const { x, y } = getLabelRect(1080, 1080, cardW, cardH, pos);
+        ctx.save();
+        ctx.shadowColor = 'rgba(231,76,60,0.3)'; ctx.shadowBlur = 25; ctx.shadowOffsetY = 6;
+        ctx.fillStyle = `rgba(231,76,60,${opacity})`;
+        roundRect(ctx, x, y, cardW, cardH, 16);
+        ctx.fill();
+        ctx.restore();
+        // Label
+        ctx.fillStyle = 'rgba(255,255,255,0.8)'; ctx.font = 'bold 14px system-ui';
+        ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+        ctx.fillText(o.badgeText || 'ХЯМДРАЛ', x + 24, y + 24);
+        // Name
+        ctx.fillStyle = '#fff'; ctx.font = 'bold 26px system-ui';
+        wrapText(ctx, p.name, x + 24, y + 52, cardW - 48, 32, 2);
+        // Price
+        ctx.fillStyle = '#fff'; ctx.font = 'bold 44px system-ui';
+        ctx.fillText(formatPrice(p.price), x + 24, y + cardH - 56);
+        if (p.comparePrice && p.comparePrice > p.price) {
+            ctx.font = '600 20px system-ui'; ctx.fillStyle = 'rgba(255,255,255,0.5)';
+            const pw = ctx.measureText(formatPrice(p.price)).width;
+            const old = formatPrice(p.comparePrice);
+            ctx.fillText(old, x + 30 + pw, y + cardH - 42);
+            const tw = ctx.measureText(old).width;
+            ctx.strokeStyle = 'rgba(255,255,255,0.6)'; ctx.lineWidth = 1.5;
+            ctx.beginPath(); ctx.moveTo(x + 30 + pw, y + cardH - 34); ctx.lineTo(x + 30 + pw + tw, y + cardH - 34); ctx.stroke();
+        }
+    }
+};
+
+const overlayBlueTag: AdTemplate = {
+    id: 'overlay_blue', name: 'Цэнхэр', emoji: '🔵',
+    width: 1080, height: 1080, category: 'square', isOverlay: true,
+    description: 'Цэнхэр карт + цагаан текст',
+    render(ctx, p, o) {
+        drawProductImage(ctx, p.image, 0, 0, 1080, 1080);
+        const pos = o.labelPosition || 'bottom-left';
+        const opacity = getOpacity(o);
+        const cardW = 440, cardH = 250;
+        const { x, y } = getLabelRect(1080, 1080, cardW, cardH, pos);
+        ctx.save();
+        ctx.shadowColor = 'rgba(59,130,246,0.3)'; ctx.shadowBlur = 25; ctx.shadowOffsetY = 6;
+        const grad = ctx.createLinearGradient(x, y, x + cardW, y + cardH);
+        grad.addColorStop(0, `rgba(37,99,235,${opacity})`);
+        grad.addColorStop(1, `rgba(59,130,246,${opacity})`);
+        ctx.fillStyle = grad;
+        roundRect(ctx, x, y, cardW, cardH, 16);
+        ctx.fill();
+        ctx.restore();
+        ctx.fillStyle = 'rgba(255,255,255,0.7)'; ctx.font = 'bold 14px system-ui';
+        ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+        ctx.fillText(o.badgeText || 'ШИНЭ БАРАА', x + 24, y + 24);
+        ctx.fillStyle = '#fff'; ctx.font = 'bold 26px system-ui';
+        wrapText(ctx, p.name, x + 24, y + 52, cardW - 48, 32, 2);
+        ctx.fillStyle = '#fff'; ctx.font = 'bold 44px system-ui';
+        ctx.fillText(formatPrice(p.price), x + 24, y + cardH - 56);
+    }
+};
+
+const overlayGreenTag: AdTemplate = {
+    id: 'overlay_green', name: 'Ногоон', emoji: '🟢',
+    width: 1080, height: 1080, category: 'square', isOverlay: true,
+    description: 'Ногоон карт — organic look',
+    render(ctx, p, o) {
+        drawProductImage(ctx, p.image, 0, 0, 1080, 1080);
+        const pos = o.labelPosition || 'bottom-right';
+        const opacity = getOpacity(o);
+        const cardW = 440, cardH = 250;
+        const { x, y } = getLabelRect(1080, 1080, cardW, cardH, pos);
+        ctx.save();
+        ctx.shadowColor = 'rgba(16,185,129,0.3)'; ctx.shadowBlur = 25; ctx.shadowOffsetY = 6;
+        const grad = ctx.createLinearGradient(x, y, x + cardW, y + cardH);
+        grad.addColorStop(0, `rgba(5,150,105,${opacity})`);
+        grad.addColorStop(1, `rgba(16,185,129,${opacity})`);
+        ctx.fillStyle = grad;
+        roundRect(ctx, x, y, cardW, cardH, 16);
+        ctx.fill();
+        ctx.restore();
+        ctx.fillStyle = 'rgba(255,255,255,0.7)'; ctx.font = 'bold 14px system-ui';
+        ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+        ctx.fillText(o.badgeText || 'ХЯМД', x + 24, y + 24);
+        ctx.fillStyle = '#fff'; ctx.font = 'bold 26px system-ui';
+        wrapText(ctx, p.name, x + 24, y + 52, cardW - 48, 32, 2);
+        ctx.fillStyle = '#fff'; ctx.font = 'bold 44px system-ui';
+        ctx.fillText(formatPrice(p.price), x + 24, y + cardH - 56);
+    }
+};
+
+const overlayPurple: AdTemplate = {
+    id: 'overlay_purple', name: 'Нил ягаан', emoji: '💜',
+    width: 1080, height: 1080, category: 'square', isOverlay: true,
+    description: 'Нил ягаан gradient карт',
+    render(ctx, p, o) {
+        drawProductImage(ctx, p.image, 0, 0, 1080, 1080);
+        const pos = o.labelPosition || 'bottom-right';
+        const opacity = getOpacity(o);
+        const cardW = 460, cardH = 260;
+        const { x, y } = getLabelRect(1080, 1080, cardW, cardH, pos);
+        ctx.save();
+        ctx.shadowColor = 'rgba(139,92,246,0.3)'; ctx.shadowBlur = 25; ctx.shadowOffsetY = 6;
+        const grad = ctx.createLinearGradient(x, y, x + cardW, y + cardH);
+        grad.addColorStop(0, `rgba(99,102,241,${opacity})`);
+        grad.addColorStop(1, `rgba(139,92,246,${opacity})`);
+        ctx.fillStyle = grad;
+        roundRect(ctx, x, y, cardW, cardH, 16);
+        ctx.fill();
+        ctx.restore();
+        ctx.fillStyle = 'rgba(255,255,255,0.7)'; ctx.font = 'bold 14px system-ui';
+        ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+        ctx.fillText(o.badgeText || '✨ ОНЦЛОХ', x + 24, y + 24);
+        ctx.fillStyle = '#fff'; ctx.font = 'bold 28px system-ui';
+        wrapText(ctx, p.name, x + 24, y + 52, cardW - 48, 34, 2);
+        if (p.description) {
+            ctx.fillStyle = 'rgba(255,255,255,0.6)'; ctx.font = '400 15px system-ui';
+            wrapText(ctx, p.description, x + 24, y + 130, cardW - 48, 20, 2);
+        }
+        ctx.fillStyle = '#ffd700'; ctx.font = 'bold 44px system-ui';
+        ctx.fillText(formatPrice(p.price), x + 24, y + cardH - 56);
+    }
+};
+
+const overlayOrangeTag: AdTemplate = {
+    id: 'overlay_orange', name: 'Улбар шар', emoji: '🟠',
+    width: 1080, height: 1080, category: 'square', isOverlay: true,
+    description: 'Улбар шар gradient карт',
+    render(ctx, p, o) {
+        drawProductImage(ctx, p.image, 0, 0, 1080, 1080);
+        const pos = o.labelPosition || 'bottom-left';
+        const opacity = getOpacity(o);
+        const cardW = 440, cardH = 240;
+        const { x, y } = getLabelRect(1080, 1080, cardW, cardH, pos);
+        ctx.save();
+        ctx.shadowColor = 'rgba(249,115,22,0.3)'; ctx.shadowBlur = 25; ctx.shadowOffsetY = 6;
+        const grad = ctx.createLinearGradient(x, y, x + cardW, y + cardH);
+        grad.addColorStop(0, `rgba(234,88,12,${opacity})`);
+        grad.addColorStop(1, `rgba(249,115,22,${opacity})`);
+        ctx.fillStyle = grad;
+        roundRect(ctx, x, y, cardW, cardH, 16);
+        ctx.fill();
+        ctx.restore();
+        ctx.fillStyle = 'rgba(255,255,255,0.8)'; ctx.font = 'bold 14px system-ui';
+        ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+        ctx.fillText(o.badgeText || '🔥 SALE', x + 24, y + 24);
+        ctx.fillStyle = '#fff'; ctx.font = 'bold 26px system-ui';
+        wrapText(ctx, p.name, x + 24, y + 52, cardW - 48, 32, 2);
+        ctx.fillStyle = '#fff'; ctx.font = 'bold 42px system-ui';
+        ctx.fillText(formatPrice(p.price), x + 24, y + cardH - 52);
+    }
+};
+
+const overlayRoundBadge: AdTemplate = {
+    id: 'overlay_round', name: 'Дугуй', emoji: '⭕',
+    width: 1080, height: 1080, category: 'square', isOverlay: true,
+    description: 'Дугуй badge — үнэ голд',
+    render(ctx, p, o) {
+        drawProductImage(ctx, p.image, 0, 0, 1080, 1080);
+        const pos = o.labelPosition || 'bottom-right';
+        const opacity = getOpacity(o);
+        const sz = 260;
+        const margin = 50;
+        let cx: number, cy: number;
+        if (pos === 'top-left') { cx = margin + sz / 2; cy = margin + sz / 2; }
+        else if (pos === 'top-right') { cx = 1080 - margin - sz / 2; cy = margin + sz / 2; }
+        else if (pos === 'bottom-left') { cx = margin + sz / 2; cy = 1080 - margin - sz / 2; }
+        else if (pos === 'center') { cx = 540; cy = 540; }
+        else if (pos === 'bottom-center') { cx = 540; cy = 1080 - margin - sz / 2; }
+        else { cx = 1080 - margin - sz / 2; cy = 1080 - margin - sz / 2; }
+        // Circle
+        ctx.save();
+        ctx.shadowColor = 'rgba(231,76,60,0.3)'; ctx.shadowBlur = 30;
+        ctx.fillStyle = `rgba(231,76,60,${opacity})`;
+        ctx.beginPath(); ctx.arc(cx, cy, sz / 2, 0, Math.PI * 2); ctx.fill();
+        ctx.restore();
+        // Price center
+        ctx.fillStyle = '#fff'; ctx.font = 'bold 38px system-ui';
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText(formatPrice(p.price), cx, cy - 8);
+        // Small name
+        ctx.font = 'bold 16px system-ui'; ctx.fillStyle = 'rgba(255,255,255,0.8)';
+        ctx.fillText(p.name.substring(0, 20), cx, cy + 32);
+        if (o.badgeText) {
+            ctx.font = 'bold 14px system-ui';
+            ctx.fillText(o.badgeText, cx, cy - 42);
+        }
+    }
+};
+
+// ── Gradient overlay (landscape) ──
+
+const overlayGradientFB: AdTemplate = {
+    id: 'overlay_gradient_fb', name: 'FB Overlay', emoji: '🖼️',
+    width: 1200, height: 628, category: 'landscape', isOverlay: true,
+    description: 'FB хэмжээ — gradient overlay',
+    render(ctx, p, o) {
+        drawProductImage(ctx, p.image, 0, 0, 1200, 628);
+        const opacity = getOpacity(o);
+        const grad = ctx.createLinearGradient(0, 300, 0, 628);
+        grad.addColorStop(0, 'rgba(0,0,0,0)');
+        grad.addColorStop(0.4, `rgba(0,0,0,${opacity * 0.4})`);
+        grad.addColorStop(1, `rgba(0,0,0,${opacity * 0.85})`);
         ctx.fillStyle = grad;
         ctx.fillRect(0, 0, 1200, 628);
-        ctx.fillStyle = 'rgba(255,255,255,0.04)';
-        ctx.beginPath(); ctx.arc(300, 314, 400, 0, Math.PI * 2); ctx.fill();
-        // Image
-        drawProductImage(ctx, p.image, 620, 40, 540, 548, 20);
-        // Badge
-        drawBadge(ctx, o.badgeText || '✨ ШИНЭ', 60, 60, '#fff', '#764ba2');
-        // Name
-        ctx.fillStyle = '#fff';
-        ctx.font = 'bold 40px system-ui';
-        ctx.textAlign = 'left';
-        ctx.textBaseline = 'top';
-        wrapText(ctx, p.name, 60, 140, 520, 50, 3);
-        // Price
-        ctx.font = 'bold 56px system-ui';
-        ctx.fillStyle = '#ffd700';
-        ctx.fillText(formatPrice(p.price), 60, 400);
-        // Business
+        if (o.badgeText) drawBadge(ctx, o.badgeText, 60, 40, '#e74c3c', '#fff');
+        ctx.fillStyle = '#fff'; ctx.font = 'bold 40px system-ui';
+        ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+        wrapText(ctx, p.name, 60, 440, 700, 48, 2);
+        ctx.font = 'bold 56px system-ui'; ctx.fillStyle = '#ffd700';
+        ctx.fillText(formatPrice(p.price), 60, 545);
         drawWatermark(ctx, o.businessName, 1200, 628);
-        if (o.storefront) {
-            ctx.font = '600 20px system-ui';
-            ctx.fillStyle = 'rgba(255,255,255,0.6)';
-            ctx.textAlign = 'left';
-            ctx.fillText('🛒 ' + o.storefront, 60, 560);
+    }
+};
+
+const overlayCatalog: AdTemplate = {
+    id: 'overlay_catalog', name: 'Каталог', emoji: '📋',
+    width: 1080, height: 1080, category: 'square', isOverlay: true,
+    description: 'Дээд зураг + доод цагаан панел',
+    render(ctx, p, o) {
+        drawProductImage(ctx, p.image, 0, 0, 1080, 760);
+        const opacity = getOpacity(o);
+        if (o.badgeText) drawBadge(ctx, o.badgeText, 30, 30, '#e74c3c', '#fff');
+        ctx.fillStyle = `rgba(255,255,255,${opacity})`;
+        ctx.fillRect(0, 720, 1080, 360);
+        const shadowGrad = ctx.createLinearGradient(0, 700, 0, 740);
+        shadowGrad.addColorStop(0, 'rgba(0,0,0,0)');
+        shadowGrad.addColorStop(1, 'rgba(0,0,0,0.08)');
+        ctx.fillStyle = shadowGrad;
+        ctx.fillRect(0, 700, 1080, 40);
+        ctx.fillStyle = '#6366f1'; ctx.font = 'bold 18px system-ui';
+        ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+        ctx.fillText((o.promoText || 'БҮТЭЭГДЭХҮҮН').toUpperCase(), 50, 750);
+        ctx.fillStyle = '#111'; ctx.font = 'bold 34px system-ui';
+        wrapText(ctx, p.name, 50, 782, 980, 42, 2);
+        if (p.description) {
+            ctx.fillStyle = '#666'; ctx.font = '400 20px system-ui';
+            wrapText(ctx, p.description, 50, 870, 980, 26, 2);
         }
+        ctx.fillStyle = '#e74c3c'; ctx.font = 'bold 52px system-ui'; ctx.textAlign = 'left';
+        ctx.fillText(formatPrice(p.price), 50, 960);
+        ctx.font = 'bold 16px system-ui'; ctx.fillStyle = '#bbb'; ctx.textAlign = 'right';
+        ctx.fillText(o.businessName, 1030, 1040);
+    }
+};
+
+const overlayStory: AdTemplate = {
+    id: 'overlay_story', name: 'Story Overlay', emoji: '📲',
+    width: 1080, height: 1920, category: 'story', isOverlay: true,
+    description: 'Story — бүтэн зураг + gradient доор',
+    render(ctx, p, o) {
+        drawProductImage(ctx, p.image, 0, 0, 1080, 1920);
+        const opacity = getOpacity(o);
+        const grad = ctx.createLinearGradient(0, 1200, 0, 1920);
+        grad.addColorStop(0, 'rgba(0,0,0,0)');
+        grad.addColorStop(0.3, `rgba(0,0,0,${opacity * 0.5})`);
+        grad.addColorStop(1, `rgba(0,0,0,${opacity * 0.9})`);
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 1000, 1080, 920);
+        if (o.badgeText) {
+            ctx.fillStyle = '#e74c3c';
+            roundRect(ctx, 340, 80, 400, 60, 30); ctx.fill();
+            ctx.fillStyle = '#fff'; ctx.font = 'bold 28px system-ui';
+            ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+            ctx.fillText(o.badgeText, 540, 110);
+        }
+        ctx.fillStyle = '#fff'; ctx.font = 'bold 48px system-ui';
+        ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+        wrapText(ctx, p.name, 60, 1500, 960, 58, 3);
+        ctx.font = 'bold 72px system-ui'; ctx.fillStyle = '#ffd700'; ctx.textAlign = 'left';
+        ctx.fillText(formatPrice(p.price), 60, 1720);
+        drawWatermark(ctx, o.businessName, 1080, 1920);
+    }
+};
+
+// ============ CLASSIC TEMPLATES (non-overlay) ============
+
+const templateSale: AdTemplate = {
+    id: 'sale', name: 'Хямдрал', emoji: '🔥',
+    width: 1200, height: 628, category: 'landscape',
+    description: 'Хямдралын зар — том зураг + үнэ',
+    render(ctx, p, o) {
+        const grad = ctx.createLinearGradient(0, 0, 1200, 628);
+        grad.addColorStop(0, '#ff6b35'); grad.addColorStop(1, '#d63031');
+        ctx.fillStyle = grad; ctx.fillRect(0, 0, 1200, 628);
+        ctx.fillStyle = 'rgba(255,255,255,0.06)';
+        ctx.beginPath(); ctx.arc(1100, 100, 200, 0, Math.PI * 2); ctx.fill();
+        drawProductImage(ctx, p.image, 60, 60, 500, 508, 24);
+        const badge = o.badgeText || 'ХЯМДРАЛ';
+        ctx.font = 'bold 28px system-ui';
+        const bm = ctx.measureText(badge);
+        ctx.fillStyle = '#fff'; roundRect(ctx, 600, 60, bm.width + 40, 50, 25); ctx.fill();
+        ctx.fillStyle = '#d63031'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+        ctx.fillText(badge, 620, 85);
+        ctx.fillStyle = '#fff'; ctx.font = 'bold 36px system-ui';
+        ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+        wrapText(ctx, p.name, 600, 140, 560, 44, 3);
+        if (p.comparePrice && p.comparePrice > p.price) {
+            ctx.font = '600 28px system-ui'; ctx.fillStyle = 'rgba(255,255,255,0.5)';
+            const oldPrice = formatPrice(p.comparePrice);
+            ctx.fillText(oldPrice, 600, 340);
+            const tw = ctx.measureText(oldPrice).width;
+            ctx.strokeStyle = 'rgba(255,255,255,0.7)'; ctx.lineWidth = 2;
+            ctx.beginPath(); ctx.moveTo(600, 354); ctx.lineTo(600 + tw, 354); ctx.stroke();
+        }
+        ctx.font = 'bold 64px system-ui'; ctx.fillStyle = '#fff';
+        ctx.fillText(formatPrice(p.price), 600, p.comparePrice ? 380 : 340);
+        drawWatermark(ctx, o.businessName, 1200, 628);
     }
 };
 
 const templateMinimal: AdTemplate = {
     id: 'minimal', name: 'Минимал', emoji: '💎',
     width: 1200, height: 628, category: 'landscape',
-    description: 'Цагаан дэвсгэр — цэвэр, elegant',
+    description: 'Цагаан дэвсгэр — elegant',
     render(ctx, p, o) {
-        ctx.fillStyle = '#fafafa';
-        ctx.fillRect(0, 0, 1200, 628);
-        // Subtle border
-        ctx.strokeStyle = '#e5e7eb';
-        ctx.lineWidth = 2;
-        roundRect(ctx, 20, 20, 1160, 588, 20);
-        ctx.stroke();
-        // Image centered
+        ctx.fillStyle = '#fafafa'; ctx.fillRect(0, 0, 1200, 628);
+        ctx.strokeStyle = '#e5e7eb'; ctx.lineWidth = 2;
+        roundRect(ctx, 20, 20, 1160, 588, 20); ctx.stroke();
         drawProductImage(ctx, p.image, 60, 60, 480, 508, 16);
-        // Name
-        ctx.fillStyle = '#111';
-        ctx.font = 'bold 34px system-ui';
-        ctx.textAlign = 'left';
-        ctx.textBaseline = 'top';
+        ctx.fillStyle = '#111'; ctx.font = 'bold 34px system-ui';
+        ctx.textAlign = 'left'; ctx.textBaseline = 'top';
         wrapText(ctx, p.name, 590, 100, 560, 42, 3);
-        // Thin line
-        ctx.strokeStyle = '#e5e7eb';
-        ctx.lineWidth = 1;
+        ctx.strokeStyle = '#e5e7eb'; ctx.lineWidth = 1;
         ctx.beginPath(); ctx.moveTo(590, 290); ctx.lineTo(1100, 290); ctx.stroke();
-        // Price
-        ctx.font = 'bold 52px system-ui';
-        ctx.fillStyle = '#111';
+        ctx.font = 'bold 52px system-ui'; ctx.fillStyle = '#111';
         ctx.fillText(formatPrice(p.price), 590, 320);
-        // Compare
-        if (p.comparePrice && p.comparePrice > p.price) {
-            ctx.font = '500 24px system-ui';
-            ctx.fillStyle = '#999';
-            const old = formatPrice(p.comparePrice);
-            ctx.fillText(old, 590, 390);
-            const tw = ctx.measureText(old).width;
-            ctx.strokeStyle = '#ccc'; ctx.lineWidth = 1.5;
-            ctx.beginPath(); ctx.moveTo(590, 402); ctx.lineTo(590 + tw, 402); ctx.stroke();
-        }
-        // Business
-        ctx.font = 'bold 16px system-ui';
-        ctx.fillStyle = '#bbb';
-        ctx.textAlign = 'right';
+        ctx.font = 'bold 16px system-ui'; ctx.fillStyle = '#bbb'; ctx.textAlign = 'right';
         ctx.fillText(o.businessName, 1140, 560);
-    }
-};
-
-const templatePastel: AdTemplate = {
-    id: 'pastel', name: 'Pastel', emoji: '🌸',
-    width: 1200, height: 628, category: 'landscape',
-    description: 'Зөөлөн pastel өнгө — rounded frame',
-    render(ctx, p, o) {
-        ctx.fillStyle = '#fce4ec';
-        ctx.fillRect(0, 0, 1200, 628);
-        // Soft blobs
-        ctx.fillStyle = '#f8bbd0';
-        ctx.beginPath(); ctx.arc(200, 500, 180, 0, Math.PI * 2); ctx.fill();
-        ctx.fillStyle = '#e1bee7';
-        ctx.beginPath(); ctx.arc(1000, 150, 200, 0, Math.PI * 2); ctx.fill();
-        // Image with rounded border
-        ctx.fillStyle = '#fff';
-        roundRect(ctx, 50, 50, 500, 528, 28);
-        ctx.fill();
-        drawProductImage(ctx, p.image, 60, 60, 480, 508, 22);
-        // Name
-        ctx.fillStyle = '#4a148c';
-        ctx.font = 'bold 36px system-ui';
-        ctx.textAlign = 'left';
-        ctx.textBaseline = 'top';
-        wrapText(ctx, p.name, 600, 100, 540, 46, 3);
-        // Price card
-        ctx.fillStyle = '#fff';
-        roundRect(ctx, 600, 340, 300, 80, 16);
-        ctx.fill();
-        ctx.font = 'bold 44px system-ui';
-        ctx.fillStyle = '#ad1457';
-        ctx.textAlign = 'center';
-        ctx.fillText(formatPrice(p.price), 750, 395);
-        // Badge
-        if (o.badgeText) drawBadge(ctx, o.badgeText, 600, 460, '#ad1457', '#fff');
-        drawWatermark(ctx, o.businessName, 1200, 628);
     }
 };
 
@@ -310,197 +649,20 @@ const templateDarkPremium: AdTemplate = {
     width: 1200, height: 628, category: 'landscape',
     description: 'Хар дэвсгэр + алтан текст',
     render(ctx, p, o) {
-        ctx.fillStyle = '#0a0a0a';
-        ctx.fillRect(0, 0, 1200, 628);
-        // Gold accents
-        ctx.strokeStyle = '#c9a43e';
-        ctx.lineWidth = 1;
-        roundRect(ctx, 30, 30, 1140, 568, 4);
-        ctx.stroke();
-        // Image
+        ctx.fillStyle = '#0a0a0a'; ctx.fillRect(0, 0, 1200, 628);
+        ctx.strokeStyle = '#c9a43e'; ctx.lineWidth = 1;
+        roundRect(ctx, 30, 30, 1140, 568, 4); ctx.stroke();
         drawProductImage(ctx, p.image, 60, 60, 480, 508, 8);
-        // Name
-        ctx.fillStyle = '#fff';
-        ctx.font = 'bold 36px system-ui';
-        ctx.textAlign = 'left';
-        ctx.textBaseline = 'top';
+        ctx.fillStyle = '#fff'; ctx.font = 'bold 36px system-ui';
+        ctx.textAlign = 'left'; ctx.textBaseline = 'top';
         wrapText(ctx, p.name, 590, 80, 560, 46, 3);
-        // Gold line
         const lg = ctx.createLinearGradient(590, 280, 1100, 280);
-        lg.addColorStop(0, '#c9a43e');
-        lg.addColorStop(1, 'transparent');
-        ctx.strokeStyle = lg;
-        ctx.lineWidth = 1.5;
+        lg.addColorStop(0, '#c9a43e'); lg.addColorStop(1, 'transparent');
+        ctx.strokeStyle = lg; ctx.lineWidth = 1.5;
         ctx.beginPath(); ctx.moveTo(590, 280); ctx.lineTo(1100, 280); ctx.stroke();
-        // Price
-        ctx.font = 'bold 56px system-ui';
-        ctx.fillStyle = '#c9a43e';
+        ctx.font = 'bold 56px system-ui'; ctx.fillStyle = '#c9a43e';
         ctx.fillText(formatPrice(p.price), 590, 310);
-        // Compare
-        if (p.comparePrice && p.comparePrice > p.price) {
-            ctx.font = '500 24px system-ui';
-            ctx.fillStyle = '#666';
-            const old = formatPrice(p.comparePrice);
-            ctx.fillText(old, 590, 385);
-            const tw = ctx.measureText(old).width;
-            ctx.strokeStyle = '#666'; ctx.lineWidth = 1;
-            ctx.beginPath(); ctx.moveTo(590, 397); ctx.lineTo(590 + tw, 397); ctx.stroke();
-        }
-        // Badge
         if (o.badgeText) drawBadge(ctx, o.badgeText, 590, 430, '#c9a43e', '#0a0a0a');
-        drawWatermark(ctx, o.businessName, 1200, 628);
-    }
-};
-
-const templatePriceFocus: AdTemplate = {
-    id: 'price_focus', name: 'Үнэ фокус', emoji: '🎯',
-    width: 1200, height: 628, category: 'landscape',
-    description: 'Үнэ том, бараа жижиг — үнэ дээр фокус',
-    render(ctx, p, o) {
-        const grad = ctx.createLinearGradient(0, 0, 1200, 628);
-        grad.addColorStop(0, '#1a1a2e');
-        grad.addColorStop(1, '#16213e');
-        ctx.fillStyle = grad;
-        ctx.fillRect(0, 0, 1200, 628);
-        // Small product image top-right
-        drawProductImage(ctx, p.image, 820, 60, 320, 320, 20);
-        // BIG PRICE
-        ctx.font = 'bold 120px system-ui';
-        ctx.fillStyle = '#00cec9';
-        ctx.textAlign = 'left';
-        ctx.textBaseline = 'top';
-        ctx.fillText(formatPrice(p.price), 60, 120);
-        // Compare
-        if (p.comparePrice && p.comparePrice > p.price) {
-            ctx.font = '600 40px system-ui';
-            ctx.fillStyle = 'rgba(255,255,255,0.3)';
-            const old = formatPrice(p.comparePrice);
-            ctx.fillText(old, 60, 260);
-            const tw = ctx.measureText(old).width;
-            ctx.strokeStyle = 'rgba(255,255,255,0.4)'; ctx.lineWidth = 2;
-            ctx.beginPath(); ctx.moveTo(60, 285); ctx.lineTo(60 + tw, 285); ctx.stroke();
-        }
-        // Name
-        ctx.fillStyle = '#fff';
-        ctx.font = 'bold 32px system-ui';
-        wrapText(ctx, p.name, 60, 360, 700, 42, 3);
-        // Badge
-        if (o.badgeText) drawBadge(ctx, o.badgeText, 60, 520, '#00cec9', '#1a1a2e');
-        drawWatermark(ctx, o.businessName, 1200, 628);
-    }
-};
-
-const templateFBBlue: AdTemplate = {
-    id: 'fb_blue', name: 'FB Blue', emoji: '🟦',
-    width: 1200, height: 628, category: 'landscape',
-    description: 'Facebook-ийн цэнхэр өнгөтэй',
-    render(ctx, p, o) {
-        const grad = ctx.createLinearGradient(0, 0, 0, 628);
-        grad.addColorStop(0, '#1877f2');
-        grad.addColorStop(1, '#0d47a1');
-        ctx.fillStyle = grad;
-        ctx.fillRect(0, 0, 1200, 628);
-        ctx.fillStyle = 'rgba(255,255,255,0.05)';
-        ctx.beginPath(); ctx.arc(600, 314, 500, 0, Math.PI * 2); ctx.fill();
-        // White card
-        ctx.fillStyle = '#fff';
-        roundRect(ctx, 40, 40, 540, 548, 20);
-        ctx.fill();
-        drawProductImage(ctx, p.image, 50, 50, 520, 400, 16);
-        // Name on card
-        ctx.fillStyle = '#1a1a2e';
-        ctx.font = 'bold 24px system-ui';
-        ctx.textAlign = 'left';
-        ctx.textBaseline = 'top';
-        wrapText(ctx, p.name, 60, 470, 500, 30, 2);
-        // Price on blue side
-        ctx.fillStyle = '#fff';
-        ctx.font = 'bold 56px system-ui';
-        ctx.textAlign = 'left';
-        ctx.fillText(formatPrice(p.price), 630, 150);
-        // Badge
-        if (o.badgeText) drawBadge(ctx, o.badgeText, 630, 250, 'rgba(255,255,255,0.2)', '#fff');
-        // Store link
-        if (o.storefront) {
-            ctx.font = 'bold 22px system-ui';
-            ctx.fillStyle = 'rgba(255,255,255,0.8)';
-            ctx.fillText('🛒 ' + o.storefront, 630, 460);
-        }
-        drawWatermark(ctx, o.businessName, 1200, 628);
-    }
-};
-
-const templateUrgent: AdTemplate = {
-    id: 'urgent', name: 'Яаралтай', emoji: '🔴',
-    width: 1200, height: 628, category: 'landscape',
-    description: 'Улаан "ХЯЗГААРТАЙ" — urgency стиль',
-    render(ctx, p, o) {
-        ctx.fillStyle = '#1a1a1a';
-        ctx.fillRect(0, 0, 1200, 628);
-        // Red stripes
-        ctx.fillStyle = '#e74c3c';
-        ctx.fillRect(0, 0, 1200, 8);
-        ctx.fillRect(0, 620, 1200, 8);
-        // Product
-        drawProductImage(ctx, p.image, 60, 50, 460, 520, 16);
-        // URGENT badge
-        ctx.fillStyle = '#e74c3c';
-        roundRect(ctx, 560, 50, 580, 60, 8);
-        ctx.fill();
-        ctx.fillStyle = '#fff';
-        ctx.font = 'bold 28px system-ui';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText(o.badgeText || '🔴 ТООГООР ХЯЗГААРТАЙ', 850, 80);
-        // Name
-        ctx.fillStyle = '#fff';
-        ctx.font = 'bold 36px system-ui';
-        ctx.textAlign = 'left';
-        ctx.textBaseline = 'top';
-        wrapText(ctx, p.name, 560, 140, 580, 46, 3);
-        // Price
-        ctx.font = 'bold 64px system-ui';
-        ctx.fillStyle = '#e74c3c';
-        ctx.fillText(formatPrice(p.price), 560, 350);
-        // Compare
-        if (p.comparePrice && p.comparePrice > p.price) {
-            ctx.font = '600 28px system-ui';
-            ctx.fillStyle = '#666';
-            const old = formatPrice(p.comparePrice);
-            ctx.fillText(old, 560, 430);
-            const tw = ctx.measureText(old).width;
-            ctx.strokeStyle = '#e74c3c'; ctx.lineWidth = 2;
-            ctx.beginPath(); ctx.moveTo(560, 446); ctx.lineTo(560 + tw, 446); ctx.stroke();
-        }
-        drawWatermark(ctx, o.businessName, 1200, 628);
-    }
-};
-
-const templateNature: AdTemplate = {
-    id: 'nature', name: 'Байгаль', emoji: '🟢',
-    width: 1200, height: 628, category: 'landscape',
-    description: 'Ногоон gradient — organic look',
-    render(ctx, p, o) {
-        const grad = ctx.createLinearGradient(0, 0, 1200, 628);
-        grad.addColorStop(0, '#134e5e');
-        grad.addColorStop(1, '#71b280');
-        ctx.fillStyle = grad;
-        ctx.fillRect(0, 0, 1200, 628);
-        ctx.fillStyle = 'rgba(255,255,255,0.04)';
-        ctx.beginPath(); ctx.arc(900, 314, 380, 0, Math.PI * 2); ctx.fill();
-        // Image
-        drawProductImage(ctx, p.image, 620, 40, 540, 548, 20);
-        // Name
-        ctx.fillStyle = '#fff';
-        ctx.font = 'bold 38px system-ui';
-        ctx.textAlign = 'left';
-        ctx.textBaseline = 'top';
-        wrapText(ctx, p.name, 60, 80, 520, 50, 3);
-        // Price
-        ctx.font = 'bold 56px system-ui';
-        ctx.fillStyle = '#a8e6cf';
-        ctx.fillText(formatPrice(p.price), 60, 360);
-        if (o.badgeText) drawBadge(ctx, o.badgeText, 60, 460, 'rgba(255,255,255,0.2)', '#fff');
         drawWatermark(ctx, o.businessName, 1200, 628);
     }
 };
@@ -508,362 +670,41 @@ const templateNature: AdTemplate = {
 const templateSquare: AdTemplate = {
     id: 'square', name: 'Квадрат', emoji: '⬜',
     width: 1080, height: 1080, category: 'square',
-    description: 'IG квадрат формат — 1080×1080',
+    description: 'IG квадрат — 1080×1080',
     render(ctx, p, o) {
-        ctx.fillStyle = '#fff';
-        ctx.fillRect(0, 0, 1080, 1080);
-        // Image top
+        ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, 1080, 1080);
         drawProductImage(ctx, p.image, 40, 40, 1000, 660, 20);
-        // Name
-        ctx.fillStyle = '#111';
-        ctx.font = 'bold 38px system-ui';
-        ctx.textAlign = 'left';
-        ctx.textBaseline = 'top';
+        ctx.fillStyle = '#111'; ctx.font = 'bold 38px system-ui';
+        ctx.textAlign = 'left'; ctx.textBaseline = 'top';
         wrapText(ctx, p.name, 60, 730, 960, 48, 3);
-        // Price
-        ctx.font = 'bold 60px system-ui';
-        ctx.fillStyle = '#e74c3c';
+        ctx.font = 'bold 60px system-ui'; ctx.fillStyle = '#e74c3c';
         ctx.fillText(formatPrice(p.price), 60, 900);
-        // Compare
-        if (p.comparePrice && p.comparePrice > p.price) {
-            ctx.font = '500 28px system-ui';
-            ctx.fillStyle = '#999';
-            const pw = ctx.measureText(formatPrice(p.price)).width;
-            const old = formatPrice(p.comparePrice);
-            ctx.fillText(old, 60 + pw + 20, 920);
-            const tw = ctx.measureText(old).width;
-            ctx.strokeStyle = '#ccc'; ctx.lineWidth = 1.5;
-            ctx.beginPath(); ctx.moveTo(60 + pw + 20, 935); ctx.lineTo(60 + pw + 20 + tw, 935); ctx.stroke();
-        }
-        // Badge
         if (o.badgeText) drawBadge(ctx, o.badgeText, 60, 1010, '#e74c3c', '#fff');
-        // Business
-        ctx.font = 'bold 16px system-ui';
-        ctx.fillStyle = '#ccc';
-        ctx.textAlign = 'right';
-        ctx.fillText(o.businessName, 1020, 1050);
+        ctx.font = 'bold 16px system-ui'; ctx.fillStyle = '#ccc';
+        ctx.textAlign = 'right'; ctx.fillText(o.businessName, 1020, 1050);
     }
 };
 
 const templateStory: AdTemplate = {
     id: 'story', name: 'Story', emoji: '📱',
     width: 1080, height: 1920, category: 'story',
-    description: 'FB/IG story формат — 1080×1920',
+    description: 'Story формат — 1080×1920',
     render(ctx, p, o) {
         const grad = ctx.createLinearGradient(0, 0, 0, 1920);
-        grad.addColorStop(0, '#0f0c29');
-        grad.addColorStop(0.5, '#302b63');
-        grad.addColorStop(1, '#24243e');
-        ctx.fillStyle = grad;
-        ctx.fillRect(0, 0, 1080, 1920);
-        // Product image — large center
+        grad.addColorStop(0, '#0f0c29'); grad.addColorStop(0.5, '#302b63'); grad.addColorStop(1, '#24243e');
+        ctx.fillStyle = grad; ctx.fillRect(0, 0, 1080, 1920);
         drawProductImage(ctx, p.image, 60, 200, 960, 960, 24);
-        // Badge top
         if (o.badgeText) {
-            ctx.fillStyle = '#ff6b6b';
-            roundRect(ctx, 340, 80, 400, 60, 30);
-            ctx.fill();
-            ctx.fillStyle = '#fff';
-            ctx.font = 'bold 28px system-ui';
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
+            ctx.fillStyle = '#ff6b6b'; roundRect(ctx, 340, 80, 400, 60, 30); ctx.fill();
+            ctx.fillStyle = '#fff'; ctx.font = 'bold 28px system-ui';
+            ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
             ctx.fillText(o.badgeText, 540, 110);
         }
-        // Name
-        ctx.fillStyle = '#fff';
-        ctx.font = 'bold 44px system-ui';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'top';
+        ctx.fillStyle = '#fff'; ctx.font = 'bold 44px system-ui';
+        ctx.textAlign = 'center'; ctx.textBaseline = 'top';
         wrapText(ctx, p.name, 540, 1220, 900, 56, 3);
-        // Price
-        ctx.font = 'bold 80px system-ui';
-        ctx.fillStyle = '#ffd700';
-        ctx.textAlign = 'center';
+        ctx.font = 'bold 80px system-ui'; ctx.fillStyle = '#ffd700'; ctx.textAlign = 'center';
         ctx.fillText(formatPrice(p.price), 540, 1480);
-        // Compare
-        if (p.comparePrice && p.comparePrice > p.price) {
-            ctx.font = '600 36px system-ui';
-            ctx.fillStyle = 'rgba(255,255,255,0.4)';
-            const old = formatPrice(p.comparePrice);
-            ctx.fillText(old, 540, 1580);
-            const tw = ctx.measureText(old).width;
-            ctx.strokeStyle = 'rgba(255,255,255,0.5)'; ctx.lineWidth = 2;
-            ctx.beginPath(); ctx.moveTo(540 - tw / 2, 1600); ctx.lineTo(540 + tw / 2, 1600); ctx.stroke();
-        }
-        // Store
-        if (o.storefront) {
-            ctx.font = 'bold 24px system-ui';
-            ctx.fillStyle = 'rgba(255,255,255,0.6)';
-            ctx.textAlign = 'center';
-            ctx.fillText('🛒 ' + o.storefront, 540, 1780);
-        }
-        drawWatermark(ctx, o.businessName, 1080, 1920);
-    }
-};
-
-const templateGradientWave: AdTemplate = {
-    id: 'gradient_wave', name: 'Градиент', emoji: '🌊',
-    width: 1200, height: 628, category: 'landscape',
-    description: 'Олон өнгийн gradient wave',
-    render(ctx, p, o) {
-        const grad = ctx.createLinearGradient(0, 0, 1200, 628);
-        grad.addColorStop(0, '#fc5c7d');
-        grad.addColorStop(0.5, '#6a82fb');
-        grad.addColorStop(1, '#05dfd7');
-        ctx.fillStyle = grad;
-        ctx.fillRect(0, 0, 1200, 628);
-        // Wave effect
-        ctx.fillStyle = 'rgba(255,255,255,0.06)';
-        ctx.beginPath();
-        ctx.moveTo(0, 400);
-        for (let x = 0; x <= 1200; x += 10) {
-            ctx.lineTo(x, 400 + Math.sin(x * 0.01) * 60);
-        }
-        ctx.lineTo(1200, 628); ctx.lineTo(0, 628); ctx.closePath(); ctx.fill();
-        // White card
-        ctx.fillStyle = 'rgba(255,255,255,0.95)';
-        roundRect(ctx, 580, 40, 580, 548, 24);
-        ctx.fill();
-        // Product image
-        drawProductImage(ctx, p.image, 40, 60, 500, 508, 20);
-        // Name on card
-        ctx.fillStyle = '#1a1a2e';
-        ctx.font = 'bold 30px system-ui';
-        ctx.textAlign = 'left';
-        ctx.textBaseline = 'top';
-        wrapText(ctx, p.name, 610, 70, 520, 40, 3);
-        // Price on card
-        ctx.font = 'bold 50px system-ui';
-        ctx.fillStyle = '#fc5c7d';
-        ctx.fillText(formatPrice(p.price), 610, 360);
-        // Badge
-        if (o.badgeText) drawBadge(ctx, o.badgeText, 610, 440, '#fc5c7d', '#fff');
-        drawWatermark(ctx, o.businessName, 1200, 628);
-    }
-};
-
-// ============ OVERLAY TEMPLATES (product image = full background) ============
-
-const templateProductCard: AdTemplate = {
-    id: 'product_card', name: 'Бүтээгдэхүүн', emoji: '🏷️',
-    width: 1080, height: 1080, category: 'square',
-    description: 'Бараа зураг бүтэн + доод баруунд мэдээллийн карт',
-    render(ctx, p, o) {
-        // Full background image
-        drawProductImage(ctx, p.image, 0, 0, 1080, 1080);
-        // White info card bottom-right
-        const cardW = 480, cardH = 280, cardX = 1080 - cardW - 40, cardY = 1080 - cardH - 40;
-        ctx.save();
-        ctx.shadowColor = 'rgba(0,0,0,0.15)';
-        ctx.shadowBlur = 30;
-        ctx.shadowOffsetX = 0;
-        ctx.shadowOffsetY = 8;
-        ctx.fillStyle = 'rgba(255,255,255,0.96)';
-        roundRect(ctx, cardX, cardY, cardW, cardH, 16);
-        ctx.fill();
-        ctx.restore();
-        // Blue accent line left
-        ctx.fillStyle = '#4285f4';
-        ctx.fillRect(cardX, cardY + 20, 4, cardH - 40);
-        // Small label
-        ctx.fillStyle = '#4285f4';
-        ctx.font = 'bold 16px system-ui';
-        ctx.textAlign = 'left';
-        ctx.textBaseline = 'top';
-        ctx.fillText('БҮТЭЭГДЭХҮҮН', cardX + 24, cardY + 28);
-        // Product name bold
-        ctx.fillStyle = '#111';
-        ctx.font = 'bold 26px system-ui';
-        wrapText(ctx, p.name, cardX + 24, cardY + 56, cardW - 48, 32, 2);
-        // Description small
-        if (p.description) {
-            ctx.fillStyle = '#666';
-            ctx.font = '400 16px system-ui';
-            wrapText(ctx, p.description, cardX + 24, cardY + 130, cardW - 48, 20, 2);
-        }
-        // Price in red bold
-        ctx.fillStyle = '#e74c3c';
-        ctx.font = 'bold 42px system-ui';
-        ctx.textAlign = 'left';
-        ctx.fillText(formatPrice(p.price), cardX + 24, cardY + cardH - 55);
-        // Compare price
-        if (p.comparePrice && p.comparePrice > p.price) {
-            ctx.font = '500 20px system-ui';
-            ctx.fillStyle = '#999';
-            const pw = ctx.measureText(formatPrice(p.price)).width;
-            const old = formatPrice(p.comparePrice);
-            ctx.fillText(old, cardX + 30 + pw, cardY + cardH - 42);
-            const tw = ctx.measureText(old).width;
-            ctx.strokeStyle = '#ccc'; ctx.lineWidth = 1.5;
-            ctx.beginPath(); ctx.moveTo(cardX + 30 + pw, cardY + cardH - 33); ctx.lineTo(cardX + 30 + pw + tw, cardY + cardH - 33); ctx.stroke();
-        }
-        // Business watermark
-        if (o.businessName) {
-            ctx.font = 'bold 14px system-ui';
-            ctx.fillStyle = 'rgba(255,255,255,0.7)';
-            ctx.textAlign = 'left';
-            ctx.textBaseline = 'top';
-            ctx.fillText(o.businessName, 20, 20);
-        }
-        // Badge top-left
-        if (o.badgeText) {
-            drawBadge(ctx, o.badgeText, 20, 50, '#e74c3c', '#fff');
-        }
-    }
-};
-
-const templateOverlay: AdTemplate = {
-    id: 'overlay', name: 'Зураг Overlay', emoji: '🖼️',
-    width: 1200, height: 628, category: 'landscape',
-    description: 'Бараа зураг бүтэн дэвсгэр + gradient overlay',
-    render(ctx, p, o) {
-        // Full background image
-        drawProductImage(ctx, p.image, 0, 0, 1200, 628);
-        // Dark gradient overlay bottom
-        const grad = ctx.createLinearGradient(0, 300, 0, 628);
-        grad.addColorStop(0, 'rgba(0,0,0,0)');
-        grad.addColorStop(0.4, 'rgba(0,0,0,0.4)');
-        grad.addColorStop(1, 'rgba(0,0,0,0.85)');
-        ctx.fillStyle = grad;
-        ctx.fillRect(0, 0, 1200, 628);
-        // Badge
-        if (o.badgeText) drawBadge(ctx, o.badgeText, 60, 40, '#e74c3c', '#fff');
-        // Product name
-        ctx.fillStyle = '#fff';
-        ctx.font = 'bold 40px system-ui';
-        ctx.textAlign = 'left';
-        ctx.textBaseline = 'top';
-        wrapText(ctx, p.name, 60, 440, 700, 48, 2);
-        // Price
-        ctx.font = 'bold 56px system-ui';
-        ctx.fillStyle = '#ffd700';
-        ctx.fillText(formatPrice(p.price), 60, 545);
-        // Compare price
-        if (p.comparePrice && p.comparePrice > p.price) {
-            ctx.font = '600 26px system-ui';
-            ctx.fillStyle = 'rgba(255,255,255,0.5)';
-            const pw = ctx.measureText(formatPrice(p.price)).width;
-            const old = formatPrice(p.comparePrice);
-            ctx.fillText(old, 70 + pw, 565);
-            const tw = ctx.measureText(old).width;
-            ctx.strokeStyle = 'rgba(255,255,255,0.6)'; ctx.lineWidth = 1.5;
-            ctx.beginPath(); ctx.moveTo(70 + pw, 580); ctx.lineTo(70 + pw + tw, 580); ctx.stroke();
-        }
-        // Business name
-        ctx.font = 'bold 20px system-ui';
-        ctx.fillStyle = 'rgba(255,255,255,0.6)';
-        ctx.textAlign = 'right';
-        ctx.fillText(o.businessName, 1140, 580);
-        // Storefront
-        if (o.storefront) {
-            ctx.font = '600 18px system-ui';
-            ctx.fillStyle = 'rgba(255,255,255,0.5)';
-            ctx.textAlign = 'right';
-            ctx.fillText('🛒 ' + o.storefront, 1140, 555);
-        }
-    }
-};
-
-const templateCatalog: AdTemplate = {
-    id: 'catalog', name: 'Каталог', emoji: '📋',
-    width: 1080, height: 1080, category: 'square',
-    description: 'Бараа зураг бүтэн + доод бүтэн мэдээлэл',
-    render(ctx, p, o) {
-        // Full background image — top 70%
-        drawProductImage(ctx, p.image, 0, 0, 1080, 760);
-        // Badge top
-        if (o.badgeText) drawBadge(ctx, o.badgeText, 30, 30, '#e74c3c', '#fff');
-        // White bottom panel
-        ctx.fillStyle = '#fff';
-        ctx.fillRect(0, 720, 1080, 360);
-        // Subtle top shadow
-        const shadowGrad = ctx.createLinearGradient(0, 700, 0, 740);
-        shadowGrad.addColorStop(0, 'rgba(0,0,0,0)');
-        shadowGrad.addColorStop(1, 'rgba(0,0,0,0.08)');
-        ctx.fillStyle = shadowGrad;
-        ctx.fillRect(0, 700, 1080, 40);
-        // Category label
-        ctx.fillStyle = '#6366f1';
-        ctx.font = 'bold 18px system-ui';
-        ctx.textAlign = 'left';
-        ctx.textBaseline = 'top';
-        ctx.fillText((o.promoText || 'БҮТЭЭГДЭХҮҮН').toUpperCase(), 50, 750);
-        // Product name
-        ctx.fillStyle = '#111';
-        ctx.font = 'bold 34px system-ui';
-        wrapText(ctx, p.name, 50, 782, 980, 42, 2);
-        // Description
-        if (p.description) {
-            ctx.fillStyle = '#666';
-            ctx.font = '400 20px system-ui';
-            wrapText(ctx, p.description, 50, 870, 980, 26, 2);
-        }
-        // Price
-        ctx.fillStyle = '#e74c3c';
-        ctx.font = 'bold 52px system-ui';
-        ctx.textAlign = 'left';
-        ctx.fillText(formatPrice(p.price), 50, 960);
-        // Compare
-        if (p.comparePrice && p.comparePrice > p.price) {
-            ctx.font = '500 24px system-ui';
-            ctx.fillStyle = '#999';
-            const pw = ctx.measureText(formatPrice(p.price)).width;
-            const old = formatPrice(p.comparePrice);
-            ctx.fillText(old, 60 + pw, 980);
-            const tw = ctx.measureText(old).width;
-            ctx.strokeStyle = '#ccc'; ctx.lineWidth = 1.5;
-            ctx.beginPath(); ctx.moveTo(60 + pw, 994); ctx.lineTo(60 + pw + tw, 994); ctx.stroke();
-        }
-        // Business
-        ctx.font = 'bold 16px system-ui';
-        ctx.fillStyle = '#bbb';
-        ctx.textAlign = 'right';
-        ctx.fillText(o.businessName, 1030, 1040);
-    }
-};
-
-const templateStoryOverlay: AdTemplate = {
-    id: 'story_overlay', name: 'Story Overlay', emoji: '📲',
-    width: 1080, height: 1920, category: 'story',
-    description: 'Story — бараа зураг бүтэн + доор мэдээлэл',
-    render(ctx, p, o) {
-        // Full background image
-        drawProductImage(ctx, p.image, 0, 0, 1080, 1920);
-        // Gradient overlay bottom
-        const grad = ctx.createLinearGradient(0, 1200, 0, 1920);
-        grad.addColorStop(0, 'rgba(0,0,0,0)');
-        grad.addColorStop(0.3, 'rgba(0,0,0,0.5)');
-        grad.addColorStop(1, 'rgba(0,0,0,0.9)');
-        ctx.fillStyle = grad;
-        ctx.fillRect(0, 1000, 1080, 920);
-        // Badge top
-        if (o.badgeText) {
-            ctx.fillStyle = '#e74c3c';
-            roundRect(ctx, 340, 80, 400, 60, 30);
-            ctx.fill();
-            ctx.fillStyle = '#fff';
-            ctx.font = 'bold 28px system-ui';
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.fillText(o.badgeText, 540, 110);
-        }
-        // Name
-        ctx.fillStyle = '#fff';
-        ctx.font = 'bold 48px system-ui';
-        ctx.textAlign = 'left';
-        ctx.textBaseline = 'top';
-        wrapText(ctx, p.name, 60, 1500, 960, 58, 3);
-        // Price
-        ctx.font = 'bold 72px system-ui';
-        ctx.fillStyle = '#ffd700';
-        ctx.textAlign = 'left';
-        ctx.fillText(formatPrice(p.price), 60, 1720);
-        // Store
-        if (o.storefront) {
-            ctx.font = 'bold 22px system-ui';
-            ctx.fillStyle = 'rgba(255,255,255,0.6)';
-            ctx.fillText('🛒 ' + o.storefront, 60, 1860);
-        }
         drawWatermark(ctx, o.businessName, 1080, 1920);
     }
 };
@@ -871,22 +712,26 @@ const templateStoryOverlay: AdTemplate = {
 // ============ EXPORT ALL ============
 
 export const AD_TEMPLATES: AdTemplate[] = [
-    templateProductCard,
-    templateOverlay,
-    templateCatalog,
+    // Overlay label templates (primary — best for ads)
+    overlayWhiteCard,
+    overlayDarkCard,
+    overlayGlassCard,
+    overlayMinimalStrip,
+    overlayRedTag,
+    overlayBlueTag,
+    overlayGreenTag,
+    overlayPurple,
+    overlayOrangeTag,
+    overlayRoundBadge,
+    overlayCatalog,
+    overlayGradientFB,
+    overlayStory,
+    // Classic templates
     templateSale,
-    templateNewArrival,
     templateMinimal,
-    templatePastel,
     templateDarkPremium,
-    templatePriceFocus,
-    templateFBBlue,
-    templateUrgent,
-    templateNature,
     templateSquare,
     templateStory,
-    templateStoryOverlay,
-    templateGradientWave,
 ];
 
 // ============ RENDER UTILITY ============
@@ -896,7 +741,6 @@ export const AD_TEMPLATES: AdTemplate[] = [
  * Falls back to direct loading if fetch fails.
  */
 export async function loadImage(src: string): Promise<HTMLImageElement> {
-    // Try fetch→blob first (bypasses CORS canvas taint)
     try {
         const response = await fetch(src, { mode: 'cors' });
         if (response.ok) {
@@ -904,20 +748,13 @@ export async function loadImage(src: string): Promise<HTMLImageElement> {
             const url = URL.createObjectURL(blob);
             return new Promise<HTMLImageElement>((resolve, reject) => {
                 const img = new Image();
-                img.onload = () => {
-                    URL.revokeObjectURL(url);
-                    resolve(img);
-                };
-                img.onerror = () => {
-                    URL.revokeObjectURL(url);
-                    reject(new Error('Blob image load failed'));
-                };
+                img.onload = () => { URL.revokeObjectURL(url); resolve(img); };
+                img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('Blob image load failed')); };
                 img.src = url;
             });
         }
-    } catch { /* fall through to direct load */ }
+    } catch { /* fall through */ }
 
-    // Fallback: direct load with crossOrigin
     return new Promise<HTMLImageElement>((resolve, reject) => {
         const img = new Image();
         img.crossOrigin = 'anonymous';

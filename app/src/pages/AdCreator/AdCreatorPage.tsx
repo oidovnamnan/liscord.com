@@ -9,7 +9,7 @@ import { db } from '../../services/firebase';
 import { useBusinessStore } from '../../store';
 import { globalSettingsService } from '../../services/adminService';
 import { AD_TEMPLATES, loadImage, renderAdImage } from './adTemplates';
-import type { AdTemplate, AdProduct, AdOptions } from './adTemplates';
+import type { AdTemplate, AdProduct, AdOptions, LabelPosition } from './adTemplates';
 import { generateProductAdCopy, generateBulkAdCopy } from './adAiService';
 import toast from 'react-hot-toast';
 import './AdCreatorPage.css';
@@ -65,6 +65,8 @@ export function AdCreatorPage() {
     // Step 2: Options
     const [badgeText, setBadgeText] = useState('');
     const [promoText, setPromoText] = useState('');
+    const [labelPosition, setLabelPosition] = useState<LabelPosition>('bottom-right');
+    const [labelOpacity, setLabelOpacity] = useState(95);
 
     // Step 3: Generated
     const [generated, setGenerated] = useState<GeneratedAd[]>([]);
@@ -175,11 +177,13 @@ export function AdCreatorPage() {
                 badgeText: badgeText || undefined,
                 promoText: promoText || undefined,
                 storefront: business?.slug ? `liscord.com/${business.slug}` : undefined,
+                labelPosition,
+                labelOpacity,
             };
             const dataUrl = await renderAdImage(selectedTemplate, adProduct, options);
             setTemplatePreview(dataUrl);
         })();
-    }, [step, selectedTemplate, selectedProducts, badgeText, promoText, business]);
+    }, [step, selectedTemplate, selectedProducts, badgeText, promoText, business, labelPosition, labelOpacity]);
 
     // Generate all
     const handleGenerate = useCallback(async () => {
@@ -207,6 +211,8 @@ export function AdCreatorPage() {
                 badgeText: badgeText || undefined,
                 promoText: promoText || undefined,
                 storefront: business?.slug ? `liscord.com/${business.slug}` : undefined,
+                labelPosition,
+                labelOpacity,
             };
             const dataUrl = await renderAdImage(selectedTemplate, adProduct, options);
             results.push({ productId: p.id, productName: p.name, dataUrl, template: selectedTemplate });
@@ -418,28 +424,81 @@ export function AdCreatorPage() {
                                 <span className="adc-count-badge">{selectedIds.size} бараа</span>
                             </div>
 
-                            {/* Template categories */}
-                            {(['landscape', 'square', 'story'] as const).map(cat => {
-                                const templates = AD_TEMPLATES.filter(t => t.category === cat);
-                                const catLabel = cat === 'landscape' ? '🖼️ Хэвтээ (FB)' : cat === 'square' ? '⬜ Квадрат (IG)' : '📱 Story';
+                            {/* Template categories — grouped by overlay vs classic, then by size */}
+                            {(() => {
+                                const overlayTemplates = AD_TEMPLATES.filter(t => t.isOverlay);
+                                const classicTemplates = AD_TEMPLATES.filter(t => !t.isOverlay);
                                 return (
-                                    <div key={cat} className="adc-template-section">
-                                        <div className="adc-template-section-title">{catLabel}</div>
-                                        <div className="adc-template-row">
-                                            {templates.map(t => (
-                                                <button
-                                                    key={t.id}
-                                                    className={`adc-template-chip ${selectedTemplate.id === t.id ? 'active' : ''}`}
-                                                    onClick={() => setSelectedTemplate(t)}
-                                                >
-                                                    <span className="adc-template-emoji">{t.emoji}</span>
-                                                    <span className="adc-template-name">{t.name}</span>
-                                                </button>
-                                            ))}
+                                    <>
+                                        <div className="adc-template-section">
+                                            <div className="adc-template-section-title">🏷️ Шошгоны загвар (Overlay)</div>
+                                            <div className="adc-template-row">
+                                                {overlayTemplates.map(t => (
+                                                    <button
+                                                        key={t.id}
+                                                        className={`adc-template-chip ${selectedTemplate.id === t.id ? 'active' : ''}`}
+                                                        onClick={() => setSelectedTemplate(t)}
+                                                    >
+                                                        <span className="adc-template-emoji">{t.emoji}</span>
+                                                        <span className="adc-template-name">{t.name}</span>
+                                                    </button>
+                                                ))}
+                                            </div>
                                         </div>
-                                    </div>
+                                        <div className="adc-template-section">
+                                            <div className="adc-template-section-title">📐 Классик загвар</div>
+                                            <div className="adc-template-row">
+                                                {classicTemplates.map(t => (
+                                                    <button
+                                                        key={t.id}
+                                                        className={`adc-template-chip ${selectedTemplate.id === t.id ? 'active' : ''}`}
+                                                        onClick={() => setSelectedTemplate(t)}
+                                                    >
+                                                        <span className="adc-template-emoji">{t.emoji}</span>
+                                                        <span className="adc-template-name">{t.name}</span>
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    </>
                                 );
-                            })}
+                            })()}
+
+                            {/* Overlay label controls — only show for overlay templates */}
+                            {selectedTemplate.isOverlay && (
+                                <div className="adc-settings-section">
+                                    <div className="adc-section-title">📍 Шошгоны байршил & тунгалагшилт</div>
+                                    <div className="adc-position-grid">
+                                        {([
+                                            { value: 'top-left' as const, label: '↖ Зүүн дээд' },
+                                            { value: 'top-right' as const, label: '↗ Баруун дээд' },
+                                            { value: 'center' as const, label: '⊙ Голд' },
+                                            { value: 'bottom-center' as const, label: '↓ Доод гол' },
+                                            { value: 'bottom-left' as const, label: '↙ Зүүн доод' },
+                                            { value: 'bottom-right' as const, label: '↘ Баруун доод' },
+                                        ]).map(pos => (
+                                            <button
+                                                key={pos.value}
+                                                className={`adc-pos-chip ${labelPosition === pos.value ? 'active' : ''}`}
+                                                onClick={() => setLabelPosition(pos.value)}
+                                            >
+                                                {pos.label}
+                                            </button>
+                                        ))}
+                                    </div>
+                                    <div className="adc-opacity-row">
+                                        <label className="adc-label">Тунгалагшилт: {labelOpacity}%</label>
+                                        <input
+                                            type="range"
+                                            min={20}
+                                            max={100}
+                                            value={labelOpacity}
+                                            onChange={e => setLabelOpacity(Number(e.target.value))}
+                                            className="adc-opacity-slider"
+                                        />
+                                    </div>
+                                </div>
+                            )}
 
                             {/* Optional settings */}
                             <div className="adc-settings-section">
