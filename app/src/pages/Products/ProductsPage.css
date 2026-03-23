@@ -253,10 +253,11 @@
 }
 
 .products-view-toggle .btn {
-    border-radius: 8px;
-    padding: 6px;
-    height: 30px;
-    width: 30px;
+    border-radius: 8px !important;
+    padding: 6px !important;
+    height: 30px !important;
+    width: 30px !important;
+    min-height: unset !important;
     transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
     color: var(--text-muted);
 }
