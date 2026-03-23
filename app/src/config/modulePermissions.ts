@@ -615,6 +615,14 @@ export const MODULE_PERMISSIONS: Record<string, ModulePermission[]> = {
         { id: 'campaigns.view_analytics', label: 'Статистик харах' },
     ],
 
+    'ad-creator': [
+        { id: 'adcreator.view', label: 'Зар зураг модуль харах' },
+        { id: 'adcreator.create', label: 'Зар зураг үүсгэх' },
+        { id: 'adcreator.use_ai', label: 'AI текст үүсгэх' },
+        { id: 'adcreator.download', label: 'Зураг татах' },
+        { id: 'adcreator.configure', label: 'Тохиргоо өөрчлөх' },
+    ],
+
     'loyalty': [
         { id: 'loyalty.view', label: 'Лоялти харах' },
         { id: 'loyalty.manage_programs', label: 'Хөтөлбөр удирдах' },
