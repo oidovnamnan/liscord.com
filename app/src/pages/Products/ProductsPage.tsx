@@ -58,6 +58,7 @@ export function ProductsPage() {
     const [geminiApiKey, setGeminiApiKey] = useState('');
     const [allCargoTypes, setAllCargoTypes] = useState<CargoType[]>([]);
     const [searchParams, setSearchParams] = useSearchParams();
+    const [sortBy, setSortBy] = useState<'newest' | 'oldest' | 'expensive' | 'cheapest'>('newest');
 
     useEffect(() => {
         if (!business?.id) return;
@@ -159,6 +160,28 @@ export function ProductsPage() {
         const matchCategory = categoryFilter === 'all' || p.categoryId === categoryFilter || (selectedCat && p.categoryName === selectedCat.name);
 
         return matchSearch && matchCategory;
+    });
+
+    // Apply sorting
+    const sorted = [...filtered].sort((a, b) => {
+        switch (sortBy) {
+            case 'newest': {
+                const tA = a.createdAt instanceof Date ? a.createdAt.getTime() : 0;
+                const tB = b.createdAt instanceof Date ? b.createdAt.getTime() : 0;
+                return tB - tA;
+            }
+            case 'oldest': {
+                const tA = a.createdAt instanceof Date ? a.createdAt.getTime() : 0;
+                const tB = b.createdAt instanceof Date ? b.createdAt.getTime() : 0;
+                return tA - tB;
+            }
+            case 'expensive':
+                return (b.pricing?.salePrice || 0) - (a.pricing?.salePrice || 0);
+            case 'cheapest':
+                return (a.pricing?.salePrice || 0) - (b.pricing?.salePrice || 0);
+            default:
+                return 0;
+        }
     });
 
     // Flash deal product lookup
@@ -268,10 +291,10 @@ export function ProductsPage() {
     };
 
     const toggleSelectAll = () => {
-        if (selectedIds.length === filtered.length) {
+        if (selectedIds.length === sorted.length) {
             setSelectedIds([]);
         } else {
-            setSelectedIds(filtered.map(p => p.id));
+            setSelectedIds(sorted.map(p => p.id));
         }
     };
 
@@ -392,6 +415,17 @@ export function ProductsPage() {
                                     ))}
                                 </select>
                             )}
+                            <select
+                                className="input"
+                                value={sortBy}
+                                onChange={(e) => setSortBy(e.target.value as any)}
+                                style={{ minWidth: 130, height: 42, borderRadius: 12, fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer', padding: '0 12px', background: 'var(--surface-1)', border: '1.5px solid var(--border-primary)', color: 'var(--text-primary)' }}
+                            >
+                                <option value="newest">Сүүлд нэмсэн</option>
+                                <option value="oldest">Эхэнд нэмсэн</option>
+                                <option value="expensive">Үнэтэй нь</option>
+                                <option value="cheapest">Хямд нь</option>
+                            </select>
                             <div className="products-view-toggle">
                                 <button className={`btn btn-ghost ${viewMode === 'grid' ? 'active' : ''}`} onClick={() => setViewMode('grid')}><Grid3X3 size={18} /></button>
                                 <button className={`btn btn-ghost ${viewMode === 'list' ? 'active' : ''}`} onClick={() => setViewMode('list')}><List size={18} /></button>
@@ -408,7 +442,7 @@ export function ProductsPage() {
                     <>
 
                         {/* Grid / List */}
-                        {filtered.length === 0 ? (
+                        {sorted.length === 0 ? (
                             <div className="empty-state animate-fade-in">
                                 <div className="empty-state-icon">📦</div>
                                 <h3>{products.length === 0 ? 'Одоогоор бараа үүсгээгүй байна' : 'Бараа олдсонгүй'}</h3>
@@ -425,11 +459,11 @@ export function ProductsPage() {
                                     <div className="bulk-selection-bar animate-slide-up">
                                         <div className="bulk-info">
                                             <div
-                                                className={`selection-checkbox ${selectedIds.length === filtered.length ? 'checked' : ''}`}
+                                                className={`selection-checkbox ${selectedIds.length === sorted.length ? 'checked' : ''}`}
                                                 onClick={toggleSelectAll}
                                                 style={{ cursor: 'pointer', width: 24, height: 24 }}
                                             >
-                                                {selectedIds.length === filtered.length && <Check size={12} />}
+                                                {selectedIds.length === sorted.length && <Check size={12} />}
                                             </div>
                                             <div className="bulk-count">{selectedIds.length} сонгосон</div>
                                             <button className="btn btn-ghost btn-sm" onClick={() => setSelectedIds([])} disabled={isBulkUpdating}>Цэвэрлэх</button>
@@ -459,7 +493,7 @@ export function ProductsPage() {
                                 )}
 
                                 <div className={`${viewMode === 'grid' ? 'products-grid' : 'products-list'} ${selectedIds.length > 0 ? 'selection-mode' : ''}`}>
-                                    {filtered.map(p => (
+                                    {sorted.map(p => (
                                         <div
                                             key={p.id}
                                             className={`product-card card-clickable ${(p.stock?.quantity || 0) === 0 ? 'product-out' : ''} ${selectedIds.includes(p.id) ? 'selected' : ''}`}
