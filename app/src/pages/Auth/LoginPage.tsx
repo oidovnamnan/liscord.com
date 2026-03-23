@@ -234,11 +234,11 @@ export function LoginPage() {
                         <img src={settings.systemLogo} alt="System Logo" style={{ height: 48, objectFit: 'contain' }} />
                     ) : (
                         <>
-                            <div className="landing-logo" style={{ width: 48, height: 48, fontSize: '1.4rem' }}>L</div>
+                            <div className="auth-logo-icon">L</div>
                             <h1 className="auth-title">Liscord</h1>
                         </>
                     )}
-                    <p className="auth-subtitle">Бизнесээ хялбар удирдаарай</p>
+                    <p className="auth-subtitle">Бизнесээ дараагийн түвшинд аваачина</p>
                 </div>
 
                 {/* SMS / QR tabs */}
