@@ -199,7 +199,7 @@
 /* ── Stats Grid: Frosted stat cards ── */
 .qd-stats-grid {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(2, 1fr);
     gap: 12px;
     margin-bottom: 22px;
 }
@@ -585,12 +585,7 @@
     }
 
     .qd-stats-grid {
-        grid-template-columns: 1fr 1fr;
         gap: 8px;
-    }
-
-    .qd-stat:last-child {
-        grid-column: span 2;
     }
 
     .qd-footer {

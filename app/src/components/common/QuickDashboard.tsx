@@ -2,9 +2,9 @@ import { useState, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import {
     X, Activity, DollarSign, ShoppingCart, Users, RefreshCw,
-    Loader2, Clock, TrendingUp
+    Loader2, Clock, TrendingUp, Eye
 } from 'lucide-react';
-import { collection, query, where, getDocs, Timestamp } from 'firebase/firestore';
+import { collection, query, where, getDocs, getDoc, doc as fdoc, Timestamp } from 'firebase/firestore';
 import { db } from '../../services/firebase';
 import { useBusinessStore } from '../../store';
 import './QuickDashboard.css';
@@ -26,6 +26,7 @@ interface DashStats {
     todayRevenue: number;
     todayOrders: number;
     todayPaidAmount: number;
+    todayVisitors: number;
     onlineUsers: OnlineUser[];
 }
 
@@ -137,6 +138,12 @@ export function QuickDashboard({ isOpen, onClose }: QuickDashboardProps) {
                 todayPaidAmount += data.financials?.paidAmount || 0;
             });
 
+            // 1b. Today's total visitors from daily_stats
+            const todayStr = now.toISOString().slice(0, 10);
+            const dailyRef = fdoc(db, 'businesses', bizId, 'daily_stats', todayStr);
+            const dailySnap = await getDoc(dailyRef);
+            const todayVisitors = dailySnap.exists() ? (dailySnap.data().visitorCount || 0) : 0;
+
             // 2. Online employees (active within last 2 minutes)
             const twoMinAgo = Timestamp.fromDate(new Date(Date.now() - 2 * 60_000));
             const empRef = collection(db, 'businesses', bizId, 'employees');
@@ -179,7 +186,7 @@ export function QuickDashboard({ isOpen, onClose }: QuickDashboardProps) {
 
             const onlineUsers = [...onlineEmployees, ...onlineVisitors];
 
-            setStats({ todayRevenue, todayOrders, todayPaidAmount, onlineUsers });
+            setStats({ todayRevenue, todayOrders, todayPaidAmount, todayVisitors, onlineUsers });
             setLastUpdated(new Date());
         } catch (err) {
             console.error('[QuickDashboard] Error:', err);
@@ -253,6 +260,14 @@ export function QuickDashboard({ isOpen, onClose }: QuickDashboardProps) {
                                     </div>
                                     <div className="qd-stat-value">{formatMoney(stats.todayPaidAmount)}</div>
                                     <div className="qd-stat-label">Төлсөн дүн</div>
+                                </div>
+
+                                <div className="qd-stat qd-stat--emerald">
+                                    <div className="qd-stat-icon">
+                                        <Eye size={16} />
+                                    </div>
+                                    <div className="qd-stat-value">{stats.todayVisitors}</div>
+                                    <div className="qd-stat-label">Өнөөдрийн зочин</div>
                                 </div>
                             </div>
 

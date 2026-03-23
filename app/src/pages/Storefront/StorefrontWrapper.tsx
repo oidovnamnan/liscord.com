@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams, Outlet, Navigate } from 'react-router-dom';
 import { businessService } from '../../services/db';
 import { db } from '../../services/firebase';
-import { doc, getDoc, setDoc, deleteDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, getDoc, setDoc, deleteDoc, serverTimestamp, increment } from 'firebase/firestore';
 import type { Business } from '../../types';
 import { CartDrawer } from '../../components/Storefront/CartDrawer';
 import { StorefrontFooter } from '../../components/Storefront/StorefrontFooter';
@@ -127,9 +127,17 @@ export function StorefrontWrapper() {
         if (!business?.id) return;
 
         let visitorId = sessionStorage.getItem('liscord_visitor_id');
+        const isNewSession = !visitorId;
         if (!visitorId) {
             visitorId = `v_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
             sessionStorage.setItem('liscord_visitor_id', visitorId);
+        }
+
+        // Increment daily visitor counter for new sessions
+        if (isNewSession) {
+            const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+            const dailyRef = doc(db, 'businesses', business.id, 'daily_stats', today);
+            setDoc(dailyRef, { visitorCount: increment(1) }, { merge: true }).catch(() => {});
         }
 
         const visitorRef = doc(db, 'businesses', business.id, 'visitors', visitorId);
