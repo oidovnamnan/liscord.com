@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import {
     X, Activity, DollarSign, ShoppingCart, Users, RefreshCw,
-    Loader2, Clock, TrendingUp, Eye
+    Loader2, Clock, Eye
 } from 'lucide-react';
 import { collection, query, where, getDocs, getDoc, doc as fdoc, Timestamp } from 'firebase/firestore';
 import { db } from '../../services/firebase';
@@ -25,7 +25,6 @@ interface OnlineUser {
 interface DashStats {
     todayRevenue: number;
     todayOrders: number;
-    todayPaidAmount: number;
     todayVisitors: number;
     onlineUsers: OnlineUser[];
 }
@@ -120,22 +119,21 @@ export function QuickDashboard({ isOpen, onClose }: QuickDashboardProps) {
             const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
             const todayTimestamp = Timestamp.fromDate(todayStart);
 
-            // 1. Today's orders
+            // 1. Today's PAID orders only
             const ordersRef = collection(db, 'businesses', bizId, 'orders');
             const ordersSnap = await getDocs(query(
                 ordersRef,
                 where('isDeleted', '==', false),
+                where('paymentStatus', '==', 'paid'),
                 where('createdAt', '>=', todayTimestamp)
             ));
 
             let todayRevenue = 0;
-            let todayPaidAmount = 0;
             const todayOrders = ordersSnap.size;
 
             ordersSnap.docs.forEach(doc => {
                 const data = doc.data();
                 todayRevenue += data.financials?.totalAmount || 0;
-                todayPaidAmount += data.financials?.paidAmount || 0;
             });
 
             // 1b. Today's total visitors from daily_stats
@@ -186,7 +184,7 @@ export function QuickDashboard({ isOpen, onClose }: QuickDashboardProps) {
 
             const onlineUsers = [...onlineEmployees, ...onlineVisitors];
 
-            setStats({ todayRevenue, todayOrders, todayPaidAmount, todayVisitors, onlineUsers });
+            setStats({ todayRevenue, todayOrders, todayVisitors, onlineUsers });
             setLastUpdated(new Date());
         } catch (err) {
             console.error('[QuickDashboard] Error:', err);
