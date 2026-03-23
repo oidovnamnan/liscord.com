@@ -1489,6 +1489,9 @@
         0 10px 30px -10px rgba(239, 68, 68, 0.06);
     overflow: hidden;
     animation: premiumModalIn 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+    display: flex;
+    flex-direction: column;
+    max-height: 85vh;
 }
 
 @keyframes premiumModalIn {
@@ -1508,6 +1511,7 @@
     border-bottom: none;
     background: linear-gradient(180deg, #fef7f5 0%, #fffbfa 100%);
     position: relative;
+    flex-shrink: 0;
 }
 
 .premium-product-modal .modal-header::after {
@@ -1552,6 +1556,7 @@
     background: transparent;
     overflow-x: auto;
     scrollbar-width: none;
+    flex-shrink: 0;
 }
 
 .premium-product-modal .modal-tabs::-webkit-scrollbar {
@@ -1608,6 +1613,9 @@
 .premium-product-modal .modal-body {
     padding: 20px 28px;
     background: #fffbfa;
+    overflow-y: auto;
+    flex: 1;
+    min-height: 0;
 }
 
 /* ── Section Cards ── */
@@ -1781,6 +1789,7 @@
     background: linear-gradient(180deg, #fffbfa 0%, #fef7f5 100%);
     position: relative;
     gap: 10px;
+    flex-shrink: 0;
 }
 
 .premium-product-modal .modal-footer::before {
