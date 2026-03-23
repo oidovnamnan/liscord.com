@@ -1573,7 +1573,7 @@ function EditProductModal({ product, onClose }: { product: Product; onClose: () 
 
     return createPortal(
         <div className="modal-backdrop" onClick={onClose}>
-            <div className="modal" onClick={e => e.stopPropagation()}>
+            <div className="modal premium-product-modal" onClick={e => e.stopPropagation()}>
                 <div className="modal-header">
                     <h2>Бараа засах</h2>
                     <button type="button" className="btn btn-ghost btn-icon" onClick={onClose}>✕</button>
