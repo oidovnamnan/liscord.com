@@ -247,8 +247,78 @@
     font-size: 0.75rem;
     font-weight: 700;
     color: #8b5cf6;
+}
+.adc-product-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
     margin-top: 2px;
 }
+.adc-product-sold {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    font-size: 0.68rem;
+    font-weight: 600;
+    color: #10b981;
+}
+
+/* ── Category Filter Chips ── */
+.adc-category-chips {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 14px;
+    overflow-x: auto;
+    padding-bottom: 4px;
+    scrollbar-width: none;
+}
+.adc-category-chips::-webkit-scrollbar { display: none; }
+.adc-filter-icon { color: var(--text-muted); flex-shrink: 0; }
+.adc-cat-chip {
+    display: inline-flex;
+    align-items: center;
+    white-space: nowrap;
+    padding: 5px 12px;
+    border-radius: 20px;
+    border: 1.5px solid var(--border-soft);
+    background: var(--surface-1);
+    color: var(--text-secondary);
+    font-family: inherit;
+    font-size: 0.72rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    flex-shrink: 0;
+}
+.adc-cat-chip:hover { border-color: #8b5cf6; color: #8b5cf6; }
+.adc-cat-chip.active {
+    background: #8b5cf6;
+    color: #fff;
+    border-color: #8b5cf6;
+}
+
+/* ── Sort Dropdown ── */
+.adc-sort-wrap {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    color: var(--text-muted);
+}
+.adc-sort-select {
+    padding: 6px 10px;
+    border: 1.5px solid var(--border-primary);
+    border-radius: 8px;
+    background: var(--surface-2);
+    font-family: inherit;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    outline: none;
+    cursor: pointer;
+    appearance: auto;
+}
+.adc-sort-select:focus { border-color: #8b5cf6; }
 
 /* ── Buttons ── */
 .adc-btn-primary {

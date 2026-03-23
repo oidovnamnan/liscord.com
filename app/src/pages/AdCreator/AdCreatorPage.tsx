@@ -1,7 +1,8 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import {
     Image as ImageIcon, Check, Download, Sparkles, Copy, CheckCircle,
-    Loader2, Search, ChevronRight, Package, Palette, Wand2, X, ArrowLeft
+    Loader2, Search, ChevronRight, Package, Palette, Wand2, X, ArrowLeft,
+    Filter, ArrowUpDown, TrendingUp
 } from 'lucide-react';
 import { collection, getDocs, query, where } from 'firebase/firestore';
 import { db } from '../../services/firebase';
@@ -21,6 +22,7 @@ interface SimpleProduct {
     description?: string;
     categoryName?: string;
     image: string | null;
+    totalSold?: number;
 }
 
 interface GeneratedAd {
@@ -52,6 +54,8 @@ export function AdCreatorPage() {
     const [loadingProducts, setLoadingProducts] = useState(true);
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
     const [searchQuery, setSearchQuery] = useState('');
+    const [categoryFilter, setCategoryFilter] = useState('all');
+    const [sortBy, setSortBy] = useState<'name' | 'price_asc' | 'price_desc' | 'popular'>('name');
 
     // Step 2: Template
     const [selectedTemplate, setSelectedTemplate] = useState<AdTemplate>(AD_TEMPLATES[0]);
@@ -93,6 +97,7 @@ export function AdCreatorPage() {
                         description: data.description || '',
                         categoryName: data.categoryName || '',
                         image: data.images?.[0] || null,
+                        totalSold: data.stats?.totalSold || 0,
                     };
                 });
                 setProducts(list.sort((a, b) => a.name.localeCompare(b.name)));
@@ -101,11 +106,32 @@ export function AdCreatorPage() {
         })();
     }, [businessId]);
 
+    // Unique categories for filter
+    const categories = useMemo(() => {
+        const cats = [...new Set(products.map(p => p.categoryName).filter(Boolean))] as string[];
+        return cats.sort((a, b) => a.localeCompare(b));
+    }, [products]);
+
     const filteredProducts = useMemo(() => {
-        if (!searchQuery.trim()) return products;
-        const q = searchQuery.toLowerCase();
-        return products.filter(p => p.name.toLowerCase().includes(q));
-    }, [products, searchQuery]);
+        let result = products;
+        // Category filter
+        if (categoryFilter !== 'all') {
+            result = result.filter(p => p.categoryName === categoryFilter);
+        }
+        // Search filter
+        if (searchQuery.trim()) {
+            const q = searchQuery.toLowerCase();
+            result = result.filter(p => p.name.toLowerCase().includes(q));
+        }
+        // Sort
+        switch (sortBy) {
+            case 'price_asc': result = [...result].sort((a, b) => a.price - b.price); break;
+            case 'price_desc': result = [...result].sort((a, b) => b.price - a.price); break;
+            case 'popular': result = [...result].sort((a, b) => (b.totalSold || 0) - (a.totalSold || 0)); break;
+            default: result = [...result].sort((a, b) => a.name.localeCompare(b.name));
+        }
+        return result;
+    }, [products, searchQuery, categoryFilter, sortBy]);
 
     const selectedProducts = useMemo(() =>
         products.filter(p => selectedIds.has(p.id)),
@@ -297,10 +323,44 @@ export function AdCreatorPage() {
                             />
                             {searchQuery && <button className="adc-search-clear" onClick={() => setSearchQuery('')}><X size={14} /></button>}
                         </div>
+                        <div className="adc-sort-wrap">
+                            <ArrowUpDown size={14} />
+                            <select className="adc-sort-select" value={sortBy} onChange={e => setSortBy(e.target.value as any)}>
+                                <option value="name">Нэрээр</option>
+                                <option value="popular">Эрэлттэй</option>
+                                <option value="price_asc">Үнэ ↑</option>
+                                <option value="price_desc">Үнэ ↓</option>
+                            </select>
+                        </div>
                         <button className="adc-btn-sm" onClick={selectAll}>
                             {selectedIds.size === filteredProducts.length ? 'Болих' : 'Бүгдийг'}
                         </button>
                     </div>
+
+                    {/* Category filter chips */}
+                    {categories.length > 1 && (
+                        <div className="adc-category-chips">
+                            <Filter size={14} className="adc-filter-icon" />
+                            <button
+                                className={`adc-cat-chip ${categoryFilter === 'all' ? 'active' : ''}`}
+                                onClick={() => setCategoryFilter('all')}
+                            >
+                                Бүгд ({products.length})
+                            </button>
+                            {categories.map(cat => {
+                                const count = products.filter(p => p.categoryName === cat).length;
+                                return (
+                                    <button
+                                        key={cat}
+                                        className={`adc-cat-chip ${categoryFilter === cat ? 'active' : ''}`}
+                                        onClick={() => setCategoryFilter(cat)}
+                                    >
+                                        {cat} ({count})
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    )}
 
                     {loadingProducts ? (
                         <div className="adc-loading"><Loader2 size={24} className="animate-spin" /> Ачаалж байна...</div>
@@ -326,7 +386,12 @@ export function AdCreatorPage() {
                                     </div>
                                     <div className="adc-product-info">
                                         <div className="adc-product-name">{p.name}</div>
-                                        <div className="adc-product-price">{p.price.toLocaleString()}₮</div>
+                                        <div className="adc-product-meta">
+                                            <span className="adc-product-price">{p.price.toLocaleString()}₮</span>
+                                            {sortBy === 'popular' && p.totalSold ? (
+                                                <span className="adc-product-sold"><TrendingUp size={12} /> {p.totalSold}ш</span>
+                                            ) : null}
+                                        </div>
                                     </div>
                                 </div>
                             ))}
