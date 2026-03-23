@@ -75,9 +75,8 @@ export function ProductsPage() {
             constraints.push(where('categoryId', '==', categoryFilter));
         }
 
-        // For price sorting we need ALL products, not limited
-        const needsAllProducts = sortBy === 'expensive' || sortBy === 'cheapest';
-        if (!needsAllProducts) {
+        // Only paginate on default "newest" view — all other sorts need full dataset
+        if (sortBy === 'newest') {
             constraints.push(limit(productsLimit));
         }
         const q = query(ref, ...constraints);
@@ -106,7 +105,7 @@ export function ProductsPage() {
                 }
             });
             setProducts(data);
-            setHasMore(!needsAllProducts && data.length === productsLimit);
+            setHasMore(sortBy === 'newest' && data.length === productsLimit);
             setLoading(false);
         }, () => {
             setProducts([]);
