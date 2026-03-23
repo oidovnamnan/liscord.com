@@ -642,9 +642,238 @@ const templateGradientWave: AdTemplate = {
     }
 };
 
+// ============ OVERLAY TEMPLATES (product image = full background) ============
+
+const templateProductCard: AdTemplate = {
+    id: 'product_card', name: 'Бүтээгдэхүүн', emoji: '🏷️',
+    width: 1080, height: 1080, category: 'square',
+    description: 'Бараа зураг бүтэн + доод баруунд мэдээллийн карт',
+    render(ctx, p, o) {
+        // Full background image
+        drawProductImage(ctx, p.image, 0, 0, 1080, 1080);
+        // White info card bottom-right
+        const cardW = 480, cardH = 280, cardX = 1080 - cardW - 40, cardY = 1080 - cardH - 40;
+        ctx.save();
+        ctx.shadowColor = 'rgba(0,0,0,0.15)';
+        ctx.shadowBlur = 30;
+        ctx.shadowOffsetX = 0;
+        ctx.shadowOffsetY = 8;
+        ctx.fillStyle = 'rgba(255,255,255,0.96)';
+        roundRect(ctx, cardX, cardY, cardW, cardH, 16);
+        ctx.fill();
+        ctx.restore();
+        // Blue accent line left
+        ctx.fillStyle = '#4285f4';
+        ctx.fillRect(cardX, cardY + 20, 4, cardH - 40);
+        // Small label
+        ctx.fillStyle = '#4285f4';
+        ctx.font = 'bold 16px system-ui';
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'top';
+        ctx.fillText('БҮТЭЭГДЭХҮҮН', cardX + 24, cardY + 28);
+        // Product name bold
+        ctx.fillStyle = '#111';
+        ctx.font = 'bold 26px system-ui';
+        wrapText(ctx, p.name, cardX + 24, cardY + 56, cardW - 48, 32, 2);
+        // Description small
+        if (p.description) {
+            ctx.fillStyle = '#666';
+            ctx.font = '400 16px system-ui';
+            wrapText(ctx, p.description, cardX + 24, cardY + 130, cardW - 48, 20, 2);
+        }
+        // Price in red bold
+        ctx.fillStyle = '#e74c3c';
+        ctx.font = 'bold 42px system-ui';
+        ctx.textAlign = 'left';
+        ctx.fillText(formatPrice(p.price), cardX + 24, cardY + cardH - 55);
+        // Compare price
+        if (p.comparePrice && p.comparePrice > p.price) {
+            ctx.font = '500 20px system-ui';
+            ctx.fillStyle = '#999';
+            const pw = ctx.measureText(formatPrice(p.price)).width;
+            const old = formatPrice(p.comparePrice);
+            ctx.fillText(old, cardX + 30 + pw, cardY + cardH - 42);
+            const tw = ctx.measureText(old).width;
+            ctx.strokeStyle = '#ccc'; ctx.lineWidth = 1.5;
+            ctx.beginPath(); ctx.moveTo(cardX + 30 + pw, cardY + cardH - 33); ctx.lineTo(cardX + 30 + pw + tw, cardY + cardH - 33); ctx.stroke();
+        }
+        // Business watermark
+        if (o.businessName) {
+            ctx.font = 'bold 14px system-ui';
+            ctx.fillStyle = 'rgba(255,255,255,0.7)';
+            ctx.textAlign = 'left';
+            ctx.textBaseline = 'top';
+            ctx.fillText(o.businessName, 20, 20);
+        }
+        // Badge top-left
+        if (o.badgeText) {
+            drawBadge(ctx, o.badgeText, 20, 50, '#e74c3c', '#fff');
+        }
+    }
+};
+
+const templateOverlay: AdTemplate = {
+    id: 'overlay', name: 'Зураг Overlay', emoji: '🖼️',
+    width: 1200, height: 628, category: 'landscape',
+    description: 'Бараа зураг бүтэн дэвсгэр + gradient overlay',
+    render(ctx, p, o) {
+        // Full background image
+        drawProductImage(ctx, p.image, 0, 0, 1200, 628);
+        // Dark gradient overlay bottom
+        const grad = ctx.createLinearGradient(0, 300, 0, 628);
+        grad.addColorStop(0, 'rgba(0,0,0,0)');
+        grad.addColorStop(0.4, 'rgba(0,0,0,0.4)');
+        grad.addColorStop(1, 'rgba(0,0,0,0.85)');
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, 1200, 628);
+        // Badge
+        if (o.badgeText) drawBadge(ctx, o.badgeText, 60, 40, '#e74c3c', '#fff');
+        // Product name
+        ctx.fillStyle = '#fff';
+        ctx.font = 'bold 40px system-ui';
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'top';
+        wrapText(ctx, p.name, 60, 440, 700, 48, 2);
+        // Price
+        ctx.font = 'bold 56px system-ui';
+        ctx.fillStyle = '#ffd700';
+        ctx.fillText(formatPrice(p.price), 60, 545);
+        // Compare price
+        if (p.comparePrice && p.comparePrice > p.price) {
+            ctx.font = '600 26px system-ui';
+            ctx.fillStyle = 'rgba(255,255,255,0.5)';
+            const pw = ctx.measureText(formatPrice(p.price)).width;
+            const old = formatPrice(p.comparePrice);
+            ctx.fillText(old, 70 + pw, 565);
+            const tw = ctx.measureText(old).width;
+            ctx.strokeStyle = 'rgba(255,255,255,0.6)'; ctx.lineWidth = 1.5;
+            ctx.beginPath(); ctx.moveTo(70 + pw, 580); ctx.lineTo(70 + pw + tw, 580); ctx.stroke();
+        }
+        // Business name
+        ctx.font = 'bold 20px system-ui';
+        ctx.fillStyle = 'rgba(255,255,255,0.6)';
+        ctx.textAlign = 'right';
+        ctx.fillText(o.businessName, 1140, 580);
+        // Storefront
+        if (o.storefront) {
+            ctx.font = '600 18px system-ui';
+            ctx.fillStyle = 'rgba(255,255,255,0.5)';
+            ctx.textAlign = 'right';
+            ctx.fillText('🛒 ' + o.storefront, 1140, 555);
+        }
+    }
+};
+
+const templateCatalog: AdTemplate = {
+    id: 'catalog', name: 'Каталог', emoji: '📋',
+    width: 1080, height: 1080, category: 'square',
+    description: 'Бараа зураг бүтэн + доод бүтэн мэдээлэл',
+    render(ctx, p, o) {
+        // Full background image — top 70%
+        drawProductImage(ctx, p.image, 0, 0, 1080, 760);
+        // Badge top
+        if (o.badgeText) drawBadge(ctx, o.badgeText, 30, 30, '#e74c3c', '#fff');
+        // White bottom panel
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(0, 720, 1080, 360);
+        // Subtle top shadow
+        const shadowGrad = ctx.createLinearGradient(0, 700, 0, 740);
+        shadowGrad.addColorStop(0, 'rgba(0,0,0,0)');
+        shadowGrad.addColorStop(1, 'rgba(0,0,0,0.08)');
+        ctx.fillStyle = shadowGrad;
+        ctx.fillRect(0, 700, 1080, 40);
+        // Category label
+        ctx.fillStyle = '#6366f1';
+        ctx.font = 'bold 18px system-ui';
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'top';
+        ctx.fillText((o.promoText || 'БҮТЭЭГДЭХҮҮН').toUpperCase(), 50, 750);
+        // Product name
+        ctx.fillStyle = '#111';
+        ctx.font = 'bold 34px system-ui';
+        wrapText(ctx, p.name, 50, 782, 980, 42, 2);
+        // Description
+        if (p.description) {
+            ctx.fillStyle = '#666';
+            ctx.font = '400 20px system-ui';
+            wrapText(ctx, p.description, 50, 870, 980, 26, 2);
+        }
+        // Price
+        ctx.fillStyle = '#e74c3c';
+        ctx.font = 'bold 52px system-ui';
+        ctx.textAlign = 'left';
+        ctx.fillText(formatPrice(p.price), 50, 960);
+        // Compare
+        if (p.comparePrice && p.comparePrice > p.price) {
+            ctx.font = '500 24px system-ui';
+            ctx.fillStyle = '#999';
+            const pw = ctx.measureText(formatPrice(p.price)).width;
+            const old = formatPrice(p.comparePrice);
+            ctx.fillText(old, 60 + pw, 980);
+            const tw = ctx.measureText(old).width;
+            ctx.strokeStyle = '#ccc'; ctx.lineWidth = 1.5;
+            ctx.beginPath(); ctx.moveTo(60 + pw, 994); ctx.lineTo(60 + pw + tw, 994); ctx.stroke();
+        }
+        // Business
+        ctx.font = 'bold 16px system-ui';
+        ctx.fillStyle = '#bbb';
+        ctx.textAlign = 'right';
+        ctx.fillText(o.businessName, 1030, 1040);
+    }
+};
+
+const templateStoryOverlay: AdTemplate = {
+    id: 'story_overlay', name: 'Story Overlay', emoji: '📲',
+    width: 1080, height: 1920, category: 'story',
+    description: 'Story — бараа зураг бүтэн + доор мэдээлэл',
+    render(ctx, p, o) {
+        // Full background image
+        drawProductImage(ctx, p.image, 0, 0, 1080, 1920);
+        // Gradient overlay bottom
+        const grad = ctx.createLinearGradient(0, 1200, 0, 1920);
+        grad.addColorStop(0, 'rgba(0,0,0,0)');
+        grad.addColorStop(0.3, 'rgba(0,0,0,0.5)');
+        grad.addColorStop(1, 'rgba(0,0,0,0.9)');
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 1000, 1080, 920);
+        // Badge top
+        if (o.badgeText) {
+            ctx.fillStyle = '#e74c3c';
+            roundRect(ctx, 340, 80, 400, 60, 30);
+            ctx.fill();
+            ctx.fillStyle = '#fff';
+            ctx.font = 'bold 28px system-ui';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(o.badgeText, 540, 110);
+        }
+        // Name
+        ctx.fillStyle = '#fff';
+        ctx.font = 'bold 48px system-ui';
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'top';
+        wrapText(ctx, p.name, 60, 1500, 960, 58, 3);
+        // Price
+        ctx.font = 'bold 72px system-ui';
+        ctx.fillStyle = '#ffd700';
+        ctx.textAlign = 'left';
+        ctx.fillText(formatPrice(p.price), 60, 1720);
+        // Store
+        if (o.storefront) {
+            ctx.font = 'bold 22px system-ui';
+            ctx.fillStyle = 'rgba(255,255,255,0.6)';
+            ctx.fillText('🛒 ' + o.storefront, 60, 1860);
+        }
+        drawWatermark(ctx, o.businessName, 1080, 1920);
+    }
+};
+
 // ============ EXPORT ALL ============
 
 export const AD_TEMPLATES: AdTemplate[] = [
+    templateProductCard,
+    templateOverlay,
+    templateCatalog,
     templateSale,
     templateNewArrival,
     templateMinimal,
@@ -656,13 +885,40 @@ export const AD_TEMPLATES: AdTemplate[] = [
     templateNature,
     templateSquare,
     templateStory,
+    templateStoryOverlay,
     templateGradientWave,
 ];
 
 // ============ RENDER UTILITY ============
 
-export function loadImage(src: string): Promise<HTMLImageElement> {
-    return new Promise((resolve, reject) => {
+/**
+ * Load image via fetch+blob to bypass CORS canvas tainting.
+ * Falls back to direct loading if fetch fails.
+ */
+export async function loadImage(src: string): Promise<HTMLImageElement> {
+    // Try fetch→blob first (bypasses CORS canvas taint)
+    try {
+        const response = await fetch(src, { mode: 'cors' });
+        if (response.ok) {
+            const blob = await response.blob();
+            const url = URL.createObjectURL(blob);
+            return new Promise<HTMLImageElement>((resolve, reject) => {
+                const img = new Image();
+                img.onload = () => {
+                    URL.revokeObjectURL(url);
+                    resolve(img);
+                };
+                img.onerror = () => {
+                    URL.revokeObjectURL(url);
+                    reject(new Error('Blob image load failed'));
+                };
+                img.src = url;
+            });
+        }
+    } catch { /* fall through to direct load */ }
+
+    // Fallback: direct load with crossOrigin
+    return new Promise<HTMLImageElement>((resolve, reject) => {
         const img = new Image();
         img.crossOrigin = 'anonymous';
         img.onload = () => resolve(img);
