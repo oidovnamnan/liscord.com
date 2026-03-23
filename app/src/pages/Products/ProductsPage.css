@@ -1492,16 +1492,17 @@
     animation: premiumModalIn 0.35s cubic-bezier(0.16, 1, 0.3, 1);
     display: flex;
     flex-direction: column;
+    height: 85vh;
     max-height: 85vh;
 }
 
 /* Form wrapper — must be flex child + flex container */
-.premium-product-modal form {
-    display: flex;
-    flex-direction: column;
-    flex: 1;
-    min-height: 0;
-    overflow: hidden;
+.premium-product-modal.modal > form {
+    display: flex !important;
+    flex-direction: column !important;
+    flex: 1 1 0% !important;
+    min-height: 0 !important;
+    overflow: hidden !important;
 }
 
 @keyframes premiumModalIn {
@@ -1714,7 +1715,7 @@
 
 /* Textarea override */
 .premium-product-modal textarea.input {
-    min-height: 60px;
+    min-height: 120px;
     resize: vertical;
     line-height: 1.5;
 }
