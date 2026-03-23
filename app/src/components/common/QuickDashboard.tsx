@@ -119,21 +119,23 @@ export function QuickDashboard({ isOpen, onClose }: QuickDashboardProps) {
             const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
             const todayTimestamp = Timestamp.fromDate(todayStart);
 
-            // 1. Today's PAID orders only
+            // 1. Today's PAID orders — fetch all today, filter paid client-side (avoids composite index)
             const ordersRef = collection(db, 'businesses', bizId, 'orders');
             const ordersSnap = await getDocs(query(
                 ordersRef,
                 where('isDeleted', '==', false),
-                where('paymentStatus', '==', 'paid'),
                 where('createdAt', '>=', todayTimestamp)
             ));
 
             let todayRevenue = 0;
-            const todayOrders = ordersSnap.size;
+            let todayOrders = 0;
 
             ordersSnap.docs.forEach(doc => {
                 const data = doc.data();
-                todayRevenue += data.financials?.totalAmount || 0;
+                if (data.paymentStatus === 'paid') {
+                    todayOrders++;
+                    todayRevenue += data.financials?.totalAmount || 0;
+                }
             });
 
             // 1b. Today's total visitors from daily_stats
