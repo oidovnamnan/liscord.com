@@ -790,9 +790,47 @@ function SourcingDetailModal({ order, businessId, settings, onClose, onUpdate }:
 
     const handleDeactivateProduct = async (productId: string) => {
         try {
+            // 1. Deactivate the product
             await productService.updateProduct(businessId, productId, { isActive: false } as any);
-            toast.success('Бараа идэвхгүй боллоо');
-        } catch { toast.error('Алдаа'); }
+            
+            // 2. Remove this item from the order
+            const remainingItems = order.items.filter(it => it.productId !== productId);
+            
+            if (remainingItems.length === 0) {
+                // All items removed → cancel order
+                await updateDoc(doc(db, 'businesses', businessId, 'orders', order.id), {
+                    items: [],
+                    'financials.totalAmount': 0,
+                    total: 0,
+                    status: 'cancelled',
+                    isDeleted: true,
+                });
+                toast.success('Бараа дууссан — захиалга цуцлагдлаа');
+                onClose();
+            } else {
+                // Recalculate total from remaining items
+                const newTotal = remainingItems.reduce((sum, it) => sum + (it.price || 0) * (it.quantity || 1), 0);
+                await updateDoc(doc(db, 'businesses', businessId, 'orders', order.id), {
+                    items: remainingItems,
+                    'financials.totalAmount': newTotal,
+                    total: newTotal,
+                });
+                // Update local state
+                const updated: SourcingOrder = {
+                    ...order,
+                    items: remainingItems,
+                    total: newTotal,
+                };
+                onUpdate(updated);
+                // Remove from items state
+                setItemsState(prev => {
+                    const newState = { ...prev };
+                    delete newState[productId];
+                    return newState;
+                });
+                toast.success('Бараа дууссан — захиалгаас хасагдлаа');
+            }
+        } catch { toast.error('Алдаа гарлаа'); }
     };
 
     const hasConfig = !!recipientName && !!cargoAddress;

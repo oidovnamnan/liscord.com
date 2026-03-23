@@ -1020,7 +1020,6 @@
         0 25px 65px -5px rgba(0, 0, 0, 0.12),
         0 10px 30px -10px rgba(239, 68, 68, 0.06);
     overflow: hidden;
-    overflow-y: hidden !important;
     animation: premiumModalIn 0.35s cubic-bezier(0.16, 1, 0.3, 1);
     height: 85vh;
     max-height: 85vh;
