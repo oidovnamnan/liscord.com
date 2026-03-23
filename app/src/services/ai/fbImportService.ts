@@ -94,7 +94,8 @@ export async function fetchFBPosts(
     pageId: string,
     accessToken: string,
     since: Date,
-    until: Date
+    until: Date,
+    sortOrder: 'newest' | 'oldest' = 'newest'
 ): Promise<FBPost[]> {
     const sinceTs = Math.floor(since.getTime() / 1000);
     const untilTs = Math.floor(until.getTime() / 1000);
@@ -111,6 +112,11 @@ export async function fetchFBPosts(
         const data = await resp.json();
         if (data.data) allPosts.push(...data.data);
         url = data.paging?.next || '';
+    }
+
+    // Sort: Facebook returns newest first by default
+    if (sortOrder === 'oldest') {
+        allPosts.reverse();
     }
 
     return allPosts;
@@ -448,17 +454,30 @@ export async function extractProductsFromPosts(
     apiKey: string,
     onProgress?: (current: number, total: number, product?: FBExtractedProduct) => void,
     existingCategories: string[] = [],
-    cargoTypes: { id: string; name: string; fee: number }[] = []
+    cargoTypes: { id: string; name: string; fee: number }[] = [],
+    signal?: AbortSignal
 ): Promise<FBExtractedProduct[]> {
     const products: FBExtractedProduct[] = [];
     const DELAY_MS = 500; // 0.5s between requests (paid tier has high limits)
 
     for (let i = 0; i < posts.length; i++) {
+        // Check if cancelled
+        if (signal?.aborted) {
+            console.log(`[FB Import] Cancelled at ${i}/${posts.length}, returning ${products.length} products`);
+            break;
+        }
+
         onProgress?.(i + 1, posts.length);
 
         // Rate limit delay (skip for first request)
         if (i > 0) {
             await new Promise(r => setTimeout(r, DELAY_MS));
+        }
+
+        // Check again after delay
+        if (signal?.aborted) {
+            console.log(`[FB Import] Cancelled at ${i}/${posts.length}, returning ${products.length} products`);
+            break;
         }
 
         let product = await extractProductFromPost(posts[i], apiKey, existingCategories, cargoTypes);
@@ -467,6 +486,7 @@ export async function extractProductsFromPosts(
         if (!product && posts[i].message && posts[i].message!.length > 3) {
             // Check if it was a rate limit by trying again after longer wait
             await new Promise(r => setTimeout(r, 15000)); // wait 15s
+            if (signal?.aborted) break;
             product = await extractProductFromPost(posts[i], apiKey, existingCategories, cargoTypes);
         }
 

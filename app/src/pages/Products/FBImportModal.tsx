@@ -1,9 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import {
     Facebook, Calendar, Loader2, CheckCircle2, AlertTriangle,
     ChevronRight, Download, ImageIcon, Sparkles, X, RefreshCw, ArrowLeft,
-    Edit3, Package, SkipForward, Replace, Merge
+    Edit3, Package, SkipForward, Replace, Merge, Square, Tag, ArrowUpDown
 } from 'lucide-react';
 import { useBusinessStore, useAuthStore } from '../../store';
 import { productService, categoryService, cargoService } from '../../services/db';
@@ -111,10 +111,14 @@ export function FBImportModal({ onClose }: FBImportModalProps) {
     const [endDate, setEndDate] = useState(localStorage.getItem('fb_import_end') || '');
     const [importAsHidden, setImportAsHidden] = useState(false);
     const [importProductType, setImportProductType] = useState<'preorder' | 'ready'>('preorder');
+    const [sortOrder, setSortOrder] = useState<'newest' | 'oldest'>('newest');
+    const [importTags, setImportTags] = useState(localStorage.getItem('fb_import_tags') || 'FB импорт');
 
     // Processing
     const [_, setPosts] = useState<FBPost[]>([]);
     const [progress, setProgress] = useState({ current: 0, total: 0, message: '' });
+    const [currentProduct, setCurrentProduct] = useState<FBExtractedProduct | null>(null);
+    const abortControllerRef = useRef<AbortController | null>(null);
 
     // Review
     const [products, setProducts] = useState<FBExtractedProduct[]>([]);
@@ -125,6 +129,7 @@ export function FBImportModal({ onClose }: FBImportModalProps) {
     // Import progress
     const [importProgress, setImportProgress] = useState({ current: 0, total: 0 });
     const [importResults, setImportResults] = useState({ success: 0, failed: 0 });
+    const [importingProduct, setImportingProduct] = useState<string>('');
 
     // Cargo types
     const [cargoTypes, setCargoTypes] = useState<CargoType[]>([]);
@@ -167,6 +172,7 @@ export function FBImportModal({ onClose }: FBImportModalProps) {
         localStorage.setItem('fb_import_token', accessToken);
         localStorage.setItem('fb_import_start', startDate);
         localStorage.setItem('fb_import_end', endDate);
+        localStorage.setItem('fb_import_tags', importTags);
     };
 
     // ===== STEP 1: SETUP & FETCH =====
@@ -184,6 +190,11 @@ export function FBImportModal({ onClose }: FBImportModalProps) {
         saveSettings();
         setStep('fetching');
         setProgress({ current: 0, total: 0, message: 'Page мэдээлэл татаж байна...' });
+        setCurrentProduct(null);
+
+        // Create abort controller for cancellation
+        const controller = new AbortController();
+        abortControllerRef.current = controller;
 
         try {
             const pageId = await fetchFBPageId(pageUrl, accessToken);
@@ -193,7 +204,8 @@ export function FBImportModal({ onClose }: FBImportModalProps) {
                 pageId,
                 accessToken,
                 new Date(startDate),
-                new Date(endDate + 'T23:59:59')
+                new Date(endDate + 'T23:59:59'),
+                sortOrder
             );
 
             if (fetchedPosts.length === 0) {
@@ -217,7 +229,8 @@ export function FBImportModal({ onClose }: FBImportModalProps) {
                         ? `${current}/${total} — "${product.name}" олдлоо`
                         : `${current}/${total} пост задалж байна...`
                 });
-            }, categoryNames, cargoForAI);
+                if (product) setCurrentProduct(product);
+            }, categoryNames, cargoForAI, controller.signal);
 
             if (extracted.length === 0) {
                 toast.error('Барааны мэдээлэл бүхий пост олдсонгүй');
@@ -232,8 +245,10 @@ export function FBImportModal({ onClose }: FBImportModalProps) {
             );
 
             setProducts(withDuplicates);
+            setCurrentProduct(null);
             setStep('review');
-            toast.success(`${extracted.length} бараа олдлоо!`);
+            const wasCancelled = controller.signal.aborted;
+            toast.success(`${extracted.length} бараа олдлоо!${wasCancelled ? ' (зогсоосон)' : ''}`);
 
         } catch (error: any) {
             console.error('FB Import error:', error);
@@ -304,6 +319,7 @@ export function FBImportModal({ onClose }: FBImportModalProps) {
             try {
                 processed++;
                 setImportProgress({ current: processed, total: totalItems });
+                setImportingProduct(product.name);
 
                 // Upload images to Firebase Storage (may fail due to CORS)
                 let finalImages: string[] = [];
@@ -358,7 +374,8 @@ export function FBImportModal({ onClose }: FBImportModalProps) {
                     isActive: true,
                     isHidden: importAsHidden,
                     stats: { totalSold: 0, totalRevenue: 0 },
-                    isDeleted: false
+                    isDeleted: false,
+                    tags: importTags ? importTags.split(',').map(t => t.trim()).filter(Boolean) : []
                 };
 
                 // Only add cargoFee if it exists (avoid undefined in Firestore)
@@ -534,7 +551,7 @@ export function FBImportModal({ onClose }: FBImportModalProps) {
 
                             <div className="modal-section-card">
                                 <div className="modal-section-title">Тохиргоо</div>
-                                <div className="flex items-center justify-between" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                <div className="flex items-center justify-between" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
                                     <div>
                                         <div style={{ fontWeight: 700, fontSize: '0.9rem' }}>Барааг нууцлагдмал оруулах</div>
                                         <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Нийтэд харагдахгүй, зөвхөн админ засаж харна</div>
@@ -545,6 +562,47 @@ export function FBImportModal({ onClose }: FBImportModalProps) {
                                     >
                                         <div className="toggle" />
                                     </div>
+                                </div>
+
+                                {/* Fetch order */}
+                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+                                    <div>
+                                        <div style={{ fontWeight: 700, fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: 6 }}>
+                                            <ArrowUpDown size={14} /> Пост эрэмбэ
+                                        </div>
+                                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                                            {sortOrder === 'newest' ? 'Шинэ постоос эхэлж задлана' : 'Хуучин постоос эхэлж задлана'}
+                                        </div>
+                                    </div>
+                                    <div style={{ display: 'flex', gap: 4, background: 'var(--bg-soft)', borderRadius: 10, padding: 3 }}>
+                                        <button type="button" onClick={() => setSortOrder('newest')} style={{
+                                            padding: '5px 12px', borderRadius: 8, fontSize: '0.75rem', fontWeight: 700, border: 'none', cursor: 'pointer',
+                                            background: sortOrder === 'newest' ? 'var(--primary)' : 'transparent',
+                                            color: sortOrder === 'newest' ? '#fff' : 'var(--text-muted)'
+                                        }}>Шинэ</button>
+                                        <button type="button" onClick={() => setSortOrder('oldest')} style={{
+                                            padding: '5px 12px', borderRadius: 8, fontSize: '0.75rem', fontWeight: 700, border: 'none', cursor: 'pointer',
+                                            background: sortOrder === 'oldest' ? 'var(--primary)' : 'transparent',
+                                            color: sortOrder === 'oldest' ? '#fff' : 'var(--text-muted)'
+                                        }}>Хуучин</button>
+                                    </div>
+                                </div>
+
+                                {/* Import tags */}
+                                <div className="input-group" style={{ marginTop: 0 }}>
+                                    <label className="input-label" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                        <Tag size={13} /> Импортын шошго (tag)
+                                    </label>
+                                    <input
+                                        className="input"
+                                        placeholder="FB импорт, КОСТКО"
+                                        value={importTags}
+                                        onChange={e => setImportTags(e.target.value)}
+                                        style={{ height: 38, fontSize: '0.85rem' }}
+                                    />
+                                    <p style={{ fontSize: '0.68rem', color: 'var(--text-muted)', marginTop: 4 }}>
+                                        Олон шошгыг таслалаар тусгаарлана. Жишээ: FB импорт, КОСТКО
+                                    </p>
                                 </div>
                             </div>
 
@@ -597,18 +655,18 @@ export function FBImportModal({ onClose }: FBImportModalProps) {
                     {(step === 'fetching' || step === 'processing') && (
                         <div className="animate-fade-in" style={{
                             display: 'flex', flexDirection: 'column', alignItems: 'center',
-                            justifyContent: 'center', minHeight: 350, gap: 24, textAlign: 'center'
+                            justifyContent: 'center', minHeight: 350, gap: 20, textAlign: 'center'
                         }}>
                             <div style={{
-                                width: 80, height: 80, borderRadius: 24,
+                                width: 72, height: 72, borderRadius: 20,
                                 background: 'linear-gradient(135deg, rgba(var(--primary-rgb), 0.1), rgba(var(--primary-rgb), 0.05))',
                                 display: 'flex', alignItems: 'center', justifyContent: 'center'
                             }}>
-                                <Loader2 size={36} className="animate-spin" style={{ color: 'var(--primary)' }} />
+                                <Loader2 size={32} className="animate-spin" style={{ color: 'var(--primary)' }} />
                             </div>
 
                             <div>
-                                <h3 style={{ margin: '0 0 8px', fontSize: '1.1rem', fontWeight: 800 }}>
+                                <h3 style={{ margin: '0 0 8px', fontSize: '1.05rem', fontWeight: 800 }}>
                                     {step === 'fetching' ? 'Постууд татаж байна' : 'AI задалж байна'}
                                 </h3>
                                 <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '0.85rem' }}>
@@ -616,8 +674,42 @@ export function FBImportModal({ onClose }: FBImportModalProps) {
                                 </p>
                             </div>
 
+                            {/* Real-time current product display */}
+                            {currentProduct && step === 'processing' && (
+                                <div style={{
+                                    width: '100%', maxWidth: 420, padding: 12, borderRadius: 14,
+                                    background: 'var(--bg-soft)', display: 'flex', gap: 12, alignItems: 'center',
+                                    textAlign: 'left', animation: 'fadeIn 0.3s ease'
+                                }}>
+                                    <div style={{
+                                        width: 52, height: 52, borderRadius: 10, overflow: 'hidden',
+                                        background: 'var(--surface-1)', flexShrink: 0
+                                    }}>
+                                        {currentProduct.images[0] ? (
+                                            <img src={currentProduct.images[0]} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                        ) : (
+                                            <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><ImageIcon size={18} style={{ color: 'var(--text-muted)' }} /></div>
+                                        )}
+                                    </div>
+                                    <div style={{ flex: 1, minWidth: 0, overflow: 'hidden' }}>
+                                        <div style={{ fontWeight: 700, fontSize: '0.82rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                            {currentProduct.name}
+                                        </div>
+                                        <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: 2, display: 'flex', gap: 8, alignItems: 'center' }}>
+                                            {currentProduct.salePrice > 0 && <span style={{ fontWeight: 700 }}>₮{currentProduct.salePrice.toLocaleString()}</span>}
+                                            <span className="badge badge-soft" style={{ fontSize: '0.6rem' }}>{currentProduct.categoryName}</span>
+                                            {currentProduct.cargoFee && currentProduct.cargoFee > 0 && (
+                                                <span style={{ color: 'var(--accent-orange)', display: 'flex', alignItems: 'center', gap: 2 }}>
+                                                    <Package size={10} />₮{currentProduct.cargoFee.toLocaleString()}
+                                                </span>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
                             {progress.total > 0 && (
-                                <div style={{ width: '100%', maxWidth: 400 }}>
+                                <div style={{ width: '100%', maxWidth: 420 }}>
                                     <div style={{
                                         height: 8, borderRadius: 4, background: 'var(--bg-soft)', overflow: 'hidden'
                                     }}>
@@ -632,6 +724,26 @@ export function FBImportModal({ onClose }: FBImportModalProps) {
                                         {progress.current} / {progress.total}
                                     </p>
                                 </div>
+                            )}
+
+                            {/* Stop button */}
+                            {step === 'processing' && progress.current > 0 && (
+                                <button
+                                    type="button"
+                                    className="btn btn-secondary"
+                                    onClick={() => {
+                                        abortControllerRef.current?.abort();
+                                        toast.success('Зогсоож байна...');
+                                    }}
+                                    style={{
+                                        borderRadius: 12, fontWeight: 700, gap: 6,
+                                        border: '2px solid var(--accent-red)', color: 'var(--accent-red)',
+                                        background: 'rgba(239, 68, 68, 0.06)'
+                                    }}
+                                >
+                                    <Square size={14} />
+                                    Зогсоож, олдсон барааг шалгах
+                                </button>
                             )}
                         </div>
                     )}
@@ -733,7 +845,7 @@ export function FBImportModal({ onClose }: FBImportModalProps) {
                             <div style={{ textAlign: 'center' }}>
                                 <h3 style={{ margin: '0 0 8px', fontWeight: 800 }}>Бараа импортлож байна</h3>
                                 <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '0.85rem' }}>
-                                    Зургууд хуулж, бараа нэмж байна... {importProgress.current}/{importProgress.total}
+                                    {importingProduct ? `"${importingProduct}" оруулж байна...` : 'Зургууд хуулж байна...'} {importProgress.current}/{importProgress.total}
                                 </p>
                             </div>
                             <div style={{ width: '100%', maxWidth: 400 }}>

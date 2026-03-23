@@ -166,7 +166,7 @@ service cloud.firestore {
       // fb-webhook uses Firestore REST API with server-side API key (not client auth)
       // fb-send uses Firestore REST API with server-side API key
       match /fbSettings/{docId} {
-        allow read: if isMemberOf(bizId);
+        allow read: if true;  // Server-side REST API (fb-send, fb-webhook) needs unauthenticated read
         allow write: if isMemberOf(bizId);
       }
 
