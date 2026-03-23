@@ -1495,6 +1495,15 @@
     max-height: 85vh;
 }
 
+/* Form wrapper — must be flex child + flex container */
+.premium-product-modal form {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+}
+
 @keyframes premiumModalIn {
     from {
         opacity: 0;

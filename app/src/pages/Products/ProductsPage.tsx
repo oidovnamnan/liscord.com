@@ -1598,7 +1598,7 @@ function EditProductModal({ product, onClose }: { product: Product; onClose: () 
                 </div>
 
                 <form onSubmit={handleSubmit}>
-                    <div className="modal-body animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: 16, minHeight: 400 }}>
+                    <div className="modal-body animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
 
                         {activeTab === 'basic' && (
                             <div className="animate-slide-up" style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
