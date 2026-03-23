@@ -1018,10 +1018,14 @@
     border-radius: 50%;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    position: absolute;
+    top: 50%;
+    left: 3px;
+    transform: translateY(-50%);
 }
 
 .products-mini-toggle.active .toggle {
-    transform: translateX(22px);
+    transform: translateX(22px) translateY(-50%);
 }
 
 @media (max-width: 640px) {
