@@ -15,6 +15,21 @@
       background: #0a0a12;
     }
   </style>
+  <!-- Storefront: force white background BEFORE React loads (fixes FB browser black screen) -->
+  <script>
+    (function() {
+      var p = location.pathname;
+      // If path is NOT /app, /login, /register, /super, / — it's a storefront slug
+      var isStore = p.length > 1 && !/^\/(app|login|register|super)(\/?|$)/i.test(p);
+      if (isStore) {
+        document.documentElement.setAttribute('data-theme', 'light');
+        document.documentElement.style.colorScheme = 'light';
+        var s = document.createElement('style');
+        s.textContent = 'body{background:#fff!important;color:#111!important}';
+        document.head.appendChild(s);
+      }
+    })();
+  </script>
 </head>
 
 <body>

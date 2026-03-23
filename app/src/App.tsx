@@ -197,6 +197,15 @@ function PageLoader() {
   );
 }
 
+// White loader specifically for storefront — prevents dark flash in FB browser
+function StorefrontLoader() {
+  return (
+    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', background: '#ffffff' }}>
+      <Loader2 size={32} className="animate-spin" style={{ color: '#10b981' }} />
+    </div>
+  );
+}
+
 // Protected Route wrapper
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuthStore();
@@ -624,9 +633,9 @@ export default function App() {
           <Route path="/" element={<LandingPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
-          <Route path="/:slug" element={<StorefrontWrapper />}>
-            <Route index element={<StoreCatalog />} />
-            <Route path="checkout" element={<StoreCheckout />} />
+          <Route path="/:slug" element={<Suspense fallback={<StorefrontLoader />}><StorefrontWrapper /></Suspense>}>
+            <Route index element={<Suspense fallback={<StorefrontLoader />}><StoreCatalog /></Suspense>} />
+            <Route path="checkout" element={<Suspense fallback={<StorefrontLoader />}><StoreCheckout /></Suspense>} />
             <Route path="my-orders" element={<Navigate to={`/${window.location.pathname.split('/')[1]}`} replace />} />
           </Route>
 
