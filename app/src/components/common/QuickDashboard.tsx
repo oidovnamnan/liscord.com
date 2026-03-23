@@ -19,6 +19,7 @@ interface OnlineUser {
     role: 'owner' | 'employee' | 'visitor';
     deviceInfo?: string;
     currentPage?: string;
+    duration?: string;
 }
 
 interface DashStats {
@@ -81,6 +82,22 @@ function parsePage(page: string): string {
     if (clean.startsWith('order')) return '📦 Захиалга';
     if (clean.startsWith('category')) return '📂 Ангилал';
     return page;
+}
+
+function parseVisitorDuration(visitorId: string): string {
+    // Visitor ID format: v_{Date.now()}_{random}
+    const match = visitorId.match(/^v_(\d+)_/);
+    if (!match) return '';
+    const startMs = parseInt(match[1], 10);
+    const diffMs = Date.now() - startMs;
+    if (diffMs < 0) return 'саяхан';
+    const secs = Math.floor(diffMs / 1000);
+    if (secs < 60) return `${secs} сек`;
+    const mins = Math.floor(secs / 60);
+    if (mins < 60) return `${mins} мин`;
+    const hrs = Math.floor(mins / 60);
+    const remMins = mins % 60;
+    return remMins > 0 ? `${hrs} цаг ${remMins} мин` : `${hrs} цаг`;
 }
 
 // ======== Component ========
@@ -156,6 +173,7 @@ export function QuickDashboard({ isOpen, onClose }: QuickDashboardProps) {
                     role: 'visitor' as const,
                     deviceInfo: parseDevice(data.userAgent || ''),
                     currentPage: parsePage(data.page || ''),
+                    duration: parseVisitorDuration(d.id),
                 };
             });
 
@@ -271,6 +289,7 @@ export function QuickDashboard({ isOpen, onClose }: QuickDashboardProps) {
                                                             <>
                                                                 <span>{user.deviceInfo}</span>
                                                                 {user.currentPage && <span style={{ marginLeft: 6, opacity: 0.7 }}>· {user.currentPage}</span>}
+                                                                {user.duration && <span style={{ marginLeft: 6, color: '#10b981', fontWeight: 700 }}>· ⏱ {user.duration}</span>}
                                                             </>
                                                         ) : user.positionName || 'Ажилтан'}
                                                     </div>
