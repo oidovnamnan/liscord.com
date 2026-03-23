@@ -16,7 +16,7 @@ interface OnlineUser {
     name: string;
     positionName: string;
     avatar: string | null;
-    role: 'owner' | 'employee';
+    role: 'owner' | 'employee' | 'visitor';
 }
 
 interface DashStats {
@@ -98,21 +98,41 @@ export function QuickDashboard({ isOpen, onClose }: QuickDashboardProps) {
             // 2. Online employees (active within last 2 minutes)
             const twoMinAgo = Timestamp.fromDate(new Date(Date.now() - 2 * 60_000));
             const empRef = collection(db, 'businesses', bizId, 'employees');
-            const onlineSnap = await getDocs(query(
+            const onlineEmpSnap = await getDocs(query(
                 empRef,
                 where('lastActiveAt', '>=', twoMinAgo)
             ));
 
-            const onlineUsers: OnlineUser[] = onlineSnap.docs.map(doc => {
-                const d = doc.data();
+            const onlineEmployees: OnlineUser[] = onlineEmpSnap.docs.map(d => {
+                const data = d.data();
                 return {
-                    id: doc.id,
-                    name: d.name || 'Нэргүй',
-                    positionName: d.positionName || '',
-                    avatar: d.avatar || null,
-                    role: d.role || 'employee',
+                    id: d.id,
+                    name: data.name || 'Нэргүй',
+                    positionName: data.positionName || '',
+                    avatar: data.avatar || null,
+                    role: data.role || 'employee',
                 };
             });
+
+            // 3. Online visitors (active within last 2 minutes)
+            const visRef = collection(db, 'businesses', bizId, 'visitors');
+            const onlineVisSnap = await getDocs(query(
+                visRef,
+                where('lastActiveAt', '>=', twoMinAgo)
+            ));
+
+            const onlineVisitors: OnlineUser[] = onlineVisSnap.docs.map(d => {
+                const data = d.data();
+                return {
+                    id: d.id,
+                    name: data.name || 'Зочин',
+                    positionName: '',
+                    avatar: data.avatar || null,
+                    role: 'visitor' as const,
+                };
+            });
+
+            const onlineUsers = [...onlineEmployees, ...onlineVisitors];
 
             setStats({ todayRevenue, todayOrders, todayPaidAmount, onlineUsers });
             setLastUpdated(new Date());
@@ -220,7 +240,7 @@ export function QuickDashboard({ isOpen, onClose }: QuickDashboardProps) {
                                                 <div className="qd-user-info">
                                                     <div className="qd-user-name">{user.name}</div>
                                                     <div className="qd-user-role">
-                                                        {user.role === 'owner' ? '👑 Эзэмшигч' : user.positionName || 'Ажилтан'}
+                                                        {user.role === 'owner' ? '👑 Эзэмшигч' : user.role === 'visitor' ? '👁 Зочин' : user.positionName || 'Ажилтан'}
                                                     </div>
                                                 </div>
                                             </div>
