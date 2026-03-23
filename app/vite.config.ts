@@ -16,8 +16,8 @@ export default defineConfig({
         globPatterns: ['**/*.{html,css,ico,png,svg,webmanifest}'],
         // Prevent SW from serving index.html for JS/CSS module requests
         navigateFallbackDenylist: [/^\/api/, /\.(js|css|json|png|jpg|svg|webp|woff2?)$/],
-        // Only use navigateFallback for actual page navigations
-        navigateFallbackAllowlist: [/^\/app/, /^\/login/, /^\/register/, /^\/s\//],
+        // Only use navigateFallback for admin pages — NOT storefront (storefront must always get fresh server response)
+        navigateFallbackAllowlist: [/^\/app/, /^\/login/, /^\/register/],
         // Runtime caching for JS chunks — always use network first
         runtimeCaching: [
           {

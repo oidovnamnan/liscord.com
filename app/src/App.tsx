@@ -1,4 +1,4 @@
-import { useState, useEffect, lazy, Suspense } from 'react';
+import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { auth, db, messaging } from './services/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
@@ -204,6 +204,50 @@ function StorefrontLoader() {
       <Loader2 size={32} className="animate-spin" style={{ color: '#10b981' }} />
     </div>
   );
+}
+
+// Error boundary for storefront — shows a recovery screen instead of blank black
+class StorefrontErrorBoundary extends React.Component<
+  { children: React.ReactNode },
+  { hasError: boolean; error: string }
+> {
+  constructor(props: { children: React.ReactNode }) {
+    super(props);
+    this.state = { hasError: false, error: '' };
+  }
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, error: error?.message || 'Unknown error' };
+  }
+  componentDidCatch(error: Error, info: React.ErrorInfo) {
+    console.error('[Storefront Crash]', error, info);
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div style={{
+          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+          height: '100vh', background: '#ffffff', color: '#111', fontFamily: 'system-ui', textAlign: 'center', padding: 24
+        }}>
+          <div style={{ fontSize: '3rem', marginBottom: 16 }}>🛍️</div>
+          <h2 style={{ fontSize: '1.1rem', marginBottom: 8, fontWeight: 700 }}>Уучлаарай, алдаа гарлаа</h2>
+          <p style={{ color: '#888', maxWidth: 320, marginBottom: 20, fontSize: '0.85rem' }}>
+            Хуудсыг дахин ачаална уу
+          </p>
+          <button
+            onClick={() => { sessionStorage.clear(); location.reload(); }}
+            style={{
+              padding: '12px 32px', background: '#10b981', color: '#fff', border: 'none',
+              borderRadius: 14, fontSize: '0.9rem', fontWeight: 700, cursor: 'pointer'
+            }}
+          >
+            Дахин ачаалах
+          </button>
+          <p style={{ marginTop: 16, fontSize: '0.65rem', color: '#ccc' }}>{this.state.error}</p>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
 }
 
 // Protected Route wrapper
@@ -633,7 +677,7 @@ export default function App() {
           <Route path="/" element={<LandingPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
-          <Route path="/:slug" element={<Suspense fallback={<StorefrontLoader />}><StorefrontWrapper /></Suspense>}>
+          <Route path="/:slug" element={<StorefrontErrorBoundary><Suspense fallback={<StorefrontLoader />}><StorefrontWrapper /></Suspense></StorefrontErrorBoundary>}>
             <Route index element={<Suspense fallback={<StorefrontLoader />}><StoreCatalog /></Suspense>} />
             <Route path="checkout" element={<Suspense fallback={<StorefrontLoader />}><StoreCheckout /></Suspense>} />
             <Route path="my-orders" element={<Navigate to={`/${window.location.pathname.split('/')[1]}`} replace />} />

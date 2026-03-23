@@ -33,12 +33,16 @@ window.addEventListener('error', (e) => {
   }
 });
 
-// Apply saved theme
-const savedTheme = localStorage.getItem('theme') || 'dark';
-const resolved = savedTheme === 'system'
-  ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
-  : savedTheme;
-document.documentElement.setAttribute('data-theme', resolved);
+// Apply saved theme — but NOT on storefront pages (those force light)
+const pathname = window.location.pathname;
+const isStorefront = pathname.length > 1 && !/^\/(app|login|register|super)(\/|$)/i.test(pathname);
+if (!isStorefront) {
+  const savedTheme = localStorage.getItem('theme') || 'dark';
+  const resolved = savedTheme === 'system'
+    ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+    : savedTheme;
+  document.documentElement.setAttribute('data-theme', resolved);
+}
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
