@@ -17,6 +17,8 @@ interface OnlineUser {
     positionName: string;
     avatar: string | null;
     role: 'owner' | 'employee' | 'visitor';
+    deviceInfo?: string;
+    currentPage?: string;
 }
 
 interface DashStats {
@@ -56,6 +58,29 @@ function getInitials(name: string): string {
 
 function formatMoney(n: number): string {
     return '₮' + (n || 0).toLocaleString();
+}
+
+function parseDevice(ua: string): string {
+    if (!ua) return '🌐 Хөтөч';
+    if (/MicroMessenger/i.test(ua)) return '🌐 WeChat';
+    if (/FBAN|FBAV/i.test(ua)) return '📘 Facebook';
+    if (/iPhone|iPad|iPod/i.test(ua)) return '📱 iPhone';
+    if (/Android/i.test(ua)) return '📱 Android';
+    if (/Macintosh|Mac OS/i.test(ua)) return '💻 Mac';
+    if (/Windows/i.test(ua)) return '💻 Windows';
+    return '🌐 Хөтөч';
+}
+
+function parsePage(page: string): string {
+    if (!page || page === '/') return 'Нүүр хуудас';
+    const clean = page.replace(/^\/store\/[^/]+/, '').replace(/^\/+/, '');
+    if (!clean || clean === '/') return 'Нүүр хуудас';
+    if (clean.startsWith('product')) return '🛍️ Бараа';
+    if (clean.startsWith('cart')) return '🛒 Сагс';
+    if (clean.startsWith('checkout')) return '💳 Төлбөр';
+    if (clean.startsWith('order')) return '📦 Захиалга';
+    if (clean.startsWith('category')) return '📂 Ангилал';
+    return page;
 }
 
 // ======== Component ========
@@ -129,6 +154,8 @@ export function QuickDashboard({ isOpen, onClose }: QuickDashboardProps) {
                     positionName: '',
                     avatar: data.avatar || null,
                     role: 'visitor' as const,
+                    deviceInfo: parseDevice(data.userAgent || ''),
+                    currentPage: parsePage(data.page || ''),
                 };
             });
 
@@ -240,7 +267,12 @@ export function QuickDashboard({ isOpen, onClose }: QuickDashboardProps) {
                                                 <div className="qd-user-info">
                                                     <div className="qd-user-name">{user.name}</div>
                                                     <div className="qd-user-role">
-                                                        {user.role === 'owner' ? '👑 Эзэмшигч' : user.role === 'visitor' ? '👁 Зочин' : user.positionName || 'Ажилтан'}
+                                                        {user.role === 'owner' ? '👑 Эзэмшигч' : user.role === 'visitor' ? (
+                                                            <>
+                                                                <span>{user.deviceInfo}</span>
+                                                                {user.currentPage && <span style={{ marginLeft: 6, opacity: 0.7 }}>· {user.currentPage}</span>}
+                                                            </>
+                                                        ) : user.positionName || 'Ажилтан'}
                                                     </div>
                                                 </div>
                                             </div>
