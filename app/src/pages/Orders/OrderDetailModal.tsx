@@ -486,7 +486,6 @@ export function OrderDetailModal({ bizId, order, onClose, statuses }: OrderDetai
                                         </span>
                                         <span>{fmt(order.financials.cargoFee)}</span>
                                     </div>
-                                    <hr />
                                     <div className="fin-row total">
                                         <span>Нийт дүн:</span>
                                         <span>{fmt(order.financials.totalAmount)}</span>
@@ -504,7 +503,7 @@ export function OrderDetailModal({ bizId, order, onClose, statuses }: OrderDetai
 
                                     {business?.settings?.ebarimt?.enabled && (
                                         <>
-                                            <hr />
+                                            <div style={{ height: 1, background: 'linear-gradient(90deg, transparent, rgba(239,68,68,0.12), transparent)', margin: '8px 0' }} />
                                             <div className="fin-row hide-print" style={{ alignItems: 'center' }}>
                                                 <span>НӨАТ:</span>
                                                 {ebarimtData ? (
