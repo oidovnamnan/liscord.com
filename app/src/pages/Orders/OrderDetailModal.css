@@ -384,3 +384,262 @@
 [data-theme="dark"] .status-badge-select:hover {
     filter: brightness(1.25);
 }
+
+/* ═══════════════════════════════════════════
+   PREMIUM ORDER DETAIL — Red/Orange Theme
+   ═══════════════════════════════════════════ */
+
+/* Container */
+.order-detail-modal.modal {
+    background: #fffbfa !important;
+    border: 1px solid rgba(239, 68, 68, 0.06);
+    border-radius: 24px !important;
+    box-shadow:
+        0 0 0 1px rgba(0, 0, 0, 0.03),
+        0 25px 65px -5px rgba(0, 0, 0, 0.12),
+        0 10px 30px -10px rgba(239, 68, 68, 0.06) !important;
+    overflow: hidden;
+    overflow-y: hidden !important;
+    animation: premiumModalIn 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+    height: 85vh;
+    max-height: 85vh !important;
+}
+
+@keyframes premiumModalIn {
+    from { opacity: 0; transform: scale(0.92) translateY(20px); }
+    to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+/* Header */
+.order-detail-modal .modal-header {
+    padding: 16px 24px 14px;
+    border-bottom: none;
+    background: linear-gradient(180deg, #fef7f5 0%, #fffbfa 100%);
+    position: relative;
+    flex-shrink: 0;
+}
+
+.order-detail-modal .modal-header::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 24px;
+    right: 24px;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(239, 68, 68, 0.15), transparent);
+}
+
+.order-detail-modal .modal-header h2 {
+    font-size: 1.1rem;
+    font-weight: 800;
+    color: #1a1a2e;
+    letter-spacing: -0.02em;
+}
+
+.order-detail-modal .modal-header .btn-ghost {
+    width: 32px;
+    height: 32px;
+    min-height: 32px;
+    border-radius: 10px;
+    background: rgba(0, 0, 0, 0.04);
+    color: #9ca3af;
+    font-size: 0.85rem;
+    transition: all 0.2s;
+}
+
+.order-detail-modal .modal-header .btn-ghost:hover {
+    background: rgba(239, 68, 68, 0.08);
+    color: #ef4444;
+    transform: rotate(90deg);
+}
+
+/* Action buttons in header */
+.order-detail-modal .btn-secondary.btn-sm {
+    background: #ffffff;
+    border: 1.5px solid rgba(0, 0, 0, 0.08);
+    color: #64748b;
+    border-radius: 10px;
+    font-weight: 700;
+    transition: all 0.2s;
+}
+
+.order-detail-modal .btn-secondary.btn-sm:hover {
+    background: #fef2f2;
+    border-color: rgba(239, 68, 68, 0.12);
+    color: #ef4444;
+}
+
+/* Body */
+.order-detail-modal .modal-body {
+    background: #fffbfa;
+    overflow-y: auto;
+    flex: 1;
+    min-height: 0;
+}
+
+/* Section titles */
+.order-detail-modal .section-title {
+    font-size: 0.7rem;
+    font-weight: 800;
+    color: #ef4444;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    padding-bottom: 6px;
+    border-bottom: 1px solid rgba(239, 68, 68, 0.08);
+    margin-bottom: 10px;
+}
+
+.order-detail-modal .section-title::before {
+    content: '';
+    display: inline-block;
+    width: 3px;
+    height: 14px;
+    border-radius: 4px;
+    background: linear-gradient(180deg, #ef4444, #f97316);
+    margin-right: 6px;
+    vertical-align: middle;
+}
+
+.order-detail-modal .section-title svg {
+    color: #ef4444;
+}
+
+/* Info card, Financial card, Timeline card */
+.order-detail-modal .info-card,
+.order-detail-modal .financial-card,
+.order-detail-modal .timeline-card,
+.order-detail-modal .notes-box {
+    background: #ffffff;
+    border: 1.5px solid rgba(0, 0, 0, 0.06);
+    border-radius: 14px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+    transition: all 0.2s;
+}
+
+.order-detail-modal .info-card:hover,
+.order-detail-modal .financial-card:hover {
+    border-color: rgba(239, 68, 68, 0.12);
+    box-shadow: 0 4px 16px rgba(239, 68, 68, 0.04);
+}
+
+/* Info rows */
+.order-detail-modal .info-row {
+    border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+    font-size: 0.85rem;
+}
+
+.order-detail-modal .info-row .label {
+    color: #64748b;
+    font-weight: 600;
+}
+
+.order-detail-modal .info-row .value {
+    font-weight: 700;
+    color: #1a1a2e;
+}
+
+/* Items table */
+.order-detail-modal .items-table th {
+    color: #9ca3af;
+    font-size: 0.68rem;
+    font-weight: 800;
+    letter-spacing: 0.8px;
+    border-bottom: 2px solid rgba(239, 68, 68, 0.1);
+    text-transform: uppercase;
+}
+
+.order-detail-modal .items-table td {
+    font-size: 0.85rem;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+    color: #1a1a2e;
+}
+
+.order-detail-modal .items-table tbody tr:hover {
+    background: rgba(239, 68, 68, 0.02);
+}
+
+.order-detail-modal .item-thumb-cell {
+    border-radius: 10px;
+    border: 1.5px solid rgba(0, 0, 0, 0.06);
+}
+
+.order-detail-modal .item-variant {
+    color: #ef4444;
+}
+
+/* Financial rows */
+.order-detail-modal .fin-row {
+    font-size: 0.85rem;
+    color: #64748b;
+}
+
+.order-detail-modal .fin-row span:last-child {
+    font-weight: 700;
+    color: #1a1a2e;
+}
+
+.order-detail-modal .fin-row.total {
+    color: #ef4444;
+    font-weight: 800;
+    border-top: 1.5px dashed rgba(239, 68, 68, 0.2);
+}
+
+.order-detail-modal .fin-row.total span:last-child {
+    color: #ef4444;
+    font-size: 1.1rem;
+}
+
+/* Timeline */
+.order-detail-modal .timeline::before {
+    background: linear-gradient(to bottom, rgba(239, 68, 68, 0.3), rgba(0, 0, 0, 0.04));
+}
+
+.order-detail-modal .timeline-marker {
+    background: #ffffff;
+    border: 2px solid rgba(0, 0, 0, 0.08);
+    font-size: 9px;
+    font-weight: 800;
+    color: #9ca3af;
+}
+
+.order-detail-modal .timeline-item.active .timeline-marker {
+    background: linear-gradient(135deg, #ef4444, #f97316);
+    border-color: #ef4444;
+    color: white;
+    box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.1);
+}
+
+.order-detail-modal .timeline-status-label {
+    font-size: 0.88rem;
+    font-weight: 700;
+    color: #1a1a2e;
+}
+
+.order-detail-modal .timeline-time {
+    font-size: 0.75rem;
+    color: #9ca3af;
+}
+
+.order-detail-modal .timeline-actor {
+    color: #ef4444;
+    font-weight: 700;
+}
+
+/* Notes box */
+.order-detail-modal .notes-box {
+    font-size: 0.85rem;
+    color: #64748b;
+    line-height: 1.6;
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.02) 0%, rgba(249, 115, 22, 0.02) 100%);
+}
+
+/* Payment screenshot */
+.order-detail-modal .empty-photo-placeholder {
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.03) 0%, rgba(249, 115, 22, 0.03) 100%);
+    border: 1.5px dashed rgba(239, 68, 68, 0.15);
+    color: #9ca3af;
+    padding: 20px;
+    text-align: center;
+    font-size: 0.82rem;
+    font-weight: 600;
+}
