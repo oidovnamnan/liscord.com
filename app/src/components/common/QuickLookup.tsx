@@ -101,6 +101,24 @@ export function QuickLookup({ isOpen, onClose }: QuickLookupProps) {
         }
     }, [isOpen]);
 
+    // Global ESC to close
+    useEffect(() => {
+        if (!isOpen) return;
+        const handler = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') {
+                e.preventDefault();
+                if (previewOrder || previewProduct) {
+                    setPreviewOrder(null);
+                    setPreviewProduct(null);
+                } else {
+                    onClose();
+                }
+            }
+        };
+        window.addEventListener('keydown', handler);
+        return () => window.removeEventListener('keydown', handler);
+    }, [isOpen, onClose, previewOrder, previewProduct]);
+
     // Search with debounce
     const doSearch = useCallback(async (q: string) => {
         if (!business?.id || q.length < 1) {
