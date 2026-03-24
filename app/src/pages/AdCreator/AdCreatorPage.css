@@ -699,6 +699,49 @@
     margin-right: 8px;
 }
 
+/* ── Download Format Bar ── */
+.adc-download-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 10px 16px;
+    background: var(--surface-2);
+    border: 1.5px solid var(--border-soft);
+    border-radius: 12px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+}
+.adc-format-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--text-muted);
+}
+.adc-format-chip {
+    padding: 5px 14px;
+    border-radius: 8px;
+    border: 1.5px solid var(--border-soft);
+    background: var(--surface-1);
+    color: var(--text-secondary);
+    font-family: inherit;
+    font-size: 0.75rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.adc-format-chip:hover { border-color: #8b5cf6; color: #8b5cf6; }
+.adc-format-chip.active {
+    background: #8b5cf6;
+    color: #fff;
+    border-color: #8b5cf6;
+}
+.adc-quality-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
 /* ── Loading / Empty ── */
 .adc-loading, .adc-empty {
     display: flex;

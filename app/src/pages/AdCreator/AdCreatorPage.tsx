@@ -2,8 +2,9 @@ import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import {
     Image as ImageIcon, Check, Download, Sparkles, Copy, CheckCircle,
     Loader2, Search, ChevronRight, Package, Palette, Wand2, X, ArrowLeft,
-    Filter, ArrowUpDown, TrendingUp
+    Filter, ArrowUpDown, TrendingUp, FolderDown, FileImage
 } from 'lucide-react';
+import JSZip from 'jszip';
 import { collection, getDocs, query, where } from 'firebase/firestore';
 import { db } from '../../services/firebase';
 import { useBusinessStore } from '../../store';
@@ -72,6 +73,11 @@ export function AdCreatorPage() {
     const [generated, setGenerated] = useState<GeneratedAd[]>([]);
     const [generating, setGenerating] = useState(false);
     const [progress, setProgress] = useState(0);
+
+    // Download options
+    type ImageFormat = 'png' | 'jpeg' | 'webp';
+    const [downloadFormat, setDownloadFormat] = useState<ImageFormat>('png');
+    const [downloadQuality, setDownloadQuality] = useState(92);
 
     // AI Copy
     const [aiCopy, setAiCopy] = useState('');
@@ -224,22 +230,117 @@ export function AdCreatorPage() {
         toast.success(`${results.length} зар зураг бэлэн боллоо!`);
     }, [selectedProducts, selectedTemplate, badgeText, promoText, business]);
 
-    // Download single
-    const downloadImage = (ad: GeneratedAd) => {
-        const a = document.createElement('a');
-        a.href = ad.dataUrl;
-        a.download = `ad_${ad.productName.replace(/\s+/g, '_').substring(0, 30)}.png`;
-        a.click();
-    };
+    // Convert data URL to target format
+    const convertDataUrl = useCallback((dataUrl: string, format: ImageFormat, quality: number): Promise<Blob> => {
+        return new Promise((resolve) => {
+            const img = new Image();
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                canvas.width = img.width;
+                canvas.height = img.height;
+                const ctx = canvas.getContext('2d')!;
+                if (format === 'jpeg') {
+                    ctx.fillStyle = '#ffffff';
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+                }
+                ctx.drawImage(img, 0, 0);
+                canvas.toBlob(
+                    (blob) => resolve(blob!),
+                    `image/${format}`,
+                    quality / 100
+                );
+            };
+            img.src = dataUrl;
+        });
+    }, []);
 
-    // Download all
-    const downloadAll = async () => {
-        for (const ad of generated) {
-            downloadImage(ad);
-            await new Promise(r => setTimeout(r, 300));
+    const getExt = (f: ImageFormat) => f === 'jpeg' ? 'jpg' : f;
+
+    // Download single — uses showSaveFilePicker for location choice
+    const downloadImage = useCallback(async (ad: GeneratedAd) => {
+        const ext = getExt(downloadFormat);
+        const fileName = `ad_${ad.productName.replace(/\s+/g, '_').substring(0, 30)}.${ext}`;
+        const blob = await convertDataUrl(ad.dataUrl, downloadFormat, downloadQuality);
+
+        // Try File System Access API (shows save location picker)
+        if ('showSaveFilePicker' in window) {
+            try {
+                const mimeMap: Record<ImageFormat, string> = {
+                    png: 'image/png', jpeg: 'image/jpeg', webp: 'image/webp'
+                };
+                const handle = await (window as any).showSaveFilePicker({
+                    suggestedName: fileName,
+                    types: [{
+                        description: `${ext.toUpperCase()} Image`,
+                        accept: { [mimeMap[downloadFormat]]: [`.${ext}`] },
+                    }],
+                });
+                const writable = await handle.createWritable();
+                await writable.write(blob);
+                await writable.close();
+                toast.success(`${fileName} хадгалагдлаа!`);
+                return;
+            } catch (e: any) {
+                if (e.name === 'AbortError') return; // user cancelled
+            }
         }
-        toast.success('Бүх зурагнууд татагдлаа!');
-    };
+
+        // Fallback: regular download
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = fileName;
+        a.click();
+        URL.revokeObjectURL(url);
+        toast.success(`${fileName} татагдлаа!`);
+    }, [downloadFormat, downloadQuality, convertDataUrl]);
+
+    // Download all as ZIP
+    const downloadAll = useCallback(async () => {
+        const ext = getExt(downloadFormat);
+        const zip = new JSZip();
+        const folder = zip.folder('ad_images')!;
+
+        toast.loading('ZIP бэлтгэж байна...', { id: 'zip' });
+
+        for (let i = 0; i < generated.length; i++) {
+            const ad = generated[i];
+            const blob = await convertDataUrl(ad.dataUrl, downloadFormat, downloadQuality);
+            const name = `${(i + 1).toString().padStart(2, '0')}_${ad.productName.replace(/\s+/g, '_').substring(0, 25)}.${ext}`;
+            folder.file(name, blob);
+        }
+
+        const zipBlob = await zip.generateAsync({ type: 'blob' });
+
+        // Try File System Access API
+        if ('showSaveFilePicker' in window) {
+            try {
+                const handle = await (window as any).showSaveFilePicker({
+                    suggestedName: 'ad_images.zip',
+                    types: [{
+                        description: 'ZIP Archive',
+                        accept: { 'application/zip': ['.zip'] },
+                    }],
+                });
+                const writable = await handle.createWritable();
+                await writable.write(zipBlob);
+                await writable.close();
+                toast.success(`${generated.length} зураг ZIP-д хадгалагдлаа!`, { id: 'zip' });
+                return;
+            } catch (e: any) {
+                if (e.name === 'AbortError') { toast.dismiss('zip'); return; }
+            }
+        }
+
+        // Fallback
+        const url = URL.createObjectURL(zipBlob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'ad_images.zip';
+        a.click();
+        URL.revokeObjectURL(url);
+        toast.success(`${generated.length} зураг ZIP-д татагдлаа!`, { id: 'zip' });
+    }, [generated, downloadFormat, downloadQuality, convertDataUrl]);
 
     // AI Copy
     const handleAiCopy = async (mode: 'bulk' | 'single') => {
@@ -572,11 +673,42 @@ export function AdCreatorPage() {
                         <>
                             <div className="adc-card-header">
                                 <div className="adc-card-title"><ImageIcon size={20} /> Бэлэн зурагнууд ({generated.length})</div>
-                                <div style={{ display: 'flex', gap: 8 }}>
-                                    <button className="adc-btn-sm" onClick={downloadAll}>
-                                        <Download size={14} /> Бүгдийг татах
+                                {generated.length > 1 && (
+                                    <button className="adc-btn-primary" onClick={downloadAll} style={{ padding: '8px 16px', fontSize: '0.82rem' }}>
+                                        <FolderDown size={16} /> ZIP татах ({generated.length})
                                     </button>
+                                )}
+                            </div>
+
+                            {/* Format & Quality Bar */}
+                            <div className="adc-download-bar">
+                                <div className="adc-format-group">
+                                    <FileImage size={14} />
+                                    <span className="adc-label" style={{ margin: 0 }}>Формат:</span>
+                                    {(['png', 'jpeg', 'webp'] as ImageFormat[]).map(f => (
+                                        <button
+                                            key={f}
+                                            className={`adc-format-chip ${downloadFormat === f ? 'active' : ''}`}
+                                            onClick={() => setDownloadFormat(f)}
+                                        >
+                                            {f === 'jpeg' ? 'JPG' : f.toUpperCase()}
+                                        </button>
+                                    ))}
                                 </div>
+                                {downloadFormat !== 'png' && (
+                                    <div className="adc-quality-group">
+                                        <span className="adc-label" style={{ margin: 0 }}>Чанар: {downloadQuality}%</span>
+                                        <input
+                                            type="range"
+                                            min={50}
+                                            max={100}
+                                            value={downloadQuality}
+                                            onChange={e => setDownloadQuality(Number(e.target.value))}
+                                            className="adc-opacity-slider"
+                                            style={{ width: 120 }}
+                                        />
+                                    </div>
+                                )}
                             </div>
 
                             {/* AI Copy Section */}
@@ -624,8 +756,8 @@ export function AdCreatorPage() {
                                         <img src={ad.dataUrl} alt={ad.productName} className="adc-gallery-img" />
                                         <div className="adc-gallery-footer">
                                             <span className="adc-gallery-name">{ad.productName}</span>
-                                            <button className="adc-btn-sm" onClick={() => downloadImage(ad)}>
-                                                <Download size={14} />
+                                            <button className="adc-btn-sm" onClick={() => downloadImage(ad)} title={`${getExt(downloadFormat).toUpperCase()} хадгалах`}>
+                                                <Download size={14} /> .{getExt(downloadFormat)}
                                             </button>
                                         </div>
                                     </div>
