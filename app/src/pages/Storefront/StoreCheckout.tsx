@@ -342,13 +342,15 @@ export function StoreCheckout() {
                     // Update order as paid via client-side Firestore
                     try {
                         const orderRef = doc(db, `businesses/${business.id}/orders`, successId);
-                        const totalAmount = items.reduce((s, i) => s + i.price * i.quantity, 0);
+                        // Read existing order to get total (cart is already cleared at this point)
+                        const orderSnap = await getDoc(orderRef);
+                        const orderTotal = orderSnap.data()?.financials?.totalAmount || 0;
                         await updateDoc(orderRef, {
                             status: 'confirmed',
                             paymentStatus: 'paid',
                             paymentVerifiedAt: new Date(),
                             paymentVerifiedBy: 'qpay',
-                            'financials.paidAmount': totalAmount,
+                            'financials.paidAmount': orderTotal,
                             'financials.balanceDue': 0,
                         });
                     } catch (firestoreErr) {
