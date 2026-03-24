@@ -26,10 +26,17 @@ export function ProductModal({ product, onClose, preorderTerms, onCategoryClick,
     const touchRef = useRef<{ startX: number; startY: number } | null>(null);
 
     // Variation support — default to cheapest variation
-    const variations = product.variations?.filter(v => (v.salePrice ?? 0) > 0 || v.name) || [];
+    // Legacy fallback: some products have prices stored in `quantity` instead of `salePrice`
+    const getVarPrice = (v: { salePrice?: number; quantity?: number }) => {
+        if ((v.salePrice ?? 0) > 0) return v.salePrice!;
+        // If quantity looks like a price (>= 1000), use it as fallback
+        if ((v.quantity ?? 0) >= 1000) return v.quantity!;
+        return 0;
+    };
+    const variations = (product.variations || []).filter(v => getVarPrice(v) > 0 || v.name);
     const hasVariations = variations.length > 0;
     const cheapestVariation = hasVariations
-        ? variations.reduce((min, v) => ((v.salePrice ?? Infinity) < (min.salePrice ?? Infinity) ? v : min), variations[0])
+        ? variations.reduce((min, v) => (getVarPrice(v) < getVarPrice(min) || getVarPrice(min) === 0 ? v : min), variations[0])
         : null;
     const [selectedVariation, setSelectedVariation] = useState<string | null>(
         cheapestVariation?.id ?? null
@@ -100,7 +107,7 @@ export function ProductModal({ product, onClose, preorderTerms, onCategoryClick,
     };
 
     // Price: variation price > flash deal > base sale price
-    const variationPrice = activeVariation?.salePrice ?? 0;
+    const variationPrice = activeVariation ? getVarPrice(activeVariation) : 0;
     const effectivePrice = flashDealPrice ?? (hasVariations && variationPrice > 0 ? variationPrice : (product.pricing?.salePrice || 0));
 
     const handleAddToCart = () => {
@@ -340,9 +347,9 @@ export function ProductModal({ product, onClose, preorderTerms, onCategoryClick,
                                                     }}
                                                 >
                                                     <span>{v.name}</span>
-                                                    {(v.salePrice ?? 0) > 0 && (
+                                                    {getVarPrice(v) > 0 && (
                                                         <span style={{ fontSize: '0.72rem', opacity: isActive ? 0.85 : 0.6 }}>
-                                                            {(v.salePrice ?? 0).toLocaleString()}₮
+                                                            {getVarPrice(v).toLocaleString()}₮
                                                         </span>
                                                     )}
                                                 </button>

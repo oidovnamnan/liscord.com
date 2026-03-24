@@ -1206,7 +1206,7 @@ function CreateProductModal({ onClose }: { onClose: () => void }) {
                                     ) : (
                                         <div className="variations-list" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                                             {variations.map((v) => (
-                                                <div key={v.id} className="variation-item" style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr 0.8fr 44px', gap: 12, alignItems: 'center', background: 'var(--bg-soft)', padding: 12, borderRadius: 14 }}>
+                                                <div key={v.id} className="variation-item" style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr 0.8fr 0.6fr 44px', gap: 12, alignItems: 'center', background: 'var(--bg-soft)', padding: 12, borderRadius: 14 }}>
                                                     <input
                                                         className="input input-sm"
                                                         placeholder="Улаан / XL"
@@ -1218,6 +1218,13 @@ function CreateProductModal({ onClose }: { onClose: () => void }) {
                                                         placeholder="SKU"
                                                         value={v.sku}
                                                         onChange={e => updateVariation(v.id, { sku: e.target.value })}
+                                                    />
+                                                    <input
+                                                        className="input input-sm"
+                                                        type="number"
+                                                        placeholder="Үнэ"
+                                                        value={v.salePrice ?? ''}
+                                                        onChange={e => updateVariation(v.id, { salePrice: Number(e.target.value) || 0 })}
                                                     />
                                                     <input
                                                         className="input input-sm"
@@ -1874,7 +1881,7 @@ function EditProductModal({ product, onClose }: { product: Product; onClose: () 
                                 ) : (
                                     <div className="variations-list" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                                         {variations.map((v) => (
-                                            <div key={v.id} className="variation-item" style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr 0.8fr 40px', gap: 10, alignItems: 'center', background: 'var(--bg-soft)', padding: 10, borderRadius: 12 }}>
+                                            <div key={v.id} className="variation-item" style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr 0.8fr 0.6fr 40px', gap: 10, alignItems: 'center', background: 'var(--bg-soft)', padding: 10, borderRadius: 12 }}>
                                                 <input
                                                     className="input input-sm"
                                                     placeholder="Улаан / XL"
@@ -1886,6 +1893,13 @@ function EditProductModal({ product, onClose }: { product: Product; onClose: () 
                                                     placeholder="SKU"
                                                     value={v.sku}
                                                     onChange={e => updateVariation(v.id, { sku: e.target.value })}
+                                                />
+                                                <input
+                                                    className="input input-sm"
+                                                    type="number"
+                                                    placeholder="Үнэ"
+                                                    value={v.salePrice ?? ''}
+                                                    onChange={e => updateVariation(v.id, { salePrice: Number(e.target.value) || 0 })}
                                                 />
                                                 <input
                                                     className="input input-sm"

@@ -328,8 +328,12 @@ export function ThemeMinimal({ business }: { business: Business }) {
                                 const salePrice = p.pricing?.salePrice || 0;
                                 const comparePrice = p.pricing?.comparePrice;
                                 const hasDiscount = comparePrice && comparePrice > salePrice;
-                                // Variation price range for cards
-                                const variationPrices = (p.variations || []).map(v => v.salePrice ?? 0).filter(pr => pr > 0);
+                                // Variation price range for cards (with legacy fallback: quantity as price if >= 1000)
+                                const variationPrices = (p.variations || []).map(v => {
+                                    if ((v.salePrice ?? 0) > 0) return v.salePrice!;
+                                    if ((v.quantity ?? 0) >= 1000) return v.quantity!;
+                                    return 0;
+                                }).filter(pr => pr > 0);
                                 const hasVariationPrices = variationPrices.length > 0 && salePrice === 0;
                                 const minVarPrice = hasVariationPrices ? Math.min(...variationPrices) : 0;
                                 const maxVarPrice = hasVariationPrices ? Math.max(...variationPrices) : 0;
