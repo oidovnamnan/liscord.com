@@ -12,17 +12,37 @@ import * as admin from 'firebase-admin';
 const QPAY_API_URL = 'https://merchant.qpay.mn/v2';
 
 // Initialize Firebase Admin (only once)
+let adminInitError: string | null = null;
 if (!admin.apps.length) {
-    admin.initializeApp({
-        credential: admin.credential.cert({
-            projectId: process.env.FIREBASE_PROJECT_ID || 'liscord-2b529',
-            clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-            privateKey: (process.env.FIREBASE_PRIVATE_KEY || '').replace(/\\n/g, '\n'),
-        }),
-    });
+    try {
+        // Try FIREBASE_SERVICE_ACCOUNT JSON first (most reliable), then individual env vars
+        const serviceAccountJson = process.env.FIREBASE_SERVICE_ACCOUNT;
+        if (serviceAccountJson) {
+            const serviceAccount = JSON.parse(serviceAccountJson);
+            admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
+        } else {
+            const projectId = process.env.FIREBASE_PROJECT_ID || 'liscord-2b529';
+            const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
+            let privateKey = process.env.FIREBASE_PRIVATE_KEY || '';
+            // Handle various escape formats
+            privateKey = privateKey.replace(/\\n/g, '\n');
+            
+            if (!clientEmail || !privateKey) {
+                adminInitError = `Missing Firebase credentials: clientEmail=${!!clientEmail}, privateKey=${!!privateKey}`;
+                console.error(adminInitError);
+            } else {
+                admin.initializeApp({
+                    credential: admin.credential.cert({ projectId, clientEmail, privateKey }),
+                });
+            }
+        }
+    } catch (initErr: any) {
+        adminInitError = `Firebase Admin init failed: ${initErr.message}`;
+        console.error(adminInitError);
+    }
 }
 
-const db = admin.firestore();
+const db = admin.apps.length ? admin.firestore() : null;
 
 // Token cache per business
 const tokenCache: Record<string, { token: string; expiresAt: number }> = {};
@@ -57,6 +77,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // QPay sends GET or POST callbacks
     if (req.method !== 'GET' && req.method !== 'POST') {
         return res.status(405).json({ error: 'Method not allowed' });
+    }
+
+    if (!db) {
+        console.error('Firebase Admin not initialized:', adminInitError);
+        return res.status(500).json({ error: `Firebase Admin not initialized: ${adminInitError}` });
     }
 
     const bizId = req.query.bizId as string;
