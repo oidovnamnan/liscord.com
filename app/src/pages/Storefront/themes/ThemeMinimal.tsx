@@ -724,11 +724,35 @@ function MembershipModal({
             const { doc, onSnapshot } = await import('firebase/firestore');
             const { db } = await import('../../../services/firebase');
             const orderRef = doc(db, 'businesses', business.id, 'orders', newId);
-            const unsubscribe = onSnapshot(orderRef, (snap) => {
+            const unsubscribe = onSnapshot(orderRef, async (snap) => {
                 const data = snap.data();
-                if (data?.paymentStatus === 'paid') {
+                if (data?.paymentStatus === 'paid' && !paymentConfirmed) {
                     setPaymentConfirmed(true);
                     unsubscribe();
+                    
+                    // Auto-create membership when payment is confirmed (bank transfer or QPay callback)
+                    if (product.exclusiveCategoryId) {
+                        try {
+                            const { addDoc, collection, serverTimestamp, Timestamp } = await import('firebase/firestore');
+                            const cleanPh = cleanPhone.replace(/^976/, '');
+                            const expDate = new Date();
+                            expDate.setDate(expDate.getDate() + durationDays);
+                            
+                            await addDoc(collection(db, 'businesses', business.id, 'memberships'), {
+                                customerPhone: cleanPh,
+                                categoryId: product.exclusiveCategoryId,
+                                orderId: newId,
+                                purchasedAt: serverTimestamp(),
+                                expiresAt: Timestamp.fromDate(expDate),
+                                amountPaid: price,
+                                status: 'active',
+                                createdBy: 'payment_listener',
+                            });
+                        } catch (e) {
+                            console.debug('Membership auto-create failed (may already exist via QPay):', e);
+                        }
+                    }
+                    
                     // Refresh membership status
                     onVerify(cleanPhone);
                     setTimeout(() => onClose(), 2500);
@@ -811,64 +835,19 @@ function MembershipModal({
             }
 
             try {
-                const resp = await fetch('/api/qpay-check', {
+                // Use qpay-callback (server-side with Admin SDK) to verify + update order + grant membership
+                const resp = await fetch(`/api/qpay-callback?bizId=${encodeURIComponent(business.id)}&orderId=${encodeURIComponent(_oid)}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        invoiceId,
-                        purpose: 'product',
-                        bizId: business.id,
-                        orderId: _oid,
-                        qpayUsername: business.settings?.qpay?.username || '',
-                        qpayPassword: business.settings?.qpay?.password || '',
-                    }),
                 });
                 const data = await resp.json();
 
-                if (data.paid) {
+                if (data.message === 'Payment confirmed' || data.message === 'Already paid') {
                     if (pollingRef.current) clearInterval(pollingRef.current);
-
-                    // Update order as paid + create membership (client-side)
-                    try {
-                        const { doc: firestoreDoc, updateDoc, addDoc, collection, serverTimestamp, Timestamp } = await import('firebase/firestore');
-                        const { db } = await import('../../../services/firebase');
-
-                        // 1. Mark order as paid
-                        const orderRef = firestoreDoc(db, `businesses/${business.id}/orders`, _oid);
-                        await updateDoc(orderRef, {
-                            status: 'confirmed',
-                            paymentStatus: 'paid',
-                            paymentVerifiedAt: serverTimestamp(),
-                            paymentVerifiedBy: 'qpay_poll',
-                            'financials.paidAmount': price,
-                            'financials.balanceDue': 0,
-                        });
-
-                        // 2. Grant membership
-                        if (product.exclusiveCategoryId) {
-                            const cleanPhone = phone.trim().replace(/[\s\-+]/g, '').replace(/^976/, '');
-                            const expDate = new Date();
-                            expDate.setDate(expDate.getDate() + durationDays);
-
-                            await addDoc(collection(db, 'businesses', business.id, 'memberships'), {
-                                customerPhone: cleanPhone,
-                                categoryId: product.exclusiveCategoryId,
-                                orderId: _oid,
-                                purchasedAt: serverTimestamp(),
-                                expiresAt: Timestamp.fromDate(expDate),
-                                amountPaid: price,
-                                status: 'active',
-                                createdBy: 'qpay_auto',
-                            });
-
-                            // Refresh membership status
-                            onVerify(cleanPhone);
-                        }
-                    } catch (e) {
-                        console.error('Failed to update order/membership:', e);
-                    }
-
                     setPaymentConfirmed(true);
+                    // Refresh membership status
+                    const cleanPhone = phone.trim().replace(/[\s\-+]/g, '').replace(/^976/, '');
+                    onVerify(cleanPhone);
                     setTimeout(() => onClose(), 2500);
                 }
             } catch (pollErr) {

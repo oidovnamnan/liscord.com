@@ -90,12 +90,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         const bizData = bizDoc.data()!;
 
         if (orderData.orderType === 'membership') {
-            // VIP/membership invoices — credentials from Vercel Environment Variables
-            if (!process.env.QPAY_VIP_USERNAME || !process.env.QPAY_VIP_PASSWORD) {
-                return res.status(500).json({ error: 'QPay VIP credentials not configured in server environment' });
+            // VIP/membership invoices — try server-side env credentials first,
+            // fallback to business QPay credentials (invoice may have been created with either)
+            if (process.env.QPAY_VIP_USERNAME && process.env.QPAY_VIP_PASSWORD) {
+                username = process.env.QPAY_VIP_USERNAME;
+                password = process.env.QPAY_VIP_PASSWORD;
+            } else {
+                // Fallback: use business's own QPay credentials
+                const qpay = bizData.settings?.qpay;
+                if (!qpay?.username || !qpay?.password) {
+                    return res.status(400).json({ error: 'QPay credentials not configured (no VIP env + no business QPay)' });
+                }
+                username = qpay.username;
+                password = qpay.password;
             }
-            username = process.env.QPAY_VIP_USERNAME;
-            password = process.env.QPAY_VIP_PASSWORD;
         } else {
             // Product orders use business's own QPay credentials
             const qpay = bizData.settings?.qpay;

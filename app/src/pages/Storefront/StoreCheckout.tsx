@@ -317,53 +317,22 @@ export function StoreCheckout() {
     }, [successId, business?.id]);
 
     // ──────── POLL QPAY PAYMENT STATUS ────────
-    // Fallback: if QPay callback doesn't fire, poll and update Firestore directly.
+    // Uses server-side qpay-callback with Admin SDK for reliable order updates + membership.
     useEffect(() => {
         if (!qpayInvoice?.invoice_id || !successId || !business?.id || paymentConfirmed) return;
-
-        const qpaySettings = business.settings?.qpay;
-        if (!qpaySettings?.username || !qpaySettings?.password) return;
 
         let stopped = false;
         const poll = async () => {
             if (stopped || paymentConfirmed) return;
             try {
-                const resp = await fetch('/api/qpay-check', {
+                // Call qpay-callback (Admin SDK) — verifies payment + updates order server-side
+                const resp = await fetch(`/api/qpay-callback?bizId=${encodeURIComponent(business.id)}&orderId=${encodeURIComponent(successId)}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        invoiceId: qpayInvoice.invoice_id,
-                        qpayUsername: qpaySettings.username,
-                        qpayPassword: qpaySettings.password,
-                        purpose: 'product',
-                        bizId: business.id,
-                        orderId: successId,
-                    }),
                 });
                 const data = await resp.json();
-                if (data.paid && !stopped) {
+                if ((data.message === 'Payment confirmed' || data.message === 'Already paid') && !stopped) {
                     stopped = true;
-                    // Update order as paid (client-side)
-                    try {
-                        const orderRef = doc(db, `businesses/${business.id}/orders`, successId);
-                        await updateDoc(orderRef, {
-                            status: 'confirmed',
-                            paymentStatus: 'paid',
-                            paymentVerifiedAt: serverTimestamp(),
-                            paymentVerifiedBy: 'qpay_poll',
-                            'financials.paidAmount': savedTotal,
-                            'financials.balanceDue': 0,
-                            statusHistory: arrayUnion({
-                                status: 'confirmed',
-                                at: new Date(),
-                                by: 'qpay_auto',
-                                byName: 'QPay Систем',
-                                note: `QPay төлбөр баталгаажлаа — ₮${savedTotal.toLocaleString()}`
-                            }),
-                        });
-                    } catch (e) {
-                        console.error('Failed to update order:', e);
-                    }
                     setPaymentConfirmed(true);
                     toast.success('Төлбөр баталгаажлаа! 🎉');
                 }
