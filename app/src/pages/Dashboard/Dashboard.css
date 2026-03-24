@@ -1802,6 +1802,7 @@
     padding: 20px 20px 24px;
     overflow: hidden;
     min-height: 340px;
+    scroll-snap-align: start;
 }
 
 @media (max-width: 768px) {

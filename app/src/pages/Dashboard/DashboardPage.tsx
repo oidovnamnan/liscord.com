@@ -1037,7 +1037,26 @@ export function DashboardPage() {
         })
         .filter(Boolean);
 
-
+    // ═══ Magnetic scroll-snap on mobile ═══
+    useEffect(() => {
+        const scrollContainer = document.querySelector('.app-main-scrolled') as HTMLElement;
+        if (!scrollContainer) return;
+        // Only on mobile
+        const mq = window.matchMedia('(max-width: 768px)');
+        const apply = () => {
+            if (mq.matches) {
+                scrollContainer.style.scrollSnapType = 'y proximity';
+            } else {
+                scrollContainer.style.scrollSnapType = '';
+            }
+        };
+        apply();
+        mq.addEventListener('change', apply);
+        return () => {
+            scrollContainer.style.scrollSnapType = '';
+            mq.removeEventListener('change', apply);
+        };
+    }, []);
 
     return (
         <div className="page-container animate-fade-in" style={{ padding: '0 0 32px' }}>
