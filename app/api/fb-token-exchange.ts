@@ -78,6 +78,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return res.status(500).json({ error: 'FB_APP_SECRET not configured in environment variables' });
     }
 
+    // Auth: Verify request origin + shared secret
+    const origin = req.headers.origin || '';
+    const allowedOrigins = ['https://www.liscord.com', 'https://liscord.com', 'http://localhost:5173', 'http://localhost:3000'];
+    const authSecret = req.headers['x-api-secret'] as string;
+    if (!allowedOrigins.includes(origin) && authSecret !== APP_SECRET) {
+        return res.status(403).json({ error: 'Unauthorized' });
+    }
+
     try {
         // Step 1: Exchange short-lived token → long-lived user token
         console.log('[fb-token] Step 1: Exchanging for long-lived user token...');

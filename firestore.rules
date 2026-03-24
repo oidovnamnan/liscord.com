@@ -165,9 +165,10 @@ service cloud.firestore {
         allow delete: if false;
       }
 
-      // Payment settings: public read (checkout needs bank details)
+      // Payment settings: member-only (QPay credentials are sensitive)
+      // Storefront uses /api/qpay-invoice serverless function instead
       match /payment_settings/{docId} {
-        allow read: if true;
+        allow read: if isMemberOf(bizId);
         allow create, update: if isMemberOf(bizId);
         allow delete: if false;
       }

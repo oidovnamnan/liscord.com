@@ -238,6 +238,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     // ═══ POST: Receive Events ═══
     if (req.method === 'POST') {
+        // Verify Facebook signature (X-Hub-Signature-256)
+        const appSecret = process.env.FB_APP_SECRET;
+        const signature = req.headers['x-hub-signature-256'] as string;
+        if (appSecret && signature) {
+            const { createHmac } = await import('crypto');
+            const rawBody = typeof req.body === 'string' ? req.body : JSON.stringify(req.body);
+            const expected = 'sha256=' + createHmac('sha256', appSecret).update(rawBody).digest('hex');
+            if (signature !== expected) {
+                console.error('[fb-webhook] ❌ Invalid signature — rejecting forged event');
+                return res.status(403).send('Invalid signature');
+            }
+        } else if (!appSecret) {
+            console.warn('[fb-webhook] ⚠️ FB_APP_SECRET not set — signature verification skipped');
+        }
+
         const body = req.body;
 
         if (body.object !== 'page') {
