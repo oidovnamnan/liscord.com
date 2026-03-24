@@ -949,6 +949,443 @@ const overlayFullInfo: AdTemplate = {
     }
 };
 
+// ── 10 PREMIUM OVERLAY TEMPLATES ──
+
+const overlayDiagonal: AdTemplate = {
+    id: 'overlay_diagonal', name: 'Диагональ', emoji: '📐',
+    width: 1080, height: 1080, category: 'square', isOverlay: true,
+    description: 'Диагональ хэлбэрийн шошго',
+    render(ctx, p, o) {
+        drawProductImage(ctx, p.image, 0, 0, 1080, 1080);
+        const opacity = getOpacity(o);
+        const pos = o.labelPosition || 'bottom-right';
+        // Diagonal slash
+        ctx.save();
+        const isRight = pos.includes('right') || pos === 'bottom-center';
+        const isTop = pos.includes('top');
+        ctx.translate(isRight ? 1080 : 0, isTop ? 0 : 1080);
+        ctx.rotate(isRight ? (isTop ? 0.35 : -0.35) : (isTop ? -0.35 : 0.35));
+        ctx.fillStyle = `rgba(0,0,0,${opacity * 0.88})`;
+        ctx.fillRect(-200, isTop ? -20 : -220, 900, 220);
+        // Name
+        ctx.fillStyle = '#fff'; ctx.font = 'bold 28px system-ui';
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText(p.name.substring(0, 35), 250, isTop ? 60 : -140);
+        // Price
+        ctx.fillStyle = '#ffd700'; ctx.font = 'bold 44px system-ui';
+        ctx.fillText(formatPrice(p.price), 250, isTop ? 120 : -70);
+        // Badge
+        if (o.badgeText) {
+            ctx.fillStyle = '#e74c3c'; ctx.font = 'bold 16px system-ui';
+            ctx.fillText(o.badgeText, 250, isTop ? 18 : -190);
+        }
+        ctx.restore();
+    }
+};
+
+const overlayNeon: AdTemplate = {
+    id: 'overlay_neon', name: 'Неон', emoji: '✨',
+    width: 1080, height: 1080, category: 'square', isOverlay: true,
+    description: 'Неон гэрлийн хүрээтэй карт',
+    render(ctx, p, o) {
+        drawProductImage(ctx, p.image, 0, 0, 1080, 1080);
+        const pos = o.labelPosition || 'bottom-right';
+        const opacity = getOpacity(o);
+        const cardW = 440, cardH = 260;
+        const { x, y } = getLabelRect(1080, 1080, cardW, cardH, pos);
+        // Neon glow
+        ctx.save();
+        ctx.shadowColor = '#00ff88'; ctx.shadowBlur = 25;
+        ctx.strokeStyle = `rgba(0,255,136,${opacity})`;
+        ctx.lineWidth = 3;
+        roundRect(ctx, x, y, cardW, cardH, 14);
+        ctx.stroke();
+        // Inner glow line
+        ctx.shadowBlur = 15;
+        roundRect(ctx, x + 3, y + 3, cardW - 6, cardH - 6, 12);
+        ctx.stroke();
+        ctx.restore();
+        // Dark fill
+        ctx.fillStyle = `rgba(8,8,8,${opacity * 0.92})`;
+        roundRect(ctx, x + 4, y + 4, cardW - 8, cardH - 8, 11);
+        ctx.fill();
+        // Neon label
+        ctx.fillStyle = '#00ff88'; ctx.font = 'bold 14px system-ui';
+        ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+        ctx.fillText(o.badgeText || '★ ОНЦЛОХ', x + 22, y + 22);
+        // Name
+        ctx.fillStyle = '#fff'; ctx.font = 'bold 26px system-ui';
+        wrapText(ctx, p.name, x + 22, y + 50, cardW - 44, 32, 2);
+        // Price neon
+        ctx.save();
+        ctx.shadowColor = '#00ff88'; ctx.shadowBlur = 10;
+        ctx.fillStyle = '#00ff88'; ctx.font = 'bold 44px system-ui';
+        ctx.fillText(formatPrice(p.price), x + 22, y + cardH - 58);
+        ctx.restore();
+        if (p.comparePrice && p.comparePrice > p.price) {
+            ctx.font = '500 18px system-ui'; ctx.fillStyle = 'rgba(255,255,255,0.4)';
+            const pw = ctx.measureText(formatPrice(p.price)).width;
+            const old = formatPrice(p.comparePrice);
+            ctx.fillText(old, x + 28 + pw, y + cardH - 42);
+        }
+    }
+};
+
+const overlayMiniTag: AdTemplate = {
+    id: 'overlay_mini', name: 'Мини тэг', emoji: '🔖',
+    width: 1080, height: 1080, category: 'square', isOverlay: true,
+    description: 'Маш жижиг, нямбай шошго',
+    render(ctx, p, o) {
+        drawProductImage(ctx, p.image, 0, 0, 1080, 1080);
+        const pos = o.labelPosition || 'bottom-left';
+        const opacity = getOpacity(o);
+        const tagW = 280, tagH = 100;
+        const { x, y } = getLabelRect(1080, 1080, tagW, tagH, pos, 24);
+        // Tiny rounded card
+        ctx.save();
+        ctx.shadowColor = 'rgba(0,0,0,0.2)'; ctx.shadowBlur = 15;
+        ctx.fillStyle = `rgba(255,255,255,${opacity})`;
+        roundRect(ctx, x, y, tagW, tagH, 14);
+        ctx.fill();
+        ctx.restore();
+        // Name tiny
+        ctx.fillStyle = '#333'; ctx.font = '600 14px system-ui';
+        ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+        const shortName = p.name.length > 25 ? p.name.substring(0, 23) + '…' : p.name;
+        ctx.fillText(shortName, x + 14, y + 14);
+        // Price bold
+        ctx.fillStyle = '#e74c3c'; ctx.font = 'bold 32px system-ui';
+        ctx.fillText(formatPrice(p.price), x + 14, y + 40);
+        // Color accent dot
+        ctx.fillStyle = '#8b5cf6';
+        ctx.beginPath(); ctx.arc(x + tagW - 24, y + tagH / 2, 8, 0, Math.PI * 2); ctx.fill();
+    }
+};
+
+const overlayStriped: AdTemplate = {
+    id: 'overlay_striped', name: 'Зураасан', emoji: '🏳️',
+    width: 1080, height: 1080, category: 'square', isOverlay: true,
+    description: 'Судалтай banner шошго',
+    render(ctx, p, o) {
+        drawProductImage(ctx, p.image, 0, 0, 1080, 1080);
+        const pos = o.labelPosition || 'bottom-center';
+        const opacity = getOpacity(o);
+        const bW = 700, bH = 160;
+        const margin = 40;
+        let bx: number, by: number;
+        if (pos.includes('left')) bx = margin;
+        else if (pos.includes('right')) bx = 1080 - bW - margin;
+        else bx = (1080 - bW) / 2;
+        if (pos.includes('top')) by = margin;
+        else if (pos === 'center') by = (1080 - bH) / 2;
+        else by = 1080 - bH - margin;
+        // Banner with stripes
+        ctx.save();
+        ctx.shadowColor = 'rgba(0,0,0,0.2)'; ctx.shadowBlur = 20;
+        ctx.fillStyle = `rgba(220,38,38,${opacity})`;
+        roundRect(ctx, bx, by, bW, bH, 12);
+        ctx.fill();
+        ctx.restore();
+        // Diagonal stripes
+        ctx.save();
+        roundRect(ctx, bx, by, bW, bH, 12);
+        ctx.clip();
+        ctx.strokeStyle = `rgba(255,255,255,0.08)`;
+        ctx.lineWidth = 18;
+        for (let i = -bH; i < bW + bH; i += 36) {
+            ctx.beginPath();
+            ctx.moveTo(bx + i, by);
+            ctx.lineTo(bx + i - bH, by + bH);
+            ctx.stroke();
+        }
+        ctx.restore();
+        // Name
+        ctx.fillStyle = '#fff'; ctx.font = 'bold 28px system-ui';
+        ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+        wrapText(ctx, p.name, bx + bW / 2, by + 20, bW - 40, 34, 2);
+        // Price
+        ctx.fillStyle = '#fff'; ctx.font = 'bold 42px system-ui';
+        ctx.textAlign = 'center';
+        ctx.fillText(formatPrice(p.price), bx + bW / 2, by + bH - 55);
+    }
+};
+
+const overlayCTA: AdTemplate = {
+    id: 'overlay_cta', name: 'Дуудлага', emoji: '🛒',
+    width: 1080, height: 1080, category: 'square', isOverlay: true,
+    description: 'Call-to-action товчтой',
+    render(ctx, p, o) {
+        drawProductImage(ctx, p.image, 0, 0, 1080, 1080);
+        const pos = o.labelPosition || 'bottom-center';
+        const opacity = getOpacity(o);
+        const cardW = 520, cardH = 260;
+        const { x, y } = getLabelRect(1080, 1080, cardW, cardH, pos);
+        // Card
+        ctx.save();
+        ctx.shadowColor = 'rgba(0,0,0,0.15)'; ctx.shadowBlur = 25;
+        ctx.fillStyle = `rgba(255,255,255,${opacity})`;
+        roundRect(ctx, x, y, cardW, cardH, 18);
+        ctx.fill();
+        ctx.restore();
+        // Name
+        ctx.fillStyle = '#111'; ctx.font = 'bold 24px system-ui';
+        ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+        wrapText(ctx, p.name, x + 22, y + 20, cardW - 44, 30, 2);
+        // Price
+        ctx.fillStyle = '#e74c3c'; ctx.font = 'bold 38px system-ui';
+        ctx.fillText(formatPrice(p.price), x + 22, y + 95);
+        // Compare
+        if (p.comparePrice && p.comparePrice > p.price) {
+            ctx.font = '500 18px system-ui'; ctx.fillStyle = '#aaa';
+            const pw = ctx.measureText(formatPrice(p.price)).width;
+            ctx.fillText(formatPrice(p.comparePrice), x + 28 + pw, y + 112);
+        }
+        // CTA Button
+        const btnW = cardW - 44, btnH = 48, btnX = x + 22, btnY = y + cardH - 68;
+        const btnGrad = ctx.createLinearGradient(btnX, btnY, btnX + btnW, btnY);
+        btnGrad.addColorStop(0, '#8b5cf6'); btnGrad.addColorStop(1, '#6366f1');
+        ctx.fillStyle = btnGrad;
+        roundRect(ctx, btnX, btnY, btnW, btnH, 12);
+        ctx.fill();
+        ctx.fillStyle = '#fff'; ctx.font = 'bold 18px system-ui';
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText(o.badgeText || '🛒 Худалдаж авах', btnX + btnW / 2, btnY + btnH / 2);
+    }
+};
+
+const overlayDualCard: AdTemplate = {
+    id: 'overlay_dual', name: 'Хос карт', emoji: '🃏',
+    width: 1080, height: 1080, category: 'square', isOverlay: true,
+    description: 'Хос жижиг карт — нэр + үнэ тусдаа',
+    render(ctx, p, o) {
+        drawProductImage(ctx, p.image, 0, 0, 1080, 1080);
+        const pos = o.labelPosition || 'bottom-right';
+        const opacity = getOpacity(o);
+        const margin = 30;
+        const nameW = 360, nameH = 90, priceW = 200, priceH = 70;
+        let baseX: number, baseY: number;
+        if (pos.includes('left')) baseX = margin;
+        else if (pos.includes('right')) baseX = 1080 - nameW - margin;
+        else baseX = (1080 - nameW) / 2;
+        if (pos.includes('top')) baseY = margin;
+        else if (pos === 'center') baseY = (1080 - nameH - priceH - 10) / 2;
+        else baseY = 1080 - nameH - priceH - 10 - margin;
+        // Name card
+        ctx.save();
+        ctx.shadowColor = 'rgba(0,0,0,0.15)'; ctx.shadowBlur = 20;
+        ctx.fillStyle = `rgba(255,255,255,${opacity})`;
+        roundRect(ctx, baseX, baseY, nameW, nameH, 14);
+        ctx.fill();
+        ctx.restore();
+        ctx.fillStyle = '#111'; ctx.font = 'bold 22px system-ui';
+        ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+        wrapText(ctx, p.name, baseX + 16, baseY + 16, nameW - 32, 28, 2);
+        // Price card (offset slightly right)
+        const priceX = baseX + 20, priceY = baseY + nameH + 10;
+        ctx.save();
+        ctx.shadowColor = 'rgba(231,76,60,0.2)'; ctx.shadowBlur = 20;
+        ctx.fillStyle = `rgba(231,76,60,${opacity})`;
+        roundRect(ctx, priceX, priceY, priceW, priceH, 14);
+        ctx.fill();
+        ctx.restore();
+        ctx.fillStyle = '#fff'; ctx.font = 'bold 30px system-ui';
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText(formatPrice(p.price), priceX + priceW / 2, priceY + priceH / 2);
+    }
+};
+
+const overlayFrame: AdTemplate = {
+    id: 'overlay_frame', name: 'Хүрээ', emoji: '🖼️',
+    width: 1080, height: 1080, category: 'square', isOverlay: true,
+    description: 'Elegant хүрээ + доод мэдээлэл',
+    render(ctx, p, o) {
+        drawProductImage(ctx, p.image, 0, 0, 1080, 1080);
+        const opacity = getOpacity(o);
+        // Elegant thin frame
+        ctx.strokeStyle = `rgba(255,255,255,${opacity * 0.9})`;
+        ctx.lineWidth = 3;
+        roundRect(ctx, 30, 30, 1020, 1020, 8);
+        ctx.stroke();
+        // Inner frame
+        ctx.strokeStyle = `rgba(255,255,255,${opacity * 0.4})`;
+        ctx.lineWidth = 1;
+        roundRect(ctx, 42, 42, 996, 996, 6);
+        ctx.stroke();
+        // Bottom info bar inside frame
+        const barH = 130;
+        ctx.fillStyle = `rgba(0,0,0,${opacity * 0.7})`;
+        ctx.fillRect(43, 1080 - 43 - barH, 994, barH);
+        const barY = 1080 - 43 - barH;
+        // Name
+        ctx.fillStyle = '#fff'; ctx.font = 'bold 28px system-ui';
+        ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+        wrapText(ctx, p.name, 70, barY + 18, 600, 34, 2);
+        // Price right
+        ctx.fillStyle = '#ffd700'; ctx.font = 'bold 42px system-ui';
+        ctx.textAlign = 'right';
+        ctx.fillText(formatPrice(p.price), 1010, barY + 20);
+        // Business
+        ctx.font = '600 14px system-ui'; ctx.fillStyle = 'rgba(255,255,255,0.5)';
+        ctx.textAlign = 'right';
+        ctx.fillText(o.businessName, 1010, barY + barH - 28);
+        // Badge top-left
+        if (o.badgeText) {
+            ctx.fillStyle = `rgba(231,76,60,${opacity})`;
+            roundRect(ctx, 43, 43, 200, 50, 0);
+            ctx.fill();
+            ctx.fillStyle = '#fff'; ctx.font = 'bold 18px system-ui';
+            ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+            ctx.fillText(o.badgeText, 143, 68);
+        }
+    }
+};
+
+const overlayBubble: AdTemplate = {
+    id: 'overlay_bubble', name: 'Бөмбөлөг', emoji: '💬',
+    width: 1080, height: 1080, category: 'square', isOverlay: true,
+    description: 'Бөмбөлөг хэлбэрийн мессеж',
+    render(ctx, p, o) {
+        drawProductImage(ctx, p.image, 0, 0, 1080, 1080);
+        const pos = o.labelPosition || 'bottom-right';
+        const opacity = getOpacity(o);
+        const bW = 420, bH = 200;
+        const { x, y } = getLabelRect(1080, 1080, bW, bH + 20, pos);
+        // Speech bubble
+        ctx.save();
+        ctx.shadowColor = 'rgba(0,0,0,0.15)'; ctx.shadowBlur = 20;
+        ctx.fillStyle = `rgba(255,255,255,${opacity})`;
+        roundRect(ctx, x, y, bW, bH, 20);
+        ctx.fill();
+        // Tail
+        ctx.beginPath();
+        const tailX = pos.includes('left') ? x + 60 : x + bW - 60;
+        const tailDir = pos.includes('top') ? -1 : 1;
+        const tailBase = pos.includes('top') ? y : y + bH;
+        ctx.moveTo(tailX - 15, tailBase);
+        ctx.lineTo(tailX + 5, tailBase + 22 * tailDir);
+        ctx.lineTo(tailX + 20, tailBase);
+        ctx.fill();
+        ctx.restore();
+        // Name
+        ctx.fillStyle = '#111'; ctx.font = 'bold 22px system-ui';
+        ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+        wrapText(ctx, p.name, x + 22, y + 18, bW - 44, 28, 2);
+        // Divider dots
+        ctx.fillStyle = '#ddd';
+        for (let i = 0; i < 5; i++) {
+            ctx.beginPath(); ctx.arc(x + 22 + i * 12, y + 90, 2, 0, Math.PI * 2); ctx.fill();
+        }
+        // Price
+        ctx.fillStyle = '#e74c3c'; ctx.font = 'bold 40px system-ui';
+        ctx.textAlign = 'left';
+        ctx.fillText(formatPrice(p.price), x + 22, y + 110);
+        // Badge right
+        if (o.badgeText) {
+            ctx.fillStyle = '#8b5cf6'; ctx.font = 'bold 14px system-ui';
+            ctx.textAlign = 'right';
+            ctx.fillText(o.badgeText, x + bW - 22, y + bH - 28);
+        }
+    }
+};
+
+const overlaySeal: AdTemplate = {
+    id: 'overlay_seal', name: 'Тамга', emoji: '🔴',
+    width: 1080, height: 1080, category: 'square', isOverlay: true,
+    description: 'Тамга хэлбэрийн дугуй + нэр зурвас',
+    render(ctx, p, o) {
+        drawProductImage(ctx, p.image, 0, 0, 1080, 1080);
+        const pos = o.labelPosition || 'bottom-right';
+        const opacity = getOpacity(o);
+        // Price seal (large circle)
+        const sz = 220;
+        const margin = 50;
+        let cx: number, cy: number;
+        if (pos === 'top-left') { cx = margin + sz / 2; cy = margin + sz / 2; }
+        else if (pos === 'top-right') { cx = 1080 - margin - sz / 2; cy = margin + sz / 2; }
+        else if (pos === 'bottom-left') { cx = margin + sz / 2; cy = 1080 - margin - sz / 2 - 60; }
+        else if (pos === 'center') { cx = 540; cy = 480; }
+        else if (pos === 'bottom-center') { cx = 540; cy = 1080 - margin - sz / 2 - 60; }
+        else { cx = 1080 - margin - sz / 2; cy = 1080 - margin - sz / 2 - 60; }
+        // Outer ring
+        ctx.save();
+        ctx.shadowColor = 'rgba(220,38,38,0.3)'; ctx.shadowBlur = 20;
+        ctx.strokeStyle = `rgba(220,38,38,${opacity})`;
+        ctx.lineWidth = 5;
+        ctx.beginPath(); ctx.arc(cx, cy, sz / 2, 0, Math.PI * 2); ctx.stroke();
+        // Inner dashed ring
+        ctx.setLineDash([8, 6]);
+        ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.arc(cx, cy, sz / 2 - 12, 0, Math.PI * 2); ctx.stroke();
+        ctx.setLineDash([]);
+        // Fill
+        ctx.fillStyle = `rgba(220,38,38,${opacity * 0.9})`;
+        ctx.beginPath(); ctx.arc(cx, cy, sz / 2 - 18, 0, Math.PI * 2); ctx.fill();
+        ctx.restore();
+        // Price
+        ctx.fillStyle = '#fff'; ctx.font = 'bold 36px system-ui';
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText(formatPrice(p.price), cx, cy - 6);
+        // Small text
+        ctx.font = 'bold 14px system-ui'; ctx.fillStyle = 'rgba(255,255,255,0.7)';
+        ctx.fillText(o.badgeText || 'ОНЦЛОХ ҮНЭ', cx, cy + 28);
+        // Name strip below seal
+        const stripW = 500, stripH = 50;
+        const stripX = cx - stripW / 2, stripY = cy + sz / 2 + 14;
+        ctx.fillStyle = `rgba(0,0,0,${opacity * 0.8})`;
+        roundRect(ctx, stripX, stripY, stripW, stripH, 25);
+        ctx.fill();
+        ctx.fillStyle = '#fff'; ctx.font = 'bold 18px system-ui';
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        const shortName = p.name.length > 35 ? p.name.substring(0, 33) + '…' : p.name;
+        ctx.fillText(shortName, cx, stripY + stripH / 2);
+    }
+};
+
+const overlaySwipe: AdTemplate = {
+    id: 'overlay_swipe', name: 'Свайп', emoji: '👆',
+    width: 1080, height: 1920, category: 'story', isOverlay: true,
+    description: 'Story свайп — дараах мэдрэгч загвар',
+    render(ctx, p, o) {
+        drawProductImage(ctx, p.image, 0, 0, 1080, 1920);
+        const opacity = getOpacity(o);
+        // Bottom gradient
+        const grad = ctx.createLinearGradient(0, 1300, 0, 1920);
+        grad.addColorStop(0, 'rgba(0,0,0,0)');
+        grad.addColorStop(0.3, `rgba(0,0,0,${opacity * 0.5})`);
+        grad.addColorStop(1, `rgba(0,0,0,${opacity * 0.95})`);
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 1100, 1080, 820);
+        // Badge pill top
+        if (o.badgeText) {
+            const bw = ctx.measureText(o.badgeText).width + 40 || 160;
+            ctx.fillStyle = '#e74c3c';
+            roundRect(ctx, (1080 - bw) / 2, 100, bw, 50, 25);
+            ctx.fill();
+            ctx.fillStyle = '#fff'; ctx.font = 'bold 22px system-ui';
+            ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+            ctx.fillText(o.badgeText, 540, 125);
+        }
+        // Product name
+        ctx.fillStyle = '#fff'; ctx.font = 'bold 44px system-ui';
+        ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+        wrapText(ctx, p.name, 540, 1450, 920, 54, 3);
+        // Price
+        ctx.fillStyle = '#ffd700'; ctx.font = 'bold 68px system-ui';
+        ctx.textAlign = 'center';
+        ctx.fillText(formatPrice(p.price), 540, 1660);
+        // Swipe up indicator
+        ctx.strokeStyle = 'rgba(255,255,255,0.5)'; ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(520, 1810); ctx.lineTo(540, 1790); ctx.lineTo(560, 1810);
+        ctx.stroke();
+        ctx.fillStyle = 'rgba(255,255,255,0.5)'; ctx.font = '600 16px system-ui';
+        ctx.textAlign = 'center';
+        ctx.fillText('Дээш шудрах', 540, 1830);
+        // Store
+        drawWatermark(ctx, o.businessName, 1080, 1870);
+    }
+};
+
 // ============ EXPORT ALL ============
 
 export const AD_TEMPLATES: AdTemplate[] = [
@@ -970,6 +1407,16 @@ export const AD_TEMPLATES: AdTemplate[] = [
     overlayCatalog,
     overlayGradientFB,
     overlayStory,
+    overlayDiagonal,
+    overlayNeon,
+    overlayMiniTag,
+    overlayStriped,
+    overlayCTA,
+    overlayDualCard,
+    overlayFrame,
+    overlayBubble,
+    overlaySeal,
+    overlaySwipe,
     // Classic templates
     templateSale,
     templateMinimal,
