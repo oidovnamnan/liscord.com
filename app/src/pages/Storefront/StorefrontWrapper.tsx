@@ -22,75 +22,6 @@ export function StorefrontWrapper() {
     const isIGBrowser = /Instagram/i.test(ua);
     const isInAppBrowser = isFBBrowser || isWeChatBrowser || isLineBrowser || isIGBrowser;
 
-    // For FB in-app browser on Android, try to force open in Chrome
-    useEffect(() => {
-        if (!isInAppBrowser) return;
-        const isAndroid = /Android/i.test(ua);
-        if (isAndroid && (isFBBrowser || isIGBrowser)) {
-            // Use intent scheme to launch in default browser on Android
-            try {
-                const url = window.location.href;
-                window.location.href = `intent://${url.replace(/^https?:\/\//, '')}#Intent;scheme=https;package=com.android.chrome;S.browser_fallback_url=${encodeURIComponent(url)};end`;
-            } catch {
-                // If intent fails, we'll show the manual prompt below
-            }
-        }
-    }, []);
-
-    // Show "Open in Browser" prompt for all in-app browsers (iOS doesn't support intent://)
-    if (isInAppBrowser) {
-        const currentUrl = window.location.href;
-        const browserName = isWeChatBrowser ? 'WeChat' : isFBBrowser ? 'Facebook' : isIGBrowser ? 'Instagram' : 'Line';
-        return (
-            <div style={{
-                display: 'flex', flexDirection: 'column', height: '100vh', alignItems: 'center', justifyContent: 'center',
-                textAlign: 'center', padding: '24px', background: '#ffffff', fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif'
-            }}>
-                <div style={{ fontSize: '3rem', marginBottom: 20 }}>🌐</div>
-                <h2 style={{ fontSize: '1.2rem', fontWeight: 800, marginBottom: 8, color: '#111' }}>
-                    Хөтөч дээр нээнэ үү
-                </h2>
-                <p style={{ color: '#666', fontSize: '0.9rem', maxWidth: 340, lineHeight: 1.6, marginBottom: 20 }}>
-                    {browserName} хөтөч дотор зөв ажиллахгүй байна.
-                    {/iPhone|iPad/i.test(ua)
-                        ? <><br/>Доод талын <strong>⋯</strong> товч дарж <strong>"Safari дээр нээх"</strong> гэснийг сонгоно уу.</>
-                        : <><br/>Баруун дээд <strong>⋮</strong> товч дарж <strong>"Хөтөчөөр нээх"</strong> гэснийг сонгоно уу.</>
-                    }
-                </p>
-                <div style={{
-                    padding: '14px 24px', background: '#f8f9fa', borderRadius: 14,
-                    fontSize: '0.8rem', color: '#555', wordBreak: 'break-all', maxWidth: 320,
-                    border: '1px dashed #ddd', userSelect: 'all', marginBottom: 16
-                }}>
-                    {currentUrl}
-                </div>
-                <button
-                    onClick={() => {
-                        try {
-                            navigator.clipboard.writeText(currentUrl);
-                        } catch {
-                            const el = document.createElement('textarea');
-                            el.value = currentUrl;
-                            document.body.appendChild(el);
-                            el.select();
-                            document.execCommand('copy');
-                            document.body.removeChild(el);
-                        }
-                        const btn = document.getElementById('copy-url-btn');
-                        if (btn) btn.textContent = '✅ Хуулагдлаа';
-                    }}
-                    id="copy-url-btn"
-                    style={{
-                        padding: '12px 32px', background: '#4a6bff', color: '#fff',
-                        border: 'none', borderRadius: 12, fontSize: '0.9rem', fontWeight: 700, cursor: 'pointer'
-                    }}
-                >
-                    📋 Линк хуулах
-                </button>
-            </div>
-        );
-    }
-
     const loadBusiness = async () => {
         if (!slug) {
             setLoading(false);
@@ -282,6 +213,61 @@ export function StorefrontWrapper() {
             <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: '20px' }}>
                 <h1 style={{ marginBottom: '10px' }}>Энэ дэлгүүр түр хаагдсан байна</h1>
                 <p style={{ color: 'var(--text-muted)' }}>Та дараа дахин зочилно уу.</p>
+            </div>
+        );
+    }
+
+    // In-app browser redirect — only when blockInAppBrowsers is enabled in settings
+    if (isInAppBrowser && business.settings?.storefront?.blockInAppBrowsers) {
+        // Android: try intent:// to force Chrome
+        const isAndroid = /Android/i.test(ua);
+        if (isAndroid && (isFBBrowser || isIGBrowser)) {
+            try {
+                const url = window.location.href;
+                window.location.href = `intent://${url.replace(/^https?:\/\//, '')}#Intent;scheme=https;package=com.android.chrome;S.browser_fallback_url=${encodeURIComponent(url)};end`;
+            } catch { /* fallback to manual prompt below */ }
+        }
+
+        const currentUrl = window.location.href;
+        const browserName = isWeChatBrowser ? 'WeChat' : isFBBrowser ? 'Facebook' : isIGBrowser ? 'Instagram' : 'Line';
+        return (
+            <div style={{
+                display: 'flex', flexDirection: 'column', height: '100vh', alignItems: 'center', justifyContent: 'center',
+                textAlign: 'center', padding: '24px', background: '#ffffff', fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif'
+            }}>
+                <div style={{ fontSize: '3rem', marginBottom: 20 }}>🌐</div>
+                <h2 style={{ fontSize: '1.2rem', fontWeight: 800, marginBottom: 8, color: '#111' }}>
+                    Хөтөч дээр нээнэ үү
+                </h2>
+                <p style={{ color: '#666', fontSize: '0.9rem', maxWidth: 340, lineHeight: 1.6, marginBottom: 20 }}>
+                    {browserName} хөтөч дотор зөв ажиллахгүй байна.
+                    {/iPhone|iPad/i.test(ua)
+                        ? <><br/>Доод талын <strong>⋯</strong> товч дарж <strong>"Safari дээр нээх"</strong> гэснийг сонгоно уу.</>
+                        : <><br/>Баруун дээд <strong>⋮</strong> товч дарж <strong>"Хөтөчөөр нээх"</strong> гэснийг сонгоно уу.</>
+                    }
+                </p>
+                <div style={{
+                    padding: '14px 24px', background: '#f8f9fa', borderRadius: 14,
+                    fontSize: '0.8rem', color: '#555', wordBreak: 'break-all', maxWidth: 320,
+                    border: '1px dashed #ddd', userSelect: 'all', marginBottom: 16
+                }}>
+                    {currentUrl}
+                </div>
+                <button
+                    onClick={() => {
+                        try { navigator.clipboard.writeText(currentUrl); } catch {
+                            const el = document.createElement('textarea');
+                            el.value = currentUrl; document.body.appendChild(el);
+                            el.select(); document.execCommand('copy'); document.body.removeChild(el);
+                        }
+                        const btn = document.getElementById('copy-url-btn');
+                        if (btn) btn.textContent = '✅ Хуулагдлаа';
+                    }}
+                    id="copy-url-btn"
+                    style={{ padding: '12px 32px', background: '#4a6bff', color: '#fff', border: 'none', borderRadius: 12, fontSize: '0.9rem', fontWeight: 700, cursor: 'pointer' }}
+                >
+                    📋 Линк хуулах
+                </button>
             </div>
         );
     }

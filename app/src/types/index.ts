@@ -204,6 +204,7 @@ export interface BusinessSettings {
         name?: string;
         installedThemes?: string[]; // IDs of installed/purchased themes
         showFooter?: boolean;
+        blockInAppBrowsers?: boolean;
         preorderTerms?: string; // newline-separated terms for preorder products
         productsPerPage?: number; // Pagination limit for storefront (default 20)
     };

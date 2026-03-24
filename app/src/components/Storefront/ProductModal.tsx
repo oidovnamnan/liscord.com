@@ -25,6 +25,14 @@ export function ProductModal({ product, onClose, preorderTerms, onCategoryClick,
     const [termsAccepted, setTermsAccepted] = useState(false);
     const touchRef = useRef<{ startX: number; startY: number } | null>(null);
 
+    // Variation support
+    const variations = product.variations?.filter(v => (v.salePrice ?? 0) > 0 || v.name) || [];
+    const hasVariations = variations.length > 0;
+    const [selectedVariation, setSelectedVariation] = useState<string | null>(
+        hasVariations ? variations[0].id : null
+    );
+    const activeVariation = hasVariations ? variations.find(v => v.id === selectedVariation) || variations[0] : null;
+
     // Lock body scroll
     useEffect(() => {
         document.body.style.overflow = 'hidden';
@@ -88,11 +96,18 @@ export function ProductModal({ product, onClose, preorderTerms, onCategoryClick,
         touchRef.current = null;
     };
 
-    const effectivePrice = flashDealPrice ?? (product.pricing?.salePrice || 0);
+    // Price: variation price > flash deal > base sale price
+    const variationPrice = activeVariation?.salePrice ?? 0;
+    const effectivePrice = flashDealPrice ?? (hasVariations && variationPrice > 0 ? variationPrice : (product.pricing?.salePrice || 0));
 
     const handleAddToCart = () => {
+        const cartProduct = flashDealPrice
+            ? { ...product, pricing: { ...product.pricing, salePrice: flashDealPrice } }
+            : hasVariations && activeVariation
+                ? { ...product, pricing: { ...product.pricing, salePrice: variationPrice }, name: `${product.name} — ${activeVariation.name}` }
+                : product;
         useCartStore.getState().addItem({
-            product: flashDealPrice ? { ...product, pricing: { ...product.pricing, salePrice: flashDealPrice } } : product,
+            product: cartProduct,
             quantity,
             price: effectivePrice
         });
@@ -109,8 +124,13 @@ export function ProductModal({ product, onClose, preorderTerms, onCategoryClick,
     };
 
     const handleBuyNow = () => {
+        const cartProduct = flashDealPrice
+            ? { ...product, pricing: { ...product.pricing, salePrice: flashDealPrice } }
+            : hasVariations && activeVariation
+                ? { ...product, pricing: { ...product.pricing, salePrice: variationPrice }, name: `${product.name} — ${activeVariation.name}` }
+                : product;
         useCartStore.getState().addItem({
-            product: flashDealPrice ? { ...product, pricing: { ...product.pricing, salePrice: flashDealPrice } } : product,
+            product: cartProduct,
             quantity,
             price: effectivePrice
         });
@@ -129,9 +149,9 @@ export function ProductModal({ product, onClose, preorderTerms, onCategoryClick,
     const brand = extractBrand(product.description);
     const isPreorder = product.productType === 'preorder';
     const hasStock = isPreorder || !product.stock?.trackInventory || (product.stock?.quantity ?? 0) > 0;
-    const originalSalePrice = product.pricing?.salePrice || 0;
+    const originalSalePrice = hasVariations && variationPrice > 0 ? variationPrice : (product.pricing?.salePrice || 0);
     const salePrice = flashDealPrice ?? originalSalePrice;
-    const comparePrice = flashDealPrice ? originalSalePrice : product.pricing?.comparePrice;
+    const comparePrice = flashDealPrice ? (product.pricing?.salePrice || 0) : product.pricing?.comparePrice;
     const hasDiscount = (comparePrice && comparePrice > salePrice) || !!flashDealPrice;
     const discountPercent = hasDiscount && comparePrice ? Math.round((1 - salePrice / comparePrice) * 100) : 0;
     const isFlashDeal = !!flashDealPrice;
@@ -285,6 +305,50 @@ export function ProductModal({ product, onClose, preorderTerms, onCategoryClick,
 
                         {/* Scrollable content below sticky header */}
                         <div className="sf-modal-info-body">
+                            {/* Variation selector */}
+                            {hasVariations && (
+                                <div style={{ marginBottom: 16 }}>
+                                    <div style={{ fontSize: '0.8rem', fontWeight: 700, color: '#555', marginBottom: 10, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                                        Хувилбар сонгох
+                                    </div>
+                                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                                        {variations.map(v => {
+                                            const isActive = selectedVariation === v.id;
+                                            return (
+                                                <button
+                                                    key={v.id}
+                                                    onClick={() => setSelectedVariation(v.id)}
+                                                    style={{
+                                                        padding: '8px 16px',
+                                                        borderRadius: 10,
+                                                        border: isActive ? '2px solid #111' : '1.5px solid #e0e0e0',
+                                                        background: isActive ? '#111' : '#fff',
+                                                        color: isActive ? '#fff' : '#333',
+                                                        fontSize: '0.82rem',
+                                                        fontWeight: isActive ? 700 : 500,
+                                                        cursor: 'pointer',
+                                                        transition: 'all 0.15s',
+                                                        fontFamily: 'inherit',
+                                                        lineHeight: 1.3,
+                                                        display: 'flex',
+                                                        flexDirection: 'column',
+                                                        alignItems: 'center',
+                                                        gap: 2,
+                                                    }}
+                                                >
+                                                    <span>{v.name}</span>
+                                                    {(v.salePrice ?? 0) > 0 && (
+                                                        <span style={{ fontSize: '0.72rem', opacity: isActive ? 0.85 : 0.6 }}>
+                                                            {(v.salePrice ?? 0).toLocaleString()}₮
+                                                        </span>
+                                                    )}
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            )}
+
                             <hr className="sf-modal-divider" />
 
                             {/* Stock / Preorder indicator */}

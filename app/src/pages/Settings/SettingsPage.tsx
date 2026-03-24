@@ -250,6 +250,7 @@ export function SettingsPage() {
         const storefrontName = fd.has('storefrontName') ? (fd.get('storefrontName') as string)?.trim() : undefined;
         const enabled = fd.has('storefrontEnabled') ? fd.get('storefrontEnabled') === 'on' : business.settings?.storefront?.enabled;
         const showFooter = fd.has('showFooter') ? fd.get('showFooter') === 'on' : business.settings?.storefront?.showFooter;
+        const blockInAppBrowsers = fd.has('blockInAppBrowsers') ? fd.get('blockInAppBrowsers') === 'on' : (business.settings?.storefront?.blockInAppBrowsers ?? false);
         const preorderTerms = fd.has('preorderTerms') ? (fd.get('preorderTerms') as string) : business.settings?.storefront?.preorderTerms;
         const productsPerPageStr = fd.get('productsPerPage') as string;
         const productsPerPage = productsPerPageStr ? parseInt(productsPerPageStr, 10) : undefined;
@@ -299,6 +300,7 @@ export function SettingsPage() {
                         ...business.settings?.storefront,
                         enabled: enabled ?? false,
                         showFooter: showFooter ?? true,
+                        blockInAppBrowsers: blockInAppBrowsers ?? false,
                         theme: newTheme || business.settings?.storefront?.theme || 'minimal',
                         name: storefrontName !== undefined ? storefrontName : (business.settings?.storefront?.name || ''),
                         preorderTerms: preorderTerms ?? business.settings?.storefront?.preorderTerms,
@@ -312,6 +314,7 @@ export function SettingsPage() {
                 ...business.settings?.storefront,
                 enabled: enabled ?? false,
                 showFooter: showFooter ?? true,
+                blockInAppBrowsers: blockInAppBrowsers ?? false,
                 theme: newTheme || business.settings?.storefront?.theme || 'minimal',
                 name: storefrontName !== undefined ? storefrontName : (business.settings?.storefront?.name || ''),
                 preorderTerms: preorderTerms ?? business.settings?.storefront?.preorderTerms,
@@ -606,6 +609,21 @@ export function SettingsPage() {
                                                     type="checkbox"
                                                     name="storefrontEnabled"
                                                     defaultChecked={business?.settings?.storefront?.enabled}
+                                                />
+                                                <span className="toggle-slider" />
+                                            </label>
+                                        </div>
+
+                                        <div className="modern-toggle-item">
+                                            <div className="toggle-info">
+                                                <h4>In-app browser хаах 🌐</h4>
+                                                <p>Facebook, WeChat, Instagram зэрэг апп доторх хөтчөөс орохыг хориглож, Chrome/Safari руу чиглүүлнэ.</p>
+                                            </div>
+                                            <label className="toggle">
+                                                <input
+                                                    type="checkbox"
+                                                    name="blockInAppBrowsers"
+                                                    defaultChecked={business?.settings?.storefront?.blockInAppBrowsers ?? false}
                                                 />
                                                 <span className="toggle-slider" />
                                             </label>

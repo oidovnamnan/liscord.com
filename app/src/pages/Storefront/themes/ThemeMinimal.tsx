@@ -170,6 +170,12 @@ export function ThemeMinimal({ business }: { business: Business }) {
     const handleAddToCart = (e: React.MouseEvent, p: Product) => {
         e.preventDefault();
         e.stopPropagation();
+        // If product has variations, open modal to pick one
+        const varPrices = (p.variations || []).filter(v => (v.salePrice ?? 0) > 0);
+        if (varPrices.length > 0 && (p.pricing?.salePrice || 0) === 0) {
+            setSelectedProduct(p as StorefrontProduct);
+            return;
+        }
         useCartStore.getState().addItem({
             product: p,
             quantity: 1,
@@ -322,6 +328,12 @@ export function ThemeMinimal({ business }: { business: Business }) {
                                 const salePrice = p.pricing?.salePrice || 0;
                                 const comparePrice = p.pricing?.comparePrice;
                                 const hasDiscount = comparePrice && comparePrice > salePrice;
+                                // Variation price range for cards
+                                const variationPrices = (p.variations || []).map(v => v.salePrice ?? 0).filter(pr => pr > 0);
+                                const hasVariationPrices = variationPrices.length > 0 && salePrice === 0;
+                                const minVarPrice = hasVariationPrices ? Math.min(...variationPrices) : 0;
+                                const maxVarPrice = hasVariationPrices ? Math.max(...variationPrices) : 0;
+                                const displayPrice = hasVariationPrices ? minVarPrice : salePrice;
 
                                 return (
                                     <div
@@ -384,9 +396,16 @@ export function ThemeMinimal({ business }: { business: Business }) {
                                             <div className="product-price">
                                                 {sfp.isLocked ? (
                                                     <span style={{ color: '#999', fontSize: '0.85rem' }}>Гишүүнчлэл шаардлагатай</span>
+                                                ) : hasVariationPrices ? (
+                                                    <span>
+                                                        {minVarPrice === maxVarPrice
+                                                            ? `${minVarPrice.toLocaleString()} ₮`
+                                                            : `${minVarPrice.toLocaleString()} ~ ${maxVarPrice.toLocaleString()} ₮`
+                                                        }
+                                                    </span>
                                                 ) : (
                                                     <>
-                                                        {salePrice.toLocaleString()} ₮
+                                                        {displayPrice.toLocaleString()} ₮
                                                         {hasDiscount && (
                                                             <span style={{
                                                                 fontSize: '0.82rem', textDecoration: 'line-through',
