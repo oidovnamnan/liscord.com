@@ -310,16 +310,29 @@ ${existingCategories.map(c => `- "${c}"`).join('\n')}
   "Кальцийн цитрат, Магни, Цайр, Витамин D3 агуулсан нэмэлт тэжээл. Ясны эрүүл мэнд, булчин болон дархлааг дэмжих зориулалттай.\\n\\nХэмжээ: 500 ширхэг таблет\\nГарал үүсэл: АНУ (Kirkland Signature)\\nХадгалах нөхцөл: Сэрүүн, хуурай, нарны шууд тусгалаас хол газар\\nХадгалах хугацаа: 3 жил\\nХэрэглэх заавар: Өдөрт 1 ширхэг усаар даруулж ууна"
 - Тайлбар нь хамгийн багадаа 100 тэмдэгтээс дээш урттай байх ЁСТОЙ
 
-ХУВИЛБАРУУД (variations):
-- Хэрэв постонд өнгө, хэмжээ, багц зэрэг сонголт байвал тус тусад нь хувилбар үүсгэх
-- Жишээ: "S, M, L, XL" → variations: [{name: "S"}, {name: "M"}, {name: "L"}, {name: "XL"}]
-- Жишээ: "Хар, Цагаан, Улаан" → variations: [{name: "Хар"}, {name: "Цагаан"}, {name: "Улаан"}]
+ХУВИЛБАРУУД (variations) — МАРГАШГҮЙ ЧУХАЛ:
+- Хэрэв постонд өнгө, хэмжээ, багц, эзэлхүүн, жин зэрэг сонголт байвал тус тусад нь хувилбар үүсгэх
+- Хувилбар бүрт ЗААВАЛ salePrice оруулна. Хэрэв хувилбар тус бүрт өөр үнэ байгаа бол тусад нь бичнэ
+- Хэрэв БҮХ хувилбар нэг үнэтэй бол: бүгдэд ижил үнэ бичнэ
+- Жишээ: "500ml - 15000₮, 1L - 25000₮" → variations: [{name: "500ml", salePrice: 15000}, {name: "1L", salePrice: 25000}]
+- Жишээ: "S, M, L, XL - 45000₮" → variations: [{name: "S", salePrice: 45000}, {name: "M", salePrice: 45000}, {name: "L", salePrice: 45000}, {name: "XL", salePrice: 45000}]
 - Хувилбар байхгүй бол хоосон array []
 
-ТООН УТГЫГ ЗӨВХӨН ТООГООР бичнэ. "45,000₮" → 45000
+ЁРӨНХИЙ ЗАРАХ ҮНЭ (salePrice) — ЧУХАЛ ДҮРЭМ:
+- Хэрэв хувилбаргүй бол: постонд байгаа зарах үнийг шууд бичих
+- Хэрэв хувилбартай бол: ХАМГИЙН БАГА хувилбарын үнийг salePrice болгож бичих
+- Хэрэв постонд нэг л үнэ байвал (хувилбартай ч байсан) түүнийг salePrice-д бичнэ
+- ҮНЭ 0 БАЙЖ БОЛОХГҮЙ — постонд үнэ байвал заавал задлах! "45,000₮" → 45000, "45.000"→ 45000, "45000"→ 45000
+
+ТООН УТГЫГ ЗӨВХӨН ТООГООР бичнэ. "45,000₮" → 45000, "125.500₮" → 125500
+
+ҮНЭ ЗАДЛАХ ОНЦГОЙ ДҮРЭМ:
+- Монгол постонд үнэ ихэвчлэн: "45,000₮", "45.000", "45000₮", "45'000", "45000" гэсэн хэлбэртэй байна
+- Таслал (,), цэг (.), апостроф (') зэрэг тусгаарлагчийг ЗААВАЛ арилгаж тоо болгох
+- "100" гэсэн тоо нь 100₮ биш 100,000₮ ч байж болно — контекстээс харах
+- Хэрэв олон үнэ байвал хувилбар тус бүрт хамааруулж бичих
 
 ӨРТӨГ ТООЦООЛОХ:
-- salePrice нь FB постонд байгаа зарах үнэ
 - costPrice нь ӨРТӨГ ҮНЭ - зарах үнийн 50-70% хооронд тооцоол (импорт бараанд)
 - Хэрэв зарах үнэ байхгүй бол costPrice = 0
 
@@ -338,11 +351,11 @@ JSON ХАРИУ:
   "isProduct": true,
   "name": "Цэвэрхэн барааны нэр",
   "description": "Цэвэрлэгдсэн, мэргэжлийн тайлбар",
-  "salePrice": 0,
-  "costPrice": 0,
+  "salePrice": 15000,
+  "costPrice": 9000,
   "categoryName": "Ангилал",
   "confidence": 85,
-  "variations": [{"name": "S"}, {"name": "M"}],
+  "variations": [{"name": "500ml", "salePrice": 15000}, {"name": "1L", "salePrice": 25000}],
   "cargoSizeCategory": "Жижиг бараа"
 }
 
@@ -383,14 +396,26 @@ JSON ХАРИУ:
             id: Math.random().toString(36).substring(2, 9),
             name: v.name || `Хувилбар ${i + 1}`,
             sku: `${sku}-${(i + 1).toString().padStart(2, '0')}`,
-            quantity: 0
+            quantity: 0,
+            salePrice: Number(v.salePrice) || 0,
         }));
+
+        // Auto-calculate main salePrice from variations if main price is 0
+        let mainSalePrice = Number(parsed.salePrice) || 0;
+        let mainCostPrice = Number(parsed.costPrice) || 0;
+        if (mainSalePrice === 0 && variations.length > 0) {
+            const varPrices = variations.map((v: any) => v.salePrice).filter((p: number) => p > 0);
+            if (varPrices.length > 0) {
+                mainSalePrice = Math.min(...varPrices);
+                mainCostPrice = Math.round(mainSalePrice * 0.6); // estimate 60%
+            }
+        }
 
         return {
             name: parsed.name || 'Нэргүй бараа',
             description: parsed.description || message,
-            salePrice: Number(parsed.salePrice) || 0,
-            costPrice: Number(parsed.costPrice) || 0,
+            salePrice: mainSalePrice,
+            costPrice: mainCostPrice,
             categoryName,
             images,
             fbPostId: post.id,
