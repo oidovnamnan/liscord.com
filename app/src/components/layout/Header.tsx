@@ -56,6 +56,26 @@ export function Header({ title, subtitle, action, extra }: HeaderProps) {
     const location = useLocation();
 
 
+    // Auto-hide header on scroll down (mobile)
+    const lastScrollY = useRef(0);
+    const [headerHidden, setHeaderHidden] = useState(false);
+
+    useEffect(() => {
+        if (typeof window === 'undefined') return;
+        const handleScroll = () => {
+            if (window.innerWidth > 768) { setHeaderHidden(false); return; }
+            const currentY = window.scrollY;
+            if (currentY > lastScrollY.current && currentY > 60) {
+                setHeaderHidden(true);
+            } else {
+                setHeaderHidden(false);
+            }
+            lastScrollY.current = currentY;
+        };
+        window.addEventListener('scroll', handleScroll, { passive: true });
+        return () => window.removeEventListener('scroll', handleScroll);
+    }, []);
+
     const [isNotifOpen, setIsNotifOpen] = useState(false);
     const [isProfileOpen, setIsProfileOpen] = useState(false);
     const profileRef = useRef<HTMLDivElement>(null);
@@ -180,7 +200,7 @@ export function Header({ title, subtitle, action, extra }: HeaderProps) {
 
 
     return (
-        <header className="header">
+        <header className={`header ${headerHidden ? 'header-hidden' : ''}`}>
             <div className="header-left">
                 <button className="header-menu-btn hide-desktop" onClick={toggleSidebar}>
                     <Menu size={22} />
