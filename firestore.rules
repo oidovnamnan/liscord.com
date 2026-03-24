@@ -138,13 +138,23 @@ service cloud.firestore {
         allow delete: if false;
       }
 
-      // Orders: storefront can create + read + update payment status, members have full access
-      // QPay payment confirmation updates paymentStatus from storefront after /api/qpay-check verifies
+      // Orders: storefront can create + read, members have full update access
+      // QPay payment confirmation: unauthenticated users can ONLY update payment-related fields
       match /orders/{docId} {
         allow read: if true;            // Storefront needs to poll order status after QPay
         allow create: if true;          // Storefront checkout creates orders
-        allow update: if true;          // Allow storefront QPay payment confirmation + business members
         allow delete: if false;
+
+        // Business members: full update
+        // Storefront (unauthenticated): only payment fields
+        allow update: if isMemberOf(bizId)
+          || (
+            // Only allow changing these specific payment fields
+            request.resource.data.diff(resource.data).affectedKeys()
+              .hasOnly(['status', 'paymentStatus', 'paymentVerifiedAt', 'paymentVerifiedBy', 'financials'])
+            // paymentStatus can only be set to 'paid'
+            && request.resource.data.paymentStatus == 'paid'
+          );
       }
 
       // Memberships: public read + create (storefront VIP purchase flow)
