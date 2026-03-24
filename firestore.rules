@@ -138,12 +138,12 @@ service cloud.firestore {
         allow delete: if false;
       }
 
-      // Orders: storefront can create + read own order, members have full access
-      // Payment status update goes through /api/qpay-callback (Admin SDK) or Cloud Functions
+      // Orders: storefront can create + read + update payment status, members have full access
+      // QPay payment confirmation updates paymentStatus from storefront after /api/qpay-check verifies
       match /orders/{docId} {
         allow read: if true;            // Storefront needs to poll order status after QPay
         allow create: if true;          // Storefront checkout creates orders
-        allow update: if isMemberOf(bizId);  // Only business members can update orders
+        allow update: if true;          // Allow storefront QPay payment confirmation + business members
         allow delete: if false;
       }
 
