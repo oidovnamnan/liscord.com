@@ -959,25 +959,41 @@ const overlayDiagonal: AdTemplate = {
         drawProductImage(ctx, p.image, 0, 0, 1080, 1080);
         const opacity = getOpacity(o);
         const pos = o.labelPosition || 'bottom-right';
-        // Diagonal slash
-        ctx.save();
-        const isRight = pos.includes('right') || pos === 'bottom-center';
         const isTop = pos.includes('top');
-        ctx.translate(isRight ? 1080 : 0, isTop ? 0 : 1080);
-        ctx.rotate(isRight ? (isTop ? 0.35 : -0.35) : (isTop ? -0.35 : 0.35));
+        const isLeft = pos.includes('left');
+        // Diagonal band across the image
+        ctx.save();
+        const centerX = 540, centerY = 540;
+        // Place band in a quadrant based on position
+        let offsetX = isLeft ? -160 : 160;
+        let offsetY = isTop ? -160 : 160;
+        if (pos === 'center' || pos === 'bottom-center') { offsetX = 0; }
+        ctx.translate(centerX + offsetX, centerY + offsetY);
+        const angle = isLeft ? -0.32 : 0.32;
+        ctx.rotate(angle);
+        // Black band
         ctx.fillStyle = `rgba(0,0,0,${opacity * 0.88})`;
-        ctx.fillRect(-200, isTop ? -20 : -220, 900, 220);
-        // Name
-        ctx.fillStyle = '#fff'; ctx.font = 'bold 28px system-ui';
-        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-        ctx.fillText(p.name.substring(0, 35), 250, isTop ? 60 : -140);
-        // Price
-        ctx.fillStyle = '#ffd700'; ctx.font = 'bold 44px system-ui';
-        ctx.fillText(formatPrice(p.price), 250, isTop ? 120 : -70);
-        // Badge
+        roundRect(ctx, -380, -100, 760, 200, 10);
+        ctx.fill();
+        // Badge text top
         if (o.badgeText) {
             ctx.fillStyle = '#e74c3c'; ctx.font = 'bold 16px system-ui';
-            ctx.fillText(o.badgeText, 250, isTop ? 18 : -190);
+            ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+            ctx.fillText(o.badgeText, 0, -60);
+        }
+        // Name
+        ctx.fillStyle = '#fff'; ctx.font = 'bold 26px system-ui';
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        const shortName = p.name.length > 32 ? p.name.substring(0, 30) + '…' : p.name;
+        ctx.fillText(shortName, 0, o.badgeText ? -20 : -25);
+        // Price
+        ctx.fillStyle = '#ffd700'; ctx.font = 'bold 44px system-ui';
+        ctx.fillText(formatPrice(p.price), 0, 40);
+        // Compare price
+        if (p.comparePrice && p.comparePrice > p.price) {
+            ctx.font = '500 18px system-ui'; ctx.fillStyle = 'rgba(255,255,255,0.5)';
+            const old = formatPrice(p.comparePrice);
+            ctx.fillText(old, 0, 76);
         }
         ctx.restore();
     }
@@ -1296,16 +1312,20 @@ const overlaySeal: AdTemplate = {
         drawProductImage(ctx, p.image, 0, 0, 1080, 1080);
         const pos = o.labelPosition || 'bottom-right';
         const opacity = getOpacity(o);
-        // Price seal (large circle)
-        const sz = 220;
-        const margin = 50;
-        let cx: number, cy: number;
-        if (pos === 'top-left') { cx = margin + sz / 2; cy = margin + sz / 2; }
-        else if (pos === 'top-right') { cx = 1080 - margin - sz / 2; cy = margin + sz / 2; }
-        else if (pos === 'bottom-left') { cx = margin + sz / 2; cy = 1080 - margin - sz / 2 - 60; }
-        else if (pos === 'center') { cx = 540; cy = 480; }
-        else if (pos === 'bottom-center') { cx = 540; cy = 1080 - margin - sz / 2 - 60; }
-        else { cx = 1080 - margin - sz / 2; cy = 1080 - margin - sz / 2 - 60; }
+        // Price seal (circle) — sized to fit with name strip below it
+        const sz = 190;
+        const stripH = 46;
+        const totalH = sz + 16 + stripH; // seal + gap + strip
+        const margin = 40;
+        // Calculate center of the seal so the whole group (seal+strip) fits inside canvas
+        let cx: number, groupTop: number;
+        if (pos === 'top-left') { cx = margin + sz / 2 + 10; groupTop = margin; }
+        else if (pos === 'top-right') { cx = 1080 - margin - sz / 2 - 10; groupTop = margin; }
+        else if (pos === 'bottom-left') { cx = margin + sz / 2 + 10; groupTop = 1080 - totalH - margin; }
+        else if (pos === 'center') { cx = 540; groupTop = (1080 - totalH) / 2; }
+        else if (pos === 'bottom-center') { cx = 540; groupTop = 1080 - totalH - margin; }
+        else { cx = 1080 - margin - sz / 2 - 10; groupTop = 1080 - totalH - margin; }
+        const cy = groupTop + sz / 2;
         // Outer ring
         ctx.save();
         ctx.shadowColor = 'rgba(220,38,38,0.3)'; ctx.shadowBlur = 20;
@@ -1315,29 +1335,33 @@ const overlaySeal: AdTemplate = {
         // Inner dashed ring
         ctx.setLineDash([8, 6]);
         ctx.lineWidth = 2;
-        ctx.beginPath(); ctx.arc(cx, cy, sz / 2 - 12, 0, Math.PI * 2); ctx.stroke();
+        ctx.beginPath(); ctx.arc(cx, cy, sz / 2 - 11, 0, Math.PI * 2); ctx.stroke();
         ctx.setLineDash([]);
         // Fill
         ctx.fillStyle = `rgba(220,38,38,${opacity * 0.9})`;
-        ctx.beginPath(); ctx.arc(cx, cy, sz / 2 - 18, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.arc(cx, cy, sz / 2 - 16, 0, Math.PI * 2); ctx.fill();
         ctx.restore();
         // Price
-        ctx.fillStyle = '#fff'; ctx.font = 'bold 36px system-ui';
+        ctx.fillStyle = '#fff'; ctx.font = 'bold 34px system-ui';
         ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
         ctx.fillText(formatPrice(p.price), cx, cy - 6);
         // Small text
-        ctx.font = 'bold 14px system-ui'; ctx.fillStyle = 'rgba(255,255,255,0.7)';
-        ctx.fillText(o.badgeText || 'ОНЦЛОХ ҮНЭ', cx, cy + 28);
-        // Name strip below seal
-        const stripW = 500, stripH = 50;
-        const stripX = cx - stripW / 2, stripY = cy + sz / 2 + 14;
+        ctx.font = 'bold 13px system-ui'; ctx.fillStyle = 'rgba(255,255,255,0.7)';
+        ctx.fillText(o.badgeText || 'ОНЦЛОХ ҮНЭ', cx, cy + 24);
+        // Name strip below seal — clamped to canvas bounds
+        const stripW = Math.min(460, 1080 - 2 * margin);
+        const stripX = Math.max(margin, Math.min(cx - stripW / 2, 1080 - margin - stripW));
+        const stripY = groupTop + sz + 16;
+        ctx.save();
+        ctx.shadowColor = 'rgba(0,0,0,0.15)'; ctx.shadowBlur = 12;
         ctx.fillStyle = `rgba(0,0,0,${opacity * 0.8})`;
-        roundRect(ctx, stripX, stripY, stripW, stripH, 25);
+        roundRect(ctx, stripX, stripY, stripW, stripH, 23);
         ctx.fill();
-        ctx.fillStyle = '#fff'; ctx.font = 'bold 18px system-ui';
+        ctx.restore();
+        ctx.fillStyle = '#fff'; ctx.font = 'bold 17px system-ui';
         ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-        const shortName = p.name.length > 35 ? p.name.substring(0, 33) + '…' : p.name;
-        ctx.fillText(shortName, cx, stripY + stripH / 2);
+        const shortName = p.name.length > 30 ? p.name.substring(0, 28) + '…' : p.name;
+        ctx.fillText(shortName, stripX + stripW / 2, stripY + stripH / 2);
     }
 };
 
