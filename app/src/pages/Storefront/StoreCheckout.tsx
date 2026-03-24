@@ -317,7 +317,7 @@ export function StoreCheckout() {
     }, [successId, business?.id]);
 
     // ──────── POLL QPAY PAYMENT STATUS ────────
-    // Uses server-side qpay-callback with Admin SDK for reliable order updates + membership.
+    // Uses /api/qpay-check (no firebase-admin needed) + client-side Firestore update.
     useEffect(() => {
         if (!qpayInvoice?.invoice_id || !successId || !business?.id || paymentConfirmed) return;
 
@@ -325,14 +325,35 @@ export function StoreCheckout() {
         const poll = async () => {
             if (stopped || paymentConfirmed) return;
             try {
-                // Call qpay-callback (Admin SDK) — verifies payment + updates order server-side
-                const resp = await fetch(`/api/qpay-callback?bizId=${encodeURIComponent(business.id)}&orderId=${encodeURIComponent(successId)}`, {
+                const qpaySettings = business.settings?.qpay;
+                const resp = await fetch('/api/qpay-check', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        invoiceId: qpayInvoice.invoice_id,
+                        qpayUsername: qpaySettings?.username || '',
+                        qpayPassword: qpaySettings?.password || '',
+                        purpose: 'product',
+                    }),
                 });
                 const data = await resp.json();
-                if ((data.message === 'Payment confirmed' || data.message === 'Already paid') && !stopped) {
+                if (data.paid && !stopped) {
                     stopped = true;
+                    // Update order as paid via client-side Firestore
+                    try {
+                        const orderRef = doc(db, `businesses/${business.id}/orders`, successId);
+                        const totalAmount = items.reduce((s, i) => s + i.price * i.quantity, 0);
+                        await updateDoc(orderRef, {
+                            status: 'confirmed',
+                            paymentStatus: 'paid',
+                            paymentVerifiedAt: new Date(),
+                            paymentVerifiedBy: 'qpay',
+                            'financials.paidAmount': totalAmount,
+                            'financials.balanceDue': 0,
+                        });
+                    } catch (firestoreErr) {
+                        console.warn('Client-side order update failed (Firestore rules may block):', firestoreErr);
+                    }
                     setPaymentConfirmed(true);
                     toast.success('Төлбөр баталгаажлаа! 🎉');
                 }
