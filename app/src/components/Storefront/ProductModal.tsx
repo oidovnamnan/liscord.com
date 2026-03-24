@@ -25,11 +25,14 @@ export function ProductModal({ product, onClose, preorderTerms, onCategoryClick,
     const [termsAccepted, setTermsAccepted] = useState(false);
     const touchRef = useRef<{ startX: number; startY: number } | null>(null);
 
-    // Variation support
+    // Variation support — default to cheapest variation
     const variations = product.variations?.filter(v => (v.salePrice ?? 0) > 0 || v.name) || [];
     const hasVariations = variations.length > 0;
+    const cheapestVariation = hasVariations
+        ? variations.reduce((min, v) => ((v.salePrice ?? Infinity) < (min.salePrice ?? Infinity) ? v : min), variations[0])
+        : null;
     const [selectedVariation, setSelectedVariation] = useState<string | null>(
-        hasVariations ? variations[0].id : null
+        cheapestVariation?.id ?? null
     );
     const activeVariation = hasVariations ? variations.find(v => v.id === selectedVariation) || variations[0] : null;
 
