@@ -1009,7 +1009,7 @@ export default function App() {
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Suspense>
-      <DebugOverlay />
+      {import.meta.env.DEV && <DebugOverlay />}
     </BrowserRouter>
   );
 }

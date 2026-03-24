@@ -14,8 +14,82 @@ export function StorefrontWrapper() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<'not-found' | 'network' | null>(null);
 
-    // Detect WeChat in-app browser
-    const isWeChat = /MicroMessenger/i.test(navigator.userAgent);
+    // Detect in-app browsers (Facebook, WeChat, Line, Instagram, etc.)
+    const ua = navigator.userAgent || '';
+    const isFBBrowser = /FBAN|FBAV/i.test(ua);
+    const isWeChatBrowser = /MicroMessenger/i.test(ua);
+    const isLineBrowser = /\bLine\b/i.test(ua);
+    const isIGBrowser = /Instagram/i.test(ua);
+    const isInAppBrowser = isFBBrowser || isWeChatBrowser || isLineBrowser || isIGBrowser;
+
+    // For FB in-app browser on Android, try to force open in Chrome
+    useEffect(() => {
+        if (!isInAppBrowser) return;
+        const isAndroid = /Android/i.test(ua);
+        if (isAndroid && (isFBBrowser || isIGBrowser)) {
+            // Use intent scheme to launch in default browser on Android
+            try {
+                const url = window.location.href;
+                window.location.href = `intent://${url.replace(/^https?:\/\//, '')}#Intent;scheme=https;package=com.android.chrome;S.browser_fallback_url=${encodeURIComponent(url)};end`;
+            } catch {
+                // If intent fails, we'll show the manual prompt below
+            }
+        }
+    }, []);
+
+    // Show "Open in Browser" prompt for all in-app browsers (iOS doesn't support intent://)
+    if (isInAppBrowser) {
+        const currentUrl = window.location.href;
+        const browserName = isWeChatBrowser ? 'WeChat' : isFBBrowser ? 'Facebook' : isIGBrowser ? 'Instagram' : 'Line';
+        return (
+            <div style={{
+                display: 'flex', flexDirection: 'column', height: '100vh', alignItems: 'center', justifyContent: 'center',
+                textAlign: 'center', padding: '24px', background: '#ffffff', fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif'
+            }}>
+                <div style={{ fontSize: '3rem', marginBottom: 20 }}>🌐</div>
+                <h2 style={{ fontSize: '1.2rem', fontWeight: 800, marginBottom: 8, color: '#111' }}>
+                    Хөтөч дээр нээнэ үү
+                </h2>
+                <p style={{ color: '#666', fontSize: '0.9rem', maxWidth: 340, lineHeight: 1.6, marginBottom: 20 }}>
+                    {browserName} хөтөч дотор зөв ажиллахгүй байна.
+                    {/iPhone|iPad/i.test(ua)
+                        ? <><br/>Доод талын <strong>⋯</strong> товч дарж <strong>"Safari дээр нээх"</strong> гэснийг сонгоно уу.</>
+                        : <><br/>Баруун дээд <strong>⋮</strong> товч дарж <strong>"Хөтөчөөр нээх"</strong> гэснийг сонгоно уу.</>
+                    }
+                </p>
+                <div style={{
+                    padding: '14px 24px', background: '#f8f9fa', borderRadius: 14,
+                    fontSize: '0.8rem', color: '#555', wordBreak: 'break-all', maxWidth: 320,
+                    border: '1px dashed #ddd', userSelect: 'all', marginBottom: 16
+                }}>
+                    {currentUrl}
+                </div>
+                <button
+                    onClick={() => {
+                        try {
+                            navigator.clipboard.writeText(currentUrl);
+                        } catch {
+                            const el = document.createElement('textarea');
+                            el.value = currentUrl;
+                            document.body.appendChild(el);
+                            el.select();
+                            document.execCommand('copy');
+                            document.body.removeChild(el);
+                        }
+                        const btn = document.getElementById('copy-url-btn');
+                        if (btn) btn.textContent = '✅ Хуулагдлаа';
+                    }}
+                    id="copy-url-btn"
+                    style={{
+                        padding: '12px 32px', background: '#4a6bff', color: '#fff',
+                        border: 'none', borderRadius: 12, fontSize: '0.9rem', fontWeight: 700, cursor: 'pointer'
+                    }}
+                >
+                    📋 Линк хуулах
+                </button>
+            </div>
+        );
+    }
 
     const loadBusiness = async () => {
         if (!slug) {
@@ -167,21 +241,6 @@ export function StorefrontWrapper() {
         );
     }
 
-    // WeChat in-app browser often blocks Firebase/Firestore — show "open in browser" prompt
-    if (isWeChat && error === 'network') {
-        return (
-            <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: '20px', background: '#fff' }}>
-                <div style={{ fontSize: '3rem', marginBottom: 16 }}>🌐</div>
-                <h2 style={{ fontSize: '1.2rem', fontWeight: 700, marginBottom: 8, color: '#333' }}>Хөтөч дээр нээнэ үү</h2>
-                <p style={{ color: '#888', fontSize: '0.9rem', maxWidth: 320, lineHeight: 1.5, marginBottom: 20 }}>
-                    WeChat хөтөч дотор зөв ажиллахгүй байна. Баруун дээд буланд байгаа <strong>⋯</strong> товч дарж <strong>"Хөтөч дээр нээх"</strong> гэснийг сонгоно уу.
-                </p>
-                <div style={{ padding: '12px 20px', background: '#f0f0f0', borderRadius: 12, fontSize: '0.82rem', color: '#555', wordBreak: 'break-all' }}>
-                    {window.location.href}
-                </div>
-            </div>
-        );
-    }
 
     // Network error — show retry
     if (error === 'network') {
@@ -228,9 +287,6 @@ export function StorefrontWrapper() {
     }
 
     const brandColor = business.brandColor || '#4a6bff';
-
-    // Detect Facebook in-app browser
-    const isFBBrowser = /FBAN|FBAV/i.test(navigator.userAgent);
 
     return (
         <div

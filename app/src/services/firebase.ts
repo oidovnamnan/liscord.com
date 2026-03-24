@@ -15,6 +15,7 @@ const firebaseConfig = {
 
 export const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
+auth.languageCode = 'mn'; // Force Mongolian reCAPTCHA (prevents Chinese in FB/WeChat browsers)
 export const db = initializeFirestore(app, {
   localCache: persistentLocalCache({ tabManager: persistentSingleTabManager({}) }),
 });
