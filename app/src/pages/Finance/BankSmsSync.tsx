@@ -27,6 +27,7 @@ import { db } from '../../services/firebase';
 import { useBusinessStore } from '../../store';
 import { usePermissions } from '../../hooks/usePermissions';
 import { SecurityModal } from '../../components/common/SecurityModal';
+import { parseSmsByTemplates, type SmsTemplate } from '../../utils/smsParser';
 import { toast } from 'react-hot-toast';
 import '../Inventory/InventoryPage.css';
 import './BankSmsSync.css';
@@ -81,6 +82,7 @@ export function BankSmsSyncPage() {
     const [qpayLoading, setQpayLoading] = useState(true);
     const [pairingKey, setPairingKey] = useState<string | null>(null);
     const [activeTab, setActiveTab] = useState<'sms' | 'qpay'>('sms');
+    const [smsTemplates, setSmsTemplates] = useState<SmsTemplate[]>([]);
 
     // Manual match modal state
     const [matchingSms, setMatchingSms] = useState<SmsLog | null>(null);
@@ -113,6 +115,18 @@ export function BankSmsSyncPage() {
             }
         };
         loadKey();
+
+        // Load SMS templates for re-parsing
+        const loadTemplates = async () => {
+            try {
+                const snap = await getDocs(collection(db, 'businesses', business.id, 'smsTemplates'));
+                const items = snap.docs.map(d => ({ id: d.id, ...d.data() } as SmsTemplate));
+                setSmsTemplates(items);
+            } catch (err) {
+                console.error('Failed to load SMS templates:', err);
+            }
+        };
+        loadTemplates();
     }, [business?.id]);
 
     useEffect(() => {
@@ -132,8 +146,14 @@ export function BankSmsSyncPage() {
                 const timeStr = isToday
                     ? createdAt.toLocaleTimeString('mn-MN', { hour: '2-digit', minute: '2-digit' })
                     : createdAt.toLocaleDateString('mn-MN', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+
+                // Re-parse SMS body using templates (fix Bridge App wrong amounts)
+                const reParsed = d.body ? parseSmsByTemplates(d.body, smsTemplates) : null;
+
                 let note = d.utga || '';
-                if (!note) {
+                if (reParsed?.matched && reParsed.utga) {
+                    note = reParsed.utga;
+                } else if (!note) {
                     const utgaMatch = d.body?.match(/(?:guilgeenii\s*)?utga[:\s]*([^\n,.]+)/i)
                         || d.body?.match(/(?:гүйлгээний\s*)?утга[:\s]*([^\n,.]+)/i);
                     if (utgaMatch) {
@@ -142,20 +162,27 @@ export function BankSmsSyncPage() {
                         note = d.body?.substring(0, 50) || '';
                     }
                 }
+
+                // Use template-parsed amount if available, otherwise Bridge App's amount
+                const amount = reParsed?.matched ? reParsed.amount : (d.amount || 0);
+                const bank = reParsed?.matched ? reParsed.bank : (d.bank || d.sender || '');
+
                 return {
                     id: docSnap.id,
                     body: d.body || '',
                     sender: d.sender || '',
-                    amount: d.amount || 0,
-                    bank: d.bank || d.sender || '',
+                    amount,
+                    bank,
                     note,
                     time: timeStr,
-                    status: d.status === 'matched' ? 'matched' : d.status === 'ignored' ? 'ignored' : 'pending',
+                    status: (d.status === 'matched' ? 'matched' : d.status === 'ignored' ? 'ignored' : 'pending') as 'matched' | 'pending' | 'ignored',
                     orderId: d.orderId || undefined,
                     createdAt,
                     source: d.source || undefined,
                 };
-            });
+            })
+            // Filter out SMS that don't match any template (non-income messages)
+            .filter(item => item.amount > 0);
             setLogs(items);
             setLoading(false);
 
@@ -169,7 +196,7 @@ export function BankSmsSyncPage() {
         });
         return () => unsubscribe();
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [pairingKey, business?.id]);
+    }, [pairingKey, business?.id, smsTemplates]);
 
     // ── QPay Income — separate listener (no pairingKey needed) ──
     useEffect(() => {

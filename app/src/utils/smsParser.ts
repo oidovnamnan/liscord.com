@@ -1,48 +1,139 @@
 
 /**
- * Simple Regex-based parser for Mongolian Bank SMS
+ * SMS Parser Utilities — shared between BankSmsSync and SmsTemplateSettings
  */
 
 export interface ParsedSms {
     amount: number;
-    transactionId?: string;
-    description?: string;
-    bankName: string;
+    utga: string;
+    bank: string;
+    matched: boolean;
 }
 
-export const parseBankSms = (body: string): ParsedSms | null => {
-    // Khan Bank Example: "Orlogo: 50,000.00 MNT ... 5000123456 ORD-1234"
-    // Golomt Bank Example: "50,000.00 MNT orlogo ... note..."
+export interface SmsTemplate {
+    id: string;
+    bankName: string;
+    senderNumbers: string[];
+    incomeKeywords: string[];
+    amountPrefix: string;
+    amountSuffix: string;
+    utgaPrefix: string;
+    utgaSuffix: string;
+    sampleSms: string;
+    isActive: boolean;
+    isDefault: boolean;
+    amountPattern?: string;
+    utgaPattern?: string;
+}
 
-    // Normalize body: remove commas from numbers to make regex easier
-    const cleanBody = body.replace(/(\d),(\d{3})/g, '$1$2');
+/**
+ * Parse SMS using prefix/suffix text markers.
+ * Finds text between prefix and suffix to extract value.
+ */
+export function parseWithMarkers(
+    smsBody: string,
+    prefix: string,
+    suffix: string
+): string {
+    if (!prefix) return '';
+    const lower = smsBody.toLowerCase();
+    const prefixLower = prefix.toLowerCase();
+    const prefixIdx = lower.indexOf(prefixLower);
+    if (prefixIdx === -1) return '';
 
-    // 1. Amount Extraction (Numbers followed by MNT, ₮, or after 'Orlogo:' / 'Орлого:')
-    let amount = 0;
-    const amountRegex = /(?:Орлого|Orlogo|Income):\s*([\d.]+)|([\d.]+)\s*(?:MNT|₮|ТӨГ)/i;
-    const amountMatch = cleanBody.match(amountRegex);
-    if (amountMatch) {
-        amount = parseFloat(amountMatch[1] || amountMatch[2]);
+    const startIdx = prefixIdx + prefix.length;
+
+    if (!suffix) {
+        // No suffix: take until end of line, comma, period followed by space, or next whitespace-heavy break
+        const rest = smsBody.substring(startIdx);
+        // Find end: newline, or ", " or ".  " or double space
+        const endMatch = rest.match(/[\n]|,\s|\.\s\s/);
+        return endMatch ? rest.substring(0, endMatch.index).trim() : rest.trim();
     }
 
-    if (amount <= 0) return null;
+    const suffixLower = suffix.toLowerCase();
+    const suffixIdx = lower.indexOf(suffixLower, startIdx);
+    if (suffixIdx === -1) {
+        // Suffix not found: take everything after prefix until line end
+        const rest = smsBody.substring(startIdx);
+        const nlIdx = rest.indexOf('\n');
+        return nlIdx > -1 ? rest.substring(0, nlIdx).trim() : rest.trim();
+    }
 
-    // 2. Bank Identification
-    let bankName = 'Unknown';
-    if (body.toLowerCase().includes('khan') || body.toLowerCase().includes('хаан')) bankName = 'Khan Bank';
-    else if (body.toLowerCase().includes('golomt') || body.toLowerCase().includes('голомт')) bankName = 'Golomt Bank';
-    else if (body.toLowerCase().includes('tdb') || body.toLowerCase().includes('худалдаа')) bankName = 'TDB';
-    else if (body.toLowerCase().includes('state bank') || body.toLowerCase().includes('төрийн')) bankName = 'State Bank';
+    return smsBody.substring(startIdx, suffixIdx).trim();
+}
 
-    // 3. Description / Note extraction (usually the last part or after specific words)
-    // Most banks put the note at the end.
-    const parts = body.split(/\s+/);
-    const description = parts.slice(-2).join(' '); // Taking last 2 words as a guess for note
+export function tryParseWithTemplate(template: SmsTemplate, smsBody: string): ParsedSms {
+    let amount = 0;
+    let utga = '';
+    let matched = false;
 
-    return {
-        amount,
-        bankName,
-        description,
-        transactionId: undefined // Usually banks don't give global transaction IDs in SMS, maybe per account?
-    };
-};
+    // Check income keywords
+    const hasKeyword = template.incomeKeywords.some(kw =>
+        smsBody.toLowerCase().includes(kw.toLowerCase())
+    );
+    if (!hasKeyword) return { amount, utga, bank: template.bankName, matched: false };
+
+    // Parse amount by prefix/suffix markers
+    if (template.amountPrefix) {
+        const amountStr = parseWithMarkers(smsBody, template.amountPrefix, template.amountSuffix);
+        if (amountStr) {
+            const parsed = parseFloat(amountStr.replace(/[,\s]/g, ''));
+            if (!isNaN(parsed) && parsed > 0) {
+                amount = parsed;
+                matched = true;
+            }
+        }
+    }
+
+    // Parse utga by prefix/suffix markers
+    if (template.utgaPrefix) {
+        utga = parseWithMarkers(smsBody, template.utgaPrefix, template.utgaSuffix);
+    }
+
+    // Fallback: try old regex patterns if markers didn't work
+    if (!matched && template.amountPattern) {
+        try {
+            const amountRegex = new RegExp(template.amountPattern, 'i');
+            const amountMatch = smsBody.match(amountRegex);
+            if (amountMatch?.[1]) {
+                amount = parseFloat(amountMatch[1].replace(/[,\s]/g, ''));
+                matched = amount > 0;
+            }
+        } catch (_e) { /* invalid regex */ }
+    }
+    if (!utga && template.utgaPattern) {
+        try {
+            const utgaRegex = new RegExp(template.utgaPattern, 'i');
+            const utgaMatch = smsBody.match(utgaRegex);
+            if (utgaMatch?.[1]) {
+                utga = utgaMatch[1].trim();
+            }
+        } catch (_e) { /* invalid regex */ }
+    }
+
+    // Fallback: MNT amount pattern
+    if (!matched) {
+        const mntFallback = smsBody.match(/(\\d[\\d,]*(?:\\.\\d{1,2})?)\\s*(?:MNT|₮|mnt)/i);
+        if (mntFallback) {
+            amount = parseFloat(mntFallback[1].replace(/,/g, ''));
+            matched = amount > 0;
+        }
+    }
+
+    return { amount, utga, bank: template.bankName, matched };
+}
+
+/**
+ * Try parsing an SMS body against all templates.
+ * Returns the first successful match, or null if none match.
+ */
+export function parseSmsByTemplates(smsBody: string, templates: SmsTemplate[]): ParsedSms | null {
+    if (!smsBody) return null;
+    for (const tmpl of templates) {
+        if (!tmpl.isActive) continue;
+        const result = tryParseWithTemplate(tmpl, smsBody);
+        if (result.matched) return result;
+    }
+    return null;
+}
