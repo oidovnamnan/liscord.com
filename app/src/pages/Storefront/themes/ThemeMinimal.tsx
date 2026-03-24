@@ -842,10 +842,12 @@ function MembershipModal({
 
     // Poll QPay every 3s to detect payment
     const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
+    const invoiceIdRef = useRef<string>('');
 
     const startPaymentPolling = (invoiceId: string, _oid: string) => {
         // Clear any existing polling
         if (pollingRef.current) clearInterval(pollingRef.current);
+        invoiceIdRef.current = invoiceId;
 
         let attempts = 0;
         const maxAttempts = 200; // ~10 min at 3s intervals
@@ -858,17 +860,44 @@ function MembershipModal({
             }
 
             try {
-                // Use qpay-callback (server-side with Admin SDK) to verify + update order + grant membership
-                const resp = await fetch(`/api/qpay-callback?bizId=${encodeURIComponent(business.id)}&orderId=${encodeURIComponent(_oid)}`, {
+                // Use /api/qpay-check (no Firebase Admin needed) to verify payment
+                const qpaySettings = business.settings?.qpay;
+                const resp = await fetch('/api/qpay-check', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        invoiceId: invoiceIdRef.current,
+                        qpayUsername: qpaySettings?.username || '',
+                        qpayPassword: qpaySettings?.password || '',
+                        purpose: 'product',
+                    }),
                 });
                 const data = await resp.json();
 
-                if (data.message === 'Payment confirmed' || data.message === 'Already paid') {
+                if (data.paid) {
                     if (pollingRef.current) clearInterval(pollingRef.current);
+
+                    // Update order as paid via client-side Firestore
+                    try {
+                        const { doc, updateDoc, getDoc } = await import('firebase/firestore');
+                        const { db } = await import('../../../services/firebase');
+                        const orderRef = doc(db, 'businesses', business.id, 'orders', _oid);
+                        const orderSnap = await getDoc(orderRef);
+                        const orderTotal = orderSnap.data()?.financials?.totalAmount || price;
+                        await updateDoc(orderRef, {
+                            status: 'confirmed',
+                            paymentStatus: 'paid',
+                            paymentVerifiedAt: new Date(),
+                            paymentVerifiedBy: 'qpay',
+                            'financials.paidAmount': orderTotal,
+                            'financials.balanceDue': 0,
+                        });
+                    } catch (updateErr) {
+                        console.warn('Client-side order update failed:', updateErr);
+                    }
+
                     setPaymentConfirmed(true);
-                    // Refresh membership status
+                    // onSnapshot listener will handle membership creation
                     const cleanPhone = phone.trim().replace(/[\s\-+]/g, '').replace(/^976/, '');
                     onVerify(cleanPhone);
                     setTimeout(() => onClose(), 2500);
