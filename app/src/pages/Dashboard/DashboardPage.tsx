@@ -573,6 +573,16 @@ export function DashboardPage() {
             .reduce((sum, o) => sum + (o.financials?.totalAmount || 0), 0);
     }, [recentOrders]);
 
+    // Confirmed orders today (real-time from recentOrders)
+    const todayConfirmedOrders = useMemo(() => {
+        const ts = new Date(); ts.setHours(0, 0, 0, 0);
+        return recentOrders.filter(o => {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const d = o.createdAt instanceof Date ? o.createdAt : (o.createdAt as any)?.toDate?.();
+            return d && d >= ts && o.paymentStatus === 'paid' && o.orderType !== 'membership';
+        }).length;
+    }, [recentOrders]);
+
     if (loading || !stats) {
         return <div className="loading-screen"><Loader2 className="animate-spin" size={32} /><p>Уншиж байна...</p></div>;
     }
@@ -1027,15 +1037,7 @@ export function DashboardPage() {
         })
         .filter(Boolean);
 
-    // Confirmed orders today (real-time from recentOrders)
-    const todayConfirmedOrders = useMemo(() => {
-        const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0);
-        return recentOrders.filter(o => {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const d = o.createdAt instanceof Date ? o.createdAt : (o.createdAt as any)?.toDate?.();
-            return d && d >= todayStart && o.paymentStatus === 'paid' && o.orderType !== 'membership';
-        }).length;
-    }, [recentOrders]);
+
 
     return (
         <div className="page-container animate-fade-in" style={{ padding: '0 0 32px' }}>
