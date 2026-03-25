@@ -976,6 +976,7 @@ function CreateOrderModal({ onClose, nextNumber, statuses }: {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const [paymentMethod, setPaymentMethod] = useState<any>('bank');
     const [paidAmount, setPaidAmount] = useState('0');
+    const [paymentRefCode, setPaymentRefCode] = useState('');
     const [loading, setLoading] = useState(false);
     useEffect(() => {
         localStorage.setItem('liscord_payCargoNow', payCargoNow.toString());
@@ -1131,7 +1132,7 @@ function CreateOrderModal({ onClose, nextNumber, statuses }: {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!customer || !business || !user) return;
+        if (!phone || !business || !user) return;
 
         const finalItems = getPreviewItems();
         if (finalItems.length === 0) return;
@@ -1184,6 +1185,8 @@ function CreateOrderModal({ onClose, nextNumber, statuses }: {
                 createdBy: user.uid,
                 createdByName: user.displayName,
                 isDeleted: false,
+                paymentRefCode: paymentRefCode || undefined,
+                selectedPaymentMethod: paymentMethod,
                 notes: payCargoNow ? '' : 'Карго ирэхээр төлнө',
                 internalNotes: '',
                 statusHistory: [],
@@ -1262,8 +1265,8 @@ function CreateOrderModal({ onClose, nextNumber, statuses }: {
                                     )}
                                 </div>
                                 <div className="input-group">
-                                    <label className="input-label">Сошиал хаяг (IG/FB) <span className="required">*</span></label>
-                                    <input className="input" placeholder="@username" value={socialHandle} onChange={e => setSocialHandle(e.target.value)} required />
+                                    <label className="input-label">Сошиал хаяг (IG/FB)</label>
+                                    <input className="input" placeholder="@username" value={socialHandle} onChange={e => setSocialHandle(e.target.value)} />
                                 </div>
                             </div>
                             <div className="input-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
@@ -1527,11 +1530,22 @@ function CreateOrderModal({ onClose, nextNumber, statuses }: {
                                     </div>
                                 </div>
                             </div>
+                            <div className="input-group" style={{ marginTop: 12 }}>
+                                <label className="input-label">Төлбөрийн код (Гүйлгээний утга)</label>
+                                <input
+                                    className="input"
+                                    placeholder="Жишээ: 3395 (SMS орлоготой автомат холбогдоно)"
+                                    value={paymentRefCode}
+                                    onChange={e => setPaymentRefCode(e.target.value.replace(/\s/g, ''))}
+                                    style={{ fontFamily: 'monospace', letterSpacing: '0.1em', fontWeight: 700 }}
+                                />
+                                <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: 4 }}>Энэ код нь банкны SMS орлогын гүйлгээний утгатай таарвал автоматаар холбогдоно</span>
+                            </div>
                         </div>
                     </div>
                     <div className="modal-footer">
                         <button type="button" className="btn btn-secondary" onClick={onClose} disabled={loading}>Болих</button>
-                        <button type="submit" className="btn btn-primary btn-lg" disabled={loading || !customer || items.length === 0}>
+                        <button type="submit" className="btn btn-primary btn-lg" disabled={loading || !phone || items.length === 0}>
                             {loading ? <Loader2 size={18} className="animate-spin" /> : <><Plus size={18} /> Захиалга үүсгэх</>}
                         </button>
                     </div>
