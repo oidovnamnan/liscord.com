@@ -1973,20 +1973,24 @@
 }
 
 .dash-mobile-hero-hello {
-    font-size: 1.1rem;
+    flex: 1;
+    font-size: 1rem;
     font-weight: 800;
     color: #fff;
     letter-spacing: -0.02em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .dash-mobile-hero-time {
+    flex-shrink: 0;
     font-size: 0.75rem;
     font-weight: 700;
-    color: rgba(255, 255, 255, 0.4);
-    background: rgba(255, 255, 255, 0.06);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    padding: 6px 12px;
-    border-radius: 100px;
+    color: rgba(255, 255, 255, 0.5);
+    background: rgba(255, 255, 255, 0.08);
+    padding: 5px 10px;
+    border-radius: 8px;
 }
 
 /* 3 Metric Cards Grid */

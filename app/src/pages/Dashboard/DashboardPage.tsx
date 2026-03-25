@@ -1048,29 +1048,17 @@ export function DashboardPage() {
                 {/* Background decorations */}
                 <div className="dash-mobile-hero-bg" />
 
-                {/* Greeting bar + hamburger + status — hides on swipe up */}
+                {/* Greeting bar + hamburger — hides on swipe up */}
                 <div className="dash-mobile-hero-header">
                     <div className="dash-mobile-hero-greeting">
                         <button className="dash-hero-menu-btn" onClick={() => useUIStore.getState().toggleSidebar()} aria-label="Цэс нээх">
                             <Menu size={22} />
                         </button>
-                        <div>
-                            <div className="dash-mobile-hero-biz"><Sparkles size={10} /> {business?.name}</div>
-                            <div className="dash-mobile-hero-hello">Сайн байна уу, {displayName}! 👋</div>
-                        </div>
+                        <div className="dash-mobile-hero-hello">Сайн байна уу, {displayName}! 👋</div>
                         <div className="dash-mobile-hero-time">
-                            {new Date().toLocaleDateString('mn-MN', { month: 'short', day: 'numeric' })}
+                            {new Date().getMonth() + 1}/{new Date().getDate()}
                         </div>
                     </div>
-
-                    {/* Quick status chips — also hide on swipe */}
-                    {(pendingOrders > 0 || preparingOrders > 0 || shippingOrders > 0) && (
-                        <div className="dash-mobile-status-row">
-                            {pendingOrders > 0 && <a href="/app/orders" className="dash-mobile-chip chip-pend"><Clock size={12} /> {pendingOrders} хүлээгдэж буй</a>}
-                            {preparingOrders > 0 && <a href="/app/orders" className="dash-mobile-chip chip-prep"><Package size={12} /> {preparingOrders} бэлтгэж буй</a>}
-                            {shippingOrders > 0 && <a href="/app/orders" className="dash-mobile-chip chip-ship"><TruckIcon size={12} /> {shippingOrders} хүргэлтэнд</a>}
-                        </div>
-                    )}
                 </div>
 
                 {/* Metrics body — snaps to fill screen */}
