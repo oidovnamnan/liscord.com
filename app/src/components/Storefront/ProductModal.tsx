@@ -13,10 +13,11 @@ interface ProductModalProps {
     preorderTerms?: string;
     onCategoryClick?: (categoryName: string) => void;
     flashDealPrice?: number;
+    flashDealMaxQty?: number;
     businessId?: string;
 }
 
-export function ProductModal({ product, onClose, preorderTerms, onCategoryClick, flashDealPrice, businessId }: ProductModalProps) {
+export function ProductModal({ product, onClose, preorderTerms, onCategoryClick, flashDealPrice, flashDealMaxQty, businessId }: ProductModalProps) {
     const [quantity, setQuantity] = useState(1);
     const [added, setAdded] = useState(false);
     const [activeImage, setActiveImage] = useState(0);
@@ -119,7 +120,8 @@ export function ProductModal({ product, onClose, preorderTerms, onCategoryClick,
         useCartStore.getState().addItem({
             product: cartProduct,
             quantity,
-            price: effectivePrice
+            price: effectivePrice,
+            maxQuantity: flashDealMaxQty,
         });
         toast.success('Сагсанд нэмлээ', {
             duration: 2000,
@@ -142,7 +144,8 @@ export function ProductModal({ product, onClose, preorderTerms, onCategoryClick,
         useCartStore.getState().addItem({
             product: cartProduct,
             quantity,
-            price: effectivePrice
+            price: effectivePrice,
+            maxQuantity: flashDealMaxQty,
         });
         onClose();
         // Open cart immediately for checkout

@@ -25,7 +25,7 @@ export interface FlashDealConfig {
 interface FlashDealSectionProps {
     config: FlashDealConfig;
     allProducts: Product[];
-    onProductClick?: (product: Product, flashPrice?: number) => void;
+    onProductClick?: (product: Product, flashPrice?: number, remaining?: number) => void;
 }
 
 /** Per-card countdown hook */
@@ -85,12 +85,13 @@ export function FlashDealSection({ config, allProducts, onProductClick }: FlashD
 
     if (!config.enabled) return null;
 
-    const handleAddToCart = (e: React.MouseEvent, product: Product, flashPrice: number) => {
+    const handleAddToCart = (e: React.MouseEvent, product: Product, flashPrice: number, remaining: number) => {
         e.stopPropagation();
         useCartStore.getState().addItem({
             product: { ...product, pricing: { ...product.pricing, salePrice: flashPrice } },
             quantity: 1,
             price: flashPrice,
+            maxQuantity: remaining > 0 ? remaining : undefined,
         });
         toast.success('Сагсанд нэмлээ', {
             duration: 2000,
@@ -196,7 +197,7 @@ export function FlashDealSection({ config, allProducts, onProductClick }: FlashD
                         <div
                             key={`${product.id}-${idx}`}
                             className={`fd-card ${isSoldOut ? 'sold-out' : ''}`}
-                            onClick={() => !isSoldOut && onProductClick?.(product, flashPrice)}
+                            onClick={() => !isSoldOut && onProductClick?.(product, flashPrice, remaining)}
                         >
                             {/* Image container */}
                             <div className="fd-card-img-wrap">
@@ -244,7 +245,7 @@ export function FlashDealSection({ config, allProducts, onProductClick }: FlashD
                                 {!isSoldOut && (
                                     <button
                                         className="fd-add-btn"
-                                        onClick={(e) => handleAddToCart(e, product, flashPrice)}
+                                        onClick={(e) => handleAddToCart(e, product, flashPrice, remaining)}
                                     >
                                         <ShoppingBag size={13} />
                                         Авах

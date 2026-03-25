@@ -20,6 +20,7 @@ export function ThemeMinimal({ business }: { business: Business }) {
 
     const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
     const [flashDealPrice, setFlashDealPrice] = useState<number | null>(null);
+    const [flashDealMaxQty, setFlashDealMaxQty] = useState<number | undefined>(undefined);
     const [showMembershipModal, setShowMembershipModal] = useState(false);
     const [membershipTarget, setMembershipTarget] = useState<StorefrontProduct | null>(null);
     const [showDashboard, setShowDashboard] = useState(false);
@@ -91,6 +92,8 @@ export function ThemeMinimal({ business }: { business: Business }) {
                             : (fd.endsAt?.toDate?.() || new Date(fd.endsAt)).getTime();
                         if (productEndsAt > now && fdProduct.flashPrice > 0) {
                             setFlashDealPrice(fdProduct.flashPrice);
+                            const remaining = Math.max(0, (fdProduct.maxQuantity || 0) - (fdProduct.soldCount || 0));
+                            if (remaining > 0) setFlashDealMaxQty(remaining);
                         }
                     }
                 }
@@ -364,8 +367,9 @@ export function ThemeMinimal({ business }: { business: Business }) {
                         <FlashDealSection
                             config={flashConfig}
                             allProducts={products}
-                            onProductClick={(p, fp) => {
+                            onProductClick={(p, fp, remaining) => {
                                 setFlashDealPrice(fp ?? null);
+                                setFlashDealMaxQty(remaining && remaining > 0 ? remaining : undefined);
                                 setSelectedProduct(p);
                             }}
                         />
@@ -526,9 +530,10 @@ export function ThemeMinimal({ business }: { business: Business }) {
             {selectedProduct && (
                 <ProductModal
                     product={selectedProduct}
-                    onClose={() => { setSelectedProduct(null); setFlashDealPrice(null); }}
+                    onClose={() => { setSelectedProduct(null); setFlashDealPrice(null); setFlashDealMaxQty(undefined); }}
                     preorderTerms={business.settings?.storefront?.preorderTerms}
                     flashDealPrice={flashDealPrice ?? undefined}
+                    flashDealMaxQty={flashDealMaxQty}
                     businessId={business.id}
                     onCategoryClick={(catName) => {
                         setActiveCategory(catName);

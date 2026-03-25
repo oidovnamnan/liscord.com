@@ -7,6 +7,7 @@ export interface CartItem {
     product: Product;
     quantity: number;
     price: number; // The price at the time of adding
+    maxQuantity?: number; // Flash deal limit
     variant?: {
         color?: string;
         size?: string;
@@ -37,15 +38,18 @@ export const useCartStore = create<CartState>()(
 
                 set((state) => {
                     const existing = state.items.find(i => i.id === id);
+                    const max = newItem.maxQuantity || existing?.maxQuantity;
                     if (existing) {
+                        const newQty = existing.quantity + newItem.quantity;
                         return {
                             items: state.items.map(i =>
-                                i.id === id ? { ...i, quantity: i.quantity + newItem.quantity } : i
+                                i.id === id ? { ...i, quantity: max ? Math.min(newQty, max) : newQty } : i
                             ),
                         };
                     }
+                    const initQty = max ? Math.min(newItem.quantity, max) : newItem.quantity;
                     return {
-                        items: [...state.items, { ...newItem, id }],
+                        items: [...state.items, { ...newItem, id, quantity: initQty }],
                     };
                 });
             },
@@ -58,7 +62,12 @@ export const useCartStore = create<CartState>()(
 
             updateQuantity: (id, qty) => {
                 set((state) => ({
-                    items: state.items.map(i => i.id === id ? { ...i, quantity: Math.max(1, qty) } : i)
+                    items: state.items.map(i => {
+                        if (i.id !== id) return i;
+                        let q = Math.max(1, qty);
+                        if (i.maxQuantity) q = Math.min(q, i.maxQuantity);
+                        return { ...i, quantity: q };
+                    })
                 }));
             },
 
