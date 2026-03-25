@@ -765,15 +765,28 @@ export function StoreCheckout() {
                                         maxLength={8}
                                         placeholder="Утасны дугаар"
                                         value={customerPhone}
-                                        onChange={e => setCustomerPhone(e.target.value.replace(/\D/g, ''))}
+                                        onChange={e => {
+                                            const val = e.target.value.replace(/\D/g, '');
+                                            setCustomerPhone(val);
+                                            if (val.length === 8) setPhoneError(false);
+                                        }}
+                                        onBlur={() => {
+                                            if (customerPhone.length > 0 && customerPhone.length < 8) setPhoneError(true);
+                                        }}
                                         onFocus={() => setPhoneError(false)}
                                         style={{
                                             height: 48, borderRadius: 12, background: 'var(--bg-soft)',
-                                            border: `1px solid ${phoneError ? '#ff4d4f' : 'var(--border-primary)'}`,
-                                            boxShadow: phoneError ? '0 0 0 2px rgba(255, 77, 79, 0.1)' : 'none'
+                                            border: `1.5px solid ${phoneError ? '#ff4d4f' : customerPhone.length > 0 && customerPhone.length < 8 ? '#faad14' : customerPhone.length === 8 ? '#52c41a' : 'var(--border-primary)'}`,
+                                            boxShadow: phoneError ? '0 0 0 3px rgba(255, 77, 79, 0.12)' : 'none',
+                                            transition: 'border-color 0.2s, box-shadow 0.2s'
                                         }}
                                     />
-                                    {phoneError && <span style={{ color: '#ff4d4f', fontSize: '0.75rem', marginTop: 4, fontWeight: 600 }}>8 оронтой тоо оруулна уу</span>}
+                                    {customerPhone.length > 0 && customerPhone.length < 8 && (
+                                        <span style={{ color: phoneError ? '#ff4d4f' : '#faad14', fontSize: '0.75rem', marginTop: 4, fontWeight: 600 }}>
+                                            {customerPhone.length}/8 оронтой тоо оруулна уу
+                                        </span>
+                                    )}
+                                    {phoneError && customerPhone.length === 0 && <span style={{ color: '#ff4d4f', fontSize: '0.75rem', marginTop: 4, fontWeight: 600 }}>8 оронтой тоо оруулна уу</span>}
                                 </div>
                             </div>
 
