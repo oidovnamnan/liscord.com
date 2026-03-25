@@ -80,6 +80,20 @@ export function ThemeMinimal({ business }: { business: Business }) {
         if (productId && products.length > 0 && !selectedProduct) {
             const target = products.find(p => p.id === productId);
             if (target) {
+                // Check if this product has an active flash deal
+                const fd = (business.settings as any)?.storefront?.flashDeal;
+                if (fd?.enabled && fd.products?.length) {
+                    const now = Date.now();
+                    const fdProduct = fd.products.find((fp: any) => fp.productId === productId);
+                    if (fdProduct) {
+                        const productEndsAt = fdProduct.endsAt
+                            ? (fdProduct.endsAt?.toDate?.() || new Date(fdProduct.endsAt)).getTime()
+                            : (fd.endsAt?.toDate?.() || new Date(fd.endsAt)).getTime();
+                        if (productEndsAt > now && fdProduct.flashPrice > 0) {
+                            setFlashDealPrice(fdProduct.flashPrice);
+                        }
+                    }
+                }
                 setSelectedProduct(target);
                 // Clean up the URL param after opening
                 searchParams.delete('product');

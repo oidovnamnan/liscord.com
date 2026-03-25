@@ -657,14 +657,14 @@
 
     .sf-modal-gallery {
         position: relative;
-        padding: 44px 20px 20px;
-        min-height: 280px;
+        padding: 44px 16px 16px;
+        min-height: 320px;
         border-radius: 0;
     }
 
     .sf-modal-main-img {
-        max-height: 380px;
-        border-radius: 16px;
+        max-height: 420px;
+        border-radius: 12px;
     }
 
     .sf-modal-info {
