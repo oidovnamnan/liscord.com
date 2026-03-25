@@ -1183,7 +1183,7 @@ function CreateOrderModal({ onClose, nextNumber, statuses }: {
                     balanceDue: finalTotal - paid,
                 },
                 createdBy: user.uid,
-                createdByName: user.displayName,
+                createdByName: user.displayName || user.email || 'Ажилтан',
                 isDeleted: false,
                 paymentRefCode: paymentRefCode || '',
                 selectedPaymentMethod: paymentMethod,
