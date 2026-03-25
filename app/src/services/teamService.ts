@@ -609,11 +609,19 @@ export const sourceService = {
     subscribeSources(bizId: string, callback: (sources: OrderSource[]) => void) {
         const q = query(
             collection(db, 'businesses', bizId, 'orderSources'),
-            where('isDeleted', '==', false),
-            orderBy('createdAt', 'desc')
+            where('isDeleted', '==', false)
         );
         return onSnapshot(q, (snap) => {
-            callback(snap.docs.map(d => convertTimestamps(d.data()) as OrderSource));
+            const sources = snap.docs.map(d => convertTimestamps(d.data()) as OrderSource);
+            sources.sort((a, b) => {
+                const tA = a.createdAt instanceof Date ? a.createdAt.getTime() : 0;
+                const tB = b.createdAt instanceof Date ? b.createdAt.getTime() : 0;
+                return tB - tA;
+            });
+            callback(sources);
+        }, (error) => {
+            console.error('Firestore subscribeSources error:', error);
+            callback([]);
         });
     },
 
