@@ -255,7 +255,45 @@ export function ThemeMinimal({ business }: { business: Business }) {
                     </p>
                 </header>
 
-                {/* Search */}
+                {/* Trust Banner */}
+                <div className="sf-trust-banner">
+                    <div className="sf-trust-track">
+                        <div className="sf-trust-item">
+                            <span className="sf-trust-icon">✅</span>
+                            <span>100% баталгаатай бараа</span>
+                        </div>
+                        <div className="sf-trust-item">
+                            <span className="sf-trust-icon">🚚</span>
+                            <span>Хүргэлттэй</span>
+                        </div>
+                        <div className="sf-trust-item">
+                            <span className="sf-trust-icon">🔒</span>
+                            <span>Аюулгүй төлбөр</span>
+                        </div>
+                        <div className="sf-trust-item">
+                            <span className="sf-trust-icon">⭐</span>
+                            <span>Итгэлтэй худалдаа</span>
+                        </div>
+                        {/* Duplicate for seamless mobile marquee */}
+                        <div className="sf-trust-item sf-trust-dup" aria-hidden="true">
+                            <span className="sf-trust-icon">✅</span>
+                            <span>100% баталгаатай бараа</span>
+                        </div>
+                        <div className="sf-trust-item sf-trust-dup" aria-hidden="true">
+                            <span className="sf-trust-icon">🚚</span>
+                            <span>Хүргэлттэй</span>
+                        </div>
+                        <div className="sf-trust-item sf-trust-dup" aria-hidden="true">
+                            <span className="sf-trust-icon">🔒</span>
+                            <span>Аюулгүй төлбөр</span>
+                        </div>
+                        <div className="sf-trust-item sf-trust-dup" aria-hidden="true">
+                            <span className="sf-trust-icon">⭐</span>
+                            <span>Итгэлтэй худалдаа</span>
+                        </div>
+                    </div>
+                </div>
+
                 <div className="store-search-container">
                     <div className="store-search-inner">
                         <Search size={18} className="store-search-icon" />
