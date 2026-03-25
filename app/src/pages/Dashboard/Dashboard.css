@@ -1216,15 +1216,7 @@
     opacity: 0.5;
 }
 
-@media (max-width: 768px) {
-    /* KPI v2 responsive */
-    .kpi-card-v2 {
-        padding: 14px 16px 10px;
-    }
-    .kpi-card-v2-value {
-        font-size: 1.2rem;
-    }
-}
+
 
 /* ═══ Order List ═══ */
 .dashboard-orders-list {
@@ -1550,86 +1542,93 @@
     min-width: 20px;
 }
 
-/* ═══ KPI Cards V2 — Clean Redesign ═══ */
-.kpi-card-v2 {
-    background: var(--surface-1);
-    border: 1px solid var(--border-primary);
-    border-left: 4px solid var(--kpi-color);
-    border-radius: 12px;
-    padding: 16px 18px 14px;
-    position: relative;
-    animation: kpiSlideUp 0.5s ease both;
-    transition: all 0.25s ease;
+/* ═══ KPI Cards V3 — Unified Clean Design ═══ */
+.kpi-unified-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 12px;
 }
 
-.kpi-card-v2:hover {
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+.kpi-card-v3 {
+    background: var(--surface-1);
+    border: 1px solid var(--border-primary);
+    border-left: 3px solid var(--kpi-color);
+    border-radius: 12px;
+    padding: 14px 16px 12px;
+    animation: kpiSlideUp 0.4s ease both;
+    transition: box-shadow 0.2s ease;
+}
+
+.kpi-card-v3:hover {
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
 }
 
 @keyframes kpiSlideUp {
-    from {
-        opacity: 0;
-        transform: translateY(12px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
 }
 
-.kpi-card-v2-header {
+.kpi-v3-top {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    margin-bottom: 10px;
+    gap: 8px;
+    margin-bottom: 8px;
 }
 
-.kpi-card-v2-icon {
-    width: 34px;
-    height: 34px;
-    border-radius: 8px;
-    background: color-mix(in srgb, var(--kpi-color) 12%, transparent);
+.kpi-v3-icon {
+    width: 28px;
+    height: 28px;
+    border-radius: 7px;
+    background: color-mix(in srgb, var(--kpi-color) 10%, transparent);
     color: var(--kpi-color);
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: transform 0.2s;
+    flex-shrink: 0;
 }
 
-.kpi-card-v2:hover .kpi-card-v2-icon {
-    transform: scale(1.05);
-}
-
-.kpi-card-v2-badge {
-    display: flex;
-    align-items: center;
-    gap: 3px;
-    font-size: 0.6rem;
-    font-weight: 700;
-    padding: 3px 8px;
-    border-radius: 100px;
-    background: color-mix(in srgb, var(--kpi-color) 8%, transparent);
-    color: var(--kpi-color);
-    text-transform: uppercase;
-    letter-spacing: 0.4px;
-}
-
-.kpi-card-v2-value {
-    font-size: 1.4rem;
-    font-weight: 800;
-    color: var(--text-primary);
-    line-height: 1.1;
-    margin-bottom: 2px;
-    letter-spacing: -0.03em;
-    font-variant-numeric: tabular-nums;
-}
-
-.kpi-card-v2-label {
+.kpi-v3-label {
     font-size: 0.68rem;
     font-weight: 600;
     color: var(--text-muted);
     text-transform: uppercase;
-    letter-spacing: 0.8px;
+    letter-spacing: 0.5px;
+}
+
+.kpi-v3-value {
+    font-size: 1.35rem;
+    font-weight: 800;
+    color: var(--text-primary);
+    line-height: 1.1;
+    letter-spacing: -0.03em;
+    font-variant-numeric: tabular-nums;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.kpi-v3-trend {
+    flex-shrink: 0;
+}
+
+.kpi-v3-trend.up { color: #10b981; }
+.kpi-v3-trend.down { color: #ef4444; }
+
+.kpi-v3-sub {
+    font-size: 0.64rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    margin-top: 3px;
+    opacity: 0.7;
+}
+
+@media (max-width: 768px) {
+    .kpi-unified-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    .kpi-v3-value {
+        font-size: 1.15rem;
+    }
 }
 
 /* Customer Avatar */

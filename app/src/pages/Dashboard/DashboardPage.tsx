@@ -3,7 +3,7 @@ import {
     ShoppingCart, Package, Loader2, ArrowRight, CheckCircle2, ScanLine,
     Truck as TruckIcon, AlertTriangle, Users, FileText, TrendingDown, TrendingUp,
     Clock, CreditCard, Radio, Wifi, Sparkles, LayoutDashboard,
-    GripVertical, BarChart3, Percent, DollarSign, Repeat, UserPlus, PackageX,
+    GripVertical, BarChart3, Percent, DollarSign, Repeat, PackageX,
     ShoppingBag, PieChart, ArrowDownRight, ArrowUpRight, Banknote, RefreshCw,
     Crown, Hash, Eye, Menu
 } from 'lucide-react';
@@ -784,19 +784,17 @@ export function DashboardPage() {
                     <div className="analytics-mini-grid">
                         <MiniStat icon={DollarSign} label="Д/Д захиалгын дүн" value={fmtNum(analytics.avgOrderValue, '₮')} color="#059669" sub="7 хоногийн" />
                         <MiniStat icon={ShoppingBag} label="Өнөөдрийн захиалга" value={String(analytics.todayOrderCount)} color="#6366f1" sub={`₮${fmtNum(analytics.todayRevenue)}`} />
-                        <MiniStat icon={BarChart3} label="7 хоногийн орлого" value={fmtNum(analytics.weekRevenue, '₮')} color="#0891b2"
+                        <MiniStat icon={BarChart3} label="7 хоногийн өсөлт" value={`${analytics.revenueGrowthPct >= 0 ? '+' : ''}${analytics.revenueGrowthPct}%`} color={analytics.revenueGrowthPct >= 0 ? '#10b981' : '#ef4444'}
                             trend={analytics.revenueGrowthPct > 0 ? 'up' : analytics.revenueGrowthPct < 0 ? 'down' : null}
-                            sub={`${analytics.revenueGrowthPct >= 0 ? '+' : ''}${analytics.revenueGrowthPct}% өмнөх 7 хоногоос`} />
-                        <MiniStat icon={Hash} label="Сарын захиалга" value={String(analytics.monthOrderCount)} color="#8b5cf6" sub={fmtNum(analytics.monthRevenue, '₮')} />
+                            sub={`₮${fmtNum(analytics.weekRevenue)} орлого`} />
                         <MiniStat icon={Percent} label="Цуцлалт/Буцаалт" value={`${analytics.cancelRate}%`} color={analytics.cancelRate > 10 ? '#ef4444' : '#10b981'}
                             sub={`${analytics.cancelledCount} цуцалсан · ${analytics.returnedCount} буцаалт`} />
-                        <MiniStat icon={PackageX} label="Нөөц дууссан" value={String(analytics.outOfStockCount)} color={analytics.outOfStockCount > 0 ? '#ef4444' : '#10b981'}
-                            sub={`${analytics.activeProductCount} идэвхтэй бараа`} />
-                        {hasModule('customers') && (
-                            <MiniStat icon={UserPlus} label="Шинэ харилцагч (7 хоног)" value={String(analytics.newCustomers7d)} color="#f59e0b" />
-                        )}
-                        {hasModule('customers') && (
+                        {hasModule('customers') && analytics.repeatCustomers > 0 && (
                             <MiniStat icon={Repeat} label="Давтан худалдан авагч" value={String(analytics.repeatCustomers)} color="#ec4899" sub="2+ захиалга" />
+                        )}
+                        {analytics.outOfStockCount > 0 && (
+                            <MiniStat icon={PackageX} label="Нөөц дууссан" value={String(analytics.outOfStockCount)} color="#ef4444"
+                                sub={`${analytics.activeProductCount} идэвхтэй бараа`} />
                         )}
                     </div>
                 );
