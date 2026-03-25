@@ -629,19 +629,17 @@ export default function App() {
 
           // 3. FCM Push Token Registration (non-blocking)
           try {
-            if ('Notification' in window && Notification.permission !== 'denied') {
+            const vapidKey = import.meta.env.VITE_FIREBASE_VAPID_KEY;
+            if (vapidKey && 'Notification' in window && Notification.permission !== 'denied') {
               const permission = await Notification.requestPermission();
               if (permission === 'granted' && messaging) {
-                const fcmToken = await getToken(messaging, {
-                  vapidKey: import.meta.env.VITE_FIREBASE_VAPID_KEY || 'BKagOny0KF_2pCJQ3m....oAdLdoc2VPoQs'
-                });
+                const fcmToken = await getToken(messaging, { vapidKey });
                 if (fcmToken) {
                   const userRef = doc(db, 'users', firebaseUser.uid);
                   await updateDoc(userRef, {
                     fcmTokens: arrayUnion(fcmToken),
                     fcmLastRegistered: serverTimestamp(),
                   });
-                  // FCM token registered
                 }
               }
             }
