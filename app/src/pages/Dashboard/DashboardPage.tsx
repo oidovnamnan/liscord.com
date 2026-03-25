@@ -548,20 +548,32 @@ export function DashboardPage() {
 
         let unsubOnline: (() => void) | undefined;
         let unsubVisitors: (() => void) | undefined;
+        let refreshInterval: ReturnType<typeof setInterval> | undefined;
+
         if (visibleModuleIds.has('online-presence')) {
-            const twoMinAgo = Timestamp.fromDate(new Date(Date.now() - 120000));
-            unsubOnline = onSnapshot(
-                query(collection(db, 'businesses', business.id!, 'employees'), where('lastActiveAt', '>=', twoMinAgo)),
-                snap => setOnlineEmployees(snap.docs.map(d => ({ id: d.id, name: d.data().name || 'Нэргүй', position: d.data().positionName || '' }))),
-                () => setOnlineEmployees([])
-            );
-            unsubVisitors = onSnapshot(
-                query(collection(db, 'businesses', business.id!, 'visitors'), where('lastActiveAt', '>=', twoMinAgo)),
-                snap => setVisitorCount(snap.size), () => setVisitorCount(0)
-            );
+            const subscribePresence = () => {
+                // Unsubscribe previous listeners before re-subscribing
+                unsubOnline?.();
+                unsubVisitors?.();
+
+                const freshTwoMinAgo = Timestamp.fromDate(new Date(Date.now() - 120000));
+                unsubOnline = onSnapshot(
+                    query(collection(db, 'businesses', business.id!, 'employees'), where('lastActiveAt', '>=', freshTwoMinAgo)),
+                    snap => setOnlineEmployees(snap.docs.map(d => ({ id: d.id, name: d.data().name || 'Нэргүй', position: d.data().positionName || '' }))),
+                    () => setOnlineEmployees([])
+                );
+                unsubVisitors = onSnapshot(
+                    query(collection(db, 'businesses', business.id!, 'visitors'), where('lastActiveAt', '>=', freshTwoMinAgo)),
+                    snap => setVisitorCount(snap.size), () => setVisitorCount(0)
+                );
+            };
+
+            subscribePresence();
+            // Re-subscribe every 60s so the twoMinAgo threshold stays fresh
+            refreshInterval = setInterval(subscribePresence, 60000);
         }
 
-        return () => { unsubOrders?.(); unsubLogs(); unsubOnline?.(); unsubVisitors?.(); };
+        return () => { unsubOrders?.(); unsubLogs(); unsubOnline?.(); unsubVisitors?.(); clearInterval(refreshInterval); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [business?.id, visibleModuleIds]);
 
