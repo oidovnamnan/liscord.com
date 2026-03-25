@@ -172,6 +172,13 @@ export function MembershipPage() {
     const [confirming, setConfirming] = useState<string | null>(null);
     const handleConfirmPayment = async (order: VipOrder) => {
         if (!business?.id) return;
+        
+        // Ask for confirmation first
+        const ok = window.confirm(
+            `${order.orderNumber} захиалгын төлбөр ₮${order.total.toLocaleString()} баталгаажуулах уу?\n\nХэрэглэгч: ${order.customerPhone}\n\nБаталгаажуулсны дараа гишүүнчлэл автоматаар идэвхжинэ.`
+        );
+        if (!ok) return;
+        
         setConfirming(order.id);
         try {
             // 1. Update order paymentStatus to 'paid'
