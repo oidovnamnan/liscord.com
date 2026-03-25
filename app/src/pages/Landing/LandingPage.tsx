@@ -132,9 +132,6 @@ export function LandingPage() {
                         <button className="lp-btn-hero" onClick={() => navigate('/register')}>
                             Үнэгүй эхлэх <ArrowRight size={18} />
                         </button>
-                        <button className="lp-btn-hero-secondary" onClick={() => navigate('/app')}>
-                            <Zap size={16} /> Demo харах
-                        </button>
                     </div>
 
                     {/* Stats row */}
