@@ -1158,8 +1158,8 @@ function CreateOrderModal({ onClose, nextNumber, statuses }: {
                     phone: phone,
                     socialHandle: socialHandle || ''
                 },
-                sourceId: sourceId || undefined,
-                accountId: accountId || undefined,
+                sourceId: sourceId || '',
+                accountId: accountId || '',
                 deliveryAddress: address,
                 items: finalItems,
                 financials: {
@@ -1185,7 +1185,7 @@ function CreateOrderModal({ onClose, nextNumber, statuses }: {
                 createdBy: user.uid,
                 createdByName: user.displayName,
                 isDeleted: false,
-                paymentRefCode: paymentRefCode || undefined,
+                paymentRefCode: paymentRefCode || '',
                 selectedPaymentMethod: paymentMethod,
                 notes: payCargoNow ? '' : 'Карго ирэхээр төлнө',
                 internalNotes: '',
