@@ -8,7 +8,7 @@
  * - Unpaid orders older than 24 hours are auto-deleted (soft-delete)
  */
 import { useState, useEffect, useMemo, useRef } from 'react';
-import { collection, query, where, onSnapshot, Timestamp, doc, updateDoc } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, Timestamp, doc, updateDoc, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../../services/firebase';
 import { useBusinessStore } from '../../store';
 import {
@@ -28,6 +28,8 @@ interface VipOrder {
     paymentStatus: string;
     createdAt?: Date;
     notes?: string;
+    membershipCategoryId?: string;
+    membershipDurationDays?: number;
 }
 
 interface MembershipRecord {
@@ -100,6 +102,8 @@ export function MembershipPage() {
                     paymentStatus: data.paymentStatus || 'unpaid',
                     createdAt,
                     notes: data.notes || '',
+                    membershipCategoryId: data.membershipCategoryId || '',
+                    membershipDurationDays: data.membershipDurationDays || 30,
                 });
             }
             result.sort((a, b) => (b.createdAt?.getTime() || 0) - (a.createdAt?.getTime() || 0));
@@ -163,6 +167,48 @@ export function MembershipPage() {
         unpaidOrders: unconfirmedOrders.length,
         activeMembers: memberships.filter(m => m.status === 'active').length,
     }), [orders, confirmedOrders, unconfirmedOrders, memberships]);
+
+    // Confirm payment + auto-create membership
+    const [confirming, setConfirming] = useState<string | null>(null);
+    const handleConfirmPayment = async (order: VipOrder) => {
+        if (!business?.id) return;
+        setConfirming(order.id);
+        try {
+            // 1. Update order paymentStatus to 'paid'
+            await updateDoc(doc(db, 'businesses', business.id, 'orders', order.id), {
+                paymentStatus: 'paid',
+                'financials.paidAmount': order.total,
+                'financials.balanceDue': 0,
+                'financials.payments': [{
+                    method: 'manual',
+                    amount: order.total,
+                    date: Timestamp.now(),
+                    note: 'Админ баталгаажуулсан',
+                }],
+            });
+
+            // 2. Auto-create membership record
+            if (order.membershipCategoryId) {
+                const expDate = new Date();
+                expDate.setDate(expDate.getDate() + (order.membershipDurationDays || 30));
+                const cleanPhone = order.customerPhone.replace(/^\+?976/, '');
+                await addDoc(collection(db, 'businesses', business.id, 'memberships'), {
+                    customerPhone: cleanPhone,
+                    categoryId: order.membershipCategoryId,
+                    orderId: order.id,
+                    purchasedAt: serverTimestamp(),
+                    expiresAt: Timestamp.fromDate(expDate),
+                    amountPaid: order.total,
+                    status: 'active',
+                    createdBy: 'admin_confirm',
+                });
+            }
+        } catch (err) {
+            console.error('Failed to confirm membership payment:', err);
+        } finally {
+            setConfirming(null);
+        }
+    };
 
     // Helper: time remaining before auto-delete
     const getTimeRemaining = (createdAt?: Date) => {
@@ -294,15 +340,19 @@ export function MembershipPage() {
                                     <div className="membership-order-amount">₮{order.total.toLocaleString()}</div>
                                 </div>
                                 <div className="membership-order-status">
-                                    {order.paymentStatus === 'paid' ? (
+                                {order.paymentStatus === 'paid' ? (
                                         <span className="membership-badge paid">
                                             <CheckCircle size={13} /> Баталгаажсан
                                         </span>
                                     ) : (
                                         <div className="membership-unpaid-info">
-                                            <span className="membership-badge unpaid">
-                                                <Clock size={13} /> Хүлээгдэж буй
-                                            </span>
+                                            <button
+                                                className="membership-confirm-btn"
+                                                onClick={() => handleConfirmPayment(order)}
+                                                disabled={confirming === order.id}
+                                            >
+                                                {confirming === order.id ? '...' : '✅ Баталгаажуулах'}
+                                            </button>
                                             <span className="membership-auto-delete-timer">
                                                 <Timer size={11} /> {getTimeRemaining(order.createdAt)}
                                             </span>
