@@ -551,10 +551,38 @@ export function DashboardPage() {
         let isFirstOrderLoad = true;
         let isFirstInquiryLoad = true;
 
+        const playNotifSound = () => {
+            try {
+                const ctx = new AudioContext();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.frequency.value = 880;
+                osc.type = 'sine';
+                gain.gain.setValueAtTime(0.3, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.5);
+                osc.start(ctx.currentTime);
+                osc.stop(ctx.currentTime + 0.5);
+                // Second beep
+                const osc2 = ctx.createOscillator();
+                const gain2 = ctx.createGain();
+                osc2.connect(gain2);
+                gain2.connect(ctx.destination);
+                osc2.frequency.value = 1100;
+                osc2.type = 'sine';
+                gain2.gain.setValueAtTime(0.3, ctx.currentTime + 0.15);
+                gain2.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.6);
+                osc2.start(ctx.currentTime + 0.15);
+                osc2.stop(ctx.currentTime + 0.6);
+            } catch {}
+        };
+
         const sendNotif = (title: string, body: string, tag: string) => {
             if ('Notification' in window && Notification.permission === 'granted') {
                 try { new Notification(title, { body, tag }); } catch {}
             }
+            playNotifSound();
         };
 
         let unsubOrders: (() => void) | undefined;
