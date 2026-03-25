@@ -203,6 +203,21 @@ service cloud.firestore {
         allow delete: if false;
       }
 
+      // Visitors: public create+update+delete (anonymous storefront heartbeat tracking)
+      // Each visitor writes lastActiveAt every 30s and deletes on tab close
+      match /visitors/{docId} {
+        allow read: if isMemberOf(bizId);    // Only dashboard reads visitors
+        allow create, update: if true;       // Anonymous storefront writes heartbeat
+        allow delete: if true;               // Cleanup on tab close (deleteDoc on unmount)
+      }
+
+      // Daily stats: public increment (storefront visitor counter), member read
+      match /daily_stats/{docId} {
+        allow read: if isMemberOf(bizId);
+        allow create, update: if true;       // Storefront increments visitorCount
+        allow delete: if false;
+      }
+
       // All other subcollections: member read/write only
       match /{subcollection}/{docId} {
         allow read: if isMemberOf(bizId);
