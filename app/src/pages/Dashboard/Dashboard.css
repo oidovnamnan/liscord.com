@@ -1918,7 +1918,46 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
+    gap: 12px;
     margin-bottom: 28px;
+}
+
+/* Inline hamburger button inside hero header — hidden on desktop */
+.dash-hero-menu-btn {
+    display: none;
+}
+
+@media (max-width: 768px) {
+    .dash-hero-menu-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        width: 44px;
+        height: 44px;
+        border-radius: 12px;
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        background: rgba(20, 20, 30, 0.6);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        color: #fff;
+        cursor: pointer;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+        transition: all 0.2s ease;
+    }
+
+    .dash-hero-menu-btn:active {
+        transform: scale(0.92);
+    }
+
+    /* Hide global fixed hamburger when dashboard hero is visible */
+    .app-container:has(.dash-mobile-hero) > .mobile-menu-btn {
+        display: none !important;
+    }
+
+    .dash-mobile-hero-greeting {
+        margin-bottom: 12px;
+    }
 }
 
 .dash-mobile-hero-biz {

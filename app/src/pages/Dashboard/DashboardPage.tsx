@@ -5,9 +5,9 @@ import {
     Clock, CreditCard, Radio, Wifi, Sparkles, LayoutDashboard,
     GripVertical, BarChart3, Percent, DollarSign, Repeat, UserPlus, PackageX,
     ShoppingBag, PieChart, ArrowDownRight, ArrowUpRight, Banknote, RefreshCw,
-    Crown, Hash, Eye
+    Crown, Hash, Eye, Menu
 } from 'lucide-react';
-import { useBusinessStore, useAuthStore, useModuleDefaultsStore } from '../../store';
+import { useBusinessStore, useAuthStore, useModuleDefaultsStore, useUIStore } from '../../store';
 import { useCartStore } from '../../store/cartStore';
 import { dashboardService } from '../../services/db';
 import { auditService } from '../../services/audit';
@@ -1048,9 +1048,12 @@ export function DashboardPage() {
                 {/* Background decorations */}
                 <div className="dash-mobile-hero-bg" />
 
-                {/* Greeting bar — hides on swipe up */}
+                {/* Greeting bar + hamburger + status — hides on swipe up */}
                 <div className="dash-mobile-hero-header">
                     <div className="dash-mobile-hero-greeting">
+                        <button className="dash-hero-menu-btn" onClick={() => useUIStore.getState().toggleSidebar()} aria-label="Цэс нээх">
+                            <Menu size={22} />
+                        </button>
                         <div>
                             <div className="dash-mobile-hero-biz"><Sparkles size={10} /> {business?.name}</div>
                             <div className="dash-mobile-hero-hello">Сайн байна уу, {displayName}! 👋</div>
@@ -1059,6 +1062,15 @@ export function DashboardPage() {
                             {new Date().toLocaleDateString('mn-MN', { month: 'short', day: 'numeric' })}
                         </div>
                     </div>
+
+                    {/* Quick status chips — also hide on swipe */}
+                    {(pendingOrders > 0 || preparingOrders > 0 || shippingOrders > 0) && (
+                        <div className="dash-mobile-status-row">
+                            {pendingOrders > 0 && <a href="/app/orders" className="dash-mobile-chip chip-pend"><Clock size={12} /> {pendingOrders} хүлээгдэж буй</a>}
+                            {preparingOrders > 0 && <a href="/app/orders" className="dash-mobile-chip chip-prep"><Package size={12} /> {preparingOrders} бэлтгэж буй</a>}
+                            {shippingOrders > 0 && <a href="/app/orders" className="dash-mobile-chip chip-ship"><TruckIcon size={12} /> {shippingOrders} хүргэлтэнд</a>}
+                        </div>
+                    )}
                 </div>
 
                 {/* Metrics body — snaps to fill screen */}
@@ -1107,15 +1119,6 @@ export function DashboardPage() {
                             <div className="dash-metric-sub">өнөөдөр баталгаажсан</div>
                         </div>
                     </div>
-
-                    {/* Quick status chips */}
-                    {(pendingOrders > 0 || preparingOrders > 0 || shippingOrders > 0) && (
-                        <div className="dash-mobile-status-row">
-                            {pendingOrders > 0 && <a href="/app/orders" className="dash-mobile-chip chip-pend"><Clock size={12} /> {pendingOrders} хүлээгдэж буй</a>}
-                            {preparingOrders > 0 && <a href="/app/orders" className="dash-mobile-chip chip-prep"><Package size={12} /> {preparingOrders} бэлтгэж буй</a>}
-                            {shippingOrders > 0 && <a href="/app/orders" className="dash-mobile-chip chip-ship"><TruckIcon size={12} /> {shippingOrders} хүргэлтэнд</a>}
-                        </div>
-                    )}
                 </div>
             </div>
 
