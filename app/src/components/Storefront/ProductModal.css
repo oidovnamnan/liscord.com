@@ -682,15 +682,22 @@
     }
 
     .sf-modal-title {
-        font-size: 1.3rem;
+        font-size: 1.1rem;
     }
 
     .sf-modal-price {
-        font-size: 1.25rem;
+        font-size: 1.05rem;
+        flex-wrap: wrap;
+        gap: 6px;
     }
 
     .sf-modal-desc {
-        font-size: 0.85rem;
+        font-size: 0.82rem;
+    }
+
+    .sf-modal-category {
+        font-size: 0.62rem;
+        padding: 2px 8px;
     }
 
     .sf-modal-actions {
