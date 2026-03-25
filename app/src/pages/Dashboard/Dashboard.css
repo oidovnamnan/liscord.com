@@ -1799,14 +1799,48 @@
 .dash-mobile-hero {
     position: relative;
     background: linear-gradient(165deg, #0f0f0f 0%, #1a1a2e 35%, #16213e 70%, #0f3460 100%);
-    padding: 20px 20px 24px;
     overflow: hidden;
-    min-height: 340px;
-    scroll-snap-align: start;
+}
+
+/* Desktop: simple stacked layout */
+.dash-mobile-hero-header {
+    padding: 20px 20px 0;
+}
+
+.dash-mobile-hero-body {
+    padding: 0 20px 24px;
 }
 
 @media (max-width: 768px) {
+    /* Hero becomes an internal scroll-snap container */
     .dash-mobile-hero {
+        height: 100svh;
+        overflow-y: auto;
+        scroll-snap-type: y mandatory;
+        overscroll-behavior-y: contain;
+        -webkit-overflow-scrolling: touch;
+        scroll-behavior: smooth;
+    }
+
+    /* Hide scrollbar */
+    .dash-mobile-hero::-webkit-scrollbar {
+        display: none;
+    }
+    .dash-mobile-hero {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+    }
+
+    /* Header: first snap section (greeting + spacing) */
+    .dash-mobile-hero-header {
+        scroll-snap-align: start;
+        padding: 20px 16px 12px;
+        min-height: 90px;
+    }
+
+    /* Body: second snap section (metrics fill screen) */
+    .dash-mobile-hero-body {
+        scroll-snap-align: start;
         min-height: 100svh;
         display: flex;
         flex-direction: column;
@@ -1815,7 +1849,7 @@
     }
 
     .dash-mobile-hero-greeting {
-        margin-bottom: 16px;
+        margin-bottom: 0;
     }
 
     .dash-mobile-metrics {

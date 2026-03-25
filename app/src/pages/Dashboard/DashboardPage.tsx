@@ -583,25 +583,7 @@ export function DashboardPage() {
         }).length;
     }, [recentOrders]);
 
-    // ═══ Magnetic scroll-snap on mobile ═══
-    useEffect(() => {
-        const scrollContainer = document.querySelector('.app-main-scrolled') as HTMLElement;
-        if (!scrollContainer) return;
-        const mq = window.matchMedia('(max-width: 768px)');
-        const apply = () => {
-            if (mq.matches) {
-                scrollContainer.style.scrollSnapType = 'y proximity';
-            } else {
-                scrollContainer.style.scrollSnapType = '';
-            }
-        };
-        apply();
-        mq.addEventListener('change', apply);
-        return () => {
-            scrollContainer.style.scrollSnapType = '';
-            mq.removeEventListener('change', apply);
-        };
-    }, []);
+    // Magnetic scroll-snap now handled by CSS on .dash-mobile-hero
 
     if (loading || !stats) {
         return <div className="loading-screen"><Loader2 className="animate-spin" size={32} /><p>Уншиж байна...</p></div>;
@@ -1066,70 +1048,75 @@ export function DashboardPage() {
                 {/* Background decorations */}
                 <div className="dash-mobile-hero-bg" />
 
-                {/* Greeting bar */}
-                <div className="dash-mobile-hero-greeting">
-                    <div>
-                        <div className="dash-mobile-hero-biz"><Sparkles size={10} /> {business?.name}</div>
-                        <div className="dash-mobile-hero-hello">Сайн байна уу, {displayName}! 👋</div>
-                    </div>
-                    <div className="dash-mobile-hero-time">
-                        {new Date().toLocaleDateString('mn-MN', { month: 'short', day: 'numeric' })}
+                {/* Greeting bar — hides on swipe up */}
+                <div className="dash-mobile-hero-header">
+                    <div className="dash-mobile-hero-greeting">
+                        <div>
+                            <div className="dash-mobile-hero-biz"><Sparkles size={10} /> {business?.name}</div>
+                            <div className="dash-mobile-hero-hello">Сайн байна уу, {displayName}! 👋</div>
+                        </div>
+                        <div className="dash-mobile-hero-time">
+                            {new Date().toLocaleDateString('mn-MN', { month: 'short', day: 'numeric' })}
+                        </div>
                     </div>
                 </div>
 
-                {/* 3 KEY METRICS */}
-                <div className="dash-mobile-metrics">
-                    {/* 1. Live Visitors — Red/Orange vibrant */}
-                    <div className="dash-metric-card dash-metric-visitors">
-                        <div className="dash-metric-glow" />
-                        <div className="dash-metric-icon-wrap">
-                            <Eye size={22} />
-                            <span className="dash-metric-live-dot" />
+                {/* Metrics body — snaps to fill screen */}
+                <div className="dash-mobile-hero-body">
+                    {/* 3 KEY METRICS */}
+                    <div className="dash-mobile-metrics">
+                        {/* 1. Live Visitors — Red/Orange vibrant */}
+                        <div className="dash-metric-card dash-metric-visitors">
+                            <div className="dash-metric-glow" />
+                            <div className="dash-metric-icon-wrap">
+                                <Eye size={22} />
+                                <span className="dash-metric-live-dot" />
+                            </div>
+                            <div className="dash-metric-value">{visitorCount}</div>
+                            <div className="dash-metric-label">Зочин</div>
+                            <div className="dash-metric-sub">
+                                <Radio size={10} className="dash-metric-pulse-icon" /> LIVE
+                            </div>
                         </div>
-                        <div className="dash-metric-value">{visitorCount}</div>
-                        <div className="dash-metric-label">Зочин</div>
-                        <div className="dash-metric-sub">
-                            <Radio size={10} className="dash-metric-pulse-icon" /> LIVE
+
+                        {/* 2. Today Revenue — Deep Blue/Cyan */}
+                        <div className="dash-metric-card dash-metric-revenue">
+                            <div className="dash-metric-glow" />
+                            <div className="dash-metric-icon-wrap">
+                                <Banknote size={22} />
+                            </div>
+                            <div className="dash-metric-value">
+                                {todayRevenue > 999999
+                                    ? `${(todayRevenue / 1000000).toFixed(1)}M`
+                                    : todayRevenue > 999
+                                        ? `${Math.round(todayRevenue / 1000)}K`
+                                        : todayRevenue.toLocaleString()}
+                            </div>
+                            <div className="dash-metric-label">Өнөөдрийн орлого</div>
+                            <div className="dash-metric-sub">₮ баталгаажсан</div>
+                        </div>
+
+                        {/* 3. Today Orders — Amber/Yellow */}
+                        <div className="dash-metric-card dash-metric-orders">
+                            <div className="dash-metric-glow" />
+                            <div className="dash-metric-icon-wrap">
+                                <ShoppingBag size={22} />
+                            </div>
+                            <div className="dash-metric-value">{todayConfirmedOrders}</div>
+                            <div className="dash-metric-label">Захиалга</div>
+                            <div className="dash-metric-sub">өнөөдөр баталгаажсан</div>
                         </div>
                     </div>
 
-                    {/* 2. Today Revenue — Deep Blue/Cyan */}
-                    <div className="dash-metric-card dash-metric-revenue">
-                        <div className="dash-metric-glow" />
-                        <div className="dash-metric-icon-wrap">
-                            <Banknote size={22} />
+                    {/* Quick status chips */}
+                    {(pendingOrders > 0 || preparingOrders > 0 || shippingOrders > 0) && (
+                        <div className="dash-mobile-status-row">
+                            {pendingOrders > 0 && <a href="/app/orders" className="dash-mobile-chip chip-pend"><Clock size={12} /> {pendingOrders} хүлээгдэж буй</a>}
+                            {preparingOrders > 0 && <a href="/app/orders" className="dash-mobile-chip chip-prep"><Package size={12} /> {preparingOrders} бэлтгэж буй</a>}
+                            {shippingOrders > 0 && <a href="/app/orders" className="dash-mobile-chip chip-ship"><TruckIcon size={12} /> {shippingOrders} хүргэлтэнд</a>}
                         </div>
-                        <div className="dash-metric-value">
-                            {todayRevenue > 999999
-                                ? `${(todayRevenue / 1000000).toFixed(1)}M`
-                                : todayRevenue > 999
-                                    ? `${Math.round(todayRevenue / 1000)}K`
-                                    : todayRevenue.toLocaleString()}
-                        </div>
-                        <div className="dash-metric-label">Өнөөдрийн орлого</div>
-                        <div className="dash-metric-sub">₮ баталгаажсан</div>
-                    </div>
-
-                    {/* 3. Today Orders — Amber/Yellow */}
-                    <div className="dash-metric-card dash-metric-orders">
-                        <div className="dash-metric-glow" />
-                        <div className="dash-metric-icon-wrap">
-                            <ShoppingBag size={22} />
-                        </div>
-                        <div className="dash-metric-value">{todayConfirmedOrders}</div>
-                        <div className="dash-metric-label">Захиалга</div>
-                        <div className="dash-metric-sub">өнөөдөр баталгаажсан</div>
-                    </div>
+                    )}
                 </div>
-
-                {/* Quick status chips */}
-                {(pendingOrders > 0 || preparingOrders > 0 || shippingOrders > 0) && (
-                    <div className="dash-mobile-status-row">
-                        {pendingOrders > 0 && <a href="/app/orders" className="dash-mobile-chip chip-pend"><Clock size={12} /> {pendingOrders} хүлээгдэж буй</a>}
-                        {preparingOrders > 0 && <a href="/app/orders" className="dash-mobile-chip chip-prep"><Package size={12} /> {preparingOrders} бэлтгэж буй</a>}
-                        {shippingOrders > 0 && <a href="/app/orders" className="dash-mobile-chip chip-ship"><TruckIcon size={12} /> {shippingOrders} хүргэлтэнд</a>}
-                    </div>
-                )}
             </div>
 
             {/* ═══ Widgets below ═══ */}
