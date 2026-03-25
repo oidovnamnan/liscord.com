@@ -1993,226 +1993,266 @@
     border-radius: 8px;
 }
 
-/* 3 Metric Cards Grid */
-.dash-mobile-metrics {
+/* ═══════════════════════════════════════════
+   HERO REVENUE — Fintech Premium Layout
+   ═══════════════════════════════════════════ */
+
+.dash-hero-revenue {
     position: relative;
     z-index: 2;
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
-    gap: 12px;
-}
-
-@media (max-width: 768px) {
-    .dash-mobile-metrics {
-        grid-template-columns: 1fr;
-        gap: 14px;
-    }
-}
-
-/* Each metric card */
-.dash-metric-card {
-    position: relative;
-    border-radius: 20px;
-    padding: 24px 20px;
     text-align: center;
-    overflow: hidden;
-    transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1),
-                box-shadow 0.4s ease;
-    cursor: default;
+    padding: 10px 0 20px;
 }
 
-.dash-metric-card:hover {
-    transform: translateY(-4px) scale(1.02);
-}
-
-/* Card inner glow */
-.dash-metric-glow {
+.dash-hero-revenue-glow {
     position: absolute;
-    inset: 0;
-    opacity: 0.5;
+    top: 50%;
+    left: 50%;
+    width: 280px;
+    height: 200px;
+    transform: translate(-50%, -50%);
+    background: radial-gradient(ellipse, rgba(220, 38, 38, 0.20) 0%, rgba(220, 38, 38, 0.08) 40%, transparent 70%);
     pointer-events: none;
+    animation: revenue-glow-pulse 4s ease-in-out infinite;
 }
 
-/* ── VISITORS — Red/Orange ── */
-.dash-metric-visitors {
-    background: linear-gradient(150deg, #dc2626 0%, #ea580c 50%, #f59e0b 100%);
-    box-shadow: 0 8px 32px rgba(220, 38, 38, 0.35),
-                0 0 80px rgba(234, 88, 12, 0.15);
+@keyframes revenue-glow-pulse {
+    0%, 100% { opacity: 0.7; transform: translate(-50%, -50%) scale(1); }
+    50% { opacity: 1; transform: translate(-50%, -50%) scale(1.1); }
 }
 
-.dash-metric-visitors .dash-metric-glow {
-    background: radial-gradient(circle at 30% 20%, rgba(255, 255, 255, 0.15) 0%, transparent 50%);
-}
-
-.dash-metric-visitors:hover {
-    box-shadow: 0 12px 48px rgba(220, 38, 38, 0.45),
-                0 0 120px rgba(234, 88, 12, 0.2);
-}
-
-/* ── REVENUE — Deep Blue/Cyan ── */
-.dash-metric-revenue {
-    background: linear-gradient(150deg, #1e3a8a 0%, #1d4ed8 50%, #0891b2 100%);
-    box-shadow: 0 8px 32px rgba(29, 78, 216, 0.35),
-                0 0 80px rgba(8, 145, 178, 0.15);
-}
-
-.dash-metric-revenue .dash-metric-glow {
-    background: radial-gradient(circle at 70% 20%, rgba(255, 255, 255, 0.12) 0%, transparent 50%);
-}
-
-.dash-metric-revenue:hover {
-    box-shadow: 0 12px 48px rgba(29, 78, 216, 0.45),
-                0 0 120px rgba(8, 145, 178, 0.2);
-}
-
-/* ── ORDERS — Amber/Black ── */
-.dash-metric-orders {
-    background: linear-gradient(150deg, #1a1a1a 0%, #292524 50%, #78350f 100%);
-    box-shadow: 0 8px 32px rgba(120, 53, 15, 0.35),
-                0 0 80px rgba(245, 158, 11, 0.1);
-    border: 1px solid rgba(245, 158, 11, 0.2);
-}
-
-.dash-metric-orders .dash-metric-glow {
-    background: radial-gradient(circle at 50% 80%, rgba(245, 158, 11, 0.15) 0%, transparent 50%);
-}
-
-.dash-metric-orders:hover {
-    box-shadow: 0 12px 48px rgba(120, 53, 15, 0.45),
-                0 0 120px rgba(245, 158, 11, 0.15);
-}
-
-/* Icon wrapper */
-.dash-metric-icon-wrap {
-    position: relative;
-    display: inline-flex;
-    align-items: center;
+.dash-hero-revenue-row {
+    display: flex;
+    align-items: baseline;
     justify-content: center;
-    width: 48px;
-    height: 48px;
-    border-radius: 16px;
-    background: rgba(255, 255, 255, 0.15);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-    color: #fff;
-    margin: 0 auto 14px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    gap: 2px;
+    position: relative;
 }
 
-/* Live dot on visitor icon */
-.dash-metric-live-dot {
-    position: absolute;
-    top: -2px;
-    right: -2px;
-    width: 12px;
-    height: 12px;
-    border-radius: 50%;
-    background: #22c55e;
-    border: 2px solid rgba(220, 38, 38, 0.8);
-    animation: live-dot-pulse 1.5s ease-in-out infinite;
+.dash-hero-revenue-symbol {
+    font-size: 1.8rem;
+    font-weight: 800;
+    color: rgba(255, 255, 255, 0.5);
+    margin-right: 2px;
 }
 
-@keyframes live-dot-pulse {
-    0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7); }
-    50% { transform: scale(1.2); box-shadow: 0 0 0 8px rgba(34, 197, 94, 0); }
-}
-
-/* Metric value — BIG and bold */
-.dash-metric-value {
-    font-size: 3rem;
+.dash-hero-revenue-num {
+    font-size: 3.2rem;
     font-weight: 900;
     color: #fff;
-    line-height: 1;
     letter-spacing: -0.04em;
-    margin-bottom: 4px;
-    text-shadow: 0 2px 20px rgba(0, 0, 0, 0.3);
+    line-height: 1;
+    text-shadow: 0 0 40px rgba(220, 38, 38, 0.3), 0 2px 20px rgba(0, 0, 0, 0.4);
     font-variant-numeric: tabular-nums;
 }
 
 @media (max-width: 768px) {
-    .dash-metric-value {
-        font-size: 3.5rem;
+    .dash-hero-revenue-num {
+        font-size: 2.8rem;
     }
 }
 
-/* Label */
-.dash-metric-label {
-    font-size: 0.85rem;
-    font-weight: 700;
-    color: rgba(255, 255, 255, 0.85);
-    letter-spacing: 0.02em;
-    margin-bottom: 4px;
-}
-
-/* Sub text */
-.dash-metric-sub {
+.dash-hero-trend {
     display: inline-flex;
     align-items: center;
-    gap: 5px;
-    font-size: 0.68rem;
+    gap: 2px;
+    font-size: 0.7rem;
     font-weight: 800;
-    text-transform: uppercase;
-    letter-spacing: 1.5px;
-    color: rgba(255, 255, 255, 0.5);
-    padding: 3px 10px;
-    background: rgba(255, 255, 255, 0.08);
-    border-radius: 100px;
-    border: 1px solid rgba(255, 255, 255, 0.06);
+    padding: 3px 8px;
+    border-radius: 8px;
+    margin-left: 8px;
+    position: relative;
+    top: -8px;
 }
 
-/* Pulsing radio icon for LIVE */
-.dash-metric-pulse-icon {
+.trend-up {
+    background: rgba(34, 197, 94, 0.15);
     color: #22c55e;
-    animation: pulse-radio 2s ease-in-out infinite;
+    border: 1px solid rgba(34, 197, 94, 0.25);
 }
 
-@keyframes pulse-radio {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.3; }
+.trend-down {
+    background: rgba(239, 68, 68, 0.15);
+    color: #ef4444;
+    border: 1px solid rgba(239, 68, 68, 0.25);
 }
 
-/* Status chips below hero */
-.dash-mobile-status-row {
+.dash-hero-revenue-label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.4);
+    margin-top: 6px;
+    letter-spacing: 0.02em;
+}
+
+/* ═══ Quick Stats Pills ═══ */
+.dash-hero-pills {
     position: relative;
     z-index: 2;
     display: flex;
-    gap: 8px;
-    margin-top: 20px;
-    flex-wrap: wrap;
     justify-content: center;
+    gap: 8px;
+    margin: 24px 0;
+    flex-wrap: wrap;
 }
 
-.dash-mobile-chip {
+.dash-hero-pill {
     display: inline-flex;
     align-items: center;
     gap: 6px;
     padding: 8px 14px;
-    border-radius: 100px;
-    font-size: 0.72rem;
-    font-weight: 700;
-    text-decoration: none;
-    transition: all 0.3s;
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    transition: all 0.3s ease;
+    color: rgba(255, 255, 255, 0.7);
 }
 
-.dash-mobile-chip:hover {
+.dash-hero-pill:hover {
+    background: rgba(255, 255, 255, 0.10);
     transform: translateY(-2px);
 }
 
-.chip-pend {
-    background: rgba(251, 191, 36, 0.15);
-    color: #fbbf24;
-    border-color: rgba(251, 191, 36, 0.3);
+.pill-value {
+    font-weight: 800;
+    font-size: 0.85rem;
+    color: #fff;
+    font-variant-numeric: tabular-nums;
 }
 
-.chip-prep {
-    background: rgba(139, 92, 246, 0.15);
-    color: #a78bfa;
-    border-color: rgba(139, 92, 246, 0.3);
+.pill-label {
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.45);
 }
 
-.chip-ship {
-    background: rgba(34, 211, 238, 0.15);
-    color: #22d3ee;
-    border-color: rgba(34, 211, 238, 0.3);
+/* Live pill with red accent */
+.pill-live {
+    border-color: rgba(220, 38, 38, 0.25);
+    background: rgba(220, 38, 38, 0.08);
+}
+
+.pill-live-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #dc2626;
+    box-shadow: 0 0 8px rgba(220, 38, 38, 0.6);
+    animation: pill-dot-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pill-dot-pulse {
+    0%, 100% { opacity: 1; box-shadow: 0 0 4px rgba(220, 38, 38, 0.6); }
+    50% { opacity: 0.6; box-shadow: 0 0 12px rgba(220, 38, 38, 0.8); }
+}
+
+.pill-orders {
+    border-color: rgba(234, 88, 12, 0.2);
+}
+
+.pill-customers {
+    border-color: rgba(139, 92, 246, 0.2);
+}
+
+/* ═══ 2-Column Detail Cards ═══ */
+.dash-hero-detail-row {
+    position: relative;
+    z-index: 2;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-top: 8px;
+}
+
+.dash-hero-detail-card {
+    padding: 16px 14px;
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+.dash-hero-detail-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 16px;
+    padding: 1px;
+    background: linear-gradient(140deg, rgba(220, 38, 38, 0.25) 0%, transparent 50%, rgba(220, 38, 38, 0.10) 100%);
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+}
+
+.dash-hero-detail-card:hover {
+    background: rgba(255, 255, 255, 0.07);
+    transform: translateY(-2px);
+}
+
+.detail-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+}
+
+.detail-card-title {
+    font-size: 0.68rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: rgba(255, 255, 255, 0.4);
+}
+
+.detail-card-icon {
+    color: rgba(220, 38, 38, 0.6);
+}
+
+.detail-card-value {
+    font-size: 1.5rem;
+    font-weight: 900;
+    color: #fff;
+    letter-spacing: -0.03em;
+    line-height: 1.1;
+    font-variant-numeric: tabular-nums;
+}
+
+.detail-card-sub {
+    font-size: 0.65rem;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.3);
+    margin-top: 4px;
+}
+
+/* ═══ Swipe Indicator ═══ */
+.dash-hero-swipe-hint {
+    display: none;
+}
+
+@media (max-width: 768px) {
+    .dash-hero-swipe-hint {
+        display: flex;
+        justify-content: center;
+        padding-top: 20px;
+        animation: swipe-bounce 2.5s ease-in-out infinite;
+    }
+
+    .swipe-hint-line {
+        width: 36px;
+        height: 4px;
+        border-radius: 4px;
+        background: rgba(255, 255, 255, 0.15);
+    }
+
+    @keyframes swipe-bounce {
+        0%, 100% { transform: translateY(0); opacity: 0.5; }
+        50% { transform: translateY(6px); opacity: 1; }
+    }
 }

@@ -1063,49 +1063,67 @@ export function DashboardPage() {
 
                 {/* Metrics body — snaps to fill screen */}
                 <div className="dash-mobile-hero-body">
-                    {/* 3 KEY METRICS */}
-                    <div className="dash-mobile-metrics">
-                        {/* 1. Live Visitors — Red/Orange vibrant */}
-                        <div className="dash-metric-card dash-metric-visitors">
-                            <div className="dash-metric-glow" />
-                            <div className="dash-metric-icon-wrap">
-                                <Eye size={22} />
-                                <span className="dash-metric-live-dot" />
-                            </div>
-                            <div className="dash-metric-value">{visitorCount}</div>
-                            <div className="dash-metric-label">Зочин</div>
-                            <div className="dash-metric-sub">
-                                <Radio size={10} className="dash-metric-pulse-icon" /> LIVE
-                            </div>
+                    {/* Hero Revenue Number */}
+                    <div className="dash-hero-revenue">
+                        <div className="dash-hero-revenue-glow" />
+                        <div className="dash-hero-revenue-row">
+                            <span className="dash-hero-revenue-symbol">₮</span>
+                            <span className="dash-hero-revenue-num">{todayRevenue.toLocaleString()}</span>
+                            {analytics.revenueGrowthPct !== 0 && (
+                                <span className={`dash-hero-trend ${analytics.revenueGrowthPct > 0 ? 'trend-up' : 'trend-down'}`}>
+                                    {analytics.revenueGrowthPct > 0 ? (
+                                        <><ArrowUpRight size={12} /> +{analytics.revenueGrowthPct}%</>
+                                    ) : (
+                                        <><ArrowDownRight size={12} /> {analytics.revenueGrowthPct}%</>
+                                    )}
+                                </span>
+                            )}
                         </div>
+                        <div className="dash-hero-revenue-label">Өнөөдрийн орлого</div>
+                    </div>
 
-                        {/* 2. Today Revenue — Deep Blue/Cyan */}
-                        <div className="dash-metric-card dash-metric-revenue">
-                            <div className="dash-metric-glow" />
-                            <div className="dash-metric-icon-wrap">
-                                <Banknote size={22} />
-                            </div>
-                            <div className="dash-metric-value">
-                                {todayRevenue > 999999
-                                    ? `${(todayRevenue / 1000000).toFixed(1)}M`
-                                    : todayRevenue > 999
-                                        ? `${Math.round(todayRevenue / 1000)}K`
-                                        : todayRevenue.toLocaleString()}
-                            </div>
-                            <div className="dash-metric-label">Өнөөдрийн орлого</div>
-                            <div className="dash-metric-sub">₮ баталгаажсан</div>
+                    {/* Quick Stats Pills */}
+                    <div className="dash-hero-pills">
+                        <div className="dash-hero-pill pill-live">
+                            <span className="pill-live-dot" />
+                            <span className="pill-value">{visitorCount}</span>
+                            <span className="pill-label">зочин</span>
                         </div>
+                        <div className="dash-hero-pill pill-orders">
+                            <ShoppingBag size={13} />
+                            <span className="pill-value">{todayConfirmedOrders}</span>
+                            <span className="pill-label">захиалга</span>
+                        </div>
+                        <div className="dash-hero-pill pill-customers">
+                            <Users size={13} />
+                            <span className="pill-value">{analytics.newCustomers7d}</span>
+                            <span className="pill-label">шинэ</span>
+                        </div>
+                    </div>
 
-                        {/* 3. Today Orders — Amber/Yellow */}
-                        <div className="dash-metric-card dash-metric-orders">
-                            <div className="dash-metric-glow" />
-                            <div className="dash-metric-icon-wrap">
-                                <ShoppingBag size={22} />
+                    {/* 2-Column Detail Cards */}
+                    <div className="dash-hero-detail-row">
+                        <div className="dash-hero-detail-card">
+                            <div className="detail-card-header">
+                                <span className="detail-card-title">7 хоног</span>
+                                <TrendingUp size={14} className="detail-card-icon" />
                             </div>
-                            <div className="dash-metric-value">{todayConfirmedOrders}</div>
-                            <div className="dash-metric-label">Захиалга</div>
-                            <div className="dash-metric-sub">өнөөдөр баталгаажсан</div>
+                            <div className="detail-card-value">{fmtNum(analytics.weekRevenue, '₮')}</div>
+                            <div className="detail-card-sub">{fmtNum(analytics.monthRevenue, '₮')} / сар</div>
                         </div>
+                        <div className="dash-hero-detail-card">
+                            <div className="detail-card-header">
+                                <span className="detail-card-title">Дундаж</span>
+                                <Hash size={14} className="detail-card-icon" />
+                            </div>
+                            <div className="detail-card-value">{fmtNum(analytics.avgOrderValue, '₮')}</div>
+                            <div className="detail-card-sub">{analytics.weekOrderCount} захиалга / 7 хоног</div>
+                        </div>
+                    </div>
+
+                    {/* Swipe indicator */}
+                    <div className="dash-hero-swipe-hint">
+                        <div className="swipe-hint-line" />
                     </div>
                 </div>
             </div>
