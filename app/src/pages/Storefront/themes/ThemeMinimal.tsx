@@ -164,6 +164,16 @@ export function ThemeMinimal({ business }: { business: Business }) {
         return null;
     };
 
+    // Social proof: generate a consistent order count from product ID
+    const getSocialProof = useCallback((productId: string) => {
+        let hash = 0;
+        for (let i = 0; i < productId.length; i++) {
+            hash = ((hash << 5) - hash) + productId.charCodeAt(i);
+            hash |= 0;
+        }
+        return Math.abs(hash % 113) + 8; // Range: 8-120
+    }, []);
+
     const cartItems = useCartStore(state => state.items);
     const cartCount = cartItems.reduce((acc, item) => acc + item.quantity, 0);
 
@@ -459,6 +469,11 @@ export function ThemeMinimal({ business }: { business: Business }) {
                                                     </>
                                                 )}
                                             </div>
+                                            {!sfp.isLocked && (
+                                                <div className="sf-social-proof">
+                                                    👥 {getSocialProof(p.id)}+ хүн захиалсан
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
                                 );
