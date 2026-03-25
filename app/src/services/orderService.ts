@@ -81,27 +81,46 @@ export const orderService = {
     },
 
     subscribeOrders(bizId: string, callback: (orders: Order[], lastDoc: any) => void, statusFilter?: string, limitCount: number = 50, startDate?: Date) {
-        let q = query(
+        // Simple query without orderBy to avoid composite index requirements
+        const q = query(
             this.getOrdersRef(bizId),
             where('isDeleted', '==', false),
-            orderBy('createdAt', 'desc'),
-            limit(limitCount)
+            limit(Math.max(limitCount, 200)) // fetch more to allow client-side filtering
         );
 
-        if (statusFilter && statusFilter !== 'all' && statusFilter !== 'cancelled') {
-            q = query(q, where('status', '==', statusFilter));
-        }
-
-        if (startDate) {
-            q = query(q, where('createdAt', '>=', startDate));
-        }
-
         return onSnapshot(q, (snapshot) => {
-            const allOrders = snapshot.docs.map(d => ({ id: d.id, ...convertTimestamps(d.data()) } as Order));
-            // Filter out membership orders — they belong in VIP module, not sales orders
-            const orders = allOrders.filter(o => o.orderType !== 'membership');
+            let allOrders = snapshot.docs.map(d => ({ id: d.id, ...convertTimestamps(d.data()) } as Order));
+            
+            // Filter out membership orders
+            allOrders = allOrders.filter(o => o.orderType !== 'membership');
+
+            // Apply status filter in memory
+            if (statusFilter && statusFilter !== 'all' && statusFilter !== 'cancelled') {
+                allOrders = allOrders.filter(o => o.status === statusFilter);
+            }
+
+            // Apply date filter in memory
+            if (startDate) {
+                allOrders = allOrders.filter(o => {
+                    const created = o.createdAt instanceof Date ? o.createdAt : new Date(0);
+                    return created >= startDate;
+                });
+            }
+
+            // Sort by createdAt desc in memory
+            allOrders.sort((a, b) => {
+                const tA = a.createdAt instanceof Date ? a.createdAt.getTime() : 0;
+                const tB = b.createdAt instanceof Date ? b.createdAt.getTime() : 0;
+                return tB - tA;
+            });
+
+            // Apply limit
+            const orders = allOrders.slice(0, limitCount);
             const lastDoc = snapshot.docs[snapshot.docs.length - 1];
             callback(orders, lastDoc);
+        }, (error) => {
+            console.error('Firestore subscribeOrders error:', error);
+            callback([], null);
         });
     },
 
@@ -109,22 +128,31 @@ export const orderService = {
         let q = query(
             this.getOrdersRef(bizId),
             where('isDeleted', '==', false),
-            orderBy('createdAt', 'desc'),
-            limit(50)
+            limit(200)
         );
-
-        if (statusFilter && statusFilter !== 'all' && statusFilter !== 'cancelled') {
-            q = query(q, where('status', '==', statusFilter));
-        }
 
         if (lastVisible) {
             q = query(q, startAfter(lastVisible));
         }
 
         const snapshot = await getDocs(q);
-        const allOrders = snapshot.docs.map(d => ({ id: d.id, ...convertTimestamps(d.data()) } as Order));
-        // Filter out membership orders — they belong in VIP module
-        const orders = allOrders.filter(o => o.orderType !== 'membership');
+        let allOrders = snapshot.docs.map(d => ({ id: d.id, ...convertTimestamps(d.data()) } as Order));
+        // Filter out membership orders
+        allOrders = allOrders.filter(o => o.orderType !== 'membership');
+
+        // Apply status filter in memory
+        if (statusFilter && statusFilter !== 'all' && statusFilter !== 'cancelled') {
+            allOrders = allOrders.filter(o => o.status === statusFilter);
+        }
+
+        // Sort by createdAt desc in memory
+        allOrders.sort((a, b) => {
+            const tA = a.createdAt instanceof Date ? a.createdAt.getTime() : 0;
+            const tB = b.createdAt instanceof Date ? b.createdAt.getTime() : 0;
+            return tB - tA;
+        });
+
+        const orders = allOrders.slice(0, 50);
         const lastDoc = snapshot.docs[snapshot.docs.length - 1];
 
         return { orders, lastDoc };
