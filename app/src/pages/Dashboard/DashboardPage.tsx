@@ -540,9 +540,82 @@ export function DashboardPage() {
         loadDashboard();
         loadExtendedData();
 
+        // Request notification permission
+        if ('Notification' in window && Notification.permission === 'default') {
+            Notification.requestPermission();
+        }
+
+        // Track seen IDs to avoid duplicate notifications
+        const seenOrderIds = new Set<string>();
+        const seenInquiryIds = new Set<string>();
+        let isFirstOrderLoad = true;
+        let isFirstInquiryLoad = true;
+
+        const sendNotif = (title: string, body: string, tag: string) => {
+            if ('Notification' in window && Notification.permission === 'granted') {
+                try { new Notification(title, { body, tag }); } catch {}
+            }
+        };
+
         let unsubOrders: (() => void) | undefined;
         if (visibleModuleIds.has('orders')) {
-            unsubOrders = dashboardService.subscribeRecentOrders(business.id!, o => setRecentOrders(o));
+            const q = query(
+                collection(db, 'businesses', business.id!, 'orders'),
+                where('isDeleted', '==', false),
+                orderBy('createdAt', 'desc'),
+                limit(10)
+            );
+            unsubOrders = onSnapshot(q, snap => {
+                const orders = snap.docs.map(d => ({ id: d.id, ...d.data() } as Order));
+                setRecentOrders(orders.slice(0, 5));
+
+                if (isFirstOrderLoad) {
+                    orders.forEach(o => seenOrderIds.add(o.id));
+                    isFirstOrderLoad = false;
+                    return;
+                }
+                // Notify for new orders
+                for (const order of orders) {
+                    if (!seenOrderIds.has(order.id)) {
+                        seenOrderIds.add(order.id);
+                        const amount = (order as any).financials?.totalAmount || (order as any).totalAmount || 0;
+                        sendNotif(
+                            '🛒 Шинэ захиалга!',
+                            `${(order as any).customerName || 'Хэрэглэгч'} — ₮${amount.toLocaleString()}`,
+                            `order-${order.id}`
+                        );
+                    }
+                }
+            });
+        }
+
+        // Stock inquiry listener + notifications
+        let unsubInquiries: (() => void) | undefined;
+        if (visibleModuleIds.has('stock-inquiry')) {
+            const iq = query(
+                collection(db, 'businesses', business.id!, 'stockInquiries'),
+                where('status', '==', 'pending'),
+                orderBy('createdAt', 'desc'),
+                limit(10)
+            );
+            unsubInquiries = onSnapshot(iq, snap => {
+                if (isFirstInquiryLoad) {
+                    snap.docs.forEach(d => seenInquiryIds.add(d.id));
+                    isFirstInquiryLoad = false;
+                    return;
+                }
+                for (const d of snap.docs) {
+                    if (!seenInquiryIds.has(d.id)) {
+                        seenInquiryIds.add(d.id);
+                        const data = d.data();
+                        sendNotif(
+                            '🔍 Бараа лавлагаа!',
+                            `${data.customerPhone || 'Хэрэглэгч'} — ${data.items?.length || 0} бараа`,
+                            `inquiry-${d.id}`
+                        );
+                    }
+                }
+            }, () => {});
         }
         const unsubLogs = auditService.subscribeAuditLogs(business.id!, 10, l => setRecentLogs(l));
 
@@ -573,7 +646,7 @@ export function DashboardPage() {
             refreshInterval = setInterval(subscribePresence, 60000);
         }
 
-        return () => { unsubOrders?.(); unsubLogs(); unsubOnline?.(); unsubVisitors?.(); clearInterval(refreshInterval); };
+        return () => { unsubOrders?.(); unsubInquiries?.(); unsubLogs(); unsubOnline?.(); unsubVisitors?.(); clearInterval(refreshInterval); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [business?.id, visibleModuleIds]);
 
