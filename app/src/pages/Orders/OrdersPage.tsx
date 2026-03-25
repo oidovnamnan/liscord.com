@@ -1153,10 +1153,10 @@ function CreateOrderModal({ onClose, nextNumber, statuses }: {
                 status: initialStatus,
                 paymentStatus: paid >= finalTotal ? 'paid' : paid > 0 ? 'partial' : 'unpaid',
                 customer: {
-                    id: selectedCustomerId,
-                    name: customer,
+                    id: selectedCustomerId || null,
+                    name: customer || phone,
                     phone: phone,
-                    socialHandle: socialHandle || undefined
+                    socialHandle: socialHandle || ''
                 },
                 sourceId: sourceId || undefined,
                 accountId: accountId || undefined,
