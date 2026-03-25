@@ -340,65 +340,48 @@
     .analytics-mini-grid { grid-template-columns: 1fr; }
 }
 
-/* ═══ Mini Stat Card ═══ */
+/* ═══ Mini Stat Card — Clean Redesign ═══ */
 .mini-stat-card {
     display: flex;
-    align-items: flex-start;
+    align-items: center;
     gap: 12px;
-    padding: 12px 14px;
+    padding: 14px 16px;
     background: var(--surface-1);
-    border: 1.5px solid var(--border-primary);
-    border-radius: 16px;
+    border: 1px solid var(--border-primary);
+    border-left: 3px solid var(--ms-color);
+    border-radius: 12px;
     position: relative;
-    overflow: hidden;
-    transition: all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-}
-
-.mini-stat-card::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 3px;
-    background: var(--ms-color);
-    border-radius: 16px 16px 0 0;
+    transition: all 0.25s ease;
 }
 
 .mini-stat-card:hover {
-    transform: translateY(-4px);
-    /* Fallback for browsers without color-mix() (Safari <16.4, Opera <97) */
-    box-shadow: 0 12px 32px rgba(108, 92, 231, 0.15);
-    border-color: rgba(108, 92, 231, 0.3);
-    box-shadow: 0 12px 32px color-mix(in srgb, var(--ms-color) 15%, transparent);
-    border-color: color-mix(in srgb, var(--ms-color) 30%, transparent);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+    border-color: var(--border-primary);
+    border-left-color: var(--ms-color);
 }
 
 .mini-stat-icon {
-    width: 34px;
-    height: 34px;
-    border-radius: 10px;
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
     display: flex;
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
-    /* Fallback for browsers without color-mix() */
-    background: rgba(108, 92, 231, 0.1);
     background: color-mix(in srgb, var(--ms-color) 10%, transparent);
     color: var(--ms-color);
-    transition: transform 0.3s;
+    transition: transform 0.2s;
 }
 
 .mini-stat-card:hover .mini-stat-icon {
-    transform: scale(1.1) rotate(5deg);
+    transform: scale(1.05);
 }
 
 .mini-stat-body { flex: 1; min-width: 0; }
 
 .mini-stat-value {
-    font-size: 1.2rem;
-    font-weight: 900;
+    font-size: 1.15rem;
+    font-weight: 800;
     color: var(--text-primary);
     line-height: 1.2;
     letter-spacing: -0.02em;
@@ -408,18 +391,18 @@
 
 .mini-stat-label {
     font-size: 0.68rem;
-    font-weight: 700;
+    font-weight: 600;
     color: var(--text-muted);
     text-transform: uppercase;
-    letter-spacing: 0.8px;
-    margin-top: 2px;
+    letter-spacing: 0.5px;
+    margin-top: 1px;
 }
 
 .mini-stat-sub {
-    font-size: 0.66rem;
+    font-size: 0.64rem;
     font-weight: 600;
     color: var(--text-muted);
-    margin-top: 3px;
+    margin-top: 2px;
     opacity: 0.7;
 }
 
@@ -1567,56 +1550,26 @@
     min-width: 20px;
 }
 
-/* ═══ KPI Cards V2 — Premium Animated ═══ */
+/* ═══ KPI Cards V2 — Clean Redesign ═══ */
 .kpi-card-v2 {
     background: var(--surface-1);
-    border: 1.5px solid var(--border-primary);
-    border-radius: 18px;
-    padding: 18px 20px 14px;
+    border: 1px solid var(--border-primary);
+    border-left: 4px solid var(--kpi-color);
+    border-radius: 12px;
+    padding: 16px 18px 14px;
     position: relative;
-    overflow: hidden;
-    animation: kpiSlideUp 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) both;
-    transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
-}
-
-.kpi-card-v2::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 3px;
-    background: var(--kpi-gradient);
-    border-radius: 18px 18px 0 0;
-}
-
-.kpi-card-v2::after {
-    content: '';
-    position: absolute;
-    top: -40%;
-    right: -30%;
-    width: 120px;
-    height: 120px;
-    /* Fallback */
-    background: radial-gradient(circle, rgba(108, 92, 231, 0.06) 0%, transparent 70%);
-    background: radial-gradient(circle, color-mix(in srgb, var(--kpi-color) 6%, transparent) 0%, transparent 70%);
-    pointer-events: none;
+    animation: kpiSlideUp 0.5s ease both;
+    transition: all 0.25s ease;
 }
 
 .kpi-card-v2:hover {
-    transform: translateY(-6px);
-    /* Fallback */
-    box-shadow: 0 16px 48px rgba(108, 92, 231, 0.15);
-    border-color: rgba(108, 92, 231, 0.3);
-    box-shadow: 0 16px 48px color-mix(in srgb, var(--kpi-color) 15%, transparent);
-    border-color: color-mix(in srgb, var(--kpi-color) 30%, transparent);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
 }
 
 @keyframes kpiSlideUp {
     from {
         opacity: 0;
-        transform: translateY(20px);
+        transform: translateY(12px);
     }
     to {
         opacity: 1;
@@ -1632,43 +1585,38 @@
 }
 
 .kpi-card-v2-icon {
-    width: 36px;
-    height: 36px;
-    border-radius: 11px;
-    background: var(--kpi-gradient);
-    color: #fff;
+    width: 34px;
+    height: 34px;
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--kpi-color) 12%, transparent);
+    color: var(--kpi-color);
     display: flex;
     align-items: center;
     justify-content: center;
-    /* Fallback */
-    box-shadow: 0 4px 12px rgba(108, 92, 231, 0.3);
-    box-shadow: 0 4px 12px color-mix(in srgb, var(--kpi-color) 30%, transparent);
-    transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    transition: transform 0.2s;
 }
 
 .kpi-card-v2:hover .kpi-card-v2-icon {
-    transform: scale(1.12) rotate(6deg);
+    transform: scale(1.05);
 }
 
 .kpi-card-v2-badge {
     display: flex;
     align-items: center;
     gap: 3px;
-    font-size: 0.62rem;
-    font-weight: 800;
+    font-size: 0.6rem;
+    font-weight: 700;
     padding: 3px 8px;
     border-radius: 100px;
-    /* Fallback */
-    background: rgba(108, 92, 231, 0.08);
     background: color-mix(in srgb, var(--kpi-color) 8%, transparent);
     color: var(--kpi-color);
     text-transform: uppercase;
-    letter-spacing: 0.5px;
+    letter-spacing: 0.4px;
 }
 
 .kpi-card-v2-value {
-    font-size: 1.5rem;
-    font-weight: 900;
+    font-size: 1.4rem;
+    font-weight: 800;
     color: var(--text-primary);
     line-height: 1.1;
     margin-bottom: 2px;
@@ -1677,11 +1625,11 @@
 }
 
 .kpi-card-v2-label {
-    font-size: 0.7rem;
-    font-weight: 700;
+    font-size: 0.68rem;
+    font-weight: 600;
     color: var(--text-muted);
     text-transform: uppercase;
-    letter-spacing: 1.2px;
+    letter-spacing: 0.8px;
 }
 
 /* Customer Avatar */
