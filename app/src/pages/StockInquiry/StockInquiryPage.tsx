@@ -3,7 +3,7 @@ import { collection, onSnapshot, query, orderBy, doc, updateDoc, Timestamp, wher
 import { db } from '../../services/firebase';
 import { useBusinessStore, useAuthStore } from '../../store';
 import { usePermissions } from '../../hooks/usePermissions';
-import { SearchCheck, Clock, CheckCircle, XCircle, RefreshCw, Eye, Package, Phone, DollarSign, AlertTriangle, BellRing } from 'lucide-react';
+import { SearchCheck, Clock, CheckCircle, XCircle, RefreshCw, Eye, Package, Phone, DollarSign, AlertTriangle, BellRing, CheckSquare, Square, ListChecks } from 'lucide-react';
 import type { StockInquiry, StockInquiryStatus } from '../../types';
 import { toast } from 'react-hot-toast';
 import './StockInquiryPage.css';
@@ -61,6 +61,60 @@ export function StockInquiryPage() {
     const [newName, setNewName] = useState('');
     const [updateNote, setUpdateNote] = useState('');
     const [showUpdateForm, setShowUpdateForm] = useState(false);
+
+    // Bulk selection
+    const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+    const [bulkMode, setBulkMode] = useState(false);
+    const [bulkLoading, setBulkLoading] = useState(false);
+
+    const toggleSelect = (id: string, e: React.MouseEvent) => {
+        e.stopPropagation();
+        setSelectedIds(prev => {
+            const next = new Set(prev);
+            if (next.has(id)) next.delete(id);
+            else next.add(id);
+            return next;
+        });
+    };
+
+    const toggleSelectAll = () => {
+        const actionable = filtered.filter(i => ['pending', 'checking', 'expired'].includes(i.status));
+        if (selectedIds.size === actionable.length && actionable.length > 0) {
+            setSelectedIds(new Set());
+        } else {
+            setSelectedIds(new Set(actionable.map(i => i.id)));
+        }
+    };
+
+    const handleBulkAction = async (newStatus: StockInquiryStatus) => {
+        if (!business?.id || selectedIds.size === 0) return;
+        const count = selectedIds.size;
+        const label = STATUS_LABELS[newStatus].label;
+        const ok = window.confirm(`${count} лавлагааг "${label}" болгох уу?`);
+        if (!ok) return;
+
+        setBulkLoading(true);
+        try {
+            const promises = Array.from(selectedIds).map(id => {
+                const ref = doc(db, `businesses/${business.id}/stockInquiries`, id);
+                return updateDoc(ref, {
+                    status: newStatus,
+                    respondedBy: user?.uid || employee?.id || '',
+                    respondedByName: employee?.name || user?.displayName || 'Оператор',
+                    respondedAt: Timestamp.now(),
+                });
+            });
+            await Promise.all(promises);
+            toast.success(`${count} лавлагаа "${label}" болгосон`);
+            setSelectedIds(new Set());
+            setBulkMode(false);
+        } catch (e) {
+            console.error('Bulk action failed:', e);
+            toast.error('Алдаа гарлаа');
+        } finally {
+            setBulkLoading(false);
+        }
+    };
 
     // Track previous pending count for new-arrival detection
     const prevPendingCountRef = useRef<number | null>(null);
@@ -224,11 +278,22 @@ export function StockInquiryPage() {
 
             {/* Filter */}
             <div className="sinq-filter-bar">
-                <button className={`sinq-filter-btn ${filter === 'active' ? 'active' : ''}`} onClick={() => setFilter('active')}>
-                    <Clock size={14} /> Идэвхтэй
-                </button>
-                <button className={`sinq-filter-btn ${filter === 'all' ? 'active' : ''}`} onClick={() => setFilter('all')}>
-                    Бүгд ({inquiries.length})
+                <div style={{ display: 'flex', gap: 6 }}>
+                    <button className={`sinq-filter-btn ${filter === 'active' ? 'active' : ''}`} onClick={() => setFilter('active')}>
+                        <Clock size={14} /> Идэвхтэй
+                    </button>
+                    <button className={`sinq-filter-btn ${filter === 'all' ? 'active' : ''}`} onClick={() => setFilter('all')}>
+                        Бүгд ({inquiries.length})
+                    </button>
+                </div>
+                <button
+                    className={`sinq-filter-btn ${bulkMode ? 'active' : ''}`}
+                    onClick={() => {
+                        setBulkMode(!bulkMode);
+                        if (bulkMode) setSelectedIds(new Set());
+                    }}
+                >
+                    <ListChecks size={14} /> Олноор
                 </button>
             </div>
 
@@ -236,6 +301,21 @@ export function StockInquiryPage() {
             <div className="sinq-content">
                 {/* List */}
                 <div className="sinq-list">
+                    {/* Select all header */}
+                    {bulkMode && filtered.length > 0 && (
+                        <div className="sinq-bulk-header">
+                            <button className="sinq-bulk-select-all" onClick={toggleSelectAll}>
+                                {selectedIds.size > 0 && selectedIds.size === filtered.filter(i => ['pending', 'checking', 'expired'].includes(i.status)).length
+                                    ? <CheckSquare size={16} />
+                                    : <Square size={16} />
+                                }
+                                Бүгдийг сонгох ({filtered.filter(i => ['pending', 'checking', 'expired'].includes(i.status)).length})
+                            </button>
+                            {selectedIds.size > 0 && (
+                                <span className="sinq-bulk-count">{selectedIds.size} сонгосон</span>
+                            )}
+                        </div>
+                    )}
                     {filtered.length === 0 ? (
                         <div className="sinq-empty">
                             <SearchCheck size={40} strokeWidth={1} />
@@ -247,9 +327,26 @@ export function StockInquiryPage() {
                             return (
                                 <div
                                     key={inq.id}
-                                    className={`sinq-card ${selectedInquiry?.id === inq.id ? 'selected' : ''} ${inq.status === 'pending' ? 'urgent' : ''}`}
-                                    onClick={() => { setSelectedInquiry(inq); setShowUpdateForm(false); }}
+                                    className={`sinq-card ${selectedInquiry?.id === inq.id ? 'selected' : ''} ${inq.status === 'pending' ? 'urgent' : ''} ${selectedIds.has(inq.id) ? 'bulk-selected' : ''}`}
+                                    onClick={() => {
+                                        if (bulkMode && ['pending', 'checking', 'expired'].includes(inq.status)) {
+                                            setSelectedIds(prev => {
+                                                const next = new Set(prev);
+                                                if (next.has(inq.id)) next.delete(inq.id);
+                                                else next.add(inq.id);
+                                                return next;
+                                            });
+                                        } else {
+                                            setSelectedInquiry(inq);
+                                            setShowUpdateForm(false);
+                                        }
+                                    }}
                                 >
+                                    {bulkMode && ['pending', 'checking', 'expired'].includes(inq.status) && (
+                                        <div className="sinq-card-checkbox">
+                                            {selectedIds.has(inq.id) ? <CheckSquare size={18} /> : <Square size={18} />}
+                                        </div>
+                                    )}
                                     <div className="sinq-card-top">
                                         <div className="sinq-card-product">
                                             {inq.productImage ? (
@@ -275,6 +372,29 @@ export function StockInquiryPage() {
                         })
                     )}
                 </div>
+
+                {/* Floating Bulk Action Bar */}
+                {bulkMode && selectedIds.size > 0 && (
+                    <div className="sinq-bulk-bar">
+                        <span className="sinq-bulk-bar-count">
+                            <CheckSquare size={16} /> {selectedIds.size} сонгосон
+                        </span>
+                        <div className="sinq-bulk-bar-actions">
+                            <button className="sinq-btn check" disabled={bulkLoading} onClick={() => handleBulkAction('checking')}>
+                                <Eye size={14} /> Шалгах
+                            </button>
+                            <button className="sinq-btn no-change" disabled={bulkLoading} onClick={() => handleBulkAction('no_change')}>
+                                <CheckCircle size={14} /> Өөрчлөлтгүй
+                            </button>
+                            <button className="sinq-btn inactive-btn" disabled={bulkLoading} onClick={() => handleBulkAction('inactive')}>
+                                <XCircle size={14} /> Нөөц дууссан
+                            </button>
+                        </div>
+                        <button className="sinq-bulk-bar-cancel" onClick={() => { setSelectedIds(new Set()); setBulkMode(false); }}>
+                            Болих
+                        </button>
+                    </div>
+                )}
 
                 {/* Detail Panel */}
                 <div className="sinq-detail">
