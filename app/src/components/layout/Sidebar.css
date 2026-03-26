@@ -311,6 +311,39 @@
     display: none;
 }
 
+/* Logout button */
+.sidebar-logout-btn {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    padding: 10px 14px;
+    margin: 0 var(--space-sm) var(--space-xs);
+    border: none;
+    background: none;
+    color: var(--error, #ef4444);
+    cursor: pointer;
+    border-radius: var(--radius-md);
+    font-size: 0.88rem;
+    font-weight: 500;
+    transition: all var(--transition-fast);
+    width: calc(100% - var(--space-sm) * 2);
+}
+
+.sidebar-logout-btn:hover {
+    background: rgba(239, 68, 68, 0.08);
+}
+
+.collapsed .sidebar-logout-btn {
+    justify-content: center;
+    padding: 12px;
+    margin: 0 var(--space-xs);
+    width: calc(100% - var(--space-xs) * 2);
+}
+
+.collapsed .sidebar-logout-btn span {
+    display: none;
+}
+
 /* Collapse button */
 .sidebar-collapse-btn {
     display: flex;

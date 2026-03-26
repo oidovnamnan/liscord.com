@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { Outlet } from 'react-router-dom';
+import { useEffect, useState, useCallback } from 'react';
+import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { Sidebar } from './Sidebar';
 import { useUIStore, useBusinessStore } from '../../store';
 import { ImpersonationBanner } from '../common/ImpersonationBanner';
@@ -17,6 +17,8 @@ export function AppLayout() {
     const { business, employee } = useBusinessStore();
     const [showQuickLookup, setShowQuickLookup] = useState(false);
     const [showQuickDash, setShowQuickDash] = useState(false);
+    const location = useLocation();
+    const navigate = useNavigate();
     useDynamicTheme(); // Phase 40: Apply dynamic theme
 
     // Global ⌘K / Ctrl+K shortcut
@@ -34,6 +36,28 @@ export function AppLayout() {
         window.addEventListener('keydown', handler);
         return () => window.removeEventListener('keydown', handler);
     }, []);
+
+    // Browser back button → stay within admin, navigate to dashboard
+    const handlePopState = useCallback(() => {
+        const path = window.location.pathname;
+        if (path.startsWith('/app')) {
+            // Already on dashboard → push state to prevent leaving
+            if (path === '/app' || path === '/app/') {
+                window.history.pushState(null, '', '/app');
+            }
+            // On sub-page → navigate to dashboard
+            else {
+                navigate('/app', { replace: true });
+            }
+        }
+    }, [navigate]);
+
+    useEffect(() => {
+        // Push initial state so we have something to "go back" to
+        window.history.pushState(null, '', location.pathname);
+        window.addEventListener('popstate', handlePopState);
+        return () => window.removeEventListener('popstate', handlePopState);
+    }, [handlePopState, location.pathname]);
 
     // Heartbeat: update employee's lastActiveAt every 60s
     useEffect(() => {

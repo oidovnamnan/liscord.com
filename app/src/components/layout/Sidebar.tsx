@@ -12,10 +12,12 @@ import {
     CornerDownLeft,
     Shield,
     Blocks,
+    LogOut,
 } from 'lucide-react';
 import { useUIStore, useBusinessStore, useAuthStore, useModuleDefaultsStore } from '../../store';
 import { doc, updateDoc, collection, query, where, limit, onSnapshot } from 'firebase/firestore';
-import { db } from '../../services/firebase';
+import { db, auth } from '../../services/firebase';
+import { signOut } from 'firebase/auth';
 import { businessService } from '../../services/db';
 import { toast } from 'react-hot-toast';
 import * as Icons from 'lucide-react';
@@ -500,6 +502,23 @@ export function Sidebar() {
                         </NavLink>
                     )}
                 </nav>
+
+                {/* Logout button */}
+                <button
+                    className="sidebar-logout-btn"
+                    onClick={async () => {
+                        try {
+                            await signOut(auth);
+                            navigate('/login');
+                        } catch (e) {
+                            console.error('Logout failed:', e);
+                        }
+                    }}
+                    title={sidebarCollapsed ? 'Гарах' : undefined}
+                >
+                    <LogOut size={18} />
+                    {!sidebarCollapsed && <span>Гарах</span>}
+                </button>
 
                 {/* Collapse toggle (desktop only) */}
                 <button
