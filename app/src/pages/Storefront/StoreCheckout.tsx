@@ -498,12 +498,12 @@ export function StoreCheckout() {
 
                                 {/* Bank app deeplinks — Toki Pay style grid */}
                                 {qpayInvoice.urls.length > 0 && (() => {
-                                    // Exclude non-bank apps and minor services (Latin + Cyrillic)
+                                    // Exclude only payment apps, keep all banks
                                     const excludedNames = [
-                                        'hipay', 'happy pay', 'ard app', 'ard credit',
-                                        'qpay', 'monpay', 'мон пэй', 'toki', 'токи',
-                                        'ард апп', 'ард кредит', 'богд', 'most', 'мост',
-                                        'чингис', 'үндэсний', 'тээвэр', 'socialpay', 'social pay',
+                                        'hipay', 'happy pay',
+                                        'ard app', 'ард апп', 'ard credit', 'ард кредит',
+                                        'toki', 'токи',
+                                        'monpay', 'мон пэй',
                                     ];
                                     const filteredUrls = qpayInvoice.urls.filter(url => {
                                         const name = (url.description || url.name || '').toLowerCase();
