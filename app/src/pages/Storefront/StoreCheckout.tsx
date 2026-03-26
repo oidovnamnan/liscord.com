@@ -1104,7 +1104,7 @@ export function StoreCheckout() {
                     @media (max-width: 900px) {
                         .checkout-grid {
                             grid-template-columns: 1fr !important;
-                            gap: 12px !important;
+                            gap: 8px !important;
                         }
                         .summary-sidebar {
                             position: static !important;
@@ -1118,24 +1118,25 @@ export function StoreCheckout() {
                         }
                         .checkout-page .store-container {
                             margin-top: 0 !important;
-                            padding-top: 8px !important;
-                            padding-bottom: 8px !important;
+                            padding-top: 4px !important;
+                            padding-bottom: 4px !important;
                         }
                         .checkout-grid .grid-2-gap {
-                            gap: 12px !important;
-                            row-gap: 12px !important;
+                            gap: 6px !important;
+                            row-gap: 6px !important;
+                            margin-bottom: 0 !important;
                         }
                         .checkout-grid .input-group + .input-group {
-                            margin-top: 12px !important;
+                            margin-top: 6px !important;
                         }
                         .checkout-grid .settings-card {
-                            padding: 16px !important;
-                            border-radius: 16px !important;
-                            box-shadow: 0 2px 12px rgba(0,0,0,0.08) !important;
+                            padding: 12px !important;
+                            border-radius: 14px !important;
+                            box-shadow: 0 1px 6px rgba(0,0,0,0.06) !important;
                             border: 1px solid rgba(0,0,0,0.06) !important;
                         }
                         .checkout-grid .settings-card h2 {
-                            font-size: 1rem !important;
+                            font-size: 0.9rem !important;
                         }
                         /* Hide section header icons on mobile */
                         .checkout-section-icon {
@@ -1143,7 +1144,7 @@ export function StoreCheckout() {
                         }
                         /* Compact section headers */
                         .checkout-section-header {
-                            margin-bottom: 14px !important;
+                            margin-bottom: 8px !important;
                             gap: 0 !important;
                         }
                         /* Hide input labels on mobile — use placeholders */
@@ -1154,17 +1155,14 @@ export function StoreCheckout() {
                         .checkout-grid .input-group {
                             margin-bottom: 0 !important;
                         }
-                        .checkout-grid .grid-2-gap {
-                            gap: 10px !important;
-                            margin-bottom: 12px !important;
-                        }
                         .checkout-grid .input {
-                            height: 42px !important;
-                            font-size: 0.9rem !important;
+                            height: 40px !important;
+                            font-size: 0.88rem !important;
+                            border-radius: 10px !important;
                         }
                         .checkout-grid .input-label {
-                            font-size: 0.72rem !important;
-                            margin-bottom: 4px !important;
+                            font-size: 0.7rem !important;
+                            margin-bottom: 2px !important;
                         }
                         /* Hide disabled payment methods */
                         .payment-disabled {
@@ -1172,26 +1170,26 @@ export function StoreCheckout() {
                         }
                         /* Compact payment option */
                         .payment-option {
-                            padding: 12px 14px !important;
+                            padding: 10px 12px !important;
                             border-radius: 12px !important;
                         }
                         .payment-option-icon {
-                            width: 34px !important;
-                            height: 34px !important;
+                            width: 30px !important;
+                            height: 30px !important;
                             border-radius: 8px !important;
                         }
                         /* Compact bank details */
                         .bank-details-card {
-                            padding: 14px !important;
-                            border-radius: 12px !important;
+                            padding: 10px !important;
+                            border-radius: 10px !important;
                         }
                         /* Compact summary */
                         .summary-sidebar {
-                            border-radius: 16px !important;
+                            border-radius: 14px !important;
                         }
                         .summary-sidebar > div {
-                            padding-left: 16px !important;
-                            padding-right: 16px !important;
+                            padding-left: 14px !important;
+                            padding-right: 14px !important;
                         }
                         .summary-item-image {
                             width: 48px !important;
