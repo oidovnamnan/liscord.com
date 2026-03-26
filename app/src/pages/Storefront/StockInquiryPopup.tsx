@@ -341,25 +341,25 @@ export function StockInquiryPopup({ businessId, cartItems, customerPhone, timeou
                                 ) : (
                                     <div className="sinq-popup-pimg-ph"><Package size={16} /></div>
                                 )}
-                                <div style={{ flex: 1 }}>
-                                    <div style={{ fontWeight: 700, fontSize: '0.88rem' }}>{item.productName}</div>
-                                    <div style={{ fontSize: '0.82rem', color: 'var(--primary)', fontWeight: 600 }}>
+                                <div style={{ flex: 1, minWidth: 0, overflow: 'hidden' }}>
+                                    <div style={{
+                                        fontWeight: 700, fontSize: '0.82rem',
+                                        whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                                    }}>{item.productName}</div>
+                                    <div style={{ fontSize: '0.78rem', color: 'var(--primary)', fontWeight: 600 }}>
                                         {is.status === 'updated' && is.changes?.newPrice != null
                                             ? <><s style={{ color: '#999', fontWeight: 400 }}>₮{item.currentPrice.toLocaleString()}</s> → <span style={{ color: '#8b5cf6' }}>₮{is.changes.newPrice.toLocaleString()}</span></>
                                             : `₮${item.currentPrice.toLocaleString()}`
                                         }
                                     </div>
                                     {is.changes?.note && (
-                                        <div style={{ fontSize: '0.75rem', color: '#6b7280', fontStyle: 'italic', marginTop: 2 }}>
+                                        <div style={{ fontSize: '0.7rem', color: '#6b7280', fontStyle: 'italic', marginTop: 1 }}>
                                             {is.changes.note}
                                         </div>
                                     )}
                                 </div>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: '0.72rem', fontWeight: 600, whiteSpace: 'nowrap' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 3, flexShrink: 0 }}>
                                     {statusIcon(is.status)}
-                                    <span style={{ color: is.status === 'pending' ? '#999' : undefined }}>
-                                        {statusLabel(is.status)}
-                                    </span>
                                 </div>
                             </div>
                         );
