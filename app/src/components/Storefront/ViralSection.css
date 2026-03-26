@@ -5,6 +5,7 @@
 /* ── Main Container ── */
 .viral-section {
     position: relative;
+    background-color: #1a1a2e;
     background: linear-gradient(145deg, #1a1a2e 0%, #16213e 30%, #0f3460 60%, #1a1a2e 100%);
     padding: 36px 0 32px;
     margin: 24px 0;

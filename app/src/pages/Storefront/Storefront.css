@@ -2790,6 +2790,21 @@
     left: 6px;
 }
 
+/* FB Browser: Viral section — force dark bg */
+.is-fb-browser .viral-section {
+    background: #1a1a2e !important;
+    border-radius: 0 !important;
+    border: none !important;
+}
+.is-fb-browser .viral-section::before,
+.is-fb-browser .viral-section::after,
+.is-fb-browser .viral-aurora {
+    display: none !important;
+}
+.is-fb-browser .viral-embers {
+    display: none !important;
+}
+
 /* FB Browser: Simplified footer */
 .is-fb-browser .sf-footer {
     padding: 16px 12px 12px;
