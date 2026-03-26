@@ -649,7 +649,8 @@
     }
 
     .sf-modal-content {
-        grid-template-columns: 1fr;
+        display: flex;
+        flex-direction: column;
         overflow-y: auto;
         overscroll-behavior: contain;
         -webkit-overflow-scrolling: touch;
@@ -658,19 +659,21 @@
     .sf-modal-gallery {
         position: relative;
         padding: 12px 8px 8px;
-        min-height: unset;
+        min-height: 240px;
         border-radius: 0;
+        flex-shrink: 0;
     }
 
     .sf-modal-main-img {
         width: 100%;
-        max-height: none;
+        max-height: 50vh;
         border-radius: 10px;
         object-fit: contain;
     }
 
     .sf-modal-info {
         overflow: visible;
+        flex-shrink: 0;
     }
 
     .sf-modal-info-header {
