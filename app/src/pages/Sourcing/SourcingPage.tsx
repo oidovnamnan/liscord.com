@@ -398,11 +398,26 @@ export function SourcingPage() {
                                     {/* Product image or status icon */}
                                     {(() => {
                                         const firstImg = order.items.find(it => productImages[it.productId]);
+                                        const fallbackImg = order.items.find(it => (it as any).image);
                                         if (firstImg && productImages[firstImg.productId]) {
                                             return (
                                                 <img
                                                     src={productImages[firstImg.productId]}
                                                     alt={firstImg.name}
+                                                    className="sourcing-card-avatar"
+                                                    style={{
+                                                        width: 44, height: 44, borderRadius: 10,
+                                                        objectFit: 'cover',
+                                                        border: '2px solid ' + statusInfo.color + '30',
+                                                    }}
+                                                />
+                                            );
+                                        }
+                                        if (fallbackImg && (fallbackImg as any).image) {
+                                            return (
+                                                <img
+                                                    src={(fallbackImg as any).image}
+                                                    alt={fallbackImg.name}
                                                     className="sourcing-card-avatar"
                                                     style={{
                                                         width: 44, height: 44, borderRadius: 10,
@@ -422,6 +437,20 @@ export function SourcingPage() {
                                         <div className="sourcing-card-top">
                                             <span className="sourcing-card-order">#{(order.orderNumber || order.id.slice(0, 6)).toUpperCase()}</span>
                                             <span className="sourcing-card-date">{order.createdAt ? format(order.createdAt, 'MM/dd HH:mm') : '—'}</span>
+                                            {(order as any).tags?.includes('flash_deal') && (
+                                                <span style={{
+                                                    background: 'linear-gradient(135deg, #f59e0b, #ef4444)',
+                                                    color: '#fff',
+                                                    fontSize: '0.6rem',
+                                                    fontWeight: 800,
+                                                    padding: '1px 6px',
+                                                    borderRadius: 6,
+                                                    display: 'inline-flex',
+                                                    alignItems: 'center',
+                                                    gap: 2,
+                                                    lineHeight: 1.4,
+                                                }}>⚡Flash</span>
+                                            )}
                                             {order.sourcing?.batchId && (
                                                 <span className="sourcing-batch-id-badge">
                                                     <Layers size={10} />
@@ -947,6 +976,16 @@ function SourcingDetailModal({ order, businessId, settings, onClose, onUpdate }:
                                                         border: '1px solid var(--border-primary)',
                                                     }}
                                                 />
+                                            ) : (item as any).image ? (
+                                                <img
+                                                    src={(item as any).image}
+                                                    alt={item.name}
+                                                    style={{
+                                                        width: 40, height: 40, borderRadius: 8,
+                                                        objectFit: 'cover', flexShrink: 0,
+                                                        border: '1px solid var(--border-primary)',
+                                                    }}
+                                                />
                                             ) : (
                                                 <div style={{
                                                     width: 40, height: 40, borderRadius: 8,
@@ -958,6 +997,14 @@ function SourcingDetailModal({ order, businessId, settings, onClose, onUpdate }:
                                             <div className="sourcing-item-info">
                                                 <span className="sourcing-item-name">{item.name}</span>
                                                 <span className="sourcing-item-qty">x{item.quantity || 1}</span>
+                                                {(item as any).isFlashDeal && (
+                                                    <span style={{
+                                                        background: 'linear-gradient(135deg, #f59e0b, #ef4444)',
+                                                        color: '#fff', fontSize: '0.6rem', fontWeight: 800,
+                                                        padding: '1px 6px', borderRadius: 4,
+                                                        display: 'inline-flex', alignItems: 'center', gap: 2,
+                                                    }}>⚡Flash</span>
+                                                )}
                                                 {productsInfo[item.productId] && !productsInfo[item.productId].isActive && (
                                                     <span style={{ fontSize: '0.65rem', fontWeight: 700, color: '#e17055', background: 'rgba(225,112,85,0.1)', padding: '1px 6px', borderRadius: 4 }}>Идэвхгүй</span>
                                                 )}

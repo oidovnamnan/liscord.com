@@ -8,6 +8,7 @@ export interface CartItem {
     quantity: number;
     price: number; // The price at the time of adding
     maxQuantity?: number; // Flash deal limit
+    isFlashDeal?: boolean; // Flash deal item marker
     variant?: {
         color?: string;
         size?: string;

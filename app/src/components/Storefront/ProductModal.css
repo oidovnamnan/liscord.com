@@ -663,8 +663,9 @@
     }
 
     .sf-modal-main-img {
-        max-height: 300px;
+        max-height: 380px;
         border-radius: 10px;
+        object-fit: contain;
     }
 
     .sf-modal-info {

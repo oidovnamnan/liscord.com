@@ -92,6 +92,7 @@ export function FlashDealSection({ config, allProducts, onProductClick }: FlashD
             quantity: 1,
             price: flashPrice,
             maxQuantity: remaining > 0 ? remaining : undefined,
+            isFlashDeal: true,
         });
         toast.success('Сагсанд нэмлээ', {
             duration: 2000,

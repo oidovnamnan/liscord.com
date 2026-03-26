@@ -430,6 +430,14 @@ export function OrdersPage() {
                                             </td>
                                             <td>
                                                 <span className="ot-order-number">#{order.orderNumber}</span>
+                                                {order.tags?.includes('flash_deal') && (
+                                                    <span style={{
+                                                        background: 'linear-gradient(135deg, #f59e0b, #ef4444)',
+                                                        color: '#fff', fontSize: '0.6rem', fontWeight: 800,
+                                                        padding: '1px 5px', borderRadius: 4,
+                                                        marginLeft: 6, verticalAlign: 'middle',
+                                                    }}>⚡Flash</span>
+                                                )}
                                             </td>
                                             <td>
                                                 <span
@@ -550,6 +558,13 @@ export function OrdersPage() {
                                                     onClick={(e) => toggleSelection(e, order.id)}
                                                 />
                                                 <span className="order-id">#{order.orderNumber}</span>
+                                                {order.tags?.includes('flash_deal') && (
+                                                    <span style={{
+                                                        background: 'linear-gradient(135deg, #f59e0b, #ef4444)',
+                                                        color: '#fff', fontSize: '0.6rem', fontWeight: 800,
+                                                        padding: '1px 5px', borderRadius: 4,
+                                                    }}>⚡Flash</span>
+                                                )}
                                                 <span
                                                     className="pro-badge"
                                                     style={{

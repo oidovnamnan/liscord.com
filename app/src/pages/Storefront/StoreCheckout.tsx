@@ -221,7 +221,8 @@ export function StoreCheckout() {
                     unitPrice: item.price,
                     costPrice: item.product.pricing?.costPrice || 0,
                     totalPrice: item.price * item.quantity,
-                    image: item.product.images?.[0] || null
+                    image: item.product.images?.[0] || null,
+                    ...(item.isFlashDeal ? { isFlashDeal: true } : {}),
                 })),
                 financials: {
                     subtotal: totalAmount(),
@@ -241,7 +242,7 @@ export function StoreCheckout() {
                 deliveryAddress: isDeliveryRequested ? `${deliveryFees[deliveryZone].label} - ${address}` : 'Дэлгүүрээс очиж авах',
                 notes: `Онлайн дэлгүүрээр өгсөн захиалга${paymentMethod === 'bank_transfer' && selectedBank ? ` | Шилжүүлэг: ${selectedBank.bankName} ${selectedBank.accountNumber} | Код: ${code}` : ''}`,
                 internalNotes: '',
-                tags: ['online'],
+                tags: [...(['online']), ...(items.some(i => i.isFlashDeal) ? ['flash_deal'] : [])],
                 statusHistory: [],
                 createdBy: 'guest',
                 createdByName: 'Customer (Online)',
