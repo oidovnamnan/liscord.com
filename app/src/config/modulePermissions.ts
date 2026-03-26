@@ -132,6 +132,7 @@ export const MODULE_PERMISSIONS: Record<string, ModulePermission[]> = {
         { id: 'products.fb_import', label: 'Facebook-оос бараа импортлох' },
         { id: 'products.cargo_estimator', label: 'Каргоны тооцоолуур ашиглах' },
         { id: 'products.copy_link', label: 'Барааны линк хуулах' },
+        { id: 'products.ai_auto_tag', label: 'AI Auto-Tag ашиглах' },
         { id: 'products.create_cargo_type', label: 'Карго төрөл үүсгэх' },
     ],
 

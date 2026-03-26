@@ -360,7 +360,7 @@ export function ProductsPage() {
                             </div>
                         </div>
                         <div className="prd-hero-actions">
-                            <PermissionGate permission="products.edit">
+                            <PermissionGate permission="products.ai_auto_tag">
                                 <button 
                                     className="prd-hero-btn" 
                                     style={{ background: 'var(--primary)', color: 'white', border: 'none' }}
@@ -371,7 +371,7 @@ export function ProductsPage() {
                                     AI Auto-Tag
                                 </button>
                             </PermissionGate>
-                            <PermissionGate permission="products.edit">
+                            <PermissionGate permission="products.cargo_estimator">
                                 <button
                                     className="prd-hero-btn"
                                     style={{ background: '#f59e0b', color: 'white', border: 'none' }}
