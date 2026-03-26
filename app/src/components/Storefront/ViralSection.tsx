@@ -168,15 +168,17 @@ export function ViralSection({ products, onProductClick }: ViralSectionProps) {
     const pausedRef = useRef(false);
     const isResettingRef = useRef(false);
 
-    const count = products.length;
+    const MAX_VIRAL = 15;
+    const cappedProducts = useMemo(() => products.slice(0, MAX_VIRAL), [products]);
+    const count = cappedProducts.length;
     const cardWidth = 276; // 260 card + 16 gap
 
     // Infinite loop: render 3 copies [clone-before | original | clone-after]
     // When scroll reaches clone zones, silently snap back to the middle set
     const tripleProducts = useMemo(() => {
-        if (count <= 1) return products;
-        return [...products, ...products, ...products];
-    }, [products, count]);
+        if (count <= 1) return cappedProducts;
+        return [...cappedProducts, ...cappedProducts, ...cappedProducts];
+    }, [cappedProducts, count]);
 
     // On mount: scroll to start of middle set (instant, no animation)
     useEffect(() => {
