@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { toast } from 'react-hot-toast';
 import { useSearchParams } from 'react-router-dom';
-import { ShoppingBag, Search, Plus, Lock, Crown, X, Phone, User } from 'lucide-react';
+import { ShoppingBag, Search, Plus, Lock, Crown, X, Phone, User, Menu } from 'lucide-react';
 import type { Business, Product } from '../../../types';
 import { useCartStore } from '../../../store';
 import { useStorefrontData, type StorefrontProduct } from '../hooks/useStorefrontData';
@@ -25,6 +25,7 @@ export function ThemeMinimal({ business }: { business: Business }) {
     const [showMembershipModal, setShowMembershipModal] = useState(false);
     const [membershipTarget, setMembershipTarget] = useState<StorefrontProduct | null>(null);
     const [showDashboard, setShowDashboard] = useState(false);
+    const [showCategorySheet, setShowCategorySheet] = useState(false);
     
     const PRODUCTS_PER_PAGE = business.settings?.storefront?.productsPerPage || 20;
     const [visibleCount, setVisibleCount] = useState(PRODUCTS_PER_PAGE);
@@ -247,6 +248,13 @@ export function ThemeMinimal({ business }: { business: Business }) {
         <div className="store-bg">
             {/* Sticky Navbar */}
             <nav className="store-nav">
+                <button
+                    className="store-hamburger-btn"
+                    onClick={() => setShowCategorySheet(true)}
+                    aria-label="Ангилал"
+                >
+                    <Menu size={22} strokeWidth={2} />
+                </button>
                 <a href={`/${business.slug}`} className="store-logo">
                     {business.logo && <img src={business.logo} alt={storeName} />}
                     <span>{storeName}</span>
@@ -269,6 +277,31 @@ export function ThemeMinimal({ business }: { business: Business }) {
                     </button>
                 </div>
             </nav>
+
+            {/* Category Bottom Sheet — Mobile */}
+            {showCategorySheet && (
+                <div className="sf-cat-sheet-overlay" onClick={() => setShowCategorySheet(false)}>
+                    <div className="sf-cat-sheet" onClick={(e) => e.stopPropagation()}>
+                        <div className="sf-cat-sheet-header">
+                            <span className="sf-cat-sheet-title">Ангилал</span>
+                            <button className="sf-cat-sheet-close" onClick={() => setShowCategorySheet(false)}>
+                                <X size={20} />
+                            </button>
+                        </div>
+                        <div className="sf-cat-sheet-list">
+                            {categories.map(cat => (
+                                <button
+                                    key={cat}
+                                    className={`sf-cat-sheet-item ${activeCategory === cat ? 'active' : ''}`}
+                                    onClick={() => { setActiveCategory(cat); setShowCategorySheet(false); }}
+                                >
+                                    {cat === 'all' ? 'Бүх бараа' : cat}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            )}
 
             <main>
                 {/* Hero Section */}

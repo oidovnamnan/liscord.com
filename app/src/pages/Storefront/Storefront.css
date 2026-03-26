@@ -91,6 +91,23 @@
     transition: all 0.3s var(--sf-transition);
 }
 
+/* Hamburger button — hidden on desktop, shown on mobile */
+.store-hamburger-btn {
+    display: none;
+    background: none;
+    border: none;
+    padding: 6px;
+    cursor: pointer;
+    color: var(--sf-text);
+    border-radius: var(--sf-radius-sm);
+    transition: background 0.2s;
+    flex-shrink: 0;
+}
+
+.store-hamburger-btn:active {
+    background: var(--sf-bg-surface);
+}
+
 .store-logo {
     font-family: var(--sf-font-title);
     font-size: 1.2rem;
@@ -576,7 +593,28 @@
    ============================================ */
 @media (max-width: 768px) {
     :root {
-        --sf-nav-height: 60px;
+        --sf-nav-height: 56px;
+    }
+
+    .store-hamburger-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .store-logo img {
+        height: 32px;
+        width: 32px;
+    }
+
+    .store-logo {
+        font-size: 1.05rem;
+        gap: 8px;
+    }
+
+    .store-nav {
+        padding: 0 14px;
+        gap: 8px;
     }
 
     .store-hero {
@@ -595,24 +633,9 @@
         margin: 4px auto 28px;
     }
 
+    /* Hide category pills on mobile — use hamburger sheet instead */
     .store-categories {
-        justify-content: flex-start;
-        overflow-x: auto;
-        flex-wrap: nowrap;
-        padding: 0 20px 32px;
-        gap: 6px;
-        -webkit-overflow-scrolling: touch;
-        scrollbar-width: none;
-        -ms-overflow-style: none;
-    }
-
-    .store-categories::-webkit-scrollbar {
         display: none;
-    }
-
-    .category-pill {
-        padding: 7px 16px;
-        font-size: 0.82rem;
     }
 
     .product-grid {
@@ -2959,6 +2982,107 @@ body.fb-browser .storefront-layout {
     height: 48px !important;
     border-radius: 12px !important;
     font-size: 0.9rem !important;
+}
+
+/* ============================================
+   CATEGORY BOTTOM SHEET — Mobile
+   ============================================ */
+.sf-cat-sheet-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    background: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    animation: fadeIn 0.2s ease;
+}
+
+.sf-cat-sheet {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: #fff;
+    border-radius: 20px 20px 0 0;
+    max-height: 70vh;
+    overflow-y: auto;
+    animation: sf-sheet-slide-up 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    overscroll-behavior: contain;
+    padding-bottom: env(safe-area-inset-bottom, 20px);
+}
+
+@keyframes sf-sheet-slide-up {
+    from { transform: translateY(100%); }
+    to { transform: translateY(0); }
+}
+
+.sf-cat-sheet-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 20px 12px;
+    position: sticky;
+    top: 0;
+    background: #fff;
+    border-bottom: 1px solid var(--sf-border);
+    z-index: 1;
+}
+
+.sf-cat-sheet-title {
+    font-family: var(--sf-font-title);
+    font-size: 1.05rem;
+    font-weight: 800;
+    color: var(--sf-text);
+    letter-spacing: -0.02em;
+}
+
+.sf-cat-sheet-close {
+    background: var(--sf-bg-surface);
+    border: none;
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: var(--sf-text-secondary);
+    transition: all 0.2s;
+}
+
+.sf-cat-sheet-close:active {
+    background: var(--sf-border-strong);
+}
+
+.sf-cat-sheet-list {
+    padding: 8px 12px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.sf-cat-sheet-item {
+    background: none;
+    border: none;
+    padding: 14px 16px;
+    border-radius: var(--sf-radius-md);
+    font-family: var(--sf-font-body);
+    font-size: 0.92rem;
+    font-weight: 500;
+    color: var(--sf-text-secondary);
+    text-align: left;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+.sf-cat-sheet-item:active {
+    background: var(--sf-bg-surface);
+}
+
+.sf-cat-sheet-item.active {
+    background: var(--sf-primary-soft);
+    color: var(--sf-text);
+    font-weight: 700;
 }
 
 /* ── Success page on FB Browser ── */
