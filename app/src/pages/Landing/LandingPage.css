@@ -796,6 +796,26 @@
     .lp-trust-logos {
         gap: 20px;
     }
+
+    /* Mobile: show icon-only nav buttons */
+    .lp-nav-icon-only { display: inline-block; }
+
+    .lp-nav-actions .lp-btn-ghost {
+        padding: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .lp-nav-actions .lp-btn-primary {
+        padding: 8px;
+        border-radius: 10px;
+    }
+}
+
+/* Desktop: hide the nav icons, show text */
+@media (min-width: 769px) {
+    .lp-nav-icon-only { display: none; }
 }
 
 @media (max-width: 480px) {

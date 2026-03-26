@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import {
     ArrowRight, Zap, Shield, Smartphone, BarChart3, Users, Package,
     ShoppingCart, Check, Star, ChevronRight, Globe, MessageCircle,
-    Layers, TrendingUp, Truck, Cpu, Clock, BadgeCheck
+    Layers, TrendingUp, Truck, Cpu, Clock, BadgeCheck, LogIn, UserPlus
 } from 'lucide-react';
 import './LandingPage.css';
 
@@ -95,9 +95,13 @@ export function LandingPage() {
                         <a href="#pricing">Үнэ</a>
                     </div>
                     <div className="lp-nav-actions">
-                        <button className="lp-btn-ghost" onClick={() => navigate('/login')}>Нэвтрэх</button>
+                        <button className="lp-btn-ghost" onClick={() => navigate('/login')}>
+                            <LogIn size={18} className="lp-nav-icon-only" />
+                            <span className="hide-mobile">Нэвтрэх</span>
+                        </button>
                         <button className="lp-btn-primary" onClick={() => navigate('/register')}>
-                            Бүртгүүлэх <ArrowRight size={14} />
+                            <UserPlus size={18} className="lp-nav-icon-only" />
+                            <span className="hide-mobile">Бүртгүүлэх <ArrowRight size={14} /></span>
                         </button>
                     </div>
                 </div>
