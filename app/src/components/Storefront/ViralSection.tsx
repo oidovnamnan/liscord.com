@@ -38,7 +38,7 @@ function EmberCanvas() {
         resize();
         window.addEventListener('resize', resize);
 
-        const colors = ['#ff6b00', '#ff8c00', '#ff4500', '#ff2d00', '#ffaa00'];
+        const colors = ['#d4af37', '#ffd700', '#b8860b', '#daa520', '#f0c040'];
 
         const spawn = () => {
             if (particles.length > 40) return;
