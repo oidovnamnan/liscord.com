@@ -498,16 +498,24 @@ export function StoreCheckout() {
 
                                 {/* Bank app deeplinks — Toki Pay style grid */}
                                 {qpayInvoice.urls.length > 0 && (() => {
-                                    const excludedBanks = ['hipay', 'happy pay', 'ard app', 'ard credit'];
-                                    const filteredUrls = qpayInvoice.urls.filter(url =>
-                                        !excludedBanks.some(b => (url.description || url.name || '').toLowerCase().includes(b))
-                                    );
+                                    // Exclude non-bank apps and minor services (Latin + Cyrillic)
+                                    const excludedNames = [
+                                        'hipay', 'happy pay', 'ard app', 'ard credit',
+                                        'qpay', 'monpay', 'мон пэй', 'toki', 'токи',
+                                        'ард апп', 'ард кредит', 'богд', 'most', 'мост',
+                                        'чингис', 'үндэсний', 'тээвэр', 'socialpay', 'social pay',
+                                    ];
+                                    const filteredUrls = qpayInvoice.urls.filter(url => {
+                                        const name = (url.description || url.name || '').toLowerCase();
+                                        return !excludedNames.some(b => name.includes(b));
+                                    });
                                     return filteredUrls.length > 0 && (
                                     <div style={{
                                         display: 'grid',
                                         gridTemplateColumns: 'repeat(4, 1fr)',
-                                        gap: '12px 6px',
+                                        gap: '14px 8px',
                                         marginBottom: 14,
+                                        overflow: 'hidden',
                                     }}>
                                         {filteredUrls.map(url => (
                                             <a
@@ -517,19 +525,29 @@ export function StoreCheckout() {
                                                     display: 'flex',
                                                     flexDirection: 'column',
                                                     alignItems: 'center',
-                                                    gap: 5,
-                                                    padding: '4px 0',
+                                                    gap: 6,
+                                                    padding: '2px 0',
                                                     textDecoration: 'none',
                                                     color: 'var(--text-primary)',
                                                     cursor: 'pointer',
+                                                    minWidth: 0,
                                                 }}
                                             >
-                                                {url.logo ? (
-                                                    <img src={url.logo} alt={url.name} style={{ width: 40, height: 40, borderRadius: '50%', objectFit: 'contain', background: '#f5f5f5', padding: 2 }} />
-                                                ) : (
-                                                    <div style={{ width: 40, height: 40, borderRadius: '50%', background: '#f5f5f5', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.1rem' }}>🏦</div>
-                                                )}
-                                                <span style={{ fontSize: '0.6rem', fontWeight: 600, textAlign: 'center', lineHeight: 1.2, maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: 'var(--text-secondary)' }}>
+                                                <div style={{
+                                                    width: 46, height: 46, borderRadius: 12,
+                                                    background: '#fff',
+                                                    border: '2px solid #fff',
+                                                    boxShadow: '0 1px 4px rgba(0,0,0,0.1)',
+                                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                    overflow: 'hidden', flexShrink: 0,
+                                                }}>
+                                                    {url.logo ? (
+                                                        <img src={url.logo} alt={url.name} style={{ width: 36, height: 36, borderRadius: 8, objectFit: 'contain' }} />
+                                                    ) : (
+                                                        <span style={{ fontSize: '1.2rem' }}>🏦</span>
+                                                    )}
+                                                </div>
+                                                <span style={{ fontSize: '0.62rem', fontWeight: 600, textAlign: 'center', lineHeight: 1.2, maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: 'var(--text-secondary)' }}>
                                                     {url.description || url.name}
                                                 </span>
                                             </a>
