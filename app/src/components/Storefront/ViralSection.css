@@ -135,7 +135,7 @@
     overflow-x: auto;
     scroll-snap-type: x mandatory;
     -webkit-overflow-scrolling: touch;
-    padding: 4px 20px 12px;
+    padding: 4px calc(50% - 120px) 12px;
     scrollbar-width: none;
     scroll-behavior: smooth;
 }
@@ -145,7 +145,7 @@
 /* ── Card ── */
 .viral-card {
     flex: 0 0 240px;
-    scroll-snap-align: start;
+    scroll-snap-align: center;
     position: relative;
     border-radius: 14px;
     overflow: hidden;
@@ -297,6 +297,6 @@
     }
     .viral-title { font-size: 1.5rem; letter-spacing: 4px; }
     .viral-card { flex: 0 0 190px; }
-    .viral-carousel { padding: 4px 14px 10px; gap: 10px; }
+    .viral-carousel { padding: 4px calc(50% - 95px) 10px; gap: 10px; }
     .viral-header { margin-bottom: 14px; }
 }
