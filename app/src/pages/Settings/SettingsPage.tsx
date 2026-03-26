@@ -61,6 +61,9 @@ export function SettingsPage() {
     const [requestReason, setRequestReason] = useState('');
     const [requestedChanges, setRequestedChanges] = useState<{ name?: string, slug?: string }>({});
     const [selectedThemeId, setSelectedThemeId] = useState(business?.settings?.storefront?.theme || 'minimal');
+    const [socialLinks, setSocialLinks] = useState<{ name: string; url: string }[]>(
+        (business?.settings?.storefront as any)?.socialLinks || []
+    );
     const [logoFiles, setLogoFiles] = useState<File[]>([]);
     const [existingLogo, setExistingLogo] = useState<string[]>(business?.logo ? [business.logo] : []);
     
@@ -304,7 +307,8 @@ export function SettingsPage() {
                         theme: newTheme || business.settings?.storefront?.theme || 'minimal',
                         name: storefrontName !== undefined ? storefrontName : (business.settings?.storefront?.name || ''),
                         preorderTerms: preorderTerms ?? business.settings?.storefront?.preorderTerms,
-                        productsPerPage: productsPerPage ?? business.settings?.storefront?.productsPerPage
+                        productsPerPage: productsPerPage ?? business.settings?.storefront?.productsPerPage,
+                        socialLinks: socialLinks.filter(l => l.name.trim() && l.url.trim()),
                     }
                 }
             });
@@ -318,7 +322,8 @@ export function SettingsPage() {
                 theme: newTheme || business.settings?.storefront?.theme || 'minimal',
                 name: storefrontName !== undefined ? storefrontName : (business.settings?.storefront?.name || ''),
                 preorderTerms: preorderTerms ?? business.settings?.storefront?.preorderTerms,
-                productsPerPage: productsPerPage ?? business.settings?.storefront?.productsPerPage
+                productsPerPage: productsPerPage ?? business.settings?.storefront?.productsPerPage,
+                socialLinks: socialLinks.filter(l => l.name.trim() && l.url.trim()),
             };
             await moduleSettingsService.updateSettings(business.id, 'storefront', sfSettings);
 
@@ -671,6 +676,64 @@ export function SettingsPage() {
                                                 <option value={0}>Устгахгүй (Идэвхгүй)</option>
                                             </select>
                                             <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: '8px 0 0 0' }}>Тогтоосон хугацаанд төлбөр баталгаажаагүй захиалгууд системээс автоматаар устгагдана.</p>
+                                        </div>
+
+                                        {/* Social Links */}
+                                        <div className="input-group" style={{ marginTop: 24 }}>
+                                            <label className="settings-label">Сошиал холбоосууд (Хөл хэсэгт харагдана)</label>
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                                                {socialLinks.map((link, i) => (
+                                                    <div key={i} style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                                                        <input
+                                                            className="input"
+                                                            placeholder="Нэр (жнь: originalsmongolia)"
+                                                            value={link.name}
+                                                            onChange={e => {
+                                                                const updated = [...socialLinks];
+                                                                updated[i] = { ...updated[i], name: e.target.value };
+                                                                setSocialLinks(updated);
+                                                                setIsDirty(true);
+                                                            }}
+                                                            style={{ flex: 1 }}
+                                                        />
+                                                        <input
+                                                            className="input"
+                                                            placeholder="URL (жнь: https://facebook.com/...)"
+                                                            value={link.url}
+                                                            onChange={e => {
+                                                                const updated = [...socialLinks];
+                                                                updated[i] = { ...updated[i], url: e.target.value };
+                                                                setSocialLinks(updated);
+                                                                setIsDirty(true);
+                                                            }}
+                                                            style={{ flex: 2 }}
+                                                        />
+                                                        <button
+                                                            type="button"
+                                                            className="btn btn-ghost btn-icon"
+                                                            onClick={() => {
+                                                                setSocialLinks(prev => prev.filter((_, idx) => idx !== i));
+                                                                setIsDirty(true);
+                                                            }}
+                                                            style={{ flexShrink: 0 }}
+                                                        >
+                                                            <X size={16} />
+                                                        </button>
+                                                    </div>
+                                                ))}
+                                                <button
+                                                    type="button"
+                                                    className="btn btn-outline btn-sm"
+                                                    onClick={() => {
+                                                        setSocialLinks(prev => [...prev, { name: '', url: '' }]);
+                                                        setIsDirty(true);
+                                                    }}
+                                                    style={{ alignSelf: 'flex-start', marginTop: 4 }}
+                                                >
+                                                    + Холбоос нэмэх
+                                                </button>
+                                            </div>
+                                            <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: '8px 0 0 0' }}>Facebook пэйж, Instagram зэрэг сошиал холбоосуудыг нэмнэ. Дэлгүүрийн хөл хэсэгт харагдана.</p>
                                         </div>
 
                                         <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 24 }}>
