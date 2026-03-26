@@ -930,7 +930,7 @@ export function DashboardPage() {
                 );
 
             case 'low-stock':
-                if (!hasModule('products') && !hasModule('inventory')) return null;
+                if (!hasModule('inventory')) return null;
                 return (
                     <div className="dashboard-section glass-section">
                         <div className="dashboard-section-header">
@@ -1024,6 +1024,7 @@ export function DashboardPage() {
                 );
 
             case 'unpaid-cart':
+                if (!hasModule('orders')) return null;
                 return (
                     <div className="dashboard-section glass-section">
                         <div className="dashboard-section-header">
