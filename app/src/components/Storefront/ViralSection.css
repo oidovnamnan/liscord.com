@@ -60,6 +60,9 @@
 .viral-embers {
     position: absolute;
     inset: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
     pointer-events: none;
     z-index: 1;
 }
@@ -300,4 +303,7 @@
     .viral-card { flex: 0 0 190px; }
     .viral-carousel { padding: 4px calc(50% - 95px) 10px; gap: 10px; }
     .viral-header { margin-bottom: 14px; }
+    .viral-embers { display: none !important; }
+    .viral-aurora { display: none; }
+    .viral-section::before { display: none; }
 }
