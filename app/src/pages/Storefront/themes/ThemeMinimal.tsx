@@ -9,13 +9,14 @@ import { StorefrontEmpty } from '../../../components/Storefront/StorefrontEmpty'
 import { ProductModal } from '../../../components/Storefront/ProductModal';
 import { CustomerDashboard } from '../../../components/Storefront/CustomerDashboard';
 import { FlashDealSection, type FlashDealConfig } from '../../../components/Storefront/FlashDealSection';
+import { ViralSection } from '../../../components/Storefront/ViralSection';
 import '../Storefront.css';
 
 export function ThemeMinimal({ business }: { business: Business }) {
     const {
         products, loading, searchQuery, setSearchQuery,
         activeCategory, setActiveCategory, categories, filteredProducts,
-        verifyMembership, activeMemberships,
+        verifyMembership, activeMemberships, viralProducts,
     } = useStorefrontData(business);
 
     const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
@@ -375,6 +376,10 @@ export function ThemeMinimal({ business }: { business: Business }) {
                         />
                     );
                 })()}
+
+                {viralProducts.length > 0 && (
+                    <ViralSection products={viralProducts} onProductClick={handleProductClick} />
+                )}
 
                 {/* Product Grid */}
                 <div className="store-container">

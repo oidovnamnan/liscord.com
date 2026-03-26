@@ -130,6 +130,11 @@ export function useStorefrontData(business: Business | undefined) {
         });
     }, [enrichedProducts, searchQuery, activeCategory, categoryList]);
 
+    // Viral products
+    const viralProducts = useMemo(() =>
+        enrichedProducts.filter(p => (p as any).isViral),
+    [enrichedProducts]);
+
     // Membership verification function
     const verifyMembership = async (phone: string) => {
         if (!business) return false;
@@ -148,6 +153,7 @@ export function useStorefrontData(business: Business | undefined) {
         setActiveCategory,
         categories,
         filteredProducts,
+        viralProducts,
         linkedToExclusiveMap,
         activeMemberships,
         verifyMembership,

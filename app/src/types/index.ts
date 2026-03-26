@@ -687,6 +687,8 @@ export interface Product {
     isHidden?: boolean;
     tags?: string[];
     sourceLinks?: { url: string; label: string }[];
+    isViral?: boolean;
+    viralAddedAt?: Date;
 }
 
 // ============ CATEGORY ============

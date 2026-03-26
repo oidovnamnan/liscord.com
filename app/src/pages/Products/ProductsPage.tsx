@@ -1403,6 +1403,7 @@ function EditProductModal({ product, onClose }: { product: Product; onClose: () 
 
     // Visibility
     const [isHidden, setIsHidden] = useState(product.isHidden || false);
+    const [isViral, setIsViral] = useState(product.isViral || false);
 
     const [activeTab, setActiveTab] = useState<'basic' | 'price' | 'variations' | 'advanced' | 'inquiries'>('basic');
     const [inquiries, setInquiries] = useState<StockInquiry[]>([]);
@@ -1615,7 +1616,9 @@ function EditProductModal({ product, onClose }: { product: Product; onClose: () 
                     }
                 } : {}),
                 updatedAt: new Date(),
-                isHidden
+                isHidden,
+                isViral,
+                ...(isViral ? { viralAddedAt: product.isViral ? (product.viralAddedAt || new Date()) : new Date() } : { viralAddedAt: undefined as Date | undefined })
             });
 
             toast.success('Амжилттай шинэчлэгдлээ');
@@ -1998,6 +2001,25 @@ function EditProductModal({ product, onClose }: { product: Product; onClose: () 
                                         <div
                                             className={`products-mini-toggle ${!isHidden ? 'active' : ''}`}
                                             onClick={() => setIsHidden(!isHidden)}
+                                        >
+                                            <div className="toggle" />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="modal-section-card">
+                                    <div className="modal-section-title">🔥 Viral бүтээгдэхүүн</div>
+                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: isViral ? 'rgba(255,107,0,0.08)' : 'var(--bg-soft)', padding: '16px', borderRadius: '12px', border: isViral ? '1.5px solid rgba(255,107,0,0.3)' : '1.5px solid transparent', transition: 'all 0.3s ease' }}>
+                                        <div>
+                                            <div style={{ fontWeight: 600, fontSize: '0.95rem' }}>Viral секцэд оруулах?</div>
+                                            <div style={{ fontSize: '0.8rem', color: isViral ? '#ff6b00' : 'var(--text-muted)', fontWeight: isViral ? 700 : 500 }}>
+                                                {isViral ? '🔥 Сторфронтод VIRAL секцэд харагдана' : 'Энгийн бараа (viral секцэд харагдахгүй)'}
+                                            </div>
+                                        </div>
+                                        <div
+                                            className={`products-mini-toggle ${isViral ? 'active' : ''}`}
+                                            onClick={() => setIsViral(!isViral)}
+                                            style={isViral ? { background: 'linear-gradient(135deg, #ff6b00, #ff3d00)' } : undefined}
                                         >
                                             <div className="toggle" />
                                         </div>
