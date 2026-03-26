@@ -306,8 +306,8 @@ export function SettingsPage() {
                         blockInAppBrowsers: blockInAppBrowsers ?? false,
                         theme: newTheme || business.settings?.storefront?.theme || 'minimal',
                         name: storefrontName !== undefined ? storefrontName : (business.settings?.storefront?.name || ''),
-                        preorderTerms: preorderTerms ?? business.settings?.storefront?.preorderTerms,
-                        productsPerPage: productsPerPage ?? business.settings?.storefront?.productsPerPage,
+                        preorderTerms: preorderTerms || business.settings?.storefront?.preorderTerms || '',
+                        ...(productsPerPage != null ? { productsPerPage } : (business.settings?.storefront?.productsPerPage != null ? { productsPerPage: business.settings.storefront.productsPerPage } : {})),
                         socialLinks: socialLinks.filter(l => l.name.trim() && l.url.trim()),
                     }
                 }
@@ -321,8 +321,8 @@ export function SettingsPage() {
                 blockInAppBrowsers: blockInAppBrowsers ?? false,
                 theme: newTheme || business.settings?.storefront?.theme || 'minimal',
                 name: storefrontName !== undefined ? storefrontName : (business.settings?.storefront?.name || ''),
-                preorderTerms: preorderTerms ?? business.settings?.storefront?.preorderTerms,
-                productsPerPage: productsPerPage ?? business.settings?.storefront?.productsPerPage,
+                preorderTerms: preorderTerms || business.settings?.storefront?.preorderTerms || '',
+                ...(productsPerPage != null ? { productsPerPage } : (business.settings?.storefront?.productsPerPage != null ? { productsPerPage: business.settings.storefront.productsPerPage } : {})),
                 socialLinks: socialLinks.filter(l => l.name.trim() && l.url.trim()),
             };
             await moduleSettingsService.updateSettings(business.id, 'storefront', sfSettings);
