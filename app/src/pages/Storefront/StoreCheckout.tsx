@@ -498,12 +498,11 @@ export function StoreCheckout() {
 
                                 {/* Bank app deeplinks — Toki Pay style grid */}
                                 {qpayInvoice.urls.length > 0 && (() => {
-                                    // Exclude only payment apps, keep all banks
+                                    // Exclude only 3 apps
                                     const excludedNames = [
-                                        'hipay', 'happy pay',
-                                        'ard app', 'ард апп', 'ard credit', 'ард кредит',
-                                        'toki', 'токи',
                                         'monpay', 'мон пэй',
+                                        'hipay',
+                                        'happy pay', 'happypay',
                                     ];
                                     const filteredUrls = qpayInvoice.urls.filter(url => {
                                         const name = (url.description || url.name || '').toLowerCase();
