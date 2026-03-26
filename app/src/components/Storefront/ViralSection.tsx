@@ -243,6 +243,8 @@ export function ViralSection({ products, onProductClick }: ViralSectionProps) {
 
     return (
         <section className="viral-section">
+            <div className="viral-edge-top" />
+            <div className="viral-edge-bottom" />
             <div className="viral-aurora" />
             <EmberCanvas />
 

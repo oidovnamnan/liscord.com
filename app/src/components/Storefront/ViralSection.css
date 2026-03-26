@@ -5,8 +5,8 @@
 /* ── Main Container ── */
 .viral-section {
     position: relative;
-    background-color: #1a1a2e;
-    background: linear-gradient(145deg, #1a1a2e 0%, #16213e 30%, #0f3460 60%, #1a1a2e 100%);
+    background-color: #1e2240;
+    background: linear-gradient(160deg, #232848 0%, #1e3465 35%, #1a4080 55%, #1e2a52 80%, #232848 100%);
     padding: 36px 0 32px;
     margin: 24px 0;
     overflow: hidden;
@@ -14,15 +14,38 @@
     border: 1px solid rgba(212, 175, 55, 0.25);
 }
 
-/* ── Geometric Diamond Pattern ── */
+/* ── Metallic Wire Mesh Pattern (full section) ── */
 .viral-section::before {
     content: '';
     position: absolute;
     inset: 0;
-    background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M30 0L60 30L30 60L0 30Z' fill='none' stroke='rgba(212,175,55,0.08)' stroke-width='0.5'/%3E%3Cpath d='M30 10L50 30L30 50L10 30Z' fill='none' stroke='rgba(212,175,55,0.05)' stroke-width='0.5'/%3E%3C/svg%3E");
-    background-size: 60px 60px;
+    background-image: url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cline x1='0' y1='0' x2='40' y2='40' stroke='rgba(200,200,220,0.07)' stroke-width='0.5'/%3E%3Cline x1='40' y1='0' x2='0' y2='40' stroke='rgba(200,200,220,0.07)' stroke-width='0.5'/%3E%3Cline x1='20' y1='0' x2='20' y2='40' stroke='rgba(200,200,220,0.04)' stroke-width='0.3'/%3E%3Cline x1='0' y1='20' x2='40' y2='20' stroke='rgba(200,200,220,0.04)' stroke-width='0.3'/%3E%3C/svg%3E");
+    background-size: 40px 40px;
     z-index: 0;
-    opacity: 0.8;
+    opacity: 1;
+}
+
+/* ── Top edge: white-to-section metallic mesh fade ── */
+.viral-section .viral-edge-top,
+.viral-section .viral-edge-bottom {
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 28px;
+    z-index: 2;
+    pointer-events: none;
+    background-image: url("data:image/svg+xml,%3Csvg width='20' height='20' viewBox='0 0 20 20' xmlns='http://www.w3.org/2000/svg'%3E%3Cline x1='0' y1='0' x2='20' y2='20' stroke='rgba(180,180,200,0.18)' stroke-width='0.5'/%3E%3Cline x1='20' y1='0' x2='0' y2='20' stroke='rgba(180,180,200,0.18)' stroke-width='0.5'/%3E%3C/svg%3E");
+    background-size: 20px 20px;
+}
+.viral-section .viral-edge-top {
+    top: 0;
+    mask-image: linear-gradient(to bottom, rgba(0,0,0,0.8), transparent);
+    -webkit-mask-image: linear-gradient(to bottom, rgba(0,0,0,0.8), transparent);
+}
+.viral-section .viral-edge-bottom {
+    bottom: 0;
+    mask-image: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
+    -webkit-mask-image: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
 }
 
 /* ── Gold Shimmer Overlay ── */
@@ -305,5 +328,4 @@
     .viral-header { margin-bottom: 14px; }
     .viral-embers { display: none !important; }
     .viral-aurora { display: none; }
-    .viral-section::before { display: none; }
 }
