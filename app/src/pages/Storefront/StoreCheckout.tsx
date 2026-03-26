@@ -377,8 +377,8 @@ export function StoreCheckout() {
                 <div style={{ maxWidth: 800, margin: '0 auto', width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                     <div className="animate-slide-up" style={{
                         background: 'var(--surface-1)',
-                        padding: '32px 24px',
-                        borderRadius: 32,
+                        padding: '20px 18px',
+                        borderRadius: 24,
                         textAlign: 'center',
                         maxWidth: 500,
                         width: '100%',
@@ -400,23 +400,23 @@ export function StoreCheckout() {
                         {paymentConfirmed ? (
                             <>
                                 <div style={{
-                                    width: 64, height: 64, borderRadius: '50%',
+                                    width: 48, height: 48, borderRadius: '50%',
                                     background: 'linear-gradient(135deg, #4BB543, #2ecc71)',
                                     color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                    margin: '0 auto 16px', boxShadow: '0 8px 32px rgba(75, 181, 67, 0.3)',
+                                    margin: '0 auto 10px', boxShadow: '0 8px 32px rgba(75, 181, 67, 0.3)',
                                     animation: 'popIn 0.5s cubic-bezier(0.16, 1, 0.3, 1)'
                                 }}>
-                                    <PartyPopper size={28} />
+                                    <PartyPopper size={22} />
                                 </div>
-                                <h2 style={{ marginBottom: 4, fontSize: '1.4rem', fontWeight: 900, color: '#4BB543', letterSpacing: '-0.02em' }}>Төлбөр баталгаажлаа!</h2>
-                                <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', fontWeight: 500, marginBottom: 8 }}>Таны шилжүүлэг амжилттай хүлээн авлаа.</p>
+                                <h2 style={{ marginBottom: 2, fontSize: '1.2rem', fontWeight: 900, color: '#4BB543', letterSpacing: '-0.02em' }}>Төлбөр баталгаажлаа!</h2>
+                                <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem', fontWeight: 500, marginBottom: 4 }}>Таны шилжүүлэг амжилттай хүлээн авлаа.</p>
                             </>
                         ) : !qpayInvoice && (
                             <>
-                                <div style={{ width: 56, height: 56, borderRadius: '50%', background: 'rgba(75, 181, 67, 0.1)', color: '#4BB543', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 12px' }}>
-                                    <CheckCircle size={28} />
+                                <div style={{ width: 44, height: 44, borderRadius: '50%', background: 'rgba(75, 181, 67, 0.1)', color: '#4BB543', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 8px' }}>
+                                    <CheckCircle size={22} />
                                 </div>
-                                <h2 style={{ marginBottom: 8, fontSize: '1.4rem', fontWeight: 900, color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>Захиалга амжилттай!</h2>
+                                <h2 style={{ marginBottom: 4, fontSize: '1.2rem', fontWeight: 900, color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>Захиалга амжилттай!</h2>
                             </>
                         )}
 
@@ -491,19 +491,24 @@ export function StoreCheckout() {
                         )}
 
                         {qpayInvoice ? (
-                            <div className="animate-fade-in" style={{ margin: '20px 0', background: 'var(--bg-soft)', padding: '24px 20px', borderRadius: 24, border: '1px solid var(--border-primary)' }}>
-                                <p style={{ fontWeight: 800, marginBottom: 6, fontSize: '0.95rem', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'center' }}>Төлбөр төлөх</p>
-                                <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', textAlign: 'center', marginBottom: 16, fontWeight: 500 }}>Банкны апп-аа сонгоно уу</p>
+                            <div className="animate-fade-in" style={{ margin: '12px 0', background: 'var(--bg-soft)', padding: '16px 14px', borderRadius: 18, border: '1px solid var(--border-primary)' }}>
+                                <p style={{ fontWeight: 800, marginBottom: 4, fontSize: '0.88rem', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'center' }}>Төлбөр төлөх</p>
+                                <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textAlign: 'center', marginBottom: 10, fontWeight: 500 }}>Банкны апп-аа сонгоно уу</p>
 
                                 {/* Bank app deeplinks — prominent grid */}
-                                {qpayInvoice.urls.length > 0 && (
+                                {qpayInvoice.urls.length > 0 && (() => {
+                                    const excludedBanks = ['hipay', 'happy pay', 'ard app', 'ard credit'];
+                                    const filteredUrls = qpayInvoice.urls.filter(url =>
+                                        !excludedBanks.some(b => (url.description || url.name || '').toLowerCase().includes(b))
+                                    );
+                                    return filteredUrls.length > 0 && (
                                     <div style={{
                                         display: 'grid',
-                                        gridTemplateColumns: 'repeat(4, 1fr)',
-                                        gap: 10,
-                                        marginBottom: 20,
+                                        gridTemplateColumns: 'repeat(3, 1fr)',
+                                        gap: 8,
+                                        marginBottom: 16,
                                     }}>
-                                        {qpayInvoice.urls.map(url => (
+                                        {filteredUrls.map(url => (
                                             <a
                                                 key={url.name}
                                                 href={url.link}
@@ -511,9 +516,9 @@ export function StoreCheckout() {
                                                     display: 'flex',
                                                     flexDirection: 'column',
                                                     alignItems: 'center',
-                                                    gap: 6,
-                                                    padding: '12px 4px',
-                                                    borderRadius: 16,
+                                                    gap: 4,
+                                                    padding: '10px 4px',
+                                                    borderRadius: 14,
                                                     border: '1px solid var(--border-color)',
                                                     background: 'var(--surface-1)',
                                                     textDecoration: 'none',
@@ -523,28 +528,29 @@ export function StoreCheckout() {
                                                 }}
                                             >
                                                 {url.logo ? (
-                                                    <img src={url.logo} alt={url.name} style={{ width: 36, height: 36, borderRadius: 10, objectFit: 'contain' }} />
+                                                    <img src={url.logo} alt={url.name} style={{ width: 32, height: 32, borderRadius: 8, objectFit: 'contain' }} />
                                                 ) : (
-                                                    <div style={{ width: 36, height: 36, borderRadius: 10, background: 'var(--primary-light)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.2rem' }}>🏦</div>
+                                                    <div style={{ width: 32, height: 32, borderRadius: 8, background: 'var(--primary-light)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1rem' }}>🏦</div>
                                                 )}
-                                                <span style={{ fontSize: '0.62rem', fontWeight: 700, textAlign: 'center', lineHeight: 1.2, maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' as any }}>
+                                                <span style={{ fontSize: '0.58rem', fontWeight: 700, textAlign: 'center', lineHeight: 1.2, maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' as any }}>
                                                     {url.description || url.name}
                                                 </span>
                                             </a>
                                         ))}
                                     </div>
-                                )}
+                                    );
+                                })()}
 
                                 {/* QR code — smaller, below as fallback */}
-                                <div style={{ textAlign: 'center', marginTop: 8 }}>
-                                    <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 600, marginBottom: 8 }}>Эсвэл QR код уншуулах</p>
+                                <div style={{ textAlign: 'center', marginTop: 6 }}>
+                                    <p style={{ fontSize: '0.68rem', color: 'var(--text-muted)', fontWeight: 600, marginBottom: 6 }}>Эсвэл QR код уншуулах</p>
                                     <div style={{
-                                        width: 160, height: 160, margin: '0 auto',
+                                        width: 120, height: 120, margin: '0 auto',
                                         background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                        border: '1.5px solid var(--border-color)', borderRadius: 16, padding: 8
+                                        border: '1.5px solid var(--border-color)', borderRadius: 12, padding: 6
                                     }}>
                                         {qpayInvoice.qr_image ? (
-                                            <img src={`data:image/png;base64,${qpayInvoice.qr_image}`} alt="QPay QR" style={{ width: '100%', height: '100%', objectFit: 'contain', borderRadius: 8 }} />
+                                            <img src={`data:image/png;base64,${qpayInvoice.qr_image}`} alt="QPay QR" style={{ width: '100%', height: '100%', objectFit: 'contain', borderRadius: 6 }} />
                                         ) : (
                                             <div style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>Ачааллаж байна...</div>
                                         )}

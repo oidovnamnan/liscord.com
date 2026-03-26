@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useParams, Outlet, Navigate } from 'react-router-dom';
+import { useParams, Outlet, Navigate, useLocation } from 'react-router-dom';
 import { businessService } from '../../services/db';
 import { db } from '../../services/firebase';
 import { doc, getDoc, setDoc, deleteDoc, serverTimestamp, increment } from 'firebase/firestore';
@@ -273,6 +273,8 @@ export function StorefrontWrapper() {
     }
 
     const brandColor = business.brandColor || '#4a6bff';
+    const location = useLocation();
+    const isCheckoutPage = location.pathname.includes('/checkout');
 
     return (
         <div
@@ -284,7 +286,7 @@ export function StorefrontWrapper() {
             }}
         >
             <Outlet context={{ business }} />
-            <StorefrontFooter business={business} />
+            {!isCheckoutPage && <StorefrontFooter business={business} />}
             <CartDrawer />
         </div>
     );
