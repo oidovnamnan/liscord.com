@@ -117,65 +117,133 @@ function getViewCount(productId: string): string {
     return views.toString();
 }
 
+// ═══ Single Card Renderer ═══
+function ViralCard({ p, onProductClick, fmt }: { p: Product; onProductClick: (p: Product) => void; fmt: (n: number) => string }) {
+    const salePrice = p.pricing?.salePrice || 0;
+    const comparePrice = p.pricing?.comparePrice;
+    const hasDiscount = comparePrice && comparePrice > salePrice;
+    const varPrices = (p.variations || []).map(v => (v.salePrice ?? 0) > 0 ? v.salePrice! : 0).filter(pr => pr > 0);
+    const hasVarPrices = varPrices.length > 0 && salePrice === 0;
+    const minVar = hasVarPrices ? Math.min(...varPrices) : 0;
+    const maxVar = hasVarPrices ? Math.max(...varPrices) : 0;
+
+    return (
+        <div className="viral-card" onClick={() => onProductClick(p)}>
+            <div className="viral-card-border" />
+            <div className="viral-card-inner">
+                <div className="viral-card-image-wrap">
+                    <div className="viral-badge">🔥 FIRE</div>
+                    {p.images?.[0] ? (
+                        <img src={p.images[0]} alt={p.name} className="viral-card-image" loading="lazy" />
+                    ) : (
+                        <div className="viral-card-placeholder">📦</div>
+                    )}
+                    <div className="viral-views">
+                        <Eye size={12} strokeWidth={2.5} />
+                        {getViewCount(p.id)}
+                    </div>
+                </div>
+                <div className="viral-card-content">
+                    <div className="viral-card-name">{p.name}</div>
+                    <div className="viral-card-price">
+                        {hasVarPrices
+                            ? (minVar === maxVar ? fmt(minVar) : `${fmt(minVar)} ~ ${fmt(maxVar)}`)
+                            : fmt(salePrice)
+                        }
+                        {hasDiscount && (
+                            <span className="viral-card-compare">{fmt(comparePrice)}</span>
+                        )}
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+}
+
 // ═══ Main Component ═══
 export function ViralSection({ products, onProductClick }: ViralSectionProps) {
     const carouselRef = useRef<HTMLDivElement>(null);
     const [activeIndex, setActiveIndex] = useState(0);
     const autoScrollRef = useRef<ReturnType<typeof setInterval> | undefined>(undefined);
     const pausedRef = useRef(false);
+    const isResettingRef = useRef(false);
 
-    const maxVisible = 10;
-    const displayProducts = useMemo(() => products.slice(0, maxVisible), [products]);
+    const count = products.length;
+    const cardWidth = 276; // 260 card + 16 gap
 
-    // Track scroll position for dots
-    const handleScroll = useCallback(() => {
-        const el = carouselRef.current;
-        if (!el) return;
-        const cardWidth = 276; // 260 + 16 gap
-        const idx = Math.round(el.scrollLeft / cardWidth);
-        setActiveIndex(Math.min(idx, displayProducts.length - 1));
-    }, [displayProducts.length]);
+    // Infinite loop: render 3 copies [clone-before | original | clone-after]
+    // When scroll reaches clone zones, silently snap back to the middle set
+    const tripleProducts = useMemo(() => {
+        if (count <= 1) return products;
+        return [...products, ...products, ...products];
+    }, [products, count]);
 
-    // Auto-scroll every 3s
+    // On mount: scroll to start of middle set (instant, no animation)
     useEffect(() => {
         const el = carouselRef.current;
-        if (!el || displayProducts.length <= 1) return;
+        if (!el || count <= 1) return;
+        el.scrollLeft = count * cardWidth;
+    }, [count, cardWidth]);
+
+    // Track scroll + infinite reset
+    const handleScroll = useCallback(() => {
+        const el = carouselRef.current;
+        if (!el || count <= 1 || isResettingRef.current) return;
+
+        const setWidth = count * cardWidth;
+        const scrollLeft = el.scrollLeft;
+
+        // If scrolled past the end of middle set → snap to start of middle
+        if (scrollLeft >= setWidth * 2) {
+            isResettingRef.current = true;
+            el.style.scrollBehavior = 'auto';
+            el.scrollLeft = scrollLeft - setWidth;
+            el.style.scrollBehavior = '';
+            isResettingRef.current = false;
+        }
+        // If scrolled before middle set → snap to end of middle
+        else if (scrollLeft < setWidth * 0.3) {
+            isResettingRef.current = true;
+            el.style.scrollBehavior = 'auto';
+            el.scrollLeft = scrollLeft + setWidth;
+            el.style.scrollBehavior = '';
+            isResettingRef.current = false;
+        }
+
+        // Active dot based on position within one set
+        const posInSet = el.scrollLeft % setWidth;
+        const idx = Math.round(posInSet / cardWidth) % count;
+        setActiveIndex(idx);
+    }, [count, cardWidth]);
+
+    // Auto-scroll every 3.5s
+    useEffect(() => {
+        const el = carouselRef.current;
+        if (!el || count <= 1) return;
 
         autoScrollRef.current = setInterval(() => {
             if (pausedRef.current) return;
-            const cardWidth = 276;
-            const maxScroll = el.scrollWidth - el.clientWidth;
-            const nextScroll = el.scrollLeft + cardWidth;
-
-            if (nextScroll >= maxScroll) {
-                el.scrollTo({ left: 0, behavior: 'smooth' });
-            } else {
-                el.scrollBy({ left: cardWidth, behavior: 'smooth' });
-            }
+            el.scrollBy({ left: cardWidth, behavior: 'smooth' });
         }, 3500);
 
         return () => clearInterval(autoScrollRef.current);
-    }, [displayProducts.length]);
+    }, [count, cardWidth]);
 
-    // Pause auto-scroll on touch
+    // Pause on touch/mouse
     const handleTouch = useCallback(() => {
         pausedRef.current = true;
         setTimeout(() => { pausedRef.current = false; }, 5000);
     }, []);
 
-    if (displayProducts.length === 0) return null;
+    if (count === 0) return null;
 
     const fmt = (n: number) => n.toLocaleString() + ' ₮';
 
     return (
         <section className="viral-section">
-            {/* Aurora Background */}
             <div className="viral-aurora" />
-
-            {/* Canvas Embers */}
             <EmberCanvas />
 
-            {/* Header */}
             <div className="viral-header">
                 <div className="viral-title-glow">
                     <span className="viral-fire-icon">🔥</span>
@@ -184,7 +252,6 @@ export function ViralSection({ products, onProductClick }: ViralSectionProps) {
                 <div className="viral-subtitle">Хамгийн их эрэлттэй бүтээгдэхүүн</div>
             </div>
 
-            {/* Carousel */}
             <div
                 className="viral-carousel"
                 ref={carouselRef}
@@ -192,86 +259,19 @@ export function ViralSection({ products, onProductClick }: ViralSectionProps) {
                 onTouchStart={handleTouch}
                 onMouseDown={handleTouch}
             >
-                {displayProducts.map(p => {
-                    const salePrice = p.pricing?.salePrice || 0;
-                    const comparePrice = p.pricing?.comparePrice;
-                    const hasDiscount = comparePrice && comparePrice > salePrice;
-                    // Variation price range
-                    const varPrices = (p.variations || []).map(v => (v.salePrice ?? 0) > 0 ? v.salePrice! : 0).filter(pr => pr > 0);
-                    const hasVarPrices = varPrices.length > 0 && salePrice === 0;
-                    const minVar = hasVarPrices ? Math.min(...varPrices) : 0;
-                    const maxVar = hasVarPrices ? Math.max(...varPrices) : 0;
-
-                    return (
-                        <div
-                            key={p.id}
-                            className="viral-card"
-                            onClick={() => onProductClick(p)}
-                        >
-                            {/* Holographic Border */}
-                            <div className="viral-card-border" />
-
-                            <div className="viral-card-inner">
-                                <div className="viral-card-image-wrap">
-                                    {/* Fire Badge */}
-                                    <div className="viral-badge">
-                                        🔥 FIRE
-                                    </div>
-
-                                    {p.images?.[0] ? (
-                                        <img
-                                            src={p.images[0]}
-                                            alt={p.name}
-                                            className="viral-card-image"
-                                            loading="lazy"
-                                        />
-                                    ) : (
-                                        <div className="viral-card-placeholder">📦</div>
-                                    )}
-
-                                    {/* View Count */}
-                                    <div className="viral-views">
-                                        <Eye size={12} strokeWidth={2.5} />
-                                        {getViewCount(p.id)}
-                                    </div>
-                                </div>
-
-                                <div className="viral-card-content">
-                                    <div className="viral-card-name">{p.name}</div>
-                                    <div className="viral-card-price">
-                                        {hasVarPrices
-                                            ? (minVar === maxVar ? fmt(minVar) : `${fmt(minVar)} ~ ${fmt(maxVar)}`)
-                                            : fmt(salePrice)
-                                        }
-                                        {hasDiscount && (
-                                            <span className="viral-card-compare">{fmt(comparePrice)}</span>
-                                        )}
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    );
-                })}
+                {tripleProducts.map((p, i) => (
+                    <ViralCard key={`v-${i}`} p={p} onProductClick={onProductClick} fmt={fmt} />
+                ))}
             </div>
 
-            {/* Scroll Dots */}
-            {displayProducts.length > 1 && (
+            {count > 1 && (
                 <div className="viral-scroll-dots">
-                    {displayProducts.map((_, i) => (
+                    {products.map((_, i) => (
                         <div
                             key={i}
                             className={`viral-scroll-dot ${i === activeIndex ? 'active' : ''}`}
                         />
                     ))}
-                </div>
-            )}
-
-            {/* View All (10+ products) */}
-            {products.length > maxVisible && (
-                <div className="viral-view-all">
-                    <button className="viral-view-all-btn">
-                        Бүгд харах ({products.length}) →
-                    </button>
                 </div>
             )}
         </section>
