@@ -188,6 +188,8 @@ const StoreCheckout = lazy(() => import('./pages/Storefront/StoreCheckout').then
 // Components
 import { BusinessWizard } from './components/auth/BusinessWizard';
 import { ModuleGuard } from './components/auth/ModuleGuard';
+import { OwnerGuard } from './components/auth/OwnerGuard';
+import { SettingsGuard } from './components/auth/SettingsGuard';
 import { ShellPage } from './pages/Common/ShellPage';
 
 function PageLoader() {
@@ -691,11 +693,11 @@ export default function App() {
             <Route path="categories" element={<CategoriesPage />} />
             <Route path="inventory" element={<InventoryPage />} />
             <Route path="customers" element={<CustomersPage />} />
-            <Route path="settings" element={<SettingsPage />} />
+            <Route path="settings" element={<SettingsGuard><SettingsPage /></SettingsGuard>} />
             <Route path="profile" element={<ProfilePage />} />
             <Route path="employees" element={<EmployeesPage />} />
             <Route path="payments" element={<PaymentsPage />} />
-            <Route path="app-store" element={<AppStorePage />} />
+            <Route path="app-store" element={<OwnerGuard><AppStorePage /></OwnerGuard>} />
             <Route path="analytics" element={<ReportsPage />} />
             <Route path="messenger" element={<ChatPage />} />
             <Route path="cargo" element={<PackagesPage />} />

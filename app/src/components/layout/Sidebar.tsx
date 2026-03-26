@@ -250,12 +250,11 @@ export function Sidebar() {
 
     // Check if user is owner — when impersonating, treat as non-owner to apply permissions
     const isOwner = !isImpersonating && (user?.uid === business?.ownerId || employee?.role === 'owner');
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const empPerms: string[] = (employee as any)?.permissions || [];
 
     const filteredNavItems = useMemo(() => {
         let items = getVisibleModules(business, moduleDefaults);
-
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const empPerms: string[] = (employee as any)?.permissions || [];
         
 
 
@@ -414,8 +413,8 @@ export function Sidebar() {
 
                 {/* Navigation */}
                 <nav className="sidebar-nav">
-                    {/* App Store - top of sidebar, hidden during impersonation */}
-                    {!isImpersonating && (
+                    {/* App Store - only visible to owner */}
+                    {isOwner && (
                         <NavLink
                             to="/app/app-store"
                             className={`sidebar-link ${location.pathname.startsWith('/app/app-store') ? 'active' : ''}`}
@@ -473,8 +472,8 @@ export function Sidebar() {
                     })}
 
 
-                    {/* Settings - hidden during impersonation unless has settings permission */}
-                    {(!isImpersonating || ((employee as any)?.permissions || []).some((p: string) => p.startsWith('settings.'))) && (
+                    {/* Settings - only owner or employees with settings.* permission */}
+                    {(isOwner || empPerms.some(p => p.startsWith('settings.'))) && (
                         <NavLink
                             to="/app/settings"
                             className={`sidebar-link ${location.pathname.startsWith('/app/settings') ? 'active' : ''}`}
