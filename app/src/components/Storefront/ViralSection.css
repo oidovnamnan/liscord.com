@@ -2,7 +2,6 @@
 /*  🔥 VIRAL SECTION — Ultra Premium Storefront Component  */
 /* ═══════════════════════════════════════════════════════ */
 
-/* ── CSS Custom Properties for animation ── */
 @property --holo-angle {
     syntax: '<angle>';
     initial-value: 0deg;
@@ -12,22 +11,21 @@
 /* ── Main Container ── */
 .viral-section {
     position: relative;
-    background: linear-gradient(135deg, #fff5eb 0%, #ffe0cc 25%, #ffd6e8 50%, #e8d5ff 75%, #d5e8ff 100%);
-    padding: 40px 0 48px;
+    background: linear-gradient(160deg, #fff8f0 0%, #fff0e0 40%, #ffe8cc 70%, #fff3e0 100%);
+    padding: 36px 0 40px;
     margin: 24px 0;
     overflow: hidden;
-    border-radius: 24px;
-    box-shadow: 0 8px 32px rgba(255, 140, 50, 0.12);
+    border-radius: 20px;
+    border: 1.5px solid rgba(255, 160, 50, 0.15);
 }
 
-/* ── Aurora Background ── */
+/* ── Warm shimmer ── */
 .viral-aurora {
     position: absolute;
     inset: 0;
     background: 
-        radial-gradient(ellipse 80% 60% at 20% 40%, rgba(255, 149, 0, 0.18), transparent),
-        radial-gradient(ellipse 60% 50% at 80% 60%, rgba(255, 64, 129, 0.15), transparent),
-        radial-gradient(ellipse 70% 40% at 50% 20%, rgba(156, 39, 176, 0.10), transparent);
+        radial-gradient(ellipse 70% 50% at 25% 30%, rgba(255, 160, 50, 0.12), transparent),
+        radial-gradient(ellipse 60% 50% at 75% 70%, rgba(255, 120, 30, 0.08), transparent);
     background-size: 200% 200%;
     animation: aurora-shift 8s ease-in-out infinite;
     pointer-events: none;
@@ -36,8 +34,7 @@
 
 @keyframes aurora-shift {
     0%, 100% { background-position: 0% 50%; }
-    33% { background-position: 100% 30%; }
-    66% { background-position: 50% 80%; }
+    50% { background-position: 100% 50%; }
 }
 
 /* ── Ember Canvas ── */
@@ -53,20 +50,19 @@
     position: relative;
     z-index: 2;
     text-align: center;
-    margin-bottom: 28px;
+    margin-bottom: 20px;
     padding: 0 20px;
 }
 
 .viral-title {
-    font-size: 2.2rem;
+    font-size: 1.8rem;
     font-weight: 900;
     letter-spacing: 3px;
     text-transform: uppercase;
-    background: linear-gradient(180deg, #ff6b00 0%, #e63900 40%, #ff8c00 70%, #d42a00 100%);
+    background: linear-gradient(135deg, #e65100, #ff6d00, #ff8f00);
     -webkit-background-clip: text;
     background-clip: text;
     -webkit-text-fill-color: transparent;
-    text-shadow: none;
     margin: 0;
     line-height: 1.2;
     display: inline-block;
@@ -80,41 +76,42 @@
 .viral-title-glow::after {
     content: '';
     position: absolute;
-    bottom: -8px;
+    bottom: -6px;
     left: 50%;
     transform: translateX(-50%);
-    width: 80%;
-    height: 20px;
-    background: radial-gradient(ellipse, rgba(255, 100, 0, 0.35), transparent);
-    filter: blur(8px);
+    width: 70%;
+    height: 16px;
+    background: radial-gradient(ellipse, rgba(255, 109, 0, 0.25), transparent);
+    filter: blur(6px);
     animation: fire-glow-pulse 2s ease-in-out infinite;
 }
 
 @keyframes fire-glow-pulse {
-    0%, 100% { opacity: 0.5; width: 70%; }
-    50% { opacity: 1; width: 90%; }
+    0%, 100% { opacity: 0.4; width: 60%; }
+    50% { opacity: 0.8; width: 80%; }
 }
 
 .viral-fire-icon {
-    font-size: 2rem;
+    font-size: 1.6rem;
     display: inline-block;
     animation: fire-dance 0.8s ease-in-out infinite alternate;
-    margin-right: 8px;
-    filter: drop-shadow(0 0 6px rgba(255, 100, 0, 0.5));
+    margin-right: 6px;
+    filter: drop-shadow(0 0 4px rgba(255, 100, 0, 0.4));
 }
 
 @keyframes fire-dance {
-    0% { transform: translateY(0) scale(1) rotate(-5deg); }
-    100% { transform: translateY(-4px) scale(1.1) rotate(5deg); }
+    0% { transform: translateY(0) scale(1) rotate(-3deg); }
+    100% { transform: translateY(-3px) scale(1.05) rotate(3deg); }
 }
 
 .viral-subtitle {
-    color: rgba(180, 80, 0, 0.55);
-    font-size: 0.8rem;
+    color: #b06000;
+    font-size: 0.72rem;
     font-weight: 600;
-    letter-spacing: 2px;
+    letter-spacing: 1.5px;
     text-transform: uppercase;
-    margin-top: 8px;
+    margin-top: 6px;
+    opacity: 0.6;
 }
 
 /* ── Carousel ── */
@@ -126,7 +123,7 @@
     overflow-x: auto;
     scroll-snap-type: x mandatory;
     -webkit-overflow-scrolling: touch;
-    padding: 8px 20px 16px;
+    padding: 4px 20px 12px;
     scrollbar-width: none;
     scroll-behavior: smooth;
 }
@@ -138,52 +135,34 @@
     flex: 0 0 260px;
     scroll-snap-align: start;
     position: relative;
-    border-radius: 20px;
+    border-radius: 16px;
     overflow: hidden;
     cursor: pointer;
-    animation: card-float 4s ease-in-out infinite;
     transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
-
-.viral-card:nth-child(2n) { animation-delay: -1s; }
-.viral-card:nth-child(3n) { animation-delay: -2s; }
 
 .viral-card:active {
     transform: scale(0.97);
 }
 
-@keyframes card-float {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-5px); }
-}
-
-/* ── Holographic Border ── */
+/* ── Card Border (subtle warm glow) ── */
 .viral-card-border {
     position: absolute;
     inset: 0;
-    border-radius: 20px;
+    border-radius: 16px;
     padding: 2px;
-    background: conic-gradient(
-        from var(--holo-angle),
-        #ff6b00, #ff3d8f, #a855f7, #3b82f6, #06d6a0, #ff6b00
-    );
-    animation: holo-rotate 3s linear infinite;
+    background: linear-gradient(135deg, #ff8f00, #ff6d00, #ff9800, #ffb74d);
     z-index: 0;
-}
-
-@keyframes holo-rotate {
-    to { --holo-angle: 360deg; }
 }
 
 .viral-card-inner {
     position: relative;
     z-index: 1;
     background: #fff;
-    backdrop-filter: blur(20px);
-    border-radius: 18px;
+    border-radius: 14px;
     overflow: hidden;
     height: 100%;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
 }
 
 /* ── Card Image ── */
@@ -192,7 +171,7 @@
     width: 100%;
     aspect-ratio: 1;
     overflow: hidden;
-    background: #f8f5f0;
+    background: #faf7f4;
 }
 
 .viral-card-image {
@@ -214,63 +193,58 @@
     align-items: center;
     justify-content: center;
     font-size: 3rem;
-    background: linear-gradient(135deg, #fff5eb, #ffe8d6);
+    background: linear-gradient(135deg, #fff8f0, #ffe8cc);
 }
 
 /* ── Fire Badge ── */
 .viral-badge {
     position: absolute;
-    top: 12px;
-    left: 12px;
+    top: 10px;
+    left: 10px;
     display: flex;
     align-items: center;
-    gap: 4px;
-    background: linear-gradient(135deg, #ff6b00, #ff3d00);
+    gap: 3px;
+    background: linear-gradient(135deg, #ff6d00, #e65100);
     color: #fff;
-    padding: 5px 12px;
+    padding: 4px 10px;
     border-radius: 100px;
-    font-size: 0.7rem;
+    font-size: 0.65rem;
     font-weight: 800;
     letter-spacing: 0.5px;
     text-transform: uppercase;
     z-index: 3;
-    animation: fire-pulse 1.5s ease-in-out infinite;
-}
-
-@keyframes fire-pulse {
-    0%, 100% { box-shadow: 0 0 8px rgba(255, 107, 0, 0.4); }
-    50% { box-shadow: 0 0 20px rgba(255, 107, 0, 0.6), 0 0 40px rgba(255, 107, 0, 0.2); }
+    box-shadow: 0 2px 8px rgba(230, 81, 0, 0.3);
 }
 
 /* ── View Count Pill ── */
 .viral-views {
     position: absolute;
-    bottom: 12px;
-    left: 12px;
+    bottom: 10px;
+    left: 10px;
     display: flex;
     align-items: center;
     gap: 4px;
-    background: rgba(0, 0, 0, 0.55);
-    backdrop-filter: blur(10px);
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(8px);
     color: rgba(255, 255, 255, 0.9);
-    padding: 4px 10px;
+    padding: 3px 9px;
     border-radius: 100px;
-    font-size: 0.7rem;
+    font-size: 0.65rem;
     font-weight: 600;
     z-index: 3;
 }
 
 /* ── Card Content ── */
 .viral-card-content {
-    padding: 14px 16px 18px;
+    padding: 12px 14px 16px;
 }
 
 .viral-card-name {
-    color: #222;
-    font-size: 0.88rem;
+    color: #333;
+    font-size: 0.84rem;
     font-weight: 700;
     line-height: 1.3;
-    margin-bottom: 6px;
+    margin-bottom: 5px;
     display: -webkit-box;
     -webkit-line-clamp: 2;
     line-clamp: 2;
@@ -279,52 +253,49 @@
 }
 
 .viral-card-price {
-    font-size: 1.15rem;
+    font-size: 1.05rem;
     font-weight: 800;
-    color: #e63900;
+    color: #e65100;
 }
 
 .viral-card-compare {
-    font-size: 0.75rem;
+    font-size: 0.72rem;
     color: rgba(0, 0, 0, 0.3);
     text-decoration: line-through;
     font-weight: 400;
-    margin-left: 6px;
+    margin-left: 5px;
 }
 
 /* ── Scroll Indicators ── */
 .viral-scroll-dots {
     display: flex;
     justify-content: center;
-    gap: 6px;
-    margin-top: 16px;
+    gap: 5px;
+    margin-top: 12px;
     position: relative;
     z-index: 2;
 }
 
 .viral-scroll-dot {
-    width: 6px;
-    height: 6px;
+    width: 5px;
+    height: 5px;
     border-radius: 50%;
-    background: rgba(200, 100, 0, 0.2);
+    background: rgba(180, 100, 0, 0.18);
     transition: all 0.3s ease;
 }
 
 .viral-scroll-dot.active {
-    background: #ff6b00;
-    width: 20px;
+    background: #ff6d00;
+    width: 18px;
     border-radius: 3px;
-    box-shadow: 0 0 8px rgba(255, 107, 0, 0.4);
+    box-shadow: 0 0 6px rgba(255, 109, 0, 0.35);
 }
 
 /* ── Reduced Motion ── */
 @media (prefers-reduced-motion: reduce) {
     .viral-aurora,
-    .viral-card,
-    .viral-badge,
     .viral-fire-icon,
-    .viral-title-glow::after,
-    .viral-card-border {
+    .viral-title-glow::after {
         animation: none !important;
     }
     .viral-embers { display: none; }
@@ -333,11 +304,14 @@
 /* ── Mobile optimization ── */
 @media (max-width: 480px) {
     .viral-section {
-        margin: 16px 0;
+        margin: 12px 0;
         border-radius: 0;
-        padding: 32px 0 40px;
+        padding: 28px 0 32px;
+        border-left: none;
+        border-right: none;
     }
-    .viral-title { font-size: 1.8rem; letter-spacing: 2px; }
-    .viral-card { flex: 0 0 220px; }
-    .viral-carousel { padding: 8px 16px 16px; gap: 12px; }
+    .viral-title { font-size: 1.5rem; letter-spacing: 2px; }
+    .viral-card { flex: 0 0 200px; }
+    .viral-carousel { padding: 4px 14px 12px; gap: 10px; }
+    .viral-header { margin-bottom: 14px; }
 }
