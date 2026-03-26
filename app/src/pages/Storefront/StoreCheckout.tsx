@@ -496,7 +496,7 @@ export function StoreCheckout() {
                                 <p style={{ fontWeight: 800, marginBottom: 4, fontSize: '0.88rem', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'center' }}>Төлбөр төлөх</p>
                                 <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textAlign: 'center', marginBottom: 10, fontWeight: 500 }}>Банкны апп-аа сонгоно уу</p>
 
-                                {/* Bank app deeplinks — prominent grid */}
+                                {/* Bank app deeplinks — Toki Pay style grid */}
                                 {qpayInvoice.urls.length > 0 && (() => {
                                     const excludedBanks = ['hipay', 'happy pay', 'ard app', 'ard credit'];
                                     const filteredUrls = qpayInvoice.urls.filter(url =>
@@ -505,9 +505,9 @@ export function StoreCheckout() {
                                     return filteredUrls.length > 0 && (
                                     <div style={{
                                         display: 'grid',
-                                        gridTemplateColumns: 'repeat(3, 1fr)',
-                                        gap: 8,
-                                        marginBottom: 16,
+                                        gridTemplateColumns: 'repeat(4, 1fr)',
+                                        gap: '12px 6px',
+                                        marginBottom: 14,
                                     }}>
                                         {filteredUrls.map(url => (
                                             <a
@@ -517,23 +517,19 @@ export function StoreCheckout() {
                                                     display: 'flex',
                                                     flexDirection: 'column',
                                                     alignItems: 'center',
-                                                    gap: 4,
-                                                    padding: '10px 4px',
-                                                    borderRadius: 14,
-                                                    border: '1px solid var(--border-color)',
-                                                    background: 'var(--surface-1)',
+                                                    gap: 5,
+                                                    padding: '4px 0',
                                                     textDecoration: 'none',
                                                     color: 'var(--text-primary)',
-                                                    transition: 'all 0.2s ease',
                                                     cursor: 'pointer',
                                                 }}
                                             >
                                                 {url.logo ? (
-                                                    <img src={url.logo} alt={url.name} style={{ width: 32, height: 32, borderRadius: 8, objectFit: 'contain' }} />
+                                                    <img src={url.logo} alt={url.name} style={{ width: 40, height: 40, borderRadius: '50%', objectFit: 'contain', background: '#f5f5f5', padding: 2 }} />
                                                 ) : (
-                                                    <div style={{ width: 32, height: 32, borderRadius: 8, background: 'var(--primary-light)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1rem' }}>🏦</div>
+                                                    <div style={{ width: 40, height: 40, borderRadius: '50%', background: '#f5f5f5', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.1rem' }}>🏦</div>
                                                 )}
-                                                <span style={{ fontSize: '0.58rem', fontWeight: 700, textAlign: 'center', lineHeight: 1.2, maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' as any }}>
+                                                <span style={{ fontSize: '0.6rem', fontWeight: 600, textAlign: 'center', lineHeight: 1.2, maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: 'var(--text-secondary)' }}>
                                                     {url.description || url.name}
                                                 </span>
                                             </a>
