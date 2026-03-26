@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { createPortal } from 'react-dom';
 import '../Inventory/InventoryPage.css';
@@ -37,6 +37,7 @@ export function ProductsPage() {
     const [products, setProducts] = useState<Product[]>([]);
     const [loading, setLoading] = useState(true);
     const [productsLimit, setProductsLimit] = useState(50);
+    const isLoadingMoreRef = useRef(false);
     const [hasMore, setHasMore] = useState(true);
 
     const [editingProduct, setEditingProduct] = useState<Product | null>(null);
@@ -64,7 +65,10 @@ export function ProductsPage() {
         if (!business?.id) return;
         const bizId = business.id;
 
-        setTimeout(() => setLoading(true), 0);
+        // Only show full loading when NOT loading more (initial load or filter change)
+        if (!isLoadingMoreRef.current) {
+            setTimeout(() => setLoading(true), 0);
+        }
 
         // Build Firestore query with category filter
         const ref = collection(db, 'businesses', bizId, 'products');
@@ -107,6 +111,7 @@ export function ProductsPage() {
             setProducts(data);
             setHasMore(sortBy === 'newest' && data.length === productsLimit);
             setLoading(false);
+            isLoadingMoreRef.current = false;
         }, () => {
             setProducts([]);
             setLoading(false);
@@ -635,9 +640,12 @@ export function ProductsPage() {
                                 {hasMore && products.length > 0 && (
                                     <div className="flex justify-center py-6 mt-4">
                                         <button
-                                            className="btn btn-secondary"
+                                        className="btn btn-secondary"
                                             style={{ minWidth: '200px', margin: '20px auto', display: 'block' }}
-                                            onClick={() => setProductsLimit(prev => prev + 50)}
+                                            onClick={() => {
+                                                isLoadingMoreRef.current = true;
+                                                setProductsLimit(prev => prev + 50);
+                                            }}
                                             disabled={loading}
                                         >
                                             {loading ? <Loader2 className="animate-spin" size={20} /> : `Дараагийн 50 бараа (Одоо ${products.length})`}
