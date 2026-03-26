@@ -62,7 +62,7 @@ export function SettingsPage() {
     const [requestedChanges, setRequestedChanges] = useState<{ name?: string, slug?: string }>({});
     const [selectedThemeId, setSelectedThemeId] = useState(business?.settings?.storefront?.theme || 'minimal');
     const [socialLinks, setSocialLinks] = useState<{ name: string; url: string }[]>(
-        (business?.settings?.storefront as any)?.socialLinks || []
+        business?.settings?.storefront?.socialLinks || []
     );
     const [logoFiles, setLogoFiles] = useState<File[]>([]);
     const [existingLogo, setExistingLogo] = useState<string[]>(business?.logo ? [business.logo] : []);

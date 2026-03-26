@@ -207,6 +207,7 @@ export interface BusinessSettings {
         blockInAppBrowsers?: boolean;
         preorderTerms?: string; // newline-separated terms for preorder products
         productsPerPage?: number; // Pagination limit for storefront (default 20)
+        socialLinks?: { name: string; url: string }[]; // Footer social links
     };
     ebarimt?: {
         enabled: boolean;
