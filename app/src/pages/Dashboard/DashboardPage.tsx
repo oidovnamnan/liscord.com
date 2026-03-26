@@ -1172,9 +1172,11 @@ export function DashboardPage() {
                     </div>
                 </div>
 
-                {/* Metrics body — snaps to fill screen */}
+                {/* Metrics body — snaps to fill screen, filtered by permissions */}
+                {(hasModule('orders') || hasModule('customers') || hasModule('online-presence')) && (
                 <div className="dash-mobile-hero-body">
-                    {/* Hero Revenue Number */}
+                    {/* Hero Revenue Number — only with orders access */}
+                    {hasModule('orders') && (
                     <div className="dash-hero-revenue">
                         <div className="dash-hero-revenue-glow" />
                         <div className="dash-hero-revenue-row">
@@ -1192,27 +1194,35 @@ export function DashboardPage() {
                         </div>
                         <div className="dash-hero-revenue-label">Өнөөдрийн орлого</div>
                     </div>
+                    )}
 
-                    {/* Quick Stats Pills */}
+                    {/* Quick Stats Pills — each filtered by module */}
                     <div className="dash-hero-pills">
+                        {hasModule('online-presence') && (
                         <div className="dash-hero-pill pill-live">
                             <span className="pill-live-dot" />
                             <span className="pill-value">{visitorCount}</span>
                             <span className="pill-label">зочин</span>
                         </div>
+                        )}
+                        {hasModule('orders') && (
                         <div className="dash-hero-pill pill-orders">
                             <ShoppingBag size={13} />
                             <span className="pill-value">{todayConfirmedOrders}</span>
                             <span className="pill-label">захиалга</span>
                         </div>
+                        )}
+                        {hasModule('customers') && (
                         <div className="dash-hero-pill pill-customers">
                             <Users size={13} />
                             <span className="pill-value">{analytics.newCustomers7d}</span>
                             <span className="pill-label">шинэ</span>
                         </div>
+                        )}
                     </div>
 
-                    {/* 2-Column Detail Cards */}
+                    {/* 2-Column Detail Cards — orders only */}
+                    {hasModule('orders') && (
                     <div className="dash-hero-detail-row">
                         <div className="dash-hero-detail-card">
                             <div className="detail-card-header">
@@ -1231,12 +1241,14 @@ export function DashboardPage() {
                             <div className="detail-card-sub">{analytics.weekOrderCount} захиалга / 7 хоног</div>
                         </div>
                     </div>
+                    )}
 
                     {/* Swipe indicator */}
                     <div className="dash-hero-swipe-hint">
                         <div className="swipe-hint-line" />
                     </div>
                 </div>
+                )}
             </div>
 
             {/* ═══ Widgets below ═══ */}
