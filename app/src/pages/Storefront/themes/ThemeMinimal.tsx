@@ -469,6 +469,20 @@ export function ThemeMinimal({ business }: { business: Business }) {
                                                 </div>
                                             )}
 
+                                            {/* Costco / Kirkland badge */}
+                                            {!sfp.isLocked && /costco|kirkland/i.test(p.name) && (
+                                                <div style={{
+                                                    position: 'absolute', top: 12, left: 12, zIndex: 2,
+                                                    background: '#e21836', color: '#fff',
+                                                    padding: '3px 8px', borderRadius: 6,
+                                                    fontSize: '0.6rem', fontWeight: 800,
+                                                    letterSpacing: '0.5px', textTransform: 'uppercase',
+                                                    boxShadow: '0 1px 4px rgba(226,24,54,0.3)',
+                                                }}>
+                                                    COSTCO
+                                                </div>
+                                            )}
+
                                             {p.images?.[0] ? (
                                                 <img
                                                     src={p.images[0]}
@@ -525,11 +539,14 @@ export function ThemeMinimal({ business }: { business: Business }) {
                                                     </>
                                                 )}
                                             </div>
-                                            {!sfp.isLocked && (
-                                                <div className="sf-social-proof">
-                                                    👥 {getSocialProof(p.id)}+ хүн захиалсан
-                                                </div>
-                                            )}
+                                            {!sfp.isLocked && (() => {
+                                                const count = getSocialProof(p.id);
+                                                return (
+                                                    <div className="sf-social-proof">
+                                                        {count >= 100 ? '🔥' : '✅'} {count}+ захиалагдсан
+                                                    </div>
+                                                );
+                                            })()}
                                         </div>
                                     </div>
                                 );
