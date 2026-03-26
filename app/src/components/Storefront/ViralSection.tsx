@@ -263,17 +263,6 @@ export function ViralSection({ products, onProductClick }: ViralSectionProps) {
                     <ViralCard key={`v-${i}`} p={p} onProductClick={onProductClick} fmt={fmt} />
                 ))}
             </div>
-
-            {count > 1 && (
-                <div className="viral-scroll-dots">
-                    {products.map((_, i) => (
-                        <div
-                            key={i}
-                            className={`viral-scroll-dot ${i === activeIndex ? 'active' : ''}`}
-                        />
-                    ))}
-                </div>
-            )}
         </section>
     );
 }
