@@ -82,6 +82,7 @@ export function StoreCheckout() {
     const [isDeliveryRequested, setIsDeliveryRequested] = useState(hasReadyItems);
     const [deliveryZone, setDeliveryZone] = useState('ub_center');
     const [cargoPaymentTiming, setCargoPaymentTiming] = useState<'with_order' | 'on_arrival'>('on_arrival');
+    const [showCargoDetails, setShowCargoDetails] = useState(false);
 
     const deliveryFees: Record<string, { label: string, fee: number }> = {
         'ub_center': { label: 'Улаанбаатар (А бүс)', fee: 5000 },
@@ -1016,58 +1017,68 @@ export function StoreCheckout() {
                             </div>
                             )}
 
-                            {/* Cargo Fee Section */}
+                            {/* Cargo Fee Section — collapsible */}
                             {totalCargoFee > 0 && (
-                                <div className="cargo-fee-section" style={{ marginBottom: 16, padding: '12px 14px', borderRadius: 12, background: 'rgba(245, 158, 11, 0.06)', border: '1px solid rgba(245, 158, 11, 0.15)' }}>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                                        <span style={{ fontWeight: 700, fontSize: '0.82rem', display: 'flex', alignItems: 'center', gap: 5 }}>📦 Карго:</span>
-                                        <span style={{ fontWeight: 800, color: '#d97706', fontSize: '0.9rem' }}>{totalCargoFee.toLocaleString()} ₮</span>
+                                <div className="cargo-fee-section" style={{ marginBottom: 12, borderRadius: 10, background: 'rgba(245, 158, 11, 0.06)', border: '1px solid rgba(245, 158, 11, 0.15)', overflow: 'hidden' }}>
+                                    <div
+                                        onClick={() => setShowCargoDetails(!showCargoDetails)}
+                                        style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 12px', cursor: 'pointer', userSelect: 'none' }}
+                                    >
+                                        <span style={{ fontWeight: 700, fontSize: '0.78rem', display: 'flex', alignItems: 'center', gap: 5 }}>📦 Карго төлбөр</span>
+                                        <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                            <span style={{ fontWeight: 800, color: '#d97706', fontSize: '0.82rem' }}>{totalCargoFee.toLocaleString()} ₮</span>
+                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#d97706" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ transition: 'transform 0.2s', transform: showCargoDetails ? 'rotate(180deg)' : 'rotate(0deg)' }}><polyline points="6 9 12 15 18 9"/></svg>
+                                        </span>
                                     </div>
-                                    <div style={{ display: 'flex', gap: 6 }}>
-                                        <label
-                                            className="cargo-radio-option"
-                                            style={{
-                                                flex: 1, display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer',
-                                                padding: '8px 10px', borderRadius: 10,
-                                                background: cargoPaymentTiming === 'on_arrival' ? 'rgba(245, 158, 11, 0.12)' : 'rgba(0,0,0,0.02)',
-                                                border: `1.5px solid ${cargoPaymentTiming === 'on_arrival' ? '#d97706' : 'transparent'}`,
-                                                transition: 'all 0.15s'
-                                            }}
-                                            onClick={() => setCargoPaymentTiming('on_arrival')}
-                                        >
-                                            <div style={{
-                                                width: 16, height: 16, borderRadius: '50%', flexShrink: 0,
-                                                border: `2px solid ${cargoPaymentTiming === 'on_arrival' ? '#d97706' : '#ccc'}`,
-                                                display: 'flex', alignItems: 'center', justifyContent: 'center'
-                                            }}>
-                                                {cargoPaymentTiming === 'on_arrival' && <div style={{ width: 7, height: 7, borderRadius: '50%', background: '#d97706' }} />}
+                                    {showCargoDetails && (
+                                        <div style={{ padding: '0 12px 10px', animation: 'fadeIn 0.2s ease' }}>
+                                            <div style={{ display: 'flex', gap: 6 }}>
+                                                <label
+                                                    className="cargo-radio-option"
+                                                    style={{
+                                                        flex: 1, display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer',
+                                                        padding: '7px 10px', borderRadius: 8,
+                                                        background: cargoPaymentTiming === 'on_arrival' ? 'rgba(245, 158, 11, 0.12)' : 'rgba(0,0,0,0.02)',
+                                                        border: `1.5px solid ${cargoPaymentTiming === 'on_arrival' ? '#d97706' : 'transparent'}`,
+                                                        transition: 'all 0.15s'
+                                                    }}
+                                                    onClick={() => setCargoPaymentTiming('on_arrival')}
+                                                >
+                                                    <div style={{
+                                                        width: 14, height: 14, borderRadius: '50%', flexShrink: 0,
+                                                        border: `2px solid ${cargoPaymentTiming === 'on_arrival' ? '#d97706' : '#ccc'}`,
+                                                        display: 'flex', alignItems: 'center', justifyContent: 'center'
+                                                    }}>
+                                                        {cargoPaymentTiming === 'on_arrival' && <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#d97706' }} />}
+                                                    </div>
+                                                    <span style={{ fontWeight: 600, fontSize: '0.72rem', lineHeight: 1.2 }}>Дараа төлөх</span>
+                                                </label>
+                                                <label
+                                                    className="cargo-radio-option"
+                                                    style={{
+                                                        flex: 1, display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer',
+                                                        padding: '7px 10px', borderRadius: 8,
+                                                        background: cargoPaymentTiming === 'with_order' ? 'rgba(99, 102, 241, 0.08)' : 'rgba(0,0,0,0.02)',
+                                                        border: `1.5px solid ${cargoPaymentTiming === 'with_order' ? 'var(--primary)' : 'transparent'}`,
+                                                        transition: 'all 0.15s'
+                                                    }}
+                                                    onClick={() => setCargoPaymentTiming('with_order')}
+                                                >
+                                                    <div style={{
+                                                        width: 14, height: 14, borderRadius: '50%', flexShrink: 0,
+                                                        border: `2px solid ${cargoPaymentTiming === 'with_order' ? 'var(--primary)' : '#ccc'}`,
+                                                        display: 'flex', alignItems: 'center', justifyContent: 'center'
+                                                    }}>
+                                                        {cargoPaymentTiming === 'with_order' && <div style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--primary)' }} />}
+                                                    </div>
+                                                    <span style={{ fontWeight: 600, fontSize: '0.72rem', lineHeight: 1.2 }}>Одоо хамт</span>
+                                                </label>
                                             </div>
-                                            <span style={{ fontWeight: 600, fontSize: '0.75rem', lineHeight: 1.2 }}>Дараа төлөх</span>
-                                        </label>
-                                        <label
-                                            className="cargo-radio-option"
-                                            style={{
-                                                flex: 1, display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer',
-                                                padding: '8px 10px', borderRadius: 10,
-                                                background: cargoPaymentTiming === 'with_order' ? 'rgba(99, 102, 241, 0.08)' : 'rgba(0,0,0,0.02)',
-                                                border: `1.5px solid ${cargoPaymentTiming === 'with_order' ? 'var(--primary)' : 'transparent'}`,
-                                                transition: 'all 0.15s'
-                                            }}
-                                            onClick={() => setCargoPaymentTiming('with_order')}
-                                        >
-                                            <div style={{
-                                                width: 16, height: 16, borderRadius: '50%', flexShrink: 0,
-                                                border: `2px solid ${cargoPaymentTiming === 'with_order' ? 'var(--primary)' : '#ccc'}`,
-                                                display: 'flex', alignItems: 'center', justifyContent: 'center'
-                                            }}>
-                                                {cargoPaymentTiming === 'with_order' && <div style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--primary)' }} />}
-                                            </div>
-                                            <span style={{ fontWeight: 600, fontSize: '0.75rem', lineHeight: 1.2 }}>Одоо хамт</span>
-                                        </label>
-                                    </div>
-                                    {cargoPaymentTiming === 'on_arrival' && (
-                                        <div style={{ marginTop: 6, padding: '4px 8px', borderRadius: 6, background: 'rgba(245, 158, 11, 0.08)', fontSize: '0.68rem', color: '#92400e', fontWeight: 600, textAlign: 'center' }}>
-                                            ⚠ {totalCargoFee.toLocaleString()}₮ бараа ирэхэд тусад нь төлнө
+                                            {cargoPaymentTiming === 'on_arrival' && (
+                                                <div style={{ marginTop: 5, padding: '3px 8px', borderRadius: 6, background: 'rgba(245, 158, 11, 0.08)', fontSize: '0.65rem', color: '#92400e', fontWeight: 600, textAlign: 'center' }}>
+                                                    ⚠ {totalCargoFee.toLocaleString()}₮ бараа ирэхэд тусад нь төлнө
+                                                </div>
+                                            )}
                                         </div>
                                     )}
                                 </div>
