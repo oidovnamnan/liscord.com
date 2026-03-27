@@ -2219,14 +2219,42 @@ function BulkDiscountModal({ bizId, onClose }: { bizId: string; onClose: () => v
 
     // Dynamic price tiers
     const [tiers, setTiers] = useState([
-        { label: '₮0 – ₮20K', maxPrice: 20000, min: 25, max: 30, color: '#dc2626' },
-        { label: '₮20K – ₮50K', maxPrice: 50000, min: 18, max: 22, color: '#f59e0b' },
-        { label: '₮50K – ₮100K', maxPrice: 100000, min: 12, max: 16, color: '#3b82f6' },
-        { label: '₮100K+', maxPrice: Infinity, min: 10, max: 14, color: '#10b981' },
+        { maxPrice: 20000, min: 25, max: 30, color: '#dc2626' },
+        { maxPrice: 50000, min: 18, max: 22, color: '#f59e0b' },
+        { maxPrice: 100000, min: 12, max: 16, color: '#3b82f6' },
+        { maxPrice: Infinity, min: 10, max: 14, color: '#10b981' },
     ]);
 
-    const updateTier = (idx: number, field: 'min' | 'max', val: number) => {
+    const tierColors = ['#dc2626', '#f59e0b', '#3b82f6', '#10b981', '#8b5cf6', '#ec4899'];
+    const fmtK = (n: number) => n >= 1000 ? `${Math.round(n / 1000)}K` : `${n}`;
+    const tierLabel = (idx: number) => {
+        const prevMax = idx === 0 ? 0 : tiers[idx - 1].maxPrice;
+        const cur = tiers[idx].maxPrice;
+        return cur === Infinity ? `₮${fmtK(prevMax)}+` : `₮${fmtK(prevMax)} – ₮${fmtK(cur)}`;
+    };
+
+    const updateTier = (idx: number, field: 'min' | 'max' | 'maxPrice', val: number) => {
         setTiers(prev => prev.map((t, i) => i === idx ? { ...t, [field]: val } : t));
+        setApplied(false);
+    };
+
+    const addTier = () => {
+        const lastFinite = tiers.filter(t => t.maxPrice !== Infinity);
+        const lastMax = lastFinite.length > 0 ? lastFinite[lastFinite.length - 1].maxPrice : 50000;
+        const newMax = lastMax + 50000;
+        // Insert before the last (Infinity) tier
+        const infTier = tiers[tiers.length - 1];
+        setTiers([
+            ...tiers.slice(0, -1),
+            { maxPrice: newMax, min: Math.max(5, infTier.min + 2), max: Math.max(8, infTier.max + 2), color: tierColors[tiers.length % tierColors.length] },
+            infTier
+        ]);
+        setApplied(false);
+    };
+
+    const removeTier = (idx: number) => {
+        if (tiers.length <= 2) return;
+        setTiers(prev => prev.filter((_, i) => i !== idx));
         setApplied(false);
     };
 
@@ -2341,18 +2369,38 @@ function BulkDiscountModal({ bizId, onClose }: { bizId: string; onClose: () => v
                     </div>
 
                     <div className="modal-section-card">
-                        <div className="modal-section-title">Үнийн шатлал</div>
-                        <div style={{ display: 'grid', gap: 8, fontSize: '0.8rem' }}>
+                        <div className="modal-section-title" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            Үнийн шатлал
+                            <button type="button" onClick={addTier} style={{ background: 'none', border: '1.5px dashed var(--border-primary)', borderRadius: 6, padding: '2px 10px', cursor: 'pointer', fontSize: '0.72rem', color: 'var(--text-muted)' }}>+ Шат</button>
+                        </div>
+                        <div style={{ display: 'grid', gap: 6, fontSize: '0.8rem' }}>
                             {tiers.map((t, i) => (
-                                <div key={t.label} style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 8, padding: '8px 10px', background: 'var(--surface-2)', borderRadius: 8, alignItems: 'center' }}>
-                                    <span style={{ color: 'var(--text-secondary)', fontSize: '0.78rem' }}>{t.label}</span>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                                <div key={i} style={{ display: 'grid', gridTemplateColumns: 'auto 1fr auto', gap: 6, padding: '6px 8px', background: 'var(--surface-2)', borderRadius: 8, alignItems: 'center' }}>
+                                    {/* Price range label + editable threshold */}
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 4, minWidth: 100 }}>
+                                        {t.maxPrice === Infinity ? (
+                                            <span style={{ color: 'var(--text-secondary)', fontSize: '0.76rem' }}>{tierLabel(i)}</span>
+                                        ) : (
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                                                <span style={{ color: 'var(--text-muted)', fontSize: '0.72rem' }}>₮{i === 0 ? '0' : fmtK(tiers[i-1].maxPrice)}–</span>
+                                                <span style={{ color: 'var(--text-muted)', fontSize: '0.72rem' }}>₮</span>
+                                                <input type="number" value={Math.round(t.maxPrice / 1000)} onChange={e => updateTier(i, 'maxPrice', Math.max(1, Number(e.target.value) || 0) * 1000)} style={{ width: 40, padding: '1px 3px', borderRadius: 5, border: '1.5px solid var(--border-primary)', textAlign: 'center', fontSize: '0.74rem', fontWeight: 600, background: 'var(--surface-1)', color: 'var(--text-secondary)' }} />
+                                                <span style={{ color: 'var(--text-muted)', fontSize: '0.68rem' }}>K</span>
+                                            </div>
+                                        )}
+                                    </div>
+                                    {/* Markup % inputs */}
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 4, justifyContent: 'flex-end' }}>
                                         <span style={{ color: t.color, fontWeight: 700, fontSize: '0.72rem' }}>+</span>
-                                        <input type="number" min={1} max={50} value={t.min} onChange={e => updateTier(i, 'min', Math.max(1, Number(e.target.value) || 0))} style={{ width: 38, padding: '2px 4px', borderRadius: 6, border: '1.5px solid var(--border-primary)', textAlign: 'center', fontWeight: 700, fontSize: '0.78rem', color: t.color, background: 'var(--surface-1)' }} />
-                                        <span style={{ color: 'var(--text-muted)', fontSize: '0.72rem' }}>–</span>
-                                        <input type="number" min={1} max={50} value={t.max} onChange={e => updateTier(i, 'max', Math.max(1, Number(e.target.value) || 0))} style={{ width: 38, padding: '2px 4px', borderRadius: 6, border: '1.5px solid var(--border-primary)', textAlign: 'center', fontWeight: 700, fontSize: '0.78rem', color: t.color, background: 'var(--surface-1)' }} />
+                                        <input type="number" min={1} max={80} value={t.min} onChange={e => updateTier(i, 'min', Math.max(1, Number(e.target.value) || 0))} style={{ width: 36, padding: '2px 3px', borderRadius: 5, border: '1.5px solid var(--border-primary)', textAlign: 'center', fontWeight: 700, fontSize: '0.76rem', color: t.color, background: 'var(--surface-1)' }} />
+                                        <span style={{ color: 'var(--text-muted)', fontSize: '0.7rem' }}>–</span>
+                                        <input type="number" min={1} max={80} value={t.max} onChange={e => updateTier(i, 'max', Math.max(1, Number(e.target.value) || 0))} style={{ width: 36, padding: '2px 3px', borderRadius: 5, border: '1.5px solid var(--border-primary)', textAlign: 'center', fontWeight: 700, fontSize: '0.76rem', color: t.color, background: 'var(--surface-1)' }} />
                                         <span style={{ color: t.color, fontWeight: 700, fontSize: '0.72rem' }}>%</span>
                                     </div>
+                                    {/* Remove button */}
+                                    {tiers.length > 2 && t.maxPrice !== Infinity && (
+                                        <button type="button" onClick={() => removeTier(i)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', fontSize: '0.8rem', padding: 0, lineHeight: 1 }} title="Устгах">×</button>
+                                    )}
                                 </div>
                             ))}
                         </div>
