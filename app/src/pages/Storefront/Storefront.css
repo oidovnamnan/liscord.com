@@ -191,7 +191,7 @@
     align-items: center;
     gap: 16px;
     overflow: hidden;
-    background: var(--sf-bg);
+    background: transparent;
 }
 
 .store-hero::before {
