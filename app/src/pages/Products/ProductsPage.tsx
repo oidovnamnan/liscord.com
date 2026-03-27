@@ -693,7 +693,6 @@ export function ProductsPage() {
             )}
             {showBulkDiscount && business?.id && (
                 <BulkDiscountModal
-                    products={products}
                     bizId={business.id}
                     onClose={() => setShowBulkDiscount(false)}
                 />
@@ -2211,12 +2210,32 @@ function CreateCargoTypeModal({ initialName, onClose, onSuccess }: { initialName
 // ═══════════════════════════════════════════
 // Bulk Discount Modal
 // ═══════════════════════════════════════════
-function BulkDiscountModal({ products, bizId, onClose }: { products: Product[]; bizId: string; onClose: () => void }) {
+function BulkDiscountModal({ bizId, onClose }: { bizId: string; onClose: () => void }) {
     const [coverage, setCoverage] = useState(70);
     const [applying, setApplying] = useState(false);
     const [applied, setApplied] = useState(false);
+    const [allProducts, setAllProducts] = useState<Product[]>([]);
+    const [loadingAll, setLoadingAll] = useState(true);
 
-    const validProducts = useMemo(() => products.filter(p => (p.pricing?.salePrice || 0) > 0), [products]);
+    // Fetch ALL products from Firestore (bypassing pagination)
+    useEffect(() => {
+        (async () => {
+            try {
+                const ref = collection(db, 'businesses', bizId, 'products');
+                const q = query(ref, where('isDeleted', '==', false));
+                const snap = await getDocs(q);
+                const prods = snap.docs.map(d => ({ id: d.id, ...d.data() } as Product));
+                setAllProducts(prods);
+            } catch (err) {
+                console.error('Failed to load all products:', err);
+                toast.error('Бараа ачаалахад алдаа гарлаа');
+            } finally {
+                setLoadingAll(false);
+            }
+        })();
+    }, [bizId]);
+
+    const validProducts = useMemo(() => allProducts.filter(p => (p.pricing?.salePrice || 0) > 0), [allProducts]);
 
     const calcComparePrice = (salePrice: number): number => {
         let m: number;
@@ -2290,8 +2309,14 @@ function BulkDiscountModal({ products, bizId, onClose }: { products: Product[]; 
                     <button type="button" className="btn btn-ghost btn-icon" onClick={onClose}>✕</button>
                 </div>
                 <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+                    {loadingAll ? (
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, padding: 40, color: 'var(--text-muted)' }}>
+                            <Loader2 size={20} className="animate-spin" /> Бүх бараа ачаалж байна...
+                        </div>
+                    ) : (
+                    <>
                     <div style={{ background: 'rgba(59,130,246,0.06)', border: '1px solid rgba(59,130,246,0.15)', borderRadius: 12, padding: '12px 16px', fontSize: '0.82rem', color: 'var(--text-secondary)', lineHeight: 1.6 }}>
-                        Одоогийн үнийг &quot;хямдарсан&quot; загвараар харуулна. Бодит үнэ өөрчлөгдөхгүй.
+                        Нийт <strong>{validProducts.length}</strong> бараанд хямдрал тохируулна. Бодит үнэ өөрчлөгдөхгүй.
                         {withExisting > 0 && <div style={{ marginTop: 6, fontWeight: 600, color: '#f59e0b' }}>⚠ {withExisting} бараанд хямдрал тавигдсан.</div>}
                     </div>
 
@@ -2336,6 +2361,8 @@ function BulkDiscountModal({ products, bizId, onClose }: { products: Product[]; 
                                 ))}
                             </div>
                         </div>
+                    )}
+                    </>
                     )}
                 </div>
 
