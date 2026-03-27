@@ -858,6 +858,7 @@
 .sf-footer-verified {
     display: flex;
     align-items: center;
+    justify-content: center;
 }
 
 .sf-verified-badge {

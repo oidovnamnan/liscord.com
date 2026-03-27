@@ -58,10 +58,17 @@ export function StorefrontFooter({ business }: { business: Business }) {
                                 }
                             }
 
+                            // Ensure URLs have protocol prefix
+                            const normalizeUrl = (url: string) => {
+                                if (!url) return '#';
+                                if (/^https?:\/\//i.test(url)) return url;
+                                return `https://${url}`;
+                            };
+
                             return socialLinks.map((link, i) => (
                                 <a
                                     key={i}
-                                    href={link.url}
+                                    href={normalizeUrl(link.url)}
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className="sf-footer-social-link"
@@ -75,7 +82,7 @@ export function StorefrontFooter({ business }: { business: Business }) {
                     </div>
                 </div>
 
-                {/* ═══ Payment & Trust Section ═══ */}
+                {/* ═══ Payment Section ═══ */}
                 <div className="sf-footer-trust-section">
                     {/* Payment Methods */}
                     <div className="sf-footer-payments">
@@ -91,15 +98,15 @@ export function StorefrontFooter({ business }: { business: Business }) {
                             </div>
                         </div>
                     </div>
+                </div>
 
-                    {/* Liscord Verified Badge */}
-                    <div className="sf-footer-verified">
-                        <div className="sf-verified-badge">
-                            <Shield size={16} />
-                            <div className="sf-verified-text">
-                                <span className="sf-verified-label">Liscord Verified</span>
-                                <span className="sf-verified-since">{verifiedYear} оноос бүртгэлтэй</span>
-                            </div>
+                {/* ═══ Liscord Verified Badge — centered below ═══ */}
+                <div className="sf-footer-verified">
+                    <div className="sf-verified-badge">
+                        <Shield size={16} />
+                        <div className="sf-verified-text">
+                            <span className="sf-verified-label">Liscord Verified</span>
+                            <span className="sf-verified-since">{verifiedYear} оноос бүртгэлтэй</span>
                         </div>
                     </div>
                 </div>
