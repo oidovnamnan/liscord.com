@@ -100,16 +100,40 @@ export function StorefrontWrapper() {
         if (!business) return;
 
         const storeName = business.settings?.storefront?.name || business.name;
+        const storeDesc = `${storeName} - Онлайн дэлгүүр. ${business.address || ''}`;
+        const storeUrl = `https://liscord.com/${business.slug || ''}`;
+        const storeImage = business.logo || 'https://liscord.com/pwa-512x512.png';
+
         document.title = `${storeName} | Liscord`;
 
         // SEO Meta
-        let metaDesc = document.querySelector('meta[name="description"]');
-        if (!metaDesc) {
-            metaDesc = document.createElement('meta');
-            metaDesc.setAttribute('name', 'description');
-            document.head.appendChild(metaDesc);
+        const setMeta = (attr: string, key: string, val: string) => {
+            let el = document.querySelector(`meta[${attr}="${key}"]`) as HTMLMetaElement | null;
+            if (!el) {
+                el = document.createElement('meta');
+                el.setAttribute(attr, key);
+                document.head.appendChild(el);
+            }
+            el.setAttribute('content', val);
+        };
+
+        setMeta('name', 'description', storeDesc);
+        setMeta('property', 'og:title', `${storeName} | Liscord`);
+        setMeta('property', 'og:description', storeDesc);
+        setMeta('property', 'og:image', storeImage);
+        setMeta('property', 'og:url', storeUrl);
+        setMeta('name', 'twitter:title', `${storeName} | Liscord`);
+        setMeta('name', 'twitter:description', storeDesc);
+        setMeta('name', 'twitter:image', storeImage);
+
+        // Canonical URL
+        let canonical = document.querySelector('link[rel="canonical"]') as HTMLLinkElement | null;
+        if (!canonical) {
+            canonical = document.createElement('link');
+            canonical.rel = 'canonical';
+            document.head.appendChild(canonical);
         }
-        metaDesc.setAttribute('content', `${storeName} - Онлайн дэлгүүр. ${business.address || ''}`);
+        canonical.href = storeUrl;
 
         // Favicon
         if (business.logo) {

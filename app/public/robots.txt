@@ -1,0 +1,16 @@
+User-agent: *
+Allow: /
+
+# Storefront pages
+Allow: /*/
+
+# Admin and auth pages - no need to index
+Disallow: /app/
+Disallow: /login
+Disallow: /register
+Disallow: /super/
+
+# Assets
+Disallow: /assets/
+
+Sitemap: https://liscord.com/sitemap.xml
