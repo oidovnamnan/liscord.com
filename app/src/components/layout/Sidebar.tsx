@@ -255,25 +255,32 @@ export function Sidebar() {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const empPerms: string[] = (employee as any)?.permissions || [];
 
+    // Detect if user is a known employee (even if employee object hasn't loaded yet)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const isKnownEmployee = !isOwner && !!(employee || (user as any)?.employeeMap?.[business?.id || '']);
+
     const filteredNavItems = useMemo(() => {
         let items = getVisibleModules(business, moduleDefaults);
-        
-
 
         // Non-owner employees: filter by permissions
-        if (!isOwner && employee) {
-            items = items.filter(mod => {
-                if (mod.id === 'dashboard') return true; // Dashboard always visible
-                const prefixes = modulePermissionMap[mod.id];
-                if (!prefixes || prefixes.length === 0) return false; // No mapping = HIDE
-                // Check if employee has ANY permission matching this module's prefixes
-                return prefixes.some(prefix => empPerms.some(p => p.startsWith(prefix)));
-            });
-
+        // Also applies when employee object hasn't loaded but user is known to be an employee
+        if (isKnownEmployee) {
+            if (employee) {
+                items = items.filter(mod => {
+                    if (mod.id === 'dashboard') return true; // Dashboard always visible
+                    const prefixes = modulePermissionMap[mod.id];
+                    if (!prefixes || prefixes.length === 0) return false; // No mapping = HIDE
+                    // Check if employee has ANY permission matching this module's prefixes
+                    return prefixes.some(prefix => empPerms.some(p => p.startsWith(prefix)));
+                });
+            } else {
+                // Employee not loaded yet — show only dashboard until loaded
+                items = items.filter(mod => mod.id === 'dashboard');
+            }
         }
 
         return items;
-    }, [business?.activeModules, business?.moduleSubscriptions, business?.category, moduleDefaults, isOwner, isImpersonating, employee, modulePermissionMap]);
+    }, [business?.activeModules, business?.moduleSubscriptions, business?.category, moduleDefaults, isOwner, isImpersonating, employee, isKnownEmployee, modulePermissionMap]);
 
     // Sort modules by admin-configured order (per-employee first, then global fallback)
     const sortedNavItems = useMemo(() => {
@@ -474,8 +481,8 @@ export function Sidebar() {
                     })}
 
 
-                    {/* Settings - only owner or employees with settings.* permission */}
-                    {(isOwner || empPerms.some(p => p.startsWith('settings.'))) && (
+                    {/* Settings - owner always, employees only with settings.* permission */}
+                    {(isOwner || (!isKnownEmployee && empPerms.length === 0) || empPerms.some(p => p.startsWith('settings.'))) && (
                         <NavLink
                             to="/app/settings"
                             className={`sidebar-link ${location.pathname.startsWith('/app/settings') ? 'active' : ''}`}
