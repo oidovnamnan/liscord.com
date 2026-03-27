@@ -126,14 +126,28 @@ export function tryParseWithTemplate(template: SmsTemplate, smsBody: string): Pa
 
 /**
  * Try parsing an SMS body against all templates.
- * Returns the first successful match, or null if none match.
+ * Prefers the template that extracts BOTH amount and utga over one that only extracts amount.
+ * This avoids issues when multiple templates exist for the same bank with slightly different markers.
  */
 export function parseSmsByTemplates(smsBody: string, templates: SmsTemplate[]): ParsedSms | null {
     if (!smsBody) return null;
+
+    let bestResult: ParsedSms | null = null;
+    let bestScore = 0; // 0 = no match, 1 = amount only, 2 = amount + utga
+
     for (const tmpl of templates) {
         if (!tmpl.isActive) continue;
         const result = tryParseWithTemplate(tmpl, smsBody);
-        if (result.matched) return result;
+        if (!result.matched) continue;
+
+        const score = result.utga ? 2 : 1;
+        if (score > bestScore) {
+            bestResult = result;
+            bestScore = score;
+        }
+        // If we already have a perfect match (amount + utga), stop
+        if (bestScore === 2) break;
     }
-    return null;
+
+    return bestResult;
 }
