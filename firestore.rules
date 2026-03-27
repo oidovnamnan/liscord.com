@@ -218,6 +218,20 @@ service cloud.firestore {
         allow delete: if false;
       }
 
+      // SMS Templates: member-only CRUD (including delete for custom templates)
+      match /smsTemplates/{docId} {
+        allow read: if isMemberOf(bizId);
+        allow create, update, delete: if isMemberOf(bizId);
+      }
+
+      // QPay income: member read, public create (from server callbacks)
+      match /qpay_income/{docId} {
+        allow read: if isMemberOf(bizId);
+        allow create: if true;  // QPay callback writes without auth
+        allow update: if isMemberOf(bizId);
+        allow delete: if false;
+      }
+
       // All other subcollections: member read/write only
       match /{subcollection}/{docId} {
         allow read: if isMemberOf(bizId);

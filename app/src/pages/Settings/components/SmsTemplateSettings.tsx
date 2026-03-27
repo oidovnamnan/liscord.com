@@ -148,7 +148,14 @@ export function SmsTemplateSettings({ bizId }: { bizId: string }) {
             await deleteDoc(doc(db, 'businesses', bizId, 'smsTemplates', tmpl.id));
             setTemplates(prev => prev.filter(t => t.id !== tmpl.id));
             toast.success('Устгалаа');
-        } catch { toast.error('Устгахад алдаа'); }
+        } catch (err: any) {
+            console.error('Delete template error:', err?.code, err?.message, err);
+            if (err?.code === 'permission-denied') {
+                toast.error('Устгах эрхгүй — Firestore rules шалгах хэрэгтэй');
+            } else {
+                toast.error('Устгахад алдаа: ' + (err?.message || ''));
+            }
+        }
     };
 
     const addTemplate = async () => {
