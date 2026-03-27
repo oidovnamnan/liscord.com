@@ -56,6 +56,7 @@ export function ProductsPage() {
     const [categories, setCategories] = useState<Category[]>([]);
     const [totalCount, setTotalCount] = useState<number | null>(null);
     const [showCargoEstimator, setShowCargoEstimator] = useState(false);
+    const [showBulkDiscount, setShowBulkDiscount] = useState(false);
     const [geminiApiKey, setGeminiApiKey] = useState('');
     const [allCargoTypes, setAllCargoTypes] = useState<CargoType[]>([]);
     const [searchParams, setSearchParams] = useSearchParams();
@@ -385,6 +386,13 @@ export function ProductsPage() {
                                     <Package size={16} /> Карго
                                 </button>
                             </PermissionGate>
+                            <button
+                                className="prd-hero-btn"
+                                style={{ background: '#dc2626', color: 'white', border: 'none' }}
+                                onClick={() => setShowBulkDiscount(true)}
+                            >
+                                💰 Хямдрал
+                            </button>
                             <PermissionGate permission="products.create">
                                 <button className="prd-hero-btn fb-btn" onClick={() => setShowFBImport(true)}>
                                     <Facebook size={16} /> FB
@@ -683,6 +691,13 @@ export function ProductsPage() {
                     geminiApiKey={geminiApiKey}
                 />
             )}
+            {showBulkDiscount && business?.id && (
+                <BulkDiscountModal
+                    products={products}
+                    bizId={business.id}
+                    onClose={() => setShowBulkDiscount(false)}
+                />
+            )}
         </>
     );
 }
@@ -708,6 +723,7 @@ function CreateProductModal({ onClose }: { onClose: () => void }) {
     const [sku, setSku] = useState('');
     const [costPrice, setCostPrice] = useState<string>('');
     const [salePrice, setSalePrice] = useState<string>('');
+    const [comparePriceVal, setComparePriceVal] = useState<string>('');
     const [margin, setMargin] = useState<string>(localStorage.getItem('liscord_last_margin') || '20');
 
     // Cargo Features
@@ -935,7 +951,8 @@ function CreateProductModal({ onClose }: { onClose: () => void }) {
                 pricing: {
                     salePrice: finalSalePrice,
                     costPrice: finalCostPrice,
-                    wholesalePrice: finalSalePrice
+                    wholesalePrice: finalSalePrice,
+                    ...(Number(comparePriceVal) > finalSalePrice ? { comparePrice: Number(comparePriceVal) } : {})
                 },
                 productType,
                 stock: {
@@ -1172,6 +1189,17 @@ function CreateProductModal({ onClose }: { onClose: () => void }) {
                                         <label className="input-label">Зарах үнэ <span className="required">*</span></label>
                                         <input className="input" type="number" value={salePrice} onChange={e => handleSaleChange(e.target.value)} required style={{ fontSize: '1.1rem', fontWeight: 700 }} />
                                     </div>
+                                    <div className="input-group" style={{ marginTop: 8 }}>
+                                        <label className="input-label" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                            Үндсэн үнэ (хуучин)
+                                            {Number(comparePriceVal) > Number(salePrice) && Number(salePrice) > 0 && (
+                                                <span style={{ background: '#dc2626', color: '#fff', padding: '1px 8px', borderRadius: 100, fontSize: '0.7rem', fontWeight: 700 }}>
+                                                    -{Math.round((1 - Number(salePrice) / Number(comparePriceVal)) * 100)}%
+                                                </span>
+                                            )}
+                                        </label>
+                                        <input className="input" type="number" value={comparePriceVal} onChange={e => setComparePriceVal(e.target.value)} placeholder="Хоосон бол хямдралгүй" />
+                                    </div>
                                 </div>
 
                                 <div className="modal-section-card">
@@ -1393,6 +1421,7 @@ function EditProductModal({ product, onClose }: { product: Product; onClose: () 
     const [sku, setSku] = useState(product.sku || '');
     const [costPrice, setCostPrice] = useState<string>(product.pricing.costPrice?.toString() || '');
     const [salePrice, setSalePrice] = useState<string>(product.pricing.salePrice.toString());
+    const [comparePriceVal, setComparePriceVal] = useState<string>(product.pricing?.comparePrice?.toString() || '');
     const [margin, setMargin] = useState<string>('20'); // Should calc from current
 
     // Images
@@ -1605,7 +1634,8 @@ function EditProductModal({ product, onClose }: { product: Product; onClose: () 
                 pricing: {
                     salePrice: Number(salePrice),
                     costPrice: Number(costPrice),
-                    wholesalePrice: Number(salePrice)
+                    wholesalePrice: Number(salePrice),
+                    comparePrice: Number(comparePriceVal) > Number(salePrice) ? Number(comparePriceVal) : 0
                 },
                 productType,
                 stock: {
@@ -1839,6 +1869,17 @@ function EditProductModal({ product, onClose }: { product: Product; onClose: () 
                                     <div className="input-group" style={{ marginTop: 20 }}>
                                         <label className="input-label">Зарах үнэ <span className="required">*</span></label>
                                         <input className="input primary" type="number" value={salePrice} onChange={e => handleSaleChange(e.target.value)} required />
+                                    </div>
+                                    <div className="input-group" style={{ marginTop: 8 }}>
+                                        <label className="input-label" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                            Үндсэн үнэ (хуучин)
+                                            {Number(comparePriceVal) > Number(salePrice) && Number(salePrice) > 0 && (
+                                                <span style={{ background: '#dc2626', color: '#fff', padding: '1px 8px', borderRadius: 100, fontSize: '0.7rem', fontWeight: 700 }}>
+                                                    -{Math.round((1 - Number(salePrice) / Number(comparePriceVal)) * 100)}%
+                                                </span>
+                                            )}
+                                        </label>
+                                        <input className="input" type="number" value={comparePriceVal} onChange={e => setComparePriceVal(e.target.value)} placeholder="Хоосон бол хямдралгүй" />
                                     </div>
                                 </div>
 
@@ -2167,3 +2208,146 @@ function CreateCargoTypeModal({ initialName, onClose, onSuccess }: { initialName
     );
 }
 
+// ═══════════════════════════════════════════
+// Bulk Discount Modal
+// ═══════════════════════════════════════════
+function BulkDiscountModal({ products, bizId, onClose }: { products: Product[]; bizId: string; onClose: () => void }) {
+    const [coverage, setCoverage] = useState(70);
+    const [applying, setApplying] = useState(false);
+    const [applied, setApplied] = useState(false);
+
+    const validProducts = useMemo(() => products.filter(p => (p.pricing?.salePrice || 0) > 0), [products]);
+
+    const calcComparePrice = (salePrice: number): number => {
+        let m: number;
+        if (salePrice <= 20000) m = 0.25 + Math.random() * 0.05;
+        else if (salePrice <= 50000) m = 0.18 + Math.random() * 0.04;
+        else if (salePrice <= 100000) m = 0.12 + Math.random() * 0.04;
+        else m = 0.10 + Math.random() * 0.04;
+        return Math.ceil(salePrice * (1 + m) / 1000) * 1000;
+    };
+
+    const selectedProducts = useMemo(() => {
+        const count = Math.round(validProducts.length * (coverage / 100));
+        const shuffled = [...validProducts].sort((a, b) => {
+            const ha = a.id.charCodeAt(0) + (a.id.charCodeAt(1) || 0) * 31;
+            const hb = b.id.charCodeAt(0) + (b.id.charCodeAt(1) || 0) * 31;
+            return ha - hb;
+        });
+        return shuffled.slice(0, count);
+    }, [validProducts, coverage]);
+
+    const previewData = useMemo(() => selectedProducts.slice(0, 8).map(p => {
+        const sp = p.pricing?.salePrice || 0;
+        const cp = calcComparePrice(sp);
+        return { name: p.name, salePrice: sp, comparePrice: cp, discountPct: Math.round((1 - sp / cp) * 100) };
+    }), [selectedProducts]);
+
+    const handleApply = async () => {
+        if (!selectedProducts.length) return;
+        setApplying(true);
+        const tid = toast.loading(`${selectedProducts.length} барааны хямдрал тохируулж байна...`);
+        try {
+            const { doc, writeBatch } = await import('firebase/firestore');
+            for (let i = 0; i < selectedProducts.length; i += 400) {
+                const batch = writeBatch(db);
+                for (const p of selectedProducts.slice(i, i + 400)) {
+                    batch.update(doc(db, 'businesses', bizId, 'products', p.id), { 'pricing.comparePrice': calcComparePrice(p.pricing?.salePrice || 0) });
+                }
+                await batch.commit();
+            }
+            toast.success(`${selectedProducts.length} бараанд хямдрал тавигдлаа!`, { id: tid });
+            setApplied(true);
+        } catch (err) { console.error(err); toast.error('Алдаа гарлаа', { id: tid }); }
+        finally { setApplying(false); }
+    };
+
+    const handleClear = async () => {
+        if (!confirm('Бүх барааны хямдралын үнийг арилгах уу?')) return;
+        setApplying(true);
+        const tid = toast.loading('Хямдрал арилгаж байна...');
+        try {
+            const { doc, writeBatch } = await import('firebase/firestore');
+            const wd = validProducts.filter(p => (p.pricing?.comparePrice || 0) > 0);
+            for (let i = 0; i < wd.length; i += 400) {
+                const batch = writeBatch(db);
+                for (const p of wd.slice(i, i + 400)) batch.update(doc(db, 'businesses', bizId, 'products', p.id), { 'pricing.comparePrice': 0 });
+                await batch.commit();
+            }
+            toast.success(`${wd.length} барааны хямдрал арилгагдлаа`, { id: tid });
+            setApplied(true);
+        } catch (err) { console.error(err); toast.error('Алдаа гарлаа', { id: tid }); }
+        finally { setApplying(false); }
+    };
+
+    const withExisting = validProducts.filter(p => (p.pricing?.comparePrice || 0) > (p.pricing?.salePrice || 0)).length;
+
+    return createPortal(
+        <div className="modal-backdrop" onClick={onClose}>
+            <div className="modal" onClick={e => e.stopPropagation()} style={{ maxWidth: 560 }}>
+                <div className="modal-header">
+                    <h2>💰 Хямдрал тохируулах</h2>
+                    <button type="button" className="btn btn-ghost btn-icon" onClick={onClose}>✕</button>
+                </div>
+                <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+                    <div style={{ background: 'rgba(59,130,246,0.06)', border: '1px solid rgba(59,130,246,0.15)', borderRadius: 12, padding: '12px 16px', fontSize: '0.82rem', color: 'var(--text-secondary)', lineHeight: 1.6 }}>
+                        Одоогийн үнийг &quot;хямдарсан&quot; загвараар харуулна. Бодит үнэ өөрчлөгдөхгүй.
+                        {withExisting > 0 && <div style={{ marginTop: 6, fontWeight: 600, color: '#f59e0b' }}>⚠ {withExisting} бараанд хямдрал тавигдсан.</div>}
+                    </div>
+
+                    <div className="modal-section-card">
+                        <div className="modal-section-title">Хамрах хүрээ</div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                            <input type="range" min={10} max={100} step={5} value={coverage} onChange={e => setCoverage(Number(e.target.value))} style={{ flex: 1, accentColor: '#dc2626' }} />
+                            <span style={{ fontWeight: 800, fontSize: '1.1rem', color: '#dc2626', minWidth: 50, textAlign: 'right' }}>{coverage}%</span>
+                        </div>
+                        <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: 6 }}>{validProducts.length} барааны {coverage}% = <strong>{selectedProducts.length} бараа</strong></div>
+                    </div>
+
+                    <div className="modal-section-card">
+                        <div className="modal-section-title">Үнийн шатлал</div>
+                        <div style={{ display: 'grid', gap: 6, fontSize: '0.8rem' }}>
+                            {[
+                                { range: '₮0 – ₮20K', markup: '25-30%', color: '#dc2626' },
+                                { range: '₮20K – ₮50K', markup: '18-22%', color: '#f59e0b' },
+                                { range: '₮50K – ₮100K', markup: '12-16%', color: '#3b82f6' },
+                                { range: '₮100K+', markup: '10-14%', color: '#10b981' },
+                            ].map(t => (
+                                <div key={t.range} style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 10px', background: 'var(--surface-2)', borderRadius: 8 }}>
+                                    <span style={{ color: 'var(--text-secondary)' }}>{t.range}</span>
+                                    <span style={{ fontWeight: 700, color: t.color }}>+{t.markup}</span>
+                                </div>
+                            ))}
+                        </div>
+                        <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: 6 }}>1,000₮ ангид бүхэлчлэнэ</div>
+                    </div>
+
+                    {previewData.length > 0 && (
+                        <div className="modal-section-card">
+                            <div className="modal-section-title">Жишээ ({Math.min(8, selectedProducts.length)} / {selectedProducts.length})</div>
+                            <div style={{ display: 'grid', gap: 4, fontSize: '0.78rem' }}>
+                                {previewData.map((d, i) => (
+                                    <div key={i} style={{ display: 'grid', gridTemplateColumns: '1fr auto auto auto', gap: 8, padding: '5px 8px', background: i % 2 === 0 ? 'var(--surface-2)' : 'transparent', borderRadius: 6, alignItems: 'center' }}>
+                                        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{d.name}</span>
+                                        <span style={{ fontWeight: 700 }}>{fmt(d.salePrice)}</span>
+                                        <span style={{ color: 'var(--text-muted)', textDecoration: 'line-through', fontSize: '0.72rem' }}>{fmt(d.comparePrice)}</span>
+                                        <span style={{ background: '#dc2626', color: '#fff', padding: '1px 6px', borderRadius: 100, fontSize: '0.65rem', fontWeight: 700 }}>-{d.discountPct}%</span>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+                </div>
+
+                <div className="modal-footer" style={{ display: 'flex', gap: 8 }}>
+                    {withExisting > 0 && <button className="btn btn-secondary" onClick={handleClear} disabled={applying} style={{ marginRight: 'auto', color: '#dc2626' }}>Хямдрал арилгах</button>}
+                    <button type="button" className="btn btn-secondary" onClick={onClose} disabled={applying}>Болих</button>
+                    <button className="btn btn-primary" onClick={handleApply} disabled={applying || applied || !selectedProducts.length} style={{ background: '#dc2626', borderColor: '#dc2626' }}>
+                        {applying ? <Loader2 size={16} className="animate-spin" /> : applied ? '✅ Хийгдлээ' : `${selectedProducts.length} бараанд тавих`}
+                    </button>
+                </div>
+            </div>
+        </div>,
+        document.body
+    );
+}
