@@ -2217,6 +2217,19 @@ function BulkDiscountModal({ bizId, onClose }: { bizId: string; onClose: () => v
     const [allProducts, setAllProducts] = useState<Product[]>([]);
     const [loadingAll, setLoadingAll] = useState(true);
 
+    // Dynamic price tiers
+    const [tiers, setTiers] = useState([
+        { label: '₮0 – ₮20K', maxPrice: 20000, min: 25, max: 30, color: '#dc2626' },
+        { label: '₮20K – ₮50K', maxPrice: 50000, min: 18, max: 22, color: '#f59e0b' },
+        { label: '₮50K – ₮100K', maxPrice: 100000, min: 12, max: 16, color: '#3b82f6' },
+        { label: '₮100K+', maxPrice: Infinity, min: 10, max: 14, color: '#10b981' },
+    ]);
+
+    const updateTier = (idx: number, field: 'min' | 'max', val: number) => {
+        setTiers(prev => prev.map((t, i) => i === idx ? { ...t, [field]: val } : t));
+        setApplied(false);
+    };
+
     // Fetch ALL products from Firestore (bypassing pagination)
     useEffect(() => {
         (async () => {
@@ -2238,11 +2251,9 @@ function BulkDiscountModal({ bizId, onClose }: { bizId: string; onClose: () => v
     const validProducts = useMemo(() => allProducts.filter(p => (p.pricing?.salePrice || 0) > 0), [allProducts]);
 
     const calcComparePrice = (salePrice: number): number => {
-        let m: number;
-        if (salePrice <= 20000) m = 0.25 + Math.random() * 0.05;
-        else if (salePrice <= 50000) m = 0.18 + Math.random() * 0.04;
-        else if (salePrice <= 100000) m = 0.12 + Math.random() * 0.04;
-        else m = 0.10 + Math.random() * 0.04;
+        const tier = tiers.find(t => salePrice <= t.maxPrice) || tiers[tiers.length - 1];
+        const range = (tier.max - tier.min) / 100;
+        const m = tier.min / 100 + Math.random() * range;
         return Math.ceil(salePrice * (1 + m) / 1000) * 1000;
     };
 
@@ -2331,16 +2342,17 @@ function BulkDiscountModal({ bizId, onClose }: { bizId: string; onClose: () => v
 
                     <div className="modal-section-card">
                         <div className="modal-section-title">Үнийн шатлал</div>
-                        <div style={{ display: 'grid', gap: 6, fontSize: '0.8rem' }}>
-                            {[
-                                { range: '₮0 – ₮20K', markup: '25-30%', color: '#dc2626' },
-                                { range: '₮20K – ₮50K', markup: '18-22%', color: '#f59e0b' },
-                                { range: '₮50K – ₮100K', markup: '12-16%', color: '#3b82f6' },
-                                { range: '₮100K+', markup: '10-14%', color: '#10b981' },
-                            ].map(t => (
-                                <div key={t.range} style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 10px', background: 'var(--surface-2)', borderRadius: 8 }}>
-                                    <span style={{ color: 'var(--text-secondary)' }}>{t.range}</span>
-                                    <span style={{ fontWeight: 700, color: t.color }}>+{t.markup}</span>
+                        <div style={{ display: 'grid', gap: 8, fontSize: '0.8rem' }}>
+                            {tiers.map((t, i) => (
+                                <div key={t.label} style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 8, padding: '8px 10px', background: 'var(--surface-2)', borderRadius: 8, alignItems: 'center' }}>
+                                    <span style={{ color: 'var(--text-secondary)', fontSize: '0.78rem' }}>{t.label}</span>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                                        <span style={{ color: t.color, fontWeight: 700, fontSize: '0.72rem' }}>+</span>
+                                        <input type="number" min={1} max={50} value={t.min} onChange={e => updateTier(i, 'min', Math.max(1, Number(e.target.value) || 0))} style={{ width: 38, padding: '2px 4px', borderRadius: 6, border: '1.5px solid var(--border-primary)', textAlign: 'center', fontWeight: 700, fontSize: '0.78rem', color: t.color, background: 'var(--surface-1)' }} />
+                                        <span style={{ color: 'var(--text-muted)', fontSize: '0.72rem' }}>–</span>
+                                        <input type="number" min={1} max={50} value={t.max} onChange={e => updateTier(i, 'max', Math.max(1, Number(e.target.value) || 0))} style={{ width: 38, padding: '2px 4px', borderRadius: 6, border: '1.5px solid var(--border-primary)', textAlign: 'center', fontWeight: 700, fontSize: '0.78rem', color: t.color, background: 'var(--surface-1)' }} />
+                                        <span style={{ color: t.color, fontWeight: 700, fontSize: '0.72rem' }}>%</span>
+                                    </div>
                                 </div>
                             ))}
                         </div>
