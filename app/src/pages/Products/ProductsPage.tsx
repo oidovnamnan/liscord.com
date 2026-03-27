@@ -18,7 +18,7 @@ import { CreateInquiryModal } from '../StockInquiry/CreateInquiryModal';
 import { toast } from 'react-hot-toast';
 import { usePermissions } from '../../hooks/usePermissions';
 import { PermissionGate } from '../../components/common/PermissionGate';
-import { collection, query, where, getCountFromServer, limit, onSnapshot, getDocs, type QueryConstraint } from 'firebase/firestore';
+import { collection, query, where, getCountFromServer, limit, onSnapshot, getDocs, deleteField, type QueryConstraint } from 'firebase/firestore';
 import { db } from '../../services/firebase';
 import { globalSettingsService } from '../../services/adminService';
 import './ProductsPage.css';
@@ -1655,7 +1655,7 @@ function EditProductModal({ product, onClose }: { product: Product; onClose: () 
                 updatedAt: new Date(),
                 isHidden,
                 isViral,
-                ...(isViral ? { viralAddedAt: product.isViral ? (product.viralAddedAt || new Date()) : new Date() } : { viralAddedAt: undefined as Date | undefined })
+                ...(isViral ? { viralAddedAt: product.isViral ? (product.viralAddedAt || new Date()) : new Date() } : { viralAddedAt: deleteField() as any })
             });
 
             toast.success('Амжилттай шинэчлэгдлээ');
