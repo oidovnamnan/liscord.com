@@ -79,7 +79,20 @@ export function StockInquirySettings({ bizId }: { bizId: string }) {
                         </div>
                     </div>
                     <label className="fds-toggle">
-                        <input type="checkbox" checked={config.enabled} onChange={e => setConfig(c => ({ ...c, enabled: e.target.checked }))} />
+                        <input type="checkbox" checked={config.enabled} onChange={async e => {
+                            const newEnabled = e.target.checked;
+                            setConfig(c => ({ ...c, enabled: newEnabled }));
+                            // Auto-save enabled state immediately
+                            try {
+                                await updateDoc(doc(db, 'businesses', bizId), {
+                                    'settings.stockInquiry.enabled': newEnabled,
+                                });
+                                toast.success(newEnabled ? 'Бараа лавлагаа идэвхжүүлсэн' : 'Бараа лавлагаа унтраасан');
+                            } catch (_) {
+                                toast.error('Алдаа гарлаа');
+                                setConfig(c => ({ ...c, enabled: !newEnabled }));
+                            }
+                        }} />
                         <span className="fds-toggle-track" />
                     </label>
                 </div>
