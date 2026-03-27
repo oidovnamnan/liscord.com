@@ -574,9 +574,6 @@ export function ThemeMinimal({ business }: { business: Business }) {
                             >
                                 Цааш үзэх
                             </button>
-                            <span style={{ fontSize: '0.75rem', color: '#999' }}>
-                                {Math.min(visibleCount, filteredProducts.length)} / {filteredProducts.length} бараа
-                            </span>
                         </div>
                     )}
                 </div>
