@@ -399,69 +399,7 @@ export function ProductModal({ product, onClose, preorderTerms, onCategoryClick,
                                 </div>
                             )}
 
-                            {/* Preorder Terms */}
-                            {isPreorder && (
-                                <div className="sf-modal-terms">
-                                    <label
-                                        className="sf-modal-terms-check"
-                                        onClick={(e) => {
-                                            if (!termsAccepted) {
-                                                e.preventDefault();
-                                                setShowTerms(true);
-                                            }
-                                        }}
-                                    >
-                                        <input
-                                            type="checkbox"
-                                            checked={termsAccepted}
-                                            onChange={e => {
-                                                if (!e.target.checked) setTermsAccepted(false);
-                                            }}
-                                            readOnly={!termsAccepted}
-                                        />
-                                        <span>{termsAccepted ? 'Нөхцөлийг зөвшөөрсөн ✓' : 'Захиалгын нөхцөлтэй танилцаж, зөвшөөрч байна'}</span>
-                                    </label>
 
-                                    {/* ═══ Terms Popup ═══ */}
-                                    {showTerms && (
-                                        <div
-                                            className="sf-terms-popup-backdrop"
-                                            onClick={() => setShowTerms(false)}
-                                        >
-                                            <div
-                                                className="sf-terms-popup"
-                                                onClick={e => e.stopPropagation()}
-                                            >
-                                                <div className="sf-terms-popup-header">
-                                                    <h3>📋 Захиалгын нөхцөл</h3>
-                                                    <button onClick={() => setShowTerms(false)} className="sf-terms-popup-close">
-                                                        <X size={18} />
-                                                    </button>
-                                                </div>
-                                                <div className="sf-terms-popup-body">
-                                                    <ul>
-                                                        {(preorderTerms || 'Урьдчилсан захиалга нь бараа ирсний дараа хүргэгдэнэ\nХүргэлтийн хугацаа дунджаар 14 хоног\nЗахиалга цуцлах боломжгүй, буцаалт хийгдэхгүй\nБараа ирсэн даруй утсаар мэдэгдэнэ\nТөлбөрийг захиалга өгөх үед бүрэн төлнө')
-                                                            .split('\n')
-                                                            .filter(line => line.trim())
-                                                            .map((term, i) => <li key={i}>{term.trim()}</li>)}
-                                                    </ul>
-                                                </div>
-                                                <div className="sf-terms-popup-footer">
-                                                    <button
-                                                        className="sf-terms-accept-btn"
-                                                        onClick={() => {
-                                                            setTermsAccepted(true);
-                                                            setShowTerms(false);
-                                                        }}
-                                                    >
-                                                        ✓ Зөвшөөрч байна
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    )}
-                                </div>
-                            )}
                         </div>
 
                         {/* Actions: Quantity + Buy Now + Add to Cart */}
@@ -486,8 +424,8 @@ export function ProductModal({ product, onClose, preorderTerms, onCategoryClick,
                                 <button
                                     className="sf-modal-cart-btn"
                                     onClick={handleAddToCart}
-                                    disabled={added || (isPreorder && !termsAccepted)}
-                                    style={added ? { background: '#16a34a', borderColor: '#16a34a', color: '#fff' } : (isPreorder && !termsAccepted) ? { opacity: 0.5, cursor: 'not-allowed' } : undefined}
+                                    disabled={added}
+                                    style={added ? { background: '#16a34a', borderColor: '#16a34a', color: '#fff' } : undefined}
                                 >
                                     {added ? (
                                         <><Check size={16} /> Нэмэгдлээ!</>
@@ -498,8 +436,8 @@ export function ProductModal({ product, onClose, preorderTerms, onCategoryClick,
                                 <button
                                     className="sf-modal-add-btn"
                                     onClick={handleBuyNow}
-                                    disabled={isPreorder && !termsAccepted}
-                                    style={(isPreorder && !termsAccepted) ? { opacity: 0.5, cursor: 'not-allowed' } : undefined}
+                                    disabled={false}
+                                    style={undefined}
                                 >
                                     <Zap size={16} /> <span className="sf-btn-label">Захиалах</span>
                                 </button>

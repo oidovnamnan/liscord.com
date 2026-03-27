@@ -3,7 +3,7 @@ import { useNavigate, useParams, useOutletContext } from 'react-router-dom';
 import { useCartStore } from '../../store';
 import { orderService } from '../../services/db';
 import { qpayService, type QPayInvoiceResponse } from '../../services/qpay';
-import { ChevronLeft, CheckCircle, MapPin, Truck, ImageIcon, ShieldCheck, CreditCard, QrCode, Landmark, Copy, Check, Smartphone, PartyPopper } from 'lucide-react';
+import { ChevronLeft, CheckCircle, MapPin, Truck, ImageIcon, ShieldCheck, CreditCard, QrCode, Landmark, Copy, Check, Smartphone, PartyPopper, X } from 'lucide-react';
 import { doc, onSnapshot, getDoc, setDoc, updateDoc, arrayUnion, serverTimestamp } from 'firebase/firestore';
 import { db } from '../../services/firebase';
 import type { Business, Order } from '../../types';
@@ -83,6 +83,11 @@ export function StoreCheckout() {
     const [deliveryZone, setDeliveryZone] = useState('ub_center');
     const [cargoPaymentTiming, setCargoPaymentTiming] = useState<'with_order' | 'on_arrival'>('on_arrival');
     const [showCargoDetails, setShowCargoDetails] = useState(false);
+
+    // Preorder terms
+    const [termsAccepted, setTermsAccepted] = useState(false);
+    const [showTerms, setShowTerms] = useState(false);
+    const preorderTerms = business.settings?.storefront?.preorderTerms || '';
 
     const deliveryFees: Record<string, { label: string, fee: number }> = {
         'ub_center': { label: 'Улаанбаатар (А бүс)', fee: 5000 },
@@ -734,7 +739,7 @@ export function StoreCheckout() {
         );
     }
 
-    const isFormValid = customerName.trim() && customerPhone.length === 8;
+    const isFormValid = customerName.trim() && customerPhone.length === 8 && (!hasPreorderItems || termsAccepted);
 
     // ──────── CHECKOUT FORM ────────
     return (
@@ -1109,6 +1114,79 @@ export function StoreCheckout() {
                         </div>
 
                         <div className="summary-footer" style={{ padding: '24px 32px', background: 'var(--surface-1)' }}>
+                            {/* Preorder Terms — shown when cart has preorder items */}
+                            {hasPreorderItems && (
+                                <div style={{ marginBottom: 20 }}>
+                                    <label
+                                        style={{
+                                            display: 'flex', alignItems: 'flex-start', gap: 10, cursor: 'pointer',
+                                            padding: '14px 16px', borderRadius: 14,
+                                            background: termsAccepted ? 'rgba(16, 185, 129, 0.06)' : 'rgba(239, 68, 68, 0.04)',
+                                            border: `1.5px solid ${termsAccepted ? 'rgba(16, 185, 129, 0.3)' : 'rgba(239, 68, 68, 0.15)'}`,
+                                            transition: 'all 0.2s'
+                                        }}
+                                        onClick={(e) => {
+                                            if (!termsAccepted) {
+                                                e.preventDefault();
+                                                setShowTerms(true);
+                                            }
+                                        }}
+                                    >
+                                        <input
+                                            type="checkbox"
+                                            checked={termsAccepted}
+                                            onChange={e => { if (!e.target.checked) setTermsAccepted(false); }}
+                                            readOnly={!termsAccepted}
+                                            style={{ width: 18, height: 18, marginTop: 1, accentColor: '#10b981', flexShrink: 0 }}
+                                        />
+                                        <span style={{ fontSize: '0.82rem', fontWeight: 600, color: termsAccepted ? '#059669' : '#666', lineHeight: 1.5 }}>
+                                            {termsAccepted ? '✓ Захиалгын нөхцөлийг зөвшөөрсөн' : '📋 Захиалгын нөхцөлтэй танилцаж, зөвшөөрч байна'}
+                                        </span>
+                                    </label>
+
+                                    {/* Terms Popup */}
+                                    {showTerms && (
+                                        <div
+                                            style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}
+                                            onClick={() => setShowTerms(false)}
+                                        >
+                                            <div
+                                                style={{ background: '#fff', borderRadius: 20, maxWidth: 440, width: '100%', overflow: 'hidden', boxShadow: '0 20px 60px rgba(0,0,0,0.25)' }}
+                                                onClick={e => e.stopPropagation()}
+                                            >
+                                                <div style={{ padding: '20px 24px', borderBottom: '1px solid #f0f0f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                                    <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 800 }}>📋 Захиалгын нөхцөл</h3>
+                                                    <button onClick={() => setShowTerms(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4 }}>
+                                                        <X size={18} />
+                                                    </button>
+                                                </div>
+                                                <div style={{ padding: '20px 24px', maxHeight: '50vh', overflowY: 'auto' }}>
+                                                    <ul style={{ margin: 0, paddingLeft: 20, display: 'flex', flexDirection: 'column', gap: 10, fontSize: '0.88rem', lineHeight: 1.6, color: '#444' }}>
+                                                        {(preorderTerms || 'Урьдчилсан захиалга нь бараа ирсний дараа хүргэгдэнэ\nХүргэлтийн хугацаа дунджаар 14 хоног\nЗахиалга цуцлах боломжгүй, буцаалт хийгдэхгүй\nБараа ирсэн даруй утсаар мэдэгдэнэ\nТөлбөрийг захиалга өгөх үед бүрэн төлнө')
+                                                            .split('\n')
+                                                            .filter((line: string) => line.trim())
+                                                            .map((term: string, i: number) => <li key={i}>{term.trim()}</li>)}
+                                                    </ul>
+                                                </div>
+                                                <div style={{ padding: '16px 24px', borderTop: '1px solid #f0f0f0' }}>
+                                                    <button
+                                                        onClick={() => { setTermsAccepted(true); setShowTerms(false); }}
+                                                        style={{
+                                                            width: '100%', padding: '14px', borderRadius: 14, border: 'none',
+                                                            background: 'linear-gradient(135deg, #10b981, #059669)', color: '#fff',
+                                                            fontSize: '0.95rem', fontWeight: 800, cursor: 'pointer',
+                                                            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8
+                                                        }}
+                                                    >
+                                                        ✓ Зөвшөөрч байна
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+
                             <button type="submit" className="btn btn-primary gradient-btn premium-btn summary-submit-btn" style={{ width: '100%', height: 56, fontSize: '1.1rem', borderRadius: 16, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, transition: 'all 0.3s ease', opacity: !isFormValid ? 0.5 : 1 }} disabled={loading || !isFormValid}>
                                 {loading ? 'Уншиж байна...' : (
                                     <>
