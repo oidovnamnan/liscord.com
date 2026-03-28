@@ -725,249 +725,142 @@
 /* ============================================
    FOOTER — Enhanced with About Us, Trust, Payment
    ============================================ */
+/* ═══ COMPACT FOOTER ═══ */
 .sf-footer {
     background: var(--sf-bg-warm);
     border-top: 1px solid var(--sf-border);
-    padding: 48px 0 32px;
-    margin-top: 40px;
+    padding: 28px 0 20px;
+    margin-top: 32px;
 }
 
 .sf-footer-content {
-    max-width: 800px;
+    max-width: 600px;
     margin: 0 auto;
-    padding: 0 24px;
-    display: flex;
-    flex-direction: column;
-    gap: 36px;
-}
-
-/* ── About Us ── */
-.sf-footer-about {
-    text-align: center;
+    padding: 0 20px;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 16px;
+    gap: 14px;
+    text-align: center;
 }
 
-.sf-footer-about-title {
+.sf-footer-brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.sf-footer-logo {
+    height: 36px;
+    width: 36px;
+    border-radius: 10px;
+    object-fit: cover;
+}
+
+.sf-footer-brand-name {
     font-family: var(--sf-font-title);
-    font-size: 1.1rem;
+    font-size: 1.05rem;
     font-weight: 800;
     letter-spacing: -0.03em;
     color: var(--sf-text);
-    margin: 0;
 }
 
-.sf-footer-about-desc {
-    font-size: 0.85rem;
+.sf-footer-desc {
+    font-size: 0.78rem;
     color: var(--sf-text-muted);
-    line-height: 1.6;
-    max-width: 480px;
+    line-height: 1.5;
     margin: 0;
+    max-width: 400px;
 }
 
-.sf-footer-contact-grid {
-    display: flex;
-    justify-content: center;
-    flex-wrap: wrap;
-    gap: 16px;
-}
-
-.sf-footer-contact-item {
-    font-size: 0.85rem;
-    font-weight: 500;
-    color: var(--sf-text-secondary);
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    text-decoration: none;
-    transition: color 0.2s;
-}
-
-.sf-footer-contact-item:hover {
-    color: var(--sf-text);
-}
-
-/* ── Social Links ── */
-.sf-footer-socials {
+.sf-footer-links {
     display: flex;
     justify-content: center;
     flex-wrap: wrap;
     gap: 8px;
-    margin-top: 4px;
 }
 
-.sf-footer-social-link {
-    display: flex;
+.sf-footer-link {
+    display: inline-flex;
     align-items: center;
-    gap: 6px;
-    padding: 7px 14px;
+    gap: 5px;
+    padding: 5px 12px;
     background: #fff;
     border: 1px solid var(--sf-border-strong);
     border-radius: 100px;
-    font-size: 0.78rem;
+    font-size: 0.73rem;
     font-weight: 600;
     color: var(--sf-text-secondary);
     text-decoration: none;
-    transition: all 0.2s var(--sf-transition);
+    transition: all 0.2s;
 }
 
-.sf-footer-social-link:hover {
-    background: #1877f2;
-    border-color: #1877f2;
-    color: #fff;
+.sf-footer-link:hover {
+    border-color: var(--sf-primary);
+    color: var(--sf-primary);
 }
 
-/* ── Payment & Trust ── */
-.sf-footer-trust-section {
+.sf-footer-trust-row {
     display: flex;
+    align-items: center;
     justify-content: center;
-    align-items: center;
     flex-wrap: wrap;
-    gap: 28px;
-    padding: 20px 0;
-    border-top: 1px solid var(--sf-border);
-    border-bottom: 1px solid var(--sf-border);
-}
-
-.sf-footer-payments {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 8px;
-}
-
-.sf-footer-payments-label {
-    font-size: 0.7rem;
+    gap: 6px;
+    font-size: 0.72rem;
     font-weight: 600;
     color: var(--sf-text-muted);
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
 }
 
-.sf-footer-payment-logos {
-    display: flex;
-    gap: 8px;
-}
-
-.sf-payment-badge {
-    display: flex;
+.sf-footer-trust-item {
+    display: inline-flex;
     align-items: center;
-    gap: 5px;
-    padding: 6px 12px;
-    background: #fff;
-    border: 1px solid var(--sf-border-strong);
-    border-radius: var(--sf-radius-sm);
-    font-size: 0.75rem;
-    font-weight: 600;
-    color: var(--sf-text-secondary);
+    gap: 4px;
 }
 
-.sf-payment-badge img {
-    height: 16px;
+.sf-footer-trust-item img {
+    height: 14px;
     width: auto;
-    object-fit: contain;
 }
 
-/* ── Verified Badge ── */
-.sf-footer-verified {
-    display: flex;
-    align-items: center;
-    justify-content: center;
+.sf-footer-trust-sep {
+    color: var(--sf-border-strong);
+    font-size: 0.9rem;
 }
 
-.sf-verified-badge {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 8px 16px;
-    background: linear-gradient(135deg, #f0fdf4, #ecfdf5);
-    border: 1px solid #86efac;
-    border-radius: var(--sf-radius-md);
+.sf-verified-inline {
     color: #15803d;
 }
 
-.sf-verified-badge svg {
-    flex-shrink: 0;
-}
-
-.sf-verified-text {
-    display: flex;
-    flex-direction: column;
-    gap: 1px;
-}
-
-.sf-verified-label {
-    font-size: 0.78rem;
-    font-weight: 700;
-    letter-spacing: -0.01em;
-}
-
-.sf-verified-since {
-    font-size: 0.65rem;
-    font-weight: 500;
-    opacity: 0.75;
-}
-
-/* ── Footer Bottom ── */
 .sf-footer-bottom {
-    width: 100%;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    font-size: 0.78rem;
-    font-weight: 500;
+    font-size: 0.68rem;
     color: var(--sf-text-muted);
+    display: flex;
+    align-items: center;
+    gap: 6px;
     flex-wrap: wrap;
-    gap: 12px;
+    justify-content: center;
 }
 
-.sf-liscord-logo {
+.sf-footer-bottom strong {
     font-weight: 800;
-    color: var(--sf-text);
-    letter-spacing: -0.04em;
+    color: var(--sf-text-secondary);
+    letter-spacing: -0.03em;
+}
+
+.sf-footer-dot {
+    color: var(--sf-border-strong);
 }
 
 @media (max-width: 768px) {
     .sf-footer {
-        padding: 32px 0 20px;
-        margin-top: 24px;
-    }
-
-    .sf-footer-content {
-        gap: 24px;
-    }
-
-    .sf-footer-about-title {
-        font-size: 1rem;
-    }
-
-    .sf-footer-about-desc {
-        font-size: 0.8rem;
-    }
-
-    .sf-footer-trust-section {
-        flex-direction: column;
-        gap: 16px;
-        padding: 16px 0;
-    }
-
-    .sf-footer-bottom {
-        flex-direction: column;
-        text-align: center;
-        gap: 4px;
-        font-size: 0.72rem;
-    }
-}
-
-@media (max-width: 768px) {
-    .store-bg {
-        min-height: auto;
-    }
-    .sf-footer {
+        padding: 20px 0 16px;
         margin-top: 4px !important;
     }
+    .sf-footer-content { gap: 12px; }
+    .sf-footer-desc { font-size: 0.73rem; }
+    .sf-footer-links { gap: 6px; }
+    .sf-footer-link { padding: 4px 10px; font-size: 0.7rem; }
+    .store-bg { min-height: auto; }
 }
 
 /* ============================================
