@@ -219,7 +219,11 @@ export function ProductsPage() {
             return matchSearch && duplicateIds.has(p.id);
         }
         if (categoryFilter === '__no_images__') {
-            return matchSearch && (!p.images || p.images.length === 0 || p.images.every(img => !img));
+            const isFbUrl = (url: string) => /fbcdn\.net|scontent\.|facebook\.com/i.test(url);
+            const hasNoImages = !p.images || p.images.length === 0 || 
+                p.images.every(img => !img || img.trim() === '') ||
+                p.images.every(img => isFbUrl(img));
+            return matchSearch && hasNoImages;
         }
 
         const selectedCat = categoryFilter !== 'all' ? categories.find(c => c.id === categoryFilter) : null;

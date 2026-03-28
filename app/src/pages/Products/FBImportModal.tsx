@@ -271,10 +271,23 @@ export function FBImportModal({ onClose }: FBImportModalProps) {
         setProgress({ current: 0, total: 0, message: 'Зураггүй бараа хайж байна...' });
 
         try {
-            // 1. Find products with no images
-            const imagelessProducts = existingProducts.filter(p =>
-                !p.isDeleted && (!p.images || p.images.length === 0 || p.images.every(img => !img))
+            // 1. Fetch ALL products directly from Firestore (not from subscription state)
+            const { collection, query, where, getDocs } = await import('firebase/firestore');
+            const { db } = await import('../../services/firebase');
+            const allSnap = await getDocs(
+                query(collection(db, 'businesses', business.id, 'products'), where('isDeleted', '==', false))
             );
+            const allProducts = allSnap.docs.map(d => ({ id: d.id, ...d.data() } as Product));
+
+            // Find products with no images OR only expired FB CDN URLs
+            const isFbUrl = (url: string) => /fbcdn\.net|scontent\.|facebook\.com/i.test(url);
+            const imagelessProducts = allProducts.filter(p => {
+                if (!p.images || p.images.length === 0) return true;
+                if (p.images.every(img => !img || img.trim() === '')) return true;
+                // Products with ONLY FB CDN URLs are also "imageless" (they'll expire)
+                if (p.images.every(img => isFbUrl(img))) return true;
+                return false;
+            });
 
             if (imagelessProducts.length === 0) {
                 toast.success('Бүх бараанд зураг байна! ✅');
