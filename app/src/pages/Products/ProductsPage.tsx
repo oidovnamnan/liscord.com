@@ -338,7 +338,7 @@ export function ProductsPage() {
             for (let pi = 0; pi < productsWithFbImages.length; pi++) {
                 const p = productsWithFbImages[pi];
                 toast.loading(
-                    `${pi + 1}/${productsWithFbImages.length} бараа шилжүүлж байна... (✅${migrated} ❌${failed})`,
+                    `${pi + 1}/${productsWithFbImages.length} бараа шилжүүлж байна... (✅${migrated} 🗑${removed})`,
                     { id: toastId }
                 );
 
@@ -349,43 +349,55 @@ export function ProductsPage() {
                     if (!isFbUrl(images[i])) continue;
 
                     try {
-                        const res = await fetch('/api/migrate-image', {
+                        // Step 1: Download via server proxy (avoids CORS)
+                        const proxyRes = await fetch('/api/migrate-image', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({
-                                url: images[i],
-                                bizId: business.id,
-                                productId: p.id,
-                                index: i,
-                            }),
+                            body: JSON.stringify({ url: images[i] }),
                         });
 
-                        if (res.ok) {
-                            const data = await res.json();
-                            images[i] = data.newUrl;
-                            migrated++;
-                            changed = true;
-                        } else {
-                            const errData = await res.json().catch(() => ({}));
+                        if (!proxyRes.ok) {
+                            const errData = await proxyRes.json().catch(() => ({}));
                             if (errData.expired) {
-                                // Image is 403/404 — remove it
                                 images.splice(i, 1);
                                 removed++;
                                 changed = true;
                             } else {
                                 failed++;
                             }
+                            continue;
                         }
+
+                        const { base64, contentType } = await proxyRes.json();
+
+                        // Step 2: Convert base64 to File and upload to Firebase Storage
+                        const byteString = atob(base64);
+                        const ab = new ArrayBuffer(byteString.length);
+                        const ia = new Uint8Array(ab);
+                        for (let j = 0; j < byteString.length; j++) {
+                            ia[j] = byteString.charCodeAt(j);
+                        }
+                        const ext = contentType?.includes('png') ? '.png' : contentType?.includes('webp') ? '.webp' : '.jpg';
+                        const blob = new Blob([ab], { type: contentType || 'image/jpeg' });
+                        const file = new File([blob], `migrated_${Date.now()}_${i}${ext}`, { type: contentType || 'image/jpeg' });
+
+                        const newUrl = await storage.uploadImage(
+                            file,
+                            `businesses/${business.id}/products/${file.name}`
+                        );
+
+                        images[i] = newUrl;
+                        migrated++;
+                        changed = true;
+
                     } catch (e) {
-                        console.error('Migration error for', p.id, e);
+                        console.error('Migration error for', p.id, i, e);
                         failed++;
                     }
 
-                    // Small delay to not overwhelm the API
-                    await new Promise(r => setTimeout(r, 300));
+                    await new Promise(r => setTimeout(r, 200));
                 }
 
-                // Update product if images changed (and weren't updated by API)
                 if (changed) {
                     try {
                         await productService.updateProduct(business.id, p.id, { images });
