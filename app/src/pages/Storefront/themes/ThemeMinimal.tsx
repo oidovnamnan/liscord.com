@@ -256,7 +256,8 @@ export function ThemeMinimal({ business }: { business: Business }) {
                     onClick={() => setShowCategorySheet(true)}
                     aria-label="Ангилал"
                 >
-                    <Menu size={22} strokeWidth={2} />
+                    <Menu size={16} strokeWidth={2.5} />
+                    <span className="store-hamburger-label">Ангилал</span>
                 </button>
                 <a href={`/${business.slug}`} className="store-logo">
                     {business.logo && <img src={business.logo} alt={storeName} />}
