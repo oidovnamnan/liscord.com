@@ -20,6 +20,9 @@ export function ThemeMinimal({ business }: { business: Business }) {
     } = useStorefrontData(business);
 
     const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+
+    // Detect Facebook/Messenger in-app browser (lazy loading breaks there)
+    const isFBBrowser = useMemo(() => /FBAN|FBAV|FB_IAB|Instagram/i.test(navigator.userAgent), []);
     const [flashDealPrice, setFlashDealPrice] = useState<number | null>(null);
     const [flashDealMaxQty, setFlashDealMaxQty] = useState<number | undefined>(undefined);
     const [showMembershipModal, setShowMembershipModal] = useState(false);
@@ -488,8 +491,20 @@ export function ThemeMinimal({ business }: { business: Business }) {
                                                     src={p.images[0]}
                                                     alt={p.name}
                                                     className="product-image"
-                                                    loading="lazy"
+                                                    loading={isFBBrowser ? 'eager' : 'lazy'}
                                                     style={sfp.isLocked ? { filter: 'blur(4px)', opacity: 0.7 } : undefined}
+                                                    onError={(e) => {
+                                                        const target = e.currentTarget;
+                                                        target.style.display = 'none';
+                                                        const parent = target.parentElement;
+                                                        if (parent && !parent.querySelector('.img-fallback')) {
+                                                            const fallback = document.createElement('div');
+                                                            fallback.className = 'img-fallback';
+                                                            fallback.style.cssText = 'width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:2.5rem;background:#f8f8f8;';
+                                                            fallback.textContent = '📦';
+                                                            parent.appendChild(fallback);
+                                                        }
+                                                    }}
                                                 />
                                             ) : (
                                                 <div style={{ color: '#ccc', fontSize: '2.5rem' }}>📦</div>

@@ -134,7 +134,13 @@ function ViralCard({ p, onProductClick, fmt }: { p: Product; onProductClick: (p:
                 <div className="viral-card-image-wrap">
                     <div className="viral-badge">🔥 FIRE</div>
                     {p.images?.[0] ? (
-                        <img src={p.images[0]} alt={p.name} className="viral-card-image" loading="lazy" />
+                        <img
+                            src={p.images[0]}
+                            alt={p.name}
+                            className="viral-card-image"
+                            loading="eager"
+                            onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                        />
                     ) : (
                         <div className="viral-card-placeholder">📦</div>
                     )}
