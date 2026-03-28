@@ -112,6 +112,7 @@ export function ProductsPage() {
                 }
             });
             setProducts(data);
+            console.log(`[Products] Loaded ${data.length} products (filter: ${categoryFilter}, sort: ${sortBy}, limit: ${sortBy === 'newest' && !categoryFilter.startsWith('__') ? productsLimit : 'none'})`);
             setHasMore(sortBy === 'newest' && data.length === productsLimit);
             setLoading(false);
             isLoadingMoreRef.current = false;
@@ -254,9 +255,11 @@ export function ProductsPage() {
                 if (score >= 80) {
                     ids.add(a.id);
                     ids.add(b.id);
+                    console.log(`[Duplicate] "${products.find(p=>p.id===a.id)?.name}" ↔ "${products.find(p=>p.id===b.id)?.name}" (score: ${score})`);
                 }
             }
         }
+        console.log(`[Duplicates] Scanned ${processed.length} products, found ${ids.size} potential duplicates`);
         return ids;
     }, [products, categoryFilter]);
 
