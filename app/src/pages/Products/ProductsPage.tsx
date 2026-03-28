@@ -196,64 +196,32 @@ export function ProductsPage() {
             const snap = await gd(q(col(fireDb, 'businesses', business.id, 'products'), w('isDeleted', '==', false)));
             const allProds = snap.docs.map(d => ({ id: d.id, ...d.data() } as Product));
 
-            // Extract stable image key from URL
-            const getImageKey = (url: string): string => {
-                try {
-                    const u = new URL(url);
-                    if (url.includes('firebasestorage')) return u.pathname;
-                    const match = u.pathname.match(/\d{5,}_\d{5,}[^/]*/);
-                    return match ? match[0] : u.pathname;
-                } catch { return url; }
-            };
+            // Build a map: imageKey → product IDs that use it
+            const imageToProducts = new Map<string, Set<string>>();
 
-            // Pre-process
-            const processed = allProds.map(p => ({
-                id: p.id,
-                name: p.name,
-                nameClean: p.name.toLowerCase()
-                    .replace(/[^\u0400-\u04ffa-z0-9\s]/gi, ' ')
-                    .replace(/\s+/g, ' ').trim(),
-                imageKeys: new Set((p.images || []).filter(Boolean).map(getImageKey)),
-                price: p.pricing?.salePrice || 0,
-            }));
+            for (const p of allProds) {
+                if (!p.images || p.images.length === 0) continue;
+                for (const img of p.images) {
+                    if (!img) continue;
+                    // Use full URL as key (exact match)
+                    if (!imageToProducts.has(img)) {
+                        imageToProducts.set(img, new Set());
+                    }
+                    imageToProducts.get(img)!.add(p.id);
+                }
+            }
 
+            // Products that share at least one image = duplicates
             const ids = new Set<string>();
-
-            for (let i = 0; i < processed.length; i++) {
-                const a = processed[i];
-                for (let j = i + 1; j < processed.length; j++) {
-                    const b = processed[j];
-                    let score = 0;
-
-                    // Signal 1: Name similarity (max 50 points)
-                    if (a.nameClean === b.nameClean) {
-                        score += 50;
-                    } else if (a.nameClean.includes(b.nameClean) || b.nameClean.includes(a.nameClean)) {
-                        const shorter = Math.min(a.nameClean.length, b.nameClean.length);
-                        const longer = Math.max(a.nameClean.length, b.nameClean.length);
-                        if (shorter > 5) score += Math.round((shorter / longer) * 45);
-                    }
-
-                    // Signal 2: Image overlap (50 points) — strongest signal
-                    if (a.imageKeys.size > 0 && b.imageKeys.size > 0) {
-                        for (const key of a.imageKeys) {
-                            if (b.imageKeys.has(key)) { score += 50; break; }
-                        }
-                    }
-
-                    // Signal 3: Same price (bonus 10 points)
-                    if (a.price > 0 && a.price === b.price) {
-                        score += 10;
-                    }
-
-                    if (score >= 80) {
-                        ids.add(a.id);
-                        ids.add(b.id);
+            for (const [, productIds] of imageToProducts) {
+                if (productIds.size > 1) {
+                    for (const id of productIds) {
+                        ids.add(id);
                     }
                 }
             }
 
-            console.log(`[Duplicates] Scanned ${allProds.length} products, found ${ids.size} duplicates`);
+            console.log(`[Duplicates] Scanned ${allProds.length} products, found ${ids.size} with shared images`);
             setDuplicateIds(ids);
             setDuplicateScanDone(true);
         };
