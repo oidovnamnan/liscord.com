@@ -181,27 +181,48 @@ export function ProductsPage() {
     const duplicateIds = useMemo(() => {
         if (categoryFilter !== '__duplicates__') return new Set<string>();
         const ids = new Set<string>();
+
+        // Common Mongolian words that should NOT count as matches
+        const STOP_WORDS = new Set([
+            'бараа', 'бүтээгдэхүүн', 'багц', 'сэт', 'ширхэг', 'төрлийн', 'төрөл',
+            'олон', 'үйлдэлт', 'ухаалаг', 'автомат', 'бариултай', 'халуун', 'хүйтэн',
+            'том', 'жижиг', 'дунд', 'шинэ', 'хуучин', 'өнгөтэй', 'өнгө',
+            'эрэгтэй', 'эмэгтэй', 'хүүхдийн', 'гэрийн', 'ган', 'зэвэрдэггүй',
+            'дэлхийн', 'алдартай', 'чанартай', 'original', 'pro', 'plus', 'mini', 'max',
+            'the', 'and', 'for', 'with', 'set', 'pack', 'box',
+        ]);
+
         const tokenize = (name: string) =>
             name.toLowerCase().replace(/[^\u0400-\u04ffa-z0-9\s]/gi, ' ')
-                .split(/\s+/).filter(w => w.length > 2);
+                .split(/\s+/)
+                .filter(w => w.length > 2 && !STOP_WORDS.has(w));
+
+        // Pre-tokenize all products
+        const tokenized = products.map(p => ({ id: p.id, words: tokenize(p.name), name: p.name }));
         
-        for (let i = 0; i < products.length; i++) {
-            const aWords = tokenize(products[i].name);
-            if (aWords.length === 0) continue;
-            for (let j = i + 1; j < products.length; j++) {
-                const bWords = tokenize(products[j].name);
-                if (bWords.length === 0) continue;
-                // Word overlap score
-                let matches = 0;
-                for (const w of aWords) {
-                    if (bWords.some(bw => bw === w || (w.length > 3 && bw.length > 3 && (w.includes(bw) || bw.includes(w))))) {
-                        matches++;
+        for (let i = 0; i < tokenized.length; i++) {
+            const a = tokenized[i];
+            if (a.words.length === 0) continue;
+            for (let j = i + 1; j < tokenized.length; j++) {
+                const b = tokenized[j];
+                if (b.words.length === 0) continue;
+
+                // Count matches (exact word or partial for long words)
+                let matchesAB = 0;
+                for (const w of a.words) {
+                    if (b.words.some(bw => bw === w || (w.length > 4 && bw.length > 4 && (w.includes(bw) || bw.includes(w))))) {
+                        matchesAB++;
                     }
                 }
-                const score = matches / Math.min(aWords.length, bWords.length);
-                if (score >= 0.6) {
-                    ids.add(products[i].id);
-                    ids.add(products[j].id);
+
+                // Require at least 2 meaningful word matches AND 70%+ overlap
+                const scoreAB = matchesAB / a.words.length;
+                const scoreBA = matchesAB / b.words.length;
+                const minScore = Math.min(scoreAB, scoreBA);
+
+                if (matchesAB >= 2 && minScore >= 0.7) {
+                    ids.add(a.id);
+                    ids.add(b.id);
                 }
             }
         }
