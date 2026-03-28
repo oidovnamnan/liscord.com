@@ -77,12 +77,13 @@ export function ProductsPage() {
         const constraints: QueryConstraint[] = [where('isDeleted', '==', false)];
 
         // When a category is selected, filter at Firestore level by ID (stable)
-        if (categoryFilter !== 'all') {
+        // Special filters (__duplicates__, __no_images__) are client-side only
+        if (categoryFilter !== 'all' && !categoryFilter.startsWith('__')) {
             constraints.push(where('categoryId', '==', categoryFilter));
         }
 
-        // Only paginate on default "newest" view — all other sorts need full dataset
-        if (sortBy === 'newest') {
+        // Only paginate on default "newest" view — special filters & sorts need full dataset
+        if (sortBy === 'newest' && !categoryFilter.startsWith('__')) {
             constraints.push(limit(productsLimit));
         }
         const q = query(ref, ...constraints);
@@ -176,11 +177,50 @@ export function ProductsPage() {
         setStats({ total: realTotal, low, out, value });
     }, [products, totalCount]);
 
+    // Detect potential duplicates by name similarity
+    const duplicateIds = useMemo(() => {
+        if (categoryFilter !== '__duplicates__') return new Set<string>();
+        const ids = new Set<string>();
+        const tokenize = (name: string) =>
+            name.toLowerCase().replace(/[^\u0400-\u04ffa-z0-9\s]/gi, ' ')
+                .split(/\s+/).filter(w => w.length > 2);
+        
+        for (let i = 0; i < products.length; i++) {
+            const aWords = tokenize(products[i].name);
+            if (aWords.length === 0) continue;
+            for (let j = i + 1; j < products.length; j++) {
+                const bWords = tokenize(products[j].name);
+                if (bWords.length === 0) continue;
+                // Word overlap score
+                let matches = 0;
+                for (const w of aWords) {
+                    if (bWords.some(bw => bw === w || (w.length > 3 && bw.length > 3 && (w.includes(bw) || bw.includes(w))))) {
+                        matches++;
+                    }
+                }
+                const score = matches / Math.min(aWords.length, bWords.length);
+                if (score >= 0.6) {
+                    ids.add(products[i].id);
+                    ids.add(products[j].id);
+                }
+            }
+        }
+        return ids;
+    }, [products, categoryFilter]);
+
     const filtered = products.filter(p => {
         const matchSearch = !search ||
             p.name.toLowerCase().includes(search.toLowerCase()) ||
             (p.sku || '').toLowerCase().includes(search.toLowerCase()) ||
             (p.categoryName || '').toLowerCase().includes(search.toLowerCase());
+
+        // Special filters
+        if (categoryFilter === '__duplicates__') {
+            return matchSearch && duplicateIds.has(p.id);
+        }
+        if (categoryFilter === '__no_images__') {
+            return matchSearch && (!p.images || p.images.length === 0 || p.images.every(img => !img));
+        }
 
         const selectedCat = categoryFilter !== 'all' ? categories.find(c => c.id === categoryFilter) : null;
         const matchCategory = categoryFilter === 'all' || p.categoryId === categoryFilter || (selectedCat && p.categoryName === selectedCat.name);
@@ -616,6 +656,9 @@ export function ProductsPage() {
                                     style={{ minWidth: 140, height: 42, borderRadius: 12, fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer', padding: '0 12px', background: 'var(--surface-1)', border: '1.5px solid var(--border-primary)', color: 'var(--text-primary)' }}
                                 >
                                     <option value="all">Бүгд ангилал</option>
+                                    <option value="__duplicates__" style={{ color: '#f59e0b' }}>⚠️ Давхардсан</option>
+                                    <option value="__no_images__" style={{ color: '#ef4444' }}>📭 Зураггүй</option>
+                                    <option disabled>──────────</option>
                                     {categories.map(cat => (
                                         <option key={cat.id} value={cat.id}>{cat.name}</option>
                                     ))}
