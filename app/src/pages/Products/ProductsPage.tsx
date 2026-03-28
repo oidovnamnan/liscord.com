@@ -177,50 +177,81 @@ export function ProductsPage() {
         setStats({ total: realTotal, low, out, value });
     }, [products, totalCount]);
 
-    // Detect potential duplicates by name similarity
+    // Detect potential duplicates by name + image + price similarity
     const duplicateIds = useMemo(() => {
         if (categoryFilter !== '__duplicates__') return new Set<string>();
         const ids = new Set<string>();
 
-        // Common Mongolian words that should NOT count as matches
-        const STOP_WORDS = new Set([
-            'бараа', 'бүтээгдэхүүн', 'багц', 'сэт', 'ширхэг', 'төрлийн', 'төрөл',
-            'олон', 'үйлдэлт', 'ухаалаг', 'автомат', 'бариултай', 'халуун', 'хүйтэн',
-            'том', 'жижиг', 'дунд', 'шинэ', 'хуучин', 'өнгөтэй', 'өнгө',
-            'эрэгтэй', 'эмэгтэй', 'хүүхдийн', 'гэрийн', 'ган', 'зэвэрдэггүй',
-            'дэлхийн', 'алдартай', 'чанартай', 'original', 'pro', 'plus', 'mini', 'max',
-            'the', 'and', 'for', 'with', 'set', 'pack', 'box',
-        ]);
+        // Extract stable image key from URL (ignore CDN params)
+        const getImageKey = (url: string): string => {
+            try {
+                const u = new URL(url);
+                // For Firebase Storage URLs, use the path
+                if (url.includes('firebasestorage')) return u.pathname;
+                // For FB CDN, extract the file ID
+                const match = u.pathname.match(/\d{5,}_\d{5,}[^/]*/);
+                return match ? match[0] : u.pathname;
+            } catch { return url; }
+        };
 
-        const tokenize = (name: string) =>
-            name.toLowerCase().replace(/[^\u0400-\u04ffa-z0-9\s]/gi, ' ')
-                .split(/\s+/)
-                .filter(w => w.length > 2 && !STOP_WORDS.has(w));
-
-        // Pre-tokenize all products
-        const tokenized = products.map(p => ({ id: p.id, words: tokenize(p.name), name: p.name }));
+        // Pre-process all products
+        const processed = products.map(p => {
+            const nameClean = p.name.toLowerCase()
+                .replace(/[^\u0400-\u04ffa-z0-9\s]/gi, ' ')
+                .replace(/\s+/g, ' ').trim();
+            const imageKeys = new Set((p.images || []).filter(Boolean).map(getImageKey));
+            return { 
+                id: p.id, 
+                nameClean, 
+                imageKeys,
+                price: p.pricing?.salePrice || 0,
+            };
+        });
         
-        for (let i = 0; i < tokenized.length; i++) {
-            const a = tokenized[i];
-            if (a.words.length === 0) continue;
-            for (let j = i + 1; j < tokenized.length; j++) {
-                const b = tokenized[j];
-                if (b.words.length === 0) continue;
+        for (let i = 0; i < processed.length; i++) {
+            const a = processed[i];
+            for (let j = i + 1; j < processed.length; j++) {
+                const b = processed[j];
+                let score = 0;
 
-                // Count matches (exact word or partial for long words)
-                let matchesAB = 0;
-                for (const w of a.words) {
-                    if (b.words.some(bw => bw === w || (w.length > 4 && bw.length > 4 && (w.includes(bw) || bw.includes(w))))) {
-                        matchesAB++;
+                // Signal 1: Name similarity (max 50 points)
+                if (a.nameClean === b.nameClean) {
+                    score += 50; // Exact match
+                } else if (a.nameClean.includes(b.nameClean) || b.nameClean.includes(a.nameClean)) {
+                    // One name contains the other entirely
+                    const shorter = Math.min(a.nameClean.length, b.nameClean.length);
+                    const longer = Math.max(a.nameClean.length, b.nameClean.length);
+                    score += Math.round((shorter / longer) * 45);
+                } else {
+                    // Levenshtein-like: check character overlap ratio
+                    const aChars = a.nameClean.split('');
+                    const bStr = b.nameClean;
+                    let matched = 0;
+                    for (const ch of aChars) {
+                        if (bStr.includes(ch)) matched++;
+                    }
+                    const ratio = matched / Math.max(a.nameClean.length, b.nameClean.length);
+                    if (ratio > 0.8) score += Math.round(ratio * 30);
+                }
+
+                // Signal 2: Image overlap (max 50 points) — strongest signal
+                if (a.imageKeys.size > 0 && b.imageKeys.size > 0) {
+                    let shared = 0;
+                    for (const key of a.imageKeys) {
+                        if (b.imageKeys.has(key)) shared++;
+                    }
+                    if (shared > 0) {
+                        score += 50; // Any shared image = very strong duplicate signal
                     }
                 }
 
-                // Require at least 2 meaningful word matches AND 70%+ overlap
-                const scoreAB = matchesAB / a.words.length;
-                const scoreBA = matchesAB / b.words.length;
-                const minScore = Math.min(scoreAB, scoreBA);
+                // Signal 3: Same price (bonus 10 points)
+                if (a.price > 0 && a.price === b.price) {
+                    score += 10;
+                }
 
-                if (matchesAB >= 2 && minScore >= 0.7) {
+                // 80+ = duplicate (needs name match + images OR very strong name match)
+                if (score >= 80) {
                     ids.add(a.id);
                     ids.add(b.id);
                 }
