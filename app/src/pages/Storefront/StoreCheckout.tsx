@@ -53,6 +53,7 @@ export function StoreCheckout() {
     const [successId, setSuccessId] = useState<string | null>(null);
     const [qpayInvoice, setQpayInvoice] = useState<QPayInvoiceResponse | null>(null);
     const [phoneError, setPhoneError] = useState(false);
+    const [nameTouched, setNameTouched] = useState(false);
     const [customerName, setCustomerName] = useState('');
     const [customerPhone, setCustomerPhone] = useState('');
     const [copied, setCopied] = useState(false);
@@ -771,7 +772,24 @@ export function StoreCheckout() {
                             <div className="grid-2-gap" style={{ marginBottom: 20 }}>
                                 <div className="input-group">
                                     <label className="input-label checkout-label" style={{ fontSize: '0.8rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Захиалагчийн нэр *</label>
-                                    <input className="input" name="name" required placeholder="Захиалагчийн нэр" value={customerName} onChange={e => setCustomerName(e.target.value)} style={{ height: 48, borderRadius: 12, background: 'var(--bg-soft)', border: '1px solid var(--border-primary)' }} />
+                                    <input
+                                        className="input"
+                                        name="name"
+                                        required
+                                        placeholder="Захиалагчийн нэр"
+                                        value={customerName}
+                                        onChange={e => setCustomerName(e.target.value)}
+                                        onBlur={() => setNameTouched(true)}
+                                        style={{
+                                            height: 48, borderRadius: 12, background: 'var(--bg-soft)',
+                                            border: `1.5px solid ${nameTouched && !customerName.trim() ? '#ff4d4f' : customerName.trim() ? '#52c41a' : 'var(--border-primary)'}`,
+                                            boxShadow: nameTouched && !customerName.trim() ? '0 0 0 3px rgba(255, 77, 79, 0.12)' : 'none',
+                                            transition: 'border-color 0.2s, box-shadow 0.2s'
+                                        }}
+                                    />
+                                    {nameTouched && !customerName.trim() && (
+                                        <span style={{ color: '#ff4d4f', fontSize: '0.75rem', marginTop: 4, fontWeight: 600 }}>Захиалагчийн нэр оруулна уу</span>
+                                    )}
                                 </div>
                                 <div className="input-group">
                                     <label className="input-label checkout-label" style={{ fontSize: '0.8rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Утасны дугаар *</label>
@@ -789,7 +807,7 @@ export function StoreCheckout() {
                                             if (val.length === 8) setPhoneError(false);
                                         }}
                                         onBlur={() => {
-                                            if (customerPhone.length > 0 && customerPhone.length < 8) setPhoneError(true);
+                                            if (customerPhone.length < 8) setPhoneError(true);
                                         }}
                                         onFocus={() => setPhoneError(false)}
                                         style={{
