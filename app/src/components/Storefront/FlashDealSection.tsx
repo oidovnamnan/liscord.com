@@ -204,7 +204,7 @@ export function FlashDealSection({ config, allProducts, onProductClick }: FlashD
                             <div className="fd-card-img-wrap">
                                 <div className="fd-card-img">
                                     {product.images?.[0] ? (
-                                        <img src={product.images[0]} alt={product.name} loading="lazy" />
+                                        <img src={product.images[0]} alt={product.name} loading="lazy" referrerPolicy="no-referrer" />
                                     ) : (
                                         <div className="fd-img-placeholder">📦</div>
                                     )}

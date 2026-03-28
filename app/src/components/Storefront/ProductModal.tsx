@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { X, Plus, Minus, ShoppingBag, Check, ChevronLeft, ChevronRight, Package, Zap } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { doc, updateDoc, increment } from 'firebase/firestore';
@@ -25,6 +25,8 @@ export function ProductModal({ product, onClose, preorderTerms, onCategoryClick,
     const [showTerms, setShowTerms] = useState(false);
     const [termsAccepted, setTermsAccepted] = useState(false);
     const touchRef = useRef<{ startX: number; startY: number } | null>(null);
+    const isFBBrowser = useMemo(() => /FBAN|FBAV|FB_IAB|Instagram/i.test(navigator.userAgent), []);
+    const [failedImages, setFailedImages] = useState<Set<number>>(new Set());
 
     // Variation support — default to cheapest variation
     // Legacy fallback: some products have prices stored in `quantity` instead of `salePrice`
@@ -184,13 +186,31 @@ export function ProductModal({ product, onClose, preorderTerms, onCategoryClick,
                         onTouchEnd={handleTouchEnd}
                     >
                         {images.length > 0 ? (
-                            <img
-                                key={activeImage}
-                                src={images[activeImage] || images[0]}
-                                alt={`${product.name} - зураг ${activeImage + 1}`}
-                                className="sf-modal-main-img sf-img-fade"
-                                draggable={false}
-                            />
+                            failedImages.has(activeImage) ? (
+                                <div className="sf-modal-img-placeholder" style={{ fontSize: '3rem', background: '#f8f8f8', display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', height: '100%' }}>📦</div>
+                            ) : (
+                                <img
+                                    key={activeImage}
+                                    src={images[activeImage] || images[0]}
+                                    alt={`${product.name} - зураг ${activeImage + 1}`}
+                                    className="sf-modal-main-img sf-img-fade"
+                                    draggable={false}
+                                    referrerPolicy="no-referrer"
+                                    crossOrigin="anonymous"
+                                    onError={(e) => {
+                                        const target = e.currentTarget;
+                                        // FB browser: retry once without crossOrigin
+                                        if (isFBBrowser && !target.dataset.retried) {
+                                            target.dataset.retried = '1';
+                                            target.removeAttribute('crossorigin');
+                                            const imgUrl = images[activeImage] || images[0];
+                                            target.src = imgUrl + (imgUrl.includes('?') ? '&' : '?') + 'fb=1';
+                                            return;
+                                        }
+                                        setFailedImages(prev => new Set(prev).add(activeImage));
+                                    }}
+                                />
+                            )
                         ) : (
                             <div className="sf-modal-img-placeholder">📦</div>
                         )}
@@ -255,7 +275,22 @@ export function ProductModal({ product, onClose, preorderTerms, onCategoryClick,
                                             setTimeout(() => setIsTransitioning(false), 300);
                                         }}
                                     >
-                                        <img src={img} alt={`Thumbnail ${i + 1}`} />
+                                        <img
+                                            src={img}
+                                            alt={`Thumbnail ${i + 1}`}
+                                            referrerPolicy="no-referrer"
+                                            crossOrigin="anonymous"
+                                            onError={(e) => {
+                                                const target = e.currentTarget;
+                                                if (isFBBrowser && !target.dataset.retried) {
+                                                    target.dataset.retried = '1';
+                                                    target.removeAttribute('crossorigin');
+                                                    target.src = img + (img.includes('?') ? '&' : '?') + 'fb=1';
+                                                    return;
+                                                }
+                                                target.style.display = 'none';
+                                            }}
+                                        />
                                     </button>
                                 ))}
                             </div>

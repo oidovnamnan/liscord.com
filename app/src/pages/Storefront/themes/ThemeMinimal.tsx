@@ -492,15 +492,24 @@ export function ThemeMinimal({ business }: { business: Business }) {
                                                     alt={p.name}
                                                     className="product-image"
                                                     loading={isFBBrowser ? 'eager' : 'lazy'}
+                                                    referrerPolicy="no-referrer"
+                                                    crossOrigin="anonymous"
                                                     style={sfp.isLocked ? { filter: 'blur(4px)', opacity: 0.7 } : undefined}
                                                     onError={(e) => {
                                                         const target = e.currentTarget;
+                                                        // FB browser: retry once without crossOrigin (some CDNs reject it)
+                                                        if (isFBBrowser && !target.dataset.retried) {
+                                                            target.dataset.retried = '1';
+                                                            target.removeAttribute('crossorigin');
+                                                            target.src = p.images[0] + (p.images[0].includes('?') ? '&' : '?') + 'fb=1';
+                                                            return;
+                                                        }
                                                         target.style.display = 'none';
                                                         const parent = target.parentElement;
                                                         if (parent && !parent.querySelector('.img-fallback')) {
                                                             const fallback = document.createElement('div');
                                                             fallback.className = 'img-fallback';
-                                                            fallback.style.cssText = 'width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:2.5rem;background:#f8f8f8;';
+                                                            fallback.style.cssText = 'width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:2.5rem;background:#f8f8f8;position:absolute;top:0;left:0;';
                                                             fallback.textContent = '📦';
                                                             parent.appendChild(fallback);
                                                         }

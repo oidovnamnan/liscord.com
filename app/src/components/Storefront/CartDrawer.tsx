@@ -57,7 +57,7 @@ export function CartDrawer() {
                                 <div key={item.id} className="cart-item">
                                     <div className="cart-item-image">
                                         {item.product.images?.[0] ? (
-                                            <img src={item.product.images[0]} alt={item.product.name} />
+                                            <img src={item.product.images[0]} alt={item.product.name} referrerPolicy="no-referrer" />
                                         ) : (
                                             <div className="cart-item-placeholder">Зураггүй</div>
                                         )}
