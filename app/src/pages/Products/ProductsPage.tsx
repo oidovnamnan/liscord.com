@@ -53,6 +53,7 @@ export function ProductsPage() {
     const [selectedIds, setSelectedIds] = useState<string[]>([]);
     const [isBulkUpdating, setIsBulkUpdating] = useState(false);
     const [isBulkTagging, setIsBulkTagging] = useState(false);
+    const [isMigrating, setIsMigrating] = useState(false);
     const [categories, setCategories] = useState<Category[]>([]);
     const [totalCount, setTotalCount] = useState<number | null>(null);
     const [showCargoEstimator, setShowCargoEstimator] = useState(false);
@@ -291,6 +292,120 @@ export function ProductsPage() {
         }
     };
 
+    // ═══ Migrate Facebook CDN Images to Firebase Storage ═══
+    const handleMigrateImages = async () => {
+        if (!business) return;
+
+        setIsMigrating(true);
+        const toastId = toast.loading('Барааны зурагнуудыг шалгаж байна...');
+
+        try {
+            const q = query(
+                collection(db, 'businesses', business.id, 'products'),
+                where('isDeleted', '==', false)
+            );
+            const snapshot = await getDocs(q);
+            const allProducts = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as Product));
+
+            // Find products with Facebook CDN URLs
+            const isFbUrl = (url: string) => /fbcdn\.net|scontent\.|facebook\.com/i.test(url);
+            const productsWithFbImages = allProducts.filter(p =>
+                p.images?.some(img => isFbUrl(img))
+            );
+
+            if (productsWithFbImages.length === 0) {
+                toast.success('Бүх зурагнууд Firebase-д хадгалагдсан байна!', { id: toastId });
+                setIsMigrating(false);
+                return;
+            }
+
+            // Count total FB images
+            let totalFbImages = 0;
+            productsWithFbImages.forEach(p => {
+                p.images?.forEach(img => { if (isFbUrl(img)) totalFbImages++; });
+            });
+
+            if (!confirm(`Нийт ${productsWithFbImages.length} бараанаас ${totalFbImages} Facebook зураг олдлоо. Firebase руу шилжүүлэх үү?`)) {
+                toast.dismiss(toastId);
+                setIsMigrating(false);
+                return;
+            }
+
+            let migrated = 0;
+            let failed = 0;
+            let removed = 0;
+
+            for (let pi = 0; pi < productsWithFbImages.length; pi++) {
+                const p = productsWithFbImages[pi];
+                toast.loading(
+                    `${pi + 1}/${productsWithFbImages.length} бараа шилжүүлж байна... (✅${migrated} ❌${failed})`,
+                    { id: toastId }
+                );
+
+                const images = [...(p.images || [])];
+                let changed = false;
+
+                for (let i = images.length - 1; i >= 0; i--) {
+                    if (!isFbUrl(images[i])) continue;
+
+                    try {
+                        const res = await fetch('/api/migrate-image', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                url: images[i],
+                                bizId: business.id,
+                                productId: p.id,
+                                index: i,
+                            }),
+                        });
+
+                        if (res.ok) {
+                            const data = await res.json();
+                            images[i] = data.newUrl;
+                            migrated++;
+                            changed = true;
+                        } else {
+                            const errData = await res.json().catch(() => ({}));
+                            if (errData.expired) {
+                                // Image is 403/404 — remove it
+                                images.splice(i, 1);
+                                removed++;
+                                changed = true;
+                            } else {
+                                failed++;
+                            }
+                        }
+                    } catch (e) {
+                        console.error('Migration error for', p.id, e);
+                        failed++;
+                    }
+
+                    // Small delay to not overwhelm the API
+                    await new Promise(r => setTimeout(r, 300));
+                }
+
+                // Update product if images changed (and weren't updated by API)
+                if (changed) {
+                    try {
+                        await productService.updateProduct(business.id, p.id, { images });
+                    } catch (e) {
+                        console.error('Failed to update product', p.id, e);
+                    }
+                }
+            }
+
+            const msg = `Зураг шилжүүлэлт дууслаа! ✅ ${migrated} шилжүүлсэн${removed > 0 ? `, 🗑 ${removed} хугацаа дууссан` : ''}${failed > 0 ? `, ❌ ${failed} алдаатай` : ''}`;
+            toast.success(msg, { id: toastId, duration: 8000 });
+
+        } catch (error) {
+            console.error('Migration error:', error);
+            toast.error('Зураг шилжүүлэхэд алдаа гарлаа', { id: toastId });
+        } finally {
+            setIsMigrating(false);
+        }
+    };
+
     const handleDelete = async (id: string) => {
         if (!business || !confirm('Энэ барааг устгахдаа итгэлтэй байна уу?')) return;
         try {
@@ -396,6 +511,17 @@ export function ProductsPage() {
                             <PermissionGate permission="products.create">
                                 <button className="prd-hero-btn fb-btn" onClick={() => setShowFBImport(true)}>
                                     <Facebook size={16} /> FB
+                                </button>
+                            </PermissionGate>
+                            <PermissionGate permission="products.edit">
+                                <button
+                                    className="prd-hero-btn"
+                                    style={{ background: '#059669', color: 'white', border: 'none' }}
+                                    onClick={handleMigrateImages}
+                                    disabled={isMigrating}
+                                >
+                                    {isMigrating ? <Loader2 size={16} className="animate-spin" /> : <ImageIcon size={16} />}
+                                    Зураг засах
                                 </button>
                             </PermissionGate>
                             <PermissionGate permission="products.create">
