@@ -9,7 +9,8 @@ import { useBusinessStore, useAuthStore } from '../../store';
 import { productService, categoryService, cargoService } from '../../services/db';
 import {
     fetchFBPageId, fetchFBPosts, extractProductsFromPosts,
-    detectDuplicates, uploadAllImages,
+    detectDuplicates, uploadAllImages, extractImagesFromPost,
+    downloadAndUploadImage,
     type FBExtractedProduct, type FBPost
 } from '../../services/ai/fbImportService';
 import { globalSettingsService } from '../../services/db';
@@ -252,6 +253,130 @@ export function FBImportModal({ onClose }: FBImportModalProps) {
 
         } catch (error: any) {
             console.error('FB Import error:', error);
+            toast.error(error.message || 'Алдаа гарлаа');
+            setStep('setup');
+        }
+    };
+
+    // ===== FIX IMAGES: Fast mode — no AI, just match & download =====
+    const handleFixImages = async () => {
+        if (!pageUrl || !accessToken || !startDate || !endDate) {
+            toast.error('Page URL, Token, огноо бөглөнө үү');
+            return;
+        }
+        if (!business?.id) return;
+
+        saveSettings();
+        setStep('fetching');
+        setProgress({ current: 0, total: 0, message: 'Зураггүй бараа хайж байна...' });
+
+        try {
+            // 1. Find products with no images
+            const imagelessProducts = existingProducts.filter(p =>
+                !p.isDeleted && (!p.images || p.images.length === 0 || p.images.every(img => !img))
+            );
+
+            if (imagelessProducts.length === 0) {
+                toast.success('Бүх бараанд зураг байна! ✅');
+                setStep('setup');
+                return;
+            }
+
+            setProgress({ current: 0, total: 0, message: `${imagelessProducts.length} зураггүй бараа олдлоо. FB постууд татаж байна...` });
+
+            // 2. Fetch FB posts
+            const pageId = await fetchFBPageId(pageUrl, accessToken);
+            const fetchedPosts = await fetchFBPosts(
+                pageId, accessToken,
+                new Date(startDate),
+                new Date(endDate + 'T23:59:59'),
+                'newest'
+            );
+
+            if (fetchedPosts.length === 0) {
+                toast.error('Тухайн хугацаанд пост олдсонгүй');
+                setStep('setup');
+                return;
+            }
+
+            // 3. Tokenize function for matching
+            const tokenize = (text: string): string[] =>
+                text.toLowerCase().replace(/[^\u0400-\u04ffa-z0-9\s]/gi, ' ')
+                    .split(/\s+/).filter(w => w.length > 2);
+
+            // 4. Match each imageless product to FB posts
+            setStep('processing');
+            let fixed = 0;
+            let noMatch = 0;
+
+            for (let i = 0; i < imagelessProducts.length; i++) {
+                const product = imagelessProducts[i];
+                setProgress({
+                    current: i + 1,
+                    total: imagelessProducts.length,
+                    message: `${i + 1}/${imagelessProducts.length} — "${product.name}" зураг хайж байна...`
+                });
+
+                const productWords = tokenize(product.name);
+                if (productWords.length === 0) { noMatch++; continue; }
+
+                // Find best matching post by name overlap
+                let bestPost: FBPost | null = null;
+                let bestScore = 0;
+
+                for (const post of fetchedPosts) {
+                    const postText = (post.message || '').toLowerCase();
+                    const postWords = tokenize(postText);
+                    if (postWords.length === 0) continue;
+
+                    let matches = 0;
+                    for (const pw of productWords) {
+                        if (postWords.some(w => w === pw || (w.length > 3 && pw.length > 3 && (w.includes(pw) || pw.includes(w))))) {
+                            matches++;
+                        }
+                    }
+                    const score = matches / productWords.length;
+                    if (score > bestScore) {
+                        bestScore = score;
+                        bestPost = post;
+                    }
+                }
+
+                // Require at least 50% word match
+                if (!bestPost || bestScore < 0.5) {
+                    noMatch++;
+                    continue;
+                }
+
+                // Extract images from matched post
+                const postImages = extractImagesFromPost(bestPost);
+                if (postImages.length === 0) { noMatch++; continue; }
+
+                // Download & upload images
+                const uploadedUrls: string[] = [];
+                for (const imgUrl of postImages) {
+                    const uploaded = await downloadAndUploadImage(imgUrl, business.id);
+                    if (uploaded) uploadedUrls.push(uploaded);
+                }
+
+                if (uploadedUrls.length > 0) {
+                    await productService.updateProduct(business.id, product.id, { images: uploadedUrls });
+                    fixed++;
+                } else {
+                    noMatch++;
+                }
+
+                await new Promise(r => setTimeout(r, 200));
+            }
+
+            toast.success(
+                `Зураг засвар дууслаа!\n✅ ${fixed} бараанд зураг нэмсэн\n❌ ${noMatch} тохирох пост олдсонгүй`,
+                { duration: 8000 }
+            );
+            setStep('setup');
+
+        } catch (error: any) {
+            console.error('Fix images error:', error);
             toast.error(error.message || 'Алдаа гарлаа');
             setStep('setup');
         }
@@ -638,16 +763,32 @@ export function FBImportModal({ onClose }: FBImportModalProps) {
                                 </div>
                             </div>
 
-                            <button
-                                className="btn btn-primary gradient-btn premium-btn"
-                                onClick={handleStartFetch}
-                                disabled={isFetching}
-                                style={{ height: 50, borderRadius: 16, fontWeight: 800 }}
-                            >
-                                <Sparkles size={20} />
-                                AI Импорт эхлүүлэх
-                                <ChevronRight size={18} />
-                            </button>
+                            <div style={{ display: 'flex', gap: 8 }}>
+                                <button
+                                    className="btn btn-primary gradient-btn premium-btn"
+                                    onClick={handleStartFetch}
+                                    disabled={isFetching}
+                                    style={{ flex: 1, height: 50, borderRadius: 16, fontWeight: 800 }}
+                                >
+                                    <Sparkles size={20} />
+                                    AI Импорт
+                                    <ChevronRight size={18} />
+                                </button>
+                                <button
+                                    className="btn"
+                                    onClick={handleFixImages}
+                                    disabled={isFetching}
+                                    style={{
+                                        height: 50, borderRadius: 16, fontWeight: 800,
+                                        background: '#059669', color: 'white', border: 'none',
+                                        display: 'flex', alignItems: 'center', gap: 6,
+                                        padding: '0 16px', whiteSpace: 'nowrap'
+                                    }}
+                                >
+                                    <ImageIcon size={18} />
+                                    Зураг татах
+                                </button>
+                            </div>
                         </div>
                     )}
 
