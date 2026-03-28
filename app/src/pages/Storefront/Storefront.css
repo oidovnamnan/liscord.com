@@ -648,6 +648,11 @@
         gap: 12px;
     }
 
+    .product-card {
+        min-width: 0;
+        overflow: hidden;
+    }
+
     .product-image-wrap {
         border-radius: var(--sf-radius-md);
         margin-bottom: 10px;
