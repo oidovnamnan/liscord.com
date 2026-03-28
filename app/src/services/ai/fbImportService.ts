@@ -666,10 +666,36 @@ export function detectDuplicates(
 
 export async function downloadAndUploadImage(imageUrl: string, bizId: string): Promise<string | null> {
     try {
-        const resp = await fetch(imageUrl);
-        if (!resp.ok) return null;
-        const blob = await resp.blob();
-        const ext = blob.type === 'image/png' ? '.png' : '.jpg';
+        const isFbCdn = /fbcdn\.net|scontent\.|facebook\.com/i.test(imageUrl);
+
+        let blob: Blob;
+
+        if (isFbCdn) {
+            // FB CDN images need server-side proxy to bypass CORS
+            const proxyRes = await fetch('/api/migrate-image', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ url: imageUrl }),
+            });
+
+            if (!proxyRes.ok) return null;
+
+            const { base64, contentType } = await proxyRes.json();
+            const byteString = atob(base64);
+            const ab = new ArrayBuffer(byteString.length);
+            const ia = new Uint8Array(ab);
+            for (let j = 0; j < byteString.length; j++) {
+                ia[j] = byteString.charCodeAt(j);
+            }
+            blob = new Blob([ab], { type: contentType || 'image/jpeg' });
+        } else {
+            // Non-FB images: direct fetch
+            const resp = await fetch(imageUrl);
+            if (!resp.ok) return null;
+            blob = await resp.blob();
+        }
+
+        const ext = blob.type === 'image/png' ? '.png' : blob.type === 'image/webp' ? '.webp' : '.jpg';
         const fileName = `fb_import_${Date.now()}_${Math.random().toString(36).substring(2, 6)}${ext}`;
         const file = new File([blob], fileName, { type: blob.type });
 

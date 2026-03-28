@@ -321,14 +321,14 @@ export function FBImportModal({ onClose }: FBImportModalProps) {
                 setImportProgress({ current: processed, total: totalItems });
                 setImportingProduct(product.name);
 
-                // Upload images to Firebase Storage (may fail due to CORS)
+                // Upload images to Firebase Storage via server proxy
                 let finalImages: string[] = [];
                 try {
                     const uploadedImages = await uploadAllImages(product.images, business.id);
-                    finalImages = uploadedImages.length > 0 ? uploadedImages : product.images;
+                    finalImages = uploadedImages; // Only use successfully uploaded Firebase URLs
                 } catch (imgErr) {
-                    console.warn('[FB Import] Image upload failed, using original URLs:', imgErr);
-                    finalImages = product.images;
+                    console.warn('[FB Import] Image upload failed:', imgErr);
+                    finalImages = []; // Never fall back to Facebook CDN URLs
                 }
 
                 // Find or create category (robust multi-signal match)
