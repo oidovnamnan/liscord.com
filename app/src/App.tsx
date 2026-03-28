@@ -112,6 +112,7 @@ const POSPage = lazy(() => import('./pages/Retail/POSPage').then(m => ({ default
 // EcommercePage removed — storefront config lives in Settings + App Store
 const DeliveryAppPage = lazy(() => import('./pages/Retail/DeliveryAppPage').then(m => ({ default: m.DeliveryAppPage })));
 const VouchersPage = lazy(() => import('./pages/Retail/VouchersPage').then(m => ({ default: m.VouchersPage })));
+const PromoCodesPage = lazy(() => import('./pages/Retail/PromoCodesPage').then(m => ({ default: m.PromoCodesPage })));
 const FranchisePage = lazy(() => import('./pages/Retail/FranchisePage').then(m => ({ default: m.FranchisePage })));
 const RestaurantPOSPage = lazy(() => import('./pages/Industry/RestaurantPOSPage').then(m => ({ default: m.RestaurantPOSPage })));
 const KDSPage = lazy(() => import('./pages/Industry/KDSPage').then(m => ({ default: m.KDSPage })));
@@ -773,6 +774,7 @@ export default function App() {
 
             <Route path="delivery-app" element={<ModuleGuard moduleId="delivery-app"><DeliveryAppPage /></ModuleGuard>} />
             <Route path="vouchers" element={<ModuleGuard moduleId="vouchers"><VouchersPage /></ModuleGuard>} />
+            <Route path="promo-codes" element={<ModuleGuard moduleId="promo-codes"><PromoCodesPage /></ModuleGuard>} />
             <Route path="franchise" element={<ModuleGuard moduleId="franchise"><FranchisePage /></ModuleGuard>} />
             <Route path="restaurant-pos" element={<ModuleGuard moduleId="restaurant-pos"><RestaurantPOSPage /></ModuleGuard>} />
             <Route path="kds" element={<ModuleGuard moduleId="kds"><KDSPage /></ModuleGuard>} />

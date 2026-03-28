@@ -1532,24 +1532,53 @@ export interface SocialMention {
     createdAt: Date;
 }
 
-// ============ VOUCHERS & COUPONS (69) ============
-export interface Voucher {
+// ============ PROMO CODES (69) ============
+export interface PromoCode {
     id: string;
     businessId: string;
-    code: string; // e.g., 'SAVE20'
+    code: string;
     type: 'fixed' | 'percentage';
     value: number;
-    minOrderAmount: number;
-    maxDiscountAmount?: number;
-    startDate: Date;
-    endDate: Date;
+
+    mode: 'static' | 'dynamic' | 'user_generated';
+    target: 'all' | 'vip' | 'regular';
+
+    usageType: 'one_time' | 'unlimited';
     usageLimit: number;
     usageCount: number;
+    usedBy: string[];
+
+    startDate: Date;
+    endDate: Date;
+    minOrderAmount: number;
+    maxDiscountAmount?: number;
+
+    dynamicConfig?: {
+        minPercent: number;
+        maxPercent: number;
+        totalCodes: number;
+        generatedCount: number;
+    };
+
+    userGenConfig?: {
+        creditsPerUser: number;
+        minPercent: number;
+        maxPercent: number;
+    };
+
     isActive: boolean;
-    applicableProducts?: string[]; // IDs
-    applicableCategories?: string[]; // IDs
+    isDeleted: boolean;
+    parentId?: string;
+    assignedTo?: string;
     createdAt: Date;
     updatedAt: Date;
+}
+
+export interface PromoCredit {
+    phone: string;
+    usedCredits: number;
+    totalCredits: number;
+    generatedCodes: string[];
 }
 
 // ============ FRANCHISE (70) ============

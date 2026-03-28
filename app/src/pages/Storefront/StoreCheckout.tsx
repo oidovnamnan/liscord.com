@@ -69,6 +69,101 @@ export function StoreCheckout() {
     const [savedTotal, setSavedTotal] = useState(0);
     const [paymentConfirmed, setPaymentConfirmed] = useState(false);
 
+    // Promo Code
+    const [promoInput, setPromoInput] = useState('');
+    const [promoCode, setPromoCode] = useState<{ code: string; discount: number; label: string; docId: string } | null>(null);
+    const [promoLoading, setPromoLoading] = useState(false);
+    const [promoError, setPromoError] = useState('');
+
+    const validatePromo = async () => {
+        if (!promoInput.trim() || !business?.id) return;
+        setPromoLoading(true);
+        setPromoError('');
+        setPromoCode(null);
+
+        try {
+            const { collection: col, query: q, where: w, getDocs: gd } = await import('firebase/firestore');
+            const snap = await gd(q(
+                col(db, 'businesses', business.id, 'promoCodes'),
+                w('code', '==', promoInput.trim().toUpperCase()),
+                w('isActive', '==', true)
+            ));
+
+            if (snap.empty) {
+                setPromoError('Промо код олдсонгүй');
+                setPromoLoading(false);
+                return;
+            }
+
+            const d = snap.docs[0];
+            const promo = { id: d.id, ...d.data() } as any;
+
+            // Check dates
+            const now = new Date();
+            const start = promo.startDate?.toDate ? promo.startDate.toDate() : new Date(promo.startDate);
+            const end = promo.endDate?.toDate ? promo.endDate.toDate() : new Date(promo.endDate);
+            if (now < start || now > end) {
+                setPromoError('Промо кодын хугацаа дууссан');
+                setPromoLoading(false);
+                return;
+            }
+
+            // Check usage
+            if (promo.usageType === 'one_time' && promo.usageCount >= 1) {
+                setPromoError('Промо код ашиглагдсан байна');
+                setPromoLoading(false);
+                return;
+            }
+            if (promo.usageLimit > 0 && promo.usageCount >= promo.usageLimit) {
+                setPromoError('Промо кодын хязгаар дүүрсэн');
+                setPromoLoading(false);
+                return;
+            }
+
+            // Check if user already used (for one_time per user)
+            const phone = customerPhone.replace(/[^\d]/g, '');
+            if (phone && (promo.usedBy || []).includes(phone)) {
+                setPromoError('Та энэ кодыг аль хэдийн ашигласан');
+                setPromoLoading(false);
+                return;
+            }
+
+            // Check min order
+            const orderTotal = totalAmount();
+            if (promo.minOrderAmount && orderTotal < promo.minOrderAmount) {
+                setPromoError(`₮${promo.minOrderAmount.toLocaleString()}-с дээш захиалгад хүчинтэй`);
+                setPromoLoading(false);
+                return;
+            }
+
+            // Calculate discount
+            let discount = 0;
+            let label = '';
+            if (promo.type === 'percentage') {
+                discount = Math.round(orderTotal * promo.value / 100);
+                if (promo.maxDiscountAmount && discount > promo.maxDiscountAmount) {
+                    discount = promo.maxDiscountAmount;
+                }
+                label = `${promo.value}% хямдрал`;
+            } else {
+                discount = Math.min(promo.value, orderTotal);
+                label = `₮${promo.value.toLocaleString()} хямдрал`;
+            }
+
+            setPromoCode({ code: promo.code, discount, label, docId: d.id });
+        } catch (e) {
+            console.error('Promo validate error:', e);
+            setPromoError('Алдаа гарлаа');
+        }
+        setPromoLoading(false);
+    };
+
+    const clearPromo = () => {
+        setPromoCode(null);
+        setPromoInput('');
+        setPromoError('');
+    };
+
     // Stock Inquiry
     const [showInquiryPopup, setShowInquiryPopup] = useState(false);
     const pendingFormRef = useRef<HTMLFormElement | null>(null);
@@ -107,7 +202,8 @@ export function StoreCheckout() {
 
     const currentFee = isDeliveryRequested ? deliveryFees[deliveryZone].fee : 0;
     const cargoInTotal = cargoPaymentTiming === 'with_order' ? totalCargoFee : 0;
-    const finalTotal = totalAmount() + currentFee + cargoInTotal;
+    const promoDiscount = promoCode?.discount || 0;
+    const finalTotal = totalAmount() + currentFee + cargoInTotal - promoDiscount;
 
     // Bank accounts
     const enabledBanks = useMemo(() =>
@@ -247,7 +343,7 @@ export function StoreCheckout() {
                     balanceDue: finalTotal
                 },
                 deliveryAddress: isDeliveryRequested ? `${deliveryFees[deliveryZone].label} - ${address}` : 'Дэлгүүрээс очиж авах',
-                notes: `Онлайн дэлгүүрээр өгсөн захиалга${paymentMethod === 'bank_transfer' && selectedBank ? ` | Шилжүүлэг: ${selectedBank.bankName} ${selectedBank.accountNumber} | Код: ${code}` : ''}`,
+                notes: `Онлайн дэлгүүрээр өгсөн захиалга${paymentMethod === 'bank_transfer' && selectedBank ? ` | Шилжүүлэг: ${selectedBank.bankName} ${selectedBank.accountNumber} | Код: ${code}` : ''}${promoCode ? ` | Промо: ${promoCode.code} (−₮${promoCode.discount.toLocaleString()})` : ''}`,
                 internalNotes: '',
                 tags: [...(['online']), ...(items.some(i => i.isFlashDeal) ? ['flash_deal'] : [])],
                 statusHistory: [],
@@ -257,6 +353,21 @@ export function StoreCheckout() {
 
             const newId = await orderService.createOrder(business.id, orderPayload);
             setSavedTotal(finalTotal);
+
+            // Update promo code usage
+            if (promoCode?.docId) {
+                try {
+                    const { doc: docRef, updateDoc: upDoc, increment, arrayUnion: arrU } = await import('firebase/firestore');
+                    await upDoc(docRef(db, 'businesses', business.id, 'promoCodes', promoCode.docId), {
+                        usageCount: increment(1),
+                        usedBy: arrU(phone),
+                        updatedAt: serverTimestamp(),
+                    });
+                } catch (e) {
+                    console.warn('Promo usage update failed:', e);
+                }
+            }
+
             window.scrollTo(0, 0);
 
             if (name) localStorage.setItem(`customer_name_${business.id}`, name);
@@ -1114,6 +1225,61 @@ export function StoreCheckout() {
                                             )}
                                         </div>
                                     )}
+                                </div>
+                            )}
+                            {/* Promo Code */}
+                            <div style={{ padding: '12px 0', borderTop: '1px solid var(--border-primary)' }}>
+                                {!promoCode ? (
+                                    <div>
+                                        <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                                            <input
+                                                type="text"
+                                                placeholder="Промо код оруулах"
+                                                value={promoInput}
+                                                onChange={e => setPromoInput(e.target.value.toUpperCase())}
+                                                onKeyDown={e => e.key === 'Enter' && validatePromo()}
+                                                style={{
+                                                    flex: 1, height: 38, border: '1.5px solid var(--border-primary)',
+                                                    borderRadius: 8, padding: '0 10px', fontSize: '0.85rem',
+                                                    fontWeight: 700, fontFamily: 'monospace', letterSpacing: '0.05em',
+                                                    background: 'var(--surface-1)', outline: 'none'
+                                                }}
+                                            />
+                                            <button
+                                                onClick={validatePromo}
+                                                disabled={promoLoading || !promoInput.trim()}
+                                                style={{
+                                                    height: 38, padding: '0 14px', background: '#6366f1', color: '#fff',
+                                                    border: 'none', borderRadius: 8, fontWeight: 700, fontSize: '0.8rem',
+                                                    cursor: 'pointer', opacity: promoLoading || !promoInput.trim() ? 0.5 : 1,
+                                                    whiteSpace: 'nowrap'
+                                                }}
+                                            >
+                                                {promoLoading ? '...' : 'Хэрэглэх'}
+                                            </button>
+                                        </div>
+                                        {promoError && (
+                                            <div style={{ fontSize: '0.73rem', color: '#dc2626', fontWeight: 600, marginTop: 5 }}>{promoError}</div>
+                                        )}
+                                    </div>
+                                ) : (
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(99, 102, 241, 0.06)', padding: '8px 10px', borderRadius: 8 }}>
+                                        <div>
+                                            <span style={{ fontFamily: 'monospace', fontWeight: 800, fontSize: '0.85rem', color: '#6366f1' }}>{promoCode.code}</span>
+                                            <span style={{ fontSize: '0.73rem', fontWeight: 600, color: '#059669', marginLeft: 8 }}>
+                                                {promoCode.label} (−₮{promoCode.discount.toLocaleString()})
+                                            </span>
+                                        </div>
+                                        <button onClick={clearPromo} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#dc2626', fontSize: '0.75rem', fontWeight: 700 }}>Болих</button>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Promo discount line */}
+                            {promoDiscount > 0 && (
+                                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.88rem', fontWeight: 700, color: '#059669' }}>
+                                    <span>🎟 Промо хямдрал</span>
+                                    <span>−₮{promoDiscount.toLocaleString()}</span>
                                 </div>
                             )}
 

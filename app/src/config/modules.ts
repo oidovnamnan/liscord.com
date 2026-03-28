@@ -1072,17 +1072,18 @@ export const LISCORD_MODULES: AppModule[] = [
         ]
     },
     {
-        id: 'vouchers',
-        name: 'Бэлгийн Карт',
-        description: 'Дижитал/цаасан бэлэг',
+        id: 'promo-codes',
+        name: 'Промо Код',
+        description: 'Хямдралын код, купон удирдлага',
         icon: 'Ticket',
-        route: '/app/vouchers',
+        route: '/app/promo-codes',
         isCore: false,
-        category: 'operations',
+        category: 'sales',
+        hasSettings: true,
         isFree: false,
         plans: [
-            { id: 'monthly', name: '30 хоног', price: 20000, durationDays: 30 },
-            { id: 'yearly', name: '1 жил', price: 192000, durationDays: 365 }
+            { id: 'monthly', name: '30 хоног', price: 15000, durationDays: 30 },
+            { id: 'yearly', name: '1 жил', price: 150000, durationDays: 365 }
         ]
     },
     {

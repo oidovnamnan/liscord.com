@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { X, User, Crown, Package, MapPin, Bell, Clock, CheckCircle, AlertTriangle, RefreshCw, Phone, Loader2, Edit3, MessageSquare, Send } from 'lucide-react';
+import { X, User, Crown, Package, MapPin, Bell, Clock, CheckCircle, AlertTriangle, RefreshCw, Phone, Loader2, Edit3, MessageSquare, Send, Ticket, Copy, Check, Gift } from 'lucide-react';
 import type { Business } from '../../types';
 import { Timestamp } from 'firebase/firestore';
 
@@ -70,6 +70,13 @@ export function CustomerDashboard({ isOpen, onClose, business, phone, onOpenMemb
     const [loadingMemberships, setLoadingMemberships] = useState(false);
     const [loadingOrders, setLoadingOrders] = useState(false);
     const [addressSaved, setAddressSaved] = useState(false);
+
+    // Promo code generation
+    const [promoCredits, setPromoCredits] = useState<{ used: number; total: number; codes: string[] }>({ used: 0, total: 5, codes: [] });
+    const [promoGenLoading, setPromoGenLoading] = useState(false);
+    const [generatedCode, setGeneratedCode] = useState<{ code: string; percent: number } | null>(null);
+    const [promoCopied, setPromoCopied] = useState(false);
+    const [promoUserCodes, setPromoUserCodes] = useState<{ code: string; value: number; isActive: boolean }[]>([]);
 
     // ═══ Login state (built-in OTP) ═══
     const [loginPhone, setLoginPhone] = useState('');
@@ -607,6 +614,14 @@ export function CustomerDashboard({ isOpen, onClose, business, phone, onOpenMemb
                                     ))}
                                 </div>
                             )}
+
+                            {/* Promo Code Section */}
+                            <h3 className="cd-section-title" style={{ marginTop: 24 }}>🎟 Промо код</h3>
+                            <PromoCodeSection
+                                business={business}
+                                phone={normalizePhone(effectivePhone)}
+                                brandColor={brandColor}
+                            />
                         </div>
                     )}
 
@@ -932,6 +947,215 @@ function OrderCardWithInquiry({ order, statusInfo, business, customerName, custo
                             )}
                         </div>
                     ))}
+                </div>
+            )}
+        </div>
+    );
+}
+
+// ═══ Promo Code Section (in Profile tab) ═══
+function PromoCodeSection({ business, phone, brandColor }: { business: Business; phone: string; brandColor: string }) {
+    const [loading, setLoading] = useState(false);
+    const [config, setConfig] = useState<{ creditsPerUser: number; minPercent: number; maxPercent: number } | null>(null);
+    const [credits, setCredits] = useState<{ used: number; total: number }>({ used: 0, total: 5 });
+    const [myCodes, setMyCodes] = useState<{ code: string; value: number; isActive: boolean }[]>([]);
+    const [genResult, setGenResult] = useState<{ code: string; pct: number } | null>(null);
+    const [copied, setCopied] = useState('');
+
+    // Load config & user codes
+    useEffect(() => {
+        if (!business?.id || !phone) return;
+        (async () => {
+            try {
+                const { collection, query, where, getDocs, doc, getDoc } = await import('firebase/firestore');
+                const { db } = await import('../../services/firebase');
+
+                // Find active user_generated config
+                const snap = await getDocs(query(
+                    collection(db, 'businesses', business.id, 'promoCodes'),
+                    where('mode', '==', 'user_generated'),
+                    where('isActive', '==', true)
+                ));
+                if (!snap.empty) {
+                    const cfg = snap.docs[0].data();
+                    const ugc = cfg.userGenConfig || { creditsPerUser: 5, minPercent: 3, maxPercent: 10 };
+                    setConfig(ugc);
+
+                    // Load credits
+                    const creditDoc = await getDoc(doc(db, 'businesses', business.id, 'promoCredits', phone));
+                    if (creditDoc.exists()) {
+                        const cd = creditDoc.data();
+                        setCredits({ used: cd.usedCredits || 0, total: ugc.creditsPerUser });
+                    } else {
+                        setCredits({ used: 0, total: ugc.creditsPerUser });
+                    }
+                }
+
+                // Load user's generated codes
+                const codesSnap = await getDocs(query(
+                    collection(db, 'businesses', business.id, 'promoCodes'),
+                    where('mode', '==', 'user_generated'),
+                    where('assignedTo', '==', phone)
+                ));
+                setMyCodes(codesSnap.docs.map(d => {
+                    const data = d.data();
+                    return { code: data.code, value: data.value, isActive: data.isActive && data.usageCount === 0 };
+                }));
+
+                // Also load dynamic codes assigned to this user
+                const dynSnap = await getDocs(query(
+                    collection(db, 'businesses', business.id, 'promoCodes'),
+                    where('mode', '==', 'dynamic'),
+                    where('assignedTo', '==', phone)
+                ));
+                const dynCodes = dynSnap.docs.map(d => {
+                    const data = d.data();
+                    return { code: data.code, value: data.value, isActive: data.isActive && data.usageCount === 0 };
+                });
+                setMyCodes(prev => [...prev, ...dynCodes]);
+            } catch (e) {
+                console.error('Load promo config:', e);
+            }
+        })();
+    }, [business?.id, phone]);
+
+    const generateCode = async () => {
+        if (!config || !business?.id || !phone || credits.used >= credits.total) return;
+        setLoading(true);
+        try {
+            const { collection, addDoc, doc, setDoc, serverTimestamp, Timestamp: TS } = await import('firebase/firestore');
+            const { db } = await import('../../services/firebase');
+
+            const pct = Math.floor(Math.random() * (config.maxPercent - config.minPercent + 1)) + config.minPercent;
+            const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+            let code = 'MY-';
+            for (let i = 0; i < 5; i++) code += chars[Math.floor(Math.random() * chars.length)];
+
+            // Create code
+            await addDoc(collection(db, 'businesses', business.id, 'promoCodes'), {
+                businessId: business.id,
+                code,
+                type: 'percentage',
+                value: pct,
+                mode: 'user_generated',
+                target: 'all',
+                usageType: 'one_time',
+                usageLimit: 1,
+                usageCount: 0,
+                usedBy: [],
+                startDate: serverTimestamp(),
+                endDate: TS.fromDate(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)), // 30 days
+                minOrderAmount: 0,
+                isActive: true,
+                isDeleted: false,
+                assignedTo: phone,
+                createdAt: serverTimestamp(),
+                updatedAt: serverTimestamp(),
+            });
+
+            // Update credits
+            await setDoc(doc(db, 'businesses', business.id, 'promoCredits', phone), {
+                phone,
+                usedCredits: credits.used + 1,
+                totalCredits: credits.total,
+                generatedCodes: [...myCodes.map(c => c.code), code],
+            }, { merge: true });
+
+            setCredits(prev => ({ ...prev, used: prev.used + 1 }));
+            setMyCodes(prev => [{ code, value: pct, isActive: true }, ...prev]);
+            setGenResult({ code, pct });
+        } catch (e) {
+            console.error('Generate promo code:', e);
+        }
+        setLoading(false);
+    };
+
+    const copyCode = (code: string) => {
+        navigator.clipboard.writeText(code);
+        setCopied(code);
+        setTimeout(() => setCopied(''), 2000);
+    };
+
+    const remaining = credits.total - credits.used;
+
+    if (!config && myCodes.length === 0) {
+        return (
+            <div style={{ padding: '16px 0', textAlign: 'center', color: '#999', fontSize: '0.82rem' }}>
+                <Gift size={28} strokeWidth={1.5} style={{ color: '#ddd', marginBottom: 6 }} />
+                <p>Промо код одоогоор идэвхгүй байна</p>
+            </div>
+        );
+    }
+
+    return (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            {/* Generate button */}
+            {config && (
+                <div style={{ background: 'linear-gradient(135deg, #f0f0ff, #fdf0ff)', border: '1px solid #e0d4fc', borderRadius: 12, padding: 16 }}>
+                    {genResult ? (
+                        <div style={{ textAlign: 'center' }}>
+                            <div style={{ fontSize: '0.72rem', color: '#6b7280', fontWeight: 600, marginBottom: 6 }}>🎉 Таны промо код үүслээ!</div>
+                            <div style={{ fontFamily: 'monospace', fontSize: '1.3rem', fontWeight: 800, color: '#6366f1', letterSpacing: '0.05em' }}>{genResult.code}</div>
+                            <div style={{ fontSize: '0.82rem', fontWeight: 700, color: '#059669', marginTop: 4 }}>{genResult.pct}% хямдрал</div>
+                            <div style={{ display: 'flex', gap: 8, justifyContent: 'center', marginTop: 12 }}>
+                                <button onClick={() => copyCode(genResult.code)} style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '6px 14px', background: '#6366f1', color: '#fff', border: 'none', borderRadius: 8, fontSize: '0.78rem', fontWeight: 700, cursor: 'pointer' }}>
+                                    {copied === genResult.code ? <><Check size={14} /> Хуулсан</> : <><Copy size={14} /> Хуулах</>}
+                                </button>
+                                <button onClick={() => setGenResult(null)} style={{ padding: '6px 14px', background: 'none', border: '1px solid #d1d5db', borderRadius: 8, fontSize: '0.78rem', fontWeight: 600, cursor: 'pointer' }}>OK</button>
+                            </div>
+                        </div>
+                    ) : (
+                        <div style={{ textAlign: 'center' }}>
+                            <div style={{ fontSize: '0.82rem', fontWeight: 700, color: '#374151', marginBottom: 4 }}>
+                                {remaining > 0 ? `${config.minPercent}-${config.maxPercent}% хямдралтай код үүсгэх` : 'Эрх дууссан'}
+                            </div>
+                            <div style={{ fontSize: '0.72rem', color: '#6b7280', marginBottom: 10 }}>
+                                Таньд <strong style={{ color: remaining > 0 ? '#6366f1' : '#dc2626' }}>{remaining}</strong> эрх үлдлээ ({credits.used}/{credits.total})
+                            </div>
+                            <button
+                                onClick={generateCode}
+                                disabled={loading || remaining <= 0}
+                                style={{
+                                    display: 'inline-flex', alignItems: 'center', gap: 6,
+                                    padding: '8px 20px', background: remaining > 0 ? '#6366f1' : '#d1d5db',
+                                    color: '#fff', border: 'none', borderRadius: 10, fontSize: '0.85rem',
+                                    fontWeight: 700, cursor: remaining > 0 ? 'pointer' : 'not-allowed',
+                                    opacity: loading ? 0.5 : 1
+                                }}
+                            >
+                                <Ticket size={16} /> {loading ? 'Үүсгэж байна...' : 'Код үүсгэх'}
+                            </button>
+                        </div>
+                    )}
+                </div>
+            )}
+
+            {/* My codes list */}
+            {myCodes.length > 0 && (
+                <div>
+                    <div style={{ fontSize: '0.72rem', fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>Миний кодууд</div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                        {myCodes.map((c, i) => (
+                            <div key={i} style={{
+                                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                                padding: '8px 12px', background: c.isActive ? '#fff' : '#f9fafb',
+                                border: `1px solid ${c.isActive ? '#e5e7eb' : '#f3f4f6'}`,
+                                borderRadius: 8, opacity: c.isActive ? 1 : 0.5
+                            }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                    <span style={{ fontFamily: 'monospace', fontWeight: 800, fontSize: '0.85rem', color: c.isActive ? '#111' : '#999' }}>{c.code}</span>
+                                    <span style={{ fontSize: '0.72rem', fontWeight: 700, color: c.isActive ? '#059669' : '#999', background: c.isActive ? '#ecfdf5' : '#f9fafb', padding: '2px 6px', borderRadius: 4 }}>{c.value}%</span>
+                                </div>
+                                {c.isActive ? (
+                                    <button onClick={() => copyCode(c.code)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: copied === c.code ? '#059669' : '#9ca3af' }}>
+                                        {copied === c.code ? <Check size={14} /> : <Copy size={14} />}
+                                    </button>
+                                ) : (
+                                    <span style={{ fontSize: '0.68rem', color: '#999', fontWeight: 600 }}>Ашигласан</span>
+                                )}
+                            </div>
+                        ))}
+                    </div>
                 </div>
             )}
         </div>
