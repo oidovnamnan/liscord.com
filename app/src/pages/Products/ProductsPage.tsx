@@ -313,102 +313,138 @@ export function ProductsPage() {
                 p.images?.some(img => isFbUrl(img))
             );
 
-            if (productsWithFbImages.length === 0) {
-                toast.success('Бүх зурагнууд Firebase-д хадгалагдсан байна!', { id: toastId });
+            // Find products with NO images at all
+            const productsWithNoImages = allProducts.filter(p =>
+                !p.images || p.images.length === 0 || p.images.every(img => !img)
+            );
+
+            // Nothing to do
+            if (productsWithFbImages.length === 0 && productsWithNoImages.length === 0) {
+                toast.success('Бүх бараанд Firebase зураг хадгалагдсан байна! ✅', { id: toastId });
                 setIsMigrating(false);
                 return;
             }
 
-            // Count total FB images
+            // Build message
+            const parts: string[] = [];
             let totalFbImages = 0;
-            productsWithFbImages.forEach(p => {
-                p.images?.forEach(img => { if (isFbUrl(img)) totalFbImages++; });
-            });
+            if (productsWithFbImages.length > 0) {
+                productsWithFbImages.forEach(p => {
+                    p.images?.forEach(img => { if (isFbUrl(img)) totalFbImages++; });
+                });
+                parts.push(`📸 ${productsWithFbImages.length} бараанд ${totalFbImages} Facebook зураг → Firebase руу шилжүүлнэ`);
+            }
+            if (productsWithNoImages.length > 0) {
+                parts.push(`📭 ${productsWithNoImages.length} бараа зураггүй → FB Import-оор дахин татна`);
+            }
 
-            if (!confirm(`Нийт ${productsWithFbImages.length} бараанаас ${totalFbImages} Facebook зураг олдлоо. Firebase руу шилжүүлэх үү?`)) {
+            if (!confirm(parts.join('\n\n') + '\n\nҮргэлжлүүлэх үү?')) {
                 toast.dismiss(toastId);
                 setIsMigrating(false);
                 return;
             }
 
+            // ── Step 1: Migrate existing FB CDN images ──
             let migrated = 0;
             let failed = 0;
             let removed = 0;
 
-            for (let pi = 0; pi < productsWithFbImages.length; pi++) {
-                const p = productsWithFbImages[pi];
-                toast.loading(
-                    `${pi + 1}/${productsWithFbImages.length} бараа шилжүүлж байна... (✅${migrated} 🗑${removed})`,
-                    { id: toastId }
-                );
+            if (productsWithFbImages.length > 0) {
+                for (let pi = 0; pi < productsWithFbImages.length; pi++) {
+                    const p = productsWithFbImages[pi];
+                    toast.loading(
+                        `${pi + 1}/${productsWithFbImages.length} бараа шилжүүлж байна... (✅${migrated} 🗑${removed})`,
+                        { id: toastId }
+                    );
 
-                const images = [...(p.images || [])];
-                let changed = false;
+                    const images = [...(p.images || [])];
+                    let changed = false;
 
-                for (let i = images.length - 1; i >= 0; i--) {
-                    if (!isFbUrl(images[i])) continue;
+                    for (let i = images.length - 1; i >= 0; i--) {
+                        if (!isFbUrl(images[i])) continue;
 
-                    try {
-                        // Step 1: Download via server proxy (avoids CORS)
-                        const proxyRes = await fetch('/api/migrate-image', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ url: images[i] }),
-                        });
+                        try {
+                            const proxyRes = await fetch('/api/migrate-image', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ url: images[i] }),
+                            });
 
-                        if (!proxyRes.ok) {
-                            const errData = await proxyRes.json().catch(() => ({}));
-                            if (errData.expired) {
-                                images.splice(i, 1);
-                                removed++;
-                                changed = true;
-                            } else {
-                                failed++;
+                            if (!proxyRes.ok) {
+                                const errData = await proxyRes.json().catch(() => ({}));
+                                if (errData.expired) {
+                                    images.splice(i, 1);
+                                    removed++;
+                                    changed = true;
+                                } else {
+                                    failed++;
+                                }
+                                continue;
                             }
-                            continue;
+
+                            const { base64, contentType } = await proxyRes.json();
+                            const byteString = atob(base64);
+                            const ab = new ArrayBuffer(byteString.length);
+                            const ia = new Uint8Array(ab);
+                            for (let j = 0; j < byteString.length; j++) {
+                                ia[j] = byteString.charCodeAt(j);
+                            }
+                            const ext = contentType?.includes('png') ? '.png' : contentType?.includes('webp') ? '.webp' : '.jpg';
+                            const blob = new Blob([ab], { type: contentType || 'image/jpeg' });
+                            const file = new File([blob], `migrated_${Date.now()}_${i}${ext}`, { type: contentType || 'image/jpeg' });
+
+                            const newUrl = await storage.uploadImage(
+                                file,
+                                `businesses/${business.id}/products/${file.name}`
+                            );
+
+                            images[i] = newUrl;
+                            migrated++;
+                            changed = true;
+                        } catch (e) {
+                            console.error('Migration error for', p.id, i, e);
+                            failed++;
                         }
 
-                        const { base64, contentType } = await proxyRes.json();
-
-                        // Step 2: Convert base64 to File and upload to Firebase Storage
-                        const byteString = atob(base64);
-                        const ab = new ArrayBuffer(byteString.length);
-                        const ia = new Uint8Array(ab);
-                        for (let j = 0; j < byteString.length; j++) {
-                            ia[j] = byteString.charCodeAt(j);
-                        }
-                        const ext = contentType?.includes('png') ? '.png' : contentType?.includes('webp') ? '.webp' : '.jpg';
-                        const blob = new Blob([ab], { type: contentType || 'image/jpeg' });
-                        const file = new File([blob], `migrated_${Date.now()}_${i}${ext}`, { type: contentType || 'image/jpeg' });
-
-                        const newUrl = await storage.uploadImage(
-                            file,
-                            `businesses/${business.id}/products/${file.name}`
-                        );
-
-                        images[i] = newUrl;
-                        migrated++;
-                        changed = true;
-
-                    } catch (e) {
-                        console.error('Migration error for', p.id, i, e);
-                        failed++;
+                        await new Promise(r => setTimeout(r, 200));
                     }
 
-                    await new Promise(r => setTimeout(r, 200));
-                }
-
-                if (changed) {
-                    try {
-                        await productService.updateProduct(business.id, p.id, { images });
-                    } catch (e) {
-                        console.error('Failed to update product', p.id, e);
+                    if (changed) {
+                        try {
+                            await productService.updateProduct(business.id, p.id, { images });
+                        } catch (e) {
+                            console.error('Failed to update product', p.id, e);
+                        }
                     }
                 }
             }
 
-            const msg = `Зураг шилжүүлэлт дууслаа! ✅ ${migrated} шилжүүлсэн${removed > 0 ? `, 🗑 ${removed} хугацаа дууссан` : ''}${failed > 0 ? `, ❌ ${failed} алдаатай` : ''}`;
-            toast.success(msg, { id: toastId, duration: 8000 });
+            // ── Step 2: Report + offer FB Import for imageless products ──
+            const msgParts: string[] = [];
+            if (migrated > 0) msgParts.push(`✅ ${migrated} зураг шилжүүлсэн`);
+            if (removed > 0) msgParts.push(`🗑 ${removed} хугацаа дууссан зураг устгасан`);
+            if (failed > 0) msgParts.push(`❌ ${failed} алдаатай`);
+
+            // Count total imageless after migration (includes newly emptied ones)
+            const totalImageless = productsWithNoImages.length + (removed > 0 ? productsWithFbImages.filter(p => {
+                const imgs = (p.images || []).filter(img => !isFbUrl(img));
+                return imgs.length === 0;
+            }).length : 0);
+
+            if (totalImageless > 0) {
+                msgParts.push(`\n📭 ${totalImageless} бараа зураггүй`);
+            }
+
+            toast.success(msgParts.join(', '), { id: toastId, duration: 8000 });
+
+            // Prompt to open FB Import for imageless products
+            if (totalImageless > 0) {
+                setTimeout(() => {
+                    if (confirm(`${totalImageless} бараа зураггүй байна.\n\nFB Import нээж зураг дахин татах уу?\n(Давхардсан → Merge сонгож зураг нэмнэ)`)) {
+                        setShowFBImport(true);
+                    }
+                }, 1000);
+            }
 
         } catch (error) {
             console.error('Migration error:', error);
