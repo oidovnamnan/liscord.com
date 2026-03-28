@@ -8,8 +8,8 @@ service firebase.storage {
 
     // Business files — only members can read/write
     match /businesses/{bizId}/{allPaths=**} {
-      allow read: if isAuth() && exists(/databases/$(database)/documents/businesses/$(bizId)/employees/$(request.auth.uid));
-      allow write: if isAuth() && exists(/databases/$(database)/documents/businesses/$(bizId)/employees/$(request.auth.uid));
+      allow read: if isAuth();
+      allow write: if isAuth();
     }
 
     // System Branding files — anyone can read, Authenticated can upload
