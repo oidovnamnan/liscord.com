@@ -196,15 +196,12 @@ export function ProductModal({ product, onClose, preorderTerms, onCategoryClick,
                                     className="sf-modal-main-img sf-img-fade"
                                     draggable={false}
                                     referrerPolicy="no-referrer"
-                                    crossOrigin="anonymous"
                                     onError={(e) => {
                                         const target = e.currentTarget;
-                                        // FB browser: retry once without crossOrigin
-                                        if (isFBBrowser && !target.dataset.retried) {
+                                        if (!target.dataset.retried) {
                                             target.dataset.retried = '1';
-                                            target.removeAttribute('crossorigin');
                                             const imgUrl = images[activeImage] || images[0];
-                                            target.src = imgUrl + (imgUrl.includes('?') ? '&' : '?') + 'fb=1';
+                                            target.src = imgUrl + (imgUrl.includes('?') ? '&' : '?') + 't=' + Date.now();
                                             return;
                                         }
                                         setFailedImages(prev => new Set(prev).add(activeImage));
@@ -279,13 +276,11 @@ export function ProductModal({ product, onClose, preorderTerms, onCategoryClick,
                                             src={img}
                                             alt={`Thumbnail ${i + 1}`}
                                             referrerPolicy="no-referrer"
-                                            crossOrigin="anonymous"
                                             onError={(e) => {
                                                 const target = e.currentTarget;
-                                                if (isFBBrowser && !target.dataset.retried) {
+                                                if (!target.dataset.retried) {
                                                     target.dataset.retried = '1';
-                                                    target.removeAttribute('crossorigin');
-                                                    target.src = img + (img.includes('?') ? '&' : '?') + 'fb=1';
+                                                    target.src = img + (img.includes('?') ? '&' : '?') + 't=' + Date.now();
                                                     return;
                                                 }
                                                 target.style.display = 'none';

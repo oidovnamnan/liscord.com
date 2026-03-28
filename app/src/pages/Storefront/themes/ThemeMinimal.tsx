@@ -493,15 +493,12 @@ export function ThemeMinimal({ business }: { business: Business }) {
                                                     className="product-image"
                                                     loading={isFBBrowser ? 'eager' : 'lazy'}
                                                     referrerPolicy="no-referrer"
-                                                    crossOrigin="anonymous"
                                                     style={sfp.isLocked ? { filter: 'blur(4px)', opacity: 0.7 } : undefined}
                                                     onError={(e) => {
                                                         const target = e.currentTarget;
-                                                        // FB browser: retry once without crossOrigin (some CDNs reject it)
-                                                        if (isFBBrowser && !target.dataset.retried) {
+                                                        if (!target.dataset.retried) {
                                                             target.dataset.retried = '1';
-                                                            target.removeAttribute('crossorigin');
-                                                            target.src = p.images[0] + (p.images[0].includes('?') ? '&' : '?') + 'fb=1';
+                                                            target.src = p.images[0] + (p.images[0].includes('?') ? '&' : '?') + 't=' + Date.now();
                                                             return;
                                                         }
                                                         target.style.display = 'none';

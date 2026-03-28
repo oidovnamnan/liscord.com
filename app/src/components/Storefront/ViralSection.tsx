@@ -139,7 +139,16 @@ function ViralCard({ p, onProductClick, fmt }: { p: Product; onProductClick: (p:
                             alt={p.name}
                             className="viral-card-image"
                             loading="eager"
-                            onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                            referrerPolicy="no-referrer"
+                            onError={(e) => {
+                                const target = e.currentTarget;
+                                if (!target.dataset.retried) {
+                                    target.dataset.retried = '1';
+                                    target.src = p.images[0] + (p.images[0].includes('?') ? '&' : '?') + 't=' + Date.now();
+                                    return;
+                                }
+                                target.style.display = 'none';
+                            }}
                         />
                     ) : (
                         <div className="viral-card-placeholder">📦</div>
