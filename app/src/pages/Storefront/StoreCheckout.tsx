@@ -779,16 +779,15 @@ export function StoreCheckout() {
                                         placeholder="Захиалагчийн нэр"
                                         value={customerName}
                                         onChange={e => setCustomerName(e.target.value)}
-                                        onBlur={() => setNameTouched(true)}
                                         style={{
                                             height: 48, borderRadius: 12, background: 'var(--bg-soft)',
-                                            border: `1.5px solid ${nameTouched && !customerName.trim() ? '#ff4d4f' : customerName.trim() ? '#52c41a' : 'var(--border-primary)'}`,
-                                            boxShadow: nameTouched && !customerName.trim() ? '0 0 0 3px rgba(255, 77, 79, 0.12)' : 'none',
+                                            border: `1.5px solid ${customerName.trim() ? '#52c41a' : '#ff4d4f'}`,
+                                            boxShadow: !customerName.trim() ? '0 0 0 3px rgba(255, 77, 79, 0.08)' : 'none',
                                             transition: 'border-color 0.2s, box-shadow 0.2s'
                                         }}
                                     />
-                                    {nameTouched && !customerName.trim() && (
-                                        <span style={{ color: '#ff4d4f', fontSize: '0.75rem', marginTop: 4, fontWeight: 600 }}>Захиалагчийн нэр оруулна уу</span>
+                                    {!customerName.trim() && (
+                                        <span style={{ color: '#ff4d4f', fontSize: '0.75rem', marginTop: 4, fontWeight: 600 }}>Нэрээ оруулна уу</span>
                                     )}
                                 </div>
                                 <div className="input-group">
@@ -806,23 +805,21 @@ export function StoreCheckout() {
                                             setCustomerPhone(val);
                                             if (val.length === 8) setPhoneError(false);
                                         }}
-                                        onBlur={() => {
-                                            if (customerPhone.length < 8) setPhoneError(true);
-                                        }}
-                                        onFocus={() => setPhoneError(false)}
                                         style={{
                                             height: 48, borderRadius: 12, background: 'var(--bg-soft)',
-                                            border: `1.5px solid ${phoneError ? '#ff4d4f' : customerPhone.length > 0 && customerPhone.length < 8 ? '#faad14' : customerPhone.length === 8 ? '#52c41a' : 'var(--border-primary)'}`,
-                                            boxShadow: phoneError ? '0 0 0 3px rgba(255, 77, 79, 0.12)' : 'none',
+                                            border: `1.5px solid ${customerPhone.length === 8 ? '#52c41a' : customerPhone.length > 0 ? '#faad14' : '#ff4d4f'}`,
+                                            boxShadow: customerPhone.length === 0 ? '0 0 0 3px rgba(255, 77, 79, 0.08)' : 'none',
                                             transition: 'border-color 0.2s, box-shadow 0.2s'
                                         }}
                                     />
+                                    {customerPhone.length === 0 && (
+                                        <span style={{ color: '#ff4d4f', fontSize: '0.75rem', marginTop: 4, fontWeight: 600 }}>Утасны дугаараа оруулна уу</span>
+                                    )}
                                     {customerPhone.length > 0 && customerPhone.length < 8 && (
-                                        <span style={{ color: phoneError ? '#ff4d4f' : '#faad14', fontSize: '0.75rem', marginTop: 4, fontWeight: 600 }}>
-                                            {customerPhone.length}/8 оронтой тоо оруулна уу
+                                        <span style={{ color: '#faad14', fontSize: '0.75rem', marginTop: 4, fontWeight: 600 }}>
+                                            Утасны дугаараа зөв оруулна уу ({customerPhone.length}/8)
                                         </span>
                                     )}
-                                    {phoneError && customerPhone.length === 0 && <span style={{ color: '#ff4d4f', fontSize: '0.75rem', marginTop: 4, fontWeight: 600 }}>8 оронтой тоо оруулна уу</span>}
                                 </div>
                             </div>
 
