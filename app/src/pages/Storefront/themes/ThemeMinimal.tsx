@@ -260,7 +260,6 @@ export function ThemeMinimal({ business }: { business: Business }) {
                     <span className="store-hamburger-label">Ангилал</span>
                 </button>
                 <a href={`/${business.slug}`} className="store-logo">
-                    {business.logo && <img src={business.logo} alt={storeName} />}
                     <span>{storeName}</span>
                 </a>
 
