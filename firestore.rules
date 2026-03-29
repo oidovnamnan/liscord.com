@@ -232,6 +232,19 @@ service cloud.firestore {
         allow delete: if false;
       }
 
+      // Promo Codes: member CRUD including delete
+      match /promoCodes/{docId} {
+        allow read: if isMemberOf(bizId);
+        allow create, update, delete: if isMemberOf(bizId);
+      }
+
+      // Promo Credits: public read (storefront profile), member write
+      match /promoCredits/{docId} {
+        allow read: if true;
+        allow create, update: if true;  // Storefront creates credits on code generation
+        allow delete: if isMemberOf(bizId);
+      }
+
       // All other subcollections: member read/write only
       match /{subcollection}/{docId} {
         allow read: if isMemberOf(bizId);
