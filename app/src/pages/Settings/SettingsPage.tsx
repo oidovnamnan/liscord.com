@@ -166,6 +166,7 @@ export function SettingsPage() {
             { id: 'security', label: 'Аюулгүй байдал', icon: Shield },
             { id: 'activity', label: 'Ажиллагсдын үйлдэл', icon: ListOrdered },
             { id: 'module-order', label: 'Модулийн байрлал', icon: GripVertical },
+            { id: 'cleanup', label: 'Систем цэвэрлэгээ', icon: Icons.Trash2 },
             { id: 'language', label: 'Хэл', icon: Globe },
         ];
 

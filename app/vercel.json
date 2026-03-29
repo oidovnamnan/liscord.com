@@ -1,8 +1,8 @@
 {
     "crons": [
         {
-            "path": "/api/cleanup-orders",
-            "schedule": "0 16 * * *"
+            "path": "/api/nightly-cleanup",
+            "schedule": "0 20 * * *"
         }
     ],
     "headers": [

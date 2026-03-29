@@ -124,44 +124,6 @@ export function OrdersPage() {
         };
     }, [business?.id, statusFilter, ordersLimit]);
 
-    // ═══ Auto-delete unpaid orders older than configured hours ═══
-    const autoDeletedRef = useRef<Set<string>>(new Set());
-    useEffect(() => {
-        if (!business?.id || orders.length === 0) return;
-        const expiryHours = business.settings?.unpaidOrderExpiryHours ?? 24;
-        if (expiryHours <= 0) return; // 0 means disabled
-        const expiryMs = expiryHours * 60 * 60 * 1000;
-        const now = Date.now();
-
-        const expiredOrders = orders.filter(o =>
-            !o.isDeleted &&
-            o.paymentStatus === 'unpaid' &&
-            o.createdAt instanceof Date &&
-            (now - o.createdAt.getTime()) > expiryMs &&
-            !autoDeletedRef.current.has(o.id)
-        );
-
-        if (expiredOrders.length === 0) return;
-
-        (async () => {
-            const { doc, updateDoc, serverTimestamp } = await import('firebase/firestore');
-            const { db: fireDb } = await import('../../services/firebase');
-            for (const order of expiredOrders) {
-                autoDeletedRef.current.add(order.id);
-                try {
-                    await updateDoc(doc(fireDb, 'businesses', business.id, 'orders', order.id), {
-                        isDeleted: true,
-                        cancelReason: `Төлбөр төлөгдөөгүй ${expiryHours}ц — автомат устгагдсан`,
-                        deletedReason: 'auto_expired_unpaid',
-                        updatedAt: serverTimestamp(),
-                    });
-                    console.log(`[AutoDelete] Order #${order.orderNumber} expired after ${expiryHours}h`);
-                } catch (e) {
-                    console.warn('[AutoDelete] Failed:', order.id, e);
-                }
-            }
-        })();
-    }, [orders, business?.id, business?.settings?.unpaidOrderExpiryHours]);
 
     const filtered = orders.filter(o => {
         const matchSearch = !search ||
