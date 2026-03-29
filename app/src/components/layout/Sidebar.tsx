@@ -480,21 +480,6 @@ export function Sidebar() {
                         );
                     })}
 
-                    {/* Community Feed Moderation - only owner or those with marketing perms */}
-                    {(isOwner || (!isKnownEmployee && empPerms.length === 0) || empPerms.some(p => p.startsWith('marketing.'))) && (
-                        <NavLink
-                            to="/app/community/moderation"
-                            className={`sidebar-link ${location.pathname.startsWith('/app/community/moderation') ? 'active' : ''}`}
-                            onClick={() => sidebarOpen && toggleSidebar()}
-                            title={sidebarCollapsed ? 'Feed Модераци' : undefined}
-                        >
-                            <Shield size={20} />
-                            {!sidebarCollapsed && <span>Feed Модераци</span>}
-                            {location.pathname.startsWith('/app/community/moderation') && <div className="sidebar-link-indicator" />}
-                        </NavLink>
-                    )}
-
-
                     {/* Settings - owner always, employees only with settings.* permission */}
                     {(isOwner || (!isKnownEmployee && empPerms.length === 0) || empPerms.some(p => p.startsWith('settings.'))) && (
                         <NavLink

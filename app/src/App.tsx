@@ -744,7 +744,7 @@ export default function App() {
             <Route path="inter-company" element={<ModuleGuard moduleId="inter-company"><InterCompanyPage /></ModuleGuard>} />
             <Route path="consolidations" element={<ModuleGuard moduleId="consolidations"><ConsolidationsPage /></ModuleGuard>} />
             <Route path="crypto-payments" element={<ModuleGuard moduleId="crypto-payments"><CryptoPaymentsPage /></ModuleGuard>} />
-            <Route path="community/moderation" element={<FeedModerationPage />} />
+            <Route path="community/moderation" element={<ModuleGuard moduleId="community-moderation"><FeedModerationPage /></ModuleGuard>} />
             <Route path="attendance" element={<ModuleGuard moduleId="attendance"><AttendancePage /></ModuleGuard>} />
             <Route path="payroll" element={<ModuleGuard moduleId="payroll"><PayrollPage /></ModuleGuard>} />
             <Route path="recruitment" element={<ModuleGuard moduleId="recruitment"><RecruitmentPage /></ModuleGuard>} />

@@ -667,6 +667,18 @@ export const MODULE_PERMISSIONS: Record<string, ModulePermission[]> = {
         { id: 'chat.send_image', label: 'Зураг илгээх' },
         { id: 'chat.copy_message', label: 'Мессеж хуулах' },
     ],
+
+    'wallet': [
+        { id: 'wallet.view', label: 'Тохиргоо харах' },
+        { id: 'wallet.manage', label: 'Урамшуулал тохируулах' }
+    ],
+
+    'community-moderation': [
+        { id: 'community.view', label: 'Пост харах' },
+        { id: 'community.approve', label: 'Пост зөвшөөрөх/цуцлах' },
+        { id: 'community.feature', label: 'Пост онцлох' },
+        { id: 'community.delete', label: 'Пост устгах' }
+    ]
 };
 
 /**

@@ -3553,6 +3553,36 @@ export const LISCORD_MODULES: AppModule[] = [
         ]
     },
     {
+        id: 'wallet',
+        name: 'Виртуал Хэтэвч',
+        description: 'Оноо цуглуулах, бонус урамшуулал',
+        icon: 'WalletCards',
+        route: '/app/settings?tab=wallet',
+        placement: 'settings',
+        isCore: false,
+        category: 'marketing',
+        hasSettings: true,
+        isFree: false,
+        plans: [
+            { id: 'monthly', name: '30 хоног', price: 20000, durationDays: 30 },
+            { id: 'yearly', name: '1 жил', price: 192000, durationDays: 365 }
+        ]
+    },
+    {
+        id: 'community-moderation',
+        name: 'Сошиал Feed',
+        description: 'Дэлгүүрийн Community контент хяналт',
+        icon: 'MessageCircleHeart',
+        route: '/app/community/moderation',
+        isCore: false,
+        category: 'marketing',
+        isFree: false,
+        plans: [
+            { id: 'monthly', name: '30 хоног', price: 15000, durationDays: 30 },
+            { id: 'yearly', name: '1 жил', price: 144000, durationDays: 365 }
+        ]
+    },
+    {
         id: 'workflow-automation',
         name: 'Ухаалаг Урсгал',
         description: 'Цахим гарын үсэг, зөвшөөрөл',
