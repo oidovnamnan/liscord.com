@@ -25,7 +25,7 @@ function formatDate(d: any): string {
 export function PromoCodesPage() {
     const { business } = useBusinessStore();
     const navigate = useNavigate();
-    const [tab, setTab] = useState<Tab>('static');
+    const [tab, setTab] = useState<Tab>('usage');
     const [codes, setCodes] = useState<PromoCode[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
@@ -319,10 +319,10 @@ export function PromoCodesPage() {
     };
 
     const tabs: { id: Tab; label: string; icon: React.ReactNode; count: number }[] = [
+        { id: 'usage', label: 'Ашиглалт', icon: <BarChart3 size={16} />, count: codes.filter(c => c.usageCount > 0).length },
         { id: 'static', label: 'Тогтмол', icon: <Tag size={16} />, count: codes.filter(c => c.mode === 'static').length },
         { id: 'dynamic', label: 'Динамик', icon: <Zap size={16} />, count: codes.filter(c => c.mode === 'dynamic' && !c.parentId).length },
         { id: 'user_gen', label: 'Lucky', icon: <Sparkles size={16} />, count: codes.filter(c => c.mode === 'user_generated').length },
-        { id: 'usage', label: 'Ашиглалт', icon: <BarChart3 size={16} />, count: codes.filter(c => c.usageCount > 0).length },
     ];
 
     return (
@@ -388,8 +388,8 @@ export function PromoCodesPage() {
                 )}
                 {tab === 'user_gen' && (
                     <button className="promo-add-btn" onClick={saveLuckyConfig} disabled={luckySaving}>
-                        {luckySaving ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />}
-                        <span>Хадгалах</span>
+                        {luckySaving ? <Loader2 size={18} className="animate-spin" /> : <Sparkles size={18} />}
+                        <span>Үүсгэх</span>
                     </button>
                 )}
             </div>
@@ -461,13 +461,125 @@ export function PromoCodesPage() {
                 </div>
             )}
 
+            {/* Usage Stats Table */}
+            {tab === 'usage' && (
+                <div style={{ marginBottom: 16 }}>
+                    {loading ? (
+                        <div className="promo-empty">Ачаалж байна...</div>
+                    ) : (() => {
+                        const allUsed = codes.filter(c => c.usageCount > 0).sort((a, b) => (b.usageCount || 0) - (a.usageCount || 0));
+                        const totalUsage = allUsed.reduce((s, c) => s + (c.usageCount || 0), 0);
+                        const uniqueUsers = new Set(allUsed.flatMap(c => c.usedBy || []));
+                        const totalDiscount = allUsed.reduce((s, c) => {
+                            if (c.type === 'percentage') return s + (c.usageCount || 0) * c.value;
+                            return s + (c.usageCount || 0) * c.value;
+                        }, 0);
+                        return (
+                            <>
+                                {/* Summary cards */}
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 16 }}>
+                                    {[
+                                        { label: 'Нийт ашиглалт', value: totalUsage, color: '#6366f1' },
+                                        { label: 'Ашигласан код', value: allUsed.length, color: '#10b981' },
+                                        { label: 'Хэрэглэгчид', value: uniqueUsers.size, color: '#f59e0b' },
+                                        { label: 'Нийт код', value: codes.length, color: '#8b5cf6' },
+                                    ].map(s => (
+                                        <div key={s.label} style={{ background: 'var(--bg-soft, #f9fafb)', border: '1px solid var(--border, #e5e7eb)', borderRadius: 12, padding: '14px 16px', textAlign: 'center' }}>
+                                            <div style={{ fontSize: '1.5rem', fontWeight: 800, color: s.color }}>{s.value}</div>
+                                            <div style={{ fontSize: '0.72rem', fontWeight: 600, color: 'var(--text-muted, #888)', textTransform: 'uppercase', marginTop: 2 }}>{s.label}</div>
+                                        </div>
+                                    ))}
+                                </div>
+
+                                {allUsed.length === 0 ? (
+                                    <div className="promo-empty">
+                                        <BarChart3 size={40} />
+                                        <p>Ашиглагдсан код олдсонгүй</p>
+                                    </div>
+                                ) : (
+                                    <div style={{ borderRadius: 12, overflow: 'hidden', border: '1px solid var(--border, #e5e7eb)' }}>
+                                        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
+                                            <thead>
+                                                <tr style={{ background: 'var(--bg-soft, #f3f4f6)' }}>
+                                                    <th style={{ padding: '10px 14px', textAlign: 'left', fontWeight: 700, fontSize: '0.72rem', textTransform: 'uppercase', color: 'var(--text-muted, #777)' }}>Код</th>
+                                                    <th style={{ padding: '10px 14px', textAlign: 'left', fontWeight: 700, fontSize: '0.72rem', textTransform: 'uppercase', color: 'var(--text-muted, #777)' }}>Төрөл</th>
+                                                    <th style={{ padding: '10px 14px', textAlign: 'center', fontWeight: 700, fontSize: '0.72rem', textTransform: 'uppercase', color: 'var(--text-muted, #777)' }}>Хямдрал</th>
+                                                    <th style={{ padding: '10px 14px', textAlign: 'center', fontWeight: 700, fontSize: '0.72rem', textTransform: 'uppercase', color: 'var(--text-muted, #777)' }}>Ашиглалт</th>
+                                                    <th style={{ padding: '10px 14px', textAlign: 'center', fontWeight: 700, fontSize: '0.72rem', textTransform: 'uppercase', color: 'var(--text-muted, #777)' }}>Хязгаар</th>
+                                                    <th style={{ padding: '10px 14px', textAlign: 'left', fontWeight: 700, fontSize: '0.72rem', textTransform: 'uppercase', color: 'var(--text-muted, #777)' }}>Ашигласан хэрэглэгчид</th>
+                                                    <th style={{ padding: '10px 14px', textAlign: 'left', fontWeight: 700, fontSize: '0.72rem', textTransform: 'uppercase', color: 'var(--text-muted, #777)' }}>Хүчинтэй</th>
+                                                    <th style={{ padding: '10px 14px', textAlign: 'center', fontWeight: 700, fontSize: '0.72rem', textTransform: 'uppercase', color: 'var(--text-muted, #777)' }}>Төлөв</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {allUsed.map((c, i) => (
+                                                    <tr key={c.id} style={{ borderTop: '1px solid var(--border, #eee)', background: i % 2 === 0 ? 'transparent' : 'var(--bg-soft, #fafafa)' }}>
+                                                        <td style={{ padding: '10px 14px' }}>
+                                                            <span style={{ fontFamily: 'monospace', fontWeight: 700, fontSize: '0.88rem', letterSpacing: 1 }}>{c.code}</span>
+                                                        </td>
+                                                        <td style={{ padding: '10px 14px' }}>
+                                                            <span style={{
+                                                                display: 'inline-block', padding: '2px 8px', borderRadius: 6, fontSize: '0.72rem', fontWeight: 700,
+                                                                background: c.mode === 'static' ? '#dbeafe' : c.mode === 'dynamic' ? '#fef3c7' : '#ede9fe',
+                                                                color: c.mode === 'static' ? '#1d4ed8' : c.mode === 'dynamic' ? '#b45309' : '#6d28d9',
+                                                            }}>
+                                                                {c.mode === 'static' ? 'Тогтмол' : c.mode === 'dynamic' ? 'Динамик' : 'Lucky'}
+                                                            </span>
+                                                        </td>
+                                                        <td style={{ padding: '10px 14px', textAlign: 'center', fontWeight: 700, color: '#6366f1' }}>
+                                                            {c.type === 'percentage' ? `${c.value}%` : `₮${c.value.toLocaleString()}`}
+                                                        </td>
+                                                        <td style={{ padding: '10px 14px', textAlign: 'center' }}>
+                                                            <span style={{ fontWeight: 800, fontSize: '1rem', color: '#10b981' }}>{c.usageCount}</span>
+                                                        </td>
+                                                        <td style={{ padding: '10px 14px', textAlign: 'center', color: 'var(--text-muted, #888)' }}>
+                                                            {c.usageLimit || '∞'}
+                                                        </td>
+                                                        <td style={{ padding: '10px 14px' }}>
+                                                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                                                                {(c.usedBy || []).length === 0 ? (
+                                                                    <span style={{ color: 'var(--text-muted, #aaa)', fontSize: '0.78rem' }}>—</span>
+                                                                ) : (c.usedBy || []).map((phone: string, idx: number) => (
+                                                                    <span key={idx} style={{
+                                                                        display: 'inline-block', padding: '2px 8px', borderRadius: 6,
+                                                                        background: 'var(--bg-soft, #f0f0f0)', fontSize: '0.75rem', fontWeight: 600
+                                                                    }}>
+                                                                        {phone}
+                                                                    </span>
+                                                                ))}
+                                                            </div>
+                                                        </td>
+                                                        <td style={{ padding: '10px 14px', fontSize: '0.78rem', color: 'var(--text-muted, #888)' }}>
+                                                            {formatDate(c.startDate)} — {formatDate(c.endDate)}
+                                                        </td>
+                                                        <td style={{ padding: '10px 14px', textAlign: 'center' }}>
+                                                            {c.isActive ? (
+                                                                <span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: '50%', background: '#10b981' }} />
+                                                            ) : (
+                                                                <span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: '50%', background: '#ef4444' }} />
+                                                            )}
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                )}
+                            </>
+                        );
+                    })()}
+                </div>
+            )}
+
+            {/* Code List (non-usage tabs) */}
+            {tab !== 'usage' && (
             <div className="promo-list">
                 {loading ? (
                     <div className="promo-empty">Ачаалж байна...</div>
                 ) : filtered.length === 0 ? (
                     <div className="promo-empty">
                         <Ticket size={40} />
-                        <p>{tab === 'usage' ? 'Ашиглагдсан код олдсонгүй' : 'Промо код байхгүй байна'}</p>
+                        <p>Промо код байхгүй байна</p>
                     </div>
                 ) : filtered.map(c => (
                     <div key={c.id} className={`promo-card ${!c.isActive ? 'inactive' : ''}`}>
@@ -518,6 +630,7 @@ export function PromoCodesPage() {
                     </div>
                 ))}
             </div>
+            )}
 
             {/* Create/Edit Modal */}
             {showModal && (
