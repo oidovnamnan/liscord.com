@@ -2068,20 +2068,22 @@
 .cd-orders-list {
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 14px;
 }
 
 .cd-order-card {
-    border: 1px solid #eee;
-    border-radius: 14px;
-    padding: 14px 16px;
+    border: 1px solid rgba(0,0,0,0.08);
+    border-radius: 16px;
+    padding: 18px 16px;
     background: #fff;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.03);
     transition: all 0.2s;
 }
 
 .cd-order-card:hover {
-    border-color: #ddd;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    border-color: rgba(0,0,0,0.15);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.06);
+    transform: translateY(-1px);
 }
 
 .cd-order-top {
