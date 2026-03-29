@@ -34,6 +34,7 @@ export function PromoCodesPage() {
     // Modal state
     const [showModal, setShowModal] = useState(false);
     const [editingCode, setEditingCode] = useState<PromoCode | null>(null);
+    const [deleteTarget, setDeleteTarget] = useState<PromoCode | null>(null);
 
     // Form state
     const [formCode, setFormCode] = useState('');
@@ -302,8 +303,13 @@ export function PromoCodesPage() {
     };
 
     const handleDelete = async (c: PromoCode) => {
-        if (!business?.id || !confirm(`"${c.code}" кодыг устгах уу?`)) return;
-        await deleteDoc(doc(db, 'businesses', business.id, 'promoCodes', c.id));
+        setDeleteTarget(c);
+    };
+
+    const confirmDelete = async () => {
+        if (!business?.id || !deleteTarget) return;
+        await deleteDoc(doc(db, 'businesses', business.id, 'promoCodes', deleteTarget.id));
+        setDeleteTarget(null);
     };
 
     const copyCode = (code: string, id: string) => {
@@ -616,6 +622,25 @@ export function PromoCodesPage() {
                             <button className="promo-btn-cancel" onClick={() => setShowModal(false)}>Болих</button>
                             <button className="promo-btn-save" onClick={handleSave} disabled={saving}>
                                 {saving ? 'Хадгалж байна...' : 'Хадгалах'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+            {/* Delete Confirm Modal */}
+            {deleteTarget && (
+                <div className="promo-modal-overlay" onClick={() => setDeleteTarget(null)}>
+                    <div className="promo-modal" onClick={e => e.stopPropagation()} style={{ maxWidth: 400, textAlign: 'center' }}>
+                        <div style={{ fontSize: 40, marginBottom: 12 }}>🗑️</div>
+                        <h3 style={{ marginBottom: 8 }}>Код устгах</h3>
+                        <p style={{ color: 'var(--text-muted, #888)', fontSize: '0.9rem', marginBottom: 20 }}>
+                            <strong style={{ fontFamily: 'monospace', fontSize: '1.05rem' }}>{deleteTarget.code}</strong> кодыг устгахдаа итгэлтэй байна уу?
+                        </p>
+                        <div className="promo-modal-actions" style={{ justifyContent: 'center' }}>
+                            <button className="promo-btn-cancel" onClick={() => setDeleteTarget(null)}>Болих</button>
+                            <button className="promo-btn-save" onClick={confirmDelete}
+                                style={{ background: '#ef4444' }}>
+                                Устгах
                             </button>
                         </div>
                     </div>
