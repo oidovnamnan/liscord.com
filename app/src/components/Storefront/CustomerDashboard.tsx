@@ -26,6 +26,7 @@ interface MembershipDetail {
 
 interface OrderItem {
     id: string;
+    status: string;
     orderNumber?: string;
     totalAmount: number;
     paymentStatus: string;
@@ -269,6 +270,7 @@ export function CustomerDashboard({ isOpen, onClose, business, phone, onOpenMemb
                     : data.createdAt ? new Date(data.createdAt) : new Date();
                 return {
                     id: d.id,
+                    status: data.status || 'pending',
                     orderNumber: data.orderNumber || d.id.slice(-6).toUpperCase(),
                     totalAmount: data.financials?.totalAmount || data.totalAmount || 0,
                     paymentStatus: data.paymentStatus || 'pending',
@@ -1201,7 +1203,7 @@ const QUICK_QUESTIONS = [
 ];
 
 function OrderCardWithInquiry({ order, statusInfo, business, customerName, customerPhone, formatDate, formatCurrency, brandColor, communityPostBonus, onShareItem }: {
-    order: { id: string; orderNumber?: string; totalAmount: number; paymentStatus: string; createdAt: Date; items?: { id?: string; productId?: string; name: string; quantity: number; price: number }[] };
+    order: { id: string; status?: string; orderNumber?: string; totalAmount: number; paymentStatus: string; createdAt: Date; items?: { id?: string; productId?: string; name: string; quantity: number; price: number }[] };
     statusInfo: { label: string; color: string; bg: string };
     business: Business;
     customerName: string;
@@ -1216,6 +1218,7 @@ function OrderCardWithInquiry({ order, statusInfo, business, customerName, custo
     const [question, setQuestion] = useState('');
     const [sending, setSending] = useState(false);
     const [sent, setSent] = useState(false);
+    const [cancelling, setCancelling] = useState(false);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const [prevInquiries, setPrevInquiries] = useState<any[]>([]);
 
@@ -1262,6 +1265,26 @@ function OrderCardWithInquiry({ order, statusInfo, business, customerName, custo
             console.error('Send inquiry error:', err);
         } finally {
             setSending(false);
+        }
+    };
+    const handleCancelOrder = async () => {
+        if (!confirm('Энэ захиалгыг устгахдаа итгэлтэй байна уу?')) return;
+        setCancelling(true);
+        try {
+            const { doc, updateDoc, Timestamp } = await import('firebase/firestore');
+            const { db } = await import('../../services/firebase');
+            await updateDoc(doc(db, 'businesses', business.id, 'orders', order.id), {
+                isDeleted: true,
+                deletedAt: Timestamp.now(),
+                deletedBy: 'customer',
+                deleteReason: 'Хэрэглэгч өөрөө устгасан'
+            });
+            toast.success('Захиалга амжилттай устгагдлаа');
+        } catch (err) {
+            console.error('Cancel order error:', err);
+            toast.error('Захиалга устгахад алдаа гарлаа');
+        } finally {
+            setCancelling(false);
         }
     };
 
@@ -1314,20 +1337,38 @@ function OrderCardWithInquiry({ order, statusInfo, business, customerName, custo
                 </div>
             )}
 
-            {/* Inquiry button / form */}
-            {!showForm ? (
+            {/* Cancel Order Button */}
+            {(order.status === 'pending' && order.paymentStatus !== 'paid') && (
                 <button
-                    onClick={() => setShowForm(true)}
+                    onClick={handleCancelOrder}
+                    disabled={cancelling}
                     style={{
                         width: '100%', marginTop: 8, padding: '8px 12px', borderRadius: 10,
-                        border: `1.5px solid ${brandColor}20`, background: `${brandColor}08`,
-                        color: brandColor, fontSize: '0.82rem', fontWeight: 700,
-                        cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                        border: `1.5px solid #ef444420`, background: `#ef444408`,
+                        color: '#ef4444', fontSize: '0.82rem', fontWeight: 600,
+                        cursor: cancelling ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
                     }}
                 >
-                    <MessageSquare size={14} /> Захиалга лавлах
+                    {cancelling ? <Loader2 size={14} className="animate-spin" /> : <X size={14} />} 
+                    Захиалга устгах
                 </button>
-            ) : (
+            )}
+
+            {/* Inquiry button / form */}
+            {(order.status !== 'pending' && order.status !== 'cancelled') && (
+                !showForm ? (
+                    <button
+                        onClick={() => setShowForm(true)}
+                        style={{
+                            width: '100%', marginTop: 8, padding: '8px 12px', borderRadius: 10,
+                            border: `1.5px solid ${brandColor}20`, background: `${brandColor}08`,
+                            color: brandColor, fontSize: '0.82rem', fontWeight: 700,
+                            cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                        }}
+                    >
+                        <MessageSquare size={14} /> Захиалга лавлах
+                    </button>
+                ) : (
                 <div style={{ marginTop: 8, background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 12, padding: 12 }}>
                     <div style={{ fontSize: '0.82rem', fontWeight: 700, marginBottom: 8, color: '#334155' }}>📩 Асуулга илгээх</div>
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 8 }}>
@@ -1367,10 +1408,11 @@ function OrderCardWithInquiry({ order, statusInfo, business, customerName, custo
                             {sending ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
                         </button>
                     </div>
-                    <button onClick={() => setShowForm(false)} style={{ width: '100%', marginTop: 6, border: 'none', background: 'none', fontSize: '0.78rem', color: '#94a3b8', cursor: 'pointer' }}>
-                        Болих
-                    </button>
-                </div>
+                        <button onClick={() => setShowForm(false)} style={{ width: '100%', marginTop: 6, border: 'none', background: 'none', fontSize: '0.78rem', color: '#94a3b8', cursor: 'pointer' }}>
+                            Болих
+                        </button>
+                    </div>
+                )
             )}
 
             {/* Previous inquiry history */}
