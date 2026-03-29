@@ -854,58 +854,78 @@ export function CustomerDashboard({ isOpen, onClose, business, phone, onOpenMemb
                     )}
                     {activeTab === 'wallet' && (
                         <div className="cd-section animate-fade-in">
-                            <div style={{ background: 'linear-gradient(135deg, #1e1e2d 0%, #111116 100%)', padding: 24, borderRadius: 16, border: '1px solid rgba(255,255,255,0.05)', color: 'white', marginBottom: 20, boxShadow: '0 12px 24px rgba(0,0,0,0.1)' }}>
-                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, opacity: 0.8, fontSize: '0.9rem' }}>
-                                        <Wallet size={16} /> <span>{business?.settings?.wallet?.currencyName || 'Оноо'} Хэтэвч</span>
-                                    </div>
-                                    <Sparkles size={16} style={{ color: 'var(--brand-primary)' }} />
-                                </div>
-                                <div style={{ fontSize: '2.5rem', fontWeight: 800, letterSpacing: '-0.5px', marginBottom: 4, display: 'flex', alignItems: 'baseline', gap: 8 }}>
-                                    {walletBalance.toLocaleString()} <span style={{ fontSize: '1rem', fontWeight: 500, opacity: 0.6 }}>₮</span>
-                                </div>
-                                <div style={{ fontSize: '0.85rem', opacity: 0.7, marginBottom: 20 }}>
-                                    Худалдан авалт хийхдээ үлдэгдлээ {business?.settings?.wallet?.usageLimitMode === 'fixed' ? 'шууд' : 'азтанаар'} ашиглан хөнгөлөлт эдлэх боломжтой.
-                                </div>
-                                
-                                {referralCode && (
-                                    <div style={{ background: 'rgba(255,255,255,0.05)', borderRadius: 8, padding: 12, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                                        <div>
-                                            <div style={{ fontSize: '0.75rem', opacity: 0.6, marginBottom: 2 }}>Миний урилгын код</div>
-                                            <div style={{ fontFamily: 'monospace', fontWeight: 700, fontSize: '1.1rem', letterSpacing: 1 }}>{referralCode}</div>
+                            <div style={{ 
+                                background: `linear-gradient(135deg, ${brandColor}, #1e293b)`, 
+                                padding: '28px 24px', 
+                                borderRadius: 24, 
+                                border: '1px solid rgba(255,255,255,0.1)', 
+                                color: 'white', 
+                                marginBottom: 24, 
+                                boxShadow: `0 16px 32px ${brandColor}30`,
+                                position: 'relative',
+                                overflow: 'hidden'
+                            }}>
+                                {/* Background blur decorations */}
+                                <div style={{ position: 'absolute', top: -30, right: -20, background: 'rgba(255,255,255,0.1)', width: 120, height: 120, borderRadius: '50%', filter: 'blur(24px)' }} />
+                                <div style={{ position: 'absolute', bottom: -40, left: -20, background: 'rgba(255,255,255,0.05)', width: 140, height: 140, borderRadius: '50%', filter: 'blur(30px)' }} />
+
+                                <div style={{ position: 'relative', zIndex: 1 }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, opacity: 0.9, fontSize: '0.9rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                                            <Wallet size={16} /> <span>{business?.settings?.wallet?.currencyName || 'Оноо'} Хэтэвч</span>
                                         </div>
-                                        <button 
-                                            onClick={() => { navigator.clipboard.writeText(referralCode); toast.success('Код хуулагдлаа'); }} 
-                                            style={{ background: 'rgba(255,255,255,0.1)', border: 'none', width: 36, height: 36, borderRadius: '50%', color: 'white', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: '0.2s' }}
-                                        >
-                                            <Copy size={16} />
-                                        </button>
+                                        <Sparkles size={18} style={{ color: 'rgba(255,255,255,0.8)' }} />
                                     </div>
-                                )}
+                                    <div style={{ fontSize: '3rem', fontWeight: 900, letterSpacing: '-1px', marginBottom: 8, display: 'flex', alignItems: 'baseline', gap: 8 }}>
+                                        {walletBalance.toLocaleString()} <span style={{ fontSize: '1.2rem', fontWeight: 600, opacity: 0.7 }}>₮</span>
+                                    </div>
+                                    <div style={{ fontSize: '0.85rem', opacity: 0.8, marginBottom: 24, lineHeight: 1.4, maxWidth: '90%' }}>
+                                        Худалдан авалт хийхдээ үлдэгдлээ {business?.settings?.wallet?.usageLimitMode === 'fixed' ? 'шууд' : 'азтанаар'} ашиглан хөнгөлөлт эдлэх боломжтой.
+                                    </div>
+                                    
+                                    {referralCode && (
+                                        <div style={{ background: 'rgba(0,0,0,0.2)', backdropFilter: 'blur(10px)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, padding: 14, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                            <div>
+                                                <div style={{ fontSize: '0.75rem', opacity: 0.7, marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>Урилгын код</div>
+                                                <div style={{ fontFamily: 'monospace', fontWeight: 800, fontSize: '1.2rem', letterSpacing: 2 }}>{referralCode}</div>
+                                            </div>
+                                            <button 
+                                                onClick={() => { navigator.clipboard.writeText(referralCode); toast.success('Код хуулагдлаа'); }} 
+                                                style={{ background: 'rgba(255,255,255,0.15)', border: 'none', width: 40, height: 40, borderRadius: '50%', color: 'white', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s' }}
+                                                onMouseOver={e => e.currentTarget.style.background = 'rgba(255,255,255,0.25)'}
+                                                onMouseOut={e => e.currentTarget.style.background = 'rgba(255,255,255,0.15)'}
+                                            >
+                                                <Copy size={18} />
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
                             </div>
 
                             <h3 className="cd-section-title" style={{ marginTop: 24 }}>Хэтэвчийн гүйлгээ</h3>
                             {loadingWallet ? (
                                 <div style={{ textAlign: 'center', padding: 40 }}><Loader2 className="animate-spin text-gray-400 mx-auto" size={24} /></div>
                             ) : walletTransactions.length === 0 ? (
-                                <div style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--text-secondary)', background: 'var(--bg-secondary)', borderRadius: 12 }}>
-                                    <Coins size={32} style={{ opacity: 0.2, margin: '0 auto 10px auto' }} />
-                                    <p>Одоогоор хэтэвчний түүх алга байна.</p>
-                                    <p style={{ fontSize: '0.85rem', marginTop: 8 }}>Урилга илгээх эсвэл худалдан авалт хийж оноо цуглуулаарай.</p>
+                                <div style={{ textAlign: 'center', padding: '48px 20px', color: '#64748b', background: '#f8fafc', border: '1px dashed #cbd5e1', borderRadius: 16 }}>
+                                    <div style={{ width: 64, height: 64, background: '#f1f5f9', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px auto' }}>
+                                        <Coins size={32} style={{ color: '#94a3b8' }} />
+                                    </div>
+                                    <p style={{ fontWeight: 700, color: '#334155', fontSize: '0.95rem', margin: '0 0 8px 0' }}>Гүйлгээний түүх хоосон байна</p>
+                                    <p style={{ fontSize: '0.85rem', margin: 0, lineHeight: 1.5 }}>Найзыгаа урьж эсвэл худалдан авалт хийж оноогоо өсгөөрэй.</p>
                                 </div>
                             ) : (
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                                     {walletTransactions.map(tx => (
-                                        <div key={tx.id} style={{ display: 'flex', alignItems: 'center', padding: 16, background: 'var(--bg-secondary)', borderRadius: 12, gap: 16 }}>
-                                            <div style={{ width: 40, height: 40, borderRadius: '50%', background: tx.amount > 0 ? 'rgba(39, 174, 96, 0.1)' : 'rgba(231, 76, 60, 0.1)', color: tx.amount > 0 ? '#27ae60' : '#e74c3c', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                                {tx.amount > 0 ? <ArrowUpRight size={20} /> : <ArrowDownRight size={20} />}
+                                        <div key={tx.id} style={{ display: 'flex', alignItems: 'center', padding: 16, background: '#fff', border: '1px solid #f1f5f9', borderRadius: 16, gap: 16, boxShadow: '0 2px 10px rgba(0,0,0,0.02)' }}>
+                                            <div style={{ width: 44, height: 44, borderRadius: 12, background: tx.amount > 0 ? '#ecfdf5' : '#fef2f2', color: tx.amount > 0 ? '#10b981' : '#ef4444', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                                {tx.amount > 0 ? <ArrowUpRight size={20} strokeWidth={2.5} /> : <ArrowDownRight size={20} strokeWidth={2.5} />}
                                             </div>
                                             <div style={{ flex: 1 }}>
-                                                <div style={{ fontWeight: 600, fontSize: '0.95rem' }}>{tx.reason || (tx.amount > 0 ? 'Урамшуулал нэмэгдэв' : 'Захиалгад ашиглав')}</div>
-                                                <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: 2 }}>{tx.createdAt?.toDate ? tx.createdAt.toDate().toLocaleString('mn-MN') : ''}</div>
+                                                <div style={{ fontWeight: 700, fontSize: '0.95rem', color: '#1e293b' }}>{tx.reason || (tx.amount > 0 ? 'Урамшуулал нэмэгдэв' : 'Захиалгад ашиглав')}</div>
+                                                <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: 4, fontWeight: 600 }}>{tx.createdAt?.toDate ? tx.createdAt.toDate().toLocaleString('mn-MN') : ''}</div>
                                             </div>
-                                            <div style={{ fontWeight: 700, fontSize: '1.05rem', color: tx.amount > 0 ? '#27ae60' : 'var(--text-primary)' }}>
-                                                {tx.amount > 0 ? '+' : ''}{tx.amount.toLocaleString()}
+                                            <div style={{ fontWeight: 800, fontSize: '1.1rem', color: tx.amount > 0 ? '#10b981' : '#0f172a' }}>
+                                                {tx.amount > 0 ? '+' : ''}{Math.abs(tx.amount).toLocaleString()}
                                             </div>
                                         </div>
                                     ))}
@@ -1492,13 +1512,14 @@ function PromoCodeSection({ business, phone, brandColor }: { business: Business;
     return (
         <div style={{
             display: 'flex', flexDirection: 'column', gap: 12,
-            background: 'linear-gradient(135deg, #FF9A9E 0%, #FECFEF 100%)',
-            padding: 20,
-            borderRadius: 16,
-            boxShadow: '0 10px 25px rgba(255, 154, 158, 0.2)',
+            background: `linear-gradient(135deg, ${brandColor}15, ${brandColor}05)`,
+            padding: 24,
+            borderRadius: 20,
+            border: `1px solid ${brandColor}25`,
             color: '#111',
             position: 'relative',
-            overflow: 'hidden'
+            overflow: 'hidden',
+            marginBottom: 20
         }}>
             {/* Festive Background Decorations */}
             <div style={{ position: 'absolute', top: -10, right: -10, opacity: 0.1, transform: 'rotate(15deg)' }}>
@@ -1511,19 +1532,19 @@ function PromoCodeSection({ business, phone, brandColor }: { business: Business;
             <div style={{ position: 'relative', zIndex: 1 }}>
                 {/* Generate button or Result banner */}
                 {config && (
-                    <div style={{ background: 'rgba(255, 255, 255, 0.9)', backdropFilter: 'blur(10px)', border: '1px solid rgba(255, 255, 255, 0.5)', borderRadius: 12, padding: 20 }}>
+                    <div style={{ background: 'rgba(255, 255, 255, 0.95)', backdropFilter: 'blur(10px)', border: '1px solid rgba(255, 255, 255, 0.8)', borderRadius: 16, padding: 24, boxShadow: '0 4px 20px rgba(0,0,0,0.03)' }}>
                         {genResult ? (
                             <div style={{ textAlign: 'center' }}>
-                                <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 8, fontSize: '0.85rem', color: '#6b7280', fontWeight: 700, marginBottom: 8, textTransform: 'uppercase' }}>
-                                    <Sparkles size={16} color="#d946ef" /> Таны промо код үүслээ! <Sparkles size={16} color="#d946ef" />
+                                <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 8, fontSize: '0.85rem', color: '#64748b', fontWeight: 700, marginBottom: 8, textTransform: 'uppercase' }}>
+                                    <Sparkles size={16} color={brandColor} /> Таны промо код үүслээ! <Sparkles size={16} color={brandColor} />
                                 </div>
-                                <div style={{ fontFamily: 'monospace', fontSize: '2rem', fontWeight: 900, color: '#d946ef', letterSpacing: '0.05em', margin: '10px 0', textShadow: '0 2px 10px rgba(217, 70, 239, 0.2)' }}>{genResult.code}</div>
-                                <div style={{ fontSize: '1rem', fontWeight: 800, color: '#059669', marginTop: 4 }}>Гаднаасаа авах {genResult.pct}% ХЯМДРАЛ 🎉</div>
-                                <div style={{ display: 'flex', gap: 10, justifyContent: 'center', marginTop: 16 }}>
-                                    <button onClick={() => copyCode(genResult.code)} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '10px 20px', background: 'linear-gradient(135deg, #d946ef, #8b5cf6)', color: '#fff', border: 'none', borderRadius: 10, fontSize: '0.85rem', fontWeight: 800, cursor: 'pointer', boxShadow: '0 4px 12px rgba(217, 70, 239, 0.3)' }}>
-                                        {copied === genResult.code ? <><Check size={16} /> ХУУЛСАН!</> : <><Copy size={16} /> КОДЫГ ХУУЛАХ</>}
+                                                <div style={{ fontFamily: 'monospace', fontSize: '2.2rem', fontWeight: 900, color: '#1e293b', letterSpacing: '0.05em', margin: '14px 0' }}>{genResult.code}</div>
+                                <div style={{ fontSize: '1.05rem', fontWeight: 800, color: brandColor, marginTop: 4 }}>Гаднаасаа авах {genResult.pct}% ХЯМДРАЛ 🎉</div>
+                                <div style={{ display: 'flex', gap: 10, justifyContent: 'center', marginTop: 20 }}>
+                                    <button onClick={() => copyCode(genResult.code)} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '12px 24px', background: brandColor, color: '#fff', border: 'none', borderRadius: 12, fontSize: '0.9rem', fontWeight: 800, cursor: 'pointer', boxShadow: `0 4px 12px ${brandColor}40` }}>
+                                        {copied === genResult.code ? <><Check size={18} /> ХУУЛСАН!</> : <><Copy size={18} /> КОДЫГ ХУУЛАХ</>}
                                     </button>
-                                    <button onClick={() => setGenResult(null)} style={{ padding: '10px 20px', background: 'none', border: '2px solid #e5e7eb', color: '#4b5563', borderRadius: 10, fontSize: '0.85rem', fontWeight: 700, cursor: 'pointer' }}>БУЦАХ</button>
+                                    <button onClick={() => setGenResult(null)} style={{ padding: '12px 24px', background: 'none', border: '2px solid #e2e8f0', color: '#475569', borderRadius: 12, fontSize: '0.9rem', fontWeight: 700, cursor: 'pointer' }}>БУЦАХ</button>
                                 </div>
                             </div>
                         ) : (
@@ -1537,17 +1558,18 @@ function PromoCodeSection({ business, phone, brandColor }: { business: Business;
                                 <div style={{ fontSize: '0.8rem', color: '#6b7280', marginBottom: 16, fontWeight: 500 }}>
                                     Таньд <strong style={{ color: remaining > 0 ? '#d946ef' : '#dc2626', fontSize: '1rem' }}>{remaining}</strong> эрх үлдсэн байна.
                                 </div>
-                                <button
+                                                <button
                                     onClick={generateCode}
                                     disabled={loading || remaining <= 0}
                                     style={{
                                         display: 'inline-flex', alignItems: 'center', gap: 8,
-                                        padding: '12px 24px', background: remaining > 0 ? 'linear-gradient(135deg, #111 0%, #333 100%)' : '#d1d5db',
-                                        color: '#fff', border: 'none', borderRadius: 12, fontSize: '0.9rem',
+                                        padding: '14px 28px', background: remaining > 0 ? brandColor : '#cbd5e1',
+                                        color: '#fff', border: 'none', borderRadius: 14, fontSize: '0.95rem',
                                         fontWeight: 800, cursor: remaining > 0 ? 'pointer' : 'not-allowed',
-                                        boxShadow: remaining > 0 ? '0 6px 16px rgba(0,0,0,0.2)' : 'none',
+                                        boxShadow: remaining > 0 ? `0 6px 16px ${brandColor}40` : 'none',
                                         transform: loading ? 'scale(0.98)' : 'scale(1)',
-                                        transition: 'all 0.2s'
+                                        transition: 'all 0.2s',
+                                        marginTop: 8
                                     }}
                                 >
                                     {loading ? 'Уншиж байна...' : <><Ticket size={18} /> ХӨНГӨЛӨЛТИЙН КОД СУГАЛАХ</>}

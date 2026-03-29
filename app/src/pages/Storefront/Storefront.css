@@ -1804,9 +1804,8 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 20px 22px;
-    background: #fafafa;
-    border-bottom: 1px solid #eee;
+    padding: 24px 24px 16px;
+    background: #fff;
 }
 
 .cd-header-user {
@@ -1866,37 +1865,46 @@
     position: relative;
     z-index: 2;
     display: flex;
-    padding: 0;
+    padding: 0 20px 16px;
     background: #fff;
-    border-bottom: 1px solid #eee;
+    border-bottom: 1px solid rgba(0,0,0,0.05);
+    gap: 8px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+.cd-tabs::-webkit-scrollbar {
+    display: none;
 }
 
 .cd-tab {
-    flex: 1;
+    flex: none;
     display: flex;
-    flex-direction: column;
     align-items: center;
-    gap: 4px;
-    padding: 14px 4px 12px;
+    gap: 6px;
+    padding: 10px 18px;
     border: none;
-    background: none;
-    color: #bbb;
-    font-size: 0.7rem;
+    background: rgba(0,0,0,0.04);
+    color: #666;
+    font-size: 0.85rem;
     font-weight: 700;
     cursor: pointer;
-    border-bottom: 2px solid transparent;
+    border-radius: 100px;
     transition: all 0.25s ease;
     font-family: var(--sf-font-body);
-    letter-spacing: 0.02em;
+    letter-spacing: 0.01em;
 }
 
 .cd-tab.active {
-    color: #111;
-    border-bottom-color: #111;
+    background: var(--sf-brand-color, #111);
+    color: #fff;
+    box-shadow: 0 4px 12px var(--sf-brand-color-soft);
 }
 
 .cd-tab:hover:not(.active) {
-    color: #888;
+    background: rgba(0,0,0,0.08);
+    color: #333;
 }
 
 /* Content */
@@ -1905,10 +1913,11 @@
     z-index: 2;
     flex: 1;
     overflow-y: auto;
-    padding: 22px 22px;
-    background: #fafafa;
+    padding: 24px;
+    padding-bottom: 120px; /* safe area for bottom floating buttons */
+    background: #fdfdfd;
     scrollbar-width: thin;
-    scrollbar-color: #ddd transparent;
+    scrollbar-color: rgba(0,0,0,0.1) transparent;
 }
 
 .cd-content::-webkit-scrollbar { width: 4px; }
@@ -3058,7 +3067,7 @@ body.fb-browser .storefront-layout {
     position: fixed;
     bottom: 24px;
     right: 24px;
-    background: linear-gradient(135deg, #ff416c, #ff4b2b);
+    background: var(--sf-brand-color, #111);
     color: white;
     padding: 14px 24px;
     border-radius: 100px;
@@ -3067,7 +3076,7 @@ body.fb-browser .storefront-layout {
     gap: 10px;
     font-weight: 800;
     font-size: 0.95rem;
-    box-shadow: 0 8px 25px rgba(255, 65, 108, 0.4);
+    box-shadow: 0 8px 25px var(--sf-brand-color-soft, rgba(0,0,0,0.2));
     text-decoration: none;
     z-index: 9999;
     user-select: none;
@@ -3077,7 +3086,7 @@ body.fb-browser .storefront-layout {
 
 .sf-floating-community-btn:hover {
     transform: translateY(-2px);
-    box-shadow: 0 12px 30px rgba(255, 65, 108, 0.5);
+    box-shadow: 0 12px 30px var(--sf-brand-color-soft, rgba(0,0,0,0.3));
 }
 
 .sf-floating-community-btn:active {
