@@ -279,7 +279,7 @@ export function PromoCodesPage() {
                         <span className="promo-stat-label">Ашиглалт</span>
                     </div>
                 </div>
-                <button className="promo-settings-btn" onClick={() => navigate('/app/settings')} title="Тохиргоо">
+                <button className="promo-settings-btn" onClick={() => navigate('/app/settings?tab=promo-codes')} title="Тохиргоо">
                     <Settings size={18} />
                 </button>
             </div>
