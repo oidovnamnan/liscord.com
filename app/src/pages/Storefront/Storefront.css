@@ -1860,53 +1860,8 @@
     color: #333;
 }
 
-/* Tabs */
-.cd-tabs {
-    position: relative;
-    z-index: 2;
-    display: flex;
-    padding: 0 20px 16px;
-    background: #fff;
-    border-bottom: 1px solid rgba(0,0,0,0.05);
-    gap: 8px;
-    overflow-x: auto;
-    scrollbar-width: none;
-    -ms-overflow-style: none;
-}
-
-.cd-tabs::-webkit-scrollbar {
-    display: none;
-}
-
-.cd-tab {
-    flex: none;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    padding: 10px 18px;
-    border: none;
-    background: rgba(0,0,0,0.04);
-    color: #666;
-    font-size: 0.85rem;
-    font-weight: 700;
-    cursor: pointer;
-    border-radius: 100px;
-    transition: all 0.25s ease;
-    font-family: var(--sf-font-body);
-    letter-spacing: 0.01em;
-}
-
-.cd-tab.active {
-    background: var(--sf-brand-color, #111);
-    color: #fff;
-    box-shadow: 0 4px 12px var(--sf-brand-color-soft);
-}
-
-.cd-tab:hover:not(.active) {
-    background: rgba(0,0,0,0.08);
-    color: #333;
-}
-
+/* Horizontal Tabs (Deprecated - Replaced by Bottom Nav) */
+/* Keep only content styles */
 /* Content */
 .cd-content {
     position: relative;
@@ -2305,33 +2260,62 @@
     margin-top: 2px;
 }
 
-/* Footer */
-.cd-footer {
+/* Bottom Navigation */
+.cd-bottom-nav {
     position: relative;
-    z-index: 2;
-    padding: 16px 22px;
-    border-top: 1px solid #eee;
-    background: #fafafa;
-}
-
-.cd-btn-logout {
-    width: 100%;
-    padding: 11px;
+    z-index: 10;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
     background: #fff;
-    border: 1px solid #e0e0e0;
-    border-radius: 10px;
-    color: #999;
-    font-weight: 700;
-    font-size: 0.85rem;
-    cursor: pointer;
-    font-family: var(--sf-font-body);
-    transition: all 0.2s;
+    border-top: 1px solid rgba(0,0,0,0.06);
+    padding: 12px 10px 24px 10px; /* bottom padding for iPhone home indicator safety */
+    box-shadow: 0 -4px 16px rgba(0,0,0,0.02);
 }
 
-.cd-btn-logout:hover {
-    background: #fef2f2;
-    border-color: #fca5a5;
-    color: #ef4444;
+.cd-nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    cursor: pointer;
+    padding: 6px 4px;
+    border-radius: 12px;
+    transition: all 0.2s ease;
+    flex: 1;
+}
+
+.cd-nav-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+    transition: all 0.2s ease;
+}
+
+.cd-nav-item span {
+    font-size: 0.65rem;
+    font-weight: 700;
+    font-family: var(--sf-font-body);
+    white-space: nowrap;
+}
+
+.cd-nav-item.active {
+    color: var(--sf-brand-color, #111);
+}
+
+.cd-nav-item.active .cd-nav-icon {
+    background: var(--sf-brand-color-soft, rgba(0,0,0,0.05));
+}
+
+.cd-nav-item:hover:not(.active) {
+    color: #475569;
 }
 
 /* Profile Icon in Nav */

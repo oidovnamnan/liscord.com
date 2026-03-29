@@ -737,19 +737,7 @@ export function CustomerDashboard({ isOpen, onClose, business, phone, onOpenMemb
                     <button className="cd-close" onClick={onClose}><X size={20} /></button>
                 </div>
 
-                {/* Tabs */}
-                <div className="cd-tabs">
-                    {TABS.map(tab => (
-                        <button
-                            key={tab.key}
-                            className={`cd-tab ${activeTab === tab.key ? 'active' : ''}`}
-                            onClick={() => setActiveTab(tab.key)}
-                        >
-                            <tab.icon size={16} />
-                            <span>{tab.label}</span>
-                        </button>
-                    ))}
-                </div>
+
 
                 {/* Content */}
                 <div className="cd-content">
@@ -850,6 +838,25 @@ export function CustomerDashboard({ isOpen, onClose, business, phone, onOpenMemb
                                 </div>
                             )}
 
+                            {/* Logout section moved from footer */}
+                            <div style={{ marginTop: 32, paddingTop: 24, borderTop: '1px solid #f1f5f9' }}>
+                                <button 
+                                    onClick={handleLogout}
+                                    style={{ 
+                                        width: '100%', 
+                                        padding: '14px', 
+                                        borderRadius: 12, 
+                                        background: '#fff', 
+                                        border: '1px solid #e2e8f0', 
+                                        color: '#ef4444', 
+                                        fontWeight: 700, 
+                                        fontSize: '0.95rem',
+                                        cursor: 'pointer',
+                                    }}
+                                >
+                                    Системээс гарах
+                                </button>
+                            </div>
                         </div>
                     )}
                     {activeTab === 'wallet' && (
@@ -1078,11 +1085,18 @@ export function CustomerDashboard({ isOpen, onClose, business, phone, onOpenMemb
                     )}
                 </div>
 
-                {/* Footer */}
-                <div className="cd-footer">
-                    <button className="cd-btn-logout" onClick={handleLogout}>
-                        Гарах
-                    </button>
+                {/* Bottom Navigation */}
+                <div className="cd-bottom-nav">
+                    {TABS.map(tab => (
+                        <button
+                            key={tab.key}
+                            className={`cd-nav-item ${activeTab === tab.key ? 'active' : ''}`}
+                            onClick={() => setActiveTab(tab.key)}
+                        >
+                            <div className="cd-nav-icon"><tab.icon size={20} strokeWidth={activeTab === tab.key ? 2.5 : 2} /></div>
+                            <span>{tab.label}</span>
+                        </button>
+                    ))}
                 </div>
             </div>
 
