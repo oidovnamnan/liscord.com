@@ -425,7 +425,7 @@ export function DashboardPage() {
                                     if (!pid) return;
                                     if (!cartItemsMap[pid]) cartItemsMap[pid] = { productId: pid, name: item.name || 'Нэргүй', totalQty: 0, totalValue: 0, cartCount: 0 };
                                     cartItemsMap[pid].totalQty += item.quantity || 1;
-                                    cartItemsMap[pid].totalValue += (item.price || 0) * (item.quantity || 1);
+                                    cartItemsMap[pid].totalValue += item.totalPrice || (item.unitPrice || item.price || 0) * (item.quantity || 1);
                                 });
                                 // Count unique carts per product
                                 const seenPids = new Set<string>();
@@ -466,7 +466,7 @@ export function DashboardPage() {
                                 soldProductIds.add(pid);
                                 if (!productSales[pid]) productSales[pid] = { name: item.name || 'Нэргүй', count: 0, revenue: 0 };
                                 productSales[pid].count += item.quantity || 1;
-                                productSales[pid].revenue += (item.price || 0) * (item.quantity || 1);
+                                productSales[pid].revenue += item.totalPrice || (item.unitPrice || item.price || 0) * (item.quantity || 1);
                             });
                         }
                     });
