@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { X, User, Crown, Package, MapPin, Bell, Clock, CheckCircle, AlertTriangle, RefreshCw, Phone, Loader2, Edit3, MessageSquare, Send, Ticket, Copy, Check, Gift } from 'lucide-react';
+import { X, User, Crown, Package, MapPin, Bell, Clock, CheckCircle, AlertTriangle, RefreshCw, Phone, Loader2, Edit3, MessageSquare, Send, Ticket, Copy, Check, Gift, Sparkles } from 'lucide-react';
 import type { Business } from '../../types';
 import { Timestamp } from 'firebase/firestore';
 
@@ -615,19 +615,19 @@ export function CustomerDashboard({ isOpen, onClose, business, phone, onOpenMemb
                                 </div>
                             )}
 
-                            {/* Promo Code Section */}
-                            <h3 className="cd-section-title" style={{ marginTop: 24 }}>🎟 Промо код</h3>
-                            <PromoCodeSection
-                                business={business}
-                                phone={normalizePhone(effectivePhone)}
-                                brandColor={brandColor}
-                            />
                         </div>
                     )}
 
                     {activeTab === 'orders' && (
                         <div className="cd-section">
-                            <h3 className="cd-section-title">Захиалгууд</h3>
+                            {/* Promo Code Section - MOVED TO TOP OF ORDERS AND MADE FESTIVE */}
+                            <PromoCodeSection
+                                business={business}
+                                phone={normalizePhone(effectivePhone)}
+                                brandColor={brandColor}
+                            />
+
+                            <h3 className="cd-section-title" style={{ marginTop: 24 }}>Захиалгууд</h3>
                             {loadingOrders ? (
                                 <div className="cd-loading">Ачаалж байна...</div>
                             ) : orders.length === 0 ? (
@@ -1079,85 +1079,111 @@ function PromoCodeSection({ business, phone, brandColor }: { business: Business;
     const remaining = credits.total - credits.used;
 
     if (!config && myCodes.length === 0) {
-        return (
-            <div style={{ padding: '16px 0', textAlign: 'center', color: '#999', fontSize: '0.82rem' }}>
-                <Gift size={28} strokeWidth={1.5} style={{ color: '#ddd', marginBottom: 6 }} />
-                <p>Промо код одоогоор идэвхгүй байна</p>
-            </div>
-        );
+        return null;
     }
 
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            {/* Generate button */}
-            {config && (
-                <div style={{ background: 'linear-gradient(135deg, #f0f0ff, #fdf0ff)', border: '1px solid #e0d4fc', borderRadius: 12, padding: 16 }}>
-                    {genResult ? (
-                        <div style={{ textAlign: 'center' }}>
-                            <div style={{ fontSize: '0.72rem', color: '#6b7280', fontWeight: 600, marginBottom: 6 }}>🎉 Таны промо код үүслээ!</div>
-                            <div style={{ fontFamily: 'monospace', fontSize: '1.3rem', fontWeight: 800, color: '#6366f1', letterSpacing: '0.05em' }}>{genResult.code}</div>
-                            <div style={{ fontSize: '0.82rem', fontWeight: 700, color: '#059669', marginTop: 4 }}>{genResult.pct}% хямдрал</div>
-                            <div style={{ display: 'flex', gap: 8, justifyContent: 'center', marginTop: 12 }}>
-                                <button onClick={() => copyCode(genResult.code)} style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '6px 14px', background: '#6366f1', color: '#fff', border: 'none', borderRadius: 8, fontSize: '0.78rem', fontWeight: 700, cursor: 'pointer' }}>
-                                    {copied === genResult.code ? <><Check size={14} /> Хуулсан</> : <><Copy size={14} /> Хуулах</>}
-                                </button>
-                                <button onClick={() => setGenResult(null)} style={{ padding: '6px 14px', background: 'none', border: '1px solid #d1d5db', borderRadius: 8, fontSize: '0.78rem', fontWeight: 600, cursor: 'pointer' }}>OK</button>
-                            </div>
-                        </div>
-                    ) : (
-                        <div style={{ textAlign: 'center' }}>
-                            <div style={{ fontSize: '0.82rem', fontWeight: 700, color: '#374151', marginBottom: 4 }}>
-                                {remaining > 0 ? `${config.minPercent}-${config.maxPercent}% хямдралтай код үүсгэх` : 'Эрх дууссан'}
-                            </div>
-                            <div style={{ fontSize: '0.72rem', color: '#6b7280', marginBottom: 10 }}>
-                                Таньд <strong style={{ color: remaining > 0 ? '#6366f1' : '#dc2626' }}>{remaining}</strong> эрх үлдлээ ({credits.used}/{credits.total})
-                            </div>
-                            <button
-                                onClick={generateCode}
-                                disabled={loading || remaining <= 0}
-                                style={{
-                                    display: 'inline-flex', alignItems: 'center', gap: 6,
-                                    padding: '8px 20px', background: remaining > 0 ? '#6366f1' : '#d1d5db',
-                                    color: '#fff', border: 'none', borderRadius: 10, fontSize: '0.85rem',
-                                    fontWeight: 700, cursor: remaining > 0 ? 'pointer' : 'not-allowed',
-                                    opacity: loading ? 0.5 : 1
-                                }}
-                            >
-                                <Ticket size={16} /> {loading ? 'Үүсгэж байна...' : 'Код үүсгэх'}
-                            </button>
-                        </div>
-                    )}
-                </div>
-            )}
+        <div style={{
+            display: 'flex', flexDirection: 'column', gap: 12,
+            background: 'linear-gradient(135deg, #FF9A9E 0%, #FECFEF 100%)',
+            padding: 20,
+            borderRadius: 16,
+            boxShadow: '0 10px 25px rgba(255, 154, 158, 0.2)',
+            color: '#111',
+            position: 'relative',
+            overflow: 'hidden'
+        }}>
+            {/* Festive Background Decorations */}
+            <div style={{ position: 'absolute', top: -10, right: -10, opacity: 0.1, transform: 'rotate(15deg)' }}>
+                <Gift size={120} />
+            </div>
+            <div style={{ position: 'absolute', bottom: -20, left: -20, opacity: 0.1, transform: 'rotate(-15deg)' }}>
+                <Ticket size={100} />
+            </div>
 
-            {/* My codes list */}
-            {myCodes.length > 0 && (
-                <div>
-                    <div style={{ fontSize: '0.72rem', fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>Миний кодууд</div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                        {myCodes.map((c, i) => (
-                            <div key={i} style={{
-                                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                                padding: '8px 12px', background: c.isActive ? '#fff' : '#f9fafb',
-                                border: `1px solid ${c.isActive ? '#e5e7eb' : '#f3f4f6'}`,
-                                borderRadius: 8, opacity: c.isActive ? 1 : 0.5
-                            }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                    <span style={{ fontFamily: 'monospace', fontWeight: 800, fontSize: '0.85rem', color: c.isActive ? '#111' : '#999' }}>{c.code}</span>
-                                    <span style={{ fontSize: '0.72rem', fontWeight: 700, color: c.isActive ? '#059669' : '#999', background: c.isActive ? '#ecfdf5' : '#f9fafb', padding: '2px 6px', borderRadius: 4 }}>{c.value}%</span>
+            <div style={{ position: 'relative', zIndex: 1 }}>
+                {/* Generate button or Result banner */}
+                {config && (
+                    <div style={{ background: 'rgba(255, 255, 255, 0.9)', backdropFilter: 'blur(10px)', border: '1px solid rgba(255, 255, 255, 0.5)', borderRadius: 12, padding: 20 }}>
+                        {genResult ? (
+                            <div style={{ textAlign: 'center' }}>
+                                <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 8, fontSize: '0.85rem', color: '#6b7280', fontWeight: 700, marginBottom: 8, textTransform: 'uppercase' }}>
+                                    <Sparkles size={16} color="#d946ef" /> Таны промо код үүслээ! <Sparkles size={16} color="#d946ef" />
                                 </div>
-                                {c.isActive ? (
-                                    <button onClick={() => copyCode(c.code)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: copied === c.code ? '#059669' : '#9ca3af' }}>
-                                        {copied === c.code ? <Check size={14} /> : <Copy size={14} />}
+                                <div style={{ fontFamily: 'monospace', fontSize: '2rem', fontWeight: 900, color: '#d946ef', letterSpacing: '0.05em', margin: '10px 0', textShadow: '0 2px 10px rgba(217, 70, 239, 0.2)' }}>{genResult.code}</div>
+                                <div style={{ fontSize: '1rem', fontWeight: 800, color: '#059669', marginTop: 4 }}>Гаднаасаа авах {genResult.pct}% ХЯМДРАЛ 🎉</div>
+                                <div style={{ display: 'flex', gap: 10, justifyContent: 'center', marginTop: 16 }}>
+                                    <button onClick={() => copyCode(genResult.code)} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '10px 20px', background: 'linear-gradient(135deg, #d946ef, #8b5cf6)', color: '#fff', border: 'none', borderRadius: 10, fontSize: '0.85rem', fontWeight: 800, cursor: 'pointer', boxShadow: '0 4px 12px rgba(217, 70, 239, 0.3)' }}>
+                                        {copied === genResult.code ? <><Check size={16} /> ХУУЛСАН!</> : <><Copy size={16} /> КОДЫГ ХУУЛАХ</>}
                                     </button>
-                                ) : (
-                                    <span style={{ fontSize: '0.68rem', color: '#999', fontWeight: 600 }}>Ашигласан</span>
-                                )}
+                                    <button onClick={() => setGenResult(null)} style={{ padding: '10px 20px', background: 'none', border: '2px solid #e5e7eb', color: '#4b5563', borderRadius: 10, fontSize: '0.85rem', fontWeight: 700, cursor: 'pointer' }}>БУЦАХ</button>
+                                </div>
                             </div>
-                        ))}
+                        ) : (
+                            <div style={{ textAlign: 'center' }}>
+                                <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', background: '#fef3c7', color: '#d97706', padding: '4px 12px', borderRadius: 20, fontSize: '0.75rem', fontWeight: 800, marginBottom: 12 }}>
+                                    <Gift size={14} style={{ marginRight: 6 }} /> БЭЛЭГТЭЙ УРАМШУУЛАЛ
+                                </div>
+                                <div style={{ fontSize: '1.2rem', fontWeight: 900, color: '#111827', marginBottom: 6, lineHeight: 1.2 }}>
+                                    {remaining > 0 ? `Азаа үзээд ${config.minPercent} - ${config.maxPercent}% хөнгөлөлт аваарай!` : 'Таны урамшууллын эрх дууссан байна'}
+                                </div>
+                                <div style={{ fontSize: '0.8rem', color: '#6b7280', marginBottom: 16, fontWeight: 500 }}>
+                                    Таньд <strong style={{ color: remaining > 0 ? '#d946ef' : '#dc2626', fontSize: '1rem' }}>{remaining}</strong> эрх үлдсэн байна.
+                                </div>
+                                <button
+                                    onClick={generateCode}
+                                    disabled={loading || remaining <= 0}
+                                    style={{
+                                        display: 'inline-flex', alignItems: 'center', gap: 8,
+                                        padding: '12px 24px', background: remaining > 0 ? 'linear-gradient(135deg, #111 0%, #333 100%)' : '#d1d5db',
+                                        color: '#fff', border: 'none', borderRadius: 12, fontSize: '0.9rem',
+                                        fontWeight: 800, cursor: remaining > 0 ? 'pointer' : 'not-allowed',
+                                        boxShadow: remaining > 0 ? '0 6px 16px rgba(0,0,0,0.2)' : 'none',
+                                        transform: loading ? 'scale(0.98)' : 'scale(1)',
+                                        transition: 'all 0.2s'
+                                    }}
+                                >
+                                    {loading ? 'Уншиж байна...' : <><Ticket size={18} /> ХӨНГӨЛӨЛТИЙН КОД СУГАЛАХ</>}
+                                </button>
+                            </div>
+                        )}
                     </div>
-                </div>
-            )}
+                )}
+
+                {/* My codes list */}
+                {myCodes.length > 0 && (
+                    <div style={{ marginTop: 16, background: 'rgba(255, 255, 255, 0.6)', borderRadius: 12, padding: 16, backdropFilter: 'blur(10px)' }}>
+                        <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#4b5563', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
+                            <Ticket size={14} /> ТАНЫ ИДЭВХТЭЙ КОДУУД
+                        </div>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 10 }}>
+                            {myCodes.map((c, i) => (
+                                <div key={i} style={{
+                                    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                                    padding: '10px 14px', background: c.isActive ? '#fff' : 'rgba(255,255,255,0.4)',
+                                    border: `1px solid ${c.isActive ? '#e5e7eb' : 'transparent'}`,
+                                    borderRadius: 10, opacity: c.isActive ? 1 : 0.6,
+                                    boxShadow: c.isActive ? '0 2px 6px rgba(0,0,0,0.05)' : 'none'
+                                }}>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                                        <span style={{ fontFamily: 'monospace', fontWeight: 900, fontSize: '0.95rem', color: c.isActive ? '#111' : '#6b7280' }}>{c.code}</span>
+                                        <span style={{ fontSize: '0.75rem', fontWeight: 800, color: c.isActive ? '#059669' : '#6b7280' }}>
+                                            {c.value}% ХЯМДРАЛ
+                                        </span>
+                                    </div>
+                                    {c.isActive ? (
+                                        <button onClick={() => copyCode(c.code)} style={{ background: copied === c.code ? '#10b981' : '#f3f4f6', color: copied === c.code ? '#fff' : '#4b5563', border: 'none', borderRadius: 8, width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'all 0.2s' }}>
+                                            {copied === c.code ? <Check size={16} /> : <Copy size={16} />}
+                                        </button>
+                                    ) : (
+                                        <span style={{ fontSize: '0.68rem', color: '#999', fontWeight: 600 }}>Ашигласан</span>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
+            </div>
         </div>
     );
 }
