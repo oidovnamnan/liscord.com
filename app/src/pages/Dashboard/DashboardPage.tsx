@@ -8,7 +8,6 @@ import {
     Crown, Hash, Eye, Menu
 } from 'lucide-react';
 import { useBusinessStore, useAuthStore, useModuleDefaultsStore, useUIStore } from '../../store';
-import { useCartStore } from '../../store/cartStore';
 import { dashboardService } from '../../services/db';
 import { auditService } from '../../services/audit';
 import { collection, query, where, getDocs, orderBy, limit, Timestamp, onSnapshot, doc, getDoc, setDoc } from 'firebase/firestore';
@@ -195,7 +194,7 @@ function HBarChart({ data, colors }: { data: { label: string; value: number }[];
 export function DashboardPage() {
     const { business, employee, isImpersonating } = useBusinessStore();
     const { user } = useAuthStore();
-    const cartItems = useCartStore(s => s.items);
+
     const [recentOrders, setRecentOrders] = useState<Order[]>([]);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const [stats, setStats] = useState<any>(null);
@@ -1028,26 +1027,23 @@ export function DashboardPage() {
                 return (
                     <div className="dashboard-section glass-section">
                         <div className="dashboard-section-header">
-                            <h3><ShoppingBag size={18} style={{ color: '#f59e0b', marginRight: 8 }} /> Сагсанд байгаа ({cartItems.length})</h3>
+                            <h3><ShoppingBag size={18} style={{ color: '#f59e0b', marginRight: 8 }} /> Сагсанд байгаа ({unpaidCartItems.length})</h3>
+                            <a href="/app/orders" className="text-primary text-sm hover-underline">Бүгд →</a>
                         </div>
                         <div className="dash-list">
-                            {cartItems.length === 0 ? (
+                            {unpaidCartItems.length === 0 ? (
                                 <div className="empty-state-compact"><ShoppingBag size={24} style={{ color: 'var(--text-muted)', marginBottom: 8 }} /><p className="text-muted">Сагсанд бараа байхгүй</p></div>
-                            ) : [...cartItems].sort((a, b) => b.quantity - a.quantity).map(item => (
-                                <div key={item.id} className="dash-list-item">
+                            ) : unpaidCartItems.slice(0, 10).map(item => (
+                                <div key={item.productId} className="dash-list-item">
                                     <div className="dash-list-left">
-                                        {item.product?.images?.[0] ? (
-                                            <img src={item.product.images[0]} alt={item.product.name} style={{ width: 32, height: 32, borderRadius: 6, objectFit: 'cover', flexShrink: 0 }} />
-                                        ) : (
-                                            <ShoppingCart size={15} style={{ color: '#f59e0b', flexShrink: 0 }} />
-                                        )}
+                                        <ShoppingCart size={15} style={{ color: '#f59e0b', flexShrink: 0 }} />
                                         <div>
-                                            <span className="dash-list-name">{item.product?.name || 'Нэргүй'}</span>
-                                            <span className="dash-list-sub">x{item.quantity}</span>
+                                            <span className="dash-list-name">{item.name}</span>
+                                            <span className="dash-list-sub">{item.totalQty}ш · {item.cartCount} сагс</span>
                                         </div>
                                     </div>
                                     <div style={{ textAlign: 'right' }}>
-                                        <span className="dash-list-amount" style={{ color: '#f59e0b' }}>{fmt(item.price * item.quantity)}</span>
+                                        <span className="dash-list-amount" style={{ color: '#f59e0b' }}>{fmt(item.totalValue)}</span>
                                     </div>
                                 </div>
                             ))}
