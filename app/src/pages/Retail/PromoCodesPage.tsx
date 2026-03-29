@@ -305,12 +305,22 @@ export function PromoCodesPage() {
                     <Search size={16} />
                     <input placeholder="Код хайх..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
                 </div>
-                {tab !== 'usage' && (
-                    <button className="promo-add-btn" onClick={() => openCreate(tab === 'dynamic' ? 'dynamic' : tab === 'user_gen' ? 'user_generated' : 'static')}>
+                {tab === 'static' && (
+                    <button className="promo-add-btn" onClick={() => openCreate('static')}>
                         <Plus size={18} />
-                        <span>
-                            {tab === 'static' ? 'Шинэ код' : tab === 'dynamic' ? 'Шинэ кампанит' : 'Тохиргоо нэмэх'}
-                        </span>
+                        <span>Шинэ код</span>
+                    </button>
+                )}
+                {tab === 'dynamic' && (
+                    <button className="promo-add-btn" onClick={() => openCreate('dynamic')}>
+                        <Plus size={18} />
+                        <span>Шинэ кампанит</span>
+                    </button>
+                )}
+                {tab === 'user_gen' && (
+                    <button className="promo-add-btn" onClick={() => navigate('/app/settings?tab=promo-codes')}>
+                        <Settings size={18} />
+                        <span>Тохиргоо</span>
                     </button>
                 )}
             </div>
@@ -378,7 +388,7 @@ export function PromoCodesPage() {
             {showModal && (
                 <div className="promo-modal-overlay" onClick={() => setShowModal(false)}>
                     <div className="promo-modal" onClick={e => e.stopPropagation()}>
-                        <h3>{editingCode ? 'Код засах' : tab === 'dynamic' ? 'Динамик кампанит' : tab === 'user_gen' ? 'Lucky код тохиргоо' : 'Шинэ промо код'}</h3>
+                        <h3>{editingCode ? 'Код засах' : tab === 'dynamic' ? 'Динамик кампанит' : 'Шинэ промо код'}</h3>
 
                         <div className="promo-form">
                             {tab === 'static' && (
@@ -406,7 +416,7 @@ export function PromoCodesPage() {
                                 </>
                             )}
 
-                            {(tab === 'dynamic' || tab === 'user_gen') && (
+                            {tab === 'dynamic' && (
                                 <div className="promo-field-row">
                                     <div className="promo-field">
                                         <label>Хамгийн бага %</label>
@@ -416,13 +426,6 @@ export function PromoCodesPage() {
                                         <label>Хамгийн их %</label>
                                         <input type="number" value={formMaxPercent} onChange={e => setFormMaxPercent(e.target.value)} />
                                     </div>
-                                </div>
-                            )}
-
-                            {tab === 'user_gen' && (
-                                <div className="promo-field">
-                                    <label>Хэрэглэгч тутамд эрхийн тоо</label>
-                                    <input type="number" value={formCreditsPerUser} onChange={e => setFormCreditsPerUser(e.target.value)} />
                                 </div>
                             )}
 
