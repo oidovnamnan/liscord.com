@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Ticket, Plus, Search, Copy, Check, Zap, Gift, BarChart3, Users, Clock, Percent, Tag, Trash2, ToggleLeft, ToggleRight, Crown, Shuffle, Settings, Sparkles } from 'lucide-react';
+import { Ticket, Plus, Search, Copy, Check, Zap, Gift, BarChart3, Users, Clock, Percent, Tag, Trash2, ToggleLeft, ToggleRight, Crown, Shuffle, Settings, Sparkles, Save, Loader2 } from 'lucide-react';
 import { useBusinessStore } from '../../store';
 import { collection, query, orderBy, onSnapshot, addDoc, updateDoc, doc, deleteDoc, getDocs, where, serverTimestamp, Timestamp } from 'firebase/firestore';
 import { db } from '../../services/firebase';
@@ -54,6 +54,15 @@ export function PromoCodesPage() {
 
     const [saving, setSaving] = useState(false);
 
+    // Lucky config state
+    const [luckyEnabled, setLuckyEnabled] = useState(false);
+    const [luckyMinPercent, setLuckyMinPercent] = useState(3);
+    const [luckyMaxPercent, setLuckyMaxPercent] = useState(10);
+    const [luckyCredits, setLuckyCredits] = useState(5);
+    const [luckyExpireDays, setLuckyExpireDays] = useState(30);
+    const [luckySaving, setLuckySaving] = useState(false);
+    const [luckyLoaded, setLuckyLoaded] = useState(false);
+
     useEffect(() => {
         if (!business?.id) return;
         const q = query(
@@ -66,6 +75,60 @@ export function PromoCodesPage() {
         });
         return () => unsub();
     }, [business?.id]);
+
+    // Load Lucky config
+    useEffect(() => {
+        if (!business?.id || luckyLoaded) return;
+        (async () => {
+            try {
+                const { doc: docRef, getDoc } = await import('firebase/firestore');
+                const cfgDoc = await getDoc(docRef(db, 'businesses', business.id, 'module_settings', 'promo-codes'));
+                if (cfgDoc.exists()) {
+                    const d = cfgDoc.data();
+                    setLuckyEnabled(d.luckyEnabled ?? false);
+                    setLuckyMinPercent(d.luckyMinPercent ?? 3);
+                    setLuckyMaxPercent(d.luckyMaxPercent ?? 10);
+                    setLuckyCredits(d.luckyCreditsPerUser ?? 5);
+                    setLuckyExpireDays(d.luckyCodeExpireDays ?? 30);
+                }
+            } catch { /* ignore */ }
+            setLuckyLoaded(true);
+        })();
+    }, [business?.id, luckyLoaded]);
+
+    const saveLuckyConfig = async () => {
+        if (!business?.id) return;
+        setLuckySaving(true);
+        try {
+            const { doc: docRef, setDoc: sd, collection: col, query: q, where: w, getDocs: gd, addDoc: ad, updateDoc: ud } = await import('firebase/firestore');
+            // Save config
+            await sd(docRef(db, 'businesses', business.id, 'module_settings', 'promo-codes'), {
+                luckyEnabled, luckyMinPercent, luckyMaxPercent, luckyCreditsPerUser: luckyCredits, luckyCodeExpireDays: luckyExpireDays,
+                updatedAt: serverTimestamp(),
+            }, { merge: true });
+
+            // Create/update user_generated config doc
+            if (luckyEnabled) {
+                const ugSnap = await gd(q(col(db, 'businesses', business.id, 'promoCodes'), w('mode', '==', 'user_generated'), w('code', '==', 'LUCKY-CONFIG')));
+                const ugConfig = { creditsPerUser: luckyCredits, minPercent: luckyMinPercent, maxPercent: luckyMaxPercent };
+                if (ugSnap.empty) {
+                    await ad(col(db, 'businesses', business.id, 'promoCodes'), {
+                        businessId: business.id, code: 'LUCKY-CONFIG', type: 'percentage', value: 0, mode: 'user_generated',
+                        target: 'all', usageType: 'one_time', usageLimit: 0, usageCount: 0, usedBy: [],
+                        startDate: serverTimestamp(), endDate: new Date('2099-12-31'),
+                        minOrderAmount: 0, isActive: true, isDeleted: false,
+                        userGenConfig: ugConfig, createdAt: serverTimestamp(), updatedAt: serverTimestamp(),
+                    });
+                } else {
+                    await ud(docRef(db, 'businesses', business.id, 'promoCodes', ugSnap.docs[0].id), {
+                        isActive: true, userGenConfig: ugConfig, updatedAt: serverTimestamp(),
+                    });
+                }
+            }
+            alert('Lucky тохиргоо хадгалагдлаа!');
+        } catch (e) { console.error(e); alert('Алдаа гарлаа'); }
+        setLuckySaving(false);
+    };
 
     const filtered = useMemo(() => {
         let list = codes;
@@ -318,14 +381,80 @@ export function PromoCodesPage() {
                     </button>
                 )}
                 {tab === 'user_gen' && (
-                    <button className="promo-add-btn" onClick={() => navigate('/app/settings?tab=promo-codes')}>
-                        <Settings size={18} />
-                        <span>Тохиргоо</span>
+                    <button className="promo-add-btn" onClick={saveLuckyConfig} disabled={luckySaving}>
+                        {luckySaving ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />}
+                        <span>Хадгалах</span>
                     </button>
                 )}
             </div>
 
-            {/* Code List */}
+            {/* Lucky Settings Panel */}
+            {tab === 'user_gen' && (
+                <div style={{ background: 'var(--bg-soft, #f9fafb)', border: '1px solid var(--border, #e5e7eb)', borderRadius: 14, padding: 20, marginBottom: 16 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                            <div style={{ width: 36, height: 36, borderRadius: 10, background: '#fef3c7', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                <Sparkles size={18} style={{ color: '#f59e0b' }} />
+                            </div>
+                            <div>
+                                <div style={{ fontWeight: 800, fontSize: '0.95rem' }}>Lucky Код тохиргоо</div>
+                                <div style={{ fontSize: '0.78rem', color: 'var(--text-muted, #888)' }}>Хэрэглэгч профайлаасаа код үүсгэх боломж</div>
+                            </div>
+                        </div>
+                        <label style={{ position: 'relative', display: 'inline-flex', alignItems: 'center', cursor: 'pointer' }}>
+                            <input type="checkbox" checked={luckyEnabled} onChange={e => setLuckyEnabled(e.target.checked)} style={{ position: 'absolute', opacity: 0, width: 0, height: 0 }} />
+                            <div style={{
+                                width: 44, height: 24, borderRadius: 12,
+                                background: luckyEnabled ? '#6366f1' : '#d1d5db',
+                                transition: 'background 0.2s', position: 'relative'
+                            }}>
+                                <div style={{
+                                    width: 18, height: 18, borderRadius: '50%', background: '#fff',
+                                    position: 'absolute', top: 3, left: luckyEnabled ? 23 : 3,
+                                    transition: 'left 0.2s', boxShadow: '0 1px 3px rgba(0,0,0,0.15)'
+                                }} />
+                            </div>
+                        </label>
+                    </div>
+
+                    {luckyEnabled && (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
+                                <div>
+                                    <label style={{ display: 'block', fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-muted, #777)', textTransform: 'uppercase', marginBottom: 4 }}>Хамгийн бага %</label>
+                                    <input type="number" min={1} max={90} value={luckyMinPercent} onChange={e => setLuckyMinPercent(Number(e.target.value))}
+                                        style={{ width: '100%', padding: '8px 10px', borderRadius: 8, border: '1px solid var(--border, #ddd)', fontSize: '0.9rem', fontWeight: 700 }} />
+                                </div>
+                                <div>
+                                    <label style={{ display: 'block', fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-muted, #777)', textTransform: 'uppercase', marginBottom: 4 }}>Хамгийн их %</label>
+                                    <input type="number" min={1} max={90} value={luckyMaxPercent} onChange={e => setLuckyMaxPercent(Number(e.target.value))}
+                                        style={{ width: '100%', padding: '8px 10px', borderRadius: 8, border: '1px solid var(--border, #ddd)', fontSize: '0.9rem', fontWeight: 700 }} />
+                                </div>
+                                <div>
+                                    <label style={{ display: 'block', fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-muted, #777)', textTransform: 'uppercase', marginBottom: 4 }}>Эрхийн тоо</label>
+                                    <input type="number" min={1} max={50} value={luckyCredits} onChange={e => setLuckyCredits(Number(e.target.value))}
+                                        style={{ width: '100%', padding: '8px 10px', borderRadius: 8, border: '1px solid var(--border, #ddd)', fontSize: '0.9rem', fontWeight: 700 }} />
+                                </div>
+                                <div>
+                                    <label style={{ display: 'block', fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-muted, #777)', textTransform: 'uppercase', marginBottom: 4 }}>Хугацаа (хоног)</label>
+                                    <input type="number" min={1} max={365} value={luckyExpireDays} onChange={e => setLuckyExpireDays(Number(e.target.value))}
+                                        style={{ width: '100%', padding: '8px 10px', borderRadius: 8, border: '1px solid var(--border, #ddd)', fontSize: '0.9rem', fontWeight: 700 }} />
+                                </div>
+                            </div>
+                            <div style={{ background: 'linear-gradient(135deg, #f0f0ff, #fdf0ff)', border: '1px solid #e0d4fc', borderRadius: 10, padding: 12, textAlign: 'center', fontSize: '0.82rem' }}>
+                                <span style={{ color: '#6b7280' }}>Хэрэглэгч </span>
+                                <strong style={{ color: '#6366f1' }}>{luckyMinPercent}-{luckyMaxPercent}%</strong>
+                                <span style={{ color: '#6b7280' }}> хямдрал · </span>
+                                <strong style={{ color: '#6366f1' }}>{luckyCredits}</strong>
+                                <span style={{ color: '#6b7280' }}> эрх · </span>
+                                <strong style={{ color: '#6366f1' }}>{luckyExpireDays}</strong>
+                                <span style={{ color: '#6b7280' }}> хоногийн хүчинтэй</span>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            )}
+
             <div className="promo-list">
                 {loading ? (
                     <div className="promo-empty">Ачаалж байна...</div>
