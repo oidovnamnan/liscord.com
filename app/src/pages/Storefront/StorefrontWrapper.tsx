@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
-import { useParams, Outlet, Navigate, useLocation } from 'react-router-dom';
+import { useParams, Outlet, Navigate, useLocation, Link } from 'react-router-dom';
 import { businessService } from '../../services/db';
 import { db } from '../../services/firebase';
 import { doc, getDoc, setDoc, deleteDoc, serverTimestamp, increment } from 'firebase/firestore';
 import type { Business } from '../../types';
 import { CartDrawer } from '../../components/Storefront/CartDrawer';
 import { StorefrontFooter } from '../../components/Storefront/StorefrontFooter';
+import { Heart } from 'lucide-react';
 import './Storefront.css';
 
 export function StorefrontWrapper() {
@@ -312,6 +313,14 @@ export function StorefrontWrapper() {
             <Outlet context={{ business }} />
             {!isCheckoutPage && <StorefrontFooter business={business} />}
             <CartDrawer />
+            
+            {/* Global Floating Community Button */}
+            {!location.pathname.includes('/community') && !isCheckoutPage && (
+                <Link to={`/${slug}/community`} className="sf-floating-community-btn">
+                    <Heart size={20} className="pulse-heart" />
+                    <span>Коммунити</span>
+                </Link>
+            )}
         </div>
     );
 }

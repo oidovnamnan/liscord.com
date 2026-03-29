@@ -4358,6 +4358,8 @@ export const LISCORD_MODULES: AppModule[] = [
         route: '/app/wallet',
         isCore: false,
         category: 'finance',
+        hasSettings: true,
+        settingsRoute: '/app/settings?tab=wallet',
         isFree: false,
         plans: [
             { id: 'monthly', name: '30 хоног', price: 20000, durationDays: 30 },

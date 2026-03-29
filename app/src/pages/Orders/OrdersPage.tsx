@@ -1125,7 +1125,7 @@ function CreateOrderModal({ onClose, nextNumber, statuses }: {
                 ? 'confirmed'
                 : (statuses.find(s => s.isActive && s.id !== 'all')?.id || 'new');
 
-            await orderService.createOrder(business.id, {
+            const newOrderId = await orderService.createOrder(business.id, {
                 orderNumber: nextNumber,
                 status: initialStatus,
                 paymentStatus: paid >= finalTotal ? 'paid' : paid > 0 ? 'partial' : 'unpaid',
@@ -1169,6 +1169,14 @@ function CreateOrderModal({ onClose, nextNumber, statuses }: {
                 statusHistory: [],
                 tags: []
             });
+            
+            // Process cashback if immediately paid
+            if (paid >= finalTotal && finalTotal > 0) {
+                import('../../services/walletService').then(({ walletService }) => {
+                    walletService.processOrderCashback(business.id, newOrderId, user);
+                }).catch(err => console.error('Wallet cashback creation failed:', err));
+            }
+
             onClose();
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (error: any) {

@@ -234,6 +234,60 @@ export interface BusinessSettings {
     autoLogoutMinutes?: number;
     unpaidOrderExpiryHours?: number;
     stockInquiryTemplates?: string[];
+    wallet?: WalletConfig;
+}
+
+export interface WalletConfig {
+    enabled: boolean;
+    currencyName: string;
+    exchangeRate: number;
+    
+    defaultCategoryLimitPct: number;
+    categoryLimits?: {
+        categoryId: string;
+        limitPct: number;
+    }[];
+    globalMaxLimitPct: number;
+    
+    usageLimitMode: 'fixed' | 'random' | 'tier_based';
+    fixedLimitPct?: number; 
+    randomLimitRange?: { minPct: number; maxPct: number; };
+    tierLimits?: { tierId: string; minSpent: number; limitPct: number; }[];
+
+    rewardEvents?: {
+        signupBonus: number; 
+        referralBonus: number; 
+        firstOrderBonus: number; 
+        orderCashbackPct: number; 
+        socialShareBonus: number; 
+        communityPostBonus: number; 
+    };
+}
+
+export interface WalletTransaction {
+    id: string;
+    businessId: string;
+    customerId: string;
+    amount: number;
+    type: 'top_up' | 'deduction' | 'order_payment' | 'refund' | 'signup_bonus' | 'referral_bonus' | 'cashback' | 'share_bonus' | 'community_post_bonus';
+    reason: string;
+    orderId?: string;
+    createdBy: string;
+    createdAt: Date;
+}
+
+export interface UserFeedPost {
+    id: string;
+    businessId: string;
+    customerId: string;
+    customerName: string;
+    customerAvatar?: string;
+    productId: string;
+    content: string;
+    images: string[];
+    likesCount: number;
+    status: 'pending' | 'approved' | 'rejected';
+    createdAt: Date;
 }
 
 export interface OrderSource {
@@ -467,6 +521,10 @@ export const ALL_PERMISSIONS: Record<string, { label: string; group: string }> =
     'settings.edit_business': { label: 'Бизнес мэдээлэл засах', group: 'Тохиргоо' },
     'settings.manage_cargo_sources': { label: 'Карго, эх сурвалж удирдах', group: 'Тохиргоо' },
     'settings.manage_billing': { label: 'Төлбөр удирдах', group: 'Тохиргоо' },
+    'settings.manage_wallet_config': { label: 'Урамшууллын хэтэвчийн ерөнхий тохиргоо', group: 'Тохиргоо' },
+    'customers.view_wallet': { label: 'Хэтэвчийн гүйлгээ харах', group: 'Харилцагч' },
+    'customers.adjust_wallet': { label: 'Хэтэвчийг гараар цэнэглэх, хасах', group: 'Харилцагч' },
+    'community.manage_feed': { label: 'Feed/Пост хянах (Устгах/Батлах)', group: 'Олон нийт' },
 };
 
 // ============ ORDER ============
@@ -552,6 +610,8 @@ export interface Order {
         payments: OrderPayment[];
         paidAmount: number;
         balanceDue: number;
+        walletDeductedAmount?: number;
+        walletUsagePctApplied?: number;
     };
 
     assignedTo: string | null;
@@ -614,6 +674,8 @@ export interface Customer {
     createdAt: Date;
     updatedAt: Date;
     isDeleted: boolean;
+    walletBalance?: number;
+    referralCode?: string;
 }
 
 // ============ PAYROLL ============

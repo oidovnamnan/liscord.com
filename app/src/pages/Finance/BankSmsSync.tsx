@@ -299,6 +299,11 @@ export function BankSmsSyncPage() {
                         }];
                     }
                     await updateDoc(orderRef, statusUpdate);
+                    
+                    import('../../services/walletService').then(({ walletService }) => {
+                        walletService.processOrderCashback(business.id, matched.id);
+                    }).catch(err => console.error('Wallet cashback match failed:', err));
+                    
                     const idx = unpaidOrders.indexOf(matched);
                     if (idx > -1) unpaidOrders.splice(idx, 1);
                     // Auto-matched successfully
@@ -392,6 +397,10 @@ export function BankSmsSyncPage() {
                 }];
             }
             await updateDoc(orderRef, statusUpdate);
+            
+            import('../../services/walletService').then(({ walletService }) => {
+                walletService.processOrderCashback(business.id, orderId);
+            }).catch(err => console.error('Wallet cashback manual match failed:', err));
 
             // Close modal
             setMatchingSms(null);

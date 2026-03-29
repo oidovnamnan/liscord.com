@@ -57,6 +57,11 @@ export function StoreCheckout() {
     const [customerName, setCustomerName] = useState('');
     const [customerPhone, setCustomerPhone] = useState('');
     const [copied, setCopied] = useState(false);
+    
+    // Wallet Logic
+    const [customerWalletDocId, setCustomerWalletDocId] = useState<string | null>(null);
+    const [walletBalance, setWalletBalance] = useState(0);
+    const [useWallet, setUseWallet] = useState(false);
 
     // Auto-fill name & phone from localStorage (returning customers)
     useEffect(() => {
@@ -164,6 +169,66 @@ export function StoreCheckout() {
         setPromoError('');
     };
 
+    // ──────── WALLET BALANCE LISTENER ────────
+    useEffect(() => {
+        if (!business?.id || customerPhone.length < 8 || !business.settings?.wallet?.enabled) {
+            setWalletBalance(0);
+            setCustomerWalletDocId(null);
+            setUseWallet(false);
+            return;
+        }
+
+        const cleanPhone = customerPhone.replace(/[^\d]/g, '');
+        if (cleanPhone.length < 8) return;
+
+        let unsub = () => {};
+        import('firebase/firestore').then(({ collection, query, where, onSnapshot }) => {
+            const q = query(
+                collection(db, `businesses/${business.id}/customers`),
+                where('phone', '==', cleanPhone)
+            );
+            unsub = onSnapshot(q, (snap) => {
+                if (!snap.empty) {
+                    const docSnap = snap.docs[0];
+                    const c = docSnap.data();
+                    setWalletBalance(c.walletBalance || 0);
+                    setCustomerWalletDocId(docSnap.id);
+                } else {
+                    setWalletBalance(0);
+                    setCustomerWalletDocId(null);
+                    setUseWallet(false);
+                }
+            });
+        });
+        return () => unsub();
+    }, [customerPhone, business?.id, business?.settings?.wallet?.enabled]);
+
+    // Calculate usable wallet points based on configuration
+    const usableWalletPoints = useMemo(() => {
+        if (!walletBalance || !business?.settings?.wallet?.enabled || items.length === 0) return 0;
+        
+        const walletConf = business.settings.wallet;
+        let sumUsable = 0;
+
+        items.forEach(item => {
+            // Find category limit, else use default limit
+            const catLimitStr = walletConf.categoryLimits?.find(c => c.categoryId === item.product.categoryId)?.limitPct;
+            const limitPct = catLimitStr !== undefined ? catLimitStr : (walletConf.defaultCategoryLimitPct ?? 100);
+            
+            const maxForItem = (item.price * item.quantity) * (limitPct / 100);
+            sumUsable += maxForItem;
+        });
+
+        // Global limit (e.g. max 50% of total order)
+        const subtotalNow = totalAmount();
+        const globalMaxAllowed = subtotalNow * ((walletConf.globalMaxLimitPct ?? 100) / 100);
+
+        const totalAllowed = Math.min(sumUsable, globalMaxAllowed);
+        
+        // Cannot use more than what we actually have
+        return Math.floor(Math.min(totalAllowed, walletBalance));
+    }, [walletBalance, items, business?.settings?.wallet]);
+
     // Stock Inquiry
     const [showInquiryPopup, setShowInquiryPopup] = useState(false);
     const pendingFormRef = useRef<HTMLFormElement | null>(null);
@@ -203,7 +268,8 @@ export function StoreCheckout() {
     const currentFee = isDeliveryRequested ? deliveryFees[deliveryZone].fee : 0;
     const cargoInTotal = cargoPaymentTiming === 'with_order' ? totalCargoFee : 0;
     const promoDiscount = promoCode?.discount || 0;
-    const finalTotal = totalAmount() + currentFee + cargoInTotal - promoDiscount;
+    const walletUsed = useWallet ? usableWalletPoints : 0;
+    const finalTotal = totalAmount() + currentFee + cargoInTotal - promoDiscount - walletUsed;
 
     // Bank accounts
     const enabledBanks = useMemo(() =>
@@ -330,8 +396,9 @@ export function StoreCheckout() {
                 financials: {
                     subtotal: totalAmount(),
                     discountType: 'fixed',
-                    discountValue: 0,
-                    discountAmount: 0,
+                    discountValue: promoDiscount + walletUsed,
+                    discountAmount: promoDiscount,
+                    walletDeductedAmount: walletUsed,
                     deliveryFee: currentFee,
                     cargoFee: totalCargoFee,
                     cargoIncluded: cargoPaymentTiming === 'with_order',
@@ -343,7 +410,7 @@ export function StoreCheckout() {
                     balanceDue: finalTotal
                 },
                 deliveryAddress: isDeliveryRequested ? `${deliveryFees[deliveryZone].label} - ${address}` : 'Дэлгүүрээс очиж авах',
-                notes: `Онлайн дэлгүүрээр өгсөн захиалга${paymentMethod === 'bank_transfer' && selectedBank ? ` | Шилжүүлэг: ${selectedBank.bankName} ${selectedBank.accountNumber} | Код: ${code}` : ''}${promoCode ? ` | Промо: ${promoCode.code} (−₮${promoCode.discount.toLocaleString()})` : ''}`,
+                notes: `Онлайн дэлгүүрээр өгсөн захиалга${paymentMethod === 'bank_transfer' && selectedBank ? ` | Шилжүүлэг: ${selectedBank.bankName} ${selectedBank.accountNumber} | Код: ${code}` : ''}${promoCode ? ` | Промо: ${promoCode.code} (−₮${promoCode.discount.toLocaleString()})` : ''}${walletUsed > 0 ? ` | Виртуал хэтэвч: −₮${walletUsed.toLocaleString()}` : ''}`,
                 internalNotes: '',
                 tags: [...(['online']), ...(items.some(i => i.isFlashDeal) ? ['flash_deal'] : [])],
                 statusHistory: [],
@@ -353,6 +420,16 @@ export function StoreCheckout() {
 
             const newId = await orderService.createOrder(business.id, orderPayload);
             setSavedTotal(finalTotal);
+
+            // Deduct wallet balance explicitly right after placing the order (only if not QPay erroring)
+            if (walletUsed > 0 && customerWalletDocId) {
+                try {
+                    const { walletService } = await import('../../services/walletService');
+                    await walletService.deductWalletOnCheckout(business.id, customerWalletDocId, newId, walletUsed);
+                } catch (we) {
+                    console.error('Wallet deduction error', we);
+                }
+            }
 
             // Update promo code usage
             if (promoCode?.docId) {
@@ -464,6 +541,12 @@ export function StoreCheckout() {
                             'financials.paidAmount': orderTotal,
                             'financials.balanceDue': 0,
                         });
+                        
+                        // Process Wallet Cashback if applicable
+                        import('../../services/walletService').then(({ walletService }) => {
+                            walletService.processOrderCashback(business.id, successId);
+                        }).catch(err => console.error('Wallet cashback import failed:', err));
+                        
                     } catch (firestoreErr) {
                         console.warn('Client-side order update failed (Firestore rules may block):', firestoreErr);
                     }
@@ -1277,9 +1360,58 @@ export function StoreCheckout() {
 
                             {/* Promo discount line */}
                             {promoDiscount > 0 && (
-                                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.88rem', fontWeight: 700, color: '#059669' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.88rem', fontWeight: 700, color: '#059669', marginBottom: 8 }}>
                                     <span>🎟 Промо хямдрал</span>
                                     <span>−₮{promoDiscount.toLocaleString()}</span>
+                                </div>
+                            )}
+
+                            {/* Wallet Usage Section */}
+                            {walletBalance > 0 && usableWalletPoints > 0 && (
+                                <div style={{ padding: '12px 14px', border: '1.5px solid var(--border-primary)', borderRadius: 12, background: useWallet ? 'rgba(var(--primary-rgb), 0.04)' : 'transparent', marginBottom: 16 }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                            <div style={{ width: 34, height: 34, borderRadius: 10, background: 'linear-gradient(135deg, #FFD700 0%, #FDB931 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 8px rgba(253, 185, 49, 0.4)' }}>
+                                                <span style={{ fontSize: '1.1rem', color: '#fff', fontWeight: 900 }}>₮</span>
+                                            </div>
+                                            <div>
+                                                <span style={{ fontWeight: 800, fontSize: '0.9rem', color: 'var(--text-primary)', display: 'block', lineHeight: 1.2 }}>{(business.settings?.wallet?.currencyName || 'Виртуал мөнгө')}</span>
+                                                <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', fontWeight: 600 }}>Таны дансанд: <span style={{ color: '#d97706', fontWeight: 800 }}>{walletBalance.toLocaleString()} ₮</span></span>
+                                            </div>
+                                        </div>
+                                        {/* Toggle Switch */}
+                                        <label style={{ position: 'relative', display: 'inline-block', width: 44, height: 24, cursor: 'pointer' }}>
+                                            <input 
+                                                type="checkbox" 
+                                                checked={useWallet} 
+                                                onChange={(e) => setUseWallet(e.target.checked)}
+                                                style={{ opacity: 0, width: 0, height: 0, position: 'absolute' }} 
+                                            />
+                                            <span style={{
+                                                position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, 
+                                                backgroundColor: useWallet ? 'var(--primary)' : 'var(--border-color)', 
+                                                transition: '.3s', borderRadius: 24 
+                                            }}>
+                                                <span style={{
+                                                    position: 'absolute', content: '""', height: 18, width: 18, left: 3, bottom: 3, 
+                                                    backgroundColor: 'white', transition: '.3s', borderRadius: '50%',
+                                                    transform: useWallet ? 'translateX(20px)' : 'none',
+                                                    boxShadow: '0 1px 3px rgba(0,0,0,0.2)'
+                                                }} />
+                                            </span>
+                                        </label>
+                                    </div>
+                                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', lineHeight: 1.4, marginTop: 10, borderTop: '1px dashed var(--border-color)', paddingTop: 8 }}>
+                                        Энэ захиалгад нийт үнийн дүн болон барааны ангиллын хязгаарын дагуу <strong style={{color: 'var(--primary)'}}>{usableWalletPoints.toLocaleString()} ₮</strong> хүртэл шууд суутгаж ашиглах боломжтой байна.
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Wallet discount line */}
+                            {walletUsed > 0 && (
+                                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.88rem', fontWeight: 700, color: 'var(--primary)', marginBottom: 12 }}>
+                                    <span>💎 Хэтэвчээс төлсөн</span>
+                                    <span>−₮{walletUsed.toLocaleString()}</span>
                                 </div>
                             )}
 

@@ -3052,3 +3052,54 @@ body.fb-browser .storefront-layout {
     padding: 12px !important;
     border-radius: 10px !important;
 }
+
+/* ═══ Global Floating Community Button ═══ */
+.sf-floating-community-btn {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    background: linear-gradient(135deg, #ff416c, #ff4b2b);
+    color: white;
+    padding: 14px 24px;
+    border-radius: 100px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 800;
+    font-size: 0.95rem;
+    box-shadow: 0 8px 25px rgba(255, 65, 108, 0.4);
+    text-decoration: none;
+    z-index: 9999;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.sf-floating-community-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 30px rgba(255, 65, 108, 0.5);
+}
+
+.sf-floating-community-btn:active {
+    transform: translateY(1px);
+}
+
+.pulse-heart {
+    animation: heartPulse 1.5s infinite;
+}
+
+@keyframes heartPulse {
+    0% { transform: scale(1); }
+    15% { transform: scale(1.2); }
+    30% { transform: scale(1); }
+    45% { transform: scale(1.2); }
+    60% { transform: scale(1); }
+    100% { transform: scale(1); }
+}
+
+@media (max-width: 768px) {
+    .sf-floating-community-btn {
+        bottom: 84px; /* Default floating nav space */
+        right: 16px;
+        padding: 12px 20px;
+        font-size: 0.9rem;
+    }
+}

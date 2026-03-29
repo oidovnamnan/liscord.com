@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import '../Settings/components/FlashDealSettings.css';
-import { Search, Plus, Phone, Mail, MoreVertical, ShoppingCart, DollarSign, Loader2, Pencil, Trash2, Users } from 'lucide-react';
+import { Search, Plus, Phone, Mail, MoreVertical, ShoppingCart, DollarSign, Loader2, Pencil, Trash2, Users, Wallet } from 'lucide-react';
 import { useBusinessStore, useAuthStore } from '../../store';
 import { customerService } from '../../services/db';
 import type { Customer } from '../../types';
@@ -10,6 +10,8 @@ import { HubLayout } from '../../components/common/HubLayout';
 import { fmt } from '../../utils/format';
 import { usePermissions } from '../../hooks/usePermissions';
 import { PermissionGate } from '../../components/common/PermissionGate';
+import { db } from '../../services/firebase';
+import { collection, addDoc, serverTimestamp, doc, runTransaction } from 'firebase/firestore';
 import './CustomersPage.css';
 
 
@@ -20,6 +22,7 @@ export function CustomersPage() {
     const [search, setSearch] = useState('');
     const [showCreate, setShowCreate] = useState(false);
     const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
+    const [walletCustomer, setWalletCustomer] = useState<Customer | null>(null);
     const [customers, setCustomers] = useState<Customer[]>([]);
     const [loading, setLoading] = useState(true);
     const [customersLimit, setCustomersLimit] = useState(50);
@@ -153,6 +156,9 @@ export function CustomersPage() {
                                                 {hasPermission('customers.edit') && (
                                                     <button className="context-item" style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '8px 12px', border: 'none', background: 'none', color: 'var(--text-primary)', borderRadius: 'var(--radius-sm)', cursor: 'pointer', fontSize: '0.85rem' }} onClick={e => { e.stopPropagation(); setMenuId(null); setEditingCustomer(c); }}><Pencil size={14} /> Засах</button>
                                                 )}
+                                                {hasPermission('customers.view_wallet') && (
+                                                    <button className="context-item" style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '8px 12px', border: 'none', background: 'none', color: 'var(--text-primary)', borderRadius: 'var(--radius-sm)', cursor: 'pointer', fontSize: '0.85rem' }} onClick={e => { e.stopPropagation(); setMenuId(null); setWalletCustomer(c); }}><Wallet size={14} /> Хэтэвч удирдлага</button>
+                                                )}
                                                 {hasPermission('customers.delete') && (
                                                     <button className="context-item" style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '8px 12px', border: 'none', background: 'none', color: 'var(--danger)', borderRadius: 'var(--radius-sm)', cursor: 'pointer', fontSize: '0.85rem' }} onClick={e => { e.stopPropagation(); handleDelete(c); }}><Trash2 size={14} /> Устгах</button>
                                                 )}
@@ -199,6 +205,7 @@ export function CustomersPage() {
 
             {showCreate && <CreateCustomerModal onClose={() => setShowCreate(false)} />}
             {editingCustomer && <EditCustomerModal customer={editingCustomer} onClose={() => setEditingCustomer(null)} />}
+            {walletCustomer && <CustomerWalletModal customer={walletCustomer} onClose={() => setWalletCustomer(null)} />}
         </HubLayout>
     );
 }
@@ -362,6 +369,127 @@ function EditCustomerModal({ customer, onClose }: { customer: Customer; onClose:
                         </button>
                     </div>
                 </form>
+            </div>
+        </div>,
+        document.body
+    );
+}
+
+function CustomerWalletModal({ customer, onClose }: { customer: Customer; onClose: () => void }) {
+    const { business } = useBusinessStore();
+    const { user } = useAuthStore();
+    const { hasPermission } = usePermissions();
+    const [loading, setLoading] = useState(false);
+    const [amount, setAmount] = useState<number | ''>('');
+    const [reason, setReason] = useState('');
+    const [isDeduction, setIsDeduction] = useState(false);
+
+    const currencyName = business?.settings?.wallet?.currencyName || 'Оноо';
+
+    const handleAdjust = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!business || !user || !amount || Number(amount) <= 0) return;
+
+        setLoading(true);
+        const amt = Number(amount);
+        const finalAmount = isDeduction ? -amt : amt;
+
+        try {
+            await runTransaction(db, async (transaction) => {
+                const customerRef = doc(db, 'businesses', business.id, 'customers', customer.id);
+                const customerDoc = await transaction.get(customerRef);
+                
+                if (!customerDoc.exists()) {
+                    throw new Error("Customer not found!");
+                }
+
+                const currentBal = customerDoc.data().walletBalance || 0;
+                let newBal = currentBal + finalAmount;
+                if (newBal < 0) newBal = 0; // Prevent negative balance
+
+                transaction.update(customerRef, { walletBalance: newBal });
+
+                const txRef = doc(collection(db, 'businesses', business.id, 'wallet_transactions'));
+                transaction.set(txRef, {
+                    businessId: business.id,
+                    customerId: customer.id,
+                    amount: finalAmount,
+                    type: isDeduction ? 'deduction' : 'top_up',
+                    reason: reason || (isDeduction ? 'Гараар хассан' : 'Админ цэнэглэв'),
+                    createdBy: user.uid,
+                    createdAt: serverTimestamp()
+                });
+            });
+
+            toast.success('Хэтэвч амжилттай шинэчлэгдлээ!');
+            setAmount('');
+            setReason('');
+        } catch (error) {
+            console.error(error);
+            toast.error('Алдаа гарлаа');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    return createPortal(
+        <div className="modal-backdrop" onClick={onClose}>
+            <div className="modal" onClick={e => e.stopPropagation()} style={{ maxWidth: 500 }}>
+                <div className="modal-header">
+                    <h2>💳 Хэтэвч ({customer.name})</h2>
+                    <button className="btn btn-ghost btn-icon" onClick={onClose}>✕</button>
+                </div>
+                
+                <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+                    <div style={{ background: 'var(--bg-secondary)', padding: 20, borderRadius: 12, textAlign: 'center' }}>
+                        <div style={{ color: 'var(--text-secondary)', fontSize: 13, marginBottom: 4 }}>Одоогийн үлдэгдэл</div>
+                        <div style={{ fontSize: 32, fontWeight: 700, color: 'var(--brand-primary)' }}>
+                            {fmt(customer.walletBalance || 0)} <span style={{ fontSize: 16 }}>{currencyName}</span>
+                        </div>
+                    </div>
+
+                    {hasPermission('customers.adjust_wallet') && (
+                        <form onSubmit={handleAdjust} style={{ border: '1px solid var(--border-secondary)', padding: 16, borderRadius: 12 }}>
+                            <h4 style={{ marginBottom: 16 }}>Гараар цэнэглэх / Хасах</h4>
+                            
+                            <div className="input-group" style={{ marginBottom: 12 }}>
+                                <label className="input-label">Үйлдэл</label>
+                                <div style={{ display: 'flex', gap: 10 }}>
+                                    <button 
+                                        type="button" 
+                                        className={`btn ${!isDeduction ? 'btn-primary' : 'btn-secondary'}`} 
+                                        style={{ flex: 1 }}
+                                        onClick={() => setIsDeduction(false)}
+                                    >
+                                        ➕ Нэмэх
+                                    </button>
+                                    <button 
+                                        type="button" 
+                                        className={`btn ${isDeduction ? 'btn-danger' : 'btn-secondary'}`} 
+                                        style={{ flex: 1 }}
+                                        onClick={() => setIsDeduction(true)}
+                                    >
+                                        ➖ Хасах
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div className="input-group" style={{ marginBottom: 12 }}>
+                                <label className="input-label">Дүн ({currencyName}) <span className="required">*</span></label>
+                                <input className="input" type="number" value={amount} onChange={e => setAmount(Number(e.target.value))} placeholder={`Хэдэн ${currencyName}?`} required min="1" />
+                            </div>
+
+                            <div className="input-group" style={{ marginBottom: 16 }}>
+                                <label className="input-label">Шалтгаан / Тайлбар</label>
+                                <input className="input" value={reason} onChange={e => setReason(e.target.value)} placeholder="Гомдол барагдуулах, урамшуулах..." required />
+                            </div>
+
+                            <button type="submit" className={`btn ${isDeduction ? 'btn-danger' : 'btn-primary'}`} style={{ width: '100%' }} disabled={loading || !amount}>
+                                {loading ? <Loader2 size={16} className="animate-spin" /> : 'Гүйцэтгэх'}
+                            </button>
+                        </form>
+                    )}
+                </div>
             </div>
         </div>,
         document.body

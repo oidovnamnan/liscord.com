@@ -1,0 +1,313 @@
+.store-community-page {
+    background-color: #fafafa;
+    min-height: 100%;
+    position: relative;
+    padding-bottom: 24px;
+}
+
+.community-header {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(0,0,0,0.05);
+    height: 56px;
+    display: flex;
+    align-items: center;
+    padding: 0 16px;
+    gap: 16px;
+}
+
+.community-back {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    color: #111;
+    text-decoration: none;
+    transition: background 0.2s;
+}
+
+.community-back:hover {
+    background: rgba(0,0,0,0.05);
+}
+
+.community-title {
+    font-size: 1rem;
+    font-weight: 800;
+    color: #111;
+    margin: 0;
+    flex: 1;
+}
+
+.community-feed {
+    padding: 16px 0;
+    max-width: 600px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.community-empty {
+    text-align: center;
+    padding: 60px 20px;
+    background: #fff;
+    margin: 0 16px;
+    border-radius: 20px;
+    border: 1px solid rgba(0,0,0,0.04);
+}
+
+.empty-icon {
+    font-size: 3rem;
+    margin-bottom: 16px;
+}
+
+.community-empty h3 {
+    margin: 0 0 8px 0;
+    font-size: 1.1rem;
+    font-weight: 800;
+    color: #111;
+}
+
+.community-empty p {
+    margin: 0 0 24px 0;
+    color: #666;
+    font-size: 0.9rem;
+    line-height: 1.5;
+}
+
+.empty-btn {
+    display: inline-block;
+    background: #111;
+    color: #fff;
+    text-decoration: none;
+    padding: 12px 24px;
+    border-radius: 12px;
+    font-weight: 700;
+    font-size: 0.9rem;
+}
+
+/* Feed Post */
+.feed-post {
+    background: #fff;
+    border: 1px solid rgba(0,0,0,0.05);
+    border-radius: 0;
+}
+
+@media (min-width: 600px) {
+    .feed-post {
+        border-radius: 16px;
+        overflow: hidden;
+    }
+}
+
+.post-header {
+    display: flex;
+    align-items: center;
+    padding: 14px 16px;
+    gap: 10px;
+}
+
+.post-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    overflow: hidden;
+    background: #eee;
+}
+
+.post-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.avatar-placeholder {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    color: #666;
+    font-size: 1.1rem;
+    text-transform: uppercase;
+}
+
+.post-user-info {
+    flex: 1;
+}
+
+.post-username {
+    font-weight: 700;
+    font-size: 0.9rem;
+    color: #111;
+    margin-bottom: 2px;
+}
+
+.post-date {
+    font-size: 0.7rem;
+    color: #888;
+}
+
+.post-more-btn {
+    background: none;
+    border: none;
+    color: #111;
+    cursor: pointer;
+    padding: 4px;
+}
+
+/* Images */
+.post-images {
+    width: 100%;
+    background: #000;
+    display: flex;
+    align-items: center;
+    overflow: hidden;
+}
+
+.single-image {
+    width: 100%;
+    max-height: 600px;
+    object-fit: contain;
+}
+
+.image-carousel {
+    display: flex;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+    width: 100%;
+}
+
+.image-carousel img {
+    flex: 0 0 100%;
+    width: 100%;
+    object-fit: cover;
+    scroll-snap-align: center;
+    aspect-ratio: 4/5;
+}
+
+/* Post Actions */
+.post-actions-bar {
+    padding: 14px 16px;
+}
+
+.post-action-buttons {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+}
+
+.action-btn {
+    background: none;
+    border: none;
+    padding: 0;
+    color: #111;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: transform 0.1s;
+}
+
+.action-btn:active {
+    transform: scale(0.9);
+}
+
+.action-count {
+    font-weight: 600;
+    font-size: 0.85rem;
+}
+
+/* Content */
+.post-content {
+    padding: 0 16px 16px;
+    font-size: 0.9rem;
+    color: #111;
+    line-height: 1.5;
+}
+
+.post-content strong {
+    font-weight: 700;
+    margin-right: 6px;
+}
+
+/* Post Product Link */
+.post-product-link {
+    margin: 0 16px 16px;
+    padding: 10px;
+    background: rgba(0,0,0,0.03);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.post-product-link:active {
+    background: rgba(0,0,0,0.06);
+}
+
+.pp-image {
+    width: 48px;
+    height: 48px;
+    border-radius: 8px;
+    background: #fff;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.pp-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.pp-placeholder {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+}
+
+.pp-info {
+    flex: 1;
+    min-width: 0; /* for text truncation */
+}
+
+.pp-name {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #111;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-bottom: 4px;
+}
+
+.pp-price {
+    font-size: 0.8rem;
+    color: #111;
+    font-weight: 600;
+}
+
+ .pp-add-btn {
+    background: #111;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 8px 14px;
+    font-weight: 700;
+    font-size: 0.75rem;
+    cursor: pointer;
+}

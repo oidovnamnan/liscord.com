@@ -245,6 +245,13 @@ service cloud.firestore {
         allow delete: if isMemberOf(bizId);
       }
 
+      // Community Feed: public read, public create (customers), member full access
+      match /user_feeds/{docId} {
+        allow read: if true;
+        allow create: if true; // Storefront customers create posts
+        allow update, delete: if isMemberOf(bizId); // Members approve/reject/delete
+      }
+
       // All other subcollections: member read/write only
       match /{subcollection}/{docId} {
         allow read: if isMemberOf(bizId);

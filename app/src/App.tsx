@@ -158,6 +158,8 @@ const InterCompanyPage = lazy(() => import('./pages/Finance/InterCompanyPage').t
 const ConsolidationsPage = lazy(() => import('./pages/Finance/ConsolidationsPage').then(m => ({ default: m.ConsolidationsPage })));
 const CryptoPaymentsPage = lazy(() => import('./pages/Finance/CryptoPaymentsPage').then(m => ({ default: m.CryptoPaymentsPage })));
 
+const FeedModerationPage = lazy(() => import('./pages/Community/FeedModeration').then(m => ({ default: m.FeedModeration })));
+
 const TrainingPage = lazy(() => import('./pages/HR/TrainingPage').then(m => ({ default: m.TrainingPage })));
 const ShiftsPage = lazy(() => import('./pages/HR/ShiftsPage').then(m => ({ default: m.ShiftsPage })));
 const BenefitsPage = lazy(() => import('./pages/HR/BenefitsPage').then(m => ({ default: m.BenefitsPage })));
@@ -184,6 +186,7 @@ const SuperAdminAppStore = lazy(() => import('./pages/SuperAdmin/SuperAdminAppSt
 const StorefrontWrapper = lazy(() => import('./pages/Storefront/StorefrontWrapper').then(m => ({ default: m.StorefrontWrapper })));
 const StoreCatalog = lazy(() => import('./pages/Storefront/StoreCatalog').then(m => ({ default: m.StoreCatalog })));
 const StoreCheckout = lazy(() => import('./pages/Storefront/StoreCheckout').then(m => ({ default: m.StoreCheckout })));
+const StoreCommunity = lazy(() => import('./pages/Storefront/StoreCommunity').then(m => ({ default: m.StoreCommunity })));
 // StoreMyOrders removed — functionality moved into CustomerDashboard
 
 // Components
@@ -682,6 +685,7 @@ export default function App() {
           <Route path="/:slug" element={<StorefrontErrorBoundary><Suspense fallback={<StorefrontLoader />}><StorefrontWrapper /></Suspense></StorefrontErrorBoundary>}>
             <Route index element={<Suspense fallback={<StorefrontLoader />}><StoreCatalog /></Suspense>} />
             <Route path="checkout" element={<Suspense fallback={<StorefrontLoader />}><StoreCheckout /></Suspense>} />
+            <Route path="community" element={<Suspense fallback={<StorefrontLoader />}><StoreCommunity /></Suspense>} />
             <Route path="my-orders" element={<Navigate to={`/${window.location.pathname.split('/')[1]}`} replace />} />
           </Route>
 
@@ -740,6 +744,7 @@ export default function App() {
             <Route path="inter-company" element={<ModuleGuard moduleId="inter-company"><InterCompanyPage /></ModuleGuard>} />
             <Route path="consolidations" element={<ModuleGuard moduleId="consolidations"><ConsolidationsPage /></ModuleGuard>} />
             <Route path="crypto-payments" element={<ModuleGuard moduleId="crypto-payments"><CryptoPaymentsPage /></ModuleGuard>} />
+            <Route path="community/moderation" element={<FeedModerationPage />} />
             <Route path="attendance" element={<ModuleGuard moduleId="attendance"><AttendancePage /></ModuleGuard>} />
             <Route path="payroll" element={<ModuleGuard moduleId="payroll"><PayrollPage /></ModuleGuard>} />
             <Route path="recruitment" element={<ModuleGuard moduleId="recruitment"><RecruitmentPage /></ModuleGuard>} />

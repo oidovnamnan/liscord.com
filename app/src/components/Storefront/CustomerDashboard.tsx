@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
-import { X, User, Crown, Package, MapPin, Bell, Clock, CheckCircle, AlertTriangle, RefreshCw, Phone, Loader2, Edit3, MessageSquare, Send, Ticket, Copy, Check, Gift, Sparkles } from 'lucide-react';
+import { X, User, Crown, Package, MapPin, Bell, Clock, CheckCircle, AlertTriangle, RefreshCw, Phone, Loader2, Edit3, MessageSquare, Send, Ticket, Copy, Check, Gift, Sparkles, Wallet, Coins, ArrowUpRight, ArrowDownRight } from 'lucide-react';
 import type { Business } from '../../types';
 import { Timestamp } from 'firebase/firestore';
+import { toast } from 'react-hot-toast';
 
 interface CustomerDashboardProps {
     isOpen: boolean;
@@ -29,7 +30,7 @@ interface OrderItem {
     totalAmount: number;
     paymentStatus: string;
     createdAt: Date;
-    items?: { name: string; quantity: number; price: number }[];
+    items?: { id?: string; productId?: string; name: string; quantity: number; price: number }[];
 }
 
 interface CustomerAddress {
@@ -43,10 +44,11 @@ interface CustomerAddress {
     notes: string;
 }
 
-type TabKey = 'profile' | 'orders' | 'address' | 'notifications';
+type TabKey = 'profile' | 'orders' | 'address' | 'notifications' | 'wallet';
 
 const TABS: { key: TabKey; label: string; icon: typeof User }[] = [
     { key: 'orders', label: 'Захиалга', icon: Package },
+    { key: 'wallet', label: 'Миний хэтэвч', icon: Wallet },
     { key: 'profile', label: 'Бүртгэл', icon: User },
     { key: 'address', label: 'Хаяг', icon: MapPin },
     { key: 'notifications', label: 'Мэдэгдэл', icon: Bell },
@@ -71,6 +73,21 @@ export function CustomerDashboard({ isOpen, onClose, business, phone, onOpenMemb
     const [loadingOrders, setLoadingOrders] = useState(false);
     const [addressSaved, setAddressSaved] = useState(false);
 
+    // Wallet State
+    const [walletBalance, setWalletBalance] = useState(0);
+    const [walletTransactions, setWalletTransactions] = useState<any[]>([]);
+    const [loadingWallet, setLoadingWallet] = useState(false);
+    const [referralCode, setReferralCode] = useState('');
+    const [communityPostBonus, setCommunityPostBonus] = useState(0);
+
+    // Share Product
+    const [shareItem, setShareItem] = useState<{ orderId: string, item: any } | null>(null);
+    const [shareText, setShareText] = useState('');
+    const [shareImageFile, setShareImageFile] = useState<File | null>(null);
+    const [shareImagePreview, setShareImagePreview] = useState<string>('');
+    const [sharePosting, setSharePosting] = useState(false);
+    const [customerId, setCustomerId] = useState('');
+
     // Promo code generation
     const [promoCredits, setPromoCredits] = useState<{ used: number; total: number; codes: string[] }>({ used: 0, total: 5, codes: [] });
     const [promoGenLoading, setPromoGenLoading] = useState(false);
@@ -89,9 +106,10 @@ export function CustomerDashboard({ isOpen, onClose, business, phone, onOpenMemb
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const recaptchaVerifierRef = useRef<any>(null);
 
-    // ═══ Name collection (first login) ═══
+    // ═══ Name and Referral collection (first login) ═══
     const [showNamePrompt, setShowNamePrompt] = useState(false);
     const [customerName, setCustomerName] = useState('');
+    const [referralInput, setReferralInput] = useState('');
     const [editingName, setEditingName] = useState(false);
 
     // Derive effective phone (from prop or after login)
@@ -129,6 +147,24 @@ export function CustomerDashboard({ isOpen, onClose, business, phone, onOpenMemb
             try { setAddress(JSON.parse(saved)); } catch { /* ignore */ }
         }
     }, [business?.id, effectivePhone]);
+
+    // Load wallet config early to get the bonus amount
+    useEffect(() => {
+        if (!business?.id) return;
+        (async () => {
+            try {
+                const { doc, getDoc } = await import('firebase/firestore');
+                const { db } = await import('../../services/firebase');
+                const confRef = doc(db, 'businesses', business.id, 'wallet_config', 'main');
+                const snap = await getDoc(confRef);
+                if (snap.exists()) {
+                    setCommunityPostBonus(snap.data().rewardEvents?.communityPostBonus || 10000);
+                } else {
+                    setCommunityPostBonus(10000); // 10k default if none
+                }
+            } catch { /* ignore */ }
+        })();
+    }, [business?.id]);
 
     const loadMemberships = async () => {
         if (!business?.id || !effectivePhone) return;
@@ -172,6 +208,50 @@ export function CustomerDashboard({ isOpen, onClose, business, phone, onOpenMemb
         if (!isOpen || !effectivePhone || !business?.id || activeTab !== 'orders') return;
         loadOrders();
     }, [isOpen, effectivePhone, business?.id, activeTab]);
+
+    // Load Wallet
+    useEffect(() => {
+        if (!isOpen || !effectivePhone || !business?.id || activeTab !== 'wallet') return;
+        loadWallet();
+    }, [isOpen, effectivePhone, business?.id, activeTab]);
+
+    const loadWallet = async () => {
+        if (!business?.id || !effectivePhone) return;
+        setLoadingWallet(true);
+        try {
+            const { collection, query, where, getDocs, limit, orderBy } = await import('firebase/firestore');
+            const { db } = await import('../../services/firebase');
+            const normalizedPhone = normalizePhone(effectivePhone);
+            
+            // 1. Get customer balance and referral code
+            const custRef = collection(db, 'businesses', business.id, 'customers');
+            const custQ = query(custRef, where('phone', '==', normalizedPhone), limit(1));
+            const custSnap = await getDocs(custQ);
+            
+            let cId = '';
+            if (!custSnap.empty) {
+                const cData = custSnap.docs[0].data();
+                cId = custSnap.docs[0].id;
+                setCustomerId(cId);
+                setWalletBalance(cData.walletBalance || 0);
+                setReferralCode(cData.referralCode || '');
+            } else {
+                setCustomerId('');
+            }
+
+            // 2. Get customer transactions if customer exists
+            if (cId) {
+                const txRef = collection(db, 'businesses', business.id, 'wallet_transactions');
+                const txQ = query(txRef, where('customerId', '==', cId), orderBy('createdAt', 'desc'), limit(15));
+                const txSnap = await getDocs(txQ);
+                setWalletTransactions(txSnap.docs.map(d => ({ id: d.id, ...d.data() })));
+            }
+        } catch (err) {
+            console.error('Load wallet:', err);
+        } finally {
+            setLoadingWallet(false);
+        }
+    };
 
     const loadOrders = async () => {
         if (!business?.id || !effectivePhone) return;
@@ -305,16 +385,105 @@ export function CustomerDashboard({ isOpen, onClose, business, phone, onOpenMemb
         localStorage.setItem(`customer_name_${business.id}_${normalizePhone(effectivePhone)}`, cleanName);
         setShowNamePrompt(false);
         setEditingName(false);
+        setAuthLoading(true);
         // Save to Firestore
         try {
-            const { doc, setDoc } = await import('firebase/firestore');
+            const { doc, setDoc, collection, query, where, getDocs, runTransaction, serverTimestamp } = await import('firebase/firestore');
             const { db } = await import('../../services/firebase');
+            
+            // 1. Save standard profile
             await setDoc(doc(db, 'businesses', business.id, 'customer_profiles', normalizePhone(effectivePhone)), {
                 name: cleanName,
                 phone: normalizePhone(effectivePhone),
                 updatedAt: new Date().toISOString(),
             }, { merge: true });
-        } catch { /* silent */ }
+
+            // 2. Handle Wallet & Referral for New Customer
+            if (business.settings?.wallet?.enabled) {
+                const custRef = collection(db, 'businesses', business.id, 'customers');
+                const q = query(custRef, where('phone', '==', normalizePhone(effectivePhone)));
+                const snap = await getDocs(q);
+                
+                if (snap.empty) {
+                    // New user -> Create customer document
+                    const newCustRef = doc(custRef);
+                    const initialBalance = business.settings?.wallet?.rewardEvents?.signupBonus || 0;
+                    let referrerId: string | null = null;
+
+                    // If referral code provided, find the referrer
+                    if (referralInput) {
+                        const refQ = query(custRef, where('referralCode', '==', referralInput));
+                        const refSnap = await getDocs(refQ);
+                        if (!refSnap.empty) {
+                            referrerId = refSnap.docs[0].id;
+                        } else {
+                            toast.error('Урилгын код олдсонгүй, гэхдээ үүслээ');
+                        }
+                    }
+
+                    // Generate my referral code (6-char)
+                    const myCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+
+                    await runTransaction(db, async (t) => {
+                        // Create user
+                        t.set(newCustRef, {
+                            name: cleanName,
+                            phone: normalizePhone(effectivePhone),
+                            email: '',
+                            address: '',
+                            tags: ['AppStore'],
+                            walletBalance: initialBalance,
+                            referralCode: myCode,
+                            referrerId: referrerId || null,
+                            stats: { totalOrders: 0, totalSpent: 0, totalDebt: 0, lastOrderAt: null },
+                            isDeleted: false,
+                            createdAt: serverTimestamp()
+                        });
+
+                        // Record signup bonus
+                        if (initialBalance > 0) {
+                            const txRef = doc(collection(db, 'businesses', business.id, 'wallet_transactions'));
+                            t.set(txRef, {
+                                businessId: business.id,
+                                customerId: newCustRef.id,
+                                amount: initialBalance,
+                                type: 'top_up',
+                                reason: 'Бүртгэлийн урамшуулал',
+                                createdAt: serverTimestamp()
+                            });
+                        }
+
+                        // Give bonus to referrer
+                        const refBonus = business.settings?.wallet?.rewardEvents?.referralBonus || 0;
+                        if (referrerId && refBonus > 0) {
+                            const referrerRef = doc(db, 'businesses', business.id, 'customers', referrerId);
+                            const referrerDoc = await t.get(referrerRef);
+                            if (referrerDoc.exists()) {
+                                const newBal = (referrerDoc.data().walletBalance || 0) + refBonus;
+                                t.update(referrerRef, { walletBalance: newBal });
+                                
+                                const refTxRef = doc(collection(db, 'businesses', business.id, 'wallet_transactions'));
+                                t.set(refTxRef, {
+                                    businessId: business.id,
+                                    customerId: referrerId,
+                                    amount: refBonus,
+                                    type: 'top_up',
+                                    reason: `Урилга (${myCode})`,
+                                    createdAt: serverTimestamp()
+                                });
+                            }
+                        }
+                    });
+                    toast.success('Амжилттай бүртгэгдлээ!');
+                }
+            }
+
+        } catch (err) {
+            console.error(err);
+        } finally {
+            setAuthLoading(false);
+            if (activeTab === 'wallet') loadWallet();
+        }
     };
 
     const handleLogout = () => {
@@ -331,6 +500,55 @@ export function CustomerDashboard({ isOpen, onClose, business, phone, onOpenMemb
         setShowNamePrompt(false);
         onClose();
         window.location.reload();
+    };
+
+    const handleShareSubmit = async () => {
+        if (!shareItem || !shareImageFile || !business?.id || !customerId) return;
+        setSharePosting(true);
+        try {
+            const { collection, addDoc, doc, serverTimestamp, setDoc } = await import('firebase/firestore');
+            const { db } = await import('../../services/firebase');
+            const { storage } = await import('../../services/storage');
+            const { walletService } = await import('../../services/walletService');
+
+            // 1. Upload Image
+            const path = `businesses/${business.id}/community_feeds/${Date.now()}_${shareImageFile.name}`;
+            const imageUrl = await storage.uploadImage(shareImageFile, path);
+
+            // 2. Create Feed Post
+            const postRef = doc(collection(db, 'businesses', business.id, 'user_feeds'));
+            await setDoc(postRef, {
+                businessId: business.id,
+                customerId,
+                customerName: customerName || 'Хэрэглэгч',
+                customerAvatar: '',
+                productId: shareItem.item.productId || shareItem.item.id || '',
+                content: shareText.trim(),
+                images: [imageUrl],
+                likesCount: 0,
+                status: 'pending', // Post needs admin approval before being public, but bonus is instant? 
+                createdAt: serverTimestamp()
+            });
+
+            // 3. Award Wallet Bonus 
+            if (communityPostBonus > 0) {
+                await walletService.awardCommunityPostBonus(business.id, customerId, communityPostBonus, postRef.id);
+            }
+
+            toast.success('Амжилттай нийтлэгдлээ! Урамшуулал орлоо 🥳');
+            
+            // Cleanup
+            setShareItem(null);
+            setShareImageFile(null);
+            setShareImagePreview('');
+            setShareText('');
+            loadWallet(); // refresh wallet balance
+        } catch (err) {
+            console.error('Post error:', err);
+            toast.error('Алдаа гарлаа. Дахин оролдоно уу.');
+        } finally {
+            setSharePosting(false);
+        }
     };
 
     if (!isOpen) return null;
@@ -457,18 +675,35 @@ export function CustomerDashboard({ isOpen, onClose, business, phone, onOpenMemb
                                     placeholder=""
                                     value={nameInput}
                                     onChange={e => setNameInput(e.target.value)}
-                                    onKeyDown={e => e.key === 'Enter' && saveCustomerName(nameInput)}
-                                    style={{ fontSize: '1rem', fontWeight: 600 }}
+                                    style={{ fontSize: '1rem', fontWeight: 600, marginBottom: 12 }}
                                     autoFocus
                                 />
+                                {business?.settings?.wallet?.enabled && (
+                                    <>
+                                        <label>Урилгын код <span style={{ opacity: 0.5 }}>(заавал биш)</span></label>
+                                        <input
+                                            type="text"
+                                            placeholder="Жнь: ABCDEF"
+                                            value={referralInput}
+                                            onChange={e => setReferralInput(e.target.value.toUpperCase())}
+                                            onKeyDown={e => e.key === 'Enter' && saveCustomerName(nameInput)}
+                                            style={{ fontSize: '1rem', fontWeight: 600, textTransform: 'uppercase' }}
+                                        />
+                                    </>
+                                )}
+                                {!business?.settings?.wallet?.enabled && (
+                                     <div style={{ display: 'none' }}>
+                                        <input onKeyDown={e => e.key === 'Enter' && saveCustomerName(nameInput)} />
+                                     </div>
+                                )}
                             </div>
                             <button
                                 className="cd-btn-primary"
                                 onClick={() => saveCustomerName(nameInput)}
-                                disabled={!nameInput.trim()}
-                                style={{ width: '100%', marginTop: 12, background: brandColor, opacity: !nameInput.trim() ? 0.5 : 1 }}
+                                disabled={!nameInput.trim() || authLoading}
+                                style={{ width: '100%', marginTop: 12, background: brandColor, opacity: (!nameInput.trim() || authLoading) ? 0.5 : 1 }}
                             >
-                                Үргэлжлүүлэх
+                                {authLoading ? <Loader2 size={16} className="animate-spin text-white" /> : 'Үргэлжлүүлэх'}
                             </button>
                         </div>
                     </div>
@@ -617,7 +852,67 @@ export function CustomerDashboard({ isOpen, onClose, business, phone, onOpenMemb
 
                         </div>
                     )}
+                    {activeTab === 'wallet' && (
+                        <div className="cd-section animate-fade-in">
+                            <div style={{ background: 'linear-gradient(135deg, #1e1e2d 0%, #111116 100%)', padding: 24, borderRadius: 16, border: '1px solid rgba(255,255,255,0.05)', color: 'white', marginBottom: 20, boxShadow: '0 12px 24px rgba(0,0,0,0.1)' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, opacity: 0.8, fontSize: '0.9rem' }}>
+                                        <Wallet size={16} /> <span>{business?.settings?.wallet?.currencyName || 'Оноо'} Хэтэвч</span>
+                                    </div>
+                                    <Sparkles size={16} style={{ color: 'var(--brand-primary)' }} />
+                                </div>
+                                <div style={{ fontSize: '2.5rem', fontWeight: 800, letterSpacing: '-0.5px', marginBottom: 4, display: 'flex', alignItems: 'baseline', gap: 8 }}>
+                                    {walletBalance.toLocaleString()} <span style={{ fontSize: '1rem', fontWeight: 500, opacity: 0.6 }}>₮</span>
+                                </div>
+                                <div style={{ fontSize: '0.85rem', opacity: 0.7, marginBottom: 20 }}>
+                                    Худалдан авалт хийхдээ үлдэгдлээ {business?.settings?.wallet?.usageLimitMode === 'fixed' ? 'шууд' : 'азтанаар'} ашиглан хөнгөлөлт эдлэх боломжтой.
+                                </div>
+                                
+                                {referralCode && (
+                                    <div style={{ background: 'rgba(255,255,255,0.05)', borderRadius: 8, padding: 12, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                        <div>
+                                            <div style={{ fontSize: '0.75rem', opacity: 0.6, marginBottom: 2 }}>Миний урилгын код</div>
+                                            <div style={{ fontFamily: 'monospace', fontWeight: 700, fontSize: '1.1rem', letterSpacing: 1 }}>{referralCode}</div>
+                                        </div>
+                                        <button 
+                                            onClick={() => { navigator.clipboard.writeText(referralCode); toast.success('Код хуулагдлаа'); }} 
+                                            style={{ background: 'rgba(255,255,255,0.1)', border: 'none', width: 36, height: 36, borderRadius: '50%', color: 'white', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: '0.2s' }}
+                                        >
+                                            <Copy size={16} />
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
 
+                            <h3 className="cd-section-title" style={{ marginTop: 24 }}>Хэтэвчийн гүйлгээ</h3>
+                            {loadingWallet ? (
+                                <div style={{ textAlign: 'center', padding: 40 }}><Loader2 className="animate-spin text-gray-400 mx-auto" size={24} /></div>
+                            ) : walletTransactions.length === 0 ? (
+                                <div style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--text-secondary)', background: 'var(--bg-secondary)', borderRadius: 12 }}>
+                                    <Coins size={32} style={{ opacity: 0.2, margin: '0 auto 10px auto' }} />
+                                    <p>Одоогоор хэтэвчний түүх алга байна.</p>
+                                    <p style={{ fontSize: '0.85rem', marginTop: 8 }}>Урилга илгээх эсвэл худалдан авалт хийж оноо цуглуулаарай.</p>
+                                </div>
+                            ) : (
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                                    {walletTransactions.map(tx => (
+                                        <div key={tx.id} style={{ display: 'flex', alignItems: 'center', padding: 16, background: 'var(--bg-secondary)', borderRadius: 12, gap: 16 }}>
+                                            <div style={{ width: 40, height: 40, borderRadius: '50%', background: tx.amount > 0 ? 'rgba(39, 174, 96, 0.1)' : 'rgba(231, 76, 60, 0.1)', color: tx.amount > 0 ? '#27ae60' : '#e74c3c', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                                {tx.amount > 0 ? <ArrowUpRight size={20} /> : <ArrowDownRight size={20} />}
+                                            </div>
+                                            <div style={{ flex: 1 }}>
+                                                <div style={{ fontWeight: 600, fontSize: '0.95rem' }}>{tx.reason || (tx.amount > 0 ? 'Урамшуулал нэмэгдэв' : 'Захиалгад ашиглав')}</div>
+                                                <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: 2 }}>{tx.createdAt?.toDate ? tx.createdAt.toDate().toLocaleString('mn-MN') : ''}</div>
+                                            </div>
+                                            <div style={{ fontWeight: 700, fontSize: '1.05rem', color: tx.amount > 0 ? '#27ae60' : 'var(--text-primary)' }}>
+                                                {tx.amount > 0 ? '+' : ''}{tx.amount.toLocaleString()}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    )}
                     {activeTab === 'orders' && (
                         <div className="cd-section">
                             {/* Promo Code Section - MOVED TO TOP OF ORDERS AND MADE FESTIVE */}
@@ -650,6 +945,8 @@ export function CustomerDashboard({ isOpen, onClose, business, phone, onOpenMemb
                                                 formatDate={formatDate}
                                                 formatCurrency={formatCurrency}
                                                 brandColor={brandColor}
+                                                communityPostBonus={communityPostBonus}
+                                                onShareItem={(item) => setShareItem({ orderId: order.id, item })}
                                             />
                                         );
                                     })}
@@ -768,6 +1065,98 @@ export function CustomerDashboard({ isOpen, onClose, business, phone, onOpenMemb
                     </button>
                 </div>
             </div>
+
+            {/* Share Post Modal Overlay */}
+            {shareItem && (
+                <div style={{ position: 'fixed', inset: 0, zIndex: 99999, display: 'flex', alignItems: 'flex-end', justifyContent: 'center', background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(3px)' }} onClick={() => setShareItem(null)}>
+                    <div style={{ background: '#fff', width: '100%', maxWidth: 500, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: '24px 20px', animation: 'slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1)' }} onClick={e => e.stopPropagation()}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                            <h3 style={{ fontSize: '1.1rem', fontWeight: 800, margin: 0 }}>🌟 Сэтгэгдэлээ хуваалцах</h3>
+                            <button onClick={() => setShareItem(null)} style={{ background: '#f5f5f5', border: 'none', borderRadius: '50%', width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+                                <X size={18} />
+                            </button>
+                        </div>
+
+                        {!customerId ? (
+                            <div style={{ padding: '20px', textAlign: 'center', color: '#dc2626', background: '#fee2e2', borderRadius: 12 }}>
+                                Урамшуулал авахын тулд та "Миний хэтэвч" цэсээр орж хэтэвчээ идэвхжүүлэх шаардлагатай!
+                            </div>
+                        ) : (
+                            <>
+                                <div style={{ background: 'linear-gradient(135deg, #f0fdf4, #dcfce7)', border: '1px dashed #4ade80', borderRadius: 12, padding: 12, display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
+                                    <div style={{ background: '#fff', borderRadius: '50%', width: 40, height: 40, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.2rem', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>🎁</div>
+                                    <div>
+                                        <div style={{ fontSize: '0.8rem', color: '#166534', fontWeight: 700 }}>Урамшуулал</div>
+                                        <div style={{ fontSize: '1.1rem', fontWeight: 900, color: '#15803d' }}>+{communityPostBonus.toLocaleString()} ₮</div>
+                                    </div>
+                                </div>
+
+                                <div style={{ background: '#f8fafc', borderRadius: 12, padding: 12, marginBottom: 16, display: 'flex', gap: 12, alignItems: 'center' }}>
+                                    <div style={{ width: 48, height: 48, background: '#e2e8f0', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.2rem' }}>📦</div>
+                                    <div style={{ flex: 1, minWidth: 0 }}>
+                                        <div style={{ fontSize: '0.75rem', color: '#64748b', marginBottom: 2 }}>Сонгосон бараа</div>
+                                        <div style={{ fontWeight: 700, fontSize: '0.9rem', color: '#1e293b', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{shareItem.item.name}</div>
+                                    </div>
+                                </div>
+
+                                <div style={{ marginBottom: 16 }}>
+                                    <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, marginBottom: 8, color: '#334155' }}>Барааны зураг хавсаргах <span style={{ color: '#ef4444' }}>*</span></label>
+                                    <input 
+                                        type="file" 
+                                        accept="image/*" 
+                                        capture="environment"
+                                        id="share-image-upload" 
+                                        style={{ display: 'none' }}
+                                        onChange={(e) => {
+                                            const file = e.target.files?.[0];
+                                            if (file) {
+                                                setShareImageFile(file);
+                                                setShareImagePreview(URL.createObjectURL(file));
+                                            }
+                                        }}
+                                    />
+                                    {shareImagePreview ? (
+                                        <div style={{ position: 'relative', width: 120, height: 120, borderRadius: 12, overflow: 'hidden', border: '2px solid #e2e8f0' }}>
+                                            <img src={shareImagePreview} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="Preview" />
+                                            <button onClick={() => { setShareImageFile(null); setShareImagePreview(''); }} style={{ position: 'absolute', top: 6, right: 6, background: 'rgba(0,0,0,0.5)', color: '#fff', border: 'none', borderRadius: '50%', width: 24, height: 24, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+                                                <X size={14} />
+                                            </button>
+                                        </div>
+                                    ) : (
+                                        <label htmlFor="share-image-upload" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: 120, background: '#f8fafc', border: '2px dashed #cbd5e1', borderRadius: 12, cursor: 'pointer', color: '#64748b', fontSize: '0.85rem', fontWeight: 600, transition: '0.2s' }}>
+                                            <span style={{ fontSize: '1.8rem', marginBottom: 6 }}>📸</span>
+                                            Зураг оруулах
+                                        </label>
+                                    )}
+                                </div>
+
+                                <div style={{ marginBottom: 24 }}>
+                                    <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, marginBottom: 8, color: '#334155' }}>Сэтгэгдэл</label>
+                                    <textarea 
+                                        value={shareText}
+                                        onChange={e => setShareText(e.target.value)}
+                                        placeholder="Бараа таалагдсан уу? Бусдад санал болгоорой..."
+                                        rows={3}
+                                        style={{ width: '100%', padding: 12, borderRadius: 12, border: '1px solid #cbd5e1', fontSize: '0.9rem', resize: 'none' }}
+                                    />
+                                </div>
+
+                                <button 
+                                    disabled={sharePosting || !shareImageFile}
+                                    onClick={handleShareSubmit}
+                                    style={{ width: '100%', padding: '14px', borderRadius: 12, background: shareImageFile ? 'var(--primary)' : '#cbd5e1', color: '#fff', border: 'none', fontWeight: 800, fontSize: '0.95rem', cursor: shareImageFile ? 'pointer' : 'not-allowed', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, transition: '0.2s' }}
+                                >
+                                    {sharePosting ? (
+                                        <><Loader2 size={18} className="animate-spin" /> Нийтэлж байна...</>
+                                    ) : (
+                                        'Нийтлэх & Оноо авах'
+                                    )}
+                                </button>
+                            </>
+                        )}
+                    </div>
+                </div>
+            )}
         </>
     );
 }
@@ -779,8 +1168,8 @@ const QUICK_QUESTIONS = [
     'Буусан уу?',
 ];
 
-function OrderCardWithInquiry({ order, statusInfo, business, customerName, customerPhone, formatDate, formatCurrency, brandColor }: {
-    order: { id: string; orderNumber?: string; totalAmount: number; paymentStatus: string; createdAt: Date; items?: { name: string; quantity: number; price: number }[] };
+function OrderCardWithInquiry({ order, statusInfo, business, customerName, customerPhone, formatDate, formatCurrency, brandColor, communityPostBonus, onShareItem }: {
+    order: { id: string; orderNumber?: string; totalAmount: number; paymentStatus: string; createdAt: Date; items?: { id?: string; productId?: string; name: string; quantity: number; price: number }[] };
     statusInfo: { label: string; color: string; bg: string };
     business: Business;
     customerName: string;
@@ -788,6 +1177,8 @@ function OrderCardWithInquiry({ order, statusInfo, business, customerName, custo
     formatDate: (d: Date) => string;
     formatCurrency: (n: number) => string;
     brandColor: string;
+    communityPostBonus: number;
+    onShareItem: (item: any) => void;
 }) {
     const [showForm, setShowForm] = useState(false);
     const [question, setQuestion] = useState('');
@@ -866,6 +1257,22 @@ function OrderCardWithInquiry({ order, statusInfo, business, customerName, custo
                         <div className="cd-order-more">+{order.items.length - 3} бараа</div>
                     )}
                 </div>
+            )}
+
+            {/* Share and Earn Button */}
+            {(order.paymentStatus === 'paid' || order.paymentStatus === 'delivered') && order.items && order.items.length > 0 && (
+                <button
+                    onClick={() => onShareItem(order.items![0])}
+                    style={{
+                        width: '100%', marginTop: 8, padding: '10px 12px', borderRadius: 10,
+                        border: 'none', background: 'linear-gradient(135deg, #10b981, #059669)',
+                        color: 'white', fontSize: '0.85rem', fontWeight: 700,
+                        cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                        boxShadow: '0 4px 10px rgba(16, 185, 129, 0.3)'
+                    }}
+                >
+                    🌟 Барааг хуваалцаж +{formatCurrency(communityPostBonus)} авах
+                </button>
             )}
 
             {/* Inquiry sent confirmation */}

@@ -21,5 +21,5 @@ export const SettingsRegistry: Record<string, React.LazyExoticComponent<any>> = 
     'fb-messenger': lazy(() => import('../pages/Settings/components/MessengerSettings').then(m => ({ default: m.MessengerSettings }))),
     'promo-codes': lazy(() => import('../pages/Settings/components/PromoCodeSettings').then(m => ({ default: m.PromoCodeSettings }))),
     'cleanup': lazy(() => import('../pages/Settings/components/CleanupSettings').then(m => ({ default: m.CleanupSettings }))),
-
+    'wallet': lazy(() => import('../pages/Settings/components/WalletSettingsPanel').then(m => ({ default: m.WalletSettingsPanel }))),
 };

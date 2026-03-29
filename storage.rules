@@ -6,9 +6,15 @@ service firebase.storage {
       return request.auth != null;
     }
 
-    // Business files — only members can read/write
+    // Public paths (community images uploaded by store customers, and public read for business files)
+    match /businesses/{bizId}/community_feeds/{imageId} {
+      allow read: if true;
+      allow write: if true; 
+    }
+
+    // Business files — only members can write, public can read (for storefront catalog)
     match /businesses/{bizId}/{allPaths=**} {
-      allow read: if isAuth();
+      allow read: if true;
       allow write: if isAuth();
     }
 
