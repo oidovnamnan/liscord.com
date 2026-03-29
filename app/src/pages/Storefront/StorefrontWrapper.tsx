@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { useParams, Outlet, Navigate, useLocation, Link } from 'react-router-dom';
+import { useEffect, useState, useRef } from 'react';
+import { useParams, Outlet, Navigate, useLocation, Link, useNavigate } from 'react-router-dom';
 import { businessService } from '../../services/db';
 import { db } from '../../services/firebase';
 import { doc, getDoc, setDoc, deleteDoc, serverTimestamp, increment } from 'firebase/firestore';
@@ -8,6 +8,71 @@ import { CartDrawer } from '../../components/Storefront/CartDrawer';
 import { StorefrontFooter } from '../../components/Storefront/StorefrontFooter';
 import { Heart } from 'lucide-react';
 import './Storefront.css';
+
+function DraggableFAB({ to, children }: { to: string, children: React.ReactNode }) {
+    const navigate = useNavigate();
+    const [position, setPosition] = useState({ x: 0, y: 0 });
+    const isDragging = useRef(false);
+    const hasMoved = useRef(false);
+    const startObj = useRef({ x: 0, y: 0, pointerId: -1 });
+    const buttonRef = useRef<HTMLDivElement>(null);
+
+    const onPointerDown = (e: React.PointerEvent) => {
+        isDragging.current = true;
+        hasMoved.current = false;
+        startObj.current = {
+            x: e.clientX - position.x,
+            y: e.clientY - position.y,
+            pointerId: e.pointerId
+        };
+        buttonRef.current?.setPointerCapture(e.pointerId);
+    };
+
+    const onPointerMove = (e: React.PointerEvent) => {
+        if (!isDragging.current) return;
+        const newX = e.clientX - startObj.current.x;
+        const newY = e.clientY - startObj.current.y;
+        
+        // Mark as moved if dragged more than 5px to prevent accidental clicks
+        if (Math.abs(newX - position.x) > 5 || Math.abs(newY - position.y) > 5) {
+            hasMoved.current = true;
+        }
+        setPosition({ x: newX, y: newY });
+    };
+
+    const onPointerUp = (e: React.PointerEvent) => {
+        isDragging.current = false;
+        buttonRef.current?.releasePointerCapture(e.pointerId);
+    };
+
+    const handleClick = (e: React.MouseEvent) => {
+        e.preventDefault();
+        if (hasMoved.current) {
+            hasMoved.current = false;
+        } else {
+            navigate(to);
+        }
+    };
+
+    return (
+        <div
+            ref={buttonRef}
+            className="sf-floating-community-btn"
+            style={{ 
+                transform: `translate3d(${position.x}px, ${position.y}px, 0)`,
+                touchAction: 'none',
+                cursor: 'grab'
+            }}
+            onPointerDown={onPointerDown}
+            onPointerMove={onPointerMove}
+            onPointerUp={onPointerUp}
+            onPointerCancel={onPointerUp}
+            onClick={handleClick}
+        >
+            {children}
+        </div>
+    );
+}
 
 export function StorefrontWrapper() {
     const { slug } = useParams<{ slug: string }>();
@@ -316,10 +381,10 @@ export function StorefrontWrapper() {
             
             {/* Global Floating Community Button */}
             {!location.pathname.includes('/community') && !isCheckoutPage && (
-                <Link to={`/${slug}/community`} className="sf-floating-community-btn">
+                <DraggableFAB to={`/${slug}/community`}>
                     <Heart size={20} className="pulse-heart" />
                     <span>Коммунити</span>
-                </Link>
+                </DraggableFAB>
             )}
         </div>
     );

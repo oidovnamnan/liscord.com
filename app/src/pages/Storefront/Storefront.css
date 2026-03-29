@@ -3070,6 +3070,8 @@ body.fb-browser .storefront-layout {
     box-shadow: 0 8px 25px rgba(255, 65, 108, 0.4);
     text-decoration: none;
     z-index: 9999;
+    user-select: none;
+    -webkit-user-select: none;
     transition: transform 0.2s, box-shadow 0.2s;
 }
 
