@@ -921,31 +921,35 @@ export function CustomerDashboard({ isOpen, onClose, business, phone, onOpenMemb
                     {activeTab === 'wallet' && (
                         <div className="cd-section animate-fade-in">
                             <div style={{ 
-                                background: `linear-gradient(135deg, ${brandColor}, #1e293b)`, 
-                                padding: '28px 24px', 
-                                borderRadius: 24, 
-                                border: '1px solid rgba(255,255,255,0.1)', 
+                                background: `linear-gradient(135deg, #b91c1c, #7f1d1d)`, 
+                                padding: '24px', 
+                                borderRadius: 16, 
+                                border: '1px solid rgba(255,255,255,0.15)', 
                                 color: 'white', 
                                 marginBottom: 24, 
-                                boxShadow: `0 16px 32px ${brandColor}30`,
+                                boxShadow: `0 12px 24px rgba(185, 28, 28, 0.25)`,
                                 position: 'relative',
-                                overflow: 'hidden'
+                                overflow: 'hidden',
+                                aspectRatio: '1.586',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                justifyContent: 'space-between'
                             }}>
                                 {/* Background blur decorations */}
                                 <div style={{ position: 'absolute', top: -30, right: -20, background: 'rgba(255,255,255,0.1)', width: 120, height: 120, borderRadius: '50%', filter: 'blur(24px)' }} />
                                 <div style={{ position: 'absolute', bottom: -40, left: -20, background: 'rgba(255,255,255,0.05)', width: 140, height: 140, borderRadius: '50%', filter: 'blur(30px)' }} />
 
                                 <div style={{ position: 'relative', zIndex: 1 }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: 8, opacity: 0.9, fontSize: '0.9rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                                             <Wallet size={16} /> <span>{business?.settings?.wallet?.currencyName || 'Оноо'} Хэтэвч</span>
                                         </div>
                                         <Sparkles size={18} style={{ color: 'rgba(255,255,255,0.8)' }} />
                                     </div>
-                                    <div style={{ fontSize: '3rem', fontWeight: 900, letterSpacing: '-1px', marginBottom: 8, display: 'flex', alignItems: 'baseline', gap: 8 }}>
+                                    <div style={{ fontSize: '3.2rem', fontWeight: 900, letterSpacing: '-1px', marginBottom: 2, display: 'flex', alignItems: 'baseline', gap: 8, textShadow: '0 2px 10px rgba(0,0,0,0.2)' }}>
                                         {walletBalance.toLocaleString()} <span style={{ fontSize: '1.2rem', fontWeight: 600, opacity: 0.7 }}>₮</span>
                                     </div>
-                                    <div style={{ fontSize: '0.85rem', opacity: 0.8, marginBottom: 24, lineHeight: 1.4, maxWidth: '90%' }}>
+                                    <div style={{ fontSize: '0.8rem', opacity: 0.85, marginBottom: 16, lineHeight: 1.4, maxWidth: '95%' }}>
                                         Худалдан авалт хийхдээ үлдэгдлээ {business?.settings?.wallet?.usageLimitMode === 'fixed' ? 'шууд' : 'азтанаар'} ашиглан хөнгөлөлт эдлэх боломжтой.
                                     </div>
                                     
@@ -1566,44 +1570,41 @@ function PromoCodeSection({ business, phone, brandColor }: { business: Business;
     return (
         <div style={{
             display: 'flex', flexDirection: 'column', gap: 12,
-            background: `linear-gradient(135deg, ${brandColor}15, ${brandColor}05)`,
-            padding: 24,
+            background: '#fff',
+            padding: '24px',
             borderRadius: 20,
-            border: `1px solid ${brandColor}25`,
+            border: `1px solid #fecaca`,
             color: '#111',
             position: 'relative',
             overflow: 'hidden',
-            marginBottom: 20
+            marginBottom: 20,
+            boxShadow: '0 8px 24px rgba(185, 28, 28, 0.08)'
         }}>
             {/* Festive Background Decorations */}
-            <div style={{ position: 'absolute', top: -10, right: -10, opacity: 0.1, transform: 'rotate(15deg)' }}>
-                <Gift size={120} />
-            </div>
-            <div style={{ position: 'absolute', bottom: -20, left: -20, opacity: 0.1, transform: 'rotate(-15deg)' }}>
-                <Ticket size={100} />
+            <div style={{ position: 'absolute', top: -10, right: -10, opacity: 0.04, transform: 'rotate(15deg)' }}>
+                <Gift size={120} color="#b91c1c" />
             </div>
 
             <div style={{ position: 'relative', zIndex: 1 }}>
                 {/* Generate button or Result banner */}
                 {config && (
-                    <div style={{ background: 'rgba(255, 255, 255, 0.95)', backdropFilter: 'blur(10px)', border: '1px solid rgba(255, 255, 255, 0.8)', borderRadius: 16, padding: 24, boxShadow: '0 4px 20px rgba(0,0,0,0.03)' }}>
+                    <div style={{ background: '#fff', borderRadius: 16, padding: 0 }}>
                         {genResult ? (
                             <div style={{ textAlign: 'center' }}>
                                 <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 8, fontSize: '0.85rem', color: '#64748b', fontWeight: 700, marginBottom: 8, textTransform: 'uppercase' }}>
-                                    <Sparkles size={16} color={brandColor} /> Таны промо код үүслээ! <Sparkles size={16} color={brandColor} />
+                                    <Sparkles size={16} color="#b91c1c" /> Таны промо код үүслээ! <Sparkles size={16} color="#b91c1c" />
                                 </div>
-                                                <div style={{ fontFamily: 'monospace', fontSize: '2.2rem', fontWeight: 900, color: '#1e293b', letterSpacing: '0.05em', margin: '14px 0' }}>{genResult.code}</div>
-                                <div style={{ fontSize: '1.05rem', fontWeight: 800, color: brandColor, marginTop: 4 }}>Гаднаасаа авах {genResult.pct}% ХЯМДРАЛ 🎉</div>
-                                <div style={{ display: 'flex', gap: 10, justifyContent: 'center', marginTop: 20 }}>
-                                    <button onClick={() => copyCode(genResult.code)} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '12px 24px', background: brandColor, color: '#fff', border: 'none', borderRadius: 12, fontSize: '0.9rem', fontWeight: 800, cursor: 'pointer', boxShadow: `0 4px 12px ${brandColor}40` }}>
-                                        {copied === genResult.code ? <><Check size={18} /> ХУУЛСАН!</> : <><Copy size={18} /> КОДЫГ ХУУЛАХ</>}
+                                <div style={{ fontFamily: 'monospace', fontSize: '2.2rem', fontWeight: 900, color: '#1e293b', letterSpacing: '0.05em', margin: '10px 0' }}>{genResult.code}</div>
+                                <div style={{ fontSize: '1rem', fontWeight: 800, color: '#b91c1c', marginTop: 4 }}>Гаднаасаа авах {genResult.pct}% ХЯМДРАЛ 🎉</div>
+                                <div style={{ display: 'flex', gap: 10, justifyContent: 'center', marginTop: 16 }}>
+                                    <button onClick={() => copyCode(genResult.code)} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '10px 20px', background: '#b91c1c', color: '#fff', border: 'none', borderRadius: 10, fontSize: '0.85rem', fontWeight: 800, cursor: 'pointer', boxShadow: `0 4px 12px rgba(185,28,28,0.3)` }}>
+                                        {copied === genResult.code ? <><Check size={16} /> ХУУЛСАН!</> : <><Copy size={16} /> КОДЫГ ХУУЛАХ</>}
                                     </button>
-                                    <button onClick={() => setGenResult(null)} style={{ padding: '12px 24px', background: 'none', border: '2px solid #e2e8f0', color: '#475569', borderRadius: 12, fontSize: '0.9rem', fontWeight: 700, cursor: 'pointer' }}>БУЦАХ</button>
                                 </div>
                             </div>
                         ) : (
                             <div style={{ textAlign: 'center' }}>
-                                <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', background: '#fef3c7', color: '#d97706', padding: '4px 12px', borderRadius: 20, fontSize: '0.75rem', fontWeight: 800, marginBottom: 12 }}>
+                                <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', background: '#fef2f2', color: '#b91c1c', padding: '6px 16px', borderRadius: 20, fontSize: '0.75rem', fontWeight: 800, marginBottom: 12 }}>
                                     <Gift size={14} style={{ marginRight: 6 }} /> БЭЛЭГТЭЙ УРАМШУУЛАЛ
                                 </div>
                                 <div style={{ fontSize: '1.2rem', fontWeight: 900, color: '#111827', marginBottom: 6, lineHeight: 1.2 }}>
@@ -1617,10 +1618,10 @@ function PromoCodeSection({ business, phone, brandColor }: { business: Business;
                                     disabled={loading || remaining <= 0}
                                     style={{
                                         display: 'inline-flex', alignItems: 'center', gap: 8,
-                                        padding: '14px 28px', background: remaining > 0 ? brandColor : '#cbd5e1',
-                                        color: '#fff', border: 'none', borderRadius: 14, fontSize: '0.95rem',
+                                        padding: '14px 28px', background: remaining > 0 ? '#b91c1c' : '#cbd5e1',
+                                        color: '#fff', border: 'none', borderRadius: 12, fontSize: '0.9rem',
                                         fontWeight: 800, cursor: remaining > 0 ? 'pointer' : 'not-allowed',
-                                        boxShadow: remaining > 0 ? `0 6px 16px ${brandColor}40` : 'none',
+                                        boxShadow: remaining > 0 ? `0 6px 16px rgba(185,28,28,0.3)` : 'none',
                                         transform: loading ? 'scale(0.98)' : 'scale(1)',
                                         transition: 'all 0.2s',
                                         marginTop: 8
