@@ -1342,7 +1342,7 @@ function OrderCardWithInquiry({ order, statusInfo, business, customerName, custo
             )}
 
             {/* Cancel Order Button */}
-            {(order.status === 'pending' && order.paymentStatus !== 'paid') && (
+            {((order.status === 'pending' || order.status === 'new') && order.paymentStatus !== 'paid') && (
                 <button
                     onClick={handleCancelOrder}
                     disabled={cancelling}
@@ -1359,7 +1359,7 @@ function OrderCardWithInquiry({ order, statusInfo, business, customerName, custo
             )}
 
             {/* Inquiry button / form */}
-            {(order.status !== 'pending' && order.status !== 'cancelled') && (
+            {(order.status !== 'pending' && order.status !== 'new' && order.status !== 'cancelled') && (
                 !showForm ? (
                     <button
                         onClick={() => setShowForm(true)}
