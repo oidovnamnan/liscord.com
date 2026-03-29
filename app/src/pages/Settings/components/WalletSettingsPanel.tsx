@@ -38,8 +38,8 @@ export function WalletSettingsPanel() {
                 ...business.settings.wallet,
                 rewardEvents: {
                     ...config.rewardEvents,
-                    ...business.settings.wallet.rewardEvents
-                }
+                    ...(business.settings.wallet.rewardEvents || {})
+                } as NonNullable<WalletConfig['rewardEvents']>
             });
         }
     }, [business?.settings?.wallet]);

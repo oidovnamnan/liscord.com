@@ -508,7 +508,7 @@ export function CustomerDashboard({ isOpen, onClose, business, phone, onOpenMemb
         try {
             const { collection, addDoc, doc, serverTimestamp, setDoc } = await import('firebase/firestore');
             const { db } = await import('../../services/firebase');
-            const { storage } = await import('../../services/storage');
+            const { storageService: storage } = await import('../../services/storage');
             const { walletService } = await import('../../services/walletService');
 
             // 1. Upload Image
