@@ -18,7 +18,23 @@
     border-radius: 16px;
     color: #fff;
     flex-wrap: wrap;
+    position: relative;
 }
+
+.promo-settings-btn {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    width: 36px; height: 36px;
+    border-radius: 10px;
+    border: none;
+    background: rgba(255,255,255,0.15);
+    color: #fff;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s;
+}
+.promo-settings-btn:hover { background: rgba(255,255,255,0.3); }
 
 .promo-hero-icon {
     width: 52px; height: 52px;

@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Ticket, Plus, Search, Copy, Check, Zap, Gift, BarChart3, Users, Clock, Percent, Tag, Trash2, ToggleLeft, ToggleRight, Crown, Shuffle } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Ticket, Plus, Search, Copy, Check, Zap, Gift, BarChart3, Users, Clock, Percent, Tag, Trash2, ToggleLeft, ToggleRight, Crown, Shuffle, Settings, Sparkles } from 'lucide-react';
 import { useBusinessStore } from '../../store';
 import { collection, query, orderBy, onSnapshot, addDoc, updateDoc, doc, deleteDoc, getDocs, where, serverTimestamp, Timestamp } from 'firebase/firestore';
 import { db } from '../../services/firebase';
@@ -23,6 +24,7 @@ function formatDate(d: any): string {
 
 export function PromoCodesPage() {
     const { business } = useBusinessStore();
+    const navigate = useNavigate();
     const [tab, setTab] = useState<Tab>('static');
     const [codes, setCodes] = useState<PromoCode[]>([]);
     const [loading, setLoading] = useState(true);
@@ -250,7 +252,7 @@ export function PromoCodesPage() {
     const tabs: { id: Tab; label: string; icon: React.ReactNode; count: number }[] = [
         { id: 'static', label: 'Тогтмол', icon: <Tag size={16} />, count: codes.filter(c => c.mode === 'static').length },
         { id: 'dynamic', label: 'Динамик', icon: <Zap size={16} />, count: codes.filter(c => c.mode === 'dynamic' && !c.parentId).length },
-        { id: 'user_gen', label: 'Хэрэглэгчийн', icon: <Gift size={16} />, count: codes.filter(c => c.mode === 'user_generated').length },
+        { id: 'user_gen', label: 'Lucky', icon: <Sparkles size={16} />, count: codes.filter(c => c.mode === 'user_generated').length },
         { id: 'usage', label: 'Ашиглалт', icon: <BarChart3 size={16} />, count: codes.filter(c => c.usageCount > 0).length },
     ];
 
@@ -277,6 +279,9 @@ export function PromoCodesPage() {
                         <span className="promo-stat-label">Ашиглалт</span>
                     </div>
                 </div>
+                <button className="promo-settings-btn" onClick={() => navigate('/app/settings')} title="Тохиргоо">
+                    <Settings size={18} />
+                </button>
             </div>
 
             {/* Tabs */}
@@ -373,7 +378,7 @@ export function PromoCodesPage() {
             {showModal && (
                 <div className="promo-modal-overlay" onClick={() => setShowModal(false)}>
                     <div className="promo-modal" onClick={e => e.stopPropagation()}>
-                        <h3>{editingCode ? 'Код засах' : tab === 'dynamic' ? 'Динамик кампанит' : tab === 'user_gen' ? 'Хэрэглэгчийн код тохиргоо' : 'Шинэ промо код'}</h3>
+                        <h3>{editingCode ? 'Код засах' : tab === 'dynamic' ? 'Динамик кампанит' : tab === 'user_gen' ? 'Lucky код тохиргоо' : 'Шинэ промо код'}</h3>
 
                         <div className="promo-form">
                             {tab === 'static' && (
