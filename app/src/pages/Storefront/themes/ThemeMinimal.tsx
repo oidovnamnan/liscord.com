@@ -835,11 +835,20 @@ function MembershipModal({
     const handlePurchase = async () => {
         setCreatingOrder(true);
         setError('');
+        
+        // Double check if already VIP to prevent duplicate purchase
+        const cleanPhone = phone.trim().replace(/[\s\-+]/g, '');
+        try {
+            const hasVIP = await onVerify(cleanPhone);
+            if (hasVIP) {
+                setError('Та аль хэдийн VIP гишүүнчлэлтэй байна!');
+                setCreatingOrder(false);
+                return;
+            }
+        } catch(e) { /* Ignore permission errors */ }
         try {
             const code = generateRefCode();
             setRefCode(code);
-
-            const cleanPhone = phone.trim().replace(/[\s\-+]/g, '');
 
             // Create membership order in Firestore
             const { orderService } = await import('../../../services/orderService');
@@ -901,21 +910,29 @@ function MembershipModal({
                     // Auto-create membership when payment is confirmed (bank transfer or QPay callback)
                     if (product.exclusiveCategoryId) {
                         try {
-                            const { addDoc, collection, serverTimestamp, Timestamp } = await import('firebase/firestore');
+                            const { addDoc, collection, getDocs, query, where, serverTimestamp, Timestamp } = await import('firebase/firestore');
                             const cleanPh = cleanPhone.replace(/^976/, '');
-                            const expDate = new Date();
-                            expDate.setDate(expDate.getDate() + durationDays);
                             
-                            await addDoc(collection(db, 'businesses', business.id, 'memberships'), {
-                                customerPhone: cleanPh,
-                                categoryId: product.exclusiveCategoryId,
-                                orderId: newId,
-                                purchasedAt: serverTimestamp(),
-                                expiresAt: Timestamp.fromDate(expDate),
-                                amountPaid: price,
-                                status: 'active',
-                                createdBy: 'payment_listener',
-                            });
+                            // Prevent duplicate membership for same order (race condition with QPay callback)
+                            await new Promise(r => setTimeout(r, 2000)); // Give webhook time to execute
+                            const existQuery = query(collection(db, 'businesses', business.id, 'memberships'), where('orderId', '==', newId));
+                            const existSnap = await getDocs(existQuery);
+                            
+                            if (existSnap.empty) {
+                                const expDate = new Date();
+                                expDate.setDate(expDate.getDate() + durationDays);
+                                
+                                await addDoc(collection(db, 'businesses', business.id, 'memberships'), {
+                                    customerPhone: cleanPh,
+                                    categoryId: product.exclusiveCategoryId,
+                                    orderId: newId,
+                                    purchasedAt: serverTimestamp(),
+                                    expiresAt: Timestamp.fromDate(expDate),
+                                    amountPaid: price,
+                                    status: 'active',
+                                    createdBy: 'payment_listener',
+                                });
+                            }
                         } catch (e) {
                             console.debug('Membership auto-create failed (may already exist via QPay):', e);
                         }
